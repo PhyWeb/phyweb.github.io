@@ -1,0 +1,610 @@
+@import url('https://fonts.googleapis.com/css2?family=Lobster&family=Roboto:wght@300&display=swap');
+
+:root {
+  --c1: #D8318A;
+  --c2: #F26C7D;
+  --c3: #E37439;
+  --bg1: #ccc;
+  --bg2: #555;
+
+  --grad1: linear-gradient(to right, #D8318A, #F26C7D, #E37439);
+}
+
+body, html {
+  height: 100%;
+  margin: 0px;
+  display: flex;
+  flex-direction: column;
+  font-size: 12px;
+  font-family:'Roboto';
+  background-color: var(--bg2);
+  user-select: none;
+}
+
+::selection {
+  background: #ffffff1e;
+  color: #333333;
+}
+::-moz-selection {
+  background: #ffffff1e;
+  color: #333333;
+}
+
+.iconmargin{
+  margin: 0 0.5em 0 0.5em;
+}
+
+/*----------------------------------------------------------------------------------------------
+--------------------------------------------SCROLLBAR-------------------------------------------
+----------------------------------------------------------------------------------------------*/
+/* Works on Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(104, 104, 104) rgba(255, 166, 0, 0);
+}
+
+/* Works on Chrome, Edge, and Safari */
+*::-webkit-scrollbar {
+  width: 12px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: blue;
+  border-radius: 20px;
+  border: 3px solid orange;
+}
+
+*::-webkit-scrollbar-button{
+  background: transparent;
+}
+
+/*----------------------------------------------------------------------------------------------
+----------------------------------------------HEADER--------------------------------------------
+----------------------------------------------------------------------------------------------*/
+
+header {
+  position: relative;
+  height: 4rem;
+  margin: 0 0 1rem 0 !important;
+  /*padding: 0.5em;*/
+
+  background-image: var(--grad1);
+  color: white;
+}
+
+#button-burger {
+  position: absolute;
+  font-size: 2rem;
+  margin: 0.75rem 1rem 0.75rem 1rem;
+  top: 0;
+  left: 0;
+}
+
+.title {
+  text-align: center;
+  font-size: 3.2rem;
+  font-family:'Lobster';
+}
+
+.btn {
+  transition: color 0.3s;
+}
+
+.btn:hover {
+  color: #333333;
+  cursor:pointer;
+}
+
+#button-magnifier {
+  display: none;
+  position: absolute;
+  font-size: 2rem;
+  padding: 0.75rem 1rem 0.5rem 1rem;
+  top: 0;
+  right: 22rem;
+}
+
+#button-magnifier.active {
+  color: white;
+  border-bottom: 3px solid white;
+}
+
+.button-round{
+  display: inline-block;
+  font-size: 2rem;
+	padding: 0.10rem 2rem;
+  background: white;
+  border: 2px solid white;
+	border-radius: 40px;
+  color: var(--c3);
+  cursor:pointer;
+  font-family:'Roboto';
+  font-weight: bold;
+  -webkit-transition: background-color 0.3s, color 0.3s, width 0.3s, border-width 0.3s, border-color 0.3s;
+	transition: background-color 0.3s, color 0.3s, width 0.3s, border-width 0.3s, border-color 0.3s;
+}
+
+.button-round:hover{
+	background: transparent;
+  color: white;
+}
+
+#openButton{
+  position: absolute;
+  margin: 0.5rem 1rem 0.5rem 1rem;
+  top: 0;
+  right: 0;
+}
+
+/*----------------------------------------------------------------------------------------------
+--------------------------------------------SIDEMENU--------------------------------------------
+----------------------------------------------------------------------------------------------*/
+/* The side navigation menu */
+.sidemenu-panel {
+  height: 100%; /* 100% Full-height */
+  width: 0; /* 0 width - change this with JavaScript */
+  z-index: 1; /* Stay on top */
+  background-color: var(--bg1);
+  overflow-x: hidden; /* Disable horizontal scroll */
+  transition: 0.3s; /* 0.5 second transition effect to slide in the sidenav */
+
+  display: flex;
+  flex-direction: column;
+}
+
+/* The navigation menu links */
+.sidemenu-panel div {
+  margin: 0.5rem 0 1.5rem 1.5rem;
+  font-size: 1.6rem;
+  font-weight: bold;
+  color: black;
+  transition: 0.3s;
+  cursor:pointer;
+}
+
+/* When you mouse over the navigation links, change their color */
+.sidemenu-panel div:hover {
+  color: #f1f1f1;
+}
+
+#downloadButton{
+  margin-top: 4rem;
+}
+
+#infoButton{
+  margin-top: auto;
+}
+
+
+/*----------------------------------------------------------------------------------------------
+--------------------------------------------CONTROLS--------------------------------------------
+----------------------------------------------------------------------------------------------*/
+
+
+.controls-container {
+  margin: 0.75rem;
+  display: none;
+}
+
+.control {
+  font-size: 2rem;
+  margin: 0 0.75rem 0 0.75rem;
+}
+
+#controls-pause {
+  display: none;
+}
+
+.fa-square{
+  color: white;
+}
+
+.textContainer{
+  display: flex;
+  justify-content:  center;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top : 1rem
+}
+
+.originButton{
+  color: #333333;
+  flex: 1;
+  cursor:pointer;
+}
+
+.originButton:hover{
+  color: white;
+  transition: color 0.3s;
+}
+
+.originButton:hover .fa-square{
+  color: #333333;
+  transition: color 0.3s;
+}
+
+.originButton.active {
+  color: white;
+}
+
+.originButton.active .fa-square{
+  color: #333333;
+}
+
+#segmentButton.button-round{
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+	padding: 0.2rem 1.5rem 0.2rem 1.5rem;
+  color: #333333;
+}
+
+#segmentButton.button-round:hover{
+	background: #333333;
+  color: white;
+  border: 2px solid #333333;
+}
+
+#segmentButton.active {
+  background: #333333;
+  color: white;
+  border: 2px solid #333333;
+}
+
+#scaleInput {
+  margin-left: 1rem;
+  margin-right: 1rem;
+  width : 8rem;
+  font-size: 1.6rem;
+}
+
+/* Remove the arrows in number inputs*/
+.no-spin::-webkit-inner-spin-button, .no-spin::-webkit-outer-spin-button {
+	-webkit-appearance: none !important;
+	margin: 0 !important;
+}
+.no-spin{
+	-moz-appearance:textfield !important;
+}
+
+/*----------------------------------------------------------------------------------------------
+----------------------------------------------LAYOUT--------------------------------------------
+----------------------------------------------------------------------------------------------*/
+
+#app {
+  flex: 1 0 10rem;
+  display: flex;
+  overflow: auto;
+}
+
+#column1 {
+  display: flex;
+  flex-direction: column;
+  flex:1 0 10rem;
+}
+
+#column2 {
+  display: none;
+  flex: 0 0 22rem;
+  flex-direction: column;
+  overflow: hidden;
+
+}
+
+#column2 .wrapper{
+  background-color: var(--bg1);
+  flex : 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+#tabBar{
+  background: var(--grad1);
+  text-align: center;
+  flex : 0;
+  display: flex;
+}
+
+#tabBar button {
+  flex: 1;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  font-size: 1.8rem;
+  color: #333333;
+  padding: 10px 0px;
+  transition: 0.3s;
+
+  background: none;
+
+  border-bottom: 3px solid transparent;
+}
+
+#tabBar button:hover {
+  color: white;
+  border-bottom: 3px solid white;
+  cursor:pointer;
+}
+
+#tabBar .active {
+  color: white;
+  border-bottom: 3px solid white;
+  cursor:pointer;
+}
+
+.innerPanel{
+  font-size: 1.2rem;
+  padding: 1rem 0 1rem 1rem;
+  flex: 1;
+  /*background-color: #E37439;*/
+  overflow-y: auto;
+}
+
+#etalonnagePanel{
+  padding: 1rem;
+}
+
+#mesuresPanel{
+  display: none;
+}
+
+#videoContainer {
+  flex: 1 0 10rem;
+  box-shadow: none;
+  position: relative;
+}
+
+.panel {
+  margin: 0 1rem 1rem 1rem;
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+}
+
+#videoContainer canvas {
+  display: none;
+  position:absolute;
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+  cursor: crosshair;
+
+}
+
+#footer {
+  color: white;
+  background: var(--grad1);
+}
+
+/*----------------------------------------------------------------------------------------------
+-----------------------------------------------TEXT---------------------------------------------
+----------------------------------------------------------------------------------------------*/
+h1{
+  margin: 0.4rem 0 0.8rem 0;
+  font-size: 1.8rem;
+  font-weight: bold;
+}
+
+p{
+  margin: 0.4rem 0 0.4rem 0;
+  font-size: 1.7rem;
+  font-weight: bold;
+}
+
+#frameLabel{
+  margin: 0.4rem 0 0.4rem 0;
+  font-size: 2rem;
+  color: white;
+}
+
+.textLabel{
+  font-size: 1.6rem;
+  font-weight: bold;
+}
+
+/*----------------------------------------------------------------------------------------------
+----------------------------------------------TABLE---------------------------------------------
+----------------------------------------------------------------------------------------------*/
+
+table{
+ border-spacing: 0px;
+}
+
+.measurementInput{
+  width: 6rem;
+}
+
+input {
+  border: none;
+  user-select: all;
+}
+
+input:focus{
+  outline: none;
+}
+
+/*----------------------------------------------------------------------------------------------
+-------------------------------------------SCRIPT MODAL-----------------------------------------
+----------------------------------------------------------------------------------------------*/
+
+.modal {
+  display: none; /* Hidden by default */
+  position: fixed; /* Stay in place */
+  z-index: 1;/* Sit on top */
+  left: 0;
+  top: 0;
+  width: 100%; /* Full width */
+  height: 100%; /* Full height */
+  /*overflow: auto; /* Enable scroll if needed */
+  background-color: rgb(0,0,0); /* Fallback color */
+  background-color: rgba(0,0,0,0.5); /* Black w/ opacity */
+}
+
+.script-modal-panel {
+  background: var(--grad1);
+  margin: 5% auto; /* 5% from the top and centered */
+  width: 80rem; /* Could be more or less, depending on screen size */
+}
+
+.modal-panel header .title{
+  font-size: 2.8rem !important;
+}
+
+.modal-close {
+  position: absolute;
+  font-size: 2rem;
+  margin: 0.75rem 1rem 0.75rem 1rem;
+  top: 0;
+  right: 0;
+  text-align: center;
+}
+
+.script-modal-container{
+  font-size: 2.2rem;
+  color: white;
+}
+
+.script-modal-item{
+  padding: 1rem;
+  display: flex;
+  flex-direction: row;
+}
+
+.script-modal-separator{
+  border-bottom: 2px solid hsla(0, 0%, 100%, .4);
+}
+
+#button-load-online, #button-load-local{
+  flex: 1;
+  margin-left: auto;
+}
+
+#button-load-online button, #button-load-local button{
+  width: 20rem;
+}
+
+.script-modal-left{
+  flex: 5;
+}
+
+[type="file"] {
+  height: 0;
+  overflow: hidden;
+  width: 0;
+}
+
+
+
+/*[type="file"]:focus + label,
+[type="file"] + label:hover {
+
+}
+
+[type="file"]:focus + label {
+
+}*/
+
+#onlineinput {
+  border: none;
+  border-bottom: 2px solid hsla(0, 0%, 100%, .4);
+  background-color: transparent;
+  color: #fff;
+  font-size: 2.2rem;
+  width: 50rem;
+  
+}
+#onlineinput:focus {
+    outline: none;
+}
+#onlineinput::placeholder {
+  color: hsla(0, 0%, 100%, .4);
+}
+
+
+/*----------------------------------------------------------------------------------------------
+------------------------------------------PRELOAD MODAL-----------------------------------------
+----------------------------------------------------------------------------------------------*/
+.preload-modal-panel {
+  background: var(--grad1);
+  margin: 15% auto; /* 5% from the top and centered */
+  width: 50rem; /* Could be more or less, depending on screen size */
+}
+
+.preloading-content {
+  display: flex;
+  flex-direction: row;
+  font-size: 2.2rem;
+  color: white;
+}
+
+.preloading-spinner {
+  flex: 1 ;
+  margin: auto;
+  text-align: center;
+  font-size: 3rem;
+}
+
+.preloading-counters-title{
+  flex: 1 ;
+}
+
+.preloading-counters-value{
+  text-align: center;
+  flex: 1 ;
+}
+
+.counter{
+  margin: 0.5rem
+}
+
+#button-cancel-preload, #button-start-script {
+  text-align: center;
+}
+
+#button-cancel-preload button, #button-start-script button{
+  margin: 1rem;
+  width: 20rem;
+}
+
+#button-start-script {
+  display: none;
+}
+
+#preload-check {
+  display: none;
+}
+
+.script-infos-container {
+  border: 2px solid white;
+	border-radius: 40px;
+  margin: 1rem;
+  padding: 1rem;
+
+  font-size: 2.2rem;
+  color: white;
+}
+.script-infos-container .script-title{
+  font-size: 2.8rem;
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.script-infos{
+  display: flex;
+  flex-direction: row;
+  text-align: center;
+}
+
+.script-infos-left{
+  flex: 3;
+}
+
+.script-infos-right{
+  flex: 2;
+}
+
+.script-infos-item{
+  flex: 1;
+  margin: 1rem 0 1rem 0;
+}
