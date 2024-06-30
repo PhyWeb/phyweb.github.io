@@ -55,10 +55,6 @@ export default class PLAYER {
   }
 
   drawFrame(_frameID){
-    // Draw the frame
-    let frame = new Image();
-    /*frame.src = this.decodedVideo.frames[_frameID]
-    frame.onload = (e)=>{*/
       this.ctx.clearRect(0, 0, this.videoCanvas.width, this.videoCanvas.height);
       this.ctx.drawImage(this.decodedVideo.frames[_frameID]/*e.target*/, 0, 0 ,this.videoCanvas.width, this.videoCanvas.height);
 
@@ -92,10 +88,7 @@ export default class PLAYER {
   drawCrosses(){
     for(let i = 0; i < this.measurement.data.length; i++){
       for(let j = 0; j < this.measurement.data[i].xs.length; j++){
-
-        if(isNumber(this.measurement.data[i].xs[j])){
-          this.drawCross(this.measurement.data[i].xs[j], this.measurement.data[i].ys[j]);
-        }
+        this.drawCross(this.measurement.data[i].xs[j], this.measurement.data[i].ys[j]);
       }
     }
   }
@@ -104,12 +97,14 @@ export default class PLAYER {
     const x = this.videoCanvas.width * _x;
     const y = this.videoCanvas.height * _y;
 
+    this.ctx.beginPath();
     this.ctx.moveTo(x - 5, y);
     this.ctx.lineTo(x + 5, y);
     this.ctx.moveTo(x, y - 5);
     this.ctx.lineTo(x, y + 5);
     this.ctx.strokeStyle = "white";
     this.ctx.stroke();
+    this.ctx.closePath();
   }
 
   drawMagnifier(_frameID){
@@ -173,6 +168,7 @@ export default class PLAYER {
 
     this.ctx.strokeStyle = "white";
     this.ctx.stroke();
+    this.ctx.closePath();
   }
 
   drawSegment(){
@@ -194,6 +190,7 @@ export default class PLAYER {
 
     this.ctx.strokeStyle = "white";
     this.ctx.stroke();
+    this.ctx.closePath();
   }
 
   toggleMagnifier(){
@@ -375,6 +372,8 @@ export default class PLAYER {
 
     $("#"+this.originFlag).classList.add("active");
 
+    this.measurement.updateTable();
+
     this.exitOriginMode();
   }
 
@@ -425,10 +424,11 @@ export default class PLAYER {
     } else{
       this.measurement.scaleSegment.x2 = distPoint.x + 0.5;
       this.measurement.scaleSegment.y2 = distPoint.y + 0.5;
+
+      this.measurement.updateTable();
+
       this.exitScaleMode();
     }
-
-    console.log(this.measurement.scaleSegment);
 
   }
 

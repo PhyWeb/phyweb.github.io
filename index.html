@@ -16,7 +16,7 @@
 <body><canvas id="loadingCanvas" style = "display:none"></canvas>
   <div class = "modal sidemenu">
     <div class="sidemenu-panel">
-      <div id="downloadButton"><i class="fas fa-download fa-fw"></i> Télécharger les données</div>
+      <div><i class="fas fa-download fa-fw"></i> Télécharger les données</div>
       <div><i class="fas fa-download fa-fw"></i> Télécharger les données</div>
       <div><i class="fas fa-download fa-fw"></i> Télécharger les données</div>
       <div id="infoButton"><i class="fa-solid fa-circle-info fa-fw"></i> A propos</div>
@@ -26,8 +26,8 @@
   <a class="btn" id="button-burger"><i class="fas fa-bars"></i></a>
   <div class="title">PhyWeb Meca</div>
   <a class="btn" id="button-magnifier"><i class="fa-solid fa-magnifying-glass"></i></a>
+  <input type="file" placeholder="No selected file..." id="fileInput">
   <div id="openButton">
-    <input type="file" placeholder="No selected file..." id="fileInput">
     <label class="button-round" for="fileInput">Ouvrir une vidéo</label>
   </div>
 </header>
@@ -88,10 +88,18 @@
           <input type="number" class="no-spin" id="scaleInput" value = "1">
           <label class="textLabel"> m</label>
         </div>
+        <h1 style="margin-top: 2.5rem;">Reglages</h1>
+        <label class="textLabel">Origine des dates : Image n° </label>
+        <label class="textLabel">Points par image :</label>
       </div>
       <div class="innerPanel" id="mesuresPanel">
-        <table id="measurementTable">
-        </table>
+        <div id="tableContainer">
+          <table id="measurementTable">
+          </table>
+        </div>
+        <div id="columnFooter">
+          <button class="button-round" id="downloadButton"><i class="fas fa-download"></i> Telecharger</button>
+        </div>
       </div>
     </div>
   </div>

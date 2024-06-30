@@ -38,7 +38,7 @@ $("#mesuresButton").addEventListener("click", ()=>{
   $("#mesuresButton").className = "active";
 
   $("#etalonnagePanel").style.display = "none";
-  $("#mesuresPanel").style.display = "block";
+  $("#mesuresPanel").style.display = "flex";
 });
 
 $("#etalonnageButton").addEventListener("click", ()=>{
@@ -109,7 +109,9 @@ function videoLoaded(){
 
 
 function onFileInputChange(){
-  player.load(fileInput.files[0], videoLoaded);
+  if(fileInput.files[0] != undefined){
+    player.load(fileInput.files[0], videoLoaded);
+  }
 }
 
 function resize() {

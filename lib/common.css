@@ -114,7 +114,8 @@ header {
 }
 
 .button-round{
-  display: inline-block;
+  margin : 0px;
+  display: block;
   font-size: 2rem;
 	padding: 0.10rem 2rem;
   background: white;
@@ -135,7 +136,7 @@ header {
 
 #openButton{
   position: absolute;
-  margin: 0.5rem 1rem 0.5rem 1rem;
+  margin: 0.55rem 0.5rem 0.5rem 0.5rem;
   top: 0;
   right: 0;
 }
@@ -169,10 +170,6 @@ header {
 /* When you mouse over the navigation links, change their color */
 .sidemenu-panel div:hover {
   color: #f1f1f1;
-}
-
-#downloadButton{
-  margin-top: 4rem;
 }
 
 #infoButton{
@@ -339,7 +336,6 @@ header {
 
 .innerPanel{
   font-size: 1.2rem;
-  padding: 1rem 0 1rem 1rem;
   flex: 1;
   /*background-color: #E37439;*/
   overflow-y: auto;
@@ -351,6 +347,26 @@ header {
 
 #mesuresPanel{
   display: none;
+  flex-direction: column;
+  overflow-x: none;
+}
+
+#tableContainer{
+  padding: 1rem 0 1rem 1rem;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+#columnFooter{
+  color: white;
+  background: var(--grad1);
+  padding: 0.5rem;
+}
+
+
+#downloadButton{
+  margin:auto;
 }
 
 #videoContainer {

@@ -38,7 +38,22 @@ export default class MEASUREMENT {
   }   
 
   init(_decodedVideo){
-    // HUUUUUM
+    // Inits
+    this.data = [];
+    this.origin = {
+      type: "topright",
+      x: 0,
+      y: 1
+    }
+    this.scaleSegment = {
+      x1 : null,
+      y1 : null,
+      x2 : null,
+      y2 : null
+    }
+    this.scale = 1;
+
+    // UI
     $("#segmentButton").classList.remove("active");
     $("#topright").classList.add("active");
     $("#topleft").classList.remove("active");
