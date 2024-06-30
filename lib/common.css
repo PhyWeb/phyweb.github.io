@@ -3,11 +3,12 @@
 :root {
   --c1: #D8318A;
   --c2: #F26C7D;
-  --c3: #E37439;
-  --bg1: #ccc;
-  --bg2: #555;
+  --c3: #38508a;
+  --bg1: #e4e4e4;
+  --bg2: #c4c4c4;
 
-  --grad1: linear-gradient(to right, #D8318A, #F26C7D, #E37439);
+  --grad1: /*linear-gradient(to right, #D8318A, #F26C7D, #E37439)*/linear-gradient(90deg, #4b6cb7 0%, #182848 100%);
+  
 }
 
 body, html {
@@ -17,7 +18,7 @@ body, html {
   flex-direction: column;
   font-size: 12px;
   font-family:'Roboto';
-  background-color: var(--bg2);
+  background-color: var(--bg1);
   user-select: none;
 }
 
@@ -103,9 +104,9 @@ header {
   display: none;
   position: absolute;
   font-size: 2rem;
-  padding: 0.75rem 1rem 0.5rem 1rem;
+  padding: 0.85rem 1rem 0.5rem 1rem;
   top: 0;
-  right: 22rem;
+  left: 8rem;
 }
 
 #button-magnifier.active {
@@ -118,10 +119,10 @@ header {
   display: block;
   font-size: 2rem;
 	padding: 0.10rem 2rem;
-  background: white;
-  border: 2px solid white;
+  background: var(--bg1);
+  border: 2px solid var(--bg1);
 	border-radius: 40px;
-  color: var(--c3);
+  color: black;
   cursor:pointer;
   font-family:'Roboto';
   font-weight: bold;
@@ -139,6 +140,17 @@ header {
   margin: 0.55rem 0.5rem 0.5rem 0.5rem;
   top: 0;
   right: 0;
+}
+
+#openButtonLabel{
+  background: white;
+  border: 2px solid white;
+  color: var(--c3);
+}
+
+#openButtonLabel:hover{
+  background: transparent;
+  color: white;
 }
 
 /*----------------------------------------------------------------------------------------------
@@ -197,7 +209,7 @@ header {
 }
 
 .fa-square{
-  color: white;
+  color: var(--bg1);
 }
 
 .textContainer{
@@ -220,7 +232,7 @@ header {
 }
 
 .originButton:hover .fa-square{
-  color: #333333;
+  color: var(--c3);
   transition: color 0.3s;
 }
 
@@ -229,7 +241,7 @@ header {
 }
 
 .originButton.active .fa-square{
-  color: #333333;
+  color: var(--c3);
 }
 
 #segmentButton.button-round{
@@ -237,19 +249,18 @@ header {
   margin-left: auto;
   margin-right: auto;
 	padding: 0.2rem 1.5rem 0.2rem 1.5rem;
-  color: #333333;
 }
 
 #segmentButton.button-round:hover{
-	background: #333333;
+	background: var(--c3);
   color: white;
-  border: 2px solid #333333;
+  border: 2px solid var(--c3);
 }
 
 #segmentButton.active {
-  background: #333333;
+  background: var(--c3);
   color: white;
-  border: 2px solid #333333;
+  border: 2px solid var(--c3);
 }
 
 #scaleInput {
@@ -293,7 +304,7 @@ header {
 }
 
 #column2 .wrapper{
-  background-color: var(--bg1);
+  background-color: /*var(--bg2)*/ white;
   flex : 1;
   display: flex;
   flex-direction: column;
@@ -313,7 +324,7 @@ header {
   outline: none;
   cursor: pointer;
   font-size: 1.8rem;
-  color: #333333;
+  color: var(--bg2);
   padding: 10px 0px;
   transition: 0.3s;
 
@@ -367,7 +378,16 @@ header {
 
 #downloadButton{
   margin:auto;
+  background: white;
+  border: 2px solid white;
+  color: var(--c3);
 }
+
+#downloadButton:hover{
+  background: transparent;
+  color: white;
+}
+
 
 #videoContainer {
   flex: 1 0 10rem;
@@ -415,7 +435,7 @@ p{
 }
 
 .textLabel{
-  font-size: 1.6rem;
+  font-size: 1.4rem;
   font-weight: bold;
 }
 

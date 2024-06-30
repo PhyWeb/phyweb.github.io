@@ -145,7 +145,6 @@ export default class MEASUREMENT {
         this.scale = $("#scaleInput").value / Math.sqrt(Math.pow(this.scaleSegment.x2 - this.scaleSegment.x1 , 2) + Math.pow(this.scaleSegment.y2 - this.scaleSegment.y1 , 2));
       }
     }
-    console.log(this.scale)
   }
 
   updateTable(){
