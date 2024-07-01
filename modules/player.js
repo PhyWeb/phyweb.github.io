@@ -34,7 +34,7 @@ export default class PLAYER {
     this.animationFrameRequest;
   }
 
-  load(_path, _cb){
+  load(_path){
     // Stop loop
     cancelAnimationFrame(this.animationFrameRequest);
 
@@ -46,15 +46,19 @@ export default class PLAYER {
       $("#button-magnifier").style.display= "block";
       $("#column2").style.display= "flex";
       this.videoCanvas.style.display= "block";
+
+      console.log("video loaded");
+      this.measurement.init(this.decodedVideo);
+
       this.resize();
 
       this.animationFrameRequest = requestAnimationFrame(this.loop);
 
-      _cb();
     })  
   }
 
   drawFrame(_frameID){
+      console.log(Date.now())
       this.ctx.clearRect(0, 0, this.videoCanvas.width, this.videoCanvas.height);
       this.ctx.drawImage(this.decodedVideo.frames[_frameID]/*e.target*/, 0, 0 ,this.videoCanvas.width, this.videoCanvas.height);
 
@@ -82,7 +86,9 @@ export default class PLAYER {
     // Update the image label
     $("#frameLabel").innerHTML = "Image n° " + (this.currentFrame + 1) +"/" + this.decodedVideo.frames.length;
 
-  /*}*/
+    // Update the table
+    this.measurement.selectRow(this.currentFrame);
+
   }
 
   drawCrosses(){

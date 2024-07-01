@@ -75,6 +75,7 @@ export default class MEASUREMENT {
       titleRow.appendChild(cellx);
       titleRow.appendChild(celly);
     }
+
     this.table.appendChild(titleRow);
 
     _decodedVideo.frames.forEach((value,index)=>{
@@ -97,37 +98,46 @@ export default class MEASUREMENT {
 
       // t column
       let cell = document.createElement('td');
-      let input = document.createElement('input');
-      input.placeholder = "0";
-      input.type = "text";
-      input.value = Math.round(this.data[index].t) / 1000;
-      input.className = "measurementInput";
-      input.autocomplete="off";
-      cell.appendChild(input);
+      let label = document.createElement('label');
+      label.innerHTML = Math.round(this.data[index].t) / 1000;
+      label.className = "measurementLabel";
+      cell.appendChild(label);
       row.appendChild(cell)
 
       // x&y columns
       for(let i = 1; i < this.pointsPerFrame + 1; i++){
         let xcell = document.createElement('td');
-        let xinput = document.createElement('input');
-        xinput.type="text";
-        xinput.className="measurementInput";
-        xinput.id = "x" + i + index;
-        xinput.autocomplete="off";
-        xcell.appendChild(xinput);
+        let xlabel = document.createElement('label');
+        xlabel.className="measurementLabel";
+        xlabel.id = "x" + i + index;
+        xcell.appendChild(xlabel);
         row.appendChild(xcell)
 
         let ycell = document.createElement('td');
-        let yinput = document.createElement('input');
-        yinput.type="text";
-        yinput.className="measurementInput";
-        yinput.id = "y" + i + index;
-        yinput.autocomplete="off";
-        ycell.appendChild(yinput);
-        row.appendChild(ycell)
+        let ylabel = document.createElement('label');
+        ylabel.className="measurementLabel";
+        ylabel.id = "y" + i + index;
+        ycell.appendChild(ylabel);
+        row.appendChild(ycell);
       }
+
+      row.id = "row" + index;
+
+      row.onclick = (e) =>{
+        this.selectRow(e.currentTarget.id.replace("row",""));
+      }
+
       this.table.appendChild(row);
     });
+  }
+
+  selectRow(index){
+    const previouslySelectedRow = $("tr.selected");
+    if (previouslySelectedRow) {
+      previouslySelectedRow.classList.remove('selected');
+    }
+
+    $("#row"+index).classList.add("selected");
   }
 
   changeValue(_index, _x, _y){
@@ -151,11 +161,11 @@ export default class MEASUREMENT {
     this.updateScale()
     for(let i = 0; i < this.table.children.length - 1; i++){
       if(this.data[i].xs[0] != ""){
-        $("#" + "x1" + i).value = this.scalex(this.data[i].xs[0]);
+        $("#" + "x1" + i).innerHTML = this.scalex(this.data[i].xs[0]);
       }
        // TODO permettre les autres points par frame
       if(this.data[i].ys[0] != ""){
-        $("#" + "y1" + i).value = this.scaley(this.data[i].ys[0]);
+        $("#" + "y1" + i).innerHTML = this.scaley(this.data[i].ys[0]);
       }
     }
   }
@@ -195,7 +205,7 @@ export default class MEASUREMENT {
         y = (_y - this.origin.y) * this.scale;
         break;
     }
-    return y;
+    return y.round(this.maxDecimals);
   }
 
   createCSV(){

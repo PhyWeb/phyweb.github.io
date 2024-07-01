@@ -1,13 +1,13 @@
 @import url('https://fonts.googleapis.com/css2?family=Lobster&family=Roboto:wght@300&display=swap');
 
 :root {
-  --c1: #D8318A;
-  --c2: #F26C7D;
+  --c1: #4b6cb7;
+  --c2: #182848;
   --c3: #38508a;
   --bg1: #e4e4e4;
   --bg2: #c4c4c4;
 
-  --grad1: /*linear-gradient(to right, #D8318A, #F26C7D, #E37439)*/linear-gradient(90deg, #4b6cb7 0%, #182848 100%);
+  --grad1: linear-gradient(90deg, var(--c1) 0%, var(--c2) 100%);
   
 }
 
@@ -22,18 +22,14 @@ body, html {
   user-select: none;
 }
 
-::selection {
+/*::selection {
   background: #ffffff1e;
   color: #333333;
 }
 ::-moz-selection {
   background: #ffffff1e;
   color: #333333;
-}
-
-.iconmargin{
-  margin: 0 0.5em 0 0.5em;
-}
+}*/
 
 /*----------------------------------------------------------------------------------------------
 --------------------------------------------SCROLLBAR-------------------------------------------
@@ -445,19 +441,28 @@ p{
 
 table{
  border-spacing: 0px;
+ border-collapse: collapse;
 }
 
-.measurementInput{
-  width: 6rem;
+.measurementLabel{
+  display: inline-block;
+  text-align:center;
+  width: 6.5rem;
 }
 
-input {
+/*input {
   border: none;
   user-select: all;
 }
 
 input:focus{
   outline: none;
+}*/
+
+tr.selected {
+  background-color: var(--bg1);
+  /*border: 2px solid var(--bg1);
+	border-radius: 40px*/;
 }
 
 /*----------------------------------------------------------------------------------------------

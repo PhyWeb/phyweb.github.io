@@ -102,15 +102,9 @@ $("#scaleInput").addEventListener("input", ()=> {
 
 window.addEventListener('resize', resize, false);
 
-function videoLoaded(){
-  console.log("video loaded");
-  measurement.init(player.decodedVideo);
-}
-
-
 function onFileInputChange(){
   if(fileInput.files[0] != undefined){
-    player.load(fileInput.files[0], videoLoaded);
+    player.load(fileInput.files[0]);
   }
 }
 
