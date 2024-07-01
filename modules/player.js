@@ -48,7 +48,7 @@ export default class PLAYER {
       this.videoCanvas.style.display= "block";
 
       console.log("video loaded");
-      this.measurement.init(this.decodedVideo);
+      this.measurement.init(this.decodedVideo, this);
 
       this.resize();
 
@@ -73,9 +73,9 @@ export default class PLAYER {
     }
 
     // Draw crosses 
-    if($("#mesuresButton").classList[0] == "active"){
+    /*if($("#mesuresButton").classList[0] == "active"){*/
       this.drawCrosses();
-    }
+    /*}*/
 
     // Draw the magnifier
     if(this.magnifier === true){
@@ -209,30 +209,24 @@ export default class PLAYER {
   }
 
   firstFrame(){
-    this.pause();
-    this.currentFrame = 0;
-    this.drawFrame(this.currentFrame);
+    this.setFrame(0);
   }
 
   previousFrame(){
-    this.pause();
-    if(this.currentFrame > 0){
-      this.currentFrame--;
-      this.drawFrame(this.currentFrame);
-    }
+    if(this.currentFrame > 0){this.setFrame(this.currentFrame - 1);}
   }
 
   nextFrame(){
-    this.pause();
-    if(this.currentFrame < this.decodedVideo.frames.length - 1){
-      this.currentFrame++;
-      this.drawFrame(this.currentFrame);
-    }
+    if(this.currentFrame < this.decodedVideo.frames.length - 1){this.setFrame(this.currentFrame + 1);}
   }
 
   lastFrame(){
+    this.setFrame(this.decodedVideo.frames.length - 1);
+  }
+
+  setFrame(id){
     this.pause();
-    this.currentFrame = this.decodedVideo.frames.length - 1;
+    this.currentFrame = id;
     this.drawFrame(this.currentFrame);
   }
 
@@ -367,8 +361,6 @@ export default class PLAYER {
 
     this.measurement.origin.x = distPoint.x + 0.5;
     this.measurement.origin.y = distPoint.y + 0.5;
-
-    console.log("origin changed :" , this.measurement.origin)
 
     $("#topright").classList.remove("active");
     $("#topleft").classList.remove("active");

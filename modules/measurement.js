@@ -37,7 +37,7 @@ export default class MEASUREMENT {
 
   }   
 
-  init(_decodedVideo){
+  init(_decodedVideo, player){
     // Inits
     this.data = [];
     this.origin = {
@@ -125,6 +125,7 @@ export default class MEASUREMENT {
 
       row.onclick = (e) =>{
         this.selectRow(e.currentTarget.id.replace("row",""));
+        player.setFrame(parseInt(e.currentTarget.id.replace("row","")));
       }
 
       this.table.appendChild(row);

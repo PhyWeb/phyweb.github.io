@@ -414,7 +414,7 @@ header {
 ----------------------------------------------------------------------------------------------*/
 h1{
   margin: 0.4rem 0 0.8rem 0;
-  font-size: 1.8rem;
+  font-size: 2.2rem;
   font-weight: bold;
 }
 
@@ -432,6 +432,11 @@ p{
 
 .textLabel{
   font-size: 1.4rem;
+  font-weight: bold;
+}
+
+.textLabel.scale{
+  font-size: 1.8rem;
   font-weight: bold;
 }
 
@@ -455,6 +460,13 @@ tr.selected {
   color: white;
   /*border: 2px solid var(--bg1);
 	border-radius: 40px*/;
+}
+
+th{
+  font-size: 1.5rem;
+}
+td{
+  font-size: 1.2rem;
 }
 
 td:first-child,
