@@ -42,7 +42,7 @@ export default class PLAYER {
       this.decodedVideo = _decodedVideo;
       this.currentFrame = 0;
 
-      $(".controls-container").style.display= "block";
+      $("#footer").style.display= "block";
       $("#button-magnifier").style.display= "block";
       $("#column2").style.display= "flex";
       this.videoCanvas.style.display= "block";

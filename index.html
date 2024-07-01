@@ -23,32 +23,29 @@
     </div>
   </div>
 <header class="panel">
-  <a class="btn" id="button-burger"><i class="fas fa-bars"></i></a>
+  <a class="button2" id="button-burger"><i class="fas fa-bars"></i></a>
   <div class="title">PhyWeb Meca</div>
-  <a class="btn" id="button-magnifier"><i class="fa-solid fa-magnifying-glass"></i></a>
+  <a class="button2" id="button-magnifier"><i class="fa-solid fa-magnifying-glass"></i></a>
   <input type="file" placeholder="No selected file..." id="fileInput">
-  <div id="openButton">
-    <label class="button-round" id = "openButtonLabel" for="fileInput">Ouvrir une vidéo</label>
-  </div>
+  <label class="button1 round inverse" id = "openButton" for="fileInput">Ouvrir une vidéo</label>
 </header>
 
 <div id="app">
   <div id="column1">
     <div class="panel" id="videoContainer">
-      
       <canvas id="videoCanvas"></canvas>
       <div class = "modal" id="canvasShadow"></div>
     </div>
     <div class="panel" id="footer">
-      <div class="controls-container">
-        <a class="control btn" id="controls-play"><i class="fas fa-play fa-fw"></i></a>
-        <a class="control btn" id="controls-pause"><i class="fas fa-pause fa-fw"></i></a>
-        <a class="control btn" id="controls-first"><i class="fas fa-backward-step"></i></a>
-        <a class="control btn" id="controls-previous"><i class="fas fa-backward"></i></a>
-        <a class="control btn" id="controls-next"><i class="fas fa-forward"></i></a>
-        <a class="control btn" id="controls-last"><i class="fas fa-forward-step"></i></a>
+
+        <a class="control button2" id="controls-play"><i class="fas fa-play fa-fw"></i></a>
+        <a class="control button2" id="controls-pause"><i class="fas fa-pause fa-fw"></i></a>
+        <a class="control button2" id="controls-first"><i class="fas fa-backward-step"></i></a>
+        <a class="control button2" id="controls-previous"><i class="fas fa-backward"></i></a>
+        <a class="control button2" id="controls-next"><i class="fas fa-forward"></i></a>
+        <a class="control button2" id="controls-last"><i class="fas fa-forward-step"></i></a>
         <span id="frameLabel"> Image 0 / 0</span>
-      </div>
+
     </div>  
   </div>
   <div id="column2" class="panel">
@@ -59,30 +56,26 @@
       </div>
       <div class="innerPanel" id="etalonnagePanel">
         <h1>Origine des axes</h1>
-        <div class="textContainer">
-          <span class="fa-stack fa-xl originButton active" id="topright">
-            <i class="fa-solid fa-square fa-stack-2x"></i>
+        <div class="textContainer axis">
+          <span class="fa-stack fa-xl button1 origin active" id="topright">
             <i class="fa-solid fa-arrow-up-long fa-stack-1x" data-fa-transform="left-4"></i>
             <i class="fa-solid fa-arrow-right-long fa-stack-1x" data-fa-transform="down-4"></i>
           </span>
-          <span class="fa-stack fa-xl originButton" id="topleft">
-            <i class="fa-solid fa-square fa-stack-2x"></i>
+          <span class="fa-stack fa-xl button1 origin" id="topleft">
             <i class="fa-solid fa-arrow-up-long fa-stack-1x" data-fa-transform="right-4"></i>
             <i class="fa-solid fa-arrow-left-long fa-stack-1x" data-fa-transform="down-4"></i>
           </span>
-          <span class="fa-stack fa-xl originButton" id="downright">
-            <i class="fa-solid fa-square fa-stack-2x"></i>
+          <span class="fa-stack fa-xl button1 origin" id="downright">
             <i class="fa-solid fa-arrow-down-long fa-stack-1x" data-fa-transform="left-4"></i>
             <i class="fa-solid fa-arrow-right-long fa-stack-1x" data-fa-transform="up-4"></i>
           </span>
-          <span class="fa-stack fa-xl originButton" id="downleft">
-            <i class="fa-solid fa-square fa-stack-2x"></i>
+          <span class="fa-stack fa-xl button1 origin" id="downleft">
             <i class="fa-solid fa-arrow-down-long fa-stack-1x" data-fa-transform="right-4"></i>
             <i class="fa-solid fa-arrow-left-long fa-stack-1x" data-fa-transform="up-4"></i>
           </span>
         </div>
         <h1 style="margin-top: 2.5rem;">Echelle</h1>
-        <button class="button-round" id="segmentButton">Tracer le segment</button>
+        <span class="button1 round" id="segmentButton">Tracer le segment</span>
         <div class="textContainer">
           <label class="textLabel scale">d = </label>
           <input type="number" class="no-spin" id="scaleInput" value = "1">
@@ -97,8 +90,12 @@
           <table id="measurementTable">
           </table>
         </div>
-        <div id="columnFooter">
-          <button class="button-round" id="downloadButton"><i class="fas fa-download"></i> Telecharger</button>
+        <div class="columnFooter white">
+          <img class="button1" id="clearTable" src="lib/table.svg" height="30" width="36"/>
+          <img class="button1" id="clearRow" src="lib/row.svg" height="30" width="36"/>
+        </div>
+        <div class="columnFooter">
+          <span class="button1 round inverse" id="downloadButton"><i class="fas fa-download"></i> Telecharger</span>
         </div>
       </div>
     </div>

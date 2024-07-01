@@ -141,6 +141,18 @@ export default class MEASUREMENT {
     $("#row"+index).classList.add("selected");
   }
 
+  clearRow(index){
+    for(let i = 0; i < this.data[index].xs.length; i++){
+      this.changeValue(index,"","");
+    }
+  }
+
+  clearTable(){
+    for(let i = 0; i < this.data.length; i++){
+      this.clearRow(i);
+    }
+  }
+
   changeValue(_index, _x, _y){
     this.data[_index].xs[0] = _x; // TODO permettre les autres points par frame
     this.data[_index].ys[0] = _y;
@@ -151,7 +163,6 @@ export default class MEASUREMENT {
   updateScale(){
     this.scale = 1;
     if(this.scaleSegment.x1 != null && this.scaleSegment.x2 != null && this.scaleSegment.y1 != null && this.scaleSegment.y2 != null){
-      debugger;
       if(isNumber($("#scaleInput").value) == true){
         this.scale = $("#scaleInput").value / Math.sqrt(Math.pow(this.scaleSegment.x2 - this.scaleSegment.x1 , 2) + Math.pow(this.scaleSegment.y2 - this.scaleSegment.y1 , 2));
       }
@@ -163,10 +174,14 @@ export default class MEASUREMENT {
     for(let i = 0; i < this.table.children.length - 1; i++){
       if(this.data[i].xs[0] != ""){
         $("#" + "x1" + i).innerHTML = this.scalex(this.data[i].xs[0]);
+      } else {
+        $("#" + "x1" + i).innerHTML = "";
       }
        // TODO permettre les autres points par frame
       if(this.data[i].ys[0] != ""){
         $("#" + "y1" + i).innerHTML = this.scaley(this.data[i].ys[0]);
+      } else {
+        $("#" + "y1" + i).innerHTML = "";
       }
     }
   }

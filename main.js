@@ -51,37 +51,21 @@ $("#etalonnageButton").addEventListener("click", ()=>{
 
 // ORIGIN
 $("#topright").addEventListener("click", ()=> {
-  /*$("#topright").classList.add("active");
-  $("#topleft").classList.remove("active");
-  $("#downright").classList.remove("active");
-  $("#downleft").classList.remove("active");*/
   player.enterOriginMode("topright");
   videoCanvas.style.cursor = "url(lib/cursors/upright.svg) 8 22, crosshair"
 })
 
 $("#topleft").addEventListener("click", ()=> {
-  /*$("#topright").classList.remove("active");
-  $("#topleft").classList.add("active");
-  $("#downright").classList.remove("active");
-  $("#downleft").classList.remove("active");*/
   player.enterOriginMode("topleft");
   videoCanvas.style.cursor = "url(lib/cursors/upleft.svg) 22 22, crosshair"
 })
 
 $("#downright").addEventListener("click", ()=> {
-  /*$("#topright").classList.remove("active");
-  $("#topleft").classList.remove("active");
-  $("#downright").classList.add("active");
-  $("#downleft").classList.remove("active");*/
   player.enterOriginMode("downright");
   videoCanvas.style.cursor = "url(lib/cursors/downright.svg) 8 8, crosshair"
 })
 
 $("#downleft").addEventListener("click", ()=> {
-  /*$("#topright").classList.remove("active");
-  $("#topleft").classList.remove("active");
-  $("#downright").classList.remove("active");
-  $("#downleft").classList.add("active");*/
   player.enterOriginMode("downleft");
   videoCanvas.style.cursor = "url(lib/cursors/downleft.svg) 22 8, crosshair"
 })
@@ -99,8 +83,17 @@ $("#scaleInput").addEventListener("input", ()=> {
   }
 })
 
+// Clear Table
+$("#clearTable").addEventListener("click", ()=> {
+  measurement.clearTable();
+});
+$("#clearRow").addEventListener("click", ()=> {
+  measurement.clearRow(player.currentFrame);
+});
+
 
 window.addEventListener('resize', resize, false);
+
 
 function onFileInputChange(){
   if(fileInput.files[0] != undefined){
