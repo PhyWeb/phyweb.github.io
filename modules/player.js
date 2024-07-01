@@ -58,7 +58,6 @@ export default class PLAYER {
   }
 
   drawFrame(_frameID){
-      console.log(Date.now())
       this.ctx.clearRect(0, 0, this.videoCanvas.width, this.videoCanvas.height);
       this.ctx.drawImage(this.decodedVideo.frames[_frameID]/*e.target*/, 0, 0 ,this.videoCanvas.width, this.videoCanvas.height);
 
