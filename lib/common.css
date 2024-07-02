@@ -25,15 +25,6 @@ body, html {
   user-select: none;
 }
 
-/*::selection {
-  background: #ffffff1e;
-  color: #333333;
-}
-::-moz-selection {
-  background: #ffffff1e;
-  color: #333333;
-}*/
-
 /*----------------------------------------------------------------------------------------------
 ---------------------------------------------BUTTONS--------------------------------------------
 ----------------------------------------------------------------------------------------------*/
@@ -472,19 +463,27 @@ tr.selected {
 
 th{
   font-size: 1.5rem;
+  background-color: var(--c1);
 }
 td{
   font-size: 1.2rem;
 }
 
-td:first-child,
-th:first-child {
-  border-radius: 10px 0 0 10px;
+tr.selected>td:first-child{
+  background-color: var(--c3);
 }
 
-td:last-child,
+td:first-child {
+  background-color: var(--c1);
+}
+
+th:first-child {
+  border-radius: 10px 0 0 0;
+  background-color: var(--c1);
+}
+
 th:last-child {
-  border-radius: 0 10px 10px 0;
+  border-radius: 0 10px 0 0;
 }
 
 /*----------------------------------------------------------------------------------------------
