@@ -26,6 +26,8 @@ export default class PLAYER {
     this.point = { x: 0, y: 0 };
     this.distPoint = { x: 0, y: 0 };
 
+    this.currentFrame = 0;
+
     this.magnifier = false;
 
     this.videoCanvas.addEventListener("mousemove", this.onMouseMove);
@@ -51,6 +53,8 @@ export default class PLAYER {
       this.measurement.init(this.decodedVideo, this);
 
       this.resize();
+
+      $("#firstFrameInput").max = this.measurement.data.length;
 
       this.animationFrameRequest = requestAnimationFrame(this.loop);
 
@@ -91,7 +95,7 @@ export default class PLAYER {
   }
 
   drawCrosses(){
-    for(let i = 0; i < this.measurement.data.length; i++){
+    for(let i = this.measurement.originFrame; i < this.measurement.data.length; i++){
       for(let j = 0; j < this.measurement.data[i].xs.length; j++){
         this.drawCross(this.measurement.data[i].xs[j], this.measurement.data[i].ys[j]);
       }
@@ -209,7 +213,7 @@ export default class PLAYER {
   }
 
   firstFrame(){
-    this.setFrame(0);
+    this.setFrame(this.measurement.originFrame);
   }
 
   previousFrame(){
@@ -225,6 +229,10 @@ export default class PLAYER {
   }
 
   setFrame(id){
+    console.log(id,this.measurement.originFrame)
+    if (id < this.measurement.originFrame){
+      id = this.measurement.originFrame;
+    }
     this.pause();
     this.currentFrame = id;
     this.drawFrame(this.currentFrame);
@@ -426,7 +434,16 @@ export default class PLAYER {
 
       this.exitScaleMode();
     }
+  }
 
+  setOriginFrame(id) {
+    if(isNumber(id) == true){
+      if(id >=0 && id < this.measurement.data.length){
+        this.measurement.originFrame = id
+        this.setFrame(this.currentFrame); // check if currentFrame < originFrame
+        console.log("originframe : " , id)
+      } 
+    }
   }
 
 }

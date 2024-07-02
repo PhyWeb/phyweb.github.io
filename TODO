@@ -1,9 +1,11 @@
-Controles du tableau
+column
+
+style tableau
+
 plus de points / frame
 
 modal d'ouverture de vidéo
 Fond ecran pour montrer ouvrir une vidéo
-retirer le menu et placer les options dans etalonnage (lui changer de nom ?)
 remplacer couleur de l'input detalonage par une checkmark
 
 modal d'enregistrement avec choix csv ou regressi

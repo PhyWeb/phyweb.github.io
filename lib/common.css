@@ -132,8 +132,6 @@ body, html {
   margin: 0.5rem auto;
 }
 
-#clear
-
 /*----------------------------------------------------------------------------------------------
 --------------------------------------------SCROLLBAR-------------------------------------------
 ----------------------------------------------------------------------------------------------*/
@@ -245,12 +243,33 @@ header {
   justify-content: space-around ;
 }
 
+input{
+  border:none;
+  border-bottom:1px solid var(--bg1);
+}
+
+input:focus{
+  outline: none;
+}
+
 #scaleInput {
-  margin-left: 1rem;
-  margin-right: 1rem;
   width : 8rem;
   font-size: 1.6rem;
 }
+
+#ppfInput {
+  font-size: 1.4rem;
+  width : 3rem;
+  padding:4px;
+}
+
+#firstFrameInput {
+  font-size: 1.4rem;
+  width : 4rem;
+  padding:4px;
+}
+
+
 
 /* Remove the arrows in number inputs*/
 .no-spin::-webkit-inner-spin-button, .no-spin::-webkit-outer-spin-button {
@@ -418,11 +437,13 @@ p{
 }
 
 .textLabel{
+  margin-top: 1.4rem;
   font-size: 1.4rem;
   font-weight: bold;
 }
 
 .textLabel.scale{
+  margin-top: 0rem;;
   font-size: 1.8rem;
   font-weight: bold;
 }

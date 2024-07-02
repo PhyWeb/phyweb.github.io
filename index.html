@@ -77,13 +77,11 @@
         <h1 style="margin-top: 2.5rem;">Echelle</h1>
         <span class="button1 round" id="segmentButton">Tracer le segment</span>
         <div class="textContainer">
-          <label class="textLabel scale">d = </label>
-          <input type="number" class="no-spin" id="scaleInput" value = "1">
-          <label class="textLabel scale"> m</label>
+          <label class="textLabel scale">d = <input type="number" class="no-spin" id="scaleInput" value = "1"> m</label>
         </div>
         <h1 style="margin-top: 2.5rem;">Reglages</h1>
-        <label class="textLabel">Origine des dates : Image n° </label>
-        <label class="textLabel">Points par image :</label>
+        <p class="textLabel">Origine (t=0s) : Image n° <input type="number" id="firstFrameInput" min="1" value="1"></p>
+        <p class="textLabel">Points par image : <input type="number" onkeydown="return false" id="ppfInput" min="1" max="9" value="1"></p>
       </div>
       <div class="innerPanel" id="mesuresPanel">
         <div id="tableContainer">
@@ -92,6 +90,7 @@
         </div>
         <div class="columnFooter white">
           <img class="button1" id="clearTable" src="lib/table.svg" height="30" width="36"/>
+          <img class="button1" id="clearColumn" src="lib/column.svg" height="30" width="36"/>
           <img class="button1" id="clearRow" src="lib/row.svg" height="30" width="36"/>
         </div>
         <div class="columnFooter">

@@ -31,6 +31,7 @@ export default class MEASUREMENT {
       y2 : null
     }
 
+    this.originFrame = 0;
     this.pointsPerFrame = 1;
     this.scale = 1;
     this.maxDecimals = 4;
@@ -51,6 +52,8 @@ export default class MEASUREMENT {
       x2 : null,
       y2 : null
     }
+    this.originFrame = 0;
+    this.pointsPerFrame = 1;
     this.scale = 1;
 
     // UI
@@ -147,6 +150,10 @@ export default class MEASUREMENT {
     }
   }
 
+  clearColumn(){
+    // TODO
+  }
+
   clearTable(){
     for(let i = 0; i < this.data.length; i++){
       this.clearRow(i);
@@ -240,23 +247,21 @@ export default class MEASUREMENT {
     csv.push(row.join(","));
 
     // datas
-    this.data.forEach((e)=>{
-      // TODO check if empty
+    for(let j = this.originFrame; j <this.data.length; j++){
       let ro = [];
-      ro.push(e.t / 1000);
+      ro.push(this.data[j].t / 1000);
       let emptyFlag = false;
-      for(let i = 0; i < e.xs.length; i++){
-        if(e.xs[i] === "" || e.ys[i] === ""){
+      for(let i = 0; i < this.data[j].xs.length; i++){
+        if(this.data[j].xs[i] === "" || this.data[j].ys[i] === ""){
           emptyFlag = true;
         }
-        ro.push(this.scalex(e.xs[i]));
-        ro.push(this.scaley(e.ys[i]));
+        ro.push(this.scalex(this.data[j].xs[i]));
+        ro.push(this.scaley(this.data[j].ys[i]));
       }
       if(emptyFlag == false){
         csv.push(ro);
       }
-      
-    });
+    }
 
     this.downloadCSV(csv.join("\n"))
   }

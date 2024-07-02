@@ -91,6 +91,13 @@ $("#clearRow").addEventListener("click", ()=> {
   measurement.clearRow(player.currentFrame);
 });
 
+// Settings
+$("#firstFrameInput").addEventListener("change", (e)=> {
+  if($("#firstFrameInput").value < 1){$("#firstFrameInput").value = 1;}
+  if($("#firstFrameInput").value > measurement.data.length){$("#firstFrameInput").value = measurement.data.length;}
+  player.setOriginFrame(e.target.value - 1);
+});
+
 
 window.addEventListener('resize', resize, false);
 
