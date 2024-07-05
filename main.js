@@ -98,6 +98,10 @@ $("#firstFrameInput").addEventListener("change", (e)=> {
   player.setOriginFrame(e.target.value - 1);
 });
 
+$("#ppfInput").addEventListener("change", (e)=> {
+  measurement.setPointPerFrame(parseInt(e.target.value), player);
+});
+
 
 window.addEventListener('resize', resize, false);
 
@@ -127,7 +131,7 @@ function closeMenu(e) {
   $(".sidemenu-panel").style.width = "0";
 }
 
-function isNumber(str) {
+function isNumber(str) { // TODO usefull here ???
   return !isNaN(str) && // use type coercion to parse the _entirety_ of the string (`parseFloat` alone does not do this)...
   !isNaN(parseFloat(str)) // ...and ensure strings of whitespace fail
 }

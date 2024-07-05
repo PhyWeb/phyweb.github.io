@@ -63,7 +63,33 @@ export default class MEASUREMENT {
     $("#downright").classList.remove("active");
     $("#downleft").classList.remove("active");
 
-    // Populate table
+    $("#ppfInput").value = 1;
+
+    _decodedVideo.frames.forEach((value,index)=>{
+      // create the data object
+      let l = [];
+      let m = [];
+
+      for(let i = 0; i < this.pointsPerFrame; i++){
+        l[i]="";
+        m[i]="";
+      }
+
+      this.data[index] = {
+        t: (_decodedVideo.duration / _decodedVideo.frames.length) * index,
+        xs: l,
+        ys: m
+      }
+    });
+
+    $("#firstFrameInput").max = this.data.length;
+    $("#firstFrameInput").value = 1;
+
+    this.buildTable(player);
+
+  }
+
+  buildTable(player){
     this.table.innerHTML="";
 
     let titleRow = document.createElement('tr');
@@ -81,22 +107,7 @@ export default class MEASUREMENT {
 
     this.table.appendChild(titleRow);
 
-    _decodedVideo.frames.forEach((value,index)=>{
-      // create the data object
-      let l = [];
-      let m = [];
-
-      for(let i = 0; i < this.pointsPerFrame; i++){
-        l[i]="";
-        m[i]="";
-      }
-
-      this.data[index] = {
-        t: (_decodedVideo.duration / _decodedVideo.frames.length) * index,
-        xs: l,
-        ys: m
-      }
-
+    this.data.forEach((value,index)=>{
       let row = document.createElement('tr');
 
       // t column
@@ -160,9 +171,36 @@ export default class MEASUREMENT {
     }
   }
 
-  changeValue(_index, _x, _y){
-    this.data[_index].xs[0] = _x; // TODO permettre les autres points par frame
-    this.data[_index].ys[0] = _y;
+  setPointPerFrame(ppf, player){
+    if(ppf == this.pointsPerFrame){
+      return
+    }
+    this.pointsPerFrame = ppf;
+
+    // extend the data if ppf increases
+    if(ppf > this.data[0].xs.length){
+      for(let i = 0; i< this.data.length; i++){
+        for(let j = this.data[i].xs.length ; j < ppf; j++){
+          this.data[i].xs[j] = "";
+          this.data[i].ys[j] = "";
+        }
+      }
+    }
+    // schrink the data if ppf decreases
+    if(ppf < this.data[0].xs.length){
+      for(let i = 0; i< this.data.length; i++){
+        this.data[i].xs.splice(ppf);
+        this.data[i].ys.splice(ppf);
+      }
+    }
+    // update the table
+
+    this.buildTable(player);
+  }
+
+  changeValue(frameIndex, pointIndex, x, y){
+    this.data[frameIndex].xs[pointIndex] = x;
+    this.data[frameIndex].ys[pointIndex] = y;
 
     this.updateTable();
   }
@@ -179,16 +217,17 @@ export default class MEASUREMENT {
   updateTable(){
     this.updateScale()
     for(let i = 0; i < this.table.children.length - 1; i++){
-      if(this.data[i].xs[0] != ""){
-        $("#" + "x1" + i).innerHTML = this.scalex(this.data[i].xs[0]);
-      } else {
-        $("#" + "x1" + i).innerHTML = "";
-      }
-       // TODO permettre les autres points par frame
-      if(this.data[i].ys[0] != ""){
-        $("#" + "y1" + i).innerHTML = this.scaley(this.data[i].ys[0]);
-      } else {
-        $("#" + "y1" + i).innerHTML = "";
+      for(let j = 1; j < this.data[i].xs.length + 1; j++){
+        if(this.data[i].xs[j - 1] != ""){
+          $("#" + "x" + j + i).innerHTML = this.scalex(this.data[i].xs[j - 1]);
+        } else {
+          $("#" + "x" + j + i).innerHTML = "";
+        }
+        if(this.data[i].ys[j - 1] != ""){
+          $("#" + "y" + j + i).innerHTML = this.scaley(this.data[i].ys[j - 1]);
+        } else {
+          $("#" + "y" + j + i).innerHTML = "";
+        }
       }
     }
   }
@@ -258,6 +297,7 @@ export default class MEASUREMENT {
         ro.push(this.scalex(this.data[j].xs[i]));
         ro.push(this.scaley(this.data[j].ys[i]));
       }
+
       if(emptyFlag == false){
         csv.push(ro);
       }

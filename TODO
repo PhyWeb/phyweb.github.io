@@ -1,5 +1,7 @@
 column
 
+catch pas bon file format
+
 style tableau
 
 plus de points / frame
@@ -7,5 +9,7 @@ plus de points / frame
 modal d'ouverture de vidéo
 Fond ecran pour montrer ouvrir une vidéo
 remplacer couleur de l'input detalonage par une checkmark
+
+resizable columns
 
 modal d'enregistrement avec choix csv ou regressi

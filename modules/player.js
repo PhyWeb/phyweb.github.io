@@ -27,6 +27,7 @@ export default class PLAYER {
     this.distPoint = { x: 0, y: 0 };
 
     this.currentFrame = 0;
+    this.currentPoint = 0;
 
     this.magnifier = false;
 
@@ -43,6 +44,7 @@ export default class PLAYER {
     this.extractor.extract(fileInput.files[0],(_decodedVideo) => {
       this.decodedVideo = _decodedVideo;
       this.currentFrame = 0;
+      this.currentPoint = 0;
 
       $("#footer").style.display= "block";
       $("#button-magnifier").style.display= "block";
@@ -53,8 +55,6 @@ export default class PLAYER {
       this.measurement.init(this.decodedVideo, this);
 
       this.resize();
-
-      $("#firstFrameInput").max = this.measurement.data.length;
 
       this.animationFrameRequest = requestAnimationFrame(this.loop);
 
@@ -229,12 +229,12 @@ export default class PLAYER {
   }
 
   setFrame(id){
-    console.log(id,this.measurement.originFrame)
     if (id < this.measurement.originFrame){
       id = this.measurement.originFrame;
     }
     this.pause();
     this.currentFrame = id;
+    this.currentPoint = 0;
     this.drawFrame(this.currentFrame);
   }
 
@@ -323,10 +323,16 @@ export default class PLAYER {
       y: (point.y - this.videoCanvas.height * 0.5) / this.videoCanvas.height
     };
 
-    this.measurement.changeValue(this.currentFrame, distPoint.x + 0.5, distPoint.y + 0.5);
+    this.measurement.changeValue(this.currentFrame, this.currentPoint, distPoint.x + 0.5, distPoint.y + 0.5);
     this.videoCanvas.style.cursor = "crosshair";
 
-    this.nextFrame();
+
+    if(this.currentPoint < this.measurement.data[this.currentFrame].xs.length - 1){
+      this.currentPoint++
+    } else{
+      this.nextFrame();
+    }
+
   }
 
   enterOriginMode(_type){
