@@ -80,6 +80,7 @@ $("#scaleInput").addEventListener("input", ()=> {
     $("#scaleInput").style.backgroundColor = "red";
   } else {
     $("#scaleInput").style.backgroundColor = "white";
+    measurement.updateTable();
   }
 })
 

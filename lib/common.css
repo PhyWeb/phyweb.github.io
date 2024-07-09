@@ -464,6 +464,7 @@ tr.selected {
 th{
   font-size: 1.5rem;
   background-color: var(--c1);
+  padding: 0.5rem 0 0.5rem;
 }
 td{
   font-size: 1.2rem;

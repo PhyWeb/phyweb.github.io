@@ -173,7 +173,7 @@ export default class MEASUREMENT {
 
   setPointPerFrame(ppf, player){
     if(ppf == this.pointsPerFrame){
-      return
+      return;
     }
     this.pointsPerFrame = ppf;
 
@@ -196,6 +196,7 @@ export default class MEASUREMENT {
     // update the table
 
     this.buildTable(player);
+    this.updateTable();
   }
 
   changeValue(frameIndex, pointIndex, x, y){

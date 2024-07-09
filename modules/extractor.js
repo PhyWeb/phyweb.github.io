@@ -34,6 +34,7 @@ export default class EXTRACTOR {
 */
     },
     onConfig(config) {
+      console.log(config);
       decodedVideo.duration = config.info.duration
       decodedVideo.width = config.codedWidth;
       decodedVideo.height = config.codedHeight;

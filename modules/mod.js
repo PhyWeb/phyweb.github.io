@@ -77,13 +77,18 @@ class MP4Demuxer {
   // track is H.264 or H.265.
   #description(track) {
     const trak = this.#file.getTrackById(track.id);
+    console.log(trak);
     for (const entry of trak.mdia.minf.stbl.stsd.entries) {
-      if (entry.avcC || entry.hvcC) {
+      if (entry.avcC || entry.hvcC || entry.av1C) {
         const stream = new DataStream(undefined, 0, DataStream.BIG_ENDIAN);
         if (entry.avcC) {
           entry.avcC.write(stream);
-        } else {
+        }
+        if (entry.hvcC) {
           entry.hvcC.write(stream);
+        }
+        if (entry.av1C) {
+          entry.av1C.write(stream);
         }
         return new Uint8Array(stream.buffer, 8);  // Remove the box header.
       }
