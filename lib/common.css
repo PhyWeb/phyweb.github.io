@@ -284,15 +284,33 @@ input:focus{
 #column1 {
   display: flex;
   flex-direction: column;
-  flex:1 0 10rem;
+  flex:1 1 auto;
+  resize: horizontal;
 }
 
 #column2 {
   display: none;
-  flex: 0 0 22rem;
+  flex: 1 1 auto;
   flex-direction: column;
   overflow: hidden;
+  width: 265px;
+  margin-left: 0;
+}
 
+.handler {
+  display: none;
+  width: 20px;
+  padding: 0;
+  cursor: ew-resize;
+  flex: 0 0 auto;
+}
+
+.handler::before {
+  content: '';
+  display: block;
+  width: 4px;
+  height: 100%;
+  margin: 0;
 }
 
 #column2 .wrapper{

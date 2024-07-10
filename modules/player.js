@@ -49,10 +49,13 @@ export default class PLAYER {
       $("#footer").style.display= "block";
       $("#button-magnifier").style.display= "block";
       $("#column2").style.display= "flex";
+      $(".handler").style.display= "block";
       this.videoCanvas.style.display= "block";
 
       console.log("video loaded");
       this.measurement.init(this.decodedVideo, this);
+
+      $("#etalonnageButton").click();
 
       this.resize();
 
@@ -76,10 +79,8 @@ export default class PLAYER {
       }
     }
 
-    // Draw crosses 
-    /*if($("#mesuresButton").classList[0] == "active"){*/
-      this.drawCrosses();
-    /*}*/
+    // Draw the crosses
+    this.drawCrosses();
 
     // Draw the magnifier
     if(this.magnifier === true){
@@ -107,6 +108,7 @@ export default class PLAYER {
     const y = this.videoCanvas.height * _y;
 
     this.ctx.beginPath();
+    this.ctx.lineWidth = 2;
     this.ctx.moveTo(x - 5, y);
     this.ctx.lineTo(x + 5, y);
     this.ctx.moveTo(x, y - 5);
@@ -267,6 +269,7 @@ export default class PLAYER {
   }
 
   resize(){
+    console.log("resize");
     let videoContainerRatio = this.videoContainer.offsetHeight / this.videoContainer.offsetWidth; 
 
     if(this.decodedVideo != null){

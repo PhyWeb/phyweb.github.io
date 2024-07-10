@@ -157,7 +157,8 @@ export default class MEASUREMENT {
 
   clearRow(index){
     for(let i = 0; i < this.data[index].xs.length; i++){
-      this.changeValue(index,"","");
+      console.log(i)
+      this.changeValue(index, i, "","");
     }
   }
 
@@ -234,6 +235,9 @@ export default class MEASUREMENT {
   }
 
   scalex(_x){
+    if(_x == ""){
+      return "";
+    }
     let x = 0;
     switch(this.origin.type){
       case "topright":
@@ -253,6 +257,9 @@ export default class MEASUREMENT {
   }
 
   scaley(_y){
+    if(_y == ""){
+      return "";
+    }
     let y = 0;
     switch(this.origin.type){
       case "topright":
@@ -290,16 +297,16 @@ export default class MEASUREMENT {
     for(let j = this.originFrame; j <this.data.length; j++){
       let ro = [];
       ro.push(this.data[j].t / 1000);
-      let emptyFlag = false;
+      let emptyCount = 0;
       for(let i = 0; i < this.data[j].xs.length; i++){
         if(this.data[j].xs[i] === "" || this.data[j].ys[i] === ""){
-          emptyFlag = true;
+          emptyCount++;
         }
         ro.push(this.scalex(this.data[j].xs[i]));
         ro.push(this.scaley(this.data[j].ys[i]));
       }
 
-      if(emptyFlag == false){
+      if(emptyCount == 0){
         csv.push(ro);
       }
     }

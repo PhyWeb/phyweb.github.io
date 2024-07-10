@@ -39,6 +39,8 @@ $("#mesuresButton").addEventListener("click", ()=>{
 
   $("#etalonnagePanel").style.display = "none";
   $("#mesuresPanel").style.display = "flex";
+
+  resize();
 });
 
 $("#etalonnageButton").addEventListener("click", ()=>{
@@ -47,6 +49,8 @@ $("#etalonnageButton").addEventListener("click", ()=>{
 
   $("#mesuresPanel").style.display = "none";
   $("#etalonnagePanel").style.display = "block";
+
+  resize();
 });
 
 // ORIGIN
@@ -113,7 +117,13 @@ function onFileInputChange(){
   }
 }
 
-function resize() {
+function resize(column2Size = "265px") {
+  if($("#etalonnageButton").classList.contains("active")){
+    $("#column2").style.width = "265px";
+  } else {
+    $("#column2").style.width = column2Size;
+  }
+  $("#column2").style.flexGrow = 0;
   player.resize();
 }
 
@@ -136,3 +146,28 @@ function isNumber(str) { // TODO usefull here ???
   return !isNaN(str) && // use type coercion to parse the _entirety_ of the string (`parseFloat` alone does not do this)...
   !isNaN(parseFloat(str)) // ...and ensure strings of whitespace fail
 }
+
+
+/*----------------------------------------------------------------------------------------------
+-------------------------------------------HANDLE RESIZE----------------------------------------
+----------------------------------------------------------------------------------------------*/
+
+let wrapper = $("#app");
+let isHandlerDragging = false;
+
+$('.handler').addEventListener('mousedown', function(e) {
+  isHandlerDragging = true;
+});
+
+document.addEventListener('mousemove', (e) => {
+  if (!isHandlerDragging) {
+    return false;
+  }
+
+  resize(Math.min(wrapper.offsetWidth - 488, (Math.max(265, wrapper.offsetWidth - e.clientX - 36))) + "px");
+});
+
+document.addEventListener('mouseup', function(e) {
+  // Turn off dragging flag when user mouse is up
+  isHandlerDragging = false;
+});
