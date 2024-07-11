@@ -1,5 +1,3 @@
-import EXTRACTOR from "./extractor.js"
-
 const $ = document.querySelector.bind(document);
 
 function isNumber(str) {
@@ -11,12 +9,12 @@ function isNumber(str) {
 ----------------------------------------------PLAYER--------------------------------------------
 ----------------------------------------------------------------------------------------------*/
 export default class PLAYER {
-  constructor(_videoContainer, _canvas, _measurement) {
+  constructor(_videoContainer, _canvas, _measurement, _extractor) {
     this.videoContainer = _videoContainer;
     this.videoCanvas = _canvas;
 
     this.ctx = this.videoCanvas.getContext("2d"); 
-    this.extractor = new EXTRACTOR();
+    this.extractor = _extractor;
 
     this.measurement = _measurement;
 
@@ -41,10 +39,12 @@ export default class PLAYER {
     // Stop loop
     cancelAnimationFrame(this.animationFrameRequest);
 
-    this.extractor.extract(fileInput.files[0],(_decodedVideo) => {
+    this.extractor.extract(_path,(_decodedVideo) => {
       this.decodedVideo = _decodedVideo;
       this.currentFrame = 0;
       this.currentPoint = 0;
+
+      $(".openmodal").style.display= "none";
 
       $("#footer").style.display= "block";
       $("#button-magnifier").style.display= "block";
@@ -269,7 +269,6 @@ export default class PLAYER {
   }
 
   resize(){
-    console.log("resize");
     let videoContainerRatio = this.videoContainer.offsetHeight / this.videoContainer.offsetWidth; 
 
     if(this.decodedVideo != null){

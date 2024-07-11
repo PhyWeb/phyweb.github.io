@@ -11,6 +11,7 @@ export default class EXTRACTOR {
   }   
 
   async extract(_file,_cb){
+    console.log(_file)
   let decodedVideo = {
     duration: null,
     width: null,
@@ -19,7 +20,12 @@ export default class EXTRACTOR {
   }
   // `getVideoFrames` requires a video URL as input.
   // If you have a file/blob instead of a videoUrl, turn it into a URL like this:
-  let videoUrl = URL.createObjectURL(_file);
+  let videoUrl;
+  if(typeof _file === "string"){
+    videoUrl = _file
+  } else {
+    videoUrl = URL.createObjectURL(_file);
+  }
 
   await getVideoFrames({
     videoUrl,
@@ -34,7 +40,6 @@ export default class EXTRACTOR {
 */
     },
     onConfig(config) {
-      console.log(config);
       decodedVideo.duration = config.info.duration
       decodedVideo.width = config.codedWidth;
       decodedVideo.height = config.codedHeight;

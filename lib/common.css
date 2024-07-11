@@ -25,6 +25,12 @@ body, html {
   user-select: none;
 }
 
+[type="file"] {
+  height: 0;
+  overflow: hidden;
+  width: 0;
+}
+
 /*----------------------------------------------------------------------------------------------
 ---------------------------------------------BUTTONS--------------------------------------------
 ----------------------------------------------------------------------------------------------*/
@@ -83,6 +89,11 @@ body, html {
 
 .button2:hover{
   color: #333333;
+  transition: color 0.3s;
+}
+
+.button2.videoListItem:hover{
+  color: var(--bg1);
   transition: color 0.3s;
 }
 
@@ -203,6 +214,79 @@ header {
 
 #infoButton{
   margin-top: auto;
+}
+
+/*----------------------------------------------------------------------------------------------
+--------------------------------------------OPEN MODAL------------------------------------------
+----------------------------------------------------------------------------------------------*/
+
+.modal {
+  display: none; /* Hidden by default */
+  position: fixed; /* Stay in place */
+  z-index: 1;/* Sit on top */
+  left: 0;
+  top: 0;
+  width: 100%; /* Full width */
+  height: 100%; /* Full height */
+  /*overflow: auto; /* Enable scroll if needed */
+  background-color: rgb(0,0,0); /* Fallback color */
+  background-color: rgba(0,0,0,0.5); /* Black w/ opacity */
+}
+
+.modal-panel {
+  background: white;
+  margin: 5% auto; /* 5% from the top and centered */
+  width: 80rem; /* Could be more or less, depending on screen size */
+  display: flex;
+  flex-direction: column;;
+}
+
+#openmodal{
+  height: 84%;
+}
+
+.titlebar{
+  font-size: 2.8rem !important;
+  color: white;
+  background: var(--grad1);
+  text-align: center;
+  box-shadow: 0 0px 8px 0 rgba(0, 0, 0, 0.2), 0 0 20px 0 rgba(0, 0, 0, 0.19);
+}
+
+.horizontal-container{
+  display: flex;
+}
+
+.horizontal-container.top{
+  flex:1;
+}
+
+.videoList{
+  flex:2;
+  font-size: 2rem;
+  font-weight: bold;;
+  padding: 1rem;
+}
+
+.videoListItem{
+  padding: 0.4rem;
+}
+
+.videoDescription{
+  flex:3;
+  font-size: 2rem;
+  font-weight: bold;;
+  padding: 1rem;
+}
+
+.horizontal-separator{
+  margin: 0 1rem 0; 
+  border-bottom: 2px solid rgba(0, 0, 0, 0.4);
+}
+
+.vertical-separator{
+  margin: 1rem 0 1rem 0; 
+  border-right: 2px solid rgba(0, 0, 0, 0.4);
 }
 
 
@@ -505,187 +589,3 @@ th:last-child {
   border-radius: 0 10px 0 0;
 }
 
-/*----------------------------------------------------------------------------------------------
--------------------------------------------SCRIPT MODAL-----------------------------------------
-----------------------------------------------------------------------------------------------*/
-
-.modal {
-  display: none; /* Hidden by default */
-  position: fixed; /* Stay in place */
-  z-index: 1;/* Sit on top */
-  left: 0;
-  top: 0;
-  width: 100%; /* Full width */
-  height: 100%; /* Full height */
-  /*overflow: auto; /* Enable scroll if needed */
-  background-color: rgb(0,0,0); /* Fallback color */
-  background-color: rgba(0,0,0,0.5); /* Black w/ opacity */
-}
-
-.script-modal-panel {
-  background: var(--grad1);
-  margin: 5% auto; /* 5% from the top and centered */
-  width: 80rem; /* Could be more or less, depending on screen size */
-}
-
-.modal-panel header .title{
-  font-size: 2.8rem !important;
-}
-
-.modal-close {
-  position: absolute;
-  font-size: 2rem;
-  margin: 0.75rem 1rem 0.75rem 1rem;
-  top: 0;
-  right: 0;
-  text-align: center;
-}
-
-.script-modal-container{
-  font-size: 2.2rem;
-  color: white;
-}
-
-.script-modal-item{
-  padding: 1rem;
-  display: flex;
-  flex-direction: row;
-}
-
-.script-modal-separator{
-  border-bottom: 2px solid hsla(0, 0%, 100%, .4);
-}
-
-#button-load-online, #button-load-local{
-  flex: 1;
-  margin-left: auto;
-}
-
-#button-load-online button, #button-load-local button{
-  width: 20rem;
-}
-
-.script-modal-left{
-  flex: 5;
-}
-
-[type="file"] {
-  height: 0;
-  overflow: hidden;
-  width: 0;
-}
-
-
-
-/*[type="file"]:focus + label,
-[type="file"] + label:hover {
-
-}
-
-[type="file"]:focus + label {
-
-}*/
-
-#onlineinput {
-  border: none;
-  border-bottom: 2px solid hsla(0, 0%, 100%, .4);
-  background-color: transparent;
-  color: #fff;
-  font-size: 2.2rem;
-  width: 50rem;
-  
-}
-#onlineinput:focus {
-    outline: none;
-}
-#onlineinput::placeholder {
-  color: hsla(0, 0%, 100%, .4);
-}
-
-
-/*----------------------------------------------------------------------------------------------
-------------------------------------------PRELOAD MODAL-----------------------------------------
-----------------------------------------------------------------------------------------------*/
-.preload-modal-panel {
-  background: var(--grad1);
-  margin: 15% auto; /* 5% from the top and centered */
-  width: 50rem; /* Could be more or less, depending on screen size */
-}
-
-.preloading-content {
-  display: flex;
-  flex-direction: row;
-  font-size: 2.2rem;
-  color: white;
-}
-
-.preloading-spinner {
-  flex: 1 ;
-  margin: auto;
-  text-align: center;
-  font-size: 3rem;
-}
-
-.preloading-counters-title{
-  flex: 1 ;
-}
-
-.preloading-counters-value{
-  text-align: center;
-  flex: 1 ;
-}
-
-.counter{
-  margin: 0.5rem
-}
-
-#button-cancel-preload, #button-start-script {
-  text-align: center;
-}
-
-#button-cancel-preload button, #button-start-script button{
-  margin: 1rem;
-  width: 20rem;
-}
-
-#button-start-script {
-  display: none;
-}
-
-#preload-check {
-  display: none;
-}
-
-.script-infos-container {
-  border: 2px solid white;
-	border-radius: 40px;
-  margin: 1rem;
-  padding: 1rem;
-
-  font-size: 2.2rem;
-  color: white;
-}
-.script-infos-container .script-title{
-  font-size: 2.8rem;
-  text-align: center;
-  margin-bottom: 1.5rem;
-}
-
-.script-infos{
-  display: flex;
-  flex-direction: row;
-  text-align: center;
-}
-
-.script-infos-left{
-  flex: 3;
-}
-
-.script-infos-right{
-  flex: 2;
-}
-
-.script-infos-item{
-  flex: 1;
-  margin: 1rem 0 1rem 0;
-}

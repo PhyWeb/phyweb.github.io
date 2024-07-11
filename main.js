@@ -1,5 +1,7 @@
+import EXTRACTOR from "./modules/extractor.js"
 import PLAYER from "./modules/player.js"
 import MEASUREMENT from "./modules/measurement.js"
+import VIDEOLIST from "./modules/videolist.js"
 
 const $ = document.querySelector.bind(document);
 
@@ -8,12 +10,17 @@ const videoContainer = $("#videoContainer");
 
 let videoCanvas = $("#videoCanvas");
 
-
+let extractor = new EXTRACTOR();
 let measurement = new MEASUREMENT();
-let player = new PLAYER(videoContainer, videoCanvas, measurement);
+let player = new PLAYER(videoContainer, videoCanvas, measurement, extractor);
+let videolist = new VIDEOLIST(player);
 
-
-fileInput.addEventListener("change", onFileInputChange);
+// FILEINPUT
+fileInput.addEventListener("change", () => {
+  if(fileInput.files[0] != undefined){
+    player.load(fileInput.files[0]);
+  }
+});
 
 // CONTROLBAR
 $("#controls-play").addEventListener("click", ()=>{player.play();});
@@ -24,10 +31,27 @@ $("#controls-next").addEventListener("click", ()=>{player.nextFrame();});
 $("#controls-last").addEventListener("click", ()=>{player.lastFrame();});
 
 // MENU
-$("#button-burger").addEventListener("click", openMenu);
-$(".sidemenu").addEventListener("click", closeMenu);
+$("#button-burger").addEventListener("click", () => {
+  $(".sidemenu").style.display= "block";
+  $(".sidemenu-panel").style.width = "25rem";
+});
+$(".sidemenu").addEventListener("click", (e) => {
+  if(e.srcElement.classList.value === "sidemenu-panel"){
+    return;
+  }
+  $(".sidemenu").style.display= "none";
+  $(".sidemenu-panel").style.width = "0";
+});
 
-$("#downloadButton").addEventListener("click", ()=>{measurement.createCSV();});
+// OPEN VIDEO MODAL
+$("#openButton").addEventListener("click", () => {
+  $(".openmodal").style.display= "block";
+});
+$(".openmodal").addEventListener("click", (e) => {
+  if(e.srcElement.classList.contains("openmodal")){
+    $(".openmodal").style.display= "none";
+  }
+});
 
 // MAGNIFIER
 $("#button-magnifier").addEventListener("click", ()=>{player.toggleMagnifier();});
@@ -88,7 +112,7 @@ $("#scaleInput").addEventListener("input", ()=> {
   }
 })
 
-// Clear Table
+// CLEAR TABLE
 $("#clearTable").addEventListener("click", ()=> {
   measurement.clearTable();
 });
@@ -96,7 +120,7 @@ $("#clearRow").addEventListener("click", ()=> {
   measurement.clearRow(player.currentFrame);
 });
 
-// Settings
+// SETTINGS
 $("#firstFrameInput").addEventListener("change", (e)=> {
   if($("#firstFrameInput").value < 1){$("#firstFrameInput").value = 1;}
   if($("#firstFrameInput").value > measurement.data.length){$("#firstFrameInput").value = measurement.data.length;}
@@ -108,14 +132,13 @@ $("#ppfInput").addEventListener("change", (e)=> {
 });
 
 
+// DOWNLOAD
+$("#downloadButton").addEventListener("click", ()=>{measurement.createCSV();});
+
+
 window.addEventListener('resize', resize, false);
 
 
-function onFileInputChange(){
-  if(fileInput.files[0] != undefined){
-    player.load(fileInput.files[0]);
-  }
-}
 
 function resize(column2Size = "265px") {
   if($("#etalonnageButton").classList.contains("active")){
@@ -125,21 +148,6 @@ function resize(column2Size = "265px") {
   }
   $("#column2").style.flexGrow = 0;
   player.resize();
-}
-
-/* Set the width of the side navigation to 250px and the left margin of the page content to 250px */
-function openMenu() {
-  $(".sidemenu").style.display= "block";
-  $(".sidemenu-panel").style.width = "25rem";
-}
-
-/* Set the width of the side navigation to 0 and the left margin of the page content to 0 */
-function closeMenu(e) {
-  if(e.srcElement.classList.value === "sidemenu-panel"){
-    return;
-  }
-  $(".sidemenu").style.display= "none";
-  $(".sidemenu-panel").style.width = "0";
 }
 
 function isNumber(str) { // TODO usefull here ???
@@ -171,3 +179,7 @@ document.addEventListener('mouseup', function(e) {
   // Turn off dragging flag when user mouse is up
   isHandlerDragging = false;
 });
+
+window.onload = (event) => {
+  videolist.init("assets/list.json");
+};

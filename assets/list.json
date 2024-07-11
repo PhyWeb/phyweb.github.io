@@ -1,0 +1,31 @@
+{
+  "title": "sample",
+  "videos": [
+    {
+      "title": "Chute d'une balle",
+      "description": "chute d'une balle de golf sans vitesse initiale. (m = 205g)",
+      "path": "",
+      "thumb": ""
+    },
+    {
+      "title": "Mobile autoporteur (0,3N)",
+      "description": "Mobile autoporteur (m = 215g) subissant une force constante (F = 0,3N)",
+      "path": "fcste/fcste0.3N-215g.mp4",
+      "thumb": "fcste/fcste0.3N-215g.jpg"
+    },
+    {
+      "title": "Mobile autoporteur (0,5N)",
+      "description": "Mobile autoporteur (m = 215g) subissant une force constante (F = 0,5N)",
+      "path": "fcste/fcste0.5N-215g.mp4",
+      "thumb": "fcste/fcste0.5N-215g.jpg"
+    },
+    {
+      "title": "Mobile autoporteur (0,7N)",
+      "description": "Mobile autoporteur (m = 215g) subissant une force constante (F = 0,7N)",
+      "path": "fcste/fcste0.7N-215g.mp4",
+      "thumb": "fcste/fcste0.7N-215g.jpg"
+    }
+  ]
+}
+
+

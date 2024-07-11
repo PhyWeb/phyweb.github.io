@@ -22,12 +22,34 @@
       <div id="infoButton"><i class="fa-solid fa-circle-info fa-fw"></i> A propos</div>
     </div>
   </div>
+  <div class = "modal openmodal">
+    <div class="modal-panel" id="openmodal">
+      <div class="titlebar">
+        Ouvrir une vidéo
+      </div>
+      <div class="horizontal-container top">
+        <div class="videoList">
+          <div class="videoListItem button2">
+            <i class="fas fa-film fa-fw"></i><span>Chute d'une balle</span>
+          </div>
+        </div>
+        <div class="vertical-separator"></div>
+        <div class="videoDescription">aaa</div>
+      </div>
+      <div class="horizontal-separator"></div>
+      <div class="horizontal-container bottom">
+        <span class="textLabel">aaa</span>
+        <input type="file" accept=".mp4, .m4v" id="fileInput">
+        <label class="button1 round inverse" id = "fileButton" for="fileInput">Ouvrir une vidéo</label>
+      </div>
+    </div>
+  </div>
 <header class="panel">
   <a class="button2" id="button-burger"><i class="fas fa-bars"></i></a>
   <div class="title">PhyWeb Meca</div>
   <a class="button2" id="button-magnifier"><i class="fa-solid fa-magnifying-glass"></i></a>
-  <input type="file" accept=".mp4, .m4v" id="fileInput">
-  <label class="button1 round inverse" id = "openButton" for="fileInput">Ouvrir une vidéo</label>
+  <label class="button1 round inverse" id = "openButton">Ouvrir une vidéo</label>
+  <!--<label class="button1 round inverse" id = "openButton" for="fileInput">Ouvrir une vidéo</label>-->
 </header>
 
 <div id="app">
@@ -37,7 +59,6 @@
       <div class = "modal" id="canvasShadow"></div>
     </div>
     <div class="panel" id="footer">
-
         <a class="control button2" id="controls-play"><i class="fas fa-play fa-fw"></i></a>
         <a class="control button2" id="controls-pause"><i class="fas fa-pause fa-fw"></i></a>
         <a class="control button2" id="controls-first"><i class="fas fa-backward-step"></i></a>
@@ -45,7 +66,6 @@
         <a class="control button2" id="controls-next"><i class="fas fa-forward"></i></a>
         <a class="control button2" id="controls-last"><i class="fas fa-forward-step"></i></a>
         <span id="frameLabel"> Image 0 / 0</span>
-
     </div>  
   </div>
   <div class="handler"></div>
