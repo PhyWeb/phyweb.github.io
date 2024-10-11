@@ -1,156 +1,247 @@
 <!DOCTYPE html>
-<html>
-<head>
-	<meta charset="UTF-8">
+<html data-theme="light">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Phyweb Tracker</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css">
+    <link rel="stylesheet" href="lib/common.css">
 
-	<title>PhyWeb Meca</title>
+    <script defer src="lib/fontawesome/solid.min.js"></script>
+    <script defer src="lib/fontawesome/fontawesome.min.js"></script>
 
-	<link rel="stylesheet" href="lib/common.css">
-
-  <script defer src="lib/fontawesome/solid.min.js"></script>
-  <script defer src="lib/fontawesome/fontawesome.min.js"></script>
-
-  <script type="module" src="main.js"></script>
-
-</head>
-<body>
-  <div class = "modal sidemenu">
-    <div class="sidemenu-panel">
-      <div><i class="fas fa-download fa-fw"></i> Télécharger les données</div>
-      <div><i class="fas fa-download fa-fw"></i> Télécharger les données</div>
-      <div><i class="fas fa-download fa-fw"></i> Télécharger les données</div>
-      <div id="infoButton"><i class="fa-solid fa-circle-info fa-fw"></i> A propos</div>
-    </div>
-  </div>
-  <div class = "modal openmodal">
-    <div class="modal-panel" id="openmodal">
-      <div class="titlebar">
-        Ouvrir une vidéo
+    <script type="module" src="main.js"></script>
+  </head>
+  <body>
+  <div id="app" class="section has-background-light" style="padding:1.2rem">
+  <nav class="navbar box is-flex-shrink-0" role="navigation" aria-label="main navigation" style="padding:0">
+    <div class="navbar-brand">
+      <div class="navbar-item is-size-4 has-text-weight-bold">
+        PhyWeb
       </div>
-      <div class="horizontal-container top">
-        <div class="videoList">
-          <div class="videoListItem button2">
-            <i class="fas fa-film fa-fw"></i><span>Chute d'une balle</span>
+    </div>
+    <div class="navbar-menu">
+      <div class="navbar-start">
+        <div class="navbar-item has-dropdown is-boxed is-hoverable">
+          <a id="navbar-dropdown" class="navbar-link has-text-primary is-size-4 has-text-weight-bold">
+            <span class="icon"><i class="fa fa-crosshairs"></i></span>
+            <span>Tracker</span>
+          </a>
+          <div class="navbar-dropdown">
+            <a class="navbar-item is-link is-size-5">
+              <span class="icon"><i class="fa fa-volume-high"></i></span>
+              <span>Audio</span>
+            </a>
+            <hr class="navbar-divider">
+            <a class="navbar-item is-size-5">
+              <span class="icon"><i class="fa fa-circle-info"></i></span>
+              <span>A propos</span>
+            </a>
           </div>
         </div>
-        <div class="vertical-separator"></div>
-        <div class="videoDescription">aaa</div>
       </div>
-      <div class="horizontal-separator"></div>
-      <div class="horizontal-container bottom">
-        <span class="textLabel">aaa</span>
-        <input type="file" accept=".mp4, .m4v" id="fileInput">
-        <label class="button1 round inverse" id = "fileButton" for="fileInput">Ouvrir une vidéo</label>
+      <div class="navbar-end">
+        <div class="navbar-item">
+          <button class="button is-white is-hidden" id="magnifier-button">
+            <span class="icon is-medium"><i class="fas fa-pause fa-magnifying-glass"></i></span>
+          </button>
+        </div>
+        <div class="navbar-item">
+          <a class="button is-primary js-modal-trigger" data-target="open-modal">
+            <strong>Ouvrir une vidéo</strong>
+          </a>
+        </div>
       </div>
     </div>
-  </div>
-<header class="panel">
-  <a class="button2" id="button-burger"><i class="fas fa-bars"></i></a>
-  <div class="title">PhyWeb Meca</div>
-  <a class="button2" id="button-magnifier"><i class="fa-solid fa-magnifying-glass"></i></a>
-  <label class="button1 round inverse" id = "openButton">Ouvrir une vidéo</label>
-  <!--<label class="button1 round inverse" id = "openButton" for="fileInput">Ouvrir une vidéo</label>-->
-</header>
+  </nav>
+  <div class="columns is-flex-grow-1 is-overflow-auto" id="handler-wrapper" style="margin-bottom: 0;">
+    <div class="column is-flex is-flex-direction-column pr-0">
+      <div class="block is-flex-grow-1" id="videoContainer">
+        <canvas id="videoCanvas"></canvas>
+        <div id="canvas-shadow"></div>
+      </div>
+      <div class="has-text-centered is-hidden" id="video-controls">
+        <div class="box is-inline-block is-centered p-3">
+          <button class="button is-white" id="play-button">
+            <span class="icon is-medium"><i class="fas fa-play fa-lg"></i></span>
+          </button>
+          <button class="button is-white is-hidden" id="pause-button">
+            <span class="icon is-medium"><i class="fas fa-pause fa-lg"></i></span>
+          </button>
+          <button class="button is-white" id="first-button">
+            <span class="icon is-medium"><i class="fas fa-backward-step fa-lg"></i></span>
+          </button>
+          <button class="button is-white" id="previous-button">
+            <span class="icon is-medium"><i class="fas fa-backward fa-lg"></i></span>
+          </button>
+          <button class="button is-white" id="next-button">
+            <span class="icon is-medium"><i class="fas fa-forward fa-lg"></i></span>
+          </button>
+          <button class="button is-white" id="last-button">
+            <span class="icon is-medium"><i class="fas fa-forward-step fa-lg"></i></span>
+          </button>
+          <label class="is-size-4 is-inline-block" id="frame-label">
+          </label>
+        </div>
+      </div>
+    </div>
+    <div class="column handler"></div>
+    <div class="column is-narrow is-hidden pl-0" id="right-column">
+      <div class="box is-flex is-flex-direction-column" style="width: 285px">
+        <div class="tabs is-fullwidth is-flex-shrink-0">
+          <ul>
+            <li class="is-active" id="etalonnage-button"><a>Etalonnage</a></li>
+            <li id="mesures-button"><a>Mesures</a></li>
+          </ul>
+        </div>
+        <div id="etalonnage-panel" class="container">
+          <div class="block">
+            <p class="title is-5">Origine des axes</p>
+            <div class="field is-grouped">
+              <button class="button p-0 is-active" id="topright">
+                <span class="fa-stack fa-lg " >
+                  <i class="fa-solid fa-arrow-up-long fa-stack-1x" data-fa-transform="left-4"></i>
+                  <i class="fa-solid fa-arrow-right-long fa-stack-1x" data-fa-transform="down-4"></i>
+                </span>
+              </button>
+              <button class="button p-0" id="topleft">
+                <span class="fa-stack fa-lg" >
+                  <i class="fa-solid fa-arrow-up-long fa-stack-1x" data-fa-transform="right-4"></i>
+                  <i class="fa-solid fa-arrow-left-long fa-stack-1x" data-fa-transform="down-4"></i>
+                </span>
+              </button>
+              <button class="button p-0" id="downright">
+                <span class="fa-stack fa-lg" >
+                  <i class="fa-solid fa-arrow-down-long fa-stack-1x" data-fa-transform="left-4"></i>
+                  <i class="fa-solid fa-arrow-right-long fa-stack-1x" data-fa-transform="up-4"></i>
+                </span>
+              </button>
+              <button class="button p-0" id="downleft">
+                <span class="fa-stack fa-lg" >
+                  <i class="fa-solid fa-arrow-down-long fa-stack-1x" data-fa-transform="right-4"></i>
+                  <i class="fa-solid fa-arrow-left-long fa-stack-1x" data-fa-transform="up-4"></i>
+                </span>
+              </button>
+            </div>
+          </div>
+          <div class="block">
+            <p class="title is-5">Echelle</p>
+            <button class="button is-medium is-fullwidth block" id="segment-button">
+              Tracer le segment
+            </button>
+            <div class="columns is-vcentered">
+              <div class="column">
+                <label class="label is-medium has-text-right">d =</label>
+              </div>
+              <div class="column is-half">
+                <p class="control">
+                  <input class="input no-spin" type="number" value="1" id="scale-input"/>
+                </p>
+              </div>
+              <div class="column">
+                <label class="label is-medium"> m</label>
+              </div>
+            </div>
+          </div>
+          <div class="block">
+            <p class="title is-5">Reglages</p>
+            <div class="columns is-vcentered">
+              <div class="column is-narrow pr-0 ">
+                <label class="label is-medium">Origine : Image n°</label>
+              </div>
+              <div class="column">
+                <p class="control">
+                  <input class="input" type="number" min="1" value="1" id="origin-frame-input"/>
+                </p>
+              </div>
+            </div>
+            <div class="columns is-vcentered">
+              <div class="column is-narrow pr-0">
+                <label class="label is-medium">Points par image :</label>
+              </div>
+              <div class="column">
+                <p class="control">
+                  <input class="input" type="number" min="1" max="9" value="1" id="ppf-input"/>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="mesures-panel" class="container is-hidden is-flex-direction-column is-overflow-auto">
+          <div class="block is-flex-grow-1 is-overflow-auto" >
+            <div class="table-container">
+              <table class="table is-hoverable is-narrow is-fullwidth is-striped has-text-centered">
+                <thead id="table-head">
 
-<div id="app">
-  <div id="column1">
-    <div class="panel" id="videoContainer">
-      <canvas id="videoCanvas"></canvas>
-      <div class = "modal" id="canvasShadow"></div>
-    </div>
-    <div class="panel" id="footer">
-        <a class="control button2" id="controls-play"><i class="fas fa-play fa-fw"></i></a>
-        <a class="control button2" id="controls-pause"><i class="fas fa-pause fa-fw"></i></a>
-        <a class="control button2" id="controls-first"><i class="fas fa-backward-step"></i></a>
-        <a class="control button2" id="controls-previous"><i class="fas fa-backward"></i></a>
-        <a class="control button2" id="controls-next"><i class="fas fa-forward"></i></a>
-        <a class="control button2" id="controls-last"><i class="fas fa-forward-step"></i></a>
-        <span id="frameLabel"> Image 0 / 0</span>
-    </div>  
-  </div>
-  <div class="handler"></div>
-  <div id="column2" class="panel">
-    <div class="wrapper">
-      <div id="tabBar">
-        <button class="active" id="etalonnageButton">Etalonnage</button>
-        <button id="mesuresButton">Mesures</button>
-      </div>
-      <div class="innerPanel" id="etalonnagePanel">
-        <h1>Origine des axes</h1>
-        <div class="textContainer axis">
-          <span class="fa-stack fa-xl button1 origin active" id="topright">
-            <i class="fa-solid fa-arrow-up-long fa-stack-1x" data-fa-transform="left-4"></i>
-            <i class="fa-solid fa-arrow-right-long fa-stack-1x" data-fa-transform="down-4"></i>
-          </span>
-          <span class="fa-stack fa-xl button1 origin" id="topleft">
-            <i class="fa-solid fa-arrow-up-long fa-stack-1x" data-fa-transform="right-4"></i>
-            <i class="fa-solid fa-arrow-left-long fa-stack-1x" data-fa-transform="down-4"></i>
-          </span>
-          <span class="fa-stack fa-xl button1 origin" id="downright">
-            <i class="fa-solid fa-arrow-down-long fa-stack-1x" data-fa-transform="left-4"></i>
-            <i class="fa-solid fa-arrow-right-long fa-stack-1x" data-fa-transform="up-4"></i>
-          </span>
-          <span class="fa-stack fa-xl button1 origin" id="downleft">
-            <i class="fa-solid fa-arrow-down-long fa-stack-1x" data-fa-transform="right-4"></i>
-            <i class="fa-solid fa-arrow-left-long fa-stack-1x" data-fa-transform="up-4"></i>
-          </span>
-        </div>
-        <h1 style="margin-top: 2.5rem;">Echelle</h1>
-        <span class="button1 round" id="segmentButton">Tracer le segment</span>
-        <div class="textContainer">
-          <label class="textLabel scale">d = <input type="number" class="no-spin" id="scaleInput" value = "1"> m</label>
-        </div>
-        <h1 style="margin-top: 2.5rem;">Reglages</h1>
-        <p class="textLabel">Origine (t=0s) : Image n° <input type="number" id="firstFrameInput" min="1" value="1"></p>
-        <p class="textLabel">Points par image : <input type="number" onkeydown="return false" id="ppfInput" min="1" max="9" value="1"></p>
-      </div>
-      <div class="innerPanel" id="mesuresPanel">
-        <div id="tableContainer">
-          <table id="measurementTable">
-          </table>
-        </div>
-        <div class="columnFooter white">
-          <img class="button1" id="clearTable" src="lib/table.svg" height="30" width="36"/>
-          <!--<img class="button1" id="clearColumn" src="lib/column.svg" height="30" width="36"/>-->
-          <img class="button1" id="clearRow" src="lib/row.svg" height="30" width="36"/>
-        </div>
-        <div class="columnFooter">
-          <span class="button1 round inverse" id="downloadButton"><i class="fas fa-download"></i> Telecharger</span>
+                </thead>
+                <tbody id="table-body">
+
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="block is-clipped is-flex-shrink-0">
+            <button class="button is-fullwidth is-primary is-medium" id="download-button">
+              <span class="icon">
+                <i class="fa-solid fa-download"></i>
+              </span>
+              <span>Télécharger</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
+  </div>  
   </div>
-</div>
-<!-- Open Script Modal -->
-<div class="modal scriptmodal">
-  <div class="script-modal-panel panel">
-    <header>
-      <div class ="title">
-        Load a Script
-      </div>
-      <a class="btn modal-close" id="script-modal-close"><i class="fas fa-times"></i></a>
-    </header>
-    <div class="script-modal-container">
-      <div class="script-modal-item">
-        <div class="script-modal-left"><i class="fas fa-globe iconmargin"></i>
-          <input type="text" placeholder="Script adress..." spellcheck="false" id="onlineinput">
+  <div id="open-modal" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card" id="open-modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title">Ouvrir une vidéo</p>
+        <button class="delete" aria-label="close"></button>
+      </header>
+      <section class="modal-card-body is-flex">
+        <div class="columns is-flex-grow-1">
+          <div class="column">
+            <aside class="menu" id="video-list"></aside>
+          </div>
+          <div class="column is-narrow vertical-divider">
+          </div>
+          <div class="column">
+            <div class="block">
+              <img id="video-thumbnail" />
+            </div>
+            <div class="block">
+              <p id="video-description"></p>
+            </div>
+          </div>
         </div>
-        <div id="button-load-online">
-          <button class="button-round"><span>Load online script</span></button>
+      </section>
+      <footer class="modal-card-foot">
+        <div class="columns is-flex-grow-1 is-vcentered">
+          <div class="column">
+            <button class="button is-primary is-fullwidth" id="open-video" disabled>Ouvrir la vidéo sélectionnée</button>
+          </div>
+          <div class="column is-narrow">
+            ou
+          </div>
+          <div class="column is-narrow">
+            <div class="file is-primary ">
+              <label class="file-label">
+                <input class="file-input" type="file" accept=".mp4, .m4v" id="file-input" />
+                <span class="file-cta">
+                  <span class="file-icon">
+                    <i class="fas fa-upload"></i>
+                  </span>
+                  <span class="file-label"> Ouvrir un fichier vidéo téléchargé </span>
+                </span>
+              </label>
+            </div>
+          </div>
         </div>
-      </div>
-      <div class="script-modal-separator"></div>
-      <div class="script-modal-item">
-        <div class="script-modal-left">
-          <input type="file" placeholder="No selected file..." id="localInput">
-          <!--<label for="localInput" class="btn" id="localInputLabel"><i class="fas fa-file iconmargin"></i>Chose a file</label></div>-->
-        <div id="button-load-local">
-          <button class="button-round"><span>Load local script</span></button>
-        </div>
-      </div>
-      <div></div>
+      </footer>
     </div>
   </div>
-</div>
-</body>
-</html> 
+  
+  </body>
+</html>

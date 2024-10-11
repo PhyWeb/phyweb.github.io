@@ -44,18 +44,19 @@ export default class PLAYER {
       this.currentFrame = 0;
       this.currentPoint = 0;
 
-      $(".openmodal").style.display= "none";
 
-      $("#footer").style.display= "block";
-      $("#button-magnifier").style.display= "block";
-      $("#column2").style.display= "flex";
+
+      $("#video-controls").classList.remove("is-hidden");
+      $("#magnifier-button").classList.remove("is-hidden");
+      $("#right-column").classList.remove("is-hidden");
+      $("#right-column").classList.add("is-flex");
       $(".handler").style.display= "block";
       this.videoCanvas.style.display= "block";
 
       console.log("video loaded");
       this.measurement.init(this.decodedVideo, this);
 
-      $("#etalonnageButton").click();
+      $("#etalonnage-button").click();
 
       this.resize();
 
@@ -69,7 +70,7 @@ export default class PLAYER {
       this.ctx.drawImage(this.decodedVideo.frames[_frameID]/*e.target*/, 0, 0 ,this.videoCanvas.width, this.videoCanvas.height);
 
     
-    if($("#etalonnageButton").classList[0] == "active"){
+    if($("#etalonnage-button").classList.contains("is-active")){
       // Draw the origin
       this.drawOrigin();
 
@@ -88,7 +89,7 @@ export default class PLAYER {
     }
 
     // Update the image label
-    $("#frameLabel").innerHTML = "Image n° " + (this.currentFrame + 1) +"/" + this.decodedVideo.frames.length;
+    $("#frame-label").innerHTML = "Image n° " + (this.currentFrame + 1) +"/" + this.decodedVideo.frames.length;
 
     // Update the table
     this.measurement.selectRow(this.currentFrame);
@@ -206,10 +207,10 @@ export default class PLAYER {
 
   toggleMagnifier(){
     if(this.magnifier){
-      $("#button-magnifier").classList.remove("active");
+      $("#magnifier-button").classList.remove("is-active");
       this.magnifier = false;
     } else {
-      $("#button-magnifier").classList.add("active");
+      $("#magnifier-button").classList.add("is-active");
       this.magnifier = true;
     }
   }
@@ -241,8 +242,8 @@ export default class PLAYER {
   }
 
   play(){
-    $("#controls-play").style.display = "none";
-    $("#controls-pause").style.display = "inline";
+    $("#play-button").classList.add("is-hidden");
+    $("#pause-button").classList.remove("is-hidden");
 
     this.pauseFlag = false;
     this.dateOrigin = performance.now();
@@ -250,8 +251,8 @@ export default class PLAYER {
   }
 
   pause(){
-    $("#controls-pause").style.display = "none";
-    $("#controls-play").style.display = "inline";
+    $("#pause-button").classList.add("is-hidden");
+    $("#play-button").classList.remove("is-hidden");
 
     this.pauseFlag = true;
   }
@@ -339,18 +340,18 @@ export default class PLAYER {
 
   enterOriginMode(_type){
     this.originFlag = _type;
-    $("#canvasShadow").style.display= "block";
+    $("#canvas-shadow").style.display= "block";
     this.videoCanvas.style.zIndex = "100";
 
-    $("#canvasShadow").addEventListener("click", this.exitOriginMode);
+    $("#canvas-shadow").addEventListener("click", this.exitOriginMode);
     this.videoCanvas.removeEventListener("click", this.onClick);
     this.videoCanvas.addEventListener("click", this.onOriginClick);
 
   }
 
   exitOriginMode = () => {
-    $("#canvasShadow").style.display= "none";
-    $("#canvasShadow").removeEventListener("click", this.exitOriginMode);
+    $("#canvas-shadow").style.display= "none";
+    $("#canvas-shadow").removeEventListener("click", this.exitOriginMode);
 
     this.videoCanvas.addEventListener("click", this.onClick);
     this.videoCanvas.removeEventListener("click", this.onOriginClick);
@@ -378,12 +379,12 @@ export default class PLAYER {
     this.measurement.origin.x = distPoint.x + 0.5;
     this.measurement.origin.y = distPoint.y + 0.5;
 
-    $("#topright").classList.remove("active");
-    $("#topleft").classList.remove("active");
-    $("#downright").classList.remove("active");
-    $("#downleft").classList.remove("active");
+    $("#topright").classList.remove("is-active");
+    $("#topleft").classList.remove("is-active");
+    $("#downright").classList.remove("is-active");
+    $("#downleft").classList.remove("is-active");
 
-    $("#"+this.originFlag).classList.add("active");
+    $("#"+this.originFlag).classList.add("is-active");
 
     this.measurement.updateTable();
 
@@ -391,12 +392,12 @@ export default class PLAYER {
   }
 
   enterScalenMode(_type){
-    $("#canvasShadow").style.display= "block";
+    $("#canvas-shadow").style.display= "block";
     this.videoCanvas.style.zIndex = "100";
 
-    $("#segmentButton").classList.add("active");
+    $("#segment-button").classList.add("is-active");
 
-    $("#canvasShadow").addEventListener("click", this.exitScaleMode);
+    $("#canvas-shadow").addEventListener("click", this.exitScaleMode);
     this.videoCanvas.removeEventListener("click", this.onClick);
     this.videoCanvas.addEventListener("click", this.onScaleClick);
 
@@ -408,10 +409,10 @@ export default class PLAYER {
   }
 
   exitScaleMode = () => {
-    $("#canvasShadow").style.display= "none";
-    $("#canvasShadow").removeEventListener("click", this.exitScaleMode);
+    $("#canvas-shadow").style.display= "none";
+    $("#canvas-shadow").removeEventListener("click", this.exitScaleMode);
 
-    $("#segmentButton").classList.remove("active");
+    $("#segment-button").classList.remove("is-active");
 
     this.videoCanvas.addEventListener("click", this.onClick);
     this.videoCanvas.removeEventListener("click", this.onScaleClick);

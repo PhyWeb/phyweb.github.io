@@ -15,7 +15,8 @@ function isNumber(str) {
 ----------------------------------------------------------------------------------------------*/
 export default class MEASUREMENT {
   constructor() {
-    this.table = $("#measurementTable");
+    this.tableHead = $("#table-head");
+    this.tableBody = $("#table-body");
     this.data = [];
 
     this.origin = {
@@ -57,13 +58,13 @@ export default class MEASUREMENT {
     this.scale = 1;
 
     // UI
-    $("#segmentButton").classList.remove("active");
+    /*$("#segmentButton").classList.remove("active");
     $("#topright").classList.add("active");
     $("#topleft").classList.remove("active");
     $("#downright").classList.remove("active");
-    $("#downleft").classList.remove("active");
+    $("#downleft").classList.remove("active");*/
 
-    $("#ppfInput").value = 1;
+    $("#ppf-input").value = 1;
 
     _decodedVideo.frames.forEach((value,index)=>{
       // create the data object
@@ -82,30 +83,34 @@ export default class MEASUREMENT {
       }
     });
 
-    $("#firstFrameInput").max = this.data.length;
-    $("#firstFrameInput").value = 1;
+    $("#origin-frame-input").max = this.data.length;
+    $("#origin-frame-input").value = 1;
 
     this.buildTable(player);
 
   }
 
   buildTable(player){
-    this.table.innerHTML="";
+    this.tableHead.innerHTML="";
+    this.tableBody.innerHTML="";
 
     let titleRow = document.createElement('tr');
     let cell = document.createElement('th');
     cell.innerHTML = "t (s)"
+    cell.classList.add("has-text-centered");
     titleRow.appendChild(cell);
     for(let i = 1; i < this.pointsPerFrame + 1; i++){
       let cellx = document.createElement('th');
+      cellx.classList.add("has-text-centered");
       cellx.innerHTML = this.pointsPerFrame > 1 ? "x" + i + " (m)" : "x" + " (m)";
       let celly = document.createElement('th');
+      celly.classList.add("has-text-centered");
       celly.innerHTML = this.pointsPerFrame > 1 ? "y" + i + " (m)" : "y" + " (m)";
       titleRow.appendChild(cellx);
       titleRow.appendChild(celly);
     }
 
-    this.table.appendChild(titleRow);
+    this.tableHead.appendChild(titleRow);
 
     this.data.forEach((value,index)=>{
       let row = document.createElement('tr');
@@ -114,7 +119,7 @@ export default class MEASUREMENT {
       let cell = document.createElement('td');
       let label = document.createElement('label');
       label.innerHTML = Math.round(this.data[index].t) / 1000;
-      label.className = "measurementLabel";
+      //label.className = "measurementLabel";
       cell.appendChild(label);
       row.appendChild(cell)
 
@@ -122,14 +127,14 @@ export default class MEASUREMENT {
       for(let i = 1; i < this.pointsPerFrame + 1; i++){
         let xcell = document.createElement('td');
         let xlabel = document.createElement('label');
-        xlabel.className="measurementLabel";
+        //xlabel.className="measurementLabel";
         xlabel.id = "x" + i + index;
         xcell.appendChild(xlabel);
         row.appendChild(xcell)
 
         let ycell = document.createElement('td');
         let ylabel = document.createElement('label');
-        ylabel.className="measurementLabel";
+        //ylabel.className="measurementLabel";
         ylabel.id = "y" + i + index;
         ycell.appendChild(ylabel);
         row.appendChild(ycell);
@@ -142,17 +147,17 @@ export default class MEASUREMENT {
         player.setFrame(parseInt(e.currentTarget.id.replace("row","")));
       }
 
-      this.table.appendChild(row);
+      this.tableBody.appendChild(row);
     });
   }
 
   selectRow(index){
-    const previouslySelectedRow = $("tr.selected");
+    const previouslySelectedRow = $("tr.is-selected");
     if (previouslySelectedRow) {
-      previouslySelectedRow.classList.remove('selected');
+      previouslySelectedRow.classList.remove("is-selected");
     }
 
-    $("#row"+index).classList.add("selected");
+    $("#row"+index).classList.add("is-selected");
   }
 
   clearRow(index){
@@ -210,15 +215,15 @@ export default class MEASUREMENT {
   updateScale(){
     this.scale = 1;
     if(this.scaleSegment.x1 != null && this.scaleSegment.x2 != null && this.scaleSegment.y1 != null && this.scaleSegment.y2 != null){
-      if(isNumber($("#scaleInput").value) == true){
-        this.scale = $("#scaleInput").value / Math.sqrt(Math.pow(this.scaleSegment.x2 - this.scaleSegment.x1 , 2) + Math.pow(this.scaleSegment.y2 - this.scaleSegment.y1 , 2));
+      if(isNumber($("#scale-input").value) == true){
+        this.scale = $("#scale-input").value / Math.sqrt(Math.pow(this.scaleSegment.x2 - this.scaleSegment.x1 , 2) + Math.pow(this.scaleSegment.y2 - this.scaleSegment.y1 , 2));
       }
     }
   }
 
   updateTable(){
     this.updateScale()
-    for(let i = 0; i < this.table.children.length - 1; i++){
+    for(let i = 0; i < this.tableBody.children.length; i++){
       for(let j = 1; j < this.data[i].xs.length + 1; j++){
         if(this.data[i].xs[j - 1] != ""){
           $("#" + "x" + j + i).innerHTML = this.scalex(this.data[i].xs[j - 1]);

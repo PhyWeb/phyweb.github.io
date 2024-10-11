@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+
+	<title>PhyWeb Meca</title>
+
+	<link rel="stylesheet" href="lib/common.css">
+
+  <script defer src="lib/fontawesome/solid.min.js"></script>
+  <script defer src="lib/fontawesome/fontawesome.min.js"></script>
+
+  <script type="module" src="main.js"></script>
+
+</head>
+<body>
+  <div class = "modal sidemenu">
+    <div class="sidemenu-panel">
+      <div><i class="fas fa-download fa-fw"></i> Télécharger les données</div>
+      <div><i class="fas fa-download fa-fw"></i> Télécharger les données</div>
+      <div><i class="fas fa-download fa-fw"></i> Télécharger les données</div>
+      <div id="infoButton"><i class="fa-solid fa-circle-info fa-fw"></i> A propos</div>
+    </div>
+  </div>
+  <div class = "modal openmodal">
+    <div class="modal-panel" id="openmodal">
+      <div class="titlebar">
+        Ouvrir une vidéo
+      </div>
+      <div class="horizontal-container top">
+        <div class="videoList">
+          <div class="videoListItem button2">
+            <i class="fas fa-film fa-fw"></i><span>Chute d'une balle</span>
+          </div>
+        </div>
+        <div class="vertical-separator"></div>
+        <div class="videoDescription">
+        </div>
+      </div>
+      <div class="horizontal-separator"></div>
+      <div class="horizontal-container bottom">
+        <input type="file" accept=".mp4, .m4v" id="fileInput">
+        <label class="button1 round" id = "fileButton" for="fileInput">Ouvrir un fichier vidéo sur l'ordinateur</label>
+      </div>
+    </div>
+  </div>
+<header class="panel">
+  <a class="button2" id="button-burger"><i class="fas fa-bars"></i></a>
+  <div class="title">PhyWeb Meca</div>
+  <a class="button2" id="button-magnifier"><i class="fa-solid fa-magnifying-glass"></i></a>
+  <label class="button1 round inverse" id = "openButton">Ouvrir une vidéo</label>
+  <!--<label class="button1 round inverse" id = "openButton" for="fileInput">Ouvrir une vidéo</label>-->
+</header>
+
+<div id="app">
+  <div id="column1">
+    <div class="panel" id="videoContainer">
+      <canvas id="videoCanvas"></canvas>
+      <div class = "modal" id="canvasShadow"></div>
+    </div>
+    <div class="panel" id="footer">
+        <a class="control button2" id="controls-play"><i class="fas fa-play fa-fw"></i></a>
+        <a class="control button2" id="controls-pause"><i class="fas fa-pause fa-fw"></i></a>
+        <a class="control button2" id="controls-first"><i class="fas fa-backward-step"></i></a>
+        <a class="control button2" id="controls-previous"><i class="fas fa-backward"></i></a>
+        <a class="control button2" id="controls-next"><i class="fas fa-forward"></i></a>
+        <a class="control button2" id="controls-last"><i class="fas fa-forward-step"></i></a>
+        <span id="frameLabel"> Image 0 / 0</span>
+    </div>  
+  </div>
+  <div class="handler"></div>
+  <div id="column2" class="panel">
+    <div class="wrapper">
+      <div id="tabBar">
+        <button class="active" id="etalonnageButton">Etalonnage</button>
+        <button id="mesuresButton">Mesures</button>
+      </div>
+      <div class="innerPanel" id="etalonnagePanel">
+        <h1>Origine des axes</h1>
+        <div class="textContainer axis">
+          <span class="fa-stack fa-xl button1 origin active" id="topright">
+            <i class="fa-solid fa-arrow-up-long fa-stack-1x" data-fa-transform="left-4"></i>
+            <i class="fa-solid fa-arrow-right-long fa-stack-1x" data-fa-transform="down-4"></i>
+          </span>
+          <span class="fa-stack fa-xl button1 origin" id="topleft">
+            <i class="fa-solid fa-arrow-up-long fa-stack-1x" data-fa-transform="right-4"></i>
+            <i class="fa-solid fa-arrow-left-long fa-stack-1x" data-fa-transform="down-4"></i>
+          </span>
+          <span class="fa-stack fa-xl button1 origin" id="downright">
+            <i class="fa-solid fa-arrow-down-long fa-stack-1x" data-fa-transform="left-4"></i>
+            <i class="fa-solid fa-arrow-right-long fa-stack-1x" data-fa-transform="up-4"></i>
+          </span>
+          <span class="fa-stack fa-xl button1 origin" id="downleft">
+            <i class="fa-solid fa-arrow-down-long fa-stack-1x" data-fa-transform="right-4"></i>
+            <i class="fa-solid fa-arrow-left-long fa-stack-1x" data-fa-transform="up-4"></i>
+          </span>
+        </div>
+        <h1 style="margin-top: 2.5rem;">Echelle</h1>
+        <span class="button1 round" id="segmentButton">Tracer le segment</span>
+        <div class="textContainer">
+          <label class="textLabel scale">d = <input type="number" class="no-spin" id="scaleInput" value = "1"> m</label>
+        </div>
+        <h1 style="margin-top: 2.5rem;">Reglages</h1>
+        <p class="textLabel">Origine (t=0s) : Image n° <input type="number" id="firstFrameInput" min="1" value="1"></p>
+        <p class="textLabel">Points par image : <input type="number" onkeydown="return false" id="ppfInput" min="1" max="9" value="1"></p>
+      </div>
+      <div class="innerPanel" id="mesuresPanel">
+        <div id="tableContainer">
+          <table id="measurementTable">
+          </table>
+        </div>
+        <div class="columnFooter white">
+          <img class="button1" id="clearTable" src="lib/table.svg" height="30" width="36"/>
+          <!--<img class="button1" id="clearColumn" src="lib/column.svg" height="30" width="36"/>-->
+          <img class="button1" id="clearRow" src="lib/row.svg" height="30" width="36"/>
+        </div>
+        <div class="columnFooter">
+          <span class="button1 round inverse" id="downloadButton"><i class="fas fa-download"></i> Telecharger</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Open Script Modal -->
+<div class="modal scriptmodal">
+  <div class="script-modal-panel panel">
+    <header>
+      <div class ="title">
+        Load a Script
+      </div>
+      <a class="btn modal-close" id="script-modal-close"><i class="fas fa-times"></i></a>
+    </header>
+    <div class="script-modal-container">
+      <div class="script-modal-item">
+        <div class="script-modal-left"><i class="fas fa-globe iconmargin"></i>
+          <input type="text" placeholder="Script adress..." spellcheck="false" id="onlineinput">
+        </div>
+        <div id="button-load-online">
+          <button class="button-round"><span>Load online script</span></button>
+        </div>
+      </div>
+      <div class="script-modal-separator"></div>
+      <div class="script-modal-item">
+        <div class="script-modal-left">
+          <input type="file" placeholder="No selected file..." id="localInput">
+          <!--<label for="localInput" class="btn" id="localInputLabel"><i class="fas fa-file iconmargin"></i>Chose a file</label></div>-->
+        <div id="button-load-local">
+          <button class="button-round"><span>Load local script</span></button>
+        </div>
+      </div>
+      <div></div>
+    </div>
+  </div>
+</div>
+</body>
+</html> 
