@@ -100,9 +100,18 @@ $("#open-video").addEventListener("click", ()=>{
 // FILEINPUT
 $("#file-input").addEventListener("change", () => {
   if($("#file-input").files[0] != undefined){
-    player.load($("#file-input").files[0]);
+    player.checkVideoSize($("#file-input").files[0]);
     closeAllModals();
   }
+});
+$("#file-input").addEventListener("click", () => {
+  $("#file-input").value = null; // allow the onchange trigger even if the same file is selected twice
+});
+
+// RESIZEVIDEO
+$("#open-resized-video").addEventListener("click", ()=>{
+  closeAllModals();
+  player.load($("#file-input").files[0],$("#def-size-input").checked,$("#fps-size-input").checked,$("#duration-size-input").checked);
 });
 
 // MAGNIFIER
@@ -162,6 +171,14 @@ $("#ppf-input").addEventListener("change", (e)=> {
   measurement.setPointPerFrame(parseInt(e.target.value), player);
 });
 
+// CLEAR TABLE
+$("#clear-table").addEventListener("click", ()=> {
+  measurement.clearTable();
+});
+$("#clear-row").addEventListener("click", ()=> {
+  measurement.clearRow(player.currentFrame);
+});
+
 // DOWNLOAD
 $("#download-button").addEventListener("click", ()=>{measurement.createCSV();});
 
@@ -180,7 +197,6 @@ function resize(column2Size = "285px") {
 
 // HANDLER
 $('.handler').addEventListener('mousedown', function(e) {
-  console.log("handler-grabbed");
   isHandlerDragging = true;
 });
 

@@ -22,7 +22,7 @@ export default class VIDEOLIST {
     this.loadXHR(_url, "text", _response => {
       // Parse JSON
       this.list = JSON.parse(_response);
-      console.log("videolist loaded", this.list);
+      //console.log("videolist loaded", this.list);
 
       // Create DOM elements
       // Iterate titles
@@ -66,6 +66,7 @@ export default class VIDEOLIST {
     i.classList.add("fa-solid")
     if(_el.type == "folder"){
       i.classList.add("fa-folder-open");
+      a.classList.add("has-text-weight-bold");
 
       a.addEventListener("click", ()=>{
         if(a.nextSibling.classList.contains("is-hidden")){

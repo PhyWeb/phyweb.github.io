@@ -1,3 +1,5 @@
+import CHECKSIZE from "./checksize.js"
+
 const $ = document.querySelector.bind(document);
 
 function isNumber(str) {
@@ -18,6 +20,8 @@ export default class PLAYER {
 
     this.measurement = _measurement;
 
+    this.checkSize = new CHECKSIZE(this.extractor);
+
     this.pauseFlag = false;
     this.originFlag = "none";
 
@@ -35,11 +39,22 @@ export default class PLAYER {
     this.animationFrameRequest;
   }
 
-  load(_path){
+  checkVideoSize(_file){
+    this.checkSize.load(_file,this);
+  }
+
+  load(_path, _defResize = false, _fpsResize = false, _durationResize = false){
     // Stop loop
     cancelAnimationFrame(this.animationFrameRequest);
 
-    this.extractor.extract(_path,(_decodedVideo) => {
+    let durationResize = {
+      checked: _durationResize,
+      start: parseInt($("#start-size-input").value),
+      end: parseInt($("#end-size-input").value),
+    }
+
+    this.extractor.extract(_path,_defResize,_fpsResize,durationResize,(_decodedVideo) => {
+      console.log(_decodedVideo);
       this.decodedVideo = _decodedVideo;
       this.currentFrame = 0;
       this.currentPoint = 0;

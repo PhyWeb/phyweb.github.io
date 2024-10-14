@@ -98,26 +98,26 @@
         <div id="etalonnage-panel" class="container">
           <div class="block">
             <p class="title is-5">Origine des axes</p>
-            <div class="field is-grouped">
-              <button class="button p-0 is-active" id="topright">
+            <div class="level">
+              <button class="button level-item p-0 is-active" id="topright">
                 <span class="fa-stack fa-lg " >
                   <i class="fa-solid fa-arrow-up-long fa-stack-1x" data-fa-transform="left-4"></i>
                   <i class="fa-solid fa-arrow-right-long fa-stack-1x" data-fa-transform="down-4"></i>
                 </span>
               </button>
-              <button class="button p-0" id="topleft">
+              <button class="button level-item p-0" id="topleft">
                 <span class="fa-stack fa-lg" >
                   <i class="fa-solid fa-arrow-up-long fa-stack-1x" data-fa-transform="right-4"></i>
                   <i class="fa-solid fa-arrow-left-long fa-stack-1x" data-fa-transform="down-4"></i>
                 </span>
               </button>
-              <button class="button p-0" id="downright">
+              <button class="button level-item p-0" id="downright">
                 <span class="fa-stack fa-lg" >
                   <i class="fa-solid fa-arrow-down-long fa-stack-1x" data-fa-transform="left-4"></i>
                   <i class="fa-solid fa-arrow-right-long fa-stack-1x" data-fa-transform="up-4"></i>
                 </span>
               </button>
-              <button class="button p-0" id="downleft">
+              <button class="button level-item p-0" id="downleft">
                 <span class="fa-stack fa-lg" >
                   <i class="fa-solid fa-arrow-down-long fa-stack-1x" data-fa-transform="right-4"></i>
                   <i class="fa-solid fa-arrow-left-long fa-stack-1x" data-fa-transform="up-4"></i>
@@ -181,6 +181,18 @@
               </table>
             </div>
           </div>
+          <div class="block is-flex-shrink-0 level">
+            <div class="level-item">
+              <button class="button" id="clear-row">
+                <img src="lib/row.svg" height="30" width="36"/>
+              </button>
+            </div>
+            <div class="level-item">
+              <button class="button" id="clear-table">
+                <img src="lib/table.svg" height="30" width="36"/>
+              </button>
+            </div>
+          </div>
           <div class="block is-clipped is-flex-shrink-0">
             <button class="button is-fullwidth is-primary is-medium" id="download-button">
               <span class="icon">
@@ -240,6 +252,75 @@
             </div>
           </div>
         </div>
+      </footer>
+    </div>
+  </div>
+  <div id="file-size-modal" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card" id="file-size-modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title is-size-4">Video très volumineuse</p>
+        <button class="delete" aria-label="close"></button>
+      </header>
+      <section class="modal-card-body is-size-5">
+        <p class="block">
+          La vidéo occupe <span class="has-text-danger has-text-weight-bold" id="size-label">xx Mio</span> de mémoire vidéo.
+        </p>
+        <p class="block">
+          Il est recommandé de ne pas dépasser <span class="has-text-weight-bold">1024 Mio</span>.
+        </p>
+        <p class="block">
+          Choisissez quel(s) modifications vous souhaitez appliquer :
+        </p>
+        <article class="message">
+          <div class="message-body">
+            <label class="checkbox">
+              <input type="checkbox" id="def-size-input"/>
+              <span>Réduire la définition de l'image</span><span id="def-size-label"></span>
+            </label>
+          </div>
+        </article>
+        <article class="message">
+          <div class="message-body">
+            <label class="checkbox">
+              <input type="checkbox" id="fps-size-input"/>
+              <span>Réduire le nombre d'images par seconde</span><span id="fps-size-label"></span>
+              
+            </label>
+          </div>
+        </article>
+        <article class="message">
+          <div class="message-body">
+            <label class="checkbox pb-4">
+              <input type="checkbox" id="duration-size-input"/>
+              Réduire la durée de la vidéo (Durée totale : <span id="duration-size-label"></span> s)
+            </label>
+            <div class="columns block is-vcentered is-hidden" id="duration-size-inputs">
+              <div class="column is-narrow pr-0 ">
+                <label class="label">Début :</label>
+              </div>
+              <div class="column">
+                <p class="control">
+                  <input class="input" type="number" min="0" value="0" id="start-size-input"/>
+                </p>
+              </div>
+              <div class="column is-narrow pr-0 ">
+                <label class="label">Fin :</label>
+              </div>
+              <div class="column">
+                <p class="control">
+                  <input class="input" type="number" min="0" value="0" id="end-size-input"/>
+                </p>
+              </div>
+              <div class="column is-narrow pr-0 ">
+                <label class="label"></label>
+              </div>
+            </div>
+          </div>
+        </article>
+      </section>
+      <footer class="modal-card-foot">
+        <button class="button is-danger is-fullwidth" id="open-resized-video"></button>
       </footer>
     </div>
   </div>

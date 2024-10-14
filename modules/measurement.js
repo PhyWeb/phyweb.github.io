@@ -162,7 +162,6 @@ export default class MEASUREMENT {
 
   clearRow(index){
     for(let i = 0; i < this.data[index].xs.length; i++){
-      console.log(i)
       this.changeValue(index, i, "","");
     }
   }
