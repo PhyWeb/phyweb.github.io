@@ -180,7 +180,32 @@ $("#clear-row").addEventListener("click", ()=> {
 });
 
 // DOWNLOAD
-$("#download-button").addEventListener("click", ()=>{measurement.createCSV();});
+$("#download-button").addEventListener("click", ()=>{
+  $("#download-modal").classList.add('is-active');
+});
+$("#csv-button").addEventListener("click", ()=>{
+  $("#csv-button").classList.add('is-link');
+  $("#rw3-button").classList.remove('is-link');
+});
+$("#rw3-button").addEventListener("click", ()=>{
+  $("#rw3-button").classList.add('is-link');
+  $("#csv-button").classList.remove('is-link');
+});
+
+$("#download-file-button").addEventListener("click", ()=>{
+  let filename = "pointage";
+  if($("#file-name-input").value !== ""){
+    filename = $("#file-name-input").value;
+  }
+  if($("#csv-button").classList.contains("is-link")){
+    let csv = measurement.createCSV();
+    measurement.downloadFile(csv,"csv",filename);
+  } else{
+    let rw3 = measurement.createRW3();
+    measurement.downloadFile(rw3,"rw3",filename);
+  }
+  closeAllModals();
+});
 
 // RESIZE
 window.addEventListener('resize', resize, false);

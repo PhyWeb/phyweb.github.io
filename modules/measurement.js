@@ -315,16 +315,107 @@ export default class MEASUREMENT {
       }
     }
 
-    this.downloadCSV(csv.join("\n"))
+    return csv.join("\n");
   }
 
-  async downloadCSV(_data){
-    const blob = new Blob([_data], { type: 'text/csv' });
+  createRW3(){
+    let rw3 = []
+    rw3.push("EVARISTE REGRESSI WINDOWS 1.0");
+    rw3.push("£"+parseInt((this.pointsPerFrame * 2) + 1)+" NOM VAR");
+    rw3.push("t");
+    for(let i = 1; i < this.pointsPerFrame + 1; i++){
+      rw3.push("x" + i);
+      rw3.push("y" + i);
+    }
+    rw3.push("£"+parseInt((this.pointsPerFrame * 2) + 1)+" GENRE VAR");
+    for(let i = 0; i < (this.pointsPerFrame * 2) + 1; i++){
+      rw3.push("0");
+    }
+    rw3.push("£"+parseInt((this.pointsPerFrame * 2) + 1)+" UNITE VAR");
+    rw3.push("s");
+    for(let i = 0; i < this.pointsPerFrame * 2; i++){
+      rw3.push("m");
+    }
+    rw3.push("£3 INCERTITUDE");
+    rw3.push("");
+    rw3.push("");
+    rw3.push("");
+    rw3.push("£1 TRIGO");
+    rw3.push("0");
+    rw3.push("£1 LOG");
+    rw3.push("0");
+    rw3.push("£1 MEMO GRANDEURS");
+    rw3.push("'Pointage PhyWeb Tracker");
+    rw3.push("£2 ACQUISITION");
+    rw3.push("CLAVIER");
+    rw3.push("");
+    rw3.push("£0 GRAPHE VAR");
+    rw3.push("&5 X");
+    rw3.push("x1");
+    rw3.push("");
+    rw3.push("");
+    rw3.push("");
+    rw3.push("");
+    rw3.push("&5 Y");
+    rw3.push("y1");
+    rw3.push("");
+    rw3.push("");
+    rw3.push("");
+    rw3.push("");
+    rw3.push("&5 MONDE");
+    rw3.push("1");
+    rw3.push("1");
+    rw3.push("1");
+    rw3.push("1");
+    rw3.push("1");
+    rw3.push("&3 GRADUATION");
+    rw3.push("0");
+    rw3.push("0");
+    rw3.push("0");
+    rw3.push("&3 ZERO");
+    rw3.push("1");
+    rw3.push("1");
+    rw3.push("1");
+    rw3.push("&7 OPTIONS");
+    rw3.push("12");
+    rw3.push("2");
+    rw3.push("1");
+    rw3.push("3");
+    rw3.push("3");
+    rw3.push("0");
+    rw3.push("0");
+    rw3.push("£1 PAGE COMMENT");
+    rw3.push("");
+    rw3.push("&96 VALEUR VAR");
+    for(let j = this.originFrame; j <this.data.length; j++){
+      let ro = [];
+      ro.push(this.data[j].t / 1000);
+      let emptyCount = 0;
+      for(let i = 0; i < this.data[j].xs.length; i++){
+        if(this.data[j].xs[i] === "" || this.data[j].ys[i] === ""){
+          emptyCount++;
+        }
+        ro.push(this.scalex(this.data[j].xs[i]));
+        ro.push(this.scaley(this.data[j].ys[i]));
+      }
+
+      if(emptyCount == 0){
+        rw3.push(ro.join(" "));
+      }
+    }
+    rw3.push("&2 OPTIONS");
+    rw3.push("1");
+    rw3.push("1");
+    
+    return rw3.join("\n");
+  }
+
+  async downloadFile(_file, _type,_name){
+    const blob = new Blob([_file], { type: "text/"+_type });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'pointage.csv';
+    a.download = _name+"."+_type;
     a.click();
-
   }
 }

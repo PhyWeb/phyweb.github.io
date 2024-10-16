@@ -15,6 +15,10 @@ body, html {
   width: 60rem;
 }
 
+#download-modal-card{
+  width: 50rem;
+}
+
 .vertical-divider{
   border-left: 1px solid rgb(163, 163, 163);
 }
