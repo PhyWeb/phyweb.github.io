@@ -8,7 +8,9 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css">
     <link rel="stylesheet" href="lib/common.css">
 
-    <script src="https://kit.fontawesome.com/b75aa8ff16.js" crossorigin="anonymous"></script>
+    <script defer src="lib/fontawesome/solid.min.js"></script>
+    <script defer src="lib/fontawesome/brands.min.js"></script>
+    <script defer src="lib/fontawesome/fontawesome.min.js"></script>
 
     <script type="module" src="main.js"></script>
   </head>
@@ -57,7 +59,10 @@
       </div>
     </div>
   </nav>
-  <div class="columns is-flex-grow-1 is-overflow-auto" id="handler-wrapper" style="margin-bottom: 0;">
+  <div class="has-text-right" id="background-arrow">
+    <i class="fa-solid fa-reply fa-10x" data-fa-transform="rotate-90" style="margin-right:2rem"></i>
+  </div>
+  <div class="columns is-flex-grow-1 is-overflow-auto is-hidden" id="handler-wrapper" style="margin-bottom: 0;">
     <div class="column is-flex is-flex-direction-column pr-0">
       <div class="block is-flex-grow-1" id="videoContainer">
         <canvas id="videoCanvas"></canvas>
@@ -89,7 +94,7 @@
       </div>
     </div>
     <div class="column handler"></div>
-    <div class="column is-narrow is-hidden pl-0" id="right-column">
+    <div class="column is-narrow pl-0" id="right-column">
       <div class="box is-flex is-flex-direction-column" style="width: 285px">
         <div class="tabs is-fullwidth is-flex-shrink-0">
           <ul>
@@ -185,12 +190,12 @@
           </div>
           <div class="block is-flex-shrink-0 level">
             <div class="level-item">
-              <button class="button" id="clear-row">
+              <button class="button" id="clear-row" title="Vider la ligne">
                 <img src="lib/row.svg" height="30" width="36"/>
               </button>
             </div>
             <div class="level-item">
-              <button class="button" id="clear-table">
+              <button class="button" id="clear-table" title="Vider le tableau">
                 <img src="lib/table.svg" height="30" width="36"/>
               </button>
             </div>
@@ -424,7 +429,10 @@
           </div>
           <div class="field-body">
             <div class="field">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras sagittis euismod velit, vehicula blandit odio ornare a. Nam mattis purus vitae vehicula efficitur. Sed volutpat nunc et ornare condimentum. Integer rutrum gravida urna sit amet feugiat. Mauris vehicula, enim eu sodales pellentesque, tortor enim lobortis leo, at elementum leo sapien quis enim. 
+              <p>PhyWeb utilise des technologies modernes pour fonctionner. Il est indispensable d'utiliser un navigateur internet récent pour les faire fonctionner. Exemples de navigateurs compatibles :</p>
+              <p>Google Chrome version 94 et +.</p>
+              <p>Microsoft Edge version 94 et +.</p>
+              <p>Mozilla Firefox version 130 et +.</p>
             </div>
           </div>
         </div>
@@ -436,7 +444,7 @@
           </div>
           <div class="field-body">
             <div class="field">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras sagittis euismod velit, vehicula blandit odio ornare a. Nam mattis purus vitae vehicula efficitur. Sed volutpat nunc et ornare condimentum. Integer rutrum gravida urna sit amet feugiat. Mauris vehicula, enim eu sodales pellentesque, tortor enim lobortis leo, at elementum leo sapien quis enim. 
+              pro.wal@protonmail.com
             </div>
           </div>
         </div>
@@ -448,8 +456,8 @@
           </div>
           <div class="field-body">
             <div class="field">
-              <p>La Belle Physique</p>
-              <p>Copyright (c) 2019 Gaétan Walter</p>
+              <p>PhyWeb Tracker</p>
+              <p>Copyright (c) 2024 Gaétan Walter</p>
               <p>Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:</p>
               <p>The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.</p>
               <p>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</p>

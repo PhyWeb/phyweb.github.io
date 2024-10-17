@@ -63,8 +63,9 @@ export default class PLAYER {
 
       $("#video-controls").classList.remove("is-hidden");
       $("#magnifier-button").classList.remove("is-hidden");
-      $("#right-column").classList.remove("is-hidden");
-      $("#right-column").classList.add("is-flex");
+      $("#handler-wrapper").classList.remove("is-hidden");
+      $("#background-arrow").classList.add("is-hidden");
+      //$("#right-column").classList.add("is-flex");
       $(".handler").style.display= "block";
       this.videoCanvas.style.display= "block";
 
