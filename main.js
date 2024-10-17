@@ -207,6 +207,11 @@ $("#download-file-button").addEventListener("click", ()=>{
   closeAllModals();
 });
 
+// ABOUT
+$("#about-button").addEventListener("click", ()=>{
+  $("#about-modal").classList.add('is-active');
+});
+
 // RESIZE
 window.addEventListener('resize', resize, false);
 
