@@ -305,7 +305,7 @@ class MP4DemuxerDummy {
         return new Uint8Array(stream.buffer, 8);  // Remove the box header.
       }
     }
-    console.log("avcC or hvcC or av1C not found");
+    $("#fileformat-alert-modal").classList.add("is-active");
     throw "avcC or hvcC or av1C not found";
   }
 

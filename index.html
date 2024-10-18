@@ -550,23 +550,24 @@
   <!------------------------------------------------------------------------------------------------------------>
   <!----------------------------------------------WRONG FILE FORMAT--------------------------------------------->
   <!------------------------------------------------------------------------------------------------------------>
-  <div id="clear-table-alert-modal" class="modal">
+  <div id="fileformat-alert-modal" class="modal">
     <div class="modal-background"></div>
-    <div class="modal-card" id="clear-table-alert-modal-card">
+    <div class="modal-card" id="fileformat-alert-modal-card">
       <header class="modal-card-head has-background-danger">
-        <p class="modal-card-title">Vider le tableau</p>
+        <p class="modal-card-title">Codec video non supporté</p>
         <button class="delete" aria-label="close"></button>
       </header>
       <section class="modal-card-body has-text-justified">
-        <p class="block">Etes-vous sûr de vouloir vider le tableau de toutes ses données?</p>
+        <div class="content">
+          <p>La vidéo doit être au format mp4 et encodé dans un des formats ci-dessous :</p>
+          <ul>
+            <li>H.264</li>
+            <li>H.265</li>
+            <li>AV1</li>
+          </ul>
+        </div>
       </section>
       <footer class="modal-card-foot buttons">
-        <button class="button is-primary" id="confirm-clear-table-button">
-          Vider de tableau
-        </button>
-        <button class="button" id="cancel-clear-table-button">
-          Annuler
-        </button>
       </footer>
     </div>
   </div>

@@ -106,6 +106,11 @@ $("#open-video").addEventListener("click", ()=>{
 
 // FILEINPUT
 $("#file-input").addEventListener("change", () => {
+  console.log($("#file-input").files[0].type)
+  if($("#file-input").files[0].type !== "video/mp4"){
+    $("#fileformat-alert-modal").classList.add("is-active");
+    return;
+  }
   if($("#file-input").files[0] != undefined){
     player.checkVideoSize($("#file-input").files[0]);
     closeAllModals();
