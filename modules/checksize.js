@@ -20,7 +20,6 @@ export default class CHECKSIZE {
   load(_file, _player){
     this.player = _player;
     this.extractor.checkSize(_file, (config)=>{
-      console.log(config)
       this.height = config.codedHeight;
       this.width = config.codedWidth;
       this.nbSamples = config.info.videoTracks[0].nb_samples;
@@ -70,14 +69,12 @@ export default class CHECKSIZE {
         });
         $("#start-size-input").addEventListener("change", ()=>{
           if(parseInt($("#start-size-input").value) >= parseInt($("#end-size-input").value)){
-            console.log("oui");
             $("#start-size-input").value = parseInt($("#end-size-input").value) - 1;
           }
           this.updateSize()
         });
         $("#end-size-input").addEventListener("change", ()=>{
           if(parseInt($("#start-size-input").value) >= parseInt($("#end-size-input").value)){
-            console.log("ui");
             $("#end-size-input").value = parseInt($("#end-size-input").value) + 1;
           }
           this.updateSize()

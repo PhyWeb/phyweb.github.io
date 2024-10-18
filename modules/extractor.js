@@ -185,7 +185,7 @@ class MP4Demuxer {
         return new Uint8Array(stream.buffer, 8);  // Remove the box header.
       }
     }
-    throw "avcC or hvcC or av1C not found";
+    console.log("avcC or hvcC or av1C not found");
   }
 
   #onReady(info) {
@@ -305,6 +305,7 @@ class MP4DemuxerDummy {
         return new Uint8Array(stream.buffer, 8);  // Remove the box header.
       }
     }
+    console.log("avcC or hvcC or av1C not found");
     throw "avcC or hvcC or av1C not found";
   }
 

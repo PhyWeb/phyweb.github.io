@@ -23,6 +23,13 @@ function isNumber(str) { // TODO usefull here ???
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+
+if ('VideoDecoder' in window) {
+  console.log("VideoDecoder supported")
+} else {
+  console.log("VideoDecoder NOT supported")
+  $("#no-videodecoder-alert-modal").classList.add("is-active")
+}
 // MODAL
 // Functions to open and close a modal
 function openModal($el) {
@@ -171,25 +178,31 @@ $("#ppf-input").addEventListener("change", (e)=> {
   measurement.setPointPerFrame(parseInt(e.target.value), player);
 });
 
-// CLEAR TABLE
-$("#clear-table").addEventListener("click", ()=> {
+// TABLE CONTROLS
+$("#confirm-clear-table-button").addEventListener("click", ()=> {
   measurement.clearTable();
+  closeAllModals();
+});
+$("#cancel-clear-table-button").addEventListener("click", ()=> {
+  closeAllModals();
 });
 $("#clear-row").addEventListener("click", ()=> {
   measurement.clearRow(player.currentFrame);
 });
+$("#copy-table-button").addEventListener("click", ()=> {
+  navigator.clipboard.writeText($("#table").innerText);
+});
 
 // DOWNLOAD
-$("#download-button").addEventListener("click", ()=>{
-  $("#download-modal").classList.add('is-active');
-});
 $("#csv-button").addEventListener("click", ()=>{
   $("#csv-button").classList.add('is-link');
   $("#rw3-button").classList.remove('is-link');
+  $("#file-name-input").placeholder = "pointage.csv";
 });
 $("#rw3-button").addEventListener("click", ()=>{
   $("#rw3-button").classList.add('is-link');
   $("#csv-button").classList.remove('is-link');
+  $("#file-name-input").placeholder = "pointage.rw3";
 });
 
 $("#download-file-button").addEventListener("click", ()=>{
@@ -207,20 +220,11 @@ $("#download-file-button").addEventListener("click", ()=>{
   closeAllModals();
 });
 
-// ABOUT
-$("#about-button").addEventListener("click", ()=>{
-  $("#about-modal").classList.add('is-active');
-});
-
 // RESIZE
 window.addEventListener('resize', resize, false);
 
 function resize(column2Size = "285px") {
-  /*if($("#etalonnage-button").classList.contains("is-active")){
-    $("#right-column").children[0].style.width = "285px";
-  } else {*/
-    $("#right-column").children[0].style.width = column2Size;
-  //}
+  $("#right-column").children[0].style.width = column2Size;
   $("#right-column").children[0].style.flexGrow = 0;
   player.resize();
 }

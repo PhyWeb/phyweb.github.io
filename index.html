@@ -16,6 +16,9 @@
   </head>
   <body>
   <div id="app" class="section has-background-light" style="padding:1.2rem">
+  <!------------------------------------------------------------------------------------------------------------>
+  <!---------------------------------------------------NAVBAR--------------------------------------------------->
+  <!------------------------------------------------------------------------------------------------------------>
   <nav class="navbar box is-flex-shrink-0" role="navigation" aria-label="main navigation" style="padding:0">
     <div class="navbar-brand">
       <div class="navbar-item is-size-4 has-text-weight-bold">
@@ -35,7 +38,7 @@
               <span>Audio</span>
             </a>
             <hr class="navbar-divider">
-            <a class="navbar-item is-size-5" id="about-button">
+            <a class="navbar-item is-size-5 js-modal-trigger" id="about-button" data-target="about-modal">
               <span class="icon"><i class="fa fa-circle-info"></i></span>
               <span>A propos</span>
             </a>
@@ -63,6 +66,9 @@
     <i class="fa-solid fa-reply fa-10x" data-fa-transform="rotate-90" style="margin-right:2rem"></i>
   </div>
   <div class="columns is-flex-grow-1 is-overflow-auto is-hidden" id="handler-wrapper" style="margin-bottom: 0;">
+    <!------------------------------------------------------------------------------------------------------------>
+    <!------------------------------------------------LEFT COLUMN------------------------------------------------->
+    <!------------------------------------------------------------------------------------------------------------>
     <div class="column is-flex is-flex-direction-column pr-0">
       <div class="block is-flex-grow-1" id="videoContainer">
         <canvas id="videoCanvas"></canvas>
@@ -93,8 +99,11 @@
         </div>
       </div>
     </div>
+    <!------------------------------------------------------------------------------------------------------------>
+    <!-----------------------------------------------RIGHT COLUMN------------------------------------------------->
+    <!------------------------------------------------------------------------------------------------------------>
     <div class="column handler"></div>
-    <div class="column is-narrow pl-0" id="right-column">
+    <div class="column is-narrow pl-0 is-flex" id="right-column">
       <div class="box is-flex is-flex-direction-column" style="width: 285px">
         <div class="tabs is-fullwidth is-flex-shrink-0">
           <ul>
@@ -102,6 +111,9 @@
             <li id="mesures-button"><a>Mesures</a></li>
           </ul>
         </div>
+        <!------------------------------------------------------------------------------------------------------------>
+        <!----------------------------------------------ETALONNAGE PANEL---------------------------------------------->
+        <!------------------------------------------------------------------------------------------------------------>
         <div id="etalonnage-panel" class="container">
           <div class="block">
             <p class="title is-5">Origine des axes</p>
@@ -175,33 +187,41 @@
             </div>
           </div>
         </div>
+        <!------------------------------------------------------------------------------------------------------------>
+        <!------------------------------------------------MESURES PANEL----------------------------------------------->
+        <!------------------------------------------------------------------------------------------------------------>
         <div id="mesures-panel" class="container is-hidden is-flex-direction-column is-overflow-auto">
           <div class="block is-flex-grow-1 is-overflow-auto" >
             <div class="table-container">
-              <table class="table is-hoverable is-narrow is-fullwidth is-striped has-text-centered">
+              <table class="table is-hoverable is-narrow is-fullwidth is-striped has-text-centered" id="table">
                 <thead id="table-head">
-
                 </thead>
                 <tbody id="table-body">
-
                 </tbody>
               </table>
             </div>
           </div>
           <div class="block is-flex-shrink-0 level">
             <div class="level-item">
-              <button class="button" id="clear-row" title="Vider la ligne">
+              <button class="button p-2" id="clear-row" style="height:52px;width:52px" title="Vider la ligne">
                 <img src="lib/row.svg" height="30" width="36"/>
               </button>
             </div>
             <div class="level-item">
-              <button class="button" id="clear-table" title="Vider le tableau">
+              <button class="button p-2 js-modal-trigger" id="clear-table" title="Vider le tableau" style="height:52px;width:52px" data-target="clear-table-alert-modal">
                 <img src="lib/table.svg" height="30" width="36"/>
+              </button>
+            </div>
+            <div class="level-item">
+              <button class="button " id="copy-table-button" title="Copier le tableau dans le presse-papier" style="height:52px;width:52px">
+                <span class="icon is-large">
+                  <i class="fa-solid fa-copy fa-2xl"></i>
+                </span>
               </button>
             </div>
           </div>
           <div class="block is-clipped is-flex-shrink-0">
-            <button class="button is-fullwidth is-primary is-medium" id="download-button">
+            <button class="button is-fullwidth is-primary is-medium js-modal-trigger" id="download-button" data-target="download-modal"> 
               <span class="icon">
                 <i class="fa-solid fa-download"></i>
               </span>
@@ -213,6 +233,9 @@
     </div>
   </div>  
   </div>
+  <!------------------------------------------------------------------------------------------------------------>
+  <!-------------------------------------------------OPEN MODAL------------------------------------------------->
+  <!------------------------------------------------------------------------------------------------------------>
   <div id="open-modal" class="modal">
     <div class="modal-background"></div>
     <div class="modal-card" id="open-modal-card">
@@ -262,6 +285,9 @@
       </footer>
     </div>
   </div>
+  <!------------------------------------------------------------------------------------------------------------>
+  <!-----------------------------------------------FILESIZE MODAL----------------------------------------------->
+  <!------------------------------------------------------------------------------------------------------------>
   <div id="file-size-modal" class="modal">
     <div class="modal-background"></div>
     <div class="modal-card" id="file-size-modal-card">
@@ -331,6 +357,9 @@
       </footer>
     </div>
   </div>
+  <!------------------------------------------------------------------------------------------------------------>
+  <!-----------------------------------------------DOWNLOAD MODAL----------------------------------------------->
+  <!------------------------------------------------------------------------------------------------------------>
   <div id="download-modal" class="modal">
     <div class="modal-background"></div>
     <div class="modal-card" id="download-modal-card">
@@ -339,7 +368,7 @@
         <button class="delete" aria-label="close"></button>
       </header>
       <section class="modal-card-body ">
-        <p class="title is-5">Type de fichier</p>
+        <p class="title is-4">Type de fichier</p>
         <div class="buttons has-addons is-centered">
           <button class="button is-medium is-link" id="csv-button">
             <span class="icon">
@@ -388,7 +417,7 @@
             <span>Format Regressi</span>
           </button>
         </div>
-        <p class="title is-5">Nom du fichier</p>
+        <p class="title is-4">Nom du fichier</p>
         <input class="input rounded is-medium" type="text" placeholder="pointage.csv" id="file-name-input"/>
       </section>
       <footer class="modal-card-foot">
@@ -401,6 +430,9 @@
       </footer>
     </div>
   </div>
+  <!------------------------------------------------------------------------------------------------------------>
+  <!------------------------------------------------ABOUT MODAL------------------------------------------------->
+  <!------------------------------------------------------------------------------------------------------------>
   <div id="about-modal" class="modal">
     <div class="modal-background"></div>
     <div class="modal-card" id="about-modal-card">
@@ -429,10 +461,12 @@
           </div>
           <div class="field-body">
             <div class="field">
-              <p>PhyWeb utilise des technologies modernes pour fonctionner. Il est indispensable d'utiliser un navigateur internet récent pour les faire fonctionner. Exemples de navigateurs compatibles :</p>
-              <p>Google Chrome version 94 et +.</p>
-              <p>Microsoft Edge version 94 et +.</p>
-              <p>Mozilla Firefox version 130 et +.</p>
+              <p class="block">PhyWeb utilise des technologies modernes pour fonctionner. Votre navigateur ne prend pas en charge toutes les fonctions nécessaires. Exemples de navigateurs compatibles :</p>
+              <ul class="block">
+                <li>Google Chrome version 94 et +</li>
+                <li>Microsoft Edge version 94 et +</li>
+                <li>Mozilla Firefox version 130 et +</li>
+              </ul>
             </div>
           </div>
         </div>
@@ -456,11 +490,11 @@
           </div>
           <div class="field-body">
             <div class="field">
-              <p>PhyWeb Tracker</p>
-              <p>Copyright (c) 2024 Gaétan Walter</p>
-              <p>Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:</p>
-              <p>The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.</p>
-              <p>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</p>
+              <p class="block">PhyWeb Tracker</p>
+              <p class="block">Copyright (c) 2024 Gaétan Walter</p>
+              <p class="block has-text-justified">Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:</p>
+              <p class="block has-text-justified">The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.</p>
+              <p class="block has-text-justified">THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</p>
             </div>
           </div>
         </div>
@@ -469,6 +503,72 @@
       </footer>
     </div>
   </div>
-  
+  <!------------------------------------------------------------------------------------------------------------>
+  <!----------------------------------------NO VIDEODECODER ALERT MODAL----------------------------------------->
+  <!------------------------------------------------------------------------------------------------------------>
+  <div id="no-videodecoder-alert-modal" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card" id="no-videodecoder-alert-modal-card">
+      <header class="modal-card-head has-background-danger">
+        <p class="modal-card-title">Navigateur non compatible</p>
+        <button class="delete" aria-label="close"></button>
+      </header>
+      <section class="modal-card-body has-text-justified">
+        <p class="block">PhyWeb utilise des technologies modernes pour fonctionner. Votre navigateur ne prend pas en charge toutes les fonctions nécessaires. Exemples de navigateurs compatibles :</p>
+        <ul class="block">
+          <li>Google Chrome version 94 et +</li>
+          <li>Microsoft Edge version 94 et +</li>
+          <li>Mozilla Firefox version 130 et +</li>
+        </ul>
+      </section>
+      <footer class="modal-card-footer"></footer>
+    </div>
+  </div>
+  <!------------------------------------------------------------------------------------------------------------>
+  <!-------------------------------------------CLEAR TABLE ALERT MODAL------------------------------------------>
+  <!------------------------------------------------------------------------------------------------------------>
+  <div id="clear-table-alert-modal" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card" id="clear-table-alert-modal-card">
+      <header class="modal-card-head has-background-danger">
+        <p class="modal-card-title">Vider le tableau</p>
+        <button class="delete" aria-label="close"></button>
+      </header>
+      <section class="modal-card-body has-text-justified">
+        <p class="block">Etes-vous sûr de vouloir vider le tableau de toutes ses données?</p>
+      </section>
+      <footer class="modal-card-foot buttons">
+        <button class="button is-primary" id="confirm-clear-table-button">
+          Vider de tableau
+        </button>
+        <button class="button" id="cancel-clear-table-button">
+          Annuler
+        </button>
+      </footer>
+    </div>
+  </div>
+  <!------------------------------------------------------------------------------------------------------------>
+  <!----------------------------------------------WRONG FILE FORMAT--------------------------------------------->
+  <!------------------------------------------------------------------------------------------------------------>
+  <div id="clear-table-alert-modal" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card" id="clear-table-alert-modal-card">
+      <header class="modal-card-head has-background-danger">
+        <p class="modal-card-title">Vider le tableau</p>
+        <button class="delete" aria-label="close"></button>
+      </header>
+      <section class="modal-card-body has-text-justified">
+        <p class="block">Etes-vous sûr de vouloir vider le tableau de toutes ses données?</p>
+      </section>
+      <footer class="modal-card-foot buttons">
+        <button class="button is-primary" id="confirm-clear-table-button">
+          Vider de tableau
+        </button>
+        <button class="button" id="cancel-clear-table-button">
+          Annuler
+        </button>
+      </footer>
+    </div>
+  </div>
   </body>
 </html>
