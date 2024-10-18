@@ -74,11 +74,8 @@ export default class EXTRACTOR {
     },
     onConfig(config) {
       decodedVideo.duration = _durationResize.checked ? (_durationResize.end - _durationResize.start) * 1000: config.info.duration; 
-      //decodedVideo.frameCount = config.info.videoTracks[0].nb_samples;
-      decodedVideo.width = config.codedWidth; // TODOOOOOOOOOOOOOOOOOOOOOOOO
-      decodedVideo.height = config.codedHeight;
-      /*$("#loadingCanvas").width = config.codedWidth;
-      $("#loadingCanvas").height = config.codedHeight;*/
+      decodedVideo.width = _defResize ? config.codedWidth / 2 : config.codedWidth;
+      decodedVideo.height = _defResize ? config.codedHeight / 2 : config.codedHeight;
     },
     onFinish() {
       console.log("Decoded!")
