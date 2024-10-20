@@ -24,7 +24,6 @@ export default class EXTRACTOR {
   }
 
   async extract(_file,_defResize,_fpsResize,_durationResize,_cb){
-    console.log(_durationResize);
   let decodedVideo = {
     duration: null,
     width: null,
@@ -72,6 +71,8 @@ export default class EXTRACTOR {
     },
   });
 
+  let keyFrameFound = false;
+
   await getVideoFrames(
     {
       videoUrl,
@@ -85,6 +86,17 @@ export default class EXTRACTOR {
         _cb(decodedVideo)
       },
       onChunk(chunk) {
+          if(_durationResize.checked && chunk.timestamp / 1000000 < _durationResize.start - 15){
+            return; //return if the frame is at least 15s before the start
+          } else if(_durationResize.checked && chunk.timestamp / 1000000 < _durationResize.start){
+            if(!keyFrameFound){
+              if(chunk.type !== "key"){
+                return;
+              } else{
+                keyFrameFound = true; // Find the first keyframe within 15s of the start
+              }
+            }
+          }
         if(_durationResize.checked && chunk.timestamp / 1000000 >= _durationResize.end){
           // TODO STOP DEMUXING
           return;
