@@ -43,10 +43,9 @@ export default class EXTRACTOR {
 
   let frameCount = 0;
 
-  await getVideoFrames({
-    videoUrl,
-    onFrame(frame) {  // `frame` is a VideoFrame object: https://developer.mozilla.org/en-US/docs/Web/API/VideoFrame
-      if(_durationResize.checked && (frame.timestamp / 1000000 < _durationResize.start || frame.timestamp / 1000000 >= _durationResize.end)){
+  let decoder = new VideoDecoder({
+    output: (frame) =>{
+      if(_durationResize.checked && frame.timestamp / 1000000 < _durationResize.start){
         frame.close();
       } else{
         if(_fpsResize && frameCount % 2 == 1){
@@ -54,7 +53,6 @@ export default class EXTRACTOR {
         } else{
           if(_defResize){
             createImageBitmap(frame,{resizeWidth : decodedVideo.width / 2, resizeHeight : decodedVideo.height / 2, resizeQuality : "medium"}).then((result)=>{
-              console.log(result);
               decodedVideo.frames.push(result);
               frame.close();
             })
@@ -67,21 +65,35 @@ export default class EXTRACTOR {
         }
         frameCount++;
       }
-      /*$("#loadingCanvas").getContext("2d").drawImage(frame,0,0);
-        decodedVideo.frames.push($("#loadingCanvas").toDataURL("image/jpeg",1))
-        frame.close();
-*/
     },
-    onConfig(config) {
-      decodedVideo.duration = _durationResize.checked ? (_durationResize.end - _durationResize.start) * 1000: config.info.duration; 
-      decodedVideo.width = _defResize ? config.codedWidth / 2 : config.codedWidth;
-      decodedVideo.height = _defResize ? config.codedHeight / 2 : config.codedHeight;
-    },
-    onFinish() {
-      console.log("Decoded!")
-      _cb(decodedVideo)
+    error: function(e) {
+      console.error(e);
+      setStatus("decode", e);
     },
   });
+
+  await getVideoFrames(
+    {
+      videoUrl,
+      onConfig(config) {
+        decodedVideo.duration = _durationResize.checked ? (_durationResize.end - _durationResize.start) * 1000: config.info.duration; 
+        decodedVideo.width = _defResize ? config.codedWidth / 2 : config.codedWidth;
+        decodedVideo.height = _defResize ? config.codedHeight / 2 : config.codedHeight;
+      },
+      onFinish() {
+        console.log("Decoded!")
+        _cb(decodedVideo)
+      },
+      onChunk(chunk) {
+        if(_durationResize.checked && chunk.timestamp / 1000000 >= _durationResize.end){
+          // TODO STOP DEMUXING
+          return;
+        }
+        decoder.decode(chunk);
+      }
+    },
+    decoder
+  );
 
   URL.revokeObjectURL(_file); // revoke URL to prevent memory leak
   }
@@ -91,18 +103,10 @@ export default class EXTRACTOR {
 ------------------------------------------MP4 DEMUXER-------------------------------------------
 ----------------------------------------------------------------------------------------------*/
 
-function getVideoFrames(opts={}) {
+function getVideoFrames(opts={},decoder) {
   
   let onFinishResolver;
   let onFinishPromise = new Promise(r => onFinishResolver=r);
-
-  const decoder = new VideoDecoder({
-    output: opts.onFrame,
-    error: function(e) {
-      console.error(e);
-      setStatus("decode", e);
-    },
-  });
 
   // Fetch and demux the media data.
   const demuxer = new MP4Demuxer(opts.videoUrl, {
@@ -115,7 +119,7 @@ function getVideoFrames(opts={}) {
       onFinishResolver();
     },
     onChunk: function(chunk) {
-      decoder.decode(chunk);
+      opts.onChunk(chunk)
     },
     setStatus: function(a, b) {
       // console.log("status:", a, b);
@@ -168,7 +172,7 @@ class MP4Demuxer {
   #description(track) {
     const trak = this.#file.getTrackById(track.id);
     for (const entry of trak.mdia.minf.stbl.stsd.entries) {
-      if (entry.avcC || entry.hvcC || entry.av1C) {
+      if (entry.avcC || entry.hvcC || entry.av1C || entry.vpcC) {
         const stream = new DataStream(undefined, 0, DataStream.BIG_ENDIAN);
         if (entry.avcC) {
           entry.avcC.write(stream);
@@ -178,6 +182,9 @@ class MP4Demuxer {
         }
         if (entry.av1C) {
           entry.av1C.write(stream);
+        }
+        if (entry.vpcC) {
+          entry.vpcC.write(stream);
         }
         return new Uint8Array(stream.buffer, 8);  // Remove the box header.
       }
@@ -288,7 +295,7 @@ class MP4DemuxerDummy {
   #description(track) {
     const trak = this.#file.getTrackById(track.id);
     for (const entry of trak.mdia.minf.stbl.stsd.entries) {
-      if (entry.avcC || entry.hvcC || entry.av1C) {
+      if (entry.avcC || entry.hvcC || entry.av1C || entry.vpcC) {
         const stream = new DataStream(undefined, 0, DataStream.BIG_ENDIAN);
         if (entry.avcC) {
           entry.avcC.write(stream);
@@ -298,6 +305,9 @@ class MP4DemuxerDummy {
         }
         if (entry.av1C) {
           entry.av1C.write(stream);
+        }
+        if (entry.vpcC) {
+          entry.vpcC.write(stream);
         }
         return new Uint8Array(stream.buffer, 8);  // Remove the box header.
       }
