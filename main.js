@@ -225,6 +225,11 @@ $("#download-file-button").addEventListener("click", ()=>{
   closeAllModals();
 });
 
+// LICENCE
+$("#licence-header").addEventListener("click", ()=>{
+  $("#licence-body").classList.toggle("is-hidden");
+});
+
 // RESIZE
 window.addEventListener('resize', resize, false);
 
