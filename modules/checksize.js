@@ -23,7 +23,7 @@ export default class CHECKSIZE {
       this.height = config.codedHeight;
       this.width = config.codedWidth;
       this.nbSamples = config.info.videoTracks[0].nb_samples;
-      this.duration = config.info.duration / 1000;
+      this.duration = config.info.videoTracks[0].movie_duration / 1000;
       this.fps = this.nbSamples / this.duration;
 
       this.updateSize();
@@ -42,7 +42,7 @@ export default class CHECKSIZE {
         $("#file-size-modal").classList.add('is-active');
 
         $("#def-size-label").innerHTML = " ( "+ this.width + "/" + this.height + " => " + this.width / 2 + "/" + this.height / 2 + " )";
-        $("#fps-size-label").innerHTML = " ( " + this.fps + " => " + this.fps/2 + " img/s )";
+        $("#fps-size-label").innerHTML = " ( " + this.fps.toFixed(2)/1 + " => " + this.fps.toFixed(2)/2 + " img/s )";
 
         $("#duration-size-label").innerHTML = this.duration;
 
