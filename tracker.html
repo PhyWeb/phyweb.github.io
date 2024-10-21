@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html data-theme="light">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Phyweb Tracker</title>
+    <link rel="icon" href="lib/favicons/favicon.ico" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css">
+    <link rel="stylesheet" href="lib/common.css">
+
+    <script defer src="lib/fontawesome/solid.min.js"></script>
+    <script defer src="lib/fontawesome/brands.min.js"></script>
+    <script defer src="lib/fontawesome/fontawesome.min.js"></script>
+
+    <script type="module" src="main.js"></script>
+  </head>
+  <body>
+  <div id="app" class="section has-background-light" style="padding:1.2rem">
+  <!------------------------------------------------------------------------------------------------------------>
+  <!---------------------------------------------------NAVBAR--------------------------------------------------->
+  <!------------------------------------------------------------------------------------------------------------>
+  <nav class="navbar box is-flex-shrink-0" role="navigation" aria-label="main navigation" style="padding:0">
+    <div class="navbar-brand">
+      <div class="navbar-item is-size-4 has-text-weight-bold">
+        PhyWeb
+      </div>
+    </div>
+    <div class="navbar-menu">
+      <div class="navbar-start">
+        <div class="navbar-item has-dropdown is-boxed is-hoverable">
+          <a id="navbar-dropdown" class="navbar-link has-text-primary is-size-4 has-text-weight-bold">
+            <span class="icon"><i class="fa fa-crosshairs"></i></span>
+            <span>Tracker</span>
+          </a>
+          <div class="navbar-dropdown">
+            <a class="navbar-item is-link is-size-5">
+              <span class="icon"><i class="fa fa-volume-high"></i></span>
+              <span>Audio</span>
+            </a>
+            <hr class="navbar-divider">
+            <a class="navbar-item is-size-5 js-modal-trigger" id="about-button" data-target="about-modal">
+              <span class="icon"><i class="fa fa-circle-info"></i></span>
+              <span>A propos</span>
+            </a>
+          </div>
+        </div>
+      </div>
+      <div class="navbar-end">
+        <div class="navbar-item">
+          <button class="button is-white is-hidden" id="magnifier-button">
+            <span class="icon is-medium"><i class="fas fa-pause fa-magnifying-glass"></i></span>
+          </button>
+        </div>
+        <div class="navbar-item">
+          <a class="button is-primary js-modal-trigger" data-target="open-modal">
+            <span class="icon">
+              <i class="fas fa-film"></i>
+            </span>
+            <strong>Ouvrir une vidéo</strong>
+          </a>
+        </div>
+      </div>
+    </div>
+  </nav>
+  <div class="has-text-right" id="background-arrow">
+    <i class="fa-solid fa-reply fa-10x" data-fa-transform="rotate-90" style="margin-right:2rem"></i>
+  </div>
+  <div class="columns is-flex-grow-1 is-overflow-auto is-hidden" id="handler-wrapper" style="margin-bottom: 0;">
+    <!------------------------------------------------------------------------------------------------------------>
+    <!------------------------------------------------LEFT COLUMN------------------------------------------------->
+    <!------------------------------------------------------------------------------------------------------------>
+    <div class="column is-flex is-flex-direction-column pr-0">
+      <div class="block is-flex-grow-1" id="videoContainer">
+        <canvas id="videoCanvas"></canvas>
+        <div id="canvas-shadow"></div>
+      </div>
+      <div class="has-text-centered is-hidden" id="video-controls">
+        <div class="box is-inline-block is-centered p-3">
+          <button class="button is-white" id="play-button">
+            <span class="icon is-medium"><i class="fas fa-play fa-lg"></i></span>
+          </button>
+          <button class="button is-white is-hidden" id="pause-button">
+            <span class="icon is-medium"><i class="fas fa-pause fa-lg"></i></span>
+          </button>
+          <button class="button is-white" id="first-button">
+            <span class="icon is-medium"><i class="fas fa-backward-step fa-lg"></i></span>
+          </button>
+          <button class="button is-white" id="previous-button">
+            <span class="icon is-medium"><i class="fas fa-backward fa-lg"></i></span>
+          </button>
+          <button class="button is-white" id="next-button">
+            <span class="icon is-medium"><i class="fas fa-forward fa-lg"></i></span>
+          </button>
+          <button class="button is-white" id="last-button">
+            <span class="icon is-medium"><i class="fas fa-forward-step fa-lg"></i></span>
+          </button>
+          <label class="is-size-4 is-inline-block" id="frame-label">
+          </label>
+        </div>
+      </div>
+    </div>
+    <!------------------------------------------------------------------------------------------------------------>
+    <!-----------------------------------------------RIGHT COLUMN------------------------------------------------->
+    <!------------------------------------------------------------------------------------------------------------>
+    <div class="column handler"></div>
+    <div class="column is-narrow pl-0 is-flex" id="right-column">
+      <div class="box is-flex is-flex-direction-column" style="width: 285px">
+        <div class="tabs is-fullwidth is-flex-shrink-0">
+          <ul>
+            <li class="is-active" id="etalonnage-button"><a>Etalonnage</a></li>
+            <li id="mesures-button"><a>Mesures</a></li>
+          </ul>
+        </div>
+        <!------------------------------------------------------------------------------------------------------------>
+        <!----------------------------------------------ETALONNAGE PANEL---------------------------------------------->
+        <!------------------------------------------------------------------------------------------------------------>
+        <div id="etalonnage-panel" class="container">
+          <div class="block">
+            <p class="title is-5">Origine des axes</p>
+            <div class="level">
+              <button class="button level-item p-0 is-active" id="topright">
+                <span class="fa-stack fa-lg " >
+                  <i class="fa-solid fa-arrow-up-long fa-stack-1x" data-fa-transform="left-4"></i>
+                  <i class="fa-solid fa-arrow-right-long fa-stack-1x" data-fa-transform="down-4"></i>
+                </span>
+              </button>
+              <button class="button level-item p-0" id="topleft">
+                <span class="fa-stack fa-lg" >
+                  <i class="fa-solid fa-arrow-up-long fa-stack-1x" data-fa-transform="right-4"></i>
+                  <i class="fa-solid fa-arrow-left-long fa-stack-1x" data-fa-transform="down-4"></i>
+                </span>
+              </button>
+              <button class="button level-item p-0" id="downright">
+                <span class="fa-stack fa-lg" >
+                  <i class="fa-solid fa-arrow-down-long fa-stack-1x" data-fa-transform="left-4"></i>
+                  <i class="fa-solid fa-arrow-right-long fa-stack-1x" data-fa-transform="up-4"></i>
+                </span>
+              </button>
+              <button class="button level-item p-0" id="downleft">
+                <span class="fa-stack fa-lg" >
+                  <i class="fa-solid fa-arrow-down-long fa-stack-1x" data-fa-transform="right-4"></i>
+                  <i class="fa-solid fa-arrow-left-long fa-stack-1x" data-fa-transform="up-4"></i>
+                </span>
+              </button>
+            </div>
+          </div>
+          <div class="block">
+            <p class="title is-5">Echelle</p>
+            <button class="button is-medium is-fullwidth block" id="segment-button">
+              Tracer le segment
+            </button>
+            <div class="columns is-vcentered">
+              <div class="column">
+                <label class="label is-medium has-text-right">d =</label>
+              </div>
+              <div class="column is-half">
+                <p class="control">
+                  <input class="input no-spin" type="number" value="1" id="scale-input"/>
+                </p>
+              </div>
+              <div class="column">
+                <label class="label is-medium"> m</label>
+              </div>
+            </div>
+          </div>
+          <div class="block">
+            <p class="title is-5">Reglages</p>
+            <div class="columns is-vcentered">
+              <div class="column is-narrow pr-0 ">
+                <label class="label is-medium">Origine : Image n°</label>
+              </div>
+              <div class="column">
+                <p class="control">
+                  <input class="input" type="number" min="1" value="1" id="origin-frame-input"/>
+                </p>
+              </div>
+            </div>
+            <div class="columns is-vcentered">
+              <div class="column is-narrow pr-0">
+                <label class="label is-medium">Points par image :</label>
+              </div>
+              <div class="column">
+                <p class="control">
+                  <input class="input" type="number" min="1" max="9" value="1" id="ppf-input"/>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!------------------------------------------------------------------------------------------------------------>
+        <!------------------------------------------------MESURES PANEL----------------------------------------------->
+        <!------------------------------------------------------------------------------------------------------------>
+        <div id="mesures-panel" class="container is-hidden is-flex-direction-column is-overflow-auto">
+          <div class="block is-flex-grow-1 is-overflow-auto" >
+            <div class="table-container">
+              <table class="table is-hoverable is-narrow is-fullwidth is-striped has-text-centered" id="table">
+                <thead id="table-head">
+                </thead>
+                <tbody id="table-body">
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="block is-flex-shrink-0 level">
+            <div class="level-item">
+              <button class="button p-2" id="clear-row" style="height:52px;width:52px" title="Vider la ligne">
+                <img src="lib/row.svg" height="30" width="36"/>
+              </button>
+            </div>
+            <div class="level-item">
+              <button class="button p-2 js-modal-trigger" id="clear-table" title="Vider le tableau" style="height:52px;width:52px" data-target="clear-table-alert-modal">
+                <img src="lib/table.svg" height="30" width="36"/>
+              </button>
+            </div>
+            <div class="level-item">
+              <button class="button " id="copy-table-button" title="Copier le tableau dans le presse-papier" style="height:52px;width:52px">
+                <span class="icon is-large">
+                  <i class="fa-solid fa-copy fa-2xl"></i>
+                </span>
+              </button>
+            </div>
+          </div>
+          <div class="block is-clipped is-flex-shrink-0">
+            <button class="button is-fullwidth is-primary is-medium js-modal-trigger" id="download-button" data-target="download-modal"> 
+              <span class="icon">
+                <i class="fa-solid fa-download"></i>
+              </span>
+              <span>Télécharger</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>  
+  </div>
+  <!------------------------------------------------------------------------------------------------------------>
+  <!-------------------------------------------------OPEN MODAL------------------------------------------------->
+  <!------------------------------------------------------------------------------------------------------------>
+  <div id="open-modal" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card" id="open-modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title">Ouvrir une vidéo</p>
+        <button class="delete" aria-label="close"></button>
+      </header>
+      <section class="modal-card-body is-flex">
+        <div class="columns is-flex-grow-1">
+          <div class="column">
+            <aside class="menu" id="video-list"></aside>
+          </div>
+          <div class="column is-narrow vertical-divider">
+          </div>
+          <div class="column">
+            <div class="block">
+              <img id="video-thumbnail" />
+            </div>
+            <div class="block">
+              <p id="video-description"></p>
+            </div>
+          </div>
+        </div>
+      </section>
+      <footer class="modal-card-foot">
+        <div class="columns is-flex-grow-1 is-vcentered">
+          <div class="column">
+            <button class="button is-primary is-fullwidth" id="open-video" disabled>Ouvrir la vidéo sélectionnée</button>
+          </div>
+          <div class="column is-narrow">
+            ou
+          </div>
+          <div class="column is-narrow">
+            <div class="file is-primary ">
+              <label class="file-label">
+                <input class="file-input" type="file" accept=".mp4, .m4v" id="file-input" />
+                <span class="file-cta">
+                  <span class="file-icon">
+                    <i class="fas fa-upload"></i>
+                  </span>
+                  <span class="file-label"> Ouvrir un fichier vidéo téléchargé </span>
+                </span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
+  </div>
+  <!------------------------------------------------------------------------------------------------------------>
+  <!-----------------------------------------------FILESIZE MODAL----------------------------------------------->
+  <!------------------------------------------------------------------------------------------------------------>
+  <div id="file-size-modal" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card" id="file-size-modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title is-size-4">Video très volumineuse</p>
+        <button class="delete" aria-label="close"></button>
+      </header>
+      <section class="modal-card-body is-size-5">
+        <p class="block">
+          La vidéo occupe <span class="has-text-danger has-text-weight-bold" id="size-label">xx Mio</span> de mémoire vidéo.
+        </p>
+        <p class="block">
+          Il est recommandé de ne pas dépasser <span class="has-text-weight-bold">1024 Mio</span>.
+        </p>
+        <p class="block">
+          Choisissez quel(s) modifications vous souhaitez appliquer :
+        </p>
+        <article class="message">
+          <div class="message-body">
+            <label class="checkbox">
+              <input type="checkbox" id="def-size-input"/>
+              <span>Réduire la définition de l'image</span><span id="def-size-label"></span>
+            </label>
+          </div>
+        </article>
+        <article class="message">
+          <div class="message-body">
+            <label class="checkbox">
+              <input type="checkbox" id="fps-size-input"/>
+              <span>Réduire le nombre d'images par seconde</span><span id="fps-size-label"></span>
+              
+            </label>
+          </div>
+        </article>
+        <article class="message">
+          <div class="message-body">
+            <label class="checkbox pb-4">
+              <input type="checkbox" id="duration-size-input"/>
+              Réduire la durée de la vidéo (Durée totale : <span id="duration-size-label"></span> s)
+            </label>
+            <div class="columns block is-vcentered is-hidden" id="duration-size-inputs">
+              <div class="column is-narrow pr-0 ">
+                <label class="label">Début :</label>
+              </div>
+              <div class="column">
+                <p class="control">
+                  <input class="input" type="number" min="0" value="0" id="start-size-input"/>
+                </p>
+              </div>
+              <div class="column is-narrow pr-0 ">
+                <label class="label">Fin :</label>
+              </div>
+              <div class="column">
+                <p class="control">
+                  <input class="input" type="number" min="0" value="0" id="end-size-input"/>
+                </p>
+              </div>
+              <div class="column is-narrow pr-0 ">
+                <label class="label"></label>
+              </div>
+            </div>
+          </div>
+        </article>
+      </section>
+      <footer class="modal-card-foot">
+        <button class="button is-danger is-fullwidth" id="open-resized-video"></button>
+      </footer>
+    </div>
+  </div>
+  <!------------------------------------------------------------------------------------------------------------>
+  <!-----------------------------------------------DOWNLOAD MODAL----------------------------------------------->
+  <!------------------------------------------------------------------------------------------------------------>
+  <div id="download-modal" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card" id="download-modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title">Télécharger les données</p>
+        <button class="delete" aria-label="close"></button>
+      </header>
+      <section class="modal-card-body ">
+        <p class="title is-4">Type de fichier</p>
+        <div class="buttons has-addons is-centered">
+          <button class="button is-medium is-link" id="csv-button">
+            <span class="icon">
+              <i class="fas fa-lg fa-file-csv"></i>
+            </span>
+            <span>Format Tableur</span>
+          </button>
+          <button class="button is-medium" id="rw3-button">
+            <span class="icon">
+              <!--<img src="lib/fontawesome/file-rw3-solid.svg" style="height:25px"/>-->
+              <svg
+                style="height:25px"
+                viewBox="0 0 512 512"
+                xmlns="http://www.w3.org/2000/svg"
+                xmlns:svg="http://www.w3.org/2000/svg">
+                <path
+                  fill="currentColor"
+                  d="M 0,64 C 0,28.7 28.7,0 64,0 h 160 v 128 c 0,17.7 14.3,32 32,32 H 384 V 304 H 176 c -35.3,0 -64,28.7 -64,64 V 512 H 64 C 28.7,512 0,483.3 0,448 Z m 384,64 H 256 V 0 Z"
+                  id="path1"
+                  sodipodi:nodetypes="sscssccsscssscccc" />
+                <path
+                  fill="currentColor"
+                  d="M 433.11773,352 C 427.00668,352 422,358.46629 422,366.35892 c 0,7.89265 5.00668,14.35894 11.11773,14.35894 h 34.94095 l -29.74191,35.22425 h -5.4e-4 c -3.36621,3.98903 -4.5139,10.27861 -2.84664,15.79655 1.66166,5.4993 5.77709,9.14995 10.35413,9.14995 h 27.52964 c 9.10763,0 16.41189,9.4337 16.41189,21.19651 0,11.7628 -7.30426,21.19651 -16.41189,21.19651 H 452.5474 c -3.79672,0 -7.29087,-2.7575 -8.98559,-7.1621 l -0.002,-0.004 -0.50408,-1.30274 c -2.73055,-7.05321 -9.44631,-9.94485 -14.9074,-6.41826 -5.4611,3.52659 -7.70003,12.20021 -4.96948,19.25341 l 0.50304,1.2994 c 5.44998,14.11177 16.64352,23.05214 28.8651,23.05214 h 20.80596 c 21.31058,0 38.64737,-22.39102 38.64737,-49.91436 0,-27.08563 -16.79937,-49.15237 -37.64335,-49.84893 L 504.1542,376.9465 h 5.3e-4 c 3.36622,-3.98904 4.51391,-10.27863 2.84664,-15.79656 C 505.33941,355.65064 501.22396,352 496.64692,352 Z"
+                  id="path3"
+                  sodipodi:nodetypes="ssscccsssssssccsscssscccsss" />
+                <g
+                  id="path1-9"
+                  transform="matrix(0.24998805,0,0,0.34186847,155.84978,344.47889)">
+                  <path
+                    fill="currentColor"
+                    d="m 64,22 c -40.720167,0 -74,33.279833 -74,74 v 192 160 c 0,23.08604 18.9139591,42 42,42 23.086041,0 42,-18.91396 42,-42 V 330 h 80.09375 l 99.5,142.11523 c 13.2074,18.96113 39.59365,23.57485 58.52148,10.39063 18.96113,-13.2074 23.57485,-39.59365 10.39063,-58.52149 l -0.008,-0.0117 L 245.17364,313.5879 C 295.4792,288.22243 330,236.09347 330,176 330,91.09128 260.90872,22 176,22 Z m 10,84 h 102 c 38.80026,0 70,31.19974 70,70 0,38.80026 -31.19974,70 -70,70 H 74 Z"
+                    id="path3-3"
+                    sodipodi:nodetypes="sscssscccscccssscssscc" />
+                </g>
+                <g
+                  id="path1-6"
+                  transform="matrix(0.25170151,0,0,0.34184249,258.82319,344.48697)">
+                  <path
+                    fill="currentColor"
+                    d="m 288,22 c -18.56618,0 -35.06918,12.285737 -40.29883,30.197266 v 0.002 L 171.01562,315.04883 71.363281,49.185547 l -0.002,-0.0039 C 63.252722,27.602284 38.88427,16.533694 17.300781,24.632812 c -0.002,7.29e-4 -0.0039,0.0012 -0.0059,0.002 -21.6663548,8.0959 -32.765042,32.491708 -24.6582032,54.076171 l 0.00195,0.0039 c 2.261e-4,6.02e-4 -2.261e-4,0.0014 0,0.002 L 136.64453,462.83008 l 0.008,0.0215 c 6.41507,16.88864 22.95793,27.79784 40.91211,27.14258 18.00559,-0.65714 33.62199,-12.88315 38.72657,-30.16016 l 0.004,-0.0176 71.69922,-245.78711 71.5957,245.73632 c 7.5e-4,0.003 0.001,0.005 0.002,0.008 4.99614,17.3423 20.6939,29.43506 38.67382,30.21679 18.11038,0.78741 34.70601,-10.27227 41.00586,-27.20312 l 143.99024,-383.968751 0.002,-0.0078 C 591.3579,57.257892 580.38153,32.830675 558.6996,24.732604 537.05725,16.649318 512.73742,27.731279 504.63905,49.283385 v 0.002 L 404.98633,315.05664 328.29687,52.189453 l -0.004,-0.01172 C 323.05363,34.363979 306.61313,22 288,22 Z"
+                    id="path3-6"
+                    sodipodi:nodetypes="sccccccccccccscccccscccscccccs" />
+                </g>
+              </svg>
+            </span>
+            <span>Format Regressi</span>
+          </button>
+        </div>
+        <p class="title is-4">Nom du fichier</p>
+        <input class="input rounded is-medium" type="text" placeholder="pointage.csv" id="file-name-input"/>
+      </section>
+      <footer class="modal-card-foot">
+        <button class="button is-medium is-fullwidth is-primary" id="download-file-button">
+          <span class="icon">
+            <i class="fas fa-download"></i>
+          </span>
+          <span>Télécharger le fichier</span>
+        </button>
+      </footer>
+    </div>
+  </div>
+  <!------------------------------------------------------------------------------------------------------------>
+  <!------------------------------------------------ABOUT MODAL------------------------------------------------->
+  <!------------------------------------------------------------------------------------------------------------>
+  <div id="about-modal" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card" id="about-modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title">A propos de PhyWeb Tracker</p>
+        <button class="delete" aria-label="close"></button>
+      </header>
+      <section class="modal-card-body ">
+        <div class="field is-horizontal">
+          <div class="field-label is-flex-grow-0">
+            <label class="label">
+              <span class="icon is-large"><i class="fa fa-circle-info fa-2xl"></i></span>
+            </label>
+          </div>
+          <div class="field-body">
+            <div class="field">
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras sagittis euismod velit, vehicula blandit odio ornare a. Nam mattis purus vitae vehicula efficitur. Sed volutpat nunc et ornare condimentum. Integer rutrum gravida urna sit amet feugiat. Mauris vehicula, enim eu sodales pellentesque, tortor enim lobortis leo, at elementum leo sapien quis enim. 
+            </div>
+          </div>
+        </div>
+        <div class="field is-horizontal">
+          <div class="field-label is-flex-grow-0">
+            <label class="label">
+              <span class="icon is-large"><i class="fa-brands fa-chrome fa-2xl"></i></i></span>
+            </label>
+          </div>
+          <div class="field-body">
+            <div class="field">
+              <div class="content">
+                <p>PhyWeb utilise des technologies modernes pour fonctionner. Votre navigateur ne prend pas en charge toutes les fonctions nécessaires. Exemples de navigateurs compatibles :</p>
+                <ul>
+                  <li>Google Chrome version 94 et +</li>
+                  <li>Microsoft Edge version 94 et +</li>
+                  <li>Mozilla Firefox version 130 et +</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="field is-horizontal">
+          <div class="field-label is-flex-grow-0">
+            <label class="label">
+              <span class="icon is-large"><i class="fa fa-envelope fa-2xl"></i></span>
+            </label>
+          </div>
+          <div class="field-body">
+            <div class="field">
+              pro.wal@protonmail.com
+            </div>
+          </div>
+        </div>
+        <div class="field is-horizontal">
+          <div class="field-label is-flex-grow-0">
+            <label class="label">
+              <span class="icon is-large"><i class="fa-solid fa-copyright fa-2xl"></i></span>
+            </label>
+          </div>
+          <div class="field-body">
+            <div class="field">
+              <article class="message is-link">
+                <div class="message-header" id="licence-header" style="border-radius:6px">
+                  <a>PhyWeb Tracker Copyright (c) 2024 Gaétan Walter</a>
+                </div>
+                <div class="message-body is-hidden" id="licence-body">
+                  <p class="block has-text-justified">Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:</p>
+                  <p class="block has-text-justified">The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.</p>
+                  <p class="block has-text-justified">THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</p>
+                </div>
+              </article>
+            </div>
+          </div>
+        </div>
+      </section>
+      <footer class="modal-card-foot">
+      </footer>
+    </div>
+  </div>
+  <!------------------------------------------------------------------------------------------------------------>
+  <!----------------------------------------NO VIDEODECODER ALERT MODAL----------------------------------------->
+  <!------------------------------------------------------------------------------------------------------------>
+  <div id="no-videodecoder-alert-modal" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card" id="no-videodecoder-alert-modal-card">
+      <header class="modal-card-head has-background-danger">
+        <p class="modal-card-title">Navigateur non compatible</p>
+        <button class="delete" aria-label="close"></button>
+      </header>
+      <section class="modal-card-body has-text-justified">
+        <div class="content">
+          <p>PhyWeb utilise des technologies modernes pour fonctionner. Votre navigateur ne prend pas en charge toutes les fonctions nécessaires. Exemples de navigateurs compatibles :</p>
+          <ul>
+            <li>Google Chrome version 94 et +</li>
+            <li>Microsoft Edge version 94 et +</li>
+            <li>Mozilla Firefox version 130 et +</li>
+          </ul>
+        </div>
+      </section>
+      <footer class="modal-card-foot"></footer>
+    </div>
+  </div>
+  <!------------------------------------------------------------------------------------------------------------>
+  <!-------------------------------------------CLEAR TABLE ALERT MODAL------------------------------------------>
+  <!------------------------------------------------------------------------------------------------------------>
+  <div id="clear-table-alert-modal" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card" id="clear-table-alert-modal-card">
+      <header class="modal-card-head has-background-danger">
+        <p class="modal-card-title">Vider le tableau</p>
+        <button class="delete" aria-label="close"></button>
+      </header>
+      <section class="modal-card-body has-text-justified">
+        <p class="block">Etes-vous sûr de vouloir vider le tableau de toutes ses données?</p>
+      </section>
+      <footer class="modal-card-foot buttons">
+        <button class="button is-primary" id="confirm-clear-table-button">
+          Vider de tableau
+        </button>
+        <button class="button" id="cancel-clear-table-button">
+          Annuler
+        </button>
+      </footer>
+    </div>
+  </div>
+  <!------------------------------------------------------------------------------------------------------------>
+  <!----------------------------------------------WRONG FILE FORMAT--------------------------------------------->
+  <!------------------------------------------------------------------------------------------------------------>
+  <div id="fileformat-alert-modal" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card" id="fileformat-alert-modal-card">
+      <header class="modal-card-head has-background-danger">
+        <p class="modal-card-title">Codec video non supporté</p>
+        <button class="delete" aria-label="close"></button>
+      </header>
+      <section class="modal-card-body has-text-justified">
+        <div class="content">
+          <p>La vidéo doit être au format mp4 et encodé dans un des formats ci-dessous :</p>
+          <ul>
+            <li>H.264</li>
+            <li>H.265</li>
+            <li>AV1</li>
+          </ul>
+        </div>
+      </section>
+      <footer class="modal-card-foot buttons">
+      </footer>
+    </div>
+  </div>
+  </body>
+</html>
