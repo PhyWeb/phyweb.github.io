@@ -17,11 +17,11 @@
     <script type="module" src="main.js"></script>
   </head>
   <body>
-  <div id="app" class="section has-background-light" style="padding:1.2rem">
+  <div id="app" class="has-background-light" >
   <!------------------------------------------------------------------------------------------------------------>
   <!---------------------------------------------------NAVBAR--------------------------------------------------->
   <!------------------------------------------------------------------------------------------------------------>
-  <nav class="navbar box is-flex-shrink-0" role="navigation" aria-label="main navigation" style="padding:0">
+  <nav class="navbar has-box-shadow is-flex-shrink-0" role="navigation" aria-label="main navigation">
     <div class="navbar-brand">
       <div class="navbar-item is-size-4 has-text-weight-bold">
         PhyWeb
@@ -35,7 +35,7 @@
             <span>Tracker</span>
           </a>
           <div class="navbar-dropdown">
-            <a class="navbar-item is-link is-size-5">
+            <a class="navbar-item is-link is-size-5" href="../audio">
               <span class="icon"><i class="fa fa-volume-high"></i></span>
               <span>Audio</span>
             </a>
@@ -58,21 +58,21 @@
             <span class="icon">
               <i class="fas fa-film"></i>
             </span>
-            <strong>Ouvrir une vidéo</strong>
+            <span>Ouvrir une vidéo</span>
           </a>
         </div>
       </div>
     </div>
   </nav>
-  <div class="has-text-right" id="background-arrow">
-    <i class="fa-solid fa-reply fa-10x" data-fa-transform="rotate-90" style="margin-right:2rem"></i>
+  <div class="has-text-right" id="background-arrow" style="padding:0.75rem">
+    <i class="fa-solid fa-reply fa-10x" data-fa-transform="rotate-90" style="margin-right:1.25rem"></i>
   </div>
-  <div class="columns is-flex-grow-1 is-overflow-auto is-hidden" id="handler-wrapper" style="margin-bottom: 0;">
+  <div class="columns is-flex-grow-1 is-overflow-auto is-hidden main-container" id="handler-wrapper">
     <!------------------------------------------------------------------------------------------------------------>
     <!------------------------------------------------LEFT COLUMN------------------------------------------------->
     <!------------------------------------------------------------------------------------------------------------>
     <div class="column is-flex is-flex-direction-column pr-0">
-      <div class="block is-flex-grow-1" id="videoContainer">
+      <div class="is-flex-grow-1" id="videoContainer">
         <canvas id="videoCanvas"></canvas>
         <div id="canvas-shadow"></div>
       </div>
@@ -106,8 +106,8 @@
     <!------------------------------------------------------------------------------------------------------------>
     <div class="column handler"></div>
     <div class="column is-narrow pl-0 is-flex" id="right-column">
-      <div class="box is-flex is-flex-direction-column" style="width: 285px">
-        <div class="tabs is-fullwidth is-flex-shrink-0">
+      <div class="box is-flex is-flex-direction-column pt-1" style="width: 285px">
+        <div class="tabs is-fullwidth is-flex-shrink-0 mb-3">
           <ul>
             <li class="is-active" id="etalonnage-button"><a>Etalonnage</a></li>
             <li id="mesures-button"><a>Mesures</a></li>
@@ -193,7 +193,7 @@
         <!------------------------------------------------MESURES PANEL----------------------------------------------->
         <!------------------------------------------------------------------------------------------------------------>
         <div id="mesures-panel" class="container is-hidden is-flex-direction-column is-overflow-auto">
-          <div class="block is-flex-grow-1 is-overflow-auto" >
+          <div class="is-flex-grow-1 is-overflow-auto mb-3" >
             <div class="table-container">
               <table class="table is-hoverable is-narrow is-fullwidth is-striped has-text-centered" id="table">
                 <thead id="table-head">
@@ -203,7 +203,7 @@
               </table>
             </div>
           </div>
-          <div class="block is-flex-shrink-0 level">
+          <div class="is-flex-shrink-0 level mb-3">
             <div class="level-item">
               <button class="button p-2" id="clear-row" style="height:52px;width:52px" title="Vider la ligne">
                 <img src="lib/row.svg" height="30" width="36"/>
@@ -442,7 +442,7 @@
         <p class="modal-card-title">A propos de PhyWeb Tracker</p>
         <button class="delete" aria-label="close"></button>
       </header>
-      <section class="modal-card-body ">
+      <section class="modal-card-body has-bottom-round-corner">
         <div class="field is-horizontal">
           <div class="field-label is-flex-grow-0">
             <label class="label">
@@ -508,8 +508,6 @@
           </div>
         </div>
       </section>
-      <footer class="modal-card-foot">
-      </footer>
     </div>
   </div>
   <!------------------------------------------------------------------------------------------------------------>
@@ -522,7 +520,7 @@
         <p class="modal-card-title">Navigateur non compatible</p>
         <button class="delete" aria-label="close"></button>
       </header>
-      <section class="modal-card-body has-text-justified">
+      <section class="modal-card-body has-bottom-round-corner has-text-justified">
         <div class="content">
           <p>PhyWeb utilise des technologies modernes pour fonctionner. Votre navigateur ne prend pas en charge toutes les fonctions nécessaires. Exemples de navigateurs compatibles :</p>
           <ul>
@@ -532,7 +530,6 @@
           </ul>
         </div>
       </section>
-      <footer class="modal-card-foot"></footer>
     </div>
   </div>
   <!------------------------------------------------------------------------------------------------------------>
@@ -541,7 +538,7 @@
   <div id="clear-table-alert-modal" class="modal">
     <div class="modal-background"></div>
     <div class="modal-card" id="clear-table-alert-modal-card">
-      <header class="modal-card-head has-background-danger">
+      <header class="modal-card-head has-background-warning">
         <p class="modal-card-title">Vider le tableau</p>
         <button class="delete" aria-label="close"></button>
       </header>
@@ -568,9 +565,9 @@
         <p class="modal-card-title">Codec video non supporté</p>
         <button class="delete" aria-label="close"></button>
       </header>
-      <section class="modal-card-body has-text-justified">
+      <section class="modal-card-body has-bottom-round-corner has-text-justified">
         <div class="content">
-          <p>La vidéo doit être au format mp4 et encodé dans un des formats ci-dessous :</p>
+          <p>La vidéo doit être au format mp4 et encodé dans un des formats listé ci-dessous :</p>
           <ul>
             <li>H.264</li>
             <li>H.265</li>
@@ -578,8 +575,6 @@
           </ul>
         </div>
       </section>
-      <footer class="modal-card-foot buttons">
-      </footer>
     </div>
   </div>
   </body>

@@ -4,6 +4,8 @@ import EXTRACTOR from "./modules/extractor.js"
 import MEASUREMENT from "./modules/measurement.js"
 import PLAYER from "./modules/player.js"
 
+import {MODALMANAGER} from "../common/common.js"
+
 const $ = document.querySelector.bind(document);
 
 const videoContainer = $("#videoContainer");
@@ -24,53 +26,15 @@ function isNumber(str) { // TODO usefull here ???
 
 document.addEventListener('DOMContentLoaded', () => {
 
+// MODALS
+let modalManager = new MODALMANAGER();
+
 if ('VideoDecoder' in window) {
   console.log("VideoDecoder supported")
 } else {
   console.log("VideoDecoder NOT supported")
   $("#no-videodecoder-alert-modal").classList.add("is-active")
 }
-// MODAL
-// Functions to open and close a modal
-function openModal($el) {
-  $el.classList.add('is-active');
-}
-
-function closeModal($el) {
-  $el.classList.remove('is-active');
-}
-
-function closeAllModals() {
-  (document.querySelectorAll('.modal') || []).forEach(($modal) => {
-    closeModal($modal);
-  });
-}
-
-// Add a click event on buttons to open a specific modal
-(document.querySelectorAll('.js-modal-trigger') || []).forEach(($trigger) => {
-  const modal = $trigger.dataset.target;
-  const $target = document.getElementById(modal);
-
-  $trigger.addEventListener('click', () => {
-    openModal($target);
-  });
-});
-
-// Add a click event on various child elements to close the parent modal
-(document.querySelectorAll(".modal-background, .modal-close, .delete") || []).forEach(($close) => {
-  const $target = $close.closest('.modal');
-
-  $close.addEventListener('click', () => {
-    closeModal($target);
-  });
-});
-
-// Add a keyboard event to close all modals
-document.addEventListener('keydown', (event) => {
-  if(event.key === "Escape") {
-    closeAllModals();
-  }
-});
 
 // NAV
 $("#etalonnage-button").addEventListener("click", ()=>{
@@ -100,7 +64,7 @@ $("#mesures-button").addEventListener("click", ()=>{
 // VIDEOLIST
 videolist.init("assets/list.json");
 $("#open-video").addEventListener("click", ()=>{
-  closeAllModals();
+  modalManager.closeAllModals();
   player.load("assets/" + $(".video-item.is-active").dataset.path);
 });
 
@@ -113,7 +77,7 @@ $("#file-input").addEventListener("change", () => {
   }
   if($("#file-input").files[0] != undefined){
     player.checkVideoSize($("#file-input").files[0]);
-    closeAllModals();
+    modalManager.closeAllModals();
   }
 });
 $("#file-input").addEventListener("click", () => {
@@ -122,7 +86,7 @@ $("#file-input").addEventListener("click", () => {
 
 // RESIZEVIDEO
 $("#open-resized-video").addEventListener("click", ()=>{
-  closeAllModals();
+  modalManager.closeAllModals();
   player.load($("#file-input").files[0],$("#def-size-input").checked,$("#fps-size-input").checked,$("#duration-size-input").checked);
 });
 
@@ -186,10 +150,10 @@ $("#ppf-input").addEventListener("change", (e)=> {
 // TABLE CONTROLS
 $("#confirm-clear-table-button").addEventListener("click", ()=> {
   measurement.clearTable();
-  closeAllModals();
+  modalManager.closeAllModals();
 });
 $("#cancel-clear-table-button").addEventListener("click", ()=> {
-  closeAllModals();
+  modalManager.closeAllModals();
 });
 $("#clear-row").addEventListener("click", ()=> {
   measurement.clearRow(player.currentFrame);
@@ -222,7 +186,7 @@ $("#download-file-button").addEventListener("click", ()=>{
     let rw3 = measurement.createRW3();
     measurement.downloadFile(rw3,"rw3",filename);
   }
-  closeAllModals();
+  modalManager.closeAllModals();
 });
 
 // LICENCE

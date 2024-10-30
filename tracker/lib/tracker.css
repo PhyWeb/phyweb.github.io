@@ -7,14 +7,11 @@
   width: 50rem;
 }
 
-.vertical-divider{
-  border-left: 1px solid rgb(163, 163, 163);
-}
-
 #videoContainer {
   flex: 1 0 10rem;
   box-shadow: none;
   position: relative;
+  margin-bottom: 0.75rem;
 }
 
 #videoContainer canvas {
@@ -22,7 +19,6 @@
   position:absolute;
   box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
   cursor: crosshair;
-
 }
 
 .table-container{
@@ -48,7 +44,7 @@
 
 .handler {
   display: none;
-  width: 1.5rem;
+  width: 0.75rem;
   padding: 0;
   cursor: ew-resize;
   flex: 0 0 auto;

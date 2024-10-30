@@ -1,0 +1,13 @@
+.navbar{
+  padding:0;
+  border-radius:0.75rem 0.75rem 0rem 0rem
+}
+
+.wrap-button-text {
+  height: max-content;
+  white-space: inherit;
+}
+
+#choose-config-modal-card{
+  width:45rem;
+}

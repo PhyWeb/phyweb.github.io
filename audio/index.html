@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html data-theme="light">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Phyweb Audio</title>
+    <link rel="icon" href="../lib/favicons/favicon.ico" />
+    <link rel="stylesheet" href="../common/bulma/bulma.min.css">
+    <link rel="stylesheet" href="../common/bulma/bulma-slider.min.css">
+    <link rel="stylesheet" href="../common/common.css">
+    <link rel="stylesheet" href="lib/audio.css">
+
+    <script src="lib/highcharts/highcharts.js"></script>
+    <script src="lib/highcharts/modules/heatmap.js"></script>
+    <script src="lib/highcharts/modules/boost.js"></script>
+
+    <script defer src="../common/fontawesome/solid.min.js"></script>
+    <script defer src="../common/fontawesome/fontawesome.min.js"></script>
+
+    <script type="module" src="main.js"></script>
+  </head>
+  <body>
+  <div id="app" class="has-background-light">
+  <!------------------------------------------------------------------------------------------------------------>
+  <!---------------------------------------------------NAVBAR--------------------------------------------------->
+  <!------------------------------------------------------------------------------------------------------------>
+  <div class="p-0 has-background-white has-box-shadow">
+    <nav class="navbar has-box-shadow is-flex-shrink-0 m-0" role="navigation" aria-label="main navigation">
+      <div class="navbar-brand">
+        <div class="navbar-item is-size-4 has-text-weight-bold">
+          PhyWeb
+        </div>
+      </div>
+      <div class="navbar-menu">
+        <div class="navbar-start">
+          <div class="navbar-item has-dropdown is-boxed is-hoverable">
+            <a id="navbar-dropdown" class="navbar-link has-text-primary is-size-4 has-text-weight-bold">
+              <span class="icon"><i class="fa fa-volume-high"></i></span>
+              <span>Audio</span>
+            </a>
+            <div class="navbar-dropdown">
+              <a class="navbar-item is-link is-size-5" href="../tracker">
+                <span class="icon"><i class="fa fa-crosshairs"></i></span>
+                <span>Tracker</span>
+              </a>
+              <hr class="navbar-divider">
+              <a class="navbar-item is-size-5 js-modal-trigger" id="about-button" data-target="about-modal">
+                <span class="icon"><i class="fa fa-circle-info"></i></span>
+                <span>A propos</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </nav>
+    <div class="columns pl-3 m-0">
+      <div class="column is-narrow tabs m-0 p-0">
+        <ul>
+          <li class="is-active" id="rt-tab-button"><a>Temps Réel</a></li>
+          <li id="rec-tab-button"><a>Acquisition</a></li>
+        </ul>
+      </div>
+      <div class="column is-narrow vertical-divider m-2">
+      </div>
+      <div class="column tabs p-0">
+        <ul id="save-tabs">
+          <li>
+            <a>
+              <span class="icon">
+                <i class="fas fa-bookmark"></i>
+              </span>
+              <span>aaa</span>
+              <button class="delete"></button>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <!------------------------------------------------------------------------------------------------------------>
+  <!----------------------------------------------------RT------------------------------------------------------>
+  <!------------------------------------------------------------------------------------------------------------>
+  <div class="columns is-flex-grow-1 main-container" id="rt-panel">
+    <div class="column is-narrow pr-0 pb-0" style="width: calc(100vw - 300px)">
+      <div class="block box mb-3" id="rt-graph-container" style="height: calc(55vh - 65px)">
+      </div>
+      <div class="block box" id="rt-fourier-container" style="height: calc(45vh - 65px)">
+      </div>
+    </div>
+    <div class="column is-narrow" style="width:300px">
+      <div class="card mb-3">
+        <header class="card-header has-background-primary">
+          <p class="is-size-5 has-text-centered is-flex-grow-1 m-2">Paramètres</p>
+        </header>
+        <div class="card-content">
+          <div class="content">
+            <p class="title is-6">Amplification</p>
+            <div class="level">
+              <div class="level-item">
+                <input class="slider is-link is-fullwidth level-item m-0" id="amplification-slider" type="range" value="1" min="0" max="2" step="0.1">
+              </div>
+              <div class="level-item">
+                <span class="tag is-link is-light is-large" id="amplification-label">x 1,0</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card mb-3">
+        <header class="button is-medium is-fullwidth" id="pause-button">
+          <span class="icon">
+            <i class="fas fa-pause fa-lg"></i>
+          </span>
+          <span>Pause</span>
+        </header>
+      </div>
+      <div class="card is-hidden">
+        <header class="button is-medium is-fullwidth" id="save-to-tab-button">
+          <span class="icon">
+            <i class="fas fa-floppy-disk fa-lg"></i>
+          </span>
+          <span>Sauvegarder</span>
+        </header>
+      </div>
+    </div>
+  </div>
+  <!------------------------------------------------------------------------------------------------------------>
+  <!----------------------------------------------------REC----------------------------------------------------->
+  <!------------------------------------------------------------------------------------------------------------>
+  <div class="columns is-flex-grow-1 is-hidden main-container" id="rec-panel">
+    <div class="column is-flex is-flex-direction-column pr-0 pb-0" style="width: calc(100vw - 324px)">
+      <div class="block box mb-3" id="rec-graph-container" style="height: calc(55vh - 65px)">
+      </div>
+      <div class="block box" id="rec-fourier-container" style="height: calc(45vh - 65px)">
+      </div>
+    </div>
+    <div class="column is-narrow" style="width:300px">
+      <div class="card mb-3">
+        <header class="card-header has-background-primary">
+          <p class="is-size-5 has-text-centered is-flex-grow-1 m-2">Acquisition</p>
+        </header>
+        <div class="tabs is-fullwidth m-0">
+          <ul>
+            <li class="is-active" id="mic-tab-button"><a>Micro</a></li>
+            <li id="file-tab-button"><a>Fichier</a></li>
+          </ul>
+        </div>
+        <div class="card-content">
+          <div id="mic-panel">
+            <div class="content">
+              <p class="title is-6">Fréquence d'échantillonage</p>
+              <div class="select" style="width:100%">
+                <select id="rec-samplerate-select" style="width:100%">
+                </select>
+              </div>
+            </div>
+            <div class="content">
+              <p class="title is-6">Durée d'acquisition</p>
+              <div class="field is-grouped">
+                <div class="control is-expanded">
+                  <input type="number" class="input" id="sample-length-input" value="0.05" step="0.01" min="0.01" max="30">
+                  <progress class="progress is-large is-hidden is-primary mt-2" id="sample-progress-bar" value="80" max="100"></progress>
+                </div>
+                <div class="control">
+                  <button class="button is-primary" id="sample-button">
+                    <span class="icon">
+                      <i class="fas fa-microphone fa-lg"></i>
+                    </span>
+                  </button>
+                  <button class="button is-primary is-hidden" id="stop-sample-button">
+                    <span class="icon">
+                      <i class="fas fa-stop fa-lg"></i>
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="is-hidden" id="file-panel">
+            <div class="file is-primary is-centered is-large">
+              <label class="file-label" id="file-label">
+                <input type="file" accept="audio/*" id="file-input" class="file-input"/>
+                <span class="file-cta">
+                  <span class="file-icon">
+                    <i class="fas fa-upload"></i>
+                  </span>
+                  <span class="file-label"> Télécharger </span>
+                </span>
+              </label>
+              <progress class="progress is-large is-hidden is-primary mt-2" id="file-progress-bar" max="100"></progress>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card is-hidden" id="sample-panel">
+        <header class="card-header has-background-info">
+          <p class="is-size-5 has-text-centered is-flex-grow-1 m-2">Enregistrement</p>
+        </header>
+        <div class="card-content">
+          <div class="level">
+            <div class="level-left">
+              <div class="level-item">
+                <button class="button is-medium" id="rec-play-button">
+                  <span class="icon">
+                    <i class="fas fa-play fa-lg"></i>
+                  </span>
+                </button>
+                <button class="button is-medium is-hidden" id="rec-stop-button">
+                  <span class="icon">
+                    <i class="fas fa-stop fa-lg"></i>
+                  </span>
+                </button>
+              </div>
+              <div class="level-item has-text" id="rec-sample-length-label">
+                Durée : 00,05 s
+              </div>
+            </div>
+          </div>
+          <button class="button is-medium wrap-button-text">
+            <span class="icon">
+              <i class="fas fa-bookmark"></i>
+            </span>
+            <span>Sauvegarder dans un onglet</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!------------------------------------------------------------------------------------------------------------>
+  <!----------------------------------------------------SAVE---------------------------------------------------->
+  <!------------------------------------------------------------------------------------------------------------>
+  <div class="columns is-flex-grow-1 is-hidden main-container" id="save-panel">
+    <div class="column is-flex is-flex-direction-column pr-0 pb-0">
+      <div class="block box mb-3" id="sav-graph-container" style="height: calc(55vh - 65px)">
+      </div>
+      <div class="block box" id="sav-fourier-container" style="height: calc(45vh - 65px)">
+      </div>
+    </div>
+    <div class="column is-narrow" style="width:300px">
+      <div class="card">
+        <header class="card-header has-background-primary">
+          <p class="is-size-4 has-text-centered is-flex-grow-1 m-2">Traitement</p>
+        </header>
+        <div class="card-content">
+          <div class="content">
+            <p class="title is-5">Fréquence d'échantillonage</p>
+            <div class="select" style="width:100%">
+              <select id="save-samplerate-select" style="width:100%">
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card" id="fourier-settings-panel">
+        <header class="card-header has-background-primary">
+          <p class="is-size-4 has-text-centered is-flex-grow-1 m-2">Analyse spectrale</p>
+        </header>
+        <div class="card-content">
+          <div class="content">
+            <p class="title is-5">Type d'analyse</p>
+            <div class="tabs is-centered is-toggle">
+              <ul class="m-0">
+                <li class="is-active">
+                  <a><span>Normale</span></a>
+                </li>
+                <li>
+                  <a><span>Temporale</span></a>
+                </li>
+              </ul>
+            </div>
+            <button class="button is-fullsize is-primary">recalc utile?</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <header class="card-header has-background-link-light">
+          <p class="is-size-4 has-text-centered is-flex-grow-1 m-2">Enregistrement</p>
+        </header>
+        <div class="card-content">
+          <div class="level">
+            <div class="level-left">
+              <div class="level-item">
+                <button class="button is-medium">
+                  <span class="icon">
+                    <i class="fas fa-play fa-lg"></i>
+                  </span>
+                </button>
+              </div>
+              <div class="level-item has-text">
+                Durée : 00,05 s
+              </div>
+            </div>
+          </div>
+          <button class="button is-fullwidth is-primary">
+            <span class="icon">
+              <i class="fas fa-download"></i>
+            </span>
+            <span>Télécharger</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+  <!------------------------------------------------------------------------------------------------------------>
+  <!--------------------------------------------CHOOSE CONFIG MODAL--------------------------------------------->
+  <!------------------------------------------------------------------------------------------------------------>
+  <div id="choose-config-modal" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card" id="choose-config-modal-card">
+      <header class="modal-card-head has-background-primary">
+        <p class="modal-card-title">Choisissez une configuration</p>
+      </header>
+      <section class="modal-card-body has-bottom-round-corner has-text-justified">
+        <div class="buttons is-centered">
+          <button class="button is-medium wrap-button-text" id="simple-mode-button" style="width:20rem">
+            <p><strong>Mode simple</strong><br/>(Sans analyse fréquentielle)</p>
+          </button>
+          <button class="button is-medium wrap-button-text" id="complete-mode-button" style="width:20rem">
+            <p><strong>Mode complet</strong><br/>(Avec analyse fréquentielle)</p>
+          </button>
+        </div>
+      </section>
+    </div>
+  </div>
+  <!------------------------------------------------------------------------------------------------------------>
+  <!-------------------------------------------------SAVE MODAL------------------------------------------------->
+  <!------------------------------------------------------------------------------------------------------------>
+  <div id="save-modal" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card" id="choose-config-modal-card">
+      <header class="modal-card-head has-background-primary">
+        <p class="modal-card-title">Sauvegarder</p>
+      </header>
+      <section class="modal-card-body has-bottom-round-corner has-text-justified">
+        <div class="field is-grouped">
+          <p class="control is-expanded">
+            <input class="input" type="text" placeholder="Nom de la sauvegarde" id="save-name-input">
+          </p>
+          <p class="control">
+            <button class="button is-primary" id="confirm-save-button">
+              <span class="icon">
+                <i class="fas fa-check"></i>
+              </span>
+            </button>
+          </p>
+        </div>
+      </section>
+    </div>
+  </div>
+</body>
+
+

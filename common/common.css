@@ -13,60 +13,9 @@ body, html {
   overflow: auto;
 }
 
-#open-modal-card{
-  height: 90%;
-  width: 60rem;
-}
-
-#download-modal-card,#about-modal-card{
-  width: 50rem;
-}
-
 .vertical-divider{
-  border-left: 1px solid rgb(163, 163, 163);
-}
-
-#videoContainer {
-  flex: 1 0 10rem;
-  box-shadow: none;
-  position: relative;
-}
-
-#videoContainer canvas {
-  display: none;
-  position:absolute;
-  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
-  cursor: crosshair;
-
-}
-
-.table-container{
-  overflow:visible;
-}
-
-#frame-label{
-  width:14rem;
-}
-
-
-#canvas-shadow {
-  display: none; 
-  position: fixed; 
-  z-index: 31;
-  left: 0;
-  top: 0;
-  width: 100%; 
-  height: 100%; 
-  background-color: rgb(0,0,0); 
-  background-color: rgba(0,0,0,0.5); 
-}
-
-.handler {
-  display: none;
-  width: 1.5rem;
-  padding: 0;
-  cursor: ew-resize;
-  flex: 0 0 auto;
+  border-left: 2px solid rgb(163, 163, 163);
+  padding:0px;
 }
 
 /* Remove the arrows in number inputs*/
@@ -76,6 +25,19 @@ body, html {
 }
 .no-spin{
 	-moz-appearance:textfield !important;
+}
+
+.has-bottom-round-corner{
+  border-end-start-radius: 0.75rem;
+  border-end-end-radius: 0.75rem;
+}
+
+.has-box-shadow{
+  box-shadow: rgba(9, 10, 12, 0.1) 0px 8px 16px -2px, rgba(9, 10, 12, 0.02) 0px 0px 0px 1px
+}
+
+.main-container{
+  margin: 0;
 }
 
 /*----------------------------------------------------------------------------------------------
