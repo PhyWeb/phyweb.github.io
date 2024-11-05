@@ -18,6 +18,19 @@ body, html {
   padding:0px;
 }
 
+.deletable-tab{
+  padding-left: 0rem !important;
+  padding-right: 0.1rem !important;
+}
+
+.tab-delete{
+  margin-inline-start: .25em !important;
+  visibility: hidden;
+}
+.deletable-tab:hover .tab-delete{
+  visibility:visible;
+}
+
 /* Remove the arrows in number inputs*/
 .no-spin::-webkit-inner-spin-button, .no-spin::-webkit-outer-spin-button {
 	-webkit-appearance: none !important;
@@ -37,7 +50,7 @@ body, html {
 }
 
 .main-container{
-  margin: 0;
+  margin: 0 !important;
 }
 
 /*----------------------------------------------------------------------------------------------

@@ -10,9 +10,9 @@
     <link rel="stylesheet" href="../common/common.css">
     <link rel="stylesheet" href="lib/audio.css">
 
-    <script src="lib/highcharts/highcharts.js"></script>
-    <script src="lib/highcharts/modules/heatmap.js"></script>
-    <script src="lib/highcharts/modules/boost.js"></script>
+    <script src="lib/highcharts_old/highcharts.js"></script>
+    <script src="lib/highcharts_old/heatmap.js"></script>
+    <script src="lib/highcharts_old/boost.js"></script>
 
     <script defer src="../common/fontawesome/solid.min.js"></script>
     <script defer src="../common/fontawesome/fontawesome.min.js"></script>
@@ -64,15 +64,6 @@
       </div>
       <div class="column tabs p-0">
         <ul id="save-tabs">
-          <li>
-            <a>
-              <span class="icon">
-                <i class="fas fa-bookmark"></i>
-              </span>
-              <span>aaa</span>
-              <button class="delete"></button>
-            </a>
-          </li>
         </ul>
       </div>
     </div>
@@ -115,7 +106,7 @@
         </header>
       </div>
       <div class="card is-hidden">
-        <header class="button is-medium is-fullwidth" id="save-to-tab-button">
+        <header class="button is-medium is-fullwidth" id="rt-save-to-tab-button">
           <span class="icon">
             <i class="fas fa-floppy-disk fa-lg"></i>
           </span>
@@ -216,7 +207,7 @@
               </div>
             </div>
           </div>
-          <button class="button is-medium wrap-button-text">
+          <button class="button is-medium wrap-button-text" id="rec-save-to-tab-button">
             <span class="icon">
               <i class="fas fa-bookmark"></i>
             </span>
@@ -230,51 +221,51 @@
   <!----------------------------------------------------SAVE---------------------------------------------------->
   <!------------------------------------------------------------------------------------------------------------>
   <div class="columns is-flex-grow-1 is-hidden main-container" id="save-panel">
-    <div class="column is-flex is-flex-direction-column pr-0 pb-0">
+    <div class="column is-flex is-flex-direction-column pr-0 pb-0" style="width: calc(100vw - 324px)">
       <div class="block box mb-3" id="sav-graph-container" style="height: calc(55vh - 65px)">
       </div>
-      <div class="block box" id="sav-fourier-container" style="height: calc(45vh - 65px)">
+      <div class="block box mb-0" id="sav-fourier-container" style="height: calc(45vh - 65px)">
+      </div>
+      <div class="block box is-hidden" id="sav-temporal-fourier-container" style="height: calc(45vh - 65px)">
       </div>
     </div>
     <div class="column is-narrow" style="width:300px">
-      <div class="card">
+      <div class="card mb-3">
         <header class="card-header has-background-primary">
-          <p class="is-size-4 has-text-centered is-flex-grow-1 m-2">Traitement</p>
+          <p class="is-size-5 has-text-centered is-flex-grow-1 m-2">Paramètres</p>
         </header>
         <div class="card-content">
           <div class="content">
-            <p class="title is-5">Fréquence d'échantillonage</p>
+            <p class="title is-6">Fréquence d'échantillonage</p>
             <div class="select" style="width:100%">
               <select id="save-samplerate-select" style="width:100%">
               </select>
             </div>
           </div>
-        </div>
-      </div>
-      <div class="card" id="fourier-settings-panel">
-        <header class="card-header has-background-primary">
-          <p class="is-size-4 has-text-centered is-flex-grow-1 m-2">Analyse spectrale</p>
-        </header>
-        <div class="card-content">
           <div class="content">
-            <p class="title is-5">Type d'analyse</p>
+            <p class="title is-6">Analyse spectrale</p>
             <div class="tabs is-centered is-toggle">
               <ul class="m-0">
-                <li class="is-active">
+                <li class="is-active" id="regular-fourier-button">
                   <a><span>Normale</span></a>
                 </li>
-                <li>
-                  <a><span>Temporale</span></a>
+                <li id="temporal-fourier-button">
+                  <a><span>Temporelle</span></a>
                 </li>
               </ul>
             </div>
-            <button class="button is-fullsize is-primary">recalc utile?</button>
+            <button class="button is-fullwidth is-primary" id="save-fourier-replot-button">
+              <span class="icon">
+                <i class="fas fa-calculator"></i>
+              </span>
+              <span>Recalculer</span>
+            </button>
           </div>
         </div>
       </div>
-      <div class="card">
+      <div class="card mb-3">
         <header class="card-header has-background-link-light">
-          <p class="is-size-4 has-text-centered is-flex-grow-1 m-2">Enregistrement</p>
+          <p class="is-size-5 has-text-centered is-flex-grow-1 m-2">Enregistrement</p>
         </header>
         <div class="card-content">
           <div class="level">
@@ -286,7 +277,7 @@
                   </span>
                 </button>
               </div>
-              <div class="level-item has-text">
+              <div class="level-item has-text" id="save-sample-length-label">
                 Durée : 00,05 s
               </div>
             </div>

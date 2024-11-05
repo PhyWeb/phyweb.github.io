@@ -1,7 +1,7 @@
 import FOURIER from "./modules/fourier.js"
 import {PhyAudio, convertFloat32ToInt16} from "./modules/audio.js"
 
-import {MODALMANAGER} from "../common/common.js"
+import {ModalManager,TabManager} from "../common/common.js"
 
 //import Highcharts from 'https://code.highcharts.com/es-modules/masters/highcharts.src.js';
 
@@ -10,7 +10,7 @@ const $ = document.querySelector.bind(document);
 document.addEventListener('DOMContentLoaded', () => {
 
 // modals
-let modalManager = new MODALMANAGER();
+let modalManager = new ModalManager();
 
 // simpleMode enabled?
 let simpleMode = false;
@@ -36,8 +36,6 @@ let audio = new PhyAudio(rtBasebufferSize);
 let fileReader = new FileReader();
 //fileReader.addEventListener("loadend", onFileReaderLoadEnd);
 
-let activeTab;
-
 // Get the default max sample rate from the audio context
 let baseSampleRate = audio.getSampleRate();
 
@@ -54,19 +52,25 @@ let samplingStartTime;
 // save vars
 let saves = [];
 
-
 // tabs
-let tabButtons = [];
-tabButtons[0] = $("#rt-tab-button");
-tabButtons[1] = $("#rec-tab-button");
-tabButtons[0].addEventListener("click", function(){onTabButtonClick(0)});
-tabButtons[1].addEventListener("click", function(){onTabButtonClick(1)});
+console.log($("#deletable-tabs-container"))
+let tabManager = new TabManager($("#save-tabs"));
 
-let tabs = [];
-tabs[0] = $("#rt-panel");
-tabs[1] = $("#rec-panel");
-//tabs[2] = $("#sav-panel");
+tabManager.newTab({
+  tabButton: $("#rt-tab-button"),
+  tab: $("#rt-panel"),
+  isActive : true,
+  cb: ()=>{
+    rtWaveChart.reflow()
+    rtFourierChart.reflow()
+  }
+});
+tabManager.newTab({
+  tabButton: $("#rec-tab-button"),
+  tab: $("#rec-panel"),
+});
 
+// rec tabs
 $("#mic-tab-button").addEventListener("click",()=>{
   $("#mic-tab-button").classList.add("is-active");
   $("#file-tab-button").classList.remove("is-active");
@@ -79,6 +83,19 @@ $("#file-tab-button").addEventListener("click",()=>{
   $("#mic-panel").classList.add("is-hidden");
   $("#file-panel").classList.remove("is-hidden");
 })
+
+// save fourier tabs
+$("#regular-fourier-button").addEventListener("click",()=>{
+  $("#regular-fourier-button").classList.add("is-active");
+  $("#temporal-fourier-button").classList.remove("is-active");
+})
+$("#temporal-fourier-button").addEventListener("click",()=>{
+  $("#regular-fourier-button").classList.remove("is-active");
+  $("#temporal-fourier-button").classList.add("is-active");
+})
+
+// save fourier replot
+$("#save-fourier-replot-button").addEventListener("click",()=>{onFourierReplotButtonClick()})
 
 // config modal
 $("#choose-config-modal").classList.add("is-active");
@@ -130,18 +147,27 @@ $("#pause-button").addEventListener("click", ()=>{
 		paused = false;
 		$("#pause-button").classList.remove("is-warning");
 		// Hide the record button
-		$("#save-to-tab-button").parentNode.classList.add("is-hidden");
+		$("#rt-save-to-tab-button").parentNode.classList.add("is-hidden");
 	}
 	else{
 		paused = true;
 		$("#pause-button").classList.add("is-warning");
 		// Show the record button
-		$("#save-to-tab-button").parentNode.classList.remove("is-hidden");
+		$("#rt-save-to-tab-button").parentNode.classList.remove("is-hidden");
 	}
 });
 
 // rt save button
-$("#save-to-tab-button").addEventListener("click", ()=>{
+$("#rt-save-to-tab-button").addEventListener("click", ()=>{
+	// Display save modal
+	$("#save-modal").classList.add("is-active");
+
+	// Focus the input
+	$("#save-name-input").focus();
+})
+
+// rt save button
+$("#rec-save-to-tab-button").addEventListener("click", ()=>{
 	// Display save modal
 	$("#save-modal").classList.add("is-active");
 
@@ -156,10 +182,10 @@ $("#confirm-save-button").addEventListener("click", ()=>{
 		text = "Enreg";
 	}
 	else{
-		text = saveNameInput.value;
+		text = $("#save-name-input").value;
 	}
 
-	if(activeTab == 0){
+	if(tabManager.activeTab == 0){
 		saves.push({
 			name: text,
 			linearData: rtWaveData,
@@ -185,8 +211,12 @@ $("#confirm-save-button").addEventListener("click", ()=>{
 			fourierType: 0
 		});
 	}
-	// Redraw tabs
-	populateTabs();
+	// add the tab
+	tabManager.newTab({
+    tab: $("#save-panel"),
+    name: text,
+    cb: saveDraw
+  })
 
 	// Empty the input and hide the modal card
 	$("#save-name-input").value = "";
@@ -199,35 +229,6 @@ $("#rec-samplerate-select").addEventListener("change", ()=>{
 });
 
 populateSampleRateSelect($("#rec-samplerate-select"), 1, 16);
-
-// tabs
-function onTabButtonClick(_id) {
-	// Store the activeTab id
-	activeTab = _id;
-
-	// UnActivate all buttons
-	for(let i = 0; i < tabButtons.length; i++){
-		tabButtons[i].classList.remove("is-active");
-	}
-	// Activate the clicked button
-	tabButtons[_id].classList.add("is-active");
-
-	// Hide all tabs
-	for(let i = 0; i < tabs.length; i++){
-		tabs[i].classList.add("is-hidden");
-	}
-
-	// Show the active tab
-	if(_id > 1){
-		tabs[2].classList.remove("is-hidden");
-
-		// Draw the active sav tab
-		saveDraw();
-	}
-	else{
-		tabs[_id].classList.remove("is-hidden");
-	}
-}
 
 // sample button
 $("#sample-button").addEventListener("click",()=>{
@@ -354,7 +355,7 @@ function formatDate(_t) {
 /*----------------------------------------------------------------------------------------------
 ---------------------------------------POINTS CONSTRUCTOR---------------------------------------
 ----------------------------------------------------------------------------------------------*/
-function Points(_length, _type = "int16") {
+/*function Points(_length, _type = "int16") { TODO OLD GRAPH LIB ???
 	if(_type == "float32"){
 		this.x = new Float32Array(_length);
 		this.y = new Float32Array(_length);
@@ -381,7 +382,7 @@ function Points(_length, _type = "int16") {
 		}
 		return a;
 	}
-}
+}*/
 
 /*----------------------------------------------------------------------------------------------
 --------------------------------------LINEAR DATA Object----------------------------------------
@@ -623,8 +624,8 @@ let rtFourierChart = Highcharts.chart('rt-fourier-container', rtFourierOptions);
 let recWaveChart = Highcharts.chart('rec-graph-container', recWaveOptions);
 let recFourierChart = Highcharts.chart('rec-fourier-container', recFourierOptions);
 
-//let savWaveChart = new Highcharts.chart('savGraphContainer', savWaveOptions);
-//let savFourierChart = new Highcharts.chart('savFourierContainer', savFourierOptions);
+let savWaveChart = Highcharts.chart('sav-graph-container', savWaveOptions);
+let savFourierChart = Highcharts.chart('sav-fourier-container', savFourierOptions);
 //let savTemporalFourierChart = new Highcharts.chart('savTemporalFourierContainer', savTemporalFourierOptions);
 
 /*savWaveChart.xAxis[0].allowZoomOutside = true;
@@ -706,7 +707,6 @@ function recordGraphDraw(_data){
 		// Display the sample length
 		$("#rec-sample-length-label").innerHTML = "Durée : " + formatDate(recWaveData.getDuration() * 1000);
 		// Compute the dft
-    let recFourierData;
 		if(simpleMode == false){
 			recFourierData = computeFourier(recWaveData, recordedSampleRate);
 		} else{
@@ -727,35 +727,37 @@ function saveDraw() {
 	// Reflow the charts to the div size
 	savWaveChart.reflow();
 	savFourierChart.reflow();
-	savTemporalFourierChart.reflow();
+	//savTemporalFourierChart.reflow();
 
 	// Populate the sample rate 
-	populateSampleRateSelect(savSampleRateSelect, saves[activeTab-2].recordedSampleRateLvl, 32);
+	populateSampleRateSelect($("#save-samplerate-select"), saves[tabManager.activeTab-2].recordedSampleRateLvl, 32);
 	
 	// Select the right option
-	savSampleRateSelect.selectedIndex = Math.log2(saves[activeTab-2].displaySampleRateLvl) - Math.log2(saves[activeTab-2].recordedSampleRateLvl);
+	$("#save-samplerate-select").selectedIndex = Math.log2(saves[tabManager.activeTab-2].displaySampleRateLvl) - Math.log2(saves[tabManager.activeTab-2].recordedSampleRateLvl);
 
 	// Display the sample length
-	savSampleLengthLabel.innerHTML = formatDate(saves[activeTab-2].linearData.getDuration() * 1000);
+	$("#save-sample-length-label").innerHTML = "Durée : " + formatDate(saves[tabManager.activeTab-2].linearData.getDuration() * 1000);
 
 	// Update the data & apply zoom
-	savWaveChart.series[0].pointInterval = saves[activeTab-2].linearData.step * saves[activeTab-2].displaySampleRateLvl;
-	savWaveChart.series[0].setData(arrayCopy(saves[activeTab-2].linearData.getData(saves[activeTab-2].displaySampleRateLvl)), false);
-	savWaveChart.zoom({xAxis:[{min:saves[activeTab-2].range.xRange[0],max:saves[activeTab-2].range.xRange[1], axis:savWaveChart.xAxis[0]}], yAxis:[{min:saves[activeTab-2].range.yRange[0],max:saves[activeTab-2].range.yRange[1], axis:savWaveChart.yAxis[0]}]});
+	savWaveChart.series[0].pointInterval = saves[tabManager.activeTab-2].linearData.step * saves[tabManager.activeTab-2].displaySampleRateLvl;
+	savWaveChart.series[0].setData(arrayCopy(saves[tabManager.activeTab-2].linearData.getData(saves[tabManager.activeTab-2].displaySampleRateLvl)), false);
+	savWaveChart.zoom({xAxis:[{min:saves[tabManager.activeTab-2].range.xRange[0],max:saves[tabManager.activeTab-2].range.xRange[1], axis:savWaveChart.xAxis[0]}], yAxis:[{min:saves[tabManager.activeTab-2].range.yRange[0],max:saves[tabManager.activeTab-2].range.yRange[1], axis:savWaveChart.yAxis[0]}]});
 
 	// Display the right fourier type and update the datas
-	if(saves[activeTab-2].fourierType == 0 && simpleMode == false){
-		$("#savRegularFourierCard").style.display = "block";
-		$("#savTemporalFourierCard").style.display = "none";
-		savFourierChart.series[0].pointInterval = saves[activeTab-2].fLinearData.step;
-		savFourierChart.series[0].setData(arrayCopy(saves[activeTab-2].fLinearData.getData()), false);
-		savFourierChart.zoom({xAxis:[{min:saves[activeTab-2].fourierRange.xRange[0],max:saves[activeTab-2].fourierRange.xRange[1], axis:savFourierChart.xAxis[0]}], yAxis:[{min:saves[activeTab-2].fourierRange.yRange[0],max:saves[activeTab-2].fourierRange.yRange[1], axis:savFourierChart.yAxis[0]}]});
+  if(simpleMode){return;};
+	if(saves[tabManager.activeTab-2].fourierType == 0){
+		$("#sav-fourier-container").classList.remove("is-hidden");
+		$("#sav-temporal-fourier-container").classList.add("is-hidden");
+    console.log(saves[tabManager.activeTab-2])
+		savFourierChart.series[0].pointInterval = saves[tabManager.activeTab-2].fLinearData.step;
+		savFourierChart.series[0].setData(arrayCopy(saves[tabManager.activeTab-2].fLinearData.getData()), false);
+		savFourierChart.zoom({xAxis:[{min:saves[tabManager.activeTab-2].fourierRange.xRange[0],max:saves[tabManager.activeTab-2].fourierRange.xRange[1], axis:savFourierChart.xAxis[0]}], yAxis:[{min:saves[tabManager.activeTab-2].fourierRange.yRange[0],max:saves[tabManager.activeTab-2].fourierRange.yRange[1], axis:savFourierChart.yAxis[0]}]});
 	}
-	if(saves[activeTab-2].fourierType == 1 && simpleMode == false){
-		$("#savRegularFourierCard").style.display = "none";
-		$("#savTemporalFourierCard").style.display = "block";
-		savTemporalFourierChart.series[0].setData(saves[activeTab-2].fTemporalData);
-		savTemporalFourierChart.zoom({xAxis:[{min:saves[activeTab-2].fourierRange.xRange[0],max:saves[activeTab-2].fourierRange.xRange[1], axis:savTemporalFourierChart.xAxis[0]}], yAxis:[{min:saves[activeTab-2].fourierRange.yRange[0],max:saves[activeTab-2].fourierRange.yRange[1], axis:savTemporalFourierChart.yAxis[0]}]});
+	if(saves[tabManager.activeTab-2].fourierType == 1){
+		$("#sav-fourier-container").classList.add("is-hidden");
+		$("#sav-temporal-fourier-container").classList.remove("is-hidden");
+		savTemporalFourierChart.series[0].setData(saves[tabManager.activeTab-2].fTemporalData);
+		savTemporalFourierChart.zoom({xAxis:[{min:saves[tabManager.activeTab-2].fourierRange.xRange[0],max:saves[tabManager.activeTab-2].fourierRange.xRange[1], axis:savTemporalFourierChart.xAxis[0]}], yAxis:[{min:saves[tabManager.activeTab-2].fourierRange.yRange[0],max:saves[tabManager.activeTab-2].fourierRange.yRange[1], axis:savTemporalFourierChart.yAxis[0]}]});
 	}
 }
 
@@ -765,7 +767,7 @@ function draw() {
 	// resume the audio context if it is suspended
 	audio.resumeContext();
 
-	switch(activeTab){
+	switch(tabManager.activeTab){
 	case 0:
 		realtimeDraw();
 		break;
@@ -807,31 +809,31 @@ function audioPlayback(_data, _sr, _callback){
 ----------------------------------------------------------------------------------------------*/
 function onSavWaveGraphSelection(event){
 	if (event.xAxis != undefined){ // handmade selection
-		saves[activeTab-2].range.xRange = [event.xAxis[0].min, event.xAxis[0].max];
-		saves[activeTab-2].range.yRange = [event.yAxis[0].min, event.yAxis[0].max];
+		saves[tabManager.activeTab-2].range.xRange = [event.xAxis[0].min, event.xAxis[0].max];
+		saves[tabManager.activeTab-2].range.yRange = [event.yAxis[0].min, event.yAxis[0].max];
 	} else{ // Reset zoom button
-		saves[activeTab-2].range.xRange = [undefined, undefined];
-		saves[activeTab-2].range.yRange = [undefined, undefined];
+		saves[tabManager.activeTab-2].range.xRange = [undefined, undefined];
+		saves[tabManager.activeTab-2].range.yRange = [undefined, undefined];
 	}
 }
 
 function onSavFourierGraphSelection(event){
 	if (event.xAxis != undefined){ // handmade selection
-		saves[activeTab-2].fourierRange.xRange = [event.xAxis[0].min, event.xAxis[0].max];
-		saves[activeTab-2].fourierRange.yRange = [event.yAxis[0].min, event.yAxis[0].max];
+		saves[tabManager.activeTab-2].fourierRange.xRange = [event.xAxis[0].min, event.xAxis[0].max];
+		saves[tabManager.activeTab-2].fourierRange.yRange = [event.yAxis[0].min, event.yAxis[0].max];
 	} else{ // Reset zoom button
-		saves[activeTab-2].fourierRange.xRange = [undefined, undefined];
-		saves[activeTab-2].fourierRange.yRange = [undefined, undefined];
+		saves[tabManager.activeTab-2].fourierRange.xRange = [undefined, undefined];
+		saves[tabManager.activeTab-2].fourierRange.yRange = [undefined, undefined];
 	}
 }
 
 function onSavTemporalFourierGraphSelection(event){
 	if (event.xAxis != undefined){ // handmade selection
-		saves[activeTab-2].fourierRange.xRange = [event.xAxis[0].min, event.xAxis[0].max];
-		saves[activeTab-2].fourierRange.yRange = [event.yAxis[0].min, event.yAxis[0].max];
+		saves[tabManager.activeTab-2].fourierRange.xRange = [event.xAxis[0].min, event.xAxis[0].max];
+		saves[tabManager.activeTab-2].fourierRange.yRange = [event.yAxis[0].min, event.yAxis[0].max];
 	} else{ // Reset zoom button
-		saves[activeTab-2].fourierRange.xRange = [undefined, undefined];
-		saves[activeTab-2].fourierRange.yRange = [undefined, undefined];
+		saves[tabManager.activeTab-2].fourierRange.xRange = [undefined, undefined];
+		saves[tabManager.activeTab-2].fourierRange.yRange = [undefined, undefined];
 	}
 }
 
@@ -899,10 +901,73 @@ function computeTemporalFourier(_wave, _sampleRate, _range){
 	return chunks;
 }
 
+function onFourierReplotButtonClick() {
+	// Save the ranges
+	saves[tabManager.activeTab-2].fourierPlottingRange = [savWaveChart.xAxis[0].min,savWaveChart.xAxis[0].max];
+
+	if($("#regular-fourier-button").classList.contains("is-active")){
+		// display the regular dft
+		$("#sav-fourier-container").classList.remove("is-hidden");
+		$("#sav-temporal-fourier-container").classList.add("is-hidden");
+
+		// Compute the dft
+		saves[tabManager.activeTab-2].fLinearData = computeFourier(saves[tabManager.activeTab-2].linearData, baseSampleRate / saves[tabManager.activeTab-2].displaySampleRateLvl, saves[tabManager.activeTab-2].fourierPlottingRange);
+
+		// Update and redraw
+		savFourierChart.series[0].pointInterval = saves[tabManager.activeTab-2].fLinearData.step;
+		savFourierChart.series[0].setData(arrayCopy(saves[tabManager.activeTab-2].fLinearData.getData()));
+		if(saves[tabManager.activeTab-2].fourierType != 0){
+			// User changed fourier type => reset zoom
+			savFourierChart.zoom({xAxis:[{min:undefined,max:undefined, axis:savFourierChart.xAxis[0]}], yAxis:[{min:undefined,max:undefined, axis:savFourierChart.yAxis[0]}]});
+		}
+		// Log fourier type displayed
+		saves[tabManager.activeTab-2].fourierType = 0;
+	}
+	else{
+		// check data size and return if too short
+		if(saves[tabManager.activeTab-2].fourierPlottingRange[1] - saves[tabManager.activeTab-2].fourierPlottingRange[0] < 0.5){
+			alert("La durée doit être supérieure à 0,5s pour réaliser une analyse spectrale temporelle.");
+			return;
+		}
+		// display the temporal dft
+		$("#sav-fourier-container").classList.add("is-hidden");
+		$("#sav-temporal-fourier-container").classList.remove("is-hidden");
+
+		let chunks = computeTemporalFourier(saves[tabManager.activeTab-2].linearData, baseSampleRate / saves[tabManager.activeTab-2].displaySampleRateLvl, saves[tabManager.activeTab-2].fourierPlottingRange);
+		// Format data
+		let highestAmplitude = 0;
+		saves[tabManager.activeTab-2].fTemporalData = [];
+		for(let i = 0; i < chunks.length; i++){
+			for(let j = 0; j < chunks[i].data.length; j++){
+				saves[tabManager.activeTab-2].fTemporalData[i * chunks[0].data.length + j] = [j * chunks[0].step, i * chunkLength, chunks[i].data[j]];
+				if(chunks[i].data[j] > highestAmplitude){ // check for the highest amplitude
+					highestAmplitude = chunks[i].data[j];
+				}
+			}
+		}
+		// Update boundaries
+		savTemporalFourierChart.update({
+			yAxis:{max:chunks.length * chunkLength},
+			colorAxis:{max:highestAmplitude}
+		});
+
+		// Set the new datas and draw
+		console.log(saves[tabManager.activeTab-2].fTemporalData);
+		savTemporalFourierChart.series[0].setData(saves[tabManager.activeTab-2].fTemporalData);
+		if(saves[tabManager.activeTab-2].fourierType != 1){
+			// User changed fourier type => reset zoom
+			savTemporalFourierChart.zoom({xAxis:[{min:undefined,max:undefined, axis:savTemporalFourierChart.xAxis[0]}], yAxis:[{min:undefined,max:undefined, axis:savTemporalFourierChart.yAxis[0]}]});
+		}
+		// Log fourier type displayed
+		saves[tabManager.activeTab-2].fourierType = 1;
+	}
+}
+
 /*----------------------------------------------------------------------------------------------
 ---------------------------------POPULATE SAMPLERATE SELECT-------------------------------------
 ----------------------------------------------------------------------------------------------*/
 function populateSampleRateSelect(_select, _initLvl = 1, _l = 4){
+  console.log("populate");
 	// Remove all previous options
 	while (_select.firstChild) {
     _select.removeChild(_select.firstChild);
@@ -925,7 +990,7 @@ function populateTabs(){
 	while(tabElements.length > 0){
 		tabElements[0].parentNode.removeChild(tabElements[0]);
 	}*/
-  $("save-tabs").innerHTML = "";
+  /*$("save-tabs").innerHTML = "";
 	tabButtons.length = 2;
 	// Populate the tabBar
 	for(let i = 0; i < saves.length; i++){
@@ -943,7 +1008,7 @@ function populateTabs(){
     let newButton = document.createElement("span"); // span because we nest a button in it
 
     
-    let icon = document.createElement("i");
+    icon = document.createElement("i");
     icon.className ="fas fa-bookmark";
     firstHalf.appendChild(icon);
     
@@ -970,7 +1035,7 @@ function populateTabs(){
     tabButtons[i + 2] = newButton;
     firstHalf.addEventListener("click", function(){onTabButtonClick(i + 2)});
     secondHalf.addEventListener("click", function(){onTabCloseButtonClick(i)});
-	}
+	}*/
 }
 
 /*window.onresize = ()=>{
@@ -981,7 +1046,7 @@ function populateTabs(){
 };*/
 
 // Activate a tab
-onTabButtonClick(0);
+//onTabButtonClick(0);
 //onRecTabButtonClick(0);
 
 });
