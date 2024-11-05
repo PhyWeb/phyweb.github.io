@@ -53,7 +53,6 @@ let samplingStartTime;
 let saves = [];
 
 // tabs
-console.log($("#deletable-tabs-container"))
 let tabManager = new TabManager($("#save-tabs"));
 
 tabManager.newTab({
@@ -96,6 +95,12 @@ $("#temporal-fourier-button").addEventListener("click",()=>{
 
 // save fourier replot
 $("#save-fourier-replot-button").addEventListener("click",()=>{onFourierReplotButtonClick()})
+
+// save samplerate
+$("#save-samplerate-select").addEventListener("click", ()=>{
+	saves[tabManager.activeTab-2].displaySampleRateLvl = baseSampleRate / $("#save-samplerate-select").value;
+	saveDraw();
+});
 
 // config modal
 $("#choose-config-modal").classList.add("is-active");
@@ -603,7 +608,6 @@ let savTemporalFourierOptions = {
 		},
 		tooltip: {
 			formatter: function() {
-				console.log(this.x);
 				return "Fréquence: <b>" + Highcharts.numberFormat(this.x, 10) + "</b><br>" + "Temps: <b>" + Highcharts.numberFormat(this.y,1) + "</b>";
 			}
 		},
@@ -626,7 +630,7 @@ let recFourierChart = Highcharts.chart('rec-fourier-container', recFourierOption
 
 let savWaveChart = Highcharts.chart('sav-graph-container', savWaveOptions);
 let savFourierChart = Highcharts.chart('sav-fourier-container', savFourierOptions);
-//let savTemporalFourierChart = new Highcharts.chart('savTemporalFourierContainer', savTemporalFourierOptions);
+let savTemporalFourierChart = Highcharts.chart('sav-temporal-fourier-container', savTemporalFourierOptions);
 
 /*savWaveChart.xAxis[0].allowZoomOutside = true;
 savWaveChart.yAxis[0].allowZoomOutside = true;
@@ -748,7 +752,6 @@ function saveDraw() {
 	if(saves[tabManager.activeTab-2].fourierType == 0){
 		$("#sav-fourier-container").classList.remove("is-hidden");
 		$("#sav-temporal-fourier-container").classList.add("is-hidden");
-    console.log(saves[tabManager.activeTab-2])
 		savFourierChart.series[0].pointInterval = saves[tabManager.activeTab-2].fLinearData.step;
 		savFourierChart.series[0].setData(arrayCopy(saves[tabManager.activeTab-2].fLinearData.getData()), false);
 		savFourierChart.zoom({xAxis:[{min:saves[tabManager.activeTab-2].fourierRange.xRange[0],max:saves[tabManager.activeTab-2].fourierRange.xRange[1], axis:savFourierChart.xAxis[0]}], yAxis:[{min:saves[tabManager.activeTab-2].fourierRange.yRange[0],max:saves[tabManager.activeTab-2].fourierRange.yRange[1], axis:savFourierChart.yAxis[0]}]});
@@ -952,7 +955,6 @@ function onFourierReplotButtonClick() {
 		});
 
 		// Set the new datas and draw
-		console.log(saves[tabManager.activeTab-2].fTemporalData);
 		savTemporalFourierChart.series[0].setData(saves[tabManager.activeTab-2].fTemporalData);
 		if(saves[tabManager.activeTab-2].fourierType != 1){
 			// User changed fourier type => reset zoom
@@ -967,7 +969,6 @@ function onFourierReplotButtonClick() {
 ---------------------------------POPULATE SAMPLERATE SELECT-------------------------------------
 ----------------------------------------------------------------------------------------------*/
 function populateSampleRateSelect(_select, _initLvl = 1, _l = 4){
-  console.log("populate");
 	// Remove all previous options
 	while (_select.firstChild) {
     _select.removeChild(_select.firstChild);
@@ -980,74 +981,5 @@ function populateSampleRateSelect(_select, _initLvl = 1, _l = 4){
 		_select.add(option);
 	}
 }
-
-/*----------------------------------------------------------------------------------------------
-------------------------------------POPULATE TABS FUNCTION--------------------------------------
-----------------------------------------------------------------------------------------------*/
-function populateTabs(){
-	// Remove all tabs in the tabBar and the tabButtons array
-	/*let tabElements = document.getElementsByClassName("savTab");
-	while(tabElements.length > 0){
-		tabElements[0].parentNode.removeChild(tabElements[0]);
-	}*/
-  /*$("save-tabs").innerHTML = "";
-	tabButtons.length = 2;
-	// Populate the tabBar
-	for(let i = 0; i < saves.length; i++){
-    let li = document.createElement("li");
-    let a = document.createElement("a");
-    let icon = document.createElement("span");
-    let secondHalf = document.createElement("span");
-
-    // Add the icon
-    let i = document.createElement("i");
-    i.className ="fas fa-bookmark";
-    firstHalf.appendChild(icon);
-
-    // Add a tab button in the tabBar
-    let newButton = document.createElement("span"); // span because we nest a button in it
-
-    
-    icon = document.createElement("i");
-    icon.className ="fas fa-bookmark";
-    firstHalf.appendChild(icon);
-    
-    // Set the button's text
-    let newText = document.createTextNode(" " + saves[i].name);
-    firstHalf.appendChild(newText);
-
-    // Set the delete button's icon
-    let closeIcon = document.createElement("i");
-    closeIcon.className ="fas fa-times";
-    secondHalf.appendChild(closeIcon);
-    
-    newButton.className ="w3-bar-item savTab phy-tab w3-hover-none";
-    firstHalf.className ="w3-button w3-hover-none phy-tab-alt w3-padding-small";
-    secondHalf.className ="w3-button w3-hover-none phy-tab-close-button";
-
-    newButton.style.padding = 0;
-
-    newButton.appendChild(firstHalf);
-    newButton.appendChild(secondHalf);
-    tabBar.appendChild(newButton);
-
-    // Set the callbacks
-    tabButtons[i + 2] = newButton;
-    firstHalf.addEventListener("click", function(){onTabButtonClick(i + 2)});
-    secondHalf.addEventListener("click", function(){onTabCloseButtonClick(i)});
-	}*/
-}
-
-/*window.onresize = ()=>{
-  console.log("reflow")
-
-  rtWaveChart.redraw();
-  rtFourierChart.redraw();
-};*/
-
-// Activate a tab
-//onTabButtonClick(0);
-//onRecTabButtonClick(0);
-
 });
 

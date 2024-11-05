@@ -48,7 +48,6 @@ class TabManager {
   container;
 	constructor(_container) {
     this.container = _container;
-    console.log(this.container);
 	}
 
   newTab(_tab){
@@ -71,8 +70,6 @@ class TabManager {
     if(_tab.isActive){
       this.activeTab = this.tabs.length - 1;
     }
-
-    console.log(this.tabs);
   }
 
   createTabButton(_name = "Enreg."){
