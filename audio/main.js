@@ -279,6 +279,7 @@ $("#sample-button").addEventListener("click",()=>{
 	$("#stop-sample-button").classList.remove("is-hidden");
 });
 
+// Rec play/stop button
 $("#rec-play-button").addEventListener("click", ()=>{
   $("#rec-play-button").classList.add("is-hidden");
   $("#rec-stop-button").classList.remove("is-hidden");
@@ -288,6 +289,27 @@ $("#rec-play-button").addEventListener("click", ()=>{
     $("#rec-stop-button").classList.add("is-hidden");
   }
   audioPlayback(recWaveData.getData(baseSampleRate / recordedSampleRate), recordedSampleRate, onRecPlaybackEnded);
+});
+$("#rec-stop-button").addEventListener("click", ()=>{
+  audio.stop();
+});
+
+// Save play/stop button
+$("#sav-play-button").addEventListener("click", ()=>{
+  $("#sav-play-button").classList.add("is-hidden");
+  $("#sav-stop-button").classList.remove("is-hidden");
+
+  let onSavPlaybackEnded = ()=>{
+    $("#sav-play-button").classList.remove("is-hidden");
+    $("#sav-stop-button").classList.add("is-hidden");
+  }
+	// Prepare the datas if the samplerate is not default
+	let sr = baseSampleRate / saves[tabManager.activeTab-2].displaySampleRateLvl;
+	audioPlayback(saves[tabManager.activeTab-2].linearData.getData(saves[tabManager.activeTab-2].displaySampleRateLvl), sr, onSavPlaybackEnded);
+});
+
+$("#sav-stop-button").addEventListener("click", ()=>{
+  audio.stop();
 });
 
 // file input
@@ -790,6 +812,8 @@ function draw() {
 /*----------------------------------------------------------------------------------------------
 -----------------------------------AUDIO PLAYBACK FUNCTION--------------------------------------
 ----------------------------------------------------------------------------------------------*/
+// TODO probablement passer ca dans audio.js avec tout ce qui touche au samplerate
+
 function audioPlayback(_data, _sr, _callback){
 	// Prepare the datas if the samplerate is not default
 		if(_sr != baseSampleRate){

@@ -4,7 +4,7 @@ import EXTRACTOR from "./modules/extractor.js"
 import MEASUREMENT from "./modules/measurement.js"
 import PLAYER from "./modules/player.js"
 
-import {MODALMANAGER} from "../common/common.js"
+import {ModalManager} from "../common/common.js"
 
 const $ = document.querySelector.bind(document);
 
@@ -27,7 +27,7 @@ function isNumber(str) { // TODO usefull here ???
 document.addEventListener('DOMContentLoaded', () => {
 
 // MODALS
-let modalManager = new MODALMANAGER();
+let modalManager = new ModalManager();
 
 if ('VideoDecoder' in window) {
   console.log("VideoDecoder supported")

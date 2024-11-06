@@ -66,10 +66,8 @@ class TabManager {
 
     this.tabs.push(tab);
 
-    console.log(_tab.tabButton);
 
     _tab.tabButton.addEventListener("click", (e)=>{
-      console.log(e);
       if(e.target.classList.contains("tab-delete") || e.target.classList.contains("fa-xmark") || e.target.localName === "path"){
         this.deleteTab(this.tabs.indexOf(tab));
       } else{
@@ -115,7 +113,6 @@ class TabManager {
   }
 
   deleteTab(_id){
-    console.log("delete" + _id)
     this.tabs[_id].button.remove();
 
     // Call the callback
@@ -137,7 +134,6 @@ class TabManager {
 
   onTabClicked(_id){
     this.activeTab = _id;
-    console.log("tab " + _id);
 
     // Unactivate all buttons
     for(let i = 0; i < this.tabs.length; i++){
