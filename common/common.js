@@ -59,13 +59,23 @@ class TabManager {
     let tab = {
       button: _tab.tabButton,
       tab:  _tab.tab,
-      cb: _tab.cb,
+      clickCB: _tab.clickCB,
+      deleteCB: _tab.deleteCB,
       name: _tab.name
     }
 
     this.tabs.push(tab);
 
-    _tab.tabButton.addEventListener("click", ()=>{this.onTabClicked(this.tabs.indexOf(tab))});
+    console.log(_tab.tabButton);
+
+    _tab.tabButton.addEventListener("click", (e)=>{
+      console.log(e);
+      if(e.target.classList.contains("tab-delete") || e.target.classList.contains("fa-xmark") || e.target.localName === "path"){
+        this.deleteTab(this.tabs.indexOf(tab));
+      } else{
+        this.onTabClicked(this.tabs.indexOf(tab));
+      }
+    });
 
     if(_tab.isActive){
       this.activeTab = this.tabs.length - 1;
@@ -104,6 +114,27 @@ class TabManager {
     return li;
   }
 
+  deleteTab(_id){
+    console.log("delete" + _id)
+    this.tabs[_id].button.remove();
+
+    // Call the callback
+    if(this.tabs[_id].deleteCB){
+      this.tabs[_id].deleteCB(_id);
+    }
+
+    this.tabs.splice(_id,1);
+
+    // Active the tab to the left if possible
+		if(this.activeTab === _id){
+      if(this.activeTab > 0){
+        this.onTabClicked(this.activeTab - 1);
+      } else{
+        this.onTabClicked(0);
+      }
+		}
+  }
+
   onTabClicked(_id){
     this.activeTab = _id;
     console.log("tab " + _id);
@@ -125,8 +156,8 @@ class TabManager {
     this.tabs[_id].tab.classList.remove("is-hidden");
 
     // Call the callback
-    if(this.tabs[_id].cb){
-      this.tabs[_id].cb(_id);
+    if(this.tabs[_id].clickCB){
+      this.tabs[_id].clickCB(_id);
     }
   }
 

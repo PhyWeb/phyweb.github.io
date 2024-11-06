@@ -59,7 +59,7 @@ tabManager.newTab({
   tabButton: $("#rt-tab-button"),
   tab: $("#rt-panel"),
   isActive : true,
-  cb: ()=>{
+  clickCB: ()=>{
     rtWaveChart.reflow()
     rtFourierChart.reflow()
   }
@@ -220,8 +220,15 @@ $("#confirm-save-button").addEventListener("click", ()=>{
 	tabManager.newTab({
     tab: $("#save-panel"),
     name: text,
-    cb: saveDraw
+    clickCB: saveDraw,
+    deleteCB: onCloseTabButton
   })
+
+  function onCloseTabButton(_id){
+    console.log("splice" + _id)
+		// Delete tab datas
+		saves.splice(_id - 2,1);
+  }
 
 	// Empty the input and hide the modal card
 	$("#save-name-input").value = "";
