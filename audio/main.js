@@ -146,6 +146,20 @@ $("#complete-mode-button").addEventListener("click", ()=>{
   draw();
 });
 
+// RT amplification slider
+$("#amplification-slider").addEventListener("input", onRtAmplificationSliderChange);
+$("#amplification-slider").addEventListener("dblclick", onRtAmplificationSliderDblClick);
+$("#amplification-label").addEventListener("dblclick", onRtAmplificationSliderDblClick);
+function onRtAmplificationSliderChange() {
+	audio.setGain($("#amplification-slider").value);
+	$("#amplification-label").innerHTML = "x " + audio.gain;
+}
+
+function onRtAmplificationSliderDblClick() {
+	$("#amplification-slider").value = 1;
+	onRtAmplificationSliderChange();
+}
+
 //pause button
 $("#pause-button").addEventListener("click", ()=>{
   if(paused == true){
