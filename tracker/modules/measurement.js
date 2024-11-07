@@ -409,13 +409,4 @@ export default class MEASUREMENT {
     
     return rw3.join("\n");
   }
-
-  async downloadFile(_file, _type,_name){
-    const blob = new Blob([_file], { type: "text/"+_type });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = _name+"."+_type;
-    a.click();
-  }
 }

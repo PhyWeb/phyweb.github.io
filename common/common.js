@@ -159,4 +159,20 @@ class TabManager {
 
 }
 
-export {ModalManager, TabManager};
+async function downloadFile(_file, _type,_name){
+  let mime;
+  if(_type === "wav"){
+    mime = "audio/wav";
+  }
+  if(_type === "csv" || _type === "rw3"){
+    mime = "text/" + _type;
+  }
+  const blob = new Blob([_file], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = _name+"."+_type;
+  a.click();
+}
+
+export {ModalManager, TabManager, downloadFile};

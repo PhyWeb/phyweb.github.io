@@ -193,7 +193,8 @@ function PhyAudio(_bufferSize){
   // Convert AudioBuffer to a Blob using WAVE representation
   this.generateWavFile = function(_data, _sr) {
     let audioBuffer = this.arrayToAudioBuffer(_data, _sr);
-    return URL.createObjectURL(this.bufferToWave(audioBuffer, audioBuffer.length));
+    let wave = this.bufferToWave(audioBuffer, audioBuffer.length)
+    return wave;
   }
 
   // Convert AudioBuffer to a Blob using WAVE representation
@@ -238,7 +239,7 @@ function PhyAudio(_bufferSize){
     }
 
     // create Blob
-    return new Blob([buffer], {type: "audio/wav"});
+    return buffer;
 
     function setUint16(data) {
       view.setUint16(pos, data, true);

@@ -4,7 +4,7 @@ import EXTRACTOR from "./modules/extractor.js"
 import MEASUREMENT from "./modules/measurement.js"
 import PLAYER from "./modules/player.js"
 
-import {ModalManager} from "../common/common.js"
+import {ModalManager , downloadFile} from "../common/common.js"
 
 const $ = document.querySelector.bind(document);
 
@@ -181,10 +181,10 @@ $("#download-file-button").addEventListener("click", ()=>{
   }
   if($("#csv-button").classList.contains("is-link")){
     let csv = measurement.createCSV();
-    measurement.downloadFile(csv,"csv",filename);
+    downloadFile(csv,"csv",filename);
   } else{
     let rw3 = measurement.createRW3();
-    measurement.downloadFile(rw3,"rw3",filename);
+    downloadFile(rw3,"rw3",filename);
   }
   modalManager.closeAllModals();
 });

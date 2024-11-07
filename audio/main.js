@@ -1,7 +1,7 @@
 import FOURIER from "./modules/fourier.js"
 import {PhyAudio, convertFloat32ToInt16} from "./modules/audio.js"
 
-import {ModalManager,TabManager} from "../common/common.js"
+import {ModalManager,TabManager,downloadFile} from "../common/common.js"
 
 //import Highcharts from 'https://code.highcharts.com/es-modules/masters/highcharts.src.js';
 
@@ -194,6 +194,7 @@ $("#rec-save-to-tab-button").addEventListener("click", ()=>{
 	$("#save-name-input").focus();
 })
 
+// Save a new tab
 $("#confirm-save-button").addEventListener("click", ()=>{
 	// Get the save name
 	let text;
@@ -366,6 +367,46 @@ function onAudioDecodeEnd(_rawData){
 	// Draw the datas
 	recordGraphDraw(convertFloat32ToInt16(_rawData.getChannelData(0), length), baseSampleRate);
 }
+
+// DOWNLOAD
+$("#wav-button").addEventListener("click", ()=>{
+  $("#wav-button").classList.add('is-link');
+  $("#csv-button").classList.remove('is-link');
+  $("#rw3-button").classList.remove('is-link');
+  $("#file-name-input").placeholder = "audio.wav";
+});
+$("#csv-button").addEventListener("click", ()=>{
+  $("#csv-button").classList.add('is-link');
+  $("#rw3-button").classList.remove('is-link');
+  $("#wav-button").classList.remove('is-link');
+  $("#file-name-input").placeholder = "audio.csv";
+});
+$("#rw3-button").addEventListener("click", ()=>{
+  $("#rw3-button").classList.add('is-link');
+  $("#csv-button").classList.remove('is-link');
+  $("#wav-button").classList.remove('is-link');
+  $("#file-name-input").placeholder = "audio.rw3";
+});
+
+$("#download-file-button").addEventListener("click", ()=>{
+  let filename = "audio";
+  if($("#file-name-input").value !== ""){
+    filename = $("#file-name-input").value;
+  }
+  if($("#wav-button").classList.contains("is-link")){
+    let sr = baseSampleRate / saves[tabManager.activeTab-2].displaySampleRateLvl;
+    let file = audio.generateWavFile(saves[tabManager.activeTab-2].linearData.getData(saves[tabManager.activeTab-2].displaySampleRateLvl), sr);
+    console.log(file)
+    downloadFile(file,"wav",filename);
+  }
+  if($("#csv-button").classList.contains("is-link")){
+    
+  }
+  if($("#rw3-button").classList.contains("is-link")){
+    
+  }
+  modalManager.closeAllModals();
+});
 
 /*----------------------------------------------------------------------------------------------
 ------------------------Format milliseconds to a displayable time layout------------------------
