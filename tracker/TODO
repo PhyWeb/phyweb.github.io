@@ -12,3 +12,7 @@ navbar remove hover
 phyweb homepage
 
 gestionnaire d'alert (stylable apriori) (ya un addon bulma pour ca je crois)
+
+audio modal pour choisir une partie du fichier (et pas prendre forcement les 20 premières secondes)
+
+alert avant de fermer onglet

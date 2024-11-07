@@ -393,13 +393,22 @@ $("#download-file-button").addEventListener("click", ()=>{
   if($("#file-name-input").value !== ""){
     filename = $("#file-name-input").value;
   }
+
+  let sr = baseSampleRate / saves[tabManager.activeTab-2].displaySampleRateLvl;
+
   if($("#wav-button").classList.contains("is-link")){
-    let sr = baseSampleRate / saves[tabManager.activeTab-2].displaySampleRateLvl;
     let file = audio.generateWavFile(saves[tabManager.activeTab-2].linearData.getData(saves[tabManager.activeTab-2].displaySampleRateLvl), sr);
-    console.log(file)
     downloadFile(file,"wav",filename);
   }
   if($("#csv-button").classList.contains("is-link")){
+    let csv = [];
+    csv.push(["Temps (s)", "Amplitude"]);
+    let data = saves[tabManager.activeTab-2].linearData.getData(saves[tabManager.activeTab-2].displaySampleRateLvl);
+    for(let i = 0; i < data.length; i++){
+      let row = [i / sr, data[i]]
+      csv.push(row)
+    }
+    downloadFile(csv.join("\n"),"csv",filename);
     
   }
   if($("#rw3-button").classList.contains("is-link")){
