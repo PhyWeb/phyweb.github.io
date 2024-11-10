@@ -173,15 +173,15 @@ class TabManager {
 /*----------------------------------------------------------------------------------------------
 -------------------------------------EXPORT/IMPORT FUNCTIONS------------------------------------
 ----------------------------------------------------------------------------------------------*/
+
 function exportToCSV(_series, _rowMustBeComplete = false){
-  console.log(_series)
   let csv = [];
   let row = [];
 
   let hasNameFlag = false;
 
   // create the name row and find the length of the biggest serie
-  let largestArrayLength = 0;
+  let largestSerieLength = 0;
   for(let i = 0; i < _series.length; i++){
     if(_series[i].name){
       hasNameFlag = true;
@@ -190,10 +190,9 @@ function exportToCSV(_series, _rowMustBeComplete = false){
       row.push("");
     }
 
-    if(_series[i].values.length > largestArrayLength){
-      largestArrayLength = _series[i].values.length;
+    if(_series[i].values.length > largestSerieLength){
+      largestSerieLength = _series[i].values.length;
     }
-    console.log("the largest array is :" + largestArrayLength);
   }
   // At least one serie has a name
   if(hasNameFlag){
@@ -201,29 +200,137 @@ function exportToCSV(_series, _rowMustBeComplete = false){
   }
 
   // push value rows
-  for(let i = 0; i < largestArrayLength; i++){
+  for(let i = 0; i < largestSerieLength; i++){
     let row = [];
     let rowIsComplete = true;
     for(let j = 0; j < _series.length; j++){
       if(_series[j].values[i] === "" || _series[j].values[i] === undefined){
         rowIsComplete = false;
       }
-      console.log(_series[j].values[i])
       row.push(_series[j].values[i]);
     }
     if(_rowMustBeComplete){
       if(rowIsComplete){
-        csv.push(row);
+        csv.push(row.join(","));
       }
     } else{
-      csv.push(row);
+      csv.push(row.join(","));
     }
   }
 
   return csv.join("\n");
 }
 
-// TODO common rw3
+function exportToRW3(_series, _rowMustBeComplete = false, _title){
+  let rw3 = []
+
+  rw3.push("EVARISTE REGRESSI WINDOWS 1.0");
+
+  // Names + find largest serie
+  rw3.push("£" + _series.length + " NOM VAR");
+  let largestSerieLength = 0;
+  for(let i = 0; i < _series.length; i++){
+    rw3.push(_series[i].name);
+
+    if(_series[i].values.length > largestSerieLength){
+      largestSerieLength = _series[i].values.length;
+    }
+  }
+
+  // Genre ???
+  rw3.push("£" + _series.length + " GENRE VAR");
+  for(let i = 0; i < _series.length; i++){
+    rw3.push("0");
+  }
+
+  // Units
+  rw3.push("£" + _series.length + " UNITE VAR");
+  for(let i = 0; i < _series.length; i++){
+    if(_series[i].unit){
+      rw3.push(_series[i].unit);
+    } else{
+      rw3.push("");
+    }
+  }
+
+  rw3.push("£3 INCERTITUDE");
+  rw3.push("");
+  rw3.push("");
+  rw3.push("");
+  rw3.push("£1 TRIGO");
+  rw3.push("0");
+  rw3.push("£1 LOG");
+  rw3.push("0");
+  rw3.push("£1 MEMO GRANDEURS");
+  rw3.push("'"+_title);
+  rw3.push("£2 ACQUISITION");
+  rw3.push("CLAVIER");
+  rw3.push("");
+  rw3.push("£0 GRAPHE VAR");
+  rw3.push("&5 X");
+  rw3.push("x1");
+  rw3.push("");
+  rw3.push("");
+  rw3.push("");
+  rw3.push("");
+  rw3.push("&5 Y");
+  rw3.push("y1");
+  rw3.push("");
+  rw3.push("");
+  rw3.push("");
+  rw3.push("");
+  rw3.push("&5 MONDE");
+  rw3.push("1");
+  rw3.push("1");
+  rw3.push("1");
+  rw3.push("1");
+  rw3.push("1");
+  rw3.push("&3 GRADUATION");
+  rw3.push("0");
+  rw3.push("0");
+  rw3.push("0");
+  rw3.push("&3 ZERO");
+  rw3.push("1");
+  rw3.push("1");
+  rw3.push("1");
+  rw3.push("&7 OPTIONS");
+  rw3.push("12");
+  rw3.push("2");
+  rw3.push("1");
+  rw3.push("3");
+  rw3.push("3");
+  rw3.push("0");
+  rw3.push("0");
+  rw3.push("£1 PAGE COMMENT");
+  rw3.push("");
+
+  // Values
+  rw3.push("&96 VALEUR VAR");
+
+  for(let i = 0; i < largestSerieLength; i++){
+    let row = [];
+    let rowIsComplete = true;
+    for(let j = 0; j < _series.length; j++){
+      if(_series[j].values[i] === "" || _series[j].values[i] === undefined){
+        rowIsComplete = false;
+      }
+      row.push(_series[j].values[i]);
+    }
+    if(_rowMustBeComplete){
+      if(rowIsComplete){
+        rw3.push(row.join(" "));
+      }
+    } else{
+      rw3.push(row.join(" "));
+    }
+  }
+
+  rw3.push("&2 OPTIONS");
+  rw3.push("1");
+  rw3.push("1");
+
+  return rw3.join("\n");
+}
 
 async function downloadFile(_file, _type,_name){
   let mime;
@@ -255,4 +362,4 @@ function maxOfArray(array){
   return max;
 }
 
-export {ModalManager, TabManager, exportToCSV, downloadFile};
+export {ModalManager, TabManager, exportToCSV, exportToRW3, downloadFile};

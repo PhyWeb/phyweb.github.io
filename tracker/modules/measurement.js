@@ -1,4 +1,4 @@
-import {exportToCSV} from "../../common/common.js"
+import {downloadFile, exportToCSV, exportToRW3} from "../../common/common.js"
 
 const $ = document.querySelector.bind(document);
 
@@ -284,7 +284,50 @@ export default class MEASUREMENT {
     return y.round(this.maxDecimals);
   }
 
-  createCSV(){
+  downloadData(_type, _name){
+    this.updateScale()
+
+    let series = []
+
+    let tSerie = {
+      name: "t",
+      values: []
+    }
+    for(let i = 0; i < this.data.length; i++){
+      tSerie.values[i] = this.data[i].t / 1000;
+    }
+    series.push(tSerie);
+
+    for(let i = 1; i < this.pointsPerFrame + 1; i++){
+      let xSerie = {
+        name: "x" + i,
+        values: []
+      }
+      let ySerie = {
+        name: "y" + i,
+        values: []
+      }
+      for(let j = 0; j < this.data.length; j++){
+        xSerie.values[j] = this.scalex(this.data[j].xs[i-1]);
+        ySerie.values[j] = this.scaley(this.data[j].ys[i-1]);
+      }
+      console.log(xSerie);
+      series.push(xSerie);
+      series.push(ySerie);
+    }
+
+    let file;
+    if(_type === "csv"){
+      file = exportToCSV(series, true);
+    }
+    if(_type === "rw3"){
+      file = exportToRW3(series, true);
+    }
+    console.log("file : " , file)
+    downloadFile(file, _type, _name)
+  }
+
+  /*createCSV(){
     this.updateScale()
 
     let series = []
@@ -319,9 +362,9 @@ export default class MEASUREMENT {
     let csv = exportToCSV(series, true);
 
     return csv;
-  }
+  }*/
 
-  createCSV2(){
+  /*createCSV2(){
     this.updateScale()
 
     let csv = []
@@ -355,9 +398,9 @@ export default class MEASUREMENT {
     }
 
     return csv.join("\n");
-  }
+  }*/
 
-  createRW3(){
+  /*createRW3(){
     let rw3 = []
     rw3.push("EVARISTE REGRESSI WINDOWS 1.0");
     rw3.push("£"+parseInt((this.pointsPerFrame * 2) + 1)+" NOM VAR");
@@ -447,5 +490,5 @@ export default class MEASUREMENT {
     rw3.push("1");
     
     return rw3.join("\n");
-  }
+  }*/
 }

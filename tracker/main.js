@@ -180,11 +180,9 @@ $("#download-file-button").addEventListener("click", ()=>{
     filename = $("#file-name-input").value;
   }
   if($("#csv-button").classList.contains("is-link")){
-    let csv = measurement.createCSV();
-    downloadFile(csv,"csv",filename);
+    measurement.downloadData("csv", filename);
   } else{
-    let rw3 = measurement.createRW3();
-    downloadFile(rw3,"rw3",filename);
+    measurement.downloadData("rw3", filename);
   }
   modalManager.closeAllModals();
 });
