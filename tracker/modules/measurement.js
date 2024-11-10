@@ -1,3 +1,5 @@
+import {exportToCSV} from "../../common/common.js"
+
 const $ = document.querySelector.bind(document);
 
 Number.prototype.round = function(n) {
@@ -283,6 +285,43 @@ export default class MEASUREMENT {
   }
 
   createCSV(){
+    this.updateScale()
+
+    let series = []
+
+    let tSerie = {
+      name: "t",
+      values: []
+    }
+    for(let i = 0; i < this.data.length; i++){
+      tSerie.values[i] = this.data[i].t / 1000;
+    }
+    series.push(tSerie);
+
+    for(let i = 1; i < this.pointsPerFrame + 1; i++){
+      let xSerie = {
+        name: "x" + i,
+        values: []
+      }
+      let ySerie = {
+        name: "y" + i,
+        values: []
+      }
+      for(let j = 0; j < this.data.length; j++){
+        xSerie.values[j] = this.scalex(this.data[j].xs[i-1]);
+        ySerie.values[j] = this.scaley(this.data[j].ys[i-1]);
+      }
+      console.log(xSerie);
+      series.push(xSerie);
+      series.push(ySerie);
+    }
+
+    let csv = exportToCSV(series, true);
+
+    return csv;
+  }
+
+  createCSV2(){
     this.updateScale()
 
     let csv = []

@@ -1,3 +1,11 @@
+/*----------------------------------------------------------------------------------------------
+-----------------------------------------NAVBAR MANAGER-----------------------------------------
+----------------------------------------------------------------------------------------------*/
+
+
+/*----------------------------------------------------------------------------------------------
+---------------------------------------MODALMANAGER CLASS---------------------------------------
+----------------------------------------------------------------------------------------------*/
 class ModalManager {
 	constructor() {
     // Add a click event on buttons to open a specific modal
@@ -42,6 +50,9 @@ class ModalManager {
   }
 }
 
+/*----------------------------------------------------------------------------------------------
+----------------------------------------TABMANAGER CLASS----------------------------------------
+----------------------------------------------------------------------------------------------*/
 class TabManager {
   activeTab;
   tabs = [];
@@ -159,6 +170,61 @@ class TabManager {
 
 }
 
+/*----------------------------------------------------------------------------------------------
+-------------------------------------EXPORT/IMPORT FUNCTIONS------------------------------------
+----------------------------------------------------------------------------------------------*/
+function exportToCSV(_series, _rowMustBeComplete = false){
+  console.log(_series)
+  let csv = [];
+  let row = [];
+
+  let hasNameFlag = false;
+
+  // create the name row and find the length of the biggest serie
+  let largestArrayLength = 0;
+  for(let i = 0; i < _series.length; i++){
+    if(_series[i].name){
+      hasNameFlag = true;
+      row.push(_series[i].name);
+    } else {
+      row.push("");
+    }
+
+    if(_series[i].values.length > largestArrayLength){
+      largestArrayLength = _series[i].values.length;
+    }
+    console.log("the largest array is :" + largestArrayLength);
+  }
+  // At least one serie has a name
+  if(hasNameFlag){
+    csv.push(row.join(","));
+  }
+
+  // push value rows
+  for(let i = 0; i < largestArrayLength; i++){
+    let row = [];
+    let rowIsComplete = true;
+    for(let j = 0; j < _series.length; j++){
+      if(_series[j].values[i] === "" || _series[j].values[i] === undefined){
+        rowIsComplete = false;
+      }
+      console.log(_series[j].values[i])
+      row.push(_series[j].values[i]);
+    }
+    if(_rowMustBeComplete){
+      if(rowIsComplete){
+        csv.push(row);
+      }
+    } else{
+      csv.push(row);
+    }
+  }
+
+  return csv.join("\n");
+}
+
+// TODO common rw3
+
 async function downloadFile(_file, _type,_name){
   let mime;
   if(_type === "wav"){
@@ -175,4 +241,18 @@ async function downloadFile(_file, _type,_name){
   a.click();
 }
 
-export {ModalManager, TabManager, downloadFile};
+/*----------------------------------------------------------------------------------------------
+------------------------------------------MISC FUNCTIONS----------------------------------------
+----------------------------------------------------------------------------------------------*/
+
+function maxOfArray(array){
+  let max = 0;
+  for(let i = 0; i < array.length; i++){
+    if(array[i] > max){
+      max = array[i];
+    }
+  }
+  return max;
+}
+
+export {ModalManager, TabManager, exportToCSV, downloadFile};
