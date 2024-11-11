@@ -321,7 +321,7 @@ export default class MEASUREMENT {
       file = exportToCSV(series, true);
     }
     if(_type === "rw3"){
-      file = exportToRW3(series, true);
+      file = exportToRW3(series, true, "Pointage PhyWeb Tracker");
     }
     console.log("file : " , file)
     downloadFile(file, _type, _name)
