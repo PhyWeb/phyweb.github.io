@@ -59,13 +59,6 @@ export default class MEASUREMENT {
     this.pointsPerFrame = 1;
     this.scale = 1;
 
-    // UI
-    /*$("#segmentButton").classList.remove("active");
-    $("#topright").classList.add("active");
-    $("#topleft").classList.remove("active");
-    $("#downright").classList.remove("active");
-    $("#downleft").classList.remove("active");*/
-
     $("#ppf-input").value = 1;
 
     _decodedVideo.frames.forEach((value,index)=>{
@@ -291,6 +284,7 @@ export default class MEASUREMENT {
 
     let tSerie = {
       name: "t",
+      unit: "s",
       values: []
     }
     for(let i = 0; i < this.data.length; i++){
@@ -301,10 +295,12 @@ export default class MEASUREMENT {
     for(let i = 1; i < this.pointsPerFrame + 1; i++){
       let xSerie = {
         name: "x" + i,
+        unit: "m",
         values: []
       }
       let ySerie = {
         name: "y" + i,
+        unit: "m",
         values: []
       }
       for(let j = 0; j < this.data.length; j++){
@@ -326,169 +322,4 @@ export default class MEASUREMENT {
     console.log("file : " , file)
     downloadFile(file, _type, _name)
   }
-
-  /*createCSV(){
-    this.updateScale()
-
-    let series = []
-
-    let tSerie = {
-      name: "t",
-      values: []
-    }
-    for(let i = 0; i < this.data.length; i++){
-      tSerie.values[i] = this.data[i].t / 1000;
-    }
-    series.push(tSerie);
-
-    for(let i = 1; i < this.pointsPerFrame + 1; i++){
-      let xSerie = {
-        name: "x" + i,
-        values: []
-      }
-      let ySerie = {
-        name: "y" + i,
-        values: []
-      }
-      for(let j = 0; j < this.data.length; j++){
-        xSerie.values[j] = this.scalex(this.data[j].xs[i-1]);
-        ySerie.values[j] = this.scaley(this.data[j].ys[i-1]);
-      }
-      console.log(xSerie);
-      series.push(xSerie);
-      series.push(ySerie);
-    }
-
-    let csv = exportToCSV(series, true);
-
-    return csv;
-  }*/
-
-  /*createCSV2(){
-    this.updateScale()
-
-    let csv = []
-    let row = []
-
-    // titles
-    row.push("t");
-    for(let i = 1; i < this.pointsPerFrame + 1; i++){
-      row.push("x" + i);
-      row.push("y" + i);
-    }
-
-    csv.push(row.join(","));
-
-    // datas
-    for(let j = this.originFrame; j <this.data.length; j++){
-      let ro = [];
-      ro.push(this.data[j].t / 1000);
-      let emptyCount = 0;
-      for(let i = 0; i < this.data[j].xs.length; i++){
-        if(this.data[j].xs[i] === "" || this.data[j].ys[i] === ""){
-          emptyCount++;
-        }
-        ro.push(this.scalex(this.data[j].xs[i]));
-        ro.push(this.scaley(this.data[j].ys[i]));
-      }
-
-      if(emptyCount == 0){
-        csv.push(ro);
-      }
-    }
-
-    return csv.join("\n");
-  }*/
-
-  /*createRW3(){
-    let rw3 = []
-    rw3.push("EVARISTE REGRESSI WINDOWS 1.0");
-    rw3.push("£"+parseInt((this.pointsPerFrame * 2) + 1)+" NOM VAR");
-    rw3.push("t");
-    for(let i = 1; i < this.pointsPerFrame + 1; i++){
-      rw3.push("x" + i);
-      rw3.push("y" + i);
-    }
-    rw3.push("£"+parseInt((this.pointsPerFrame * 2) + 1)+" GENRE VAR");
-    for(let i = 0; i < (this.pointsPerFrame * 2) + 1; i++){
-      rw3.push("0");
-    }
-    rw3.push("£"+parseInt((this.pointsPerFrame * 2) + 1)+" UNITE VAR");
-    rw3.push("s");
-    for(let i = 0; i < this.pointsPerFrame * 2; i++){
-      rw3.push("m");
-    }
-    rw3.push("£3 INCERTITUDE");
-    rw3.push("");
-    rw3.push("");
-    rw3.push("");
-    rw3.push("£1 TRIGO");
-    rw3.push("0");
-    rw3.push("£1 LOG");
-    rw3.push("0");
-    rw3.push("£1 MEMO GRANDEURS");
-    rw3.push("'Pointage PhyWeb Tracker");
-    rw3.push("£2 ACQUISITION");
-    rw3.push("CLAVIER");
-    rw3.push("");
-    rw3.push("£0 GRAPHE VAR");
-    rw3.push("&5 X");
-    rw3.push("x1");
-    rw3.push("");
-    rw3.push("");
-    rw3.push("");
-    rw3.push("");
-    rw3.push("&5 Y");
-    rw3.push("y1");
-    rw3.push("");
-    rw3.push("");
-    rw3.push("");
-    rw3.push("");
-    rw3.push("&5 MONDE");
-    rw3.push("1");
-    rw3.push("1");
-    rw3.push("1");
-    rw3.push("1");
-    rw3.push("1");
-    rw3.push("&3 GRADUATION");
-    rw3.push("0");
-    rw3.push("0");
-    rw3.push("0");
-    rw3.push("&3 ZERO");
-    rw3.push("1");
-    rw3.push("1");
-    rw3.push("1");
-    rw3.push("&7 OPTIONS");
-    rw3.push("12");
-    rw3.push("2");
-    rw3.push("1");
-    rw3.push("3");
-    rw3.push("3");
-    rw3.push("0");
-    rw3.push("0");
-    rw3.push("£1 PAGE COMMENT");
-    rw3.push("");
-    rw3.push("&96 VALEUR VAR");
-    for(let j = this.originFrame; j <this.data.length; j++){
-      let ro = [];
-      ro.push(this.data[j].t / 1000);
-      let emptyCount = 0;
-      for(let i = 0; i < this.data[j].xs.length; i++){
-        if(this.data[j].xs[i] === "" || this.data[j].ys[i] === ""){
-          emptyCount++;
-        }
-        ro.push(this.scalex(this.data[j].xs[i]));
-        ro.push(this.scaley(this.data[j].ys[i]));
-      }
-
-      if(emptyCount == 0){
-        rw3.push(ro.join(" "));
-      }
-    }
-    rw3.push("&2 OPTIONS");
-    rw3.push("1");
-    rw3.push("1");
-    
-    return rw3.join("\n");
-  }*/
 }

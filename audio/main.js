@@ -1,9 +1,7 @@
 import FOURIER from "./modules/fourier.js"
 import {PhyAudio, convertFloat32ToInt16} from "./modules/audio.js"
 
-import {ModalManager,TabManager,downloadFile} from "../common/common.js"
-
-//import Highcharts from 'https://code.highcharts.com/es-modules/masters/highcharts.src.js';
+import {ModalManager,TabManager,downloadFile, exportToCSV, exportToRW3} from "../common/common.js"
 
 const $ = document.querySelector.bind(document);
 
@@ -19,7 +17,6 @@ let simpleMode = false;
 let rtWaveData;
 let recWaveData;
 
-// Declare vars
 let rtFourierData;
 let recFourierData;
 
@@ -34,7 +31,6 @@ let rtInitialDraw = true;
 let fourier = new FOURIER(rtBasebufferSize);
 let audio = new PhyAudio(rtBasebufferSize);
 let fileReader = new FileReader();
-//fileReader.addEventListener("loadend", onFileReaderLoadEnd);
 
 // Get the default max sample rate from the audio context
 let baseSampleRate = audio.getSampleRate();
@@ -52,7 +48,9 @@ let samplingStartTime;
 // save vars
 let saves = [];
 
-// tabs
+/*----------------------------------------------------------------------------------------------
+----------------------------------------------TABS----------------------------------------------
+----------------------------------------------------------------------------------------------*/
 let tabManager = new TabManager($("#save-tabs"));
 
 tabManager.newTab({
@@ -93,16 +91,9 @@ $("#temporal-fourier-button").addEventListener("click",()=>{
   $("#temporal-fourier-button").classList.add("is-active");
 })
 
-// save fourier replot
-$("#save-fourier-replot-button").addEventListener("click",()=>{onFourierReplotButtonClick()})
-
-// save samplerate
-$("#save-samplerate-select").addEventListener("click", ()=>{
-	saves[tabManager.activeTab-2].displaySampleRateLvl = baseSampleRate / $("#save-samplerate-select").value;
-	saveDraw();
-});
-
-// config modal
+/*----------------------------------------------------------------------------------------------
+------------------------------------------CONFIG MODAL------------------------------------------
+----------------------------------------------------------------------------------------------*/
 $("#choose-config-modal").classList.add("is-active");
 $("#simple-mode-button").addEventListener("click", ()=>{
 	modalManager.closeAllModals();
@@ -146,7 +137,9 @@ $("#complete-mode-button").addEventListener("click", ()=>{
   draw();
 });
 
-// RT amplification slider
+/*----------------------------------------------------------------------------------------------
+--------------------------------------------RT LOGIC--------------------------------------------
+----------------------------------------------------------------------------------------------*/
 $("#amplification-slider").addEventListener("input", onRtAmplificationSliderChange);
 $("#amplification-slider").addEventListener("dblclick", onRtAmplificationSliderDblClick);
 $("#amplification-label").addEventListener("dblclick", onRtAmplificationSliderDblClick);
@@ -194,7 +187,9 @@ $("#rec-save-to-tab-button").addEventListener("click", ()=>{
 	$("#save-name-input").focus();
 })
 
-// Save a new tab
+/*----------------------------------------------------------------------------------------------
+-----------------------------------------SAVE A NEW TAB-----------------------------------------
+----------------------------------------------------------------------------------------------*/
 $("#confirm-save-button").addEventListener("click", ()=>{
 	// Get the save name
 	let text;
@@ -250,14 +245,9 @@ $("#confirm-save-button").addEventListener("click", ()=>{
 	modalManager.closeAllModals();
 })
 
-// rec samplerate
-$("#rec-samplerate-select").addEventListener("change", ()=>{
-  recSampleRate = $("#rec-samplerate-select").value;
-});
-
-populateSampleRateSelect($("#rec-samplerate-select"), 1, 16);
-
-// sample button
+/*----------------------------------------------------------------------------------------------
+----------------------------------------REC SAMPLE LOGIC----------------------------------------
+----------------------------------------------------------------------------------------------*/
 $("#sample-button").addEventListener("click",()=>{
 	// SampleLength value verifications
 	if($("#sample-length-input").value === ""){
@@ -294,7 +284,9 @@ $("#sample-button").addEventListener("click",()=>{
 	$("#stop-sample-button").classList.remove("is-hidden");
 });
 
-// Rec play/stop button
+/*----------------------------------------------------------------------------------------------
+------------------------------------REC & SAVE PLAY AND STOP------------------------------------
+----------------------------------------------------------------------------------------------*/
 $("#rec-play-button").addEventListener("click", ()=>{
   $("#rec-play-button").classList.add("is-hidden");
   $("#rec-stop-button").classList.remove("is-hidden");
@@ -305,11 +297,11 @@ $("#rec-play-button").addEventListener("click", ()=>{
   }
   audioPlayback(recWaveData.getData(baseSampleRate / recordedSampleRate), recordedSampleRate, onRecPlaybackEnded);
 });
+
 $("#rec-stop-button").addEventListener("click", ()=>{
   audio.stop();
 });
 
-// Save play/stop button
 $("#sav-play-button").addEventListener("click", ()=>{
   $("#sav-play-button").classList.add("is-hidden");
   $("#sav-stop-button").classList.remove("is-hidden");
@@ -327,7 +319,39 @@ $("#sav-stop-button").addEventListener("click", ()=>{
   audio.stop();
 });
 
-// file input
+/*----------------------------------------------------------------------------------------------
+-------------------------------------------SAMPLERATE-------------------------------------------
+----------------------------------------------------------------------------------------------*/
+
+$("#rec-samplerate-select").addEventListener("change", ()=>{
+  recSampleRate = $("#rec-samplerate-select").value;
+});
+
+populateSampleRateSelect($("#rec-samplerate-select"), 1, 16);
+
+// save samplerate
+$("#save-samplerate-select").addEventListener("click", ()=>{
+	saves[tabManager.activeTab-2].displaySampleRateLvl = baseSampleRate / $("#save-samplerate-select").value;
+	saveDraw();
+});
+
+function populateSampleRateSelect(_select, _initLvl = 1, _l = 4){
+	// Remove all previous options
+	while (_select.firstChild) {
+    _select.removeChild(_select.firstChild);
+	}
+	// Populate sampleRate selects based on baseSampleRate
+	for (let i = _initLvl; i <= _l; i = i * 2) {
+		let option = document.createElement("option");
+		option.value = baseSampleRate / i;
+		option.text = (baseSampleRate / i).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " Hz";
+		_select.add(option);
+	}
+}
+
+/*----------------------------------------------------------------------------------------------
+-------------------------------------------FILE LOAD--------------------------------------------
+----------------------------------------------------------------------------------------------*/
 $("#file-input").addEventListener("change",(event)=>{
 	// Read the file
 	fileReader.readAsArrayBuffer($("#file-input").files[0]);
@@ -339,11 +363,6 @@ $("#file-input").addEventListener("change",(event)=>{
 	$("#file-progress-bar").classList.remove("is-hidden");
 });
 
-/*function onFileInputResultDiscardButtonClick(event){
-	fileInput.value = "";
-	$("#inputFileButton").style.display="block";
-	$("#fileInputResult").style.display="none";
-}*/
 fileReader.addEventListener("loadend", ()=>{
   //clear the input
   $("#file-input").value = "";
@@ -357,8 +376,7 @@ function onAudioDecodeEnd(_rawData){
 
 	let length = _rawData.duration * baseSampleRate;
 	if(_rawData.duration > 20){
-		// Display save modal
-		//$("#fileModal").style.display="block"; TODO
+		// TODO let the user choose the part of the file he wants
 		length = baseSampleRate * 20;
 	}
 	// Save the sampleRate used DUMMY
@@ -368,28 +386,30 @@ function onAudioDecodeEnd(_rawData){
 	recordGraphDraw(convertFloat32ToInt16(_rawData.getChannelData(0), length), baseSampleRate);
 }
 
-// DOWNLOAD
+/*----------------------------------------------------------------------------------------------
+--------------------------------------------DOWNLOAD--------------------------------------------
+----------------------------------------------------------------------------------------------*/
 $("#wav-button").addEventListener("click", ()=>{
   $("#wav-button").classList.add('is-link');
   $("#csv-button").classList.remove('is-link');
   $("#rw3-button").classList.remove('is-link');
-  $("#file-name-input").placeholder = "audio.wav";
+  $("#file-name-input").placeholder = "enregistrement.wav";
 });
 $("#csv-button").addEventListener("click", ()=>{
   $("#csv-button").classList.add('is-link');
   $("#rw3-button").classList.remove('is-link');
   $("#wav-button").classList.remove('is-link');
-  $("#file-name-input").placeholder = "audio.csv";
+  $("#file-name-input").placeholder = "enregistrement.csv";
 });
 $("#rw3-button").addEventListener("click", ()=>{
   $("#rw3-button").classList.add('is-link');
   $("#csv-button").classList.remove('is-link');
   $("#wav-button").classList.remove('is-link');
-  $("#file-name-input").placeholder = "audio.rw3";
+  $("#file-name-input").placeholder = "enregistrement.rw3";
 });
 
 $("#download-file-button").addEventListener("click", ()=>{
-  let filename = "audio";
+  let filename = "enregistrement";
   if($("#file-name-input").value !== ""){
     filename = $("#file-name-input").value;
   }
@@ -401,21 +421,46 @@ $("#download-file-button").addEventListener("click", ()=>{
     downloadFile(file,"wav",filename);
   }
   if($("#csv-button").classList.contains("is-link")){
-    let csv = [];
-    csv.push(["Temps (s)", "Amplitude"]);
-    let data = saves[tabManager.activeTab-2].linearData.getData(saves[tabManager.activeTab-2].displaySampleRateLvl);
-    for(let i = 0; i < data.length; i++){
-      let row = [i / sr, data[i]]
-      csv.push(row)
-    }
-    downloadFile(csv.join("\n"),"csv",filename);
-    
+    downloadData("csv", filename);
   }
   if($("#rw3-button").classList.contains("is-link")){
-    
+    downloadData("rw3", filename);
   }
   modalManager.closeAllModals();
 });
+
+function downloadData(_type, _name){
+  let sr = baseSampleRate / saves[tabManager.activeTab-2].displaySampleRateLvl;
+
+  let series = [];
+  let tSerie = {
+    name: "Temps",
+    unit: "s",
+    values: []
+  }
+  let aSerie = {
+    name: "Amplitude",
+    unit: "",
+    values: []
+  }
+  aSerie.values = saves[tabManager.activeTab-2].linearData.getData(saves[tabManager.activeTab-2].displaySampleRateLvl);
+  for(let i = 0; i < aSerie.values.length; i++){
+    tSerie.values[i] = i / sr;
+  }
+
+  series.push(tSerie);
+  series.push(aSerie);
+
+  let file;
+  if(_type === "csv"){
+    file = exportToCSV(series, true);
+  }
+  if(_type === "rw3"){
+    file = exportToRW3(series, true, "Enregistrement PhyWeb Audio");
+  }
+  console.log("file : " , file)
+  downloadFile(file, _type, _name)
+}
 
 /*----------------------------------------------------------------------------------------------
 ------------------------Format milliseconds to a displayable time layout------------------------
@@ -451,67 +496,19 @@ function formatDate(_t) {
 }
 
 /*----------------------------------------------------------------------------------------------
----------------------------------------POINTS CONSTRUCTOR---------------------------------------
-----------------------------------------------------------------------------------------------*/
-/*function Points(_length, _type = "int16") { TODO OLD GRAPH LIB ???
-	if(_type == "float32"){
-		this.x = new Float32Array(_length);
-		this.y = new Float32Array(_length);
-	}
-	if(_type == "int16"){
-		this.x = new Float32Array(_length);
-		this.y = new Int16Array(_length);
-	}
-
-	this.setY = function(_d){
-		this.y = _d;
-	}
-
-	this.getPJSX = function(){
-		return this.x;
-	}
-	this.getPJSY = function(){
-		return this.y;
-	}
-	this.toGJS = function(){
-		let a = [];
-		for(let i = 0; i < this.x.length; i++){
-			a[i] = {x: this.x[i], y: this.y[i]};
-		}
-		return a;
-	}
-}*/
-
-/*----------------------------------------------------------------------------------------------
 --------------------------------------LINEAR DATA Object----------------------------------------
 ----------------------------------------------------------------------------------------------*/
 function LinearData(_data, _step = 1) {
 	this.data = _data;
 	this.step = _step;
 
-	this.generateXData = function(_length){
+	/*this.generateXData = function(_length){
 		// Create a new float32 array and populate it 
 		let xdata = new Float32Array(this.data.length);
 		for(let i = 0; i < xdata.length; i++){
 			xdata[i] = i * this.step;
 		}
 		return xdata;
-	}
-
-	/*this.toGJS = function(_downSampling = 1, _length = this.data.length * this.step, stabilize = false){
-		let data
-		if(stabilize == true){
-			data = this.stabilize();
-		} else{
-			data = this.data;
-		}
-		let xdata = this.generateXData(data.length);
-		// create a new array of points
-		let a = [];
-		for(let i = 0; i < (_length / this.step) / _downSampling; i++){
-			a[i] = {x: xdata[i * _downSampling], y: data[i * _downSampling]};
-		}
-		return a;
 	}*/
 
 	this.getData = function(_downSampling = 1, _length = undefined, stabilize = false){
@@ -936,7 +933,7 @@ function onSavTemporalFourierGraphSelection(event){
 }
 
 /*----------------------------------------------------------------------------------------------
--------------------------------------DEEP COPY FUNCTION-----------------------------------------
+-------------------------------------DEEP? COPY FUNCTION-----------------------------------------
 ----------------------------------------------------------------------------------------------*/
 function arrayCopy(_array, _length = _array.length){
 	let copy = [];
@@ -999,6 +996,9 @@ function computeTemporalFourier(_wave, _sampleRate, _range){
 	return chunks;
 }
 
+// save fourier replot
+$("#save-fourier-replot-button").addEventListener("click",()=>{onFourierReplotButtonClick()})
+
 function onFourierReplotButtonClick() {
 	// Save the ranges
 	saves[tabManager.activeTab-2].fourierPlottingRange = [savWaveChart.xAxis[0].min,savWaveChart.xAxis[0].max];
@@ -1057,23 +1057,6 @@ function onFourierReplotButtonClick() {
 		}
 		// Log fourier type displayed
 		saves[tabManager.activeTab-2].fourierType = 1;
-	}
-}
-
-/*----------------------------------------------------------------------------------------------
----------------------------------POPULATE SAMPLERATE SELECT-------------------------------------
-----------------------------------------------------------------------------------------------*/
-function populateSampleRateSelect(_select, _initLvl = 1, _l = 4){
-	// Remove all previous options
-	while (_select.firstChild) {
-    _select.removeChild(_select.firstChild);
-	}
-	// Populate sampleRate selects based on baseSampleRate
-	for (let i = _initLvl; i <= _l; i = i * 2) {
-		let option = document.createElement("option");
-		option.value = baseSampleRate / i;
-		option.text = (baseSampleRate / i).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " Hz";
-		_select.add(option);
 	}
 }
 });

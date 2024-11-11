@@ -253,10 +253,6 @@ function exportToRW3(_series, _rowMustBeComplete = false, _title){
     }
   }
 
-  rw3.push("£3 INCERTITUDE");
-  rw3.push("");
-  rw3.push("");
-  rw3.push("");
   rw3.push("£1 TRIGO");
   rw3.push("0");
   rw3.push("£1 LOG");
@@ -268,13 +264,13 @@ function exportToRW3(_series, _rowMustBeComplete = false, _title){
   rw3.push("");
   rw3.push("£0 GRAPHE VAR");
   rw3.push("&5 X");
-  rw3.push("x1");
+  rw3.push(_series[0].name);
   rw3.push("");
   rw3.push("");
   rw3.push("");
   rw3.push("");
   rw3.push("&5 Y");
-  rw3.push("y1");
+  rw3.push(_series[1].name);
   rw3.push("");
   rw3.push("");
   rw3.push("");
@@ -305,7 +301,7 @@ function exportToRW3(_series, _rowMustBeComplete = false, _title){
   rw3.push("");
 
   // Values
-  rw3.push("&96 VALEUR VAR");
+  rw3.push("&" + largestSerieLength + " VALEUR VAR");
 
   for(let i = 0; i < largestSerieLength; i++){
     let row = [];
