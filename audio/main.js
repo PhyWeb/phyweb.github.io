@@ -1,7 +1,7 @@
 import FOURIER from "./modules/fourier.js"
 import {PhyAudio, convertFloat32ToInt16} from "./modules/audio.js"
 
-import {ModalManager,TabManager,downloadFile, exportToCSV, exportToRW3} from "../common/common.js"
+import {ModalManager, TabManager, FullscreenManager, downloadFile, exportToCSV, exportToRW3} from "../common/common.js"
 
 const $ = document.querySelector.bind(document);
 
@@ -9,6 +9,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // modals
 let modalManager = new ModalManager();
+
+// fullscreen
+let fullscreenManager = new FullscreenManager($("#expand-button"),$("#compress-button"));
 
 // simpleMode enabled?
 let simpleMode = false;

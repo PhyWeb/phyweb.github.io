@@ -171,6 +171,34 @@ class TabManager {
 }
 
 /*----------------------------------------------------------------------------------------------
+----------------------------------------FULLSCREEN MANAGER--------------------------------------
+----------------------------------------------------------------------------------------------*/
+class FullscreenManager {
+	constructor(_expandButton, _compressButton) {
+    this.expandButton = _expandButton;
+    this.compressButton = _compressButton;
+
+    this.expandButton.addEventListener("click", ()=>{
+      document.documentElement.requestFullscreen();
+    });
+
+    this.compressButton.addEventListener("click", ()=>{
+      document.exitFullscreen();
+    });
+
+    document.documentElement.addEventListener("fullscreenchange", ()=>{
+      if (document.fullscreenElement) {
+        this.expandButton.classList.add("is-hidden");
+        this.compressButton.classList.remove("is-hidden");
+      } else {
+        this.expandButton.classList.remove("is-hidden");
+        this.compressButton.classList.add("is-hidden");
+      }
+    });
+	}
+}
+
+/*----------------------------------------------------------------------------------------------
 -------------------------------------EXPORT/IMPORT FUNCTIONS------------------------------------
 ----------------------------------------------------------------------------------------------*/
 
@@ -358,4 +386,4 @@ function maxOfArray(array){
   return max;
 }
 
-export {ModalManager, TabManager, exportToCSV, exportToRW3, downloadFile};
+export {ModalManager, TabManager, FullscreenManager, exportToCSV, exportToRW3, downloadFile};

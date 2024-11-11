@@ -4,7 +4,7 @@ import EXTRACTOR from "./modules/extractor.js"
 import MEASUREMENT from "./modules/measurement.js"
 import PLAYER from "./modules/player.js"
 
-import {ModalManager , downloadFile} from "../common/common.js"
+import {ModalManager , FullscreenManager} from "../common/common.js"
 
 const $ = document.querySelector.bind(document);
 
@@ -89,6 +89,9 @@ $("#open-resized-video").addEventListener("click", ()=>{
   modalManager.closeAllModals();
   player.load($("#file-input").files[0],$("#def-size-input").checked,$("#fps-size-input").checked,$("#duration-size-input").checked);
 });
+
+// FULLSCREEN
+let fullscreenManager = new FullscreenManager($("#expand-button"),$("#compress-button"));
 
 // MAGNIFIER
 $("#magnifier-button").addEventListener("click", ()=>{player.toggleMagnifier();});
