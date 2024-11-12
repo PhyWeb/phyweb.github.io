@@ -50,6 +50,85 @@ class ModalManager {
   }
 }
 
+function createElement(_type, _className, _parent){
+  let e = document.createElement(_type);
+  e.className = _className;
+
+  if(_parent){
+    _parent.appendChild(e);
+  }
+  return e
+}
+
+function closeAlertModal(_e){
+  _e.remove()//classList.remove("is-active");
+}
+
+function alertModal(_config){
+  console.log(_config)
+  let modal = createElement("div", "modal is-active", document.body);
+  let background = createElement("div", "modal-background", modal);
+  let card = createElement("div", "modal-card", modal);
+  let head = createElement("header", "modal-card-head", card);
+  let title = createElement("p", "modal-card-title", head);
+  let body = createElement("section", "modal-card-body", card);
+
+  // Style
+  if(_config.width){
+    card.style.width = _config.width;
+  }
+  // Header
+  if(_config.title){
+    title.innerHTML = _config.title;
+  }
+  if(_config.type) {
+    head.classList.add("has-background-"+_config.type);
+  }
+
+  // Body
+  if(_config.body){
+    body.innerHTML = _config.body;
+  }
+
+  // Has a footer
+  if(_config.confirm || _config.cancel) {
+    let foot = createElement("footer", "modal-card-foot", card);
+    let buttons = createElement("div", "buttons", foot);
+
+    if(_config.confirm){
+      let confirmButton = createElement("button", "button is-primary", buttons);
+      confirmButton.addEventListener("click", ()=>{closeAlertModal(modal)});
+
+      if(typeof _config.confirm === "string"){
+        confirmButton.innerHTML = _config.confirm;
+      } else{
+        confirmButton.innerHTML = _config.confirm.label;
+      }
+
+      if(_config.confirm.cb){
+        confirmButton.addEventListener("click", ()=>{_config.confirm.cb()});
+      }
+    }
+
+    if(_config.cancel){
+      let cancelButton = createElement("button", "button", buttons);
+      cancelButton.addEventListener("click", ()=>{closeAlertModal(modal)});
+
+      if(typeof _config.cancel === "string"){
+        cancelButton.innerHTML = _config.cancel;
+      } else {
+        cancelButton.innerHTML = _config.cancel.label;
+      }
+
+      if(_config.cancel.cb){
+        cancelButton.addEventListener("click", ()=>{_config.cancel.cb()});
+      }
+    }
+  }
+
+  background.addEventListener("click", ()=>{closeAlertModal(modal)});
+}
+
 /*----------------------------------------------------------------------------------------------
 ----------------------------------------TABMANAGER CLASS----------------------------------------
 ----------------------------------------------------------------------------------------------*/
@@ -386,4 +465,4 @@ function maxOfArray(array){
   return max;
 }
 
-export {ModalManager, TabManager, FullscreenManager, exportToCSV, exportToRW3, downloadFile};
+export {ModalManager, alertModal, TabManager, FullscreenManager, exportToCSV, exportToRW3, downloadFile};

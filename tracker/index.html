@@ -29,8 +29,8 @@
     </div>
     <div class="navbar-menu">
       <div class="navbar-start">
-        <div class="navbar-item has-dropdown is-boxed is-hoverable">
-          <a id="navbar-dropdown" class="navbar-link has-text-primary is-size-4 has-text-weight-bold">
+        <div id="navbar-dropdown" class="navbar-item has-dropdown is-boxed">
+          <a class="navbar-link has-text-primary is-size-4 has-text-weight-bold">
             <span class="icon"><i class="fa fa-crosshairs"></i></span>
             <span>Tracker</span>
           </a>
@@ -220,7 +220,7 @@
               </button>
             </div>
             <div class="level-item">
-              <button class="button p-2 js-modal-trigger" id="clear-table" title="Vider le tableau" style="height:52px;width:52px" data-target="clear-table-alert-modal">
+              <button class="button p-2" id="clear-table-button" title="Vider le tableau" style="height:52px;width:52px">
                 <img src="lib/table.svg" height="30" width="36"/>
               </button>
             </div>
@@ -516,73 +516,6 @@
               </article>
             </div>
           </div>
-        </div>
-      </section>
-    </div>
-  </div>
-  <!------------------------------------------------------------------------------------------------------------>
-  <!----------------------------------------NO VIDEODECODER ALERT MODAL----------------------------------------->
-  <!------------------------------------------------------------------------------------------------------------>
-  <div id="no-videodecoder-alert-modal" class="modal">
-    <div class="modal-background"></div>
-    <div class="modal-card" id="no-videodecoder-alert-modal-card">
-      <header class="modal-card-head has-background-danger">
-        <p class="modal-card-title">Navigateur non compatible</p>
-        <button class="delete" aria-label="close"></button>
-      </header>
-      <section class="modal-card-body has-bottom-round-corner has-text-justified">
-        <div class="content">
-          <p>PhyWeb utilise des technologies modernes pour fonctionner. Votre navigateur ne prend pas en charge toutes les fonctions nécessaires. Exemples de navigateurs compatibles :</p>
-          <ul>
-            <li>Google Chrome version 94 et +</li>
-            <li>Microsoft Edge version 94 et +</li>
-            <li>Mozilla Firefox version 130 et +</li>
-          </ul>
-        </div>
-      </section>
-    </div>
-  </div>
-  <!------------------------------------------------------------------------------------------------------------>
-  <!-------------------------------------------CLEAR TABLE ALERT MODAL------------------------------------------>
-  <!------------------------------------------------------------------------------------------------------------>
-  <div id="clear-table-alert-modal" class="modal">
-    <div class="modal-background"></div>
-    <div class="modal-card" id="clear-table-alert-modal-card">
-      <header class="modal-card-head has-background-warning">
-        <p class="modal-card-title">Vider le tableau</p>
-        <button class="delete" aria-label="close"></button>
-      </header>
-      <section class="modal-card-body has-text-justified">
-        <p class="block">Etes-vous sûr de vouloir vider le tableau de toutes ses données?</p>
-      </section>
-      <footer class="modal-card-foot buttons">
-        <button class="button is-primary" id="confirm-clear-table-button">
-          Vider de tableau
-        </button>
-        <button class="button" id="cancel-clear-table-button">
-          Annuler
-        </button>
-      </footer>
-    </div>
-  </div>
-  <!------------------------------------------------------------------------------------------------------------>
-  <!----------------------------------------------WRONG FILE FORMAT--------------------------------------------->
-  <!------------------------------------------------------------------------------------------------------------>
-  <div id="fileformat-alert-modal" class="modal">
-    <div class="modal-background"></div>
-    <div class="modal-card" id="fileformat-alert-modal-card">
-      <header class="modal-card-head has-background-danger">
-        <p class="modal-card-title">Codec video non supporté</p>
-        <button class="delete" aria-label="close"></button>
-      </header>
-      <section class="modal-card-body has-bottom-round-corner has-text-justified">
-        <div class="content">
-          <p>La vidéo doit être au format mp4 et encodé dans un des formats listé ci-dessous :</p>
-          <ul>
-            <li>H.264</li>
-            <li>H.265</li>
-            <li>AV1</li>
-          </ul>
         </div>
       </section>
     </div>

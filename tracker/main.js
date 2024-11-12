@@ -4,7 +4,7 @@ import EXTRACTOR from "./modules/extractor.js"
 import MEASUREMENT from "./modules/measurement.js"
 import PLAYER from "./modules/player.js"
 
-import {ModalManager , FullscreenManager} from "../common/common.js"
+import {ModalManager, alertModal, FullscreenManager} from "../common/common.js"
 
 const $ = document.querySelector.bind(document);
 
@@ -26,14 +26,33 @@ function isNumber(str) { // TODO usefull here ???
 
 document.addEventListener('DOMContentLoaded', () => {
 
+// navbar
+$("#navbar-dropdown").addEventListener("click",()=>{
+	$("#navbar-dropdown").classList.toggle("is-active");
+})
+
 // MODALS
 let modalManager = new ModalManager();
 
-if ('VideoDecoder' in window) {
+if ("VideoDecoder" in window) {
   console.log("VideoDecoder supported")
 } else {
   console.log("VideoDecoder NOT supported")
-  $("#no-videodecoder-alert-modal").classList.add("is-active")
+  alertModal({
+    type: "danger",
+    title: "Navigateur non compatible",
+    body: `<div class="content has-text-justified"">
+          <p>PhyWeb utilise des technologies modernes pour fonctionner. Votre navigateur ne prend pas en charge toutes les fonctions nécessaires. </p>
+          <p>Exemples de navigateurs compatibles :</p>
+          <ul>
+            <li>Google Chrome version 94 et +</li>
+            <li>Microsoft Edge version 94 et +</li>
+            <li>Mozilla Firefox version 130 et +</li>
+          </ul>
+        </div>`,
+    confirm: "OK",
+    width: "42rem"
+  })
 }
 
 // NAV
@@ -72,7 +91,20 @@ $("#open-video").addEventListener("click", ()=>{
 $("#file-input").addEventListener("change", () => {
   console.log($("#file-input").files[0].type)
   if($("#file-input").files[0].type !== "video/mp4"){
-    $("#fileformat-alert-modal").classList.add("is-active");
+    alertModal({
+      type: "danger",
+      title: "Codec video non supporté",
+      body: `<div class="content">
+          <p>La vidéo doit être au format mp4 et encodé dans un des formats listé ci-dessous :</p>
+          <ul>
+            <li>H.264</li>
+            <li>H.265</li>
+            <li>AV1</li>
+          </ul>
+        </div>`,
+      confirm: "OK",
+      width: "45rem"
+    })
     return;
   }
   if($("#file-input").files[0] != undefined){
@@ -151,12 +183,16 @@ $("#ppf-input").addEventListener("change", (e)=> {
 });
 
 // TABLE CONTROLS
-$("#confirm-clear-table-button").addEventListener("click", ()=> {
-  measurement.clearTable();
-  modalManager.closeAllModals();
-});
-$("#cancel-clear-table-button").addEventListener("click", ()=> {
-  modalManager.closeAllModals();
+$("#clear-table-button").addEventListener("click", ()=> {
+  alertModal({
+    type: "warning",
+    title: "Vider le tableau",
+    body: "Etes-vous sûr de vouloir vider le tableau de toutes ses données ?",
+    confirm:{
+      label: "Vider de tableau",
+      cb: ()=>{measurement.clearTable();}},
+    cancel: "Annuler"
+  })
 });
 $("#clear-row").addEventListener("click", ()=> {
   measurement.clearRow(player.currentFrame);

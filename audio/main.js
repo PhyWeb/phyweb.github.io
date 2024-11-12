@@ -1,7 +1,7 @@
 import FOURIER from "./modules/fourier.js"
 import {PhyAudio, convertFloat32ToInt16} from "./modules/audio.js"
 
-import {ModalManager, TabManager, FullscreenManager, downloadFile, exportToCSV, exportToRW3} from "../common/common.js"
+import {ModalManager, alertModal, TabManager, FullscreenManager, downloadFile, exportToCSV, exportToRW3} from "../common/common.js"
 
 const $ = document.querySelector.bind(document);
 
@@ -50,6 +50,11 @@ let samplingStartTime;
 
 // save vars
 let saves = [];
+
+// navbar
+$("#navbar-dropdown").addEventListener("click",()=>{
+	$("#navbar-dropdown").classList.toggle("is-active");
+})
 
 /*----------------------------------------------------------------------------------------------
 ----------------------------------------------TABS----------------------------------------------
@@ -379,7 +384,12 @@ function onAudioDecodeEnd(_rawData){
 
 	let length = _rawData.duration * baseSampleRate;
 	if(_rawData.duration > 20){
-		// TODO let the user choose the part of the file he wants
+		alertModal({
+      type: "warning",
+      title: "Fichier trop long",
+      body: "Le fichier est trop long. Pour des raisons de performance, seules les 20 premières secondes du fichier ont été chargées.",
+      confirm: "OK"
+    })
 		length = baseSampleRate * 20;
 	}
 	// Save the sampleRate used DUMMY

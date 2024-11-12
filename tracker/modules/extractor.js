@@ -1,3 +1,5 @@
+import {alertModal} from "../../common/common.js"
+
 const $ = document.querySelector.bind(document);
 
 /*----------------------------------------------------------------------------------------------
@@ -324,7 +326,21 @@ class MP4DemuxerDummy {
         return new Uint8Array(stream.buffer, 8);  // Remove the box header.
       }
     }
-    $("#fileformat-alert-modal").classList.add("is-active");
+    //$("#fileformat-alert-modal").classList.add("is-active");
+    alertModal({
+      type: "danger",
+      title: "Codec video non supporté",
+      body: `<div class="content">
+          <p>La vidéo doit être au format mp4 et encodé dans un des formats listé ci-dessous :</p>
+          <ul>
+            <li>H.264</li>
+            <li>H.265</li>
+            <li>AV1</li>
+          </ul>
+        </div>`,
+      confirm: "OK",
+      width: "45rem"
+    })
     throw "avcC or hvcC or av1C not found";
   }
 
