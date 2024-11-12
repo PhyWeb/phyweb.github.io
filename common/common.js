@@ -203,6 +203,7 @@ class TabManager {
   }
 
   deleteTab(_id){
+    // tab alert TODO
     this.tabs[_id].button.remove();
 
     // Call the callback
