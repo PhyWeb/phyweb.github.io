@@ -4,7 +4,7 @@ import EXTRACTOR from "./modules/extractor.js"
 import MEASUREMENT from "./modules/measurement.js"
 import PLAYER from "./modules/player.js"
 
-import {ModalManager, alertModal, FullscreenManager} from "../common/common.js"
+import {ModalManager, alertModal, createAboutModal, FullscreenManager} from "../common/common.js"
 
 const $ = document.querySelector.bind(document);
 
@@ -30,6 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
 $("#navbar-dropdown").addEventListener("click",()=>{
 	$("#navbar-dropdown").classList.toggle("is-active");
 })
+createAboutModal("Tracker");
 
 // MODALS
 let modalManager = new ModalManager();

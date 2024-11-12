@@ -4,7 +4,7 @@
 
 
 /*----------------------------------------------------------------------------------------------
----------------------------------------MODALMANAGER CLASS---------------------------------------
+-----------------------------------------MODALS / ALERTS----------------------------------------
 ----------------------------------------------------------------------------------------------*/
 class ModalManager {
 	constructor() {
@@ -81,8 +81,11 @@ function alertModal(_config){
   if(_config.title){
     title.innerHTML = _config.title;
   }
-  if(_config.type) {
+  if(_config.type){
     head.classList.add("has-background-"+_config.type);
+  }
+  if(_config.delete){
+    let deleteButton = createElement("button", "delete", head);
   }
 
   // Body
@@ -128,9 +131,87 @@ function alertModal(_config){
         cancelButton.addEventListener("click", ()=>{_config.cancel.cb()});
       }
     }
+  } else {
+    // No footer
+    body.classList.add("has-bottom-round-corner");
   }
 
   background.addEventListener("click", ()=>{closeAlertModal(modal)});
+}
+
+function createAboutModal(_app){
+  let description;
+  //switch
+  alertModal({
+    title: "A propos de PhyWeb " + _app,
+    delete: true,
+    width: "50rem",
+    body: `<div class="field is-horizontal">
+          <div class="field-label is-flex-grow-0">
+            <label class="label">
+              <span class="icon is-large"><i class="fa fa-circle-info fa-2xl"></i></span>
+            </label>
+          </div>
+          <div class="field-body">
+            <div class="field has-text-justified">
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras sagittis euismod velit, vehicula blandit odio ornare a. Nam mattis purus vitae vehicula efficitur. Sed volutpat nunc et ornare condimentum. Integer rutrum gravida urna sit amet feugiat. Mauris vehicula, enim eu sodales pellentesque, tortor enim lobortis leo, at elementum leo sapien quis enim. 
+            </div>
+          </div>
+        </div>
+        <div class="field is-horizontal">
+          <div class="field-label is-flex-grow-0">
+            <label class="label">
+              <span class="icon is-large"><i class="fa-brands fa-chrome fa-2xl"></i></i></span>
+            </label>
+          </div>
+          <div class="field-body">
+            <div class="field">
+              <div class="content">
+                <p class="has-text-justified">PhyWeb utilise des technologies modernes pour fonctionner. Votre navigateur ne prend pas en charge toutes les fonctions nécessaires. Exemples de navigateurs compatibles :</p>
+                <ul>
+                  <li>Google Chrome version 94 et +</li>
+                  <li>Microsoft Edge version 94 et +</li>
+                  <li>Mozilla Firefox version 130 et +</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="field is-horizontal">
+          <div class="field-label is-flex-grow-0">
+            <label class="label">
+              <span class="icon is-large"><i class="fa fa-envelope fa-2xl"></i></span>
+            </label>
+          </div>
+          <div class="field-body">
+            <div class="field">
+              pro.wal@protonmail.com
+            </div>
+          </div>
+        </div>
+        <div class="field is-horizontal">
+          <div class="field-label is-flex-grow-0">
+            <label class="label">
+              <span class="icon is-large"><i class="fa-solid fa-copyright fa-2xl"></i></span>
+            </label>
+          </div>
+          <div class="field-body">
+            <div class="field">
+              <article class="message is-link">
+                <div class="message-header" id="licence-header" style="border-radius:6px">
+                  <a>PhyWeb Tracker Copyright (c) 2024 Gaétan Walter</a>
+                </div>
+                <div class="message-body is-hidden" id="licence-body">
+                  <p class="block has-text-justified">Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:</p>
+                  <p class="block has-text-justified">The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.</p>
+                  <p class="block has-text-justified">THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</p>
+                </div>
+              </article>
+            </div>
+          </div>
+        </div>`,
+  });
+
 }
 
 /*----------------------------------------------------------------------------------------------
@@ -484,4 +565,4 @@ function maxOfArray(array){
   return max;
 }
 
-export {ModalManager, alertModal, TabManager, FullscreenManager, exportToCSV, exportToRW3, downloadFile};
+export {ModalManager, alertModal, createAboutModal, TabManager, FullscreenManager, exportToCSV, exportToRW3, downloadFile};

@@ -13,7 +13,5 @@ phyweb homepage
 
 audio modal pour choisir une partie du fichier (et pas prendre forcement les 20 premières secondes)
 
-alert avant de fermer onglet
-
 TRACKER change data format to series
 AUDIO change data format to series
