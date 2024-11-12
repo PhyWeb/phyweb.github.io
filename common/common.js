@@ -96,7 +96,11 @@ function alertModal(_config){
     let buttons = createElement("div", "buttons", foot);
 
     if(_config.confirm){
-      let confirmButton = createElement("button", "button is-primary", buttons);
+      let type = "primary";
+      if(_config.confirm.type){
+        type = _config.confirm.type;
+      }
+      let confirmButton = createElement("button", "button is-" + type, buttons);
       confirmButton.addEventListener("click", ()=>{closeAlertModal(modal)});
 
       if(typeof _config.confirm === "string"){
@@ -203,24 +207,38 @@ class TabManager {
   }
 
   deleteTab(_id){
-    // tab alert TODO
-    this.tabs[_id].button.remove();
+    let confirmDeleteTab = ()=>{
+      this.tabs[_id].button.remove();
 
-    // Call the callback
-    if(this.tabs[_id].deleteCB){
-      this.tabs[_id].deleteCB(_id);
+      // Call the callback
+      if(this.tabs[_id].deleteCB){
+        this.tabs[_id].deleteCB(_id);
+      }
+  
+      this.tabs.splice(_id,1);
+  
+      // Active the tab to the left if possible
+      if(this.activeTab === _id){
+        if(this.activeTab > 0){
+          this.onTabClicked(this.activeTab - 1);
+        } else{
+          this.onTabClicked(0);
+        }
+      }
     }
 
-    this.tabs.splice(_id,1);
+    alertModal({
+      type: "warning",
+      title: "Fermer un onglet",
+      body: "Etes-vous sur de vouloir fermer l'onglet : <strong>" + this.tabs[_id].name + "</strong>",
+      confirm: {
+        label: "Fermer",
+        type: "danger",
+        cb: confirmDeleteTab
+      },
+      cancel: "Annuler"
+    });
 
-    // Active the tab to the left if possible
-		if(this.activeTab === _id){
-      if(this.activeTab > 0){
-        this.onTabClicked(this.activeTab - 1);
-      } else{
-        this.onTabClicked(0);
-      }
-		}
   }
 
   onTabClicked(_id){
