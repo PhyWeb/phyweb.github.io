@@ -1,7 +1,7 @@
 import FOURIER from "./modules/fourier.js"
 import {PhyAudio, convertFloat32ToInt16} from "./modules/audio.js"
 
-import {ModalManager, alertModal, TabManager, FullscreenManager, downloadFile, exportToCSV, exportToRW3} from "../common/common.js"
+import {ModalManager, alertModal, aboutModal, TabManager, FullscreenManager, downloadFile, exportToCSV, exportToRW3} from "../common/common.js"
 
 const $ = document.querySelector.bind(document);
 
@@ -54,6 +54,9 @@ let saves = [];
 // navbar
 $("#navbar-dropdown").addEventListener("click",()=>{
 	$("#navbar-dropdown").classList.toggle("is-active");
+})
+$("#about-button").addEventListener("click",()=>{
+	aboutModal("Audio");
 })
 
 /*----------------------------------------------------------------------------------------------

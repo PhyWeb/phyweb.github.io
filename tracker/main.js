@@ -4,7 +4,7 @@ import EXTRACTOR from "./modules/extractor.js"
 import MEASUREMENT from "./modules/measurement.js"
 import PLAYER from "./modules/player.js"
 
-import {ModalManager, alertModal, createAboutModal, FullscreenManager} from "../common/common.js"
+import {ModalManager, alertModal, aboutModal, FullscreenManager} from "../common/common.js"
 
 const $ = document.querySelector.bind(document);
 
@@ -30,7 +30,9 @@ document.addEventListener('DOMContentLoaded', () => {
 $("#navbar-dropdown").addEventListener("click",()=>{
 	$("#navbar-dropdown").classList.toggle("is-active");
 })
-createAboutModal("Tracker");
+$("#about-button").addEventListener("click",()=>{
+	aboutModal("Tracker");
+})
 
 // MODALS
 let modalManager = new ModalManager();
@@ -225,11 +227,6 @@ $("#download-file-button").addEventListener("click", ()=>{
     measurement.downloadData("rw3", filename);
   }
   modalManager.closeAllModals();
-});
-
-// LICENCE
-$("#licence-header").addEventListener("click", ()=>{
-  $("#licence-body").classList.toggle("is-hidden");
 });
 
 // RESIZE

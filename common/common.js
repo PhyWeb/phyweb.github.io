@@ -1,3 +1,5 @@
+const $ = document.querySelector.bind(document);
+
 /*----------------------------------------------------------------------------------------------
 -----------------------------------------NAVBAR MANAGER-----------------------------------------
 ----------------------------------------------------------------------------------------------*/
@@ -65,7 +67,6 @@ function closeAlertModal(_e){
 }
 
 function alertModal(_config){
-  console.log(_config)
   let modal = createElement("div", "modal is-active", document.body);
   let background = createElement("div", "modal-background", modal);
   let card = createElement("div", "modal-card", modal);
@@ -86,6 +87,7 @@ function alertModal(_config){
   }
   if(_config.delete){
     let deleteButton = createElement("button", "delete", head);
+    deleteButton.addEventListener("click", ()=>{closeAlertModal(modal)});
   }
 
   // Body
@@ -139,8 +141,18 @@ function alertModal(_config){
   background.addEventListener("click", ()=>{closeAlertModal(modal)});
 }
 
-function createAboutModal(_app){
+function aboutModal(_app){
   let description;
+  switch (_app) {
+    case "Tracker":
+      description = "tracker description"
+      break;
+    case "Audio":
+      description = "audio description"
+      break;
+    default:
+      console.log("wrong app name in about modal");
+  }
   //switch
   alertModal({
     title: "A propos de PhyWeb " + _app,
@@ -153,9 +165,9 @@ function createAboutModal(_app){
             </label>
           </div>
           <div class="field-body">
-            <div class="field has-text-justified">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras sagittis euismod velit, vehicula blandit odio ornare a. Nam mattis purus vitae vehicula efficitur. Sed volutpat nunc et ornare condimentum. Integer rutrum gravida urna sit amet feugiat. Mauris vehicula, enim eu sodales pellentesque, tortor enim lobortis leo, at elementum leo sapien quis enim. 
-            </div>
+            <div class="field has-text-justified">`
+              + description +  
+            `</div>
           </div>
         </div>
         <div class="field is-horizontal">
@@ -199,7 +211,7 @@ function createAboutModal(_app){
             <div class="field">
               <article class="message is-link">
                 <div class="message-header" id="licence-header" style="border-radius:6px">
-                  <a>PhyWeb Tracker Copyright (c) 2024 Gaétan Walter</a>
+                  <a>PhyWeb ` + _app + ` Copyright (c) 2024 Gaétan Walter</a>
                 </div>
                 <div class="message-body is-hidden" id="licence-body">
                   <p class="block has-text-justified">Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:</p>
@@ -212,6 +224,11 @@ function createAboutModal(_app){
         </div>`,
   });
 
+  // LICENCE
+  $("#licence-header").addEventListener("click", ()=>{
+    console.log("ué")
+    $("#licence-body").classList.toggle("is-hidden");
+  });
 }
 
 /*----------------------------------------------------------------------------------------------
@@ -565,4 +582,4 @@ function maxOfArray(array){
   return max;
 }
 
-export {ModalManager, alertModal, createAboutModal, TabManager, FullscreenManager, exportToCSV, exportToRW3, downloadFile};
+export {ModalManager, alertModal, aboutModal, TabManager, FullscreenManager, exportToCSV, exportToRW3, downloadFile};
