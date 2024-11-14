@@ -1,19 +1,16 @@
 import FOURIER from "./modules/fourier.js"
 import {PhyAudio, convertFloat32ToInt16} from "./modules/audio.js"
 
-import {ModalManager, alertModal, aboutModal, TabManager, FullscreenManager, downloadFile, exportToCSV, exportToRW3} from "../common/common.js"
+import {Common, alertModal, TabManager, downloadFile, exportToCSV, exportToRW3} from "../common/common.js"
 
 const $ = document.querySelector.bind(document);
 
 document.addEventListener('DOMContentLoaded', () => {
 
-// modals
-let modalManager = new ModalManager();
+// Common
+let common = new Common();
 
-// fullscreen
-let fullscreenManager = new FullscreenManager($("#expand-button"),$("#compress-button"));
-
-// simpleMode enabled?
+// SimpleMode enabled?
 let simpleMode = false;
 
 // Declare vars
@@ -38,26 +35,18 @@ let fileReader = new FileReader();
 // Get the default max sample rate from the audio context
 let baseSampleRate = audio.getSampleRate();
 
-// rt vars
+// RTS vars
 let paused = false;
 
-// record vars
+// Record vars
 let sampleLength = parseFloat($("#sample-length-input").value);
 let recSampleRate = baseSampleRate; // The sample will be recorded with this sampleRate
 let recordedSampleRate; // The sample was recorded with this sampleRate
 
 let samplingStartTime;
 
-// save vars
+// Save vars
 let saves = [];
-
-// navbar
-$("#navbar-dropdown").addEventListener("click",()=>{
-	$("#navbar-dropdown").classList.toggle("is-active");
-})
-$("#about-button").addEventListener("click",()=>{
-	aboutModal("Audio");
-})
 
 /*----------------------------------------------------------------------------------------------
 ----------------------------------------------TABS----------------------------------------------
@@ -107,22 +96,23 @@ $("#temporal-fourier-button").addEventListener("click",()=>{
 ----------------------------------------------------------------------------------------------*/
 $("#choose-config-modal").classList.add("is-active");
 $("#simple-mode-button").addEventListener("click", ()=>{
-	modalManager.closeAllModals();
+	common.modalManager.closeAllModals();
 
 	simpleMode = true;
 
 	// Hide fourier graph cards
 	$("#rt-fourier-container").style.display = "none";
 	$("#rec-fourier-container").style.display = "none";
-	//$("#savFourierContainer").parentNode.style.display = "none";
+	$("#sav-fourier-container").style.display = "none";
+	$("#sav-temporal-fourier-container").style.display = "none";
 
-	// Hide fourier menu card
+	// Hide save furier settings
 	$("#fourier-settings-panel").style.display = "none";
 
 	// Resize wave charts to full height
 	$("#rt-graph-container").style.height = "calc(100vh - 130px)";
 	$("#rec-graph-container").style.height = "calc(100vh - 130px)";
-	$("#sav-graph-container").style.height = "calc(100vh - 168px)";
+	$("#sav-graph-container").style.height = "calc(100vh - 130px)";
 
   //remove unnecassary margin
   $("#rt-graph-container").style.marginBottom = "0px";
@@ -136,7 +126,7 @@ $("#simple-mode-button").addEventListener("click", ()=>{
 });
 
 $("#complete-mode-button").addEventListener("click", ()=>{
-	modalManager.closeAllModals();
+	common.modalManager.closeAllModals();
 
   simpleMode = false;
 
@@ -253,7 +243,7 @@ $("#confirm-save-button").addEventListener("click", ()=>{
 
 	// Empty the input and hide the modal card
 	$("#save-name-input").value = "";
-	modalManager.closeAllModals();
+	common.modalManager.closeAllModals();
 })
 
 /*----------------------------------------------------------------------------------------------
@@ -442,7 +432,7 @@ $("#download-file-button").addEventListener("click", ()=>{
   if($("#rw3-button").classList.contains("is-link")){
     downloadData("rw3", filename);
   }
-  modalManager.closeAllModals();
+  common.modalManager.closeAllModals();
 });
 
 function downloadData(_type, _name){
@@ -575,17 +565,6 @@ function LinearData(_data, _step = 1) {
 /*----------------------------------------------------------------------------------------------
 -----------------------------------------GRAPH SETTINGS-----------------------------------------
 ----------------------------------------------------------------------------------------------*/
-// Define the colors used in the app CHANGE TO USE W3.CSS COLORSSSSSSSSSSSSSSSSSSSS
-let phyColors = {
-	// Copy from w3-blue
-	black: "rgb(0,0,0)",
-	blue: "rgb(33, 150, 243)",
-	deepOrange: "rgb(255, 87, 34)",
-	pink: "rgb(233, 30, 99)",
-	blueGrey: "rgb(96, 125, 139)",
-	theme:"#009688",
-	theme2:"#3f51b5"
-};
 
 Highcharts.setOptions({
 	lang: {
@@ -613,7 +592,7 @@ function HighchartOptions(_title, _xTitle, _yTitle, _xMin, _xMax, _yMin, _yMax, 
 				hover: {lineWidthPlus: 0}
 			},
 			lineWidth: 3,
-			color: phyColors.theme2,
+			color: common.colors.link,
 			enableMouseTracking: _mouseTracking
 		},
 	};

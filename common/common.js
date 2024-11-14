@@ -1,10 +1,36 @@
 const $ = document.querySelector.bind(document);
 
 /*----------------------------------------------------------------------------------------------
------------------------------------------NAVBAR MANAGER-----------------------------------------
+---------------------------------------------Common---------------------------------------------
 ----------------------------------------------------------------------------------------------*/
+class Common {
+  colors = {
+    primary: "hsl(171, 100%, 41%)",
+    link: "hsl(217, 71%, 53%)"
+  }
+  constructor() {
+    this.navbarSetup();
+
+    this.FullscreenManager = new FullscreenManager($("#expand-button"),$("#compress-button"));
+    this.modalManager = new ModalManager();
+  }
+
+  navbarSetup(){
+    $("#navbar-dropdown").addEventListener("click",()=>{
+      $("#navbar-dropdown").classList.toggle("is-active");
+    })
+    $("#about-button").addEventListener("click",()=>{
+      aboutModal("Audio");
+    })
+  }
+
+  isNumber(str) {
+    return !isNaN(str) && // use type coercion to parse the _entirety_ of the string (`parseFloat` alone does not do this)...
+    !isNaN(parseFloat(str)) // ...and ensure strings of whitespace fail
+  }
 
 
+}
 /*----------------------------------------------------------------------------------------------
 -----------------------------------------MODALS / ALERTS----------------------------------------
 ----------------------------------------------------------------------------------------------*/
@@ -571,8 +597,8 @@ async function downloadFile(_file, _type,_name){
 /*----------------------------------------------------------------------------------------------
 ------------------------------------------MISC FUNCTIONS----------------------------------------
 ----------------------------------------------------------------------------------------------*/
-
-function maxOfArray(array){
+// TODO still usefull ?
+/*function maxOfArray(array){
   let max = 0;
   for(let i = 0; i < array.length; i++){
     if(array[i] > max){
@@ -580,6 +606,6 @@ function maxOfArray(array){
     }
   }
   return max;
-}
+}*/
 
-export {ModalManager, alertModal, aboutModal, TabManager, FullscreenManager, exportToCSV, exportToRW3, downloadFile};
+export {Common, alertModal, TabManager, exportToCSV, exportToRW3, downloadFile};

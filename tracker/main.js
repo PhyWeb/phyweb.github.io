@@ -4,38 +4,21 @@ import EXTRACTOR from "./modules/extractor.js"
 import MEASUREMENT from "./modules/measurement.js"
 import PLAYER from "./modules/player.js"
 
-import {ModalManager, alertModal, aboutModal, FullscreenManager} from "../common/common.js"
+import {Common, alertModal} from "../common/common.js"
 
 const $ = document.querySelector.bind(document);
 
-const videoContainer = $("#videoContainer");
-let videoCanvas = $("#videoCanvas");
-
 let videolist = new VIDEOLIST();
-
 let extractor = new EXTRACTOR();
 let measurement = new MEASUREMENT();
-let player = new PLAYER(videoContainer, videoCanvas, measurement, extractor);
+let player = new PLAYER($("#videoContainer"), $("#videoCanvas"), measurement, extractor);
 
+// handler to resize the columns
 let isHandlerDragging = false;
 
-function isNumber(str) { // TODO usefull here ???
-  return !isNaN(str) && // use type coercion to parse the _entirety_ of the string (`parseFloat` alone does not do this)...
-  !isNaN(parseFloat(str)) // ...and ensure strings of whitespace fail
-}
-
 document.addEventListener('DOMContentLoaded', () => {
-
-// navbar
-$("#navbar-dropdown").addEventListener("click",()=>{
-	$("#navbar-dropdown").classList.toggle("is-active");
-})
-$("#about-button").addEventListener("click",()=>{
-	aboutModal("Tracker");
-})
-
-// MODALS
-let modalManager = new ModalManager();
+// Common
+let common = new Common();
 
 if ("VideoDecoder" in window) {
   console.log("VideoDecoder supported")
@@ -86,7 +69,7 @@ $("#mesures-button").addEventListener("click", ()=>{
 // VIDEOLIST
 videolist.init("assets/list.json");
 $("#open-video").addEventListener("click", ()=>{
-  modalManager.closeAllModals();
+  common.modalManager.closeAllModals();
   player.load("assets/" + $(".video-item.is-active").dataset.path);
 });
 
@@ -112,7 +95,7 @@ $("#file-input").addEventListener("change", () => {
   }
   if($("#file-input").files[0] != undefined){
     player.checkVideoSize($("#file-input").files[0]);
-    modalManager.closeAllModals();
+    common.modalManager.closeAllModals();
   }
 });
 $("#file-input").addEventListener("click", () => {
@@ -121,12 +104,9 @@ $("#file-input").addEventListener("click", () => {
 
 // RESIZEVIDEO
 $("#open-resized-video").addEventListener("click", ()=>{
-  modalManager.closeAllModals();
+  common.modalManager.closeAllModals();
   player.load($("#file-input").files[0],$("#def-size-input").checked,$("#fps-size-input").checked,$("#duration-size-input").checked);
 });
-
-// FULLSCREEN
-let fullscreenManager = new FullscreenManager($("#expand-button"),$("#compress-button"));
 
 // MAGNIFIER
 $("#magnifier-button").addEventListener("click", ()=>{player.toggleMagnifier();});
@@ -142,22 +122,22 @@ $("#last-button").addEventListener("click", ()=>{player.lastFrame();});
 // ORIGIN
 $("#topright").addEventListener("click", ()=> {
   player.enterOriginMode("topright");
-  videoCanvas.style.cursor = "url(lib/cursors/upright.svg) 8 22, crosshair"
+  $("#videoCanvas").style.cursor = "url(lib/cursors/upright.svg) 8 22, crosshair"
 })
 
 $("#topleft").addEventListener("click", ()=> {
   player.enterOriginMode("topleft");
-  videoCanvas.style.cursor = "url(lib/cursors/upleft.svg) 22 22, crosshair"
+  $("#videoCanvas").style.cursor = "url(lib/cursors/upleft.svg) 22 22, crosshair"
 })
 
 $("#downright").addEventListener("click", ()=> {
   player.enterOriginMode("downright");
-  videoCanvas.style.cursor = "url(lib/cursors/downright.svg) 8 8, crosshair"
+  $("#videoCanvas").style.cursor = "url(lib/cursors/downright.svg) 8 8, crosshair"
 })
 
 $("#downleft").addEventListener("click", ()=> {
   player.enterOriginMode("downleft");
-  videoCanvas.style.cursor = "url(lib/cursors/downleft.svg) 22 8, crosshair"
+  $("#videoCanvas").style.cursor = "url(lib/cursors/downleft.svg) 22 8, crosshair"
 })
 
 // SCALE
@@ -166,7 +146,7 @@ $("#segment-button").addEventListener("click", ()=> {
 })
 
 $("#scale-input").addEventListener("input", ()=> {
-  if(!isNumber($("#scale-input").value)){
+  if(!common.isNumber($("#scale-input").value)){
     $("#scale-input").classList.add("has-background-danger");
   } else {
     $("#scale-input").classList.remove("has-background-danger");
@@ -226,7 +206,7 @@ $("#download-file-button").addEventListener("click", ()=>{
   } else{
     measurement.downloadData("rw3", filename);
   }
-  modalManager.closeAllModals();
+  common.modalManager.closeAllModals();
 });
 
 // RESIZE
