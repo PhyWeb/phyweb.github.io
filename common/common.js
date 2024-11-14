@@ -252,7 +252,6 @@ function aboutModal(_app){
 
   // LICENCE
   $("#licence-header").addEventListener("click", ()=>{
-    console.log("ué")
     $("#licence-body").classList.toggle("is-hidden");
   });
 }

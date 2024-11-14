@@ -307,7 +307,6 @@ export default class MEASUREMENT {
         xSerie.values[j] = this.scalex(this.data[j].xs[i-1]);
         ySerie.values[j] = this.scaley(this.data[j].ys[i-1]);
       }
-      console.log(xSerie);
       series.push(xSerie);
       series.push(ySerie);
     }

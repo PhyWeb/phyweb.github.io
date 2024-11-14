@@ -236,7 +236,6 @@ $("#confirm-save-button").addEventListener("click", ()=>{
   })
 
   function onCloseTabButton(_id){
-    console.log("splice" + _id)
 		// Delete tab datas
 		saves.splice(_id - 2,1);
   }
@@ -252,15 +251,30 @@ $("#confirm-save-button").addEventListener("click", ()=>{
 $("#sample-button").addEventListener("click",()=>{
 	// SampleLength value verifications
 	if($("#sample-length-input").value === ""){
-		alert("La durée d'enregistrement n'est pas un nombre valide.");
+    alertModal({
+      type: "warning",
+      title: "Durée non valide",
+      body: "La durée d'enregistrement n'est pas un nombre valide.",
+      confirm: "OK"
+    })
 		return;
 	}
 	if($("#sample-length-input").value < 0.01){
-		alert("La durée d'enregistrement minimale est de 0,01 s.");
+    alertModal({
+      type: "warning",
+      title: "Durée insuffisante",
+      body: "La durée d'enregistrement minimale est de 0,01 s.",
+      confirm: "OK"
+    })
 		return;
 	}
 	if($("#sample-length-input").value > 30){
-		alert("La durée d'enregistrement maximale est de 30 s.");
+    alertModal({
+      type: "warning",
+      title: "Durée trop importante",
+      body: "La durée d'enregistrement maximale est de 30 s.",
+      confirm: "OK"
+    })
 		return;
 	}
 	// Get the sampleLength
@@ -1019,7 +1033,12 @@ function onFourierReplotButtonClick() {
 	else{
 		// check data size and return if too short
 		if(saves[tabManager.activeTab-2].fourierPlottingRange[1] - saves[tabManager.activeTab-2].fourierPlottingRange[0] < 0.5){
-			alert("La durée doit être supérieure à 0,5s pour réaliser une analyse spectrale temporelle.");
+      alertModal({
+        type: "warning",
+        title: "Durée insuffisante",
+        body: "La durée de l'enregistrement doit être supérieure à 0,5s pour réaliser une analyse spectrale temporelle.",
+        confirm: "OK"
+      })
 			return;
 		}
 		// display the temporal dft
