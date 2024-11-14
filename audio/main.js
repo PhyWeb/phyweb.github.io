@@ -8,7 +8,7 @@ const $ = document.querySelector.bind(document);
 document.addEventListener('DOMContentLoaded', () => {
 
 // Common
-let common = new Common();
+let common = new Common("Audio");
 
 // SimpleMode enabled?
 let simpleMode = false;

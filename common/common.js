@@ -8,19 +8,24 @@ class Common {
     primary: "hsl(171, 100%, 41%)",
     link: "hsl(217, 71%, 53%)"
   }
-  constructor() {
-    this.navbarSetup();
+  constructor(_app = "") {
+    this.app = _app;
 
-    this.FullscreenManager = new FullscreenManager($("#expand-button"),$("#compress-button"));
+    this.navbarSetup();
+    if($("#expand-button")){
+      this.FullscreenManager = new FullscreenManager($("#expand-button"),$("#compress-button"));
+    }
     this.modalManager = new ModalManager();
   }
 
   navbarSetup(){
-    $("#navbar-dropdown").addEventListener("click",()=>{
-      $("#navbar-dropdown").classList.toggle("is-active");
-    })
+    if($("#navbar-dropdown")){
+      $("#navbar-dropdown").addEventListener("click",()=>{
+        $("#navbar-dropdown").classList.toggle("is-active");
+      })
+    }
     $("#about-button").addEventListener("click",()=>{
-      aboutModal("Audio");
+      aboutModal(this.app);
     })
   }
 
@@ -170,6 +175,9 @@ function alertModal(_config){
 function aboutModal(_app){
   let description;
   switch (_app) {
+    case "":
+      description = "PhyWeb description"
+      break;
     case "Tracker":
       description = "tracker description"
       break;

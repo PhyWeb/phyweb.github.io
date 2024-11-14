@@ -18,7 +18,7 @@ let isHandlerDragging = false;
 
 document.addEventListener('DOMContentLoaded', () => {
 // Common
-let common = new Common();
+let common = new Common("Tracker");
 
 if ("VideoDecoder" in window) {
   console.log("VideoDecoder supported")

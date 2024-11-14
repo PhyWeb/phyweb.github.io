@@ -1,0 +1,30 @@
+:root {
+  --h: var(--bulma-primary-h);
+  --s: var(--bulma-primary-s);
+  --l: var(--bulma-primary-l);
+}
+
+.app-tile {
+  --a: 0.2;
+  background-color: var(--bulma-scheme-main);
+  border-color: var(--bulma-border);
+  border-radius: var(--bulma-radius-large);
+  border-style: solid;
+  border-width: 1px;
+  box-shadow: var(--bulma-shadow);
+  box-shadow: 0 .25em .5em 0 hsla(var(--h), var(--s), var(--l), var(--a));
+  color: var(--bulma-text-weak);
+  display: flex;
+  flex-direction: column;
+  gap: .5em;
+  padding: 1.125em 1.5em 1.5em;
+  transition-duration: var(--bulma-duration);
+  transition-property: border-color,box-shadow,transform;
+}
+
+.app-tile:hover {
+  --a: 0.15;
+  border-color: hsla(var(--h), var(--s), var(--l), 100%);
+  box-shadow: 0 1em 2em 0 hsla(var(--h), var(--s), var(--l), var(--a)),0 2em 4em 0 hsla(var(--h), var(--s), var(--l), var(--a));
+  transform: translateY(-.5em)
+}
