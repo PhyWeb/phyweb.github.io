@@ -45,6 +45,8 @@ let recordedSampleRate; // The sample was recorded with this sampleRate
 
 let samplingStartTime;
 
+let onAudioDecodeEndedBuffer;
+
 // Save vars
 let saves = [];
 
@@ -386,24 +388,57 @@ fileReader.addEventListener("loadend", ()=>{
 });
 
 function onAudioDecodeEnd(_rawData){
+
 	$("#file-label").classList.remove("is-hidden");
 	$("#file-progress-bar").classList.add("is-hidden");
 
 	let length = _rawData.duration * baseSampleRate;
-	if(_rawData.duration > 20){
-		alertModal({
-      type: "warning",
-      title: "Fichier trop long",
-      body: "Le fichier est trop long. Pour des raisons de performance, seules les 20 premières secondes du fichier ont été chargées.",
-      confirm: "OK"
-    })
-		length = baseSampleRate * 20;
-	}
-	// Save the sampleRate used DUMMY
-	recordedSampleRate = baseSampleRate;
+	if(_rawData.duration > 30){
+    // open the resize modal
+    $("#end-length-input").value = this.duration;
+    $("#end-length-input").max = this.duration;
+    $("#file-length-modal").classList.add("is-active");
 
-	// Draw the datas
-	recordGraphDraw(convertFloat32ToInt16(_rawData.getChannelData(0), length), baseSampleRate);
+    // save the data in a buffer
+    onAudioDecodeEndedBuffer = _rawData;
+	} else {
+    drawDecodedAudio(_rawData, length);
+  }
+}
+
+$("#open-resized-file").addEventListener("click",()=>{
+  let length = ($("#end-length-input").value - $("#start-length-input").value) * baseSampleRate;
+  drawDecodedAudio(onAudioDecodeEndedBuffer, length, $("#start-length-input").value * baseSampleRate);
+  $("#file-length-modal").classList.remove("is-active");
+});
+
+// Enforce valid start and end inputs TODO check pas dépasser la longueur du fichier ptetre
+$("#start-length-input").addEventListener("change", ()=>{
+  if(parseInt($("#start-length-input").value) >= parseInt($("#end-length-input").value)){
+    $("#start-length-input").value = parseInt($("#end-length-input").value) - 1;
+  }
+  if(parseInt($("#end-length-input").value) - parseInt($("#start-length-input").value) > 30 ){
+    debugger;
+    $("#start-length-input").value = parseInt($("#end-length-input").value) - 30;
+  }
+});
+$("#end-length-input").addEventListener("change", ()=>{
+  if(parseInt($("#start-length-input").value) >= parseInt($("#end-length-input").value)){
+    $("#end-length-input").value = parseInt($("#end-length-input").value) + 1;
+  }
+  if(parseInt($("#end-length-input").value) - parseInt($("#start-length-input").value) > 30 ){
+    $("#end-length-input").value = parseInt($("#start-length-input").value) + 30;
+  }
+});
+
+let drawDecodedAudio = (_rawData, _length, _start = 0)=>{
+  console.log(_rawData)
+  console.log(_length)
+  // Save the sampleRate used DUMMY
+  recordedSampleRate = baseSampleRate;
+
+  // Draw the datas
+  recordGraphDraw(convertFloat32ToInt16(_rawData.getChannelData(0), _length, _start), baseSampleRate);
 }
 
 /*----------------------------------------------------------------------------------------------
@@ -803,6 +838,7 @@ function recordDraw() {
 }
 
 function recordGraphDraw(_data){
+    console.log(_data)
 		// Discard old datas and create a new LinearData
 		recWaveData = new LinearData(_data, 1 / baseSampleRate)
 		// Display the save and playback buttons

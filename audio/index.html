@@ -452,6 +452,52 @@
       </footer>
     </div>
   </div>
+  <!------------------------------------------------------------------------------------------------------------>
+  <!---------------------------------------------FILE LENGTH MODAL---------------------------------------------->
+  <!------------------------------------------------------------------------------------------------------------>
+  <div id="file-length-modal" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card" id="file-length-modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title is-size-4">Fichier trop long</p>
+        <button class="delete" aria-label="close"></button>
+      </header>
+      <section class="modal-card-body">
+        <p class="block">
+          Pour des raisons de performance, seules 30 secondes peuvent être chargées.
+        </p>
+        <p class="block">
+          Choisissez la portion du fichier que vous souhaitez charger:
+        </p>
+        <article class="notification">
+          <div class="columns block is-vcentered">
+            <div class="column is-narrow pr-0 ">
+              <label class="label">Début :</label>
+            </div>
+            <div class="column">
+              <p class="control">
+                <input class="input" type="number" min="0" value="0" id="start-length-input"/>
+              </p>
+            </div>
+            <div class="column is-narrow pr-0 ">
+              <label class="label">Fin :</label>
+            </div>
+            <div class="column">
+              <p class="control">
+                <input class="input" type="number" min="0" value="1" id="end-length-input"/>
+              </p>
+            </div>
+            <div class="column is-narrow pr-0 ">
+              <label class="label"></label>
+            </div>
+          </div>
+        </article>
+      </section>
+      <footer class="modal-card-foot">
+        <button class="button is-primary" id="open-resized-file">Charger</button>
+      </footer>
+    </div>
+  </div>
 </body>
 
 

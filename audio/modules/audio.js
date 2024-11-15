@@ -257,13 +257,13 @@ function PhyAudio(_bufferSize){
 /*----------------------------------------------------------------------------------------------
 -------------------------------------TYPED ARRAY CONVERTERS-------------------------------------
 ----------------------------------------------------------------------------------------------*/
-function convertFloat32ToInt16(buffer, l = buffer.length) {
+function convertFloat32ToInt16(buffer, l = buffer.length, _start = 0) {
 	let buf = new Int16Array(l);
   let s;
 
-	while (l--) {
-    s = Math.max(-1, Math.min(1, buffer[l]));
-    buf[l] = s < 0 ? s * 32768 : s * 32767;
+  for(let i = 0; i < (l - _start); i++){
+    s = Math.max(-1, Math.min(1, buffer[i+_start]));
+    buf[i] = s < 0 ? s * 32768 : s * 32767;
   }
   return buf;
 }
