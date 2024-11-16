@@ -270,11 +270,11 @@ $("#sample-button").addEventListener("click",()=>{
     })
 		return;
 	}
-	if($("#sample-length-input").value > 30){
+	if($("#sample-length-input").value > 60){
     alertModal({
       type: "warning",
       title: "Durée trop importante",
-      body: "La durée d'enregistrement maximale est de 30 s.",
+      body: "La durée d'enregistrement maximale est de 60 s.",
       confirm: "OK"
     })
 		return;
@@ -394,9 +394,15 @@ function onAudioDecodeEnd(_rawData){
 
 	let length = _rawData.duration * baseSampleRate;
 	if(_rawData.duration > 30){
-    // open the resize modal
-    $("#end-length-input").value = this.duration;
-    $("#end-length-input").max = this.duration;
+    // open the resize modal and reset the slider
+    $("#file-slider").noUiSlider.reset();
+    $("#file-slider").noUiSlider.updateOptions({
+      range:{
+        'min': 0,
+        'max': _rawData.duration
+      }
+    });
+    
     $("#file-length-modal").classList.add("is-active");
 
     // save the data in a buffer
@@ -406,34 +412,51 @@ function onAudioDecodeEnd(_rawData){
   }
 }
 
+// file modal confirm
 $("#open-resized-file").addEventListener("click",()=>{
-  let length = ($("#end-length-input").value - $("#start-length-input").value) * baseSampleRate;
-  drawDecodedAudio(onAudioDecodeEndedBuffer, length, $("#start-length-input").value * baseSampleRate);
+  let length = parseInt(($("#file-slider").noUiSlider.get(true)[1] - $("#file-slider").noUiSlider.get(true)[0]) * baseSampleRate);
+  let start = parseInt($("#file-slider").noUiSlider.get(true)[0] * baseSampleRate);
+
+  drawDecodedAudio(onAudioDecodeEndedBuffer, length, start);
+
   $("#file-length-modal").classList.remove("is-active");
 });
 
-// Enforce valid start and end inputs TODO check pas dépasser la longueur du fichier ptetre
-$("#start-length-input").addEventListener("change", ()=>{
-  if(parseInt($("#start-length-input").value) >= parseInt($("#end-length-input").value)){
-    $("#start-length-input").value = parseInt($("#end-length-input").value) - 1;
-  }
-  if(parseInt($("#end-length-input").value) - parseInt($("#start-length-input").value) > 30 ){
-    debugger;
-    $("#start-length-input").value = parseInt($("#end-length-input").value) - 30;
+// file slider
+noUiSlider.create($("#file-slider"), {
+  start: [0, 10],
+  connect: true,
+  range: {
+      'min': 0,
+      'max': 1
+  },
+  limit: 60,
+  behaviour: 'tap-drag',
+  tooltips: true,
+  pips: {
+    mode: 'steps',
+    stepped: true,
+    density: 4
+}
+});
+$("#file-slider").noUiSlider.on('update', function (values, handle) {
+  let value = values[handle];
+
+  if (handle) {
+    $("#end-length-input").value = value;
+  } else {
+    $("#start-length-input").value = value;
   }
 });
-$("#end-length-input").addEventListener("change", ()=>{
-  if(parseInt($("#start-length-input").value) >= parseInt($("#end-length-input").value)){
-    $("#end-length-input").value = parseInt($("#end-length-input").value) + 1;
-  }
-  if(parseInt($("#end-length-input").value) - parseInt($("#start-length-input").value) > 30 ){
-    $("#end-length-input").value = parseInt($("#start-length-input").value) + 30;
-  }
+$("#start-length-input").addEventListener('change', function () {
+  $("#file-slider").noUiSlider.set([this.value, null]);
+});
+$("#end-length-input").addEventListener('change', function () {
+  $("#file-slider").noUiSlider.set([null, this.value]);
 });
 
+
 let drawDecodedAudio = (_rawData, _length, _start = 0)=>{
-  console.log(_rawData)
-  console.log(_length)
   // Save the sampleRate used DUMMY
   recordedSampleRate = baseSampleRate;
 
@@ -838,7 +861,6 @@ function recordDraw() {
 }
 
 function recordGraphDraw(_data){
-    console.log(_data)
 		// Discard old datas and create a new LinearData
 		recWaveData = new LinearData(_data, 1 / baseSampleRate)
 		// Display the save and playback buttons

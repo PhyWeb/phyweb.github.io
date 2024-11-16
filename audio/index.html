@@ -14,6 +14,9 @@
     <script src="lib/highcharts_old/highcharts-heatmap.js"></script>
     <script src="lib/highcharts_old/boost.js"></script>
 
+    <link href="../common/noUIslider/nouislider.css" rel="stylesheet">
+    <script src="../common/noUIslider/nouislider.js"></script>
+
     <script defer src="../common/fontawesome/solid.min.js"></script>
     <script defer src="../common/fontawesome/brands.min.js"></script>
     <script defer src="../common/fontawesome/fontawesome.min.js"></script>
@@ -464,12 +467,13 @@
       </header>
       <section class="modal-card-body">
         <p class="block">
-          Pour des raisons de performance, seules 30 secondes peuvent être chargées.
+          Pour des raisons de performance, PhyWeb Audio ne peut charger plus de 60s.
         </p>
         <p class="block">
           Choisissez la portion du fichier que vous souhaitez charger:
         </p>
         <article class="notification">
+          <div class="mb-6" id="file-slider"></div>
           <div class="columns block is-vcentered">
             <div class="column is-narrow pr-0 ">
               <label class="label">Début :</label>
