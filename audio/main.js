@@ -430,6 +430,7 @@ noUiSlider.create($("#file-slider"), {
       'min': 0,
       'max': 1
   },
+  margin: 0.05,
   limit: 60,
   behaviour: 'tap-drag',
   tooltips: false,
@@ -437,7 +438,7 @@ noUiSlider.create($("#file-slider"), {
     mode: 'steps',
     stepped: true,
     density: 4
-}
+	}
 });
 $("#file-slider").noUiSlider.on('update', function (values, handle) {
   let value = values[handle];
