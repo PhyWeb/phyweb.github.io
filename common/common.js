@@ -6,7 +6,8 @@ const $ = document.querySelector.bind(document);
 class Common {
   colors = {
     primary: "hsl(171, 100%, 41%)",
-    link: "hsl(217, 71%, 53%)"
+    link: "hsl(217, 71%, 53%)",
+    linkRGB: "rgb(50,115,220)"
   }
   constructor(_app = "") {
     this.app = _app;

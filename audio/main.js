@@ -664,7 +664,7 @@ function HighchartOptions(_title, _xTitle, _yTitle, _xMin, _xMax, _yMin, _yMax, 
 				hover: {lineWidthPlus: 0}
 			},
 			lineWidth: 3,
-			color: common.colors.link,
+			color: common.colors.linkRGB,
 			enableMouseTracking: _mouseTracking
 		},
 	};
