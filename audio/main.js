@@ -432,7 +432,7 @@ noUiSlider.create($("#file-slider"), {
   },
   limit: 60,
   behaviour: 'tap-drag',
-  tooltips: true,
+  tooltips: false,
   pips: {
     mode: 'steps',
     stepped: true,

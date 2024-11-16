@@ -214,7 +214,7 @@ function aboutModal(_app){
           <div class="field-body">
             <div class="field">
               <div class="content">
-                <p class="has-text-justified">PhyWeb utilise des technologies modernes pour fonctionner. Votre navigateur ne prend pas en charge toutes les fonctions nécessaires. Exemples de navigateurs compatibles :</p>
+                <p class="has-text-justified">PhyWeb utilise des technologies modernes pour fonctionner. Un navigateur récent est nécessaire au bon fonctionnement des applications. Exemples de navigateurs compatibles :</p>
                 <ul>
                   <li>Google Chrome version 94 et +</li>
                   <li>Microsoft Edge version 94 et +</li>
