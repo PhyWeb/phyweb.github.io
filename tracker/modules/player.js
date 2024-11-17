@@ -58,7 +58,6 @@ export default class PLAYER {
     // destroy previous frames
     if(this.decodedVideo){
       this.decodedVideo.frames.forEach((e)=>{
-
         e.close();
       });
     }
@@ -68,8 +67,6 @@ export default class PLAYER {
       this.decodedVideo = _decodedVideo;
       this.currentFrame = 0;
       this.currentPoint = 0;
-
-
 
       $("#video-controls").classList.remove("is-hidden");
       $("#magnifier-button").classList.remove("is-hidden");

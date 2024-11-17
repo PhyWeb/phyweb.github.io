@@ -114,7 +114,7 @@ export default class CHECKSIZE {
       $("#open-resized-video").classList.remove("is-success");
       $("#open-resized-video").innerHTML = "Ouvrir la vidéo malgré sa taille";
     }
-    $("#size-label").innerHTML = this.size + "Mio"
+    $("#size-label").innerHTML = this.size + " Mio"
   }
 
 }

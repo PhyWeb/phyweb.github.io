@@ -321,7 +321,7 @@
         <p class="modal-card-title is-size-4">Video très volumineuse</p>
         <button class="delete" aria-label="close"></button>
       </header>
-      <section class="modal-card-body is-size-5">
+      <section class="modal-card-body">
         <p class="block">
           La vidéo occupe <span class="has-text-danger has-text-weight-bold" id="size-label">xx Mio</span> de mémoire vidéo.
         </p>
@@ -329,7 +329,7 @@
           Il est recommandé de ne pas dépasser <span class="has-text-weight-bold">1024 Mio</span>.
         </p>
         <p class="block">
-          Choisissez quel(s) modifications vous souhaitez appliquer :
+          Choisissez quelle(s) modification(s) vous souhaitez appliquer :
         </p>
         <article class="message">
           <div class="message-body">
@@ -349,12 +349,12 @@
         </article>
         <article class="message">
           <div class="message-body">
-            <label class="checkbox pb-4">
+            <label class="checkbox">
               <input type="checkbox" id="duration-size-input"/>
               Réduire la durée de la vidéo (Durée totale : <span id="duration-size-label"></span> s)
             </label>
             <div id="duration-size-inputs">
-              <div class="mb-6" id="file-slider"></div>
+              <div class="mb-6 mt-2" id="file-slider"></div>
               <div class="columns block is-vcentered" >
                 <div class="column is-narrow pr-0 ">
                   <label class="label">Début :</label>
@@ -364,6 +364,9 @@
                     <input class="input" type="number" min="0" value="0" id="start-size-input"/>
                   </p>
                 </div>
+                <div class="column is-narrow pl-0 ">
+                  <label class="label">s</label>
+                </div>
                 <div class="column is-narrow pr-0 ">
                   <label class="label">Fin :</label>
                 </div>
@@ -372,8 +375,8 @@
                     <input class="input" type="number" min="0" value="0" id="end-size-input"/>
                   </p>
                 </div>
-                <div class="column is-narrow pr-0 ">
-                  <label class="label"></label>
+                <div class="column is-narrow pl-0 ">
+                  <label class="label">s</label>
                 </div>
               </div>
             </div>
