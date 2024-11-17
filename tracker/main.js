@@ -107,6 +107,41 @@ $("#open-resized-video").addEventListener("click", ()=>{
   player.load($("#file-input").files[0],$("#def-size-input").checked,$("#fps-size-input").checked,$("#duration-size-input").checked);
 });
 
+// FILE SLIDER
+noUiSlider.create($("#file-slider"), {
+  start: [0, 10],
+  connect: true,
+  range: {
+      'min': 0,
+      'max': 10
+  },
+  margin: 1,
+  behaviour: 'tap-drag',
+  tooltips: false,
+  pips: {
+    mode: 'steps',
+    stepped: true,
+    density: 4
+	}
+});
+$("#file-slider").noUiSlider.on('update', function (values, handle) {
+  let value = values[handle];
+
+  if (handle) {
+    $("#end-size-input").value = value;
+  } else {
+    $("#start-size-input").value = value;
+  }
+
+  player.checkSize.updateSize();
+});
+$("#start-size-input").addEventListener('change', function () {
+  $("#file-slider").noUiSlider.set([this.value, null]);
+});
+$("#end-size-input").addEventListener('change', function () {
+  $("#file-slider").noUiSlider.set([null, this.value]);
+});
+
 // MAGNIFIER
 $("#magnifier-button").addEventListener("click", ()=>{player.toggleMagnifier();});
 

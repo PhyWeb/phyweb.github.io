@@ -46,8 +46,13 @@ export default class CHECKSIZE {
 
         $("#duration-size-label").innerHTML = this.duration;
 
-        $("#end-size-input").value = this.duration;
-        $("#end-size-input").max = this.duration;
+        $("#file-slider").noUiSlider.reset();
+        $("#file-slider").noUiSlider.updateOptions({
+          range:{
+            'min': 0,
+            'max': this.duration
+          }
+        });
 
         this.updateSize();
 
@@ -68,15 +73,9 @@ export default class CHECKSIZE {
           this.updateSize()
         });
         $("#start-size-input").addEventListener("change", ()=>{
-          if(parseInt($("#start-size-input").value) >= parseInt($("#end-size-input").value)){
-            $("#start-size-input").value = parseInt($("#end-size-input").value) - 1;
-          }
           this.updateSize()
         });
         $("#end-size-input").addEventListener("change", ()=>{
-          if(parseInt($("#start-size-input").value) >= parseInt($("#end-size-input").value)){
-            $("#end-size-input").value = parseInt($("#end-size-input").value) + 1;
-          }
           this.updateSize()
         });
       }
