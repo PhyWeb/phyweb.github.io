@@ -1,5 +1,5 @@
 import FOURIER from "./modules/fourier.js"
-import {PhyAudio, convertFloat32ToInt16} from "./modules/audio.js"
+import {PhyAudio, convertFloat32ToInt16} from "./modules/audio2.js"
 
 import {Common, alertModal, TabManager, downloadFile, exportToCSV, exportToRW3} from "../common/common.js"
 
@@ -98,6 +98,7 @@ $("#temporal-fourier-button").addEventListener("click",()=>{
 ----------------------------------------------------------------------------------------------*/
 $("#choose-config-modal").classList.add("is-active");
 $("#simple-mode-button").addEventListener("click", ()=>{
+	audio.onUserGesture();
 	common.modalManager.closeAllModals();
 
 	simpleMode = true;
@@ -926,7 +927,7 @@ function draw() {
 	requestAnimationFrame(draw);
 
 	// resume the audio context if it is suspended
-	audio.resumeContext();
+	//audio.resumeContext(); TODO
 
 	switch(tabManager.activeTab){
 	case 0:
