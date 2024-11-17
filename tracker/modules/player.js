@@ -18,6 +18,8 @@ export default class PLAYER {
     this.ctx = this.videoCanvas.getContext("2d"); 
     this.extractor = _extractor;
 
+    this.decodedVideo;
+
     this.measurement = _measurement;
 
     this.checkSize = new CHECKSIZE(this.extractor);
@@ -51,6 +53,14 @@ export default class PLAYER {
       checked: _durationResize,
       start: parseInt($("#start-size-input").value),
       end: parseInt($("#end-size-input").value),
+    }
+    
+    // destroy previous frames
+    if(this.decodedVideo){
+      this.decodedVideo.frames.forEach((e)=>{
+
+        e.close();
+      });
     }
 
     this.extractor.extract(_path,_defResize,_fpsResize,durationResize,(_decodedVideo) => {
