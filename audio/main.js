@@ -129,6 +129,7 @@ $("#simple-mode-button").addEventListener("click", ()=>{
 });
 
 $("#complete-mode-button").addEventListener("click", ()=>{
+	audio.onUserGesture();
 	common.modalManager.closeAllModals();
 
   simpleMode = false;
@@ -802,7 +803,7 @@ savTemporalFourierChart.yAxis[0].allowZoomOutside = true;*/
 -----------------------------------------DRAW FUNCTIONS-----------------------------------------
 ----------------------------------------------------------------------------------------------*/
 function realtimeDraw() {
-	if(paused == false){
+	if(paused == false && audio.analyserNode){
 	// sample
 	rtWaveData = new LinearData(audio.getGraph(), 1 / baseSampleRate);
 

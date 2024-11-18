@@ -4,8 +4,9 @@ class PhyAudio{
     this.mediaStream;
     this.micNode;
     this.processorNode;
-    this.analyserNode = this.audioCtx.createAnalyser();
-    this.analyserNode.fftSize = _bufferSize * 2;
+    this.analyserNode;
+
+    this.bufferSize = _bufferSize;
 
     this.isModuleLoaded = false;
   }
@@ -15,12 +16,20 @@ class PhyAudio{
       await this.audioCtx.audioWorklet.addModule('modules/processor-node.js');
       this.isModuleLoaded = true;
     }
-    await this.loadGraph();
+    await this.loadRT();
   };
 
-  loadRT
+  loadRT = async () => {
+    this.mediaStream = await navigator.mediaDevices.getUserMedia({audio: true});
+    this.micNode = this.audioCtx.createMediaStreamSource(this.mediaStream);
+    this.gainNode = this.audioCtx.createGain();
+    this.analyserNode = this.audioCtx.createAnalyser();
+    this.analyserNode.fftSize = this.bufferSize * 2;
 
-  loadGraph = async () => {
+    this.micNode.connect(this.gainNode).connect(this.analyserNode);
+  }
+
+  /*loadGraph = async () => {
     this.mediaStream = await navigator.mediaDevices.getUserMedia({audio: true});
     this.micNode = this.audioCtx.createMediaStreamSource(this.mediaStream);
     this.processorNode = new AudioWorkletNode(this.audioCtx, 'processor-node');
@@ -38,7 +47,7 @@ class PhyAudio{
     this.micNode.connect(this.processorNode).connect(this.analyserNode).connect(this.audioCtx.destination);
 
 
-  };
+  };*/
 
   onUserGesture = async () => {
     await this.startAudio(this.audioCtx);
@@ -50,9 +59,18 @@ class PhyAudio{
   }
 
   getGraph = () => {
-    let graphDataArray = new Float32Array(this.analyserNode.frequencyBinCount);
-    this.analyserNode.getFloatTimeDomainData(graphDataArray);
-    return convertFloat32ToInt16(graphDataArray);
+    if(this.analyserNode){
+      let graphDataArray = new Float32Array(this.analyserNode.frequencyBinCount);
+      this.analyserNode.getFloatTimeDomainData(graphDataArray);
+      return convertFloat32ToInt16(graphDataArray);
+    } else {
+      return [];
+    }
+  }
+
+  setGain = (_gain) => {
+    this.gain = _gain;
+    this.gainNode.gain.setValueAtTime(_gain, this.audioCtx.currentTime);
   }
 }
 
