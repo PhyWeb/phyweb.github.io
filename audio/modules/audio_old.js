@@ -1,135 +1,150 @@
-class PhyAudio{
-  constructor(_bufferSize){
-    this.audioCtx;
-    this.mediaStream;
-    this.micNode;
-    this.processorNode;
-    this.analyserNode;
+function PhyAudio(_bufferSize){
+  this.gain = 1;
 
-    this.data = [];
+  this.data = [];
 
-    this.recording = false;
+  this.recording = false;
+  this.availableData = false;
 
-    this.bufferSize = _bufferSize;
+  this.startTime;
+  this.delay = -1;
 
-    this.isModuleLoaded = false;
+  // Create an audio context
+  this.audioCtx = new (window.AudioContext || window.webkitAudioContext)(); // TODO Maybe deprecated
+  this.sampleRate = this.audioCtx.sampleRate;
+
+  this.playbackSource = this.audioCtx.createBufferSource();
+
+  // Create a gain node
+  this.gainNode = this.audioCtx.createGain();
+
+  // Create a processor node
+  this.processorNode = this.audioCtx.createScriptProcessor(4096, 1, 1);
+
+  // Create an analyser node
+  this.analyserNode = this.audioCtx.createAnalyser();
+
+  // Set the analyser
+  this.analyserNode.fftSize = _bufferSize * 2;
+
+  // Only ask for audio
+  let constraints = { audio: true, video: false }; 
+
+  // Get the audio source and connect all nodes
+  navigator.mediaDevices.getUserMedia(constraints)
+  .then(function(stream) {
+
+    // Create a MediaStreamAudioSourceNode
+    // Feed the HTMLMediaElement into it
+    this.source = this.audioCtx.createMediaStreamSource(stream);
+
+    // connect the AudioBufferSourceNode to the gain node
+    // and the gain node to the analyser
+    // and the analyser to the scriptprocessor
+    // and the analyser to the destination
+    this.source.connect(this.gainNode);
+    this.gainNode.connect(this.analyserNode);
+    this.analyserNode.connect(this.processorNode); 
+    this.processorNode.connect(this.audioCtx.destination); // TODO replace destination by a dummy node to avoid audio playback
+  }.bind(this))
+  .catch(function(err) { console.log(err.name + ": " + err.message); }); // always check for errors at the end.
+
+  this.resumeContext = function(e){
+    if(this.audioCtx.state == "suspended"){
+      this.audioCtx.resume();
+    }
   }
 
-  /*----------------------------------------------------------------------------------------------
-  --------------------------------------RT & REC FUNCTIONS----------------------------------------
-  ----------------------------------------------------------------------------------------------*/
-  startAudio = async (_mode) => {
-    // Create a new audio context
-    if(this.audioCtx){
-      this.audioCtx.close();
-    }
-    this.audioCtx = new AudioContext();
-
-    // load the record processor node
-    if (!this.isModuleLoaded) {
-      await this.audioCtx.audioWorklet.addModule('modules/processor-node.js');
-    }
-    // Create the rt or rec graph
-    if(_mode === "RT"){
-      await this.loadRT();
-    }
-    if(_mode === "REC"){
-      await this.loadREC();
-    }
-
-    this.audioCtx.resume();
-  };
-
-  loadRT = async () => {
-    this.mediaStream = await navigator.mediaDevices.getUserMedia({audio: true});
-    this.micNode = this.audioCtx.createMediaStreamSource(this.mediaStream);
-    this.gainNode = this.audioCtx.createGain();
-    this.analyserNode = this.audioCtx.createAnalyser();
-    this.analyserNode.fftSize = this.bufferSize * 2;
-
-    this.micNode.connect(this.gainNode).connect(this.analyserNode);
-  }
-
-  loadREC = async () => {
-    this.mediaStream = await navigator.mediaDevices.getUserMedia({audio: true});
-    this.micNode = this.audioCtx.createMediaStreamSource(this.mediaStream);
-    this.processorNode = new AudioWorkletNode(this.audioCtx, 'processor-node');
-
-    this.processorNode.port.onmessage = (e) => {
-      if (e.data.eventType === 'data') {
-        if(this.recording){
-          let bufferLength = e.data.audioBuffer.length;
-
-          this.data.push(convertFloat32ToInt16(e.data.audioBuffer))
-          if(this.data.length * bufferLength > this.recordLength * this.audioCtx.sampleRate){
-            this.availableData = true;
-            this.recording = false;
-          }
-        }
+  this.processorNode.onaudioprocess = function(e) {
+    if(this.recording == true){
+      // push new datas to the array
+      if(this.delay == -1){
+        this.delay = Math.max(0, (4096 / this.sampleRate) - (performance.now() - this.startTime) / 1000);
       }
-      if (e.data.eventType === 'stop') {
-        // recording has stopped TODO probably not usefull
-      }
-    };
-
-    this.micNode.connect(this.processorNode);
-  };
-
-  isDataAvailable = () =>{
-    if(this.availableData == true && this.data.length > 0){
-      return true;
+      this.data.push(convertFloat32ToInt16(e.inputBuffer.getChannelData(0)));
     }
-    return false;
-  }
-
-  getRecord = () =>{
-    let a = new Int16Array(this.data.length * this.data[0].length);
-
-    // concat all remaining chunks together
-    for(let i = 0; i  < this.data.length; i++){
-      a.set(this.data[i], i * this.data[0].length);
+    
+    if(this.recording == true && (this.data.length - 2) * 4096 > (this.recordLength + this.delay) * this.sampleRate){
+      this.availableData = true;
+      this.recording = false;
     }
-    this.availableData = false;
-    this.delay = -1;
 
-    return a.slice(0, this.recordLength * this.audioCtx.sampleRate);
-  }
+  }.bind(this)
 
-  startRecording = (_length) =>{
+  this.startRecording = function(_length){
     this.startTime = performance.now();
     this.data.length = 0;
     this.recording = true;
     this.recordLength = _length;
   }
 
-  getSampleRate = () => {
+  this.isDataAvailable = function(_length){
+    if(this.availableData == true && this.data.length > 0){
+      return true;
+    }
+    return false;
+  }
+
+  this.getRecord = function(){
+    let shift = Math.round(this.delay * this.sampleRate);
+    if (shift > 4096){ 
+      shift = 4096;
+    }
+    let a = new Int16Array(this.data.length * this.data[0].length - shift);
+
+    // Copy the first chunk
+    for(let i = 0; i < this.data[0].length - shift; i++){
+      a[i] = this.data[2][i + shift];
+    }
+
+    // concat all remaining chunks together
+    for(let i = 3; i  < this.data.length; i++){
+      a.set(this.data[i], (i - 2) * this.data[0].length - shift);
+    }
+    this.availableData = false;
+    this.delay = -1;
+
+    return a.slice(0, this.recordLength * this.sampleRate);
+  }
+
+  this.setBufferSize = function(_bufferSize){
+    this.analyserNode.fftSize = _bufferSize * 2;
+  }
+
+  this.getGraph = function(){
+    let graphDataArray = new Float32Array(this.analyserNode.frequencyBinCount);
+    this.analyserNode.getFloatTimeDomainData(graphDataArray);
+    return convertFloat32ToInt16(graphDataArray);
+  }
+
+  /*this.getFft = function(){
+    this.analyserNode.getByteFrequencyData(this.fftDataArray);
+    return this.fftDataArray;
+  }*/
+
+  this.getSampleRate = function(){
     return this.audioCtx.sampleRate;
   }
 
-  getGraph = () => {
-    if(this.analyserNode){
-      let graphDataArray = new Float32Array(this.analyserNode.frequencyBinCount);
-      this.analyserNode.getFloatTimeDomainData(graphDataArray);
-      return convertFloat32ToInt16(graphDataArray);
-    } else {
-      return [];
-    }
-  }
-
-  setGain = (_gain) => {
+  this.setGain = function(_gain){
     this.gain = _gain;
     this.gainNode.gain.setValueAtTime(_gain, this.audioCtx.currentTime);
   }
 
-  close = ()=>{
-    this.audioCtx.close();
-    this.isModuleLoaded = undefined;
-  }
-
   /*----------------------------------------------------------------------------------------------
-  --------------------------------------PLAYBACK FUNCTIONS----------------------------------------
+  ---------------------------------------PLAYBACK FUNCTION----------------------------------------
   ----------------------------------------------------------------------------------------------*/
-  play = (channelData) => {
+  this.play = function (channelData) {
+    /*
+    // create a new single channel audio buffer to put sound into
+    let soundBuffer = this.audioCtx.createBuffer(1, channelData.length, this.audioCtx.sampleRate);
+    // get channel data for mutating
+    let channelBuffer = soundBuffer.getChannelData(0);
+
+    for (let i = 0, l = channelData.length; i < l; i++) {
+      s = Math.max(-32768, Math.min(32767, channelData[i])); // built-in int16 to float32
+      channelBuffer[i] = s < 0 ? s / 32768 : s / 32767;
+    }*/
     let soundBuffer = this.arrayToAudioBuffer(channelData);
 
     this.playbackSource = this.audioCtx.createBufferSource();
@@ -144,7 +159,7 @@ class PhyAudio{
     this.playbackSource.start();
   }
 
-  stop = () =>{
+  this.stop = function () {
     // stop the source playing!
     this.playbackSource.stop();
   }
@@ -152,7 +167,7 @@ class PhyAudio{
   /*----------------------------------------------------------------------------------------------
   ----------------------------------------DECODE FUNCTION-----------------------------------------
   ----------------------------------------------------------------------------------------------*/
-  decode = (_data, _callback) => {
+  this.decode = function(_data, _callback){
     this.audioCtx.decodeAudioData(_data).then(function(decodedData) {
       _callback(decodedData);
      });
@@ -162,7 +177,7 @@ class PhyAudio{
   ---------------------------------------UTILITY FUNCTIONS----------------------------------------
   ----------------------------------------------------------------------------------------------*/
   // Convert array to an audioBuffer (single channel only)
-  arrayToAudioBuffer = (_array, _sr = this.audioCtx.sampleRate) => {
+  this.arrayToAudioBuffer = function(_array, _sr = this.audioCtx.sampleRate){
     // create a new single channel audio buffer to put sound into
     let soundBuffer = this.audioCtx.createBuffer(1, _array.length, _sr);
     // get channel data for mutating
@@ -176,14 +191,14 @@ class PhyAudio{
   }
 
   // Convert AudioBuffer to a Blob using WAVE representation
-  generateWavFile = (_data, _sr) => {
+  this.generateWavFile = function(_data, _sr) {
     let audioBuffer = this.arrayToAudioBuffer(_data, _sr);
     let wave = this.bufferToWave(audioBuffer, audioBuffer.length)
     return wave;
   }
 
   // Convert AudioBuffer to a Blob using WAVE representation
-  bufferToWave = (abuffer, len) => {
+  this.bufferToWave = function(abuffer, len) {
     let numOfChan = abuffer.numberOfChannels,
     length = len * numOfChan * 2 + 44,
     buffer = new ArrayBuffer(length),
@@ -236,6 +251,7 @@ class PhyAudio{
       pos += 4;
     }
   }
+
 }
 
 /*----------------------------------------------------------------------------------------------

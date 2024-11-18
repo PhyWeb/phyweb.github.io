@@ -1,5 +1,5 @@
 import FOURIER from "./modules/fourier.js"
-import {PhyAudio, convertFloat32ToInt16} from "./modules/audio2.js"
+import {PhyAudio, convertFloat32ToInt16} from "./modules/audio.js"
 
 import {Common, alertModal, TabManager, downloadFile, exportToCSV, exportToRW3} from "../common/common.js"
 
@@ -33,14 +33,14 @@ let audio = new PhyAudio(rtBasebufferSize);
 let fileReader = new FileReader();
 
 // Get the default max sample rate from the audio context
-let baseSampleRate = 48000;//audio.getSampleRate();
+let baseSampleRate;
 
 // RTS vars
 let paused = false;
 
 // Record vars
 let sampleLength = parseFloat($("#sample-length-input").value);
-let recSampleRate = baseSampleRate; // The sample will be recorded with this sampleRate
+let recSampleRate; // The sample will be recorded with this sampleRate
 let recordedSampleRate; // The sample was recorded with this sampleRate
 
 let samplingStartTime;
@@ -60,7 +60,7 @@ tabManager.newTab({
   tab: $("#rt-panel"),
   isActive : true,
   clickCB: ()=>{
-	audio.startAudio("RT");
+	  audio.startAudio("RT");
     rtWaveChart.reflow();
     rtFourierChart.reflow();
   }
@@ -69,8 +69,7 @@ tabManager.newTab({
   tabButton: $("#rec-tab-button"),
   tab: $("#rec-panel"),
   clickCB: ()=>{
-	audio.close();
-	audio.startAudio("REC");
+	  audio.startAudio("REC");
   }
 });
 
@@ -103,7 +102,7 @@ $("#temporal-fourier-button").addEventListener("click",()=>{
 ----------------------------------------------------------------------------------------------*/
 $("#choose-config-modal").classList.add("is-active");
 $("#simple-mode-button").addEventListener("click", async ()=>{
-	await audio.startAudio("RT");
+  await audioInit()
 	common.modalManager.closeAllModals();
 
 	simpleMode = true;
@@ -134,7 +133,7 @@ $("#simple-mode-button").addEventListener("click", async ()=>{
 });
 
 $("#complete-mode-button").addEventListener("click", async ()=>{
-	await audio.startAudio("RT");
+	await audioInit()
 	common.modalManager.closeAllModals();
 
   simpleMode = false;
@@ -146,6 +145,14 @@ $("#complete-mode-button").addEventListener("click", async ()=>{
 
   draw();
 });
+
+async function audioInit(){
+	await audio.startAudio("RT");
+  baseSampleRate = audio.getSampleRate();
+  recSampleRate = baseSampleRate; // The sample will be recorded with this sampleRate
+
+  populateSampleRateSelect($("#rec-samplerate-select"), 1, 16);
+}
 
 /*----------------------------------------------------------------------------------------------
 --------------------------------------------RT LOGIC--------------------------------------------
@@ -289,11 +296,11 @@ $("#sample-button").addEventListener("click",()=>{
 	// Get the sampleLength
 	sampleLength = parseFloat($("#sample-length-input").value);
 
+  // Save the sampleRate used
+	recordedSampleRate = recSampleRate;
+
 	// Record new datas
 	audio.startRecording(sampleLength);
-
-	// Save the sampleRate used
-	recordedSampleRate = recSampleRate;
 
 	// Hide the playback controls
 	$("#sample-panel").classList.add("is-hidden");
@@ -350,8 +357,6 @@ $("#sav-stop-button").addEventListener("click", ()=>{
 $("#rec-samplerate-select").addEventListener("change", ()=>{
   recSampleRate = $("#rec-samplerate-select").value;
 });
-
-populateSampleRateSelect($("#rec-samplerate-select"), 1, 16);
 
 // save samplerate
 $("#save-samplerate-select").addEventListener("click", ()=>{
@@ -869,28 +874,27 @@ function recordDraw() {
 }
 
 function recordGraphDraw(_data){
-    console.log(_data);
-		// Discard old datas and create a new LinearData
-		recWaveData = new LinearData(_data, 1 / baseSampleRate)
-		// Display the save and playback buttons
-		$("#sample-panel").classList.remove("is-hidden");
-		// Display the sample length
-		$("#rec-sample-length-label").innerHTML = "Durée : " + formatDate(recWaveData.getDuration() * 1000);
-		// Compute the dft
-		if(simpleMode == false){
-			recFourierData = computeFourier(recWaveData, recordedSampleRate);
-		} else{
-			recFourierData = null;
-		}
-		// Plot graphs
-		recWaveChart.xAxis.max = recWaveData.getDuration();
-		recWaveChart.series[0].pointInterval = recWaveData.step * (baseSampleRate / recordedSampleRate);
-		recWaveChart.series[0].setData(arrayCopy(recWaveData.getData(baseSampleRate / recordedSampleRate)));
+  // Discard old datas and create a new LinearData
+  recWaveData = new LinearData(_data, 1 / baseSampleRate)
+  // Display the save and playback buttons
+  $("#sample-panel").classList.remove("is-hidden");
+  // Display the sample length
+  $("#rec-sample-length-label").innerHTML = "Durée : " + formatDate(recWaveData.getDuration() * 1000);
+  // Compute the dft
+  if(simpleMode == false){
+    recFourierData = computeFourier(recWaveData, recordedSampleRate);
+  } else{
+    recFourierData = null;
+  }
+  // Plot graphs
+  recWaveChart.xAxis.max = recWaveData.getDuration();
+  recWaveChart.series[0].pointInterval = recWaveData.step * (baseSampleRate / recordedSampleRate);
+  recWaveChart.series[0].setData(arrayCopy(recWaveData.getData(baseSampleRate / recordedSampleRate)));
 
-		if(simpleMode == false){
-			recFourierChart.series[0].pointInterval = recFourierData.step;
-			recFourierChart.series[0].setData(arrayCopy(recFourierData.getData()));
-		}
+  if(simpleMode == false){
+    recFourierChart.series[0].pointInterval = recFourierData.step;
+    recFourierChart.series[0].setData(arrayCopy(recFourierData.getData()));
+  }
 }
 
 function saveDraw() {

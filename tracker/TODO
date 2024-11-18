@@ -6,8 +6,6 @@ COMMON:
 HOME:
 
 AUDIO:
-  - audio to webworker
-  - audio apres le premier click
   - peut pas stopper acquisition dans rec
   - preview wave when loading a file
 
