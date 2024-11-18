@@ -33,7 +33,7 @@ let audio = new PhyAudio(rtBasebufferSize);
 let fileReader = new FileReader();
 
 // Get the default max sample rate from the audio context
-let baseSampleRate = audio.getSampleRate();
+let baseSampleRate = 48000;//audio.getSampleRate();
 
 // RTS vars
 let paused = false;
@@ -60,13 +60,18 @@ tabManager.newTab({
   tab: $("#rt-panel"),
   isActive : true,
   clickCB: ()=>{
-    rtWaveChart.reflow()
-    rtFourierChart.reflow()
+	audio.startAudio("RT");
+    rtWaveChart.reflow();
+    rtFourierChart.reflow();
   }
 });
 tabManager.newTab({
   tabButton: $("#rec-tab-button"),
   tab: $("#rec-panel"),
+  clickCB: ()=>{
+	audio.close();
+	audio.startAudio("REC");
+  }
 });
 
 // rec tabs
@@ -97,8 +102,8 @@ $("#temporal-fourier-button").addEventListener("click",()=>{
 ------------------------------------------CONFIG MODAL------------------------------------------
 ----------------------------------------------------------------------------------------------*/
 $("#choose-config-modal").classList.add("is-active");
-$("#simple-mode-button").addEventListener("click", ()=>{
-	audio.onUserGesture();
+$("#simple-mode-button").addEventListener("click", async ()=>{
+	await audio.startAudio("RT");
 	common.modalManager.closeAllModals();
 
 	simpleMode = true;
@@ -128,8 +133,8 @@ $("#simple-mode-button").addEventListener("click", ()=>{
   draw();
 });
 
-$("#complete-mode-button").addEventListener("click", ()=>{
-	audio.onUserGesture();
+$("#complete-mode-button").addEventListener("click", async ()=>{
+	await audio.startAudio("RT");
 	common.modalManager.closeAllModals();
 
   simpleMode = false;
@@ -803,7 +808,7 @@ savTemporalFourierChart.yAxis[0].allowZoomOutside = true;*/
 -----------------------------------------DRAW FUNCTIONS-----------------------------------------
 ----------------------------------------------------------------------------------------------*/
 function realtimeDraw() {
-	if(paused == false && audio.analyserNode){
+	if(paused == false){
 	// sample
 	rtWaveData = new LinearData(audio.getGraph(), 1 / baseSampleRate);
 
@@ -854,16 +859,17 @@ function recordDraw() {
 	// sample
 	if(audio.isDataAvailable() == true){
 		// Hide the progress bar
-    $("#sample-length-input").classList.remove("is-hidden");
-    $("#sample-progress-bar").classList.add("is-hidden");
-    $("#sample-button").classList.remove("is-hidden");
-    $("#stop-sample-button").classList.add("is-hidden");
+		$("#sample-length-input").classList.remove("is-hidden");
+		$("#sample-progress-bar").classList.add("is-hidden");
+		$("#sample-button").classList.remove("is-hidden");
+		$("#stop-sample-button").classList.add("is-hidden");
 
 		recordGraphDraw(audio.getRecord(), recSampleRate);
 	}
 }
 
 function recordGraphDraw(_data){
+    console.log(_data);
 		// Discard old datas and create a new LinearData
 		recWaveData = new LinearData(_data, 1 / baseSampleRate)
 		// Display the save and playback buttons
