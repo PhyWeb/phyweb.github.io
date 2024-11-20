@@ -315,6 +315,10 @@ $("#sample-button").addEventListener("click",()=>{
 	$("#stop-sample-button").classList.remove("is-hidden");
 });
 
+$("#stop-sample-button").addEventListener("click",()=>{
+  audio.stopRecording();
+});
+
 /*----------------------------------------------------------------------------------------------
 ------------------------------------REC & SAVE PLAY AND STOP------------------------------------
 ----------------------------------------------------------------------------------------------*/
@@ -592,15 +596,6 @@ function formatDate(_t) {
 function LinearData(_data, _step = 1) {
 	this.data = _data;
 	this.step = _step;
-
-	/*this.generateXData = function(_length){
-		// Create a new float32 array and populate it 
-		let xdata = new Float32Array(this.data.length);
-		for(let i = 0; i < xdata.length; i++){
-			xdata[i] = i * this.step;
-		}
-		return xdata;
-	}*/
 
 	this.getData = function(_downSampling = 1, _length = undefined, stabilize = false){
 		let data

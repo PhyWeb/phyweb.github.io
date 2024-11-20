@@ -102,6 +102,10 @@ class PhyAudio{
     this.recordLength = _length;
   }
 
+  stopRecording = () =>{
+    this.recordLength = (performance.now() - this.startTime) / 1000;
+  }
+
   getSampleRate = () => {
     return this.audioCtx.sampleRate;
   }

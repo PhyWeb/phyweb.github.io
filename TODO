@@ -6,7 +6,6 @@ COMMON:
 HOME:
 
 AUDIO:
-  - peut pas stopper acquisition dans rec
   - preview wave when loading a file
 
 TRACKER:
