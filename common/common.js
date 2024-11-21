@@ -177,10 +177,13 @@ function alertModal(_config){
 }
 
 function aboutModal(_app){
+  // Description
   let description;
   switch (_app) {
     case "":
-      description = "PhyWeb description"
+      description = `<p>PhyWeb est une collection d’applications destinées à l’enseignement de la physique et de la chimie.</p> 
+      <p>Toutes les applications sont disponibles en ligne directement dans le navigateur. Il est néanmoins possible de télécharger un fichier exécutable pour avoir accès aux applications hors-ligne. Téléchargement</p>
+      `
       break;
     case "Tracker":
       description = "tracker description"
@@ -191,7 +194,10 @@ function aboutModal(_app){
     default:
       console.log("wrong app name in about modal");
   }
-  //switch
+
+  // Year
+  const d = new Date();
+  let year = d.getFullYear();
   alertModal({
     title: "A propos de PhyWeb " + _app,
     delete: true,
@@ -234,7 +240,7 @@ function aboutModal(_app){
             </label>
           </div>
           <div class="field-body">
-            <div class="field">
+            <div class="field pt-2">
               pro.wal@protonmail.com
             </div>
           </div>
@@ -249,7 +255,7 @@ function aboutModal(_app){
             <div class="field">
               <article class="message is-link">
                 <div class="message-header" id="licence-header" style="border-radius:6px">
-                  <a>PhyWeb ` + _app + ` Copyright (c) 2024 Gaétan Walter</a>
+                  <a>PhyWeb ` + _app + ` Copyright (c) ` + year + ` Gaétan Walter</a>
                 </div>
                 <div class="message-body is-hidden" id="licence-body">
                   <p class="block has-text-justified">Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:</p>
