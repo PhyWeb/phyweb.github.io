@@ -4,7 +4,7 @@ const { FuseV1Options, FuseVersion } = require('@electron/fuses');
 module.exports = {
   packagerConfig: {
     asar: true,
-    icon: '/common/assets/phyweb.png'
+    icon: '/common/assets/phyweb'
   },
   rebuildConfig: {},
   makers: [
@@ -18,10 +18,10 @@ module.exports = {
         }
       },
     },
-    {
+    /*{
       name: '@electron-forge/maker-squirrel',
       config: {},
-    },
+    },*/
     {
       name: '@electron-forge/maker-zip',
       platforms: ['darwin'],

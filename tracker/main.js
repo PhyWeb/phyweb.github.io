@@ -50,6 +50,12 @@ $("#etalonnage-button").addEventListener("click", ()=>{
   $("#mesures-panel").classList.add("is-hidden");
 });
 
+// ELECTRON
+if (window.electronAPI){
+  // move the open file big arrow
+  $("#big-arrow").style.marginRight = "10.5rem";
+}
+
 // TABS
 $("#etalonnage-button").addEventListener("click", ()=>{
   $("#etalonnage-button").classList.add("is-active");

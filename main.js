@@ -7,6 +7,7 @@ const createWindow = () => {
     width: 1280,
     height: 720,
     frame: false,
+    icon: __dirname + '/common/assets/phyweb.png',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js')
     }
@@ -15,7 +16,7 @@ const createWindow = () => {
   win.loadFile('index.html')
 
   // Open the DevTools.
-  win.webContents.openDevTools()
+  //win.webContents.openDevTools()
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
