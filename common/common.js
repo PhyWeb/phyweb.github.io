@@ -18,6 +18,7 @@ class Common {
     }
 
     includeLogos();
+    electronSetup();
 
     this.modalManager = new ModalManager();
   }
@@ -37,8 +38,63 @@ class Common {
     return !isNaN(str) && // use type coercion to parse the _entirety_ of the string (`parseFloat` alone does not do this)...
     !isNaN(parseFloat(str)) // ...and ensure strings of whitespace fail
   }
+}
 
+async function electronSetup(){
+  if (window.electronAPI){
+    // Electron window controls
+    if($(".window-controls")){
+      $(".window-controls").outerHTML = `
+        <div class="vertical-divider m-2 window-control"></div>
+        <div class="navbar-item window-control">
+          <a class="button is-white" id="window-minimize-button">
+            <span class="icon">
+              <i class="fa-solid fa-window-minimize"></i>
+            </span>
+          </a>
+        </div>
+        <div class="navbar-item window-control is-hidden">
+          <a class="button is-white" id="window-restore-button">
+            <span class="icon">
+              <i class="fa-solid fa-window-restore"></i>
+            </span>
+          </a>
+        </div>
+        <div class="navbar-item window-control">
+          <a class="button is-white" id="window-maximize-button">
+            <span class="icon">
+              <i class="fa-solid fa-square"></i>
+            </span>
+          </a>
+        </div>
+        <div class="navbar-item window-control mr-2">
+          <a class="button is-white" id="window-close-button">
+            <span class="icon">
+              <i class="fas fa-xmark"></i>
+            </span>
+          </a>
+        </div>
+      `;
 
+      const isMaximized = await window.electronAPI.isMaximized()
+      if(isMaximized){
+        $("#window-maximize-button").parentNode.classList.add("is-hidden");
+        $("#window-restore-button").parentNode.classList.remove("is-hidden");
+      }
+    }
+    $("#window-close-button").addEventListener('click', () => window.electronAPI.close())
+    $("#window-minimize-button").addEventListener('click', () => window.electronAPI.minimize())
+    $("#window-maximize-button").addEventListener('click', () => {
+      window.electronAPI.maximize()
+      $("#window-maximize-button").parentNode.classList.add("is-hidden");
+      $("#window-restore-button").parentNode.classList.remove("is-hidden");
+    })
+    $("#window-restore-button").addEventListener('click', () => {
+      window.electronAPI.restore()
+      $("#window-maximize-button").parentNode.classList.remove("is-hidden");
+      $("#window-restore-button").parentNode.classList.add("is-hidden");
+    })
+  }
 }
 /*----------------------------------------------------------------------------------------------
 -----------------------------------------MODALS / ALERTS----------------------------------------
@@ -704,6 +760,8 @@ async function downloadFile(_file, _type,_name){
   a.download = _name+"."+_type;
   a.click();
 }
+
+
 
 /*----------------------------------------------------------------------------------------------
 ------------------------------------------MISC FUNCTIONS----------------------------------------

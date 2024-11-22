@@ -14,7 +14,7 @@ body, html {
 }
 
 .vertical-divider{
-  border-left: 2px solid rgb(163, 163, 163);
+  border-left: 1px solid rgba(0, 0, 0, 0.205);
   padding:0px;
 }
 
@@ -61,6 +61,11 @@ body, html {
 }
 .navbar-end, .navbar-start, .navbar-brand{
   -webkit-app-region: no-drag;
+}
+
+.window-control{
+  padding-left: 0px;
+  padding-right: 0px;
 }
 
 /*----------------------------------------------------------------------------------------------
