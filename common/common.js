@@ -238,7 +238,7 @@ function aboutModal(_app){
   switch (_app) {
     case "":
       description = `<p>PhyWeb est une collection d’applications destinées à l’enseignement de la physique et de la chimie.</p> 
-      <p>Toutes les applications sont disponibles en ligne directement dans le navigateur. Il est néanmoins possible de télécharger un fichier exécutable pour avoir accès aux applications hors-ligne. <a href="http://phyweb.github.io/portable/phyweb.exe">Télécharger</a></p>
+      <p>Toutes les applications sont disponibles en ligne directement dans le navigateur. Il est néanmoins possible de télécharger un fichier exécutable pour avoir accès aux applications hors-ligne. <a href="https://phyweb.github.io/portable/phyweb.exe">Télécharger</a></p>
       `
       break;
     case "Tracker":
