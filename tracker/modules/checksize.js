@@ -19,16 +19,18 @@ export default class CHECKSIZE {
 
   load(_file, _player){
     this.player = _player;
-    this.extractor.checkSize(_file, (config)=>{
-      this.height = config.codedHeight;
-      this.width = config.codedWidth;
-      this.nbSamples = config.info.videoTracks[0].nb_samples;
-      this.duration = config.info.videoTracks[0].movie_duration / 1000;
+    this.extractor.checkSize(_file, (info)=>{
+      console.log("Video info : ", info)
+      let track = info.videoTracks[0];
+      this.height = track.video.height;
+      this.width = track.video.width;
+      this.nbSamples = track.nb_samples;
+      this.duration = track.movie_duration / track.movie_timescale;
       this.fps = this.nbSamples / this.duration;
 
       this.updateSize();
 
-      console.log("video size = " + this.size + " MiB")
+      console.log(`video size ${this.size}  MiB`)
       if(this.size < this.sizeThreshold) {
         this.player.load(_file);
       } else{

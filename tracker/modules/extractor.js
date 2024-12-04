@@ -11,6 +11,53 @@ export default class EXTRACTOR {
   }
 
   async checkSize(_file,_cb){
+    console.log("File: ", _file)
+
+    let chunksize = 1024 * 1024;
+
+    let fileSize = _file.size;
+    let offset = 0;
+
+    let infoReady = false;
+
+    var mp4boxfile = MP4Box.createFile();
+    mp4boxfile.onError = (e) => {};
+    mp4boxfile.onReady = (info) => {
+      infoReady = true;
+      _cb(info);
+    }
+
+
+    var onBlockRead = function(evt) {
+      if (evt.target.error == null) {
+        //onparsedbuffer(mp4boxfile, evt.target.result); // callback for handling read chunk
+        let buffer = evt.target.result;
+        buffer.fileStart = offset;
+        mp4boxfile.appendBuffer(buffer);
+        offset += evt.target.result.byteLength;
+      } else {
+          console.log("Read error: " + evt.target.error);
+          return;
+      }
+      if (offset >= fileSize || infoReady) {
+        mp4boxfile.flush();
+        return;
+      }
+
+      readBlock(offset, chunksize, _file);
+    }
+
+    var readBlock = function(_offset, _length, _file) {
+      var r = new FileReader();
+      var blob = _file.slice(_offset, _length + _offset);
+      r.onload = onBlockRead;
+      r.readAsArrayBuffer(blob);
+    }
+
+    readBlock(offset, chunksize, _file);
+  }
+
+  async checkSize_old(_file,_cb){
     let videoUrl = URL.createObjectURL(_file);
 
     const demuxer = new MP4DemuxerDummy(videoUrl, {
@@ -269,96 +316,6 @@ class MP4FileSink {
     this.#setStatus("fetch", "Done");
     this.#file.flush();
   }
-}
-
-/*----------------------------------------------------------------------------------------------
-----------------------------------------------DUMMY---------------------------------------------
-----------------------------------------------------------------------------------------------*/
-class MP4DemuxerDummy {
-  #onConfig = null;
-  #onChunk = null;
-  #onFinish = null;
-  #setStatus = null;
-  #file = null;
-  #videoDecoder = null;
-
-  constructor(uri, {onConfig, onChunk, onFinish, setStatus, videoDecoder}) {
-    this.#onConfig = onConfig;
-    this.#setStatus = setStatus;
-    this.#videoDecoder = videoDecoder;
-
-    // Configure an MP4Box File for demuxing.
-    this.#file = MP4Box.createFile();
-    this.#file.onError = error => {
-      console.error(error);
-      setStatus("demux", error);
-    }
-    this.#file.onReady = this.#onReady.bind(this);
-
-    // Fetch the file and pipe the data through.
-    const fileSink = new MP4FileSink(this.#file, setStatus);
-    fetch(uri).then(async response => {
-      // highWaterMark should be large enough for smooth streaming, but lower is better for memory usage.
-      await response.body.pipeTo(new WritableStream(fileSink, {highWaterMark: 2}));
-
-    });
-  }
-
-  // Get the appropriate `description` for a specific track. Assumes that the
-  // track is H.264 or H.265.
-  #description(track) {
-    const trak = this.#file.getTrackById(track.id);
-    for (const entry of trak.mdia.minf.stbl.stsd.entries) {
-      if (entry.avcC || entry.hvcC || entry.av1C || entry.vpcC) {
-        const stream = new DataStream(undefined, 0, DataStream.BIG_ENDIAN);
-        if (entry.avcC) {
-          entry.avcC.write(stream);
-        }
-        if (entry.hvcC) {
-          entry.hvcC.write(stream);
-        }
-        if (entry.av1C) {
-          entry.av1C.write(stream);
-        }
-        if (entry.vpcC) {
-          entry.vpcC.write(stream);
-        }
-        return new Uint8Array(stream.buffer, 8);  // Remove the box header.
-      }
-    }
-    //$("#fileformat-alert-modal").classList.add("is-active");
-    alertModal({
-      type: "danger",
-      title: "Codec video non supporté",
-      body: `<div class="content">
-          <p>La vidéo doit être au format mp4 et encodé dans un des formats listé ci-dessous :</p>
-          <ul>
-            <li>H.264</li>
-            <li>H.265</li>
-            <li>AV1</li>
-          </ul>
-        </div>`,
-      confirm: "OK",
-      width: "45rem"
-    })
-    throw "avcC or hvcC or av1C not found";
-  }
-
-  #onReady(info) {
-    this.#setStatus("demux", "Ready");
-    const track = info.videoTracks[0];
-
-    // Generate and emit an appropriate VideoDecoderConfig.
-    this.#onConfig({
-      codec: track.codec,
-      codedHeight: track.video.height,
-      codedWidth: track.video.width,
-      description: this.#description(track),
-      mp4boxFile: this.#file,
-      info: info,
-    });
-  }
-
 }
 
 /*! mp4box 23-09-2022 */
