@@ -99,44 +99,46 @@ export default class EXTRACTOR {
     },
     error: function(e) {
       console.error(e);
-      setStatus("decode", e);
+      //setStatus("decode", e);
     },
   });
 
   let keyFrameFound = false;
 
-  await getVideoFrames(
-    {
-      videoUrl,
-      onConfig(config) {
-        decodedVideo.duration = _durationResize.checked ? (_durationResize.end - _durationResize.start) * 1000: config.info.duration; 
-        decodedVideo.width = _defResize ? config.codedWidth / 2 : config.codedWidth;
-        decodedVideo.height = _defResize ? config.codedHeight / 2 : config.codedHeight;
-      },
-      onFinish() {
-        _cb(decodedVideo)
-      },
-      onChunk(chunk) {
-          if(_durationResize.checked && chunk.timestamp / 1000000 < _durationResize.start - 15){
-            return; //return if the frame is at least 15s before the start
-          } else if(_durationResize.checked && chunk.timestamp / 1000000 < _durationResize.start){
-            if(!keyFrameFound){
-              if(chunk.type !== "key"){
-                return;
-              } else{
-                keyFrameFound = true; // Find the first keyframe within 15s of the start
-              }
+  let getVideoFramesOptions = {
+    videoUrl,
+    onConfig(config) {
+      decodedVideo.duration = _durationResize.checked ? (_durationResize.end - _durationResize.start) * 1000: config.info.duration; 
+      decodedVideo.width = _defResize ? config.codedWidth / 2 : config.codedWidth;
+      decodedVideo.height = _defResize ? config.codedHeight / 2 : config.codedHeight;
+    },
+    onFinish() {
+      _cb(decodedVideo)
+    },
+    onChunk(chunk) {
+        if(_durationResize.checked && chunk.timestamp / 1000000 < _durationResize.start - 15){
+          return; //return if the frame is at least 15s before the start
+        } else if(_durationResize.checked && chunk.timestamp / 1000000 < _durationResize.start){
+          if(!keyFrameFound){
+            if(chunk.type !== "key"){
+              return;
+            } else{
+              keyFrameFound = true; // Find the first keyframe within 15s of the start
             }
           }
-        if(_durationResize.checked && chunk.timestamp / 1000000 >= _durationResize.end){
-          // TODO STOP DEMUXING
-          return;
         }
-        decoder.decode(chunk);
+      if(_durationResize.checked && chunk.timestamp / 1000000 >= _durationResize.end){
+        return;
       }
-    },
-    decoder
-  );
+      decoder.decode(chunk);
+    }
+  }
+
+  if(_durationResize.checked){
+    getVideoFramesOptions.demuxingEnd = _durationResize.end;
+  }
+
+  await getVideoFrames(getVideoFramesOptions,decoder);
 
   URL.revokeObjectURL(_file); // revoke URL to prevent memory leak
   }
@@ -165,9 +167,10 @@ function getVideoFrames(opts={},decoder) {
       opts.onChunk(chunk)
     },
     setStatus: function(a, b) {
-      // console.log("status:", a, b);
+       //console.log("status:", a, b);
     },
     videoDecoder: decoder,
+    demuxingEnd: opts.demuxingEnd
   });
 
   return onFinishPromise;
@@ -183,12 +186,14 @@ class MP4Demuxer {
   #file = null;
   #videoDecoder = null;
 
-  constructor(uri, {onConfig, onChunk, onFinish, setStatus, videoDecoder}) {
+  constructor(uri, {onConfig, onChunk, onFinish, setStatus, videoDecoder, demuxingEnd}) {
     this.#onConfig = onConfig;
     this.#onChunk = onChunk;
     this.#onFinish = onFinish;
     this.#setStatus = setStatus;
     this.#videoDecoder = videoDecoder;
+
+    this.demuxingEnd = demuxingEnd;
 
     // Configure an MP4Box File for demuxing.
     this.#file = MP4Box.createFile();
@@ -256,6 +261,13 @@ class MP4Demuxer {
   }
 
   async #onSamples(track_id, ref, samples) {
+    // Check if the demuxing reached durationEnd
+    if(samples[0].cts / samples[0].timescale > this.demuxingEnd){
+      console.log("flush");
+      this.#file.stop();
+      this.#file.flush();
+      return;
+    }
     // Generate and emit an EncodedVideoChunk for each demuxed sample.
     for (const sample of samples) {
       this.#onChunk(new EncodedVideoChunk({
