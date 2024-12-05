@@ -1,3 +1,5 @@
+import {alertModal} from "../../common/common.js"
+
 const $ = document.querySelector.bind(document);
 
 /*----------------------------------------------------------------------------------------------
@@ -18,9 +20,27 @@ export default class CHECKSIZE {
   }   
 
   load(_file, _player){
-    this.player = _player;
+    $("#open-modal").classList.remove("is-active");
+    alertModal({
+      title: "Analyse de la vidéo",
+      body: `<progress class="progress is-primary" id="checksize-progress" value="15" max="100"></progress>`,
+      width: "42rem",
+      cancel: {
+        type: "danger",
+        label: "Annuler",
+        cb: ()=>{this.extractor.checkSizeInfoReady = true}
+      },
+      id:"checksize-loading-modal"
+    })
+   // $("#loading-panel").classList.remove("is-hidden");
+    //$("#big-arrow").classList.add("is-hidden");
+    $("#checksize-progress").value = 0;
+
     this.extractor.checkSize(_file, (info)=>{
       console.log("Video info : ", info)
+
+    $("#checksize-loading-modal").children[0].click(); //close
+
       let track = info.videoTracks[0];
       this.height = track.video.height;
       this.width = track.video.width;
@@ -31,15 +51,15 @@ export default class CHECKSIZE {
       this.updateSize();
 
       console.log(`video size ${this.size}  MiB`)
+
+      // Check if the video is too big
       if(this.size < this.sizeThreshold) {
-        this.player.load(_file);
+        _player.load(_file);
       } else{
-        
         $("#def-size-input").checked = false;
         $("#fps-size-input").checked = false;
         $("#duration-size-input").checked = false;
         $("#duration-size-inputs").classList.add("is-hidden");
-
 
         $("#file-size-modal").classList.add('is-active');
 
@@ -96,7 +116,6 @@ export default class CHECKSIZE {
     }
     let nb = duration * fps;
 
-
     this.size = Math.ceil(h * w * 4 * nb / (1024*1024));
 
     $("#size-label").innerHTML = this.resizedSize + "Mio"
@@ -118,5 +137,4 @@ export default class CHECKSIZE {
     }
     $("#size-label").innerHTML = this.size + " Mio"
   }
-
 }

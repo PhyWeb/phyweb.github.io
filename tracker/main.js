@@ -100,7 +100,6 @@ $("#file-input").addEventListener("change", () => {
   }
   if($("#file-input").files[0] != undefined){
     player.checkVideoSize($("#file-input").files[0]);
-    common.modalManager.closeAllModals();
   }
 });
 $("#file-input").addEventListener("click", () => {

@@ -1,5 +1,3 @@
-import {alertModal} from "../../common/common.js"
-
 const $ = document.querySelector.bind(document);
 
 /*----------------------------------------------------------------------------------------------
@@ -7,7 +5,7 @@ const $ = document.querySelector.bind(document);
 ----------------------------------------------------------------------------------------------*/
 export default class EXTRACTOR {
   constructor() {
-
+    this.checkSizeInfoReady = false;
   }
 
   async checkSize(_file,_cb){
@@ -18,29 +16,29 @@ export default class EXTRACTOR {
     let fileSize = _file.size;
     let offset = 0;
 
-    let infoReady = false;
+    this.checkSizeInfoReady = false;
 
     var mp4boxfile = MP4Box.createFile();
     mp4boxfile.onError = (e) => {};
     mp4boxfile.onReady = (info) => {
-      infoReady = true;
+      this.checkSizeInfoReady = true;
       _cb(info);
     }
 
 
-    var onBlockRead = function(evt) {
+    var onBlockRead = (evt) => {
+      if (offset >= fileSize || this.checkSizeInfoReady) {
+        mp4boxfile.flush();
+        return;
+      }
       if (evt.target.error == null) {
-        //onparsedbuffer(mp4boxfile, evt.target.result); // callback for handling read chunk
+        $("#checksize-progress").value = Math.ceil(100*offset/fileSize);
         let buffer = evt.target.result;
         buffer.fileStart = offset;
         mp4boxfile.appendBuffer(buffer);
         offset += evt.target.result.byteLength;
       } else {
-          console.log("Read error: " + evt.target.error);
-          return;
-      }
-      if (offset >= fileSize || infoReady) {
-        mp4boxfile.flush();
+        console.log("Read error: " + evt.target.error);
         return;
       }
 
@@ -55,21 +53,6 @@ export default class EXTRACTOR {
     }
 
     readBlock(offset, chunksize, _file);
-  }
-
-  async checkSize_old(_file,_cb){
-    let videoUrl = URL.createObjectURL(_file);
-
-    const demuxer = new MP4DemuxerDummy(videoUrl, {
-      onConfig: function(config) {
-        _cb(config);
-      },
-      onFinish: null,
-      onChunk: null,
-      setStatus: function(a, b) {
-      },
-      videoDecoder: null,
-    });
   }
 
   async extract(_file,_defResize,_fpsResize,_durationResize,_cb){
@@ -131,7 +114,6 @@ export default class EXTRACTOR {
         decodedVideo.height = _defResize ? config.codedHeight / 2 : config.codedHeight;
       },
       onFinish() {
-        console.log("Decoded!")
         _cb(decodedVideo)
       },
       onChunk(chunk) {

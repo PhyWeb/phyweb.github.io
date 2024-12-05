@@ -63,7 +63,7 @@ export default class PLAYER {
     }
 
     this.extractor.extract(_path,_defResize,_fpsResize,durationResize,(_decodedVideo) => {
-      console.log(_decodedVideo);
+      console.log("Video decoded", _decodedVideo);
       this.decodedVideo = _decodedVideo;
       this.currentFrame = 0;
       this.currentPoint = 0;
@@ -76,7 +76,6 @@ export default class PLAYER {
       $(".handler").style.display= "block";
       this.videoCanvas.style.display= "block";
 
-      console.log("video loaded");
       this.measurement.init(this.decodedVideo, this);
 
       $("#etalonnage-button").click();

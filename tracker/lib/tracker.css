@@ -1,3 +1,8 @@
+#loading-panel{
+  width: 20rem !important;
+  margin-top: 10rem;
+}
+
 #open-modal-card{
   height: 90%;
   width: 60rem;

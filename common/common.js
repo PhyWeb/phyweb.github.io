@@ -165,6 +165,11 @@ function alertModal(_config){
   let title = createElement("p", "modal-card-title", head);
   let body = createElement("section", "modal-card-body", card);
 
+  // ID
+  if(_config.id){
+    modal.id = _config.id;
+  }
+
   // Style
   if(_config.width){
     card.style.width = _config.width;
@@ -191,6 +196,7 @@ function alertModal(_config){
     let foot = createElement("footer", "modal-card-foot", card);
     let buttons = createElement("div", "buttons", foot);
 
+    // Confirm button
     if(_config.confirm){
       let type = "primary";
       if(_config.confirm.type){
@@ -210,9 +216,9 @@ function alertModal(_config){
       }
     }
 
+    // Cancel button
     if(_config.cancel){
       let cancelButton = createElement("button", "button", buttons);
-      cancelButton.addEventListener("click", ()=>{closeAlertModal(modal)});
 
       if(typeof _config.cancel === "string"){
         cancelButton.innerHTML = _config.cancel;
@@ -223,6 +229,11 @@ function alertModal(_config){
       if(_config.cancel.cb){
         cancelButton.addEventListener("click", ()=>{_config.cancel.cb()});
       }
+      if(_config.cancel.type){
+        cancelButton.classList.add("is-" + _config.cancel.type);
+      }
+
+      cancelButton.addEventListener("click", ()=>{closeAlertModal(modal)});
     }
   } else {
     // No footer
@@ -777,4 +788,4 @@ async function downloadFile(_file, _type,_name){
   return max;
 }*/
 
-export {Common, alertModal, TabManager, exportToCSV, exportToRW3, downloadFile};
+export {Common, ModalManager, alertModal, TabManager, exportToCSV, exportToRW3, downloadFile};
