@@ -117,8 +117,6 @@ export default class CHECKSIZE {
 
     this.size = Math.ceil(h * w * 4 * nb / (1024*1024));
 
-    $("#size-label").innerHTML = this.resizedSize + "Mio"
-
     if(this.size < this.sizeThreshold) {
       $("#size-label").classList.remove("has-text-danger");
       $("#size-label").classList.add("has-text-success");
@@ -134,6 +132,7 @@ export default class CHECKSIZE {
       $("#open-resized-video").classList.remove("is-success");
       $("#open-resized-video").innerHTML = "Ouvrir la vidéo malgré sa taille";
     }
+    
     $("#size-label").innerHTML = this.size + " Mio"
   }
 }
