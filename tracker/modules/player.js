@@ -288,6 +288,8 @@ export default class PLAYER {
         this.drawFrame(this.currentFrame);
       }
       requestAnimationFrame(this.playing); 
+    } else {
+      this.pause();
     }
   }
 
