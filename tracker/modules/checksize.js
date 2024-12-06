@@ -60,8 +60,8 @@ export default class CHECKSIZE {
       } else{
         $("#file-size-modal").classList.add('is-active');
 
-        $("#def-size-label").innerHTML = " ( "+ this.width + "/" + this.height + " => " + this.width / 2 + "/" + this.height / 2 + " )";
-        $("#fps-size-label").innerHTML = " ( " + this.fps.toFixed(2)/1 + " => " + this.fps.toFixed(2)/2 + " img/s )";
+        $("#def-size-label").innerHTML = ` ( ${this.width} / ${this.height} => ${this.width / 2} / ${this.height / 2} )`;
+        $("#fps-size-label").innerHTML = `( ${this.fps.toFixed(2)/1} => ${this.fps.toFixed(2)/2} img/s )`;
 
         $("#duration-size-label").innerHTML = this.duration;
 
