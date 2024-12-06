@@ -23,7 +23,7 @@ export default class CHECKSIZE {
     $("#open-modal").classList.remove("is-active");
     alertModal({
       title: "Analyse de la vidéo",
-      body: `<progress class="progress is-primary" id="checksize-progress" value="15" max="100"></progress>`,
+      body: `<progress class="progress is-primary" id="checksize-progress" value="0" max="100"></progress>`,
       width: "42rem",
       cancel: {
         type: "danger",
@@ -32,9 +32,6 @@ export default class CHECKSIZE {
       },
       id:"checksize-loading-modal"
     })
-   // $("#loading-panel").classList.remove("is-hidden");
-    //$("#big-arrow").classList.add("is-hidden");
-    $("#checksize-progress").value = 0;
 
     this.extractor.checkSize(_file, (info)=>{
       console.log("Video info : ", info)
@@ -48,6 +45,11 @@ export default class CHECKSIZE {
       this.duration = track.movie_duration / track.movie_timescale;
       this.fps = this.nbSamples / this.duration;
 
+      $("#def-size-input").checked = false;
+      $("#fps-size-input").checked = false;
+      $("#duration-size-input").checked = false;
+      $("#duration-size-inputs").classList.add("is-hidden");
+
       this.updateSize();
 
       console.log(`video size ${this.size}  MiB`)
@@ -56,11 +58,6 @@ export default class CHECKSIZE {
       if(this.size < this.sizeThreshold) {
         _player.load(_file);
       } else{
-        $("#def-size-input").checked = false;
-        $("#fps-size-input").checked = false;
-        $("#duration-size-input").checked = false;
-        $("#duration-size-inputs").classList.add("is-hidden");
-
         $("#file-size-modal").classList.add('is-active');
 
         $("#def-size-label").innerHTML = " ( "+ this.width + "/" + this.height + " => " + this.width / 2 + "/" + this.height / 2 + " )";
@@ -79,11 +76,11 @@ export default class CHECKSIZE {
         this.updateSize();
 
         $("#def-size-input").addEventListener("click", ()=>{
-          this.updateSize()
+          this.updateSize();
         });
 
         $("#fps-size-input").addEventListener("click", ()=>{
-          this.updateSize()
+          this.updateSize();
         });
 
         $("#duration-size-input").addEventListener("click", ()=>{
@@ -92,13 +89,13 @@ export default class CHECKSIZE {
           } else{
             $("#duration-size-inputs").classList.add("is-hidden");
           }
-          this.updateSize()
+          this.updateSize();
         });
         $("#start-size-input").addEventListener("change", ()=>{
-          this.updateSize()
+          this.updateSize();
         });
         $("#end-size-input").addEventListener("change", ()=>{
-          this.updateSize()
+          this.updateSize();
         });
       }
     });
@@ -108,12 +105,14 @@ export default class CHECKSIZE {
     let h = $("#def-size-input").checked ? this.height / 2 : this.height;
     let w = $("#def-size-input").checked ? this.width / 2 : this.width;
     let fps = $("#fps-size-input").checked ? this.fps / 2 : this.fps;
+
     let duration;
     if($("#duration-size-input").checked){
       duration = $("#end-size-input").value - $("#start-size-input").value;
     } else{
-      duration = this.duration
+      duration = this.duration;
     }
+
     let nb = duration * fps;
 
     this.size = Math.ceil(h * w * 4 * nb / (1024*1024));

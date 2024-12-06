@@ -138,7 +138,9 @@ $("#file-slider").noUiSlider.on('update', function (values, handle) {
     $("#start-size-input").value = value;
   }
 
-  player.checkSize.updateSize();
+  if($("#file-size-modal").classList.contains("is-active")){
+    player.checkSize.updateSize();
+  }
 });
 $("#start-size-input").addEventListener('change', function () {
   $("#file-slider").noUiSlider.set([this.value, null]);
