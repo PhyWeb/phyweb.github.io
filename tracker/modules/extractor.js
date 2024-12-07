@@ -1,3 +1,5 @@
+import {alertModal} from "../../common/common.js"
+
 const $ = document.querySelector.bind(document);
 
 /*----------------------------------------------------------------------------------------------
@@ -99,7 +101,14 @@ export default class EXTRACTOR {
     },
     error: function(e) {
       console.error(e);
-      //setStatus("decode", e);
+      alertModal({
+        type: "danger",
+        title: "Erreur",
+        body: `<p>Une erreur est survenue lors du décodage de la vidéo</p>
+          <p>Le format de la vidéo n'est pas pris en charge ou la mémoire vidéo est insuffisante pour ouvrir une vidéo de cette taille</p>`,
+        width: "42rem",
+        confirm: "OK",
+      });
     },
   });
 

@@ -31,7 +31,7 @@ export default class CHECKSIZE {
         cb: ()=>{this.extractor.checkSizeInfoReady = true}
       },
       id:"checksize-loading-modal"
-    })
+    });
 
     this.extractor.checkSize(_file, (info)=>{
       console.log("Video info : ", info)
