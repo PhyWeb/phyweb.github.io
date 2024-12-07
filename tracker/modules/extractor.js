@@ -76,6 +76,15 @@ export default class EXTRACTOR {
 
   let decoder = new VideoDecoder({
     output: (frame) =>{
+      // Update progressbar
+      let duration;
+      if(_durationResize.checked){
+        duration = _durationResize.end - _durationResize.start
+      } else{
+        duration = decodedVideo.duration;
+        console.log("duration", duration)
+      }
+      console.log((frame.timestamp / 1e6) / duration * 100)
       if(_durationResize.checked && frame.timestamp / 1000000 < _durationResize.start){
         frame.close();
       } else{
