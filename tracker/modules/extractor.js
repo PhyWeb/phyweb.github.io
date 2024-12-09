@@ -76,6 +76,21 @@ export default class EXTRACTOR {
 
   let frameCount = 0;
 
+  alertModal({
+    title: "Ouverture de la vidéo",
+    body: `<p>Analyse de la vidéo:</p>
+    <progress class="progress is-primary" id="extract-demuxing-progress" value="0" max="100"></progress>
+    <p>Décodage de la vidéo:</p>
+    <progress class="progress is-primary" id="extract-decode-progress" value="0" max="100"></progress>`,
+    width: "42rem",
+    cancel: {
+      type: "danger",
+      label: "Annuler",
+      cb: ()=>{/*TODO*/}
+    },
+    id:"extract-loading-modal"
+  });
+
   let decoder = new VideoDecoder({
     output: (frame) =>{
       // Update progressbar
@@ -84,9 +99,10 @@ export default class EXTRACTOR {
         duration = _durationResize.end - _durationResize.start
       } else{
         duration = decodedVideo.duration;
-        console.log("duration", duration)
       }
-      console.log((frame.timestamp / 1e6) / duration * 100)
+      $("#extract-decode-progress").value = Math.ceil((frame.timestamp / 1e6) / duration * 100);
+
+      // actual decode
       if(_durationResize.checked && frame.timestamp / 1000000 < _durationResize.start){
         frame.close();
       } else{
@@ -113,8 +129,8 @@ export default class EXTRACTOR {
       alertModal({
         type: "danger",
         title: "Erreur",
-        body: `<p>Une erreur est survenue lors du décodage de la vidéo</p>
-          <p>Le format de la vidéo n'est pas pris en charge ou la mémoire vidéo est insuffisante pour ouvrir une vidéo de cette taille</p>`,
+        body: `<p>Une erreur est survenue lors du décodage de la vidéo.</p>
+          <p class="has-text-justified">Le format de la vidéo n'est pas pris en charge ou la mémoire vidéo est insuffisante pour ouvrir une vidéo de cette taille.</p>`,
         width: "42rem",
         confirm: "OK",
       });
@@ -131,24 +147,32 @@ export default class EXTRACTOR {
       decodedVideo.height = _defResize ? config.codedHeight / 2 : config.codedHeight;
     },
     onFinish() {
+      $("#extract-loading-modal").remove();
       _cb(decodedVideo)
     },
     onChunk(chunk) {
-        if(_durationResize.checked && chunk.timestamp / 1000000 < _durationResize.start - 15){
-          return; //return if the frame is at least 15s before the start
-        } else if(_durationResize.checked && chunk.timestamp / 1000000 < _durationResize.start){
-          if(!keyFrameFound){
-            if(chunk.type !== "key"){
-              return;
-            } else{
-              keyFrameFound = true; // Find the first keyframe within 15s of the start
-            }
-          }
-        }
       if(_durationResize.checked && chunk.timestamp / 1000000 >= _durationResize.end){
         return;
       }
+
+      if(_durationResize.checked && chunk.timestamp / 1000000 < _durationResize.start - 10){
+        return; //return if the frame is at least 10s before the start
+      } else if(_durationResize.checked && chunk.timestamp / 1000000 < _durationResize.start){
+        if(!keyFrameFound){
+          if(chunk.type !== "key"){
+            return;
+          } else{
+            keyFrameFound = true; // Find the first keyframe within 15s of the start
+          }
+        }
+      }
+
       decoder.decode(chunk);
+    },
+    onStatus(_a, _b){
+      if(_a === "fetch"){
+        $("#extract-demuxing-progress").value = _b / _file.size * 100;      
+      }
     }
   }
 
@@ -167,7 +191,6 @@ export default class EXTRACTOR {
 ----------------------------------------------------------------------------------------------*/
 
 function getVideoFrames(opts={},decoder) {
-  
   let onFinishResolver;
   let onFinishPromise = new Promise(r => onFinishResolver=r);
 
@@ -185,7 +208,8 @@ function getVideoFrames(opts={},decoder) {
       opts.onChunk(chunk)
     },
     setStatus: function(a, b) {
-       //console.log("status:", a, b);
+      if(opts.onStatus) opts.onStatus(a, b);
+      //console.log("status:", a, b);
     },
     videoDecoder: decoder,
     demuxingEnd: opts.demuxingEnd
@@ -226,7 +250,7 @@ class MP4Demuxer {
     const fileSink = new MP4FileSink(this.#file, setStatus);
     fetch(uri).then(async response => {
       // highWaterMark should be large enough for smooth streaming, but lower is better for memory usage.
-      await response.body.pipeTo(new WritableStream(fileSink, {highWaterMark: 2}));
+      await response.body.pipeTo(new WritableStream(fileSink, {highWaterMark: 1}));
       
       await this.#videoDecoder.flush();
       if(this.#onFinish) this.#onFinish();
@@ -320,12 +344,12 @@ class MP4FileSink {
     this.#offset += buffer.byteLength;
 
     // Append chunk.
-    this.#setStatus("fetch", (this.#offset / (1024 ** 2)).toFixed(1) + " MiB");
+    this.#setStatus("fetch", (this.#offset).toFixed(1));
     this.#file.appendBuffer(buffer);
   }
 
   close() {
-    this.#setStatus("fetch", "Done");
+    //this.#setStatus("fetch", "Done");
     this.#file.flush();
   }
 }

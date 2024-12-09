@@ -30,13 +30,14 @@ export default class CHECKSIZE {
         label: "Annuler",
         cb: ()=>{this.extractor.checkSizeInfoReady = true}
       },
+      backgroundNotClickable: true,
       id:"checksize-loading-modal"
     });
 
     this.extractor.checkSize(_file, (info)=>{
       console.log("Video info : ", info)
 
-    $("#checksize-loading-modal").children[0].click(); //close
+    $("#checksize-loading-modal").remove();
 
       let track = info.videoTracks[0];
       this.height = track.video.height;
@@ -63,7 +64,7 @@ export default class CHECKSIZE {
         $("#def-size-label").innerHTML = ` ( ${this.width} / ${this.height} => ${this.width / 2} / ${this.height / 2} )`;
         $("#fps-size-label").innerHTML = `( ${this.fps.toFixed(2)/1} => ${this.fps.toFixed(2)/2} img/s )`;
 
-        $("#duration-size-label").innerHTML = this.duration;
+        $("#duration-size-label").innerHTML = this.duration.toFixed(2);
 
         $("#file-slider").noUiSlider.reset();
         $("#file-slider").noUiSlider.updateOptions({

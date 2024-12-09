@@ -240,7 +240,11 @@ function alertModal(_config){
     body.classList.add("has-bottom-round-corner");
   }
 
-  background.addEventListener("click", ()=>{closeAlertModal(modal)});
+  if(!_config.backgroundNotClickable){
+    background.addEventListener("click", ()=>{closeAlertModal(modal)});
+  }
+
+  return modal;
 }
 
 function aboutModal(_app){
@@ -259,7 +263,7 @@ function aboutModal(_app){
       description = "audio description"
       break;
     default:
-      console.log("wrong app name in about modal");
+      console.error("wrong app name in about modal");
   }
 
   // Year
