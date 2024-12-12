@@ -99,7 +99,7 @@ $("#file-input").addEventListener("change", () => {
     return;
   }
   if($("#file-input").files[0] != undefined){
-    player.checkVideoSize($("#file-input").files[0]);
+    player.load($("#file-input").files[0]);
   }
 });
 $("#file-input").addEventListener("click", () => {
@@ -109,7 +109,7 @@ $("#file-input").addEventListener("click", () => {
 // RESIZEVIDEO
 $("#open-resized-video").addEventListener("click", ()=>{
   common.modalManager.closeAllModals();
-  player.load($("#file-input").files[0],$("#def-size-input").checked,$("#fps-size-input").checked,$("#duration-size-input").checked);
+  extractor.extract();
 });
 
 // FILE SLIDER
@@ -139,7 +139,7 @@ $("#file-slider").noUiSlider.on('update', function (values, handle) {
   }
 
   if($("#file-size-modal").classList.contains("is-active")){
-    player.checkSize.updateSize();
+    player.extractor.updateSize();
   }
 });
 $("#start-size-input").addEventListener('change', function () {

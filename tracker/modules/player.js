@@ -1,5 +1,3 @@
-import CHECKSIZE from "./checksize.js"
-
 const $ = document.querySelector.bind(document);
 
 function isNumber(str) {
@@ -22,8 +20,6 @@ export default class PLAYER {
 
     this.measurement = _measurement;
 
-    this.checkSize = new CHECKSIZE(this.extractor);
-
     this.pauseFlag = false;
     this.originFlag = "none";
 
@@ -41,33 +37,31 @@ export default class PLAYER {
     this.animationFrameRequest;
   }
 
-  checkVideoSize(_file){
-    this.checkSize.load(_file,this);
-  }
-
-  load(_path, _defResize = false, _fpsResize = false, _durationResize = false){
+  load(_file/*, _defResize = false, _fpsResize = false, _durationResize = false*/){
+    // Pause if the video is playing
+    this.pause();
+    
     // Stop loop
     cancelAnimationFrame(this.animationFrameRequest);
 
-    let durationResize = {
-      checked: _durationResize,
-      start: parseInt($("#start-size-input").value),
-      end: parseInt($("#end-size-input").value),
-    }
-    
-    // destroy previous frames
-    if(this.decodedVideo){
-      this.decodedVideo.frames.forEach((e)=>{
-        e.close();
-      });
+    // Checksize callback
+    let checksizeCB = () => {
+      // destroy previous frames
+      if(this.decodedVideo){
+        this.decodedVideo.frames.forEach((e)=>{
+          e.close();
+        });
+      }
     }
 
-    this.extractor.extract(_path,_defResize,_fpsResize,durationResize,(_decodedVideo) => {
+    // Decoded video callback
+    let decodedVideoCB = (_decodedVideo) => {
       console.log("Video decoded", _decodedVideo);
       this.decodedVideo = _decodedVideo;
       this.currentFrame = 0;
       this.currentPoint = 0;
 
+      // Display UI
       $("#video-controls").classList.remove("is-hidden");
       $("#magnifier-button").classList.remove("is-hidden");
       $("#handler-wrapper").classList.remove("is-hidden");
@@ -83,8 +77,18 @@ export default class PLAYER {
       this.resize();
 
       this.animationFrameRequest = requestAnimationFrame(this.loop);
-
-    })  
+    }
+    
+    // Check if _file is a file or a path and start extraction
+    if(typeof _file === "string"){
+      fetch(_file)
+      .then(res => res.blob()) 
+      .then(blob => {
+        this.extractor.checkSize(blob, checksizeCB, decodedVideoCB);
+      });
+    } else {
+      this.extractor.checkSize(_file, checksizeCB, decodedVideoCB);
+    }
   }
 
   drawFrame(_frameID){
