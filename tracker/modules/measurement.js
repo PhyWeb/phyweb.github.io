@@ -287,8 +287,8 @@ export default class MEASUREMENT {
       unit: "s",
       values: []
     }
-    for(let i = 0; i < this.data.length; i++){
-      tSerie.values[i] = this.data[i].t / 1000;
+    for(let i = this.originFrame; i < this.data.length; i++){
+      tSerie.values[i] = (this.data[i].t - this.data[this.originFrame].t) / 1000;
     }
     series.push(tSerie);
 
@@ -303,7 +303,7 @@ export default class MEASUREMENT {
         unit: "m",
         values: []
       }
-      for(let j = 0; j < this.data.length; j++){
+      for(let j = this.originFrame; j < this.data.length; j++){
         xSerie.values[j] = this.scalex(this.data[j].xs[i-1]);
         ySerie.values[j] = this.scaley(this.data[j].ys[i-1]);
       }
