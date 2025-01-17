@@ -444,7 +444,7 @@ class TabManager {
       title: "Fermer un onglet",
       body: "Etes-vous sur de vouloir fermer l'onglet : <strong>" + this.tabs[_id].name + "</strong>",
       confirm: {
-        label: "Ferme l'onglet",
+        label: "Fermer l'onglet",
         type: "danger",
         cb: confirmDeleteTab
       },
