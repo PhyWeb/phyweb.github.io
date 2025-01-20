@@ -119,14 +119,15 @@ export default class MEASUREMENT {
       let label = document.createElement('label');
       label.innerHTML = index + 1;
       cell.appendChild(label);
-      row.appendChild(cell)
+      row.appendChild(cell);
 
       // t column
-      let cell2 = document.createElement('td');
-      let label2 = document.createElement('label');
-      label2.innerHTML = Math.round(this.data[index].t) / 1000;
-      cell2.appendChild(label2);
-      row.appendChild(cell2)
+      let tcell = document.createElement('td');
+      let tlabel = document.createElement('label');
+      tlabel.id = "t" + index;
+      tlabel.innerHTML = Math.round(this.data[index].t) / 1000;
+      tcell.appendChild(tlabel);
+      row.appendChild(tcell)
 
       // x&y columns
       for(let i = 1; i < this.pointsPerFrame + 1; i++){
@@ -207,6 +208,11 @@ export default class MEASUREMENT {
     this.updateTable();
   }
 
+  setOriginFrame(_id){
+    this.originFrame = _id;
+    this.updateTable();
+  }
+
   changeValue(frameIndex, pointIndex, x, y){
     this.data[frameIndex].xs[pointIndex] = x;
     this.data[frameIndex].ys[pointIndex] = y;
@@ -225,17 +231,33 @@ export default class MEASUREMENT {
 
   updateTable(){
     this.updateScale()
+
     for(let i = 0; i < this.tableBody.children.length; i++){
-      for(let j = 1; j < this.data[i].xs.length + 1; j++){
-        if(this.data[i].xs[j - 1] != ""){
-          $("#" + "x" + j + i).innerHTML = this.scalex(this.data[i].xs[j - 1]);
-        } else {
+      // update t values
+      if(i < this.originFrame){
+        $("#" + "t" + i).innerHTML = "";
+      } else{
+        $("#" + "t" + i).innerHTML = Math.round(this.data[i].t - this.data[this.originFrame].t) / 1000;
+      }
+
+      // update x and y values
+      if(i < this.originFrame){
+        for(let j = 1; j < this.data[i].xs.length + 1; j++){
           $("#" + "x" + j + i).innerHTML = "";
-        }
-        if(this.data[i].ys[j - 1] != ""){
-          $("#" + "y" + j + i).innerHTML = this.scaley(this.data[i].ys[j - 1]);
-        } else {
           $("#" + "y" + j + i).innerHTML = "";
+        } 
+      } else{
+        for(let j = 1; j < this.data[i].xs.length + 1; j++){
+          if(this.data[i].xs[j - 1] != ""){
+            $("#" + "x" + j + i).innerHTML = this.scalex(this.data[i].xs[j - 1]);
+          } else {
+            $("#" + "x" + j + i).innerHTML = "";
+          }
+          if(this.data[i].ys[j - 1] != ""){
+            $("#" + "y" + j + i).innerHTML = this.scaley(this.data[i].ys[j - 1]);
+          } else {
+            $("#" + "y" + j + i).innerHTML = "";
+          }
         }
       }
     }
@@ -326,7 +348,6 @@ export default class MEASUREMENT {
     if(_type === "rw3"){
       file = exportToRW3(series, true, "Pointage PhyWeb Tracker");
     }
-    console.log("file : " , file)
     downloadFile(file, _type, _name)
   }
 }

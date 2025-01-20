@@ -476,7 +476,8 @@ export default class PLAYER {
   setOriginFrame(id) {
     if(isNumber(id) == true){
       if(id >=0 && id < this.measurement.data.length){
-        this.measurement.originFrame = id
+        //this.measurement.originFrame = id
+        this.measurement.setOriginFrame(id);
         this.setFrame(this.currentFrame); // check if currentFrame < originFrame
         console.log("originframe : " , id)
       } 
