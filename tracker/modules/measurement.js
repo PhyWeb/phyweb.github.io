@@ -91,9 +91,13 @@ export default class MEASUREMENT {
 
     let titleRow = document.createElement('tr');
     let cell = document.createElement('th');
-    cell.innerHTML = "t (s)"
+    cell.innerHTML = "n°"
     cell.classList.add("has-text-centered");
     titleRow.appendChild(cell);
+    let cell2 = document.createElement('th');
+    cell2.innerHTML = "t (s)"
+    cell2.classList.add("has-text-centered");
+    titleRow.appendChild(cell2);
     for(let i = 1; i < this.pointsPerFrame + 1; i++){
       let cellx = document.createElement('th');
       cellx.classList.add("has-text-centered");
@@ -110,26 +114,30 @@ export default class MEASUREMENT {
     this.data.forEach((value,index)=>{
       let row = document.createElement('tr');
 
-      // t column
+      // image index column
       let cell = document.createElement('td');
       let label = document.createElement('label');
-      label.innerHTML = Math.round(this.data[index].t) / 1000;
-      //label.className = "measurementLabel";
+      label.innerHTML = index + 1;
       cell.appendChild(label);
       row.appendChild(cell)
+
+      // t column
+      let cell2 = document.createElement('td');
+      let label2 = document.createElement('label');
+      label2.innerHTML = Math.round(this.data[index].t) / 1000;
+      cell2.appendChild(label2);
+      row.appendChild(cell2)
 
       // x&y columns
       for(let i = 1; i < this.pointsPerFrame + 1; i++){
         let xcell = document.createElement('td');
         let xlabel = document.createElement('label');
-        //xlabel.className="measurementLabel";
         xlabel.id = "x" + i + index;
         xcell.appendChild(xlabel);
         row.appendChild(xcell)
 
         let ycell = document.createElement('td');
         let ylabel = document.createElement('label');
-        //ylabel.className="measurementLabel";
         ylabel.id = "y" + i + index;
         ycell.appendChild(ylabel);
         row.appendChild(ycell);
