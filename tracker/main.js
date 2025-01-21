@@ -27,7 +27,7 @@ if ("VideoDecoder" in window) {
   alertModal({
     type: "danger",
     title: "Navigateur non compatible",
-    body: `<div class="content has-text-justified"">
+    body: `<div class="content has-text-justified">
           <p>PhyWeb utilise des technologies modernes pour fonctionner. Votre navigateur ne prend pas en charge toutes les fonctions nécessaires. </p>
           <p>Exemples de navigateurs compatibles :</p>
           <ul>
@@ -117,8 +117,8 @@ noUiSlider.create($("#file-slider"), {
   start: [0, 10],
   connect: true,
   range: {
-      'min': 0,
-      'max': 10
+    'min': 0,
+    'max': 10
   },
   margin: 1,
   behaviour: 'tap-drag',
