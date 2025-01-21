@@ -4,10 +4,11 @@ COMMON:
   - change data format to series
 
 HOME:
+  - add buttonand modal to download the app
 
 AUDIO:
   - preview wave when loading a file
-  - fft add 0s to have a power of two and use faster fft
+  - fft add 0s to have a power of two and use faster fft ??
 
 TRACKER:
   - Add vidéos
