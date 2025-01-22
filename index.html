@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Phyweb</title>
-    <link rel="icon" href="./lib/favicons/favicon.ico" />
+    <link rel="icon" href="./common/assets/phyweb.ico" />
     <link rel="stylesheet" href="./common/bulma/bulma.min.css">
     <link rel="stylesheet" href="./common/common.css">
     <link rel="stylesheet" href="home.css">
@@ -49,69 +49,119 @@
   <!------------------------------------------------------------------------------------------------------------>
   <!------------------------------------------------APP CONTAINER----------------------------------------------->
   <!------------------------------------------------------------------------------------------------------------>
-    <div class="container">
-      <h1 class="title">
-        <span class="icon-text">
-          <span class="icon has-text-primary mr-3">
-            <i class="fa-solid fa-arrow-right fa-lg"></i>
-          </span>
-          <span>Applications PhyWeb</span>
+  <div class="container">
+    <h1 class="title">
+      <span class="icon-text">
+        <span class="icon has-text-primary mr-3">
+          <i class="fa-solid fa-arrow-right fa-lg"></i>
         </span>
-      </h1>
-      <div class="grid">
-        <div class="cell">
-          <a class="app-tile" href="./audio/index.html">
-            <h2 class="title is-4">
-              <span class="icon-text">
-                <span class="is-flex has-text-primary mr-1">
-                  <i class="audio-logo-small"></i>
-                </span>
-                <span>Audio</span>
+        <span>Applications PhyWeb</span>
+      </span>
+    </h1>
+    <div class="grid">
+      <div class="cell">
+        <a class="app-tile" href="./audio/index.html">
+          <h2 class="title is-4">
+            <span class="icon-text">
+              <span class="is-flex has-text-primary mr-1">
+                <i class="audio-logo-small"></i>
               </span>
-            </h2>
-            <p>
-              Application permettant de visualiser et d'analyser des sons enregistrés ou importés.
-            </p>
-          </a>
-        </div>
-        <div class="cell">
-          <a class="app-tile" href="./tracker/index.html">
-            <h2 class="title is-4">
-              <span class="icon-text">
-                <span class="icon has-text-primary mr-1">
-                  <i class="fa-solid fa-crosshairs"></i>
-                </span>
-                <span>Tracker</span>
+              <span>Audio</span>
+            </span>
+          </h2>
+          <p>
+            Application permettant de visualiser et d'analyser des sons enregistrés ou importés.
+          </p>
+        </a>
+      </div>
+      <div class="cell">
+        <a class="app-tile" href="./tracker/index.html">
+          <h2 class="title is-4">
+            <span class="icon-text">
+              <span class="icon has-text-primary mr-1">
+                <i class="fa-solid fa-crosshairs"></i>
               </span>
-            </h2>
-            <p>
-              Application de pointage permettant d'étudier le mouvement d'objets dans une vidéo.
-            </p>
-          </a>
-        </div>
-        <div class="cell">
-          <a class="app-tile">
-            <h2 class="title is-4">
-              <span class="icon-text">
-                <span class="icon has-text-primary mr-1">
-                  <i class="fa-solid fa-chart-line"></i>
-                </span>
-                <span>Grapher</span>
+              <span>Tracker</span>
+            </span>
+          </h2>
+          <p>
+            Application de pointage permettant d'étudier le mouvement d'objets dans une vidéo.
+          </p>
+        </a>
+      </div>
+      <div class="cell">
+        <a class="app-tile">
+          <h2 class="title is-4">
+            <span class="icon-text">
+              <span class="icon has-text-primary mr-1">
+                <i class="fa-solid fa-chart-line"></i>
               </span>
-            </h2>
-            <p>
-              En chantier.
-            </p>
-          </a>
-        </div>
+              <span>Grapher</span>
+            </span>
+          </h2>
+          <p>
+            En chantier.
+          </p>
+        </a>
       </div>
     </div>
-    <button class="button is-primary" id="download-button" style="position:absolute; bottom:1rem; right:1rem">
-      <span class="icon">
-        <i class="fa-solid fa-download"></i>
-      </span>
-      <span>Télécharger</span>
-    </button>
-
+  </div>
+  <!----------------------------------------------DOWNLOAD BUTTON----------------------------------------------->
+  <button class="button is-primary js-modal-trigger" id="download-button" style="position:absolute; bottom:1rem; right:1rem" data-target="download-modal">
+    <span class="icon">
+      <i class="fa-solid fa-download"></i>
+    </span>
+    <span>Télécharger</span>
+  </button>
+  <!------------------------------------------------------------------------------------------------------------>
+  <!-----------------------------------------------DOWNLOAD MODAL----------------------------------------------->
+  <!------------------------------------------------------------------------------------------------------------>
+  <div id="download-modal" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card" id="download-modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title">Télécharger PhyWeb</p>
+        <button class="delete" aria-label="close"></button>
+      </header>
+      <section class="modal-card-body ">
+        <p class="block">
+          PhyWeb est une application web. Cependant, vous pouvez télécharger une version de l'application pour l'utiliser hors-ligne.
+        </p>
+        <div class="buttons is-centered">
+          <button class="button is-link" id="windows-button">
+            <span class="icon">
+              <i class="fa-brands fa-lg fa-windows"></i>
+            </span>
+            <span>Windows</span>
+          </button>
+          <button class="button" id="macos-button" disabled>
+            <span class="icon">
+              <i class="fa-brands fa-lg fa-apple"></i>
+            </span>
+            <span>MacOS</span>
+          </button>
+          <button class="button" id="linux-button" disabled>
+            <span class="icon">
+              <i class="fa-brands fa-lg fa-linux"></i>
+            </span>
+            <span>Linux</span>
+          </button>
+        </div>
+        <article class="message">
+          <div class="message-body">
+            Fichier .exe ne nécessitant pas d'installation. Il suffit de le télécharger et de l'exécuter. Un message d'avertissement peut apparaître, cliquez sur "Plus d'infos" puis sur "Exécuter quand même".
+          </div>
+        </article>
+      </section>
+      <footer class="modal-card-foot">
+        <a href="https://phyweb.github.io/portable/phyweb.exe" class="button is-fullwidth is-primary" id="download-file-button">
+          <span class="icon">
+            <i class="fas fa-download"></i>
+          </span>
+          <span>Télécharger Phyweb</span>
+        </a>
+      </footer>
+    </div>
+  </div>
   </body>
 </html>
