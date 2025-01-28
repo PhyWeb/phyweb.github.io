@@ -207,6 +207,14 @@ $("#rec-save-to-tab-button").addEventListener("click", ()=>{
 /*----------------------------------------------------------------------------------------------
 -----------------------------------------SAVE A NEW TAB-----------------------------------------
 ----------------------------------------------------------------------------------------------*/
+// keyboard shortcut
+$("#save-name-input").addEventListener("keyup", (event)=> {
+	if (event.key === "Enter") {
+		event.preventDefault();
+		$("#confirm-save-button").click();
+	}
+});
+
 $("#confirm-save-button").addEventListener("click", ()=>{
 	// Get the save name
 	let text;
