@@ -20,6 +20,13 @@ export default class PLAYER {
 
     this.measurement = _measurement;
 
+    this.segment = {
+      x1: null,
+      y1: null,
+      x2: null,
+      y2: null
+    };
+
     this.pauseFlag = false;
     this.originFlag = "none";
 
@@ -94,14 +101,13 @@ export default class PLAYER {
   drawFrame(_frameID){
       this.ctx.clearRect(0, 0, this.videoCanvas.width, this.videoCanvas.height);
       this.ctx.drawImage(this.decodedVideo.frames[_frameID]/*e.target*/, 0, 0 ,this.videoCanvas.width, this.videoCanvas.height);
-
     
     if($("#etalonnage-button").classList.contains("is-active")){
       // Draw the origin
       this.drawOrigin();
 
       // Draw the scale segment
-      if(this.measurement.scaleSegment.x1 != null  && this.measurement.scaleSegment.y1){
+      if(this.measurement.scaleSegment.x1 != null || this.segment.x1 != null){
         this.drawSegment();
       }
     }
@@ -215,12 +221,14 @@ export default class PLAYER {
     let x2 = this.videoCanvas.width * this.measurement.scaleSegment.x2;
     let y2 = this.videoCanvas.height * this.measurement.scaleSegment.y2;
 
-    // Draw to mouse instead
-    if(this.measurement.scaleSegment.x2 == null && this.measurement.scaleSegment.y2 == null){
+    if(this.segment.x1 != null){
+      // draw to mouse instead
+      x1 = this.segment.x1 * this.videoCanvas.width;
+      y1 = this.segment.y1 * this.videoCanvas.height;
       x2 = this.videoCanvas.width * (this.distPoint.x + 0.5);
       y2 = this.videoCanvas.height * (this.distPoint.y + 0.5);
-      
     }
+
     this.ctx.beginPath();
     this.ctx.moveTo(x1, y1);
 
@@ -366,6 +374,14 @@ export default class PLAYER {
 
   }
 
+  // Escape shortcut callback (originMode)
+  originModeKeyboardShortcut = (event) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      this.exitOriginMode();
+    }
+  }
+
   enterOriginMode(_type){
     this.originFlag = _type;
     $("#canvas-shadow").style.display= "block";
@@ -375,6 +391,8 @@ export default class PLAYER {
     this.videoCanvas.removeEventListener("click", this.onClick);
     this.videoCanvas.addEventListener("click", this.onOriginClick);
 
+    // Keyboard shortcut
+    document.addEventListener("keyup", this.originModeKeyboardShortcut);
   }
 
   exitOriginMode = () => {
@@ -388,6 +406,9 @@ export default class PLAYER {
 
     this.videoCanvas.style.cursor = "crosshair";
     this.originFlag = "none";
+
+    // Remove keyboard shortcut
+    document.removeEventListener("keyup", this.originModeKeyboardShortcut);
   }
 
   onOriginClick = (ev) => {
@@ -419,6 +440,14 @@ export default class PLAYER {
     this.exitOriginMode();
   }
 
+  // Escape shortcut callback (scaleMode)
+  scaleModeKeyboardShortcut = (event) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      this.exitScaleMode();
+    }
+  }
+
   enterScalenMode(_type){
     $("#canvas-shadow").style.display= "block";
     this.videoCanvas.style.zIndex = "100";
@@ -429,11 +458,8 @@ export default class PLAYER {
     this.videoCanvas.removeEventListener("click", this.onClick);
     this.videoCanvas.addEventListener("click", this.onScaleClick);
 
-    this.measurement.scaleSegment.x1 = null;
-    this.measurement.scaleSegment.x2 = null;
-    this.measurement.scaleSegment.y1 = null;
-    this.measurement.scaleSegment.y2 = null;
-
+    // Keyboard shortcut
+    document.addEventListener("keyup", this.scaleModeKeyboardShortcut);
   }
 
   exitScaleMode = () => {
@@ -446,6 +472,14 @@ export default class PLAYER {
     this.videoCanvas.removeEventListener("click", this.onScaleClick);
 
     this.videoCanvas.style.zIndex = "auto";
+
+    this.segment.x1 = null;
+    this.segment.x2 = null;
+    this.segment.y1 = null;
+    this.segment.y2 = null;
+
+    // Remove keyboard shortcut
+    document.removeEventListener("keyup", this.scaleModeKeyboardShortcut);
   }
 
   onScaleClick = (ev) => {
@@ -460,12 +494,17 @@ export default class PLAYER {
       y: (point.y - this.videoCanvas.height * 0.5) / this.videoCanvas.height
     };
 
-    if(this.measurement.scaleSegment.x1 == null){
-      this.measurement.scaleSegment.x1 = distPoint.x + 0.5;
-      this.measurement.scaleSegment.y1 = distPoint.y + 0.5;
+    if(this.segment.x1 == null){
+      this.segment.x1 = distPoint.x + 0.5;
+      this.segment.y1 = distPoint.y + 0.5;
     } else{
-      this.measurement.scaleSegment.x2 = distPoint.x + 0.5;
-      this.measurement.scaleSegment.y2 = distPoint.y + 0.5;
+      this.segment.x2 = distPoint.x + 0.5;
+      this.segment.y2 = distPoint.y + 0.5;
+
+      this.measurement.scaleSegment.x1 = this.segment.x1;
+      this.measurement.scaleSegment.y1 = this.segment.y1;
+      this.measurement.scaleSegment.x2 = this.segment.x2;
+      this.measurement.scaleSegment.y2 = this.segment.y2;
 
       this.measurement.updateTable();
 

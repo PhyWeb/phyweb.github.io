@@ -186,6 +186,14 @@ $("#segment-button").addEventListener("click", ()=> {
   player.enterScalenMode();
 })
 
+// keyboard shortcut
+$("#scale-input").addEventListener("keyup", (event)=> {
+	if (event.key === "Enter") {
+		event.preventDefault();
+		$("#scale-input").blur();
+	}
+});
+
 $("#scale-input").addEventListener("input", ()=> {
   if(!common.isNumber($("#scale-input").value)){
     $("#scale-input").classList.add("has-background-danger");
@@ -196,12 +204,26 @@ $("#scale-input").addEventListener("input", ()=> {
 })
 
 // SETTINGS
+// keyboard shortcut
+$("#origin-frame-input").addEventListener("keyup", (event)=> {
+	if (event.key === "Enter") {
+		event.preventDefault();
+		$("#origin-frame-input").blur();
+	}
+});
 $("#origin-frame-input").addEventListener("change", (e)=> {
   if($("#origin-frame-input").value < 1){$("#origin-frame-input").value = 1;}
   if($("#origin-frame-input").value > measurement.data.length){$("#origin-frame-input").value = measurement.data.length;}
   player.setOriginFrame(e.target.value - 1);
 });
 
+// keyboard shortcut
+$("#ppf-input").addEventListener("keyup", (event)=> {
+	if (event.key === "Enter") {
+		event.preventDefault();
+		$("#ppf-input").blur();
+	}
+});
 $("#ppf-input").addEventListener("change", (e)=> {
   measurement.setPointPerFrame(parseInt(e.target.value), player);
 });
@@ -226,6 +248,13 @@ $("#copy-table-button").addEventListener("click", ()=> {
 });
 
 // DOWNLOAD
+// keyboard shortcut
+$("#file-name-input").addEventListener("keyup", (event)=> {
+	if (event.key === "Enter") {
+		event.preventDefault();
+		$("#download-file-button").click();
+	}
+});
 $("#csv-button").addEventListener("click", ()=>{
   $("#csv-button").classList.add('is-link');
   $("#rw3-button").classList.remove('is-link');
