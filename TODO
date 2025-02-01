@@ -1,5 +1,5 @@
 COMMON:
-  - modal à propos: rédiger + pdf
+  - modal à propos: rédiger (améliorer)
   - FULLSCREEN request if screen is too small
   - change data format to series
 
@@ -13,4 +13,3 @@ AUDIO:
 
 TRACKER:
   - Add vidéos
-  - finir notice
