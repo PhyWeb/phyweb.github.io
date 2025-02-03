@@ -326,12 +326,12 @@ export default class MEASUREMENT {
 
     for(let i = 1; i < this.pointsPerFrame + 1; i++){
       let xSerie = {
-        name: "x" + i,
+        name: this.pointsPerFrame > 1 ? "x" + i : "x",
         unit: "m",
         values: []
       }
       let ySerie = {
-        name: "y" + i,
+        name: this.pointsPerFrame > 1 ? "y" + i : "y",
         unit: "m",
         values: []
       }
