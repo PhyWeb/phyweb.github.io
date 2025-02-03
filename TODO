@@ -2,6 +2,7 @@ COMMON:
   - modal à propos: rédiger (améliorer)
   - FULLSCREEN request if screen is too small
   - change data format to series
+  - confirm modal before losing data when user click on another app
 
 HOME:
   - update & have a version number in the apps

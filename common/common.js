@@ -260,7 +260,14 @@ function aboutModal(_app){
       description = "Application de pointage permettant d'étudier le mouvement d'objets dans une vidéo. Une <a href='notice/index.html'>notice d'utilisation</a> à imprimer est disponible."
       break;
     case "Audio":
-      description = "audio description"
+      description = `<div class="content">
+        <p>Application permettant de visualiser des ondes sonores et de réaliser des analyses spectrales (Analyses de Fourier)</p>
+        <p>Les données peuvent être obtenues de deux manière :</p>
+        <ul>
+          <li>A l'aide d'un micro, en temps réel, ou en choisissant une durée d'acquisition;</li>
+          <li>A l'aide d'un fichier audio. (La plupart des codecs sont supportés)</li>
+        </ul>
+      </div>`
       break;
     default:
       console.error("wrong app name in about modal");
