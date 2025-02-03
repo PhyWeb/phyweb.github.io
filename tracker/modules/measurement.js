@@ -55,11 +55,12 @@ export default class MEASUREMENT {
       x2 : null,
       y2 : null
     }
-    this.originFrame = 0;
+    
     this.pointsPerFrame = 1;
-    this.scale = 1;
-
     $("#ppf-input").value = 1;
+
+    this.scale = 1;
+    $("#scale-input").value = 1;
 
     _decodedVideo.frames.forEach((value,index)=>{
       // create the data object
@@ -78,6 +79,7 @@ export default class MEASUREMENT {
       }
     });
 
+    this.originFrame = 0;
     $("#origin-frame-input").max = this.data.length;
     $("#origin-frame-input").value = 1;
 

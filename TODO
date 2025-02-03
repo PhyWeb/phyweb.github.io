@@ -13,4 +13,5 @@ AUDIO:
   - fft add 0s to have a power of two and use faster fft ??
 
 TRACKER:
+  - bug : x1 and y1 in regressi instead of x any y
   - Add vidéos
