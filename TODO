@@ -4,7 +4,7 @@ COMMON:
   - change data format to series
 
 HOME:
-  - update & have a version number in the apps
+  - build and check if version number actually shows in about modal
   - macos and linux package
 
 AUDIO:

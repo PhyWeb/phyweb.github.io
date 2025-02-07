@@ -248,6 +248,11 @@ function alertModal(_config){
 }
 
 function aboutModal(_app){
+  // electron
+  let version = ""
+  if(window.electronAPI){
+    version = "v2502"
+  }
   // Description
   let description;
   switch (_app) {
@@ -277,7 +282,7 @@ function aboutModal(_app){
   const d = new Date();
   let year = d.getFullYear();
   alertModal({
-    title: "A propos de PhyWeb " + _app,
+    title: "A propos de PhyWeb " + _app + version,
     delete: true,
     width: "50rem",
     body: `<div class="field is-horizontal">
