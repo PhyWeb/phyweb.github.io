@@ -41,6 +41,42 @@ if ("VideoDecoder" in window) {
   })
 }
 
+// Navbar
+let quitConfirm = (_path)=>{
+  // Check if data is empty
+  let empty = true;
+  for(let i = measurement.originFrame; i < measurement.data.length; i++){
+    for(let j = 0; j < measurement.data[i].xs.length; j++){
+      if(measurement.data[i].xs[j] !== ""){
+        empty = false
+      }
+    }
+  }
+  if(empty){
+    window.location.replace(_path);
+    return;
+  }
+  alertModal({
+    type: "warning",
+    title: "Quitter l'application",
+    body: `<p>Etes-vous sur de vouloir quitter l'application. Les données seront perdues.</p>`,
+    confirm:{
+      label: "Quitter",
+      type:"warning",
+      cb: ()=>{window.location.replace(_path);}
+    },
+    cancel: "Annuler",
+    width: "42rem"
+  })
+}
+
+$("#navbar-home-button").addEventListener("click", () => {
+  quitConfirm("../index.html");
+});
+$("#navbar-audio-button").addEventListener("click", () => {
+  quitConfirm("../audio/index.html");
+});
+
 // NAV
 $("#etalonnage-button").addEventListener("click", ()=>{
   $("#etalonnage-button").classList.add("is-active");

@@ -38,7 +38,6 @@ export default class MEASUREMENT {
     this.pointsPerFrame = 1;
     this.scale = 1;
     this.maxDecimals = 4;
-
   }   
 
   init(_decodedVideo, player){

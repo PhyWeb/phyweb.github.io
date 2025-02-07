@@ -98,6 +98,37 @@ $("#temporal-fourier-button").addEventListener("click",()=>{
 })
 
 /*----------------------------------------------------------------------------------------------
+---------------------------------------------NAVBAR---------------------------------------------
+----------------------------------------------------------------------------------------------*/
+let quitConfirm = (_path)=>{
+	// Check if there's at least 1 saved tab
+  if(tabManager.tabs.length === 2){
+    window.location.replace(_path);
+    return;
+  }
+	
+	alertModal({
+	  type: "warning",
+	  title: "Quitter l'application",
+	  body: `<p>Etes-vous sur de vouloir quitter l'application. Les données seront perdues.</p>`,
+	  confirm:{
+      label: "Quitter",
+      type:"warning",
+      cb: ()=>{window.location.replace(_path);}
+	  },
+	  cancel: "Annuler",
+	  width: "42rem"
+	})
+}
+  
+  $("#navbar-home-button").addEventListener("click", () => {
+	quitConfirm("../index.html");
+  });
+  $("#navbar-tracker-button").addEventListener("click", () => {
+	quitConfirm("../tracker/index.html");
+  });
+
+/*----------------------------------------------------------------------------------------------
 ------------------------------------------CONFIG MODAL------------------------------------------
 ----------------------------------------------------------------------------------------------*/
 $("#choose-config-modal").classList.add("is-active");
