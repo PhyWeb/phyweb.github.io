@@ -12,13 +12,6 @@ function isNumber(str) {
   !isNaN(parseFloat(str)) // ...and ensure strings of whitespace fail
 }
 
-class SERIE {
-  constructor(_tutle = ""){
-    this.title = _title;
-    this.data = []
-  }
-
-}
 /*----------------------------------------------------------------------------------------------
 --------------------------------------------MEASUREMENT------------------------------------------
 ----------------------------------------------------------------------------------------------*/
@@ -26,7 +19,7 @@ export default class MEASUREMENT {
   constructor() {
     this.tableHead = $("#table-head");
     this.tableBody = $("#table-body");
-    this.series = [];
+    this.data = [];
 
     this.origin = {
       type: "topright",
@@ -49,7 +42,7 @@ export default class MEASUREMENT {
 
   init(_decodedVideo, player){
     // Inits
-    this.series = [];
+    this.data = [];
     this.origin = {
       type: "topright",
       x: 0,
@@ -68,16 +61,21 @@ export default class MEASUREMENT {
     this.scale = 1;
     $("#scale-input").value = 1;
 
-    this.series.push(new SERIE("t (s)"));
-    this.series.push(new SERIE("x (m)"));
-    this.series.push(new SERIE("y (m)"));
+    _decodedVideo.frames.forEach((value,index)=>{
+      // create the data object
+      let l = [];
+      let m = [];
 
-    _decodedVideo.frames.forEach((value,i)=>{
-      this.series[0][i] = (_decodedVideo.duration / _decodedVideo.frames.length) * i,
-      this.series[1][i] = "";
-      this.series[2][i] = "";
+      for(let i = 0; i < this.pointsPerFrame; i++){
+        l[i]="";
+        m[i]="";
+      }
 
-      // TODO prendre en compte ppf des l'init ?
+      this.data[index] = {
+        t: (_decodedVideo.duration / _decodedVideo.frames.length) * index,
+        xs: l,
+        ys: m
+      }
     });
 
     this.originFrame = 0;
@@ -101,7 +99,7 @@ export default class MEASUREMENT {
     cell2.innerHTML = "t (s)"
     cell2.classList.add("has-text-centered");
     titleRow.appendChild(cell2);
-    for(let i = 1; i < (this.series.length - 1) / 2; i++){
+    for(let i = 1; i < this.pointsPerFrame + 1; i++){
       let cellx = document.createElement('th');
       cellx.classList.add("has-text-centered");
       cellx.innerHTML = this.pointsPerFrame > 1 ? "x" + i + " (m)" : "x" + " (m)";
@@ -114,15 +112,13 @@ export default class MEASUREMENT {
 
     this.tableHead.appendChild(titleRow);
 
-
-
-    this.series[0].forEach((value,i)=>{
+    this.data.forEach((value,index)=>{
       let row = document.createElement('tr');
 
       // image index column
       let cell = document.createElement('td');
       let label = document.createElement('label');
-      label.innerHTML = i + 1;
+      label.innerHTML = index + 1;
       cell.appendChild(label);
       row.appendChild(cell);
 
@@ -130,21 +126,21 @@ export default class MEASUREMENT {
       let tcell = document.createElement('td');
       let tlabel = document.createElement('label');
       tlabel.id = "t" + index;
-      tlabel.innerHTML = Math.round(this.series[0][i]) / 1000;
+      tlabel.innerHTML = Math.round(this.data[index].t) / 1000;
       tcell.appendChild(tlabel);
       row.appendChild(tcell)
 
       // x&y columns
-      for(let j = 1; j < (this.series.length - 1) / 2; j++){
+      for(let i = 1; i < this.pointsPerFrame + 1; i++){
         let xcell = document.createElement('td');
         let xlabel = document.createElement('label');
-        xlabel.id = "x" + j + i;
+        xlabel.id = "x" + i + index;
         xcell.appendChild(xlabel);
         row.appendChild(xcell)
 
         let ycell = document.createElement('td');
         let ylabel = document.createElement('label');
-        ylabel.id = "y" + j + i;
+        ylabel.id = "y" + i + index;
         ycell.appendChild(ylabel);
         row.appendChild(ycell);
       }
@@ -170,10 +166,9 @@ export default class MEASUREMENT {
   }
 
   clearRow(index){
-    for(let i = 1; i < this.series.length; i++){
-      this.series[i].data[index] = "";
+    for(let i = 0; i < this.data[index].xs.length; i++){
+      this.changeValue(index, i, "","");
     }
-    this.updateTable();
   }
 
   clearColumn(){
@@ -181,16 +176,16 @@ export default class MEASUREMENT {
   }
 
   clearTable(){
-    for(let i = 0; i < this.series[0].length; i++){
+    for(let i = 0; i < this.data.length; i++){
       this.clearRow(i);
     }
   }
 
   setPointPerFrame(ppf, player){
-    if(ppf === (this.series.length - 1) / 2){
+    if(ppf == this.pointsPerFrame){
       return;
     }
-    //this.pointsPerFrame = ppf;
+    this.pointsPerFrame = ppf;
 
     // extend the data if ppf increases
     if(ppf > this.data[0].xs.length){
