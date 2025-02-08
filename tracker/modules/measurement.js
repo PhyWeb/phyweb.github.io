@@ -13,9 +13,15 @@ function isNumber(str) {
 }
 
 class SERIE {
-  constructor(_tutle = ""){
+  constructor(_title = ""){
     this.title = _title;
     this.data = []
+  }
+
+  init(_size, _fill){
+    for(let i = 0; i < _size; i++){
+      this.data[i] = _fill;
+    }
   }
 
 }
@@ -42,7 +48,6 @@ export default class MEASUREMENT {
     }
 
     this.originFrame = 0;
-    this.pointsPerFrame = 1;
     this.scale = 1;
     this.maxDecimals = 4;
   }   
@@ -62,7 +67,6 @@ export default class MEASUREMENT {
       y2 : null
     }
     
-    this.pointsPerFrame = 1;
     $("#ppf-input").value = 1;
 
     this.scale = 1;
@@ -81,7 +85,7 @@ export default class MEASUREMENT {
     });
 
     this.originFrame = 0;
-    $("#origin-frame-input").max = this.data.length;
+    $("#origin-frame-input").max = this.series[0].length;
     $("#origin-frame-input").value = 1;
 
     this.buildTable(player);
@@ -104,17 +108,15 @@ export default class MEASUREMENT {
     for(let i = 1; i < (this.series.length - 1) / 2; i++){
       let cellx = document.createElement('th');
       cellx.classList.add("has-text-centered");
-      cellx.innerHTML = this.pointsPerFrame > 1 ? "x" + i + " (m)" : "x" + " (m)";
+      cellx.innerHTML = (this.series.length - 1) / 2 > 1 ? "x" + i + " (m)" : "x" + " (m)";
       let celly = document.createElement('th');
       celly.classList.add("has-text-centered");
-      celly.innerHTML = this.pointsPerFrame > 1 ? "y" + i + " (m)" : "y" + " (m)";
+      celly.innerHTML = (this.series.length - 1) / 2 > 1 ? "y" + i + " (m)" : "y" + " (m)";
       titleRow.appendChild(cellx);
       titleRow.appendChild(celly);
     }
 
     this.tableHead.appendChild(titleRow);
-
-
 
     this.series[0].forEach((value,i)=>{
       let row = document.createElement('tr');
@@ -187,42 +189,40 @@ export default class MEASUREMENT {
   }
 
   setPointPerFrame(ppf, player){
-    if(ppf === (this.series.length - 1) / 2){
+    let currentPpf = (this.series.length - 1) / 2;
+    if(ppf === currentPpf){
       return;
     }
-    //this.pointsPerFrame = ppf;
 
-    // extend the data if ppf increases
-    if(ppf > this.data[0].xs.length){
-      for(let i = 0; i< this.data.length; i++){
-        for(let j = this.data[i].xs.length ; j < ppf; j++){
-          this.data[i].xs[j] = "";
-          this.data[i].ys[j] = "";
-        }
+    // create new series if ppf increases
+    if(ppf > currentPpf){
+      for(let i = currentPpf; i < ppf; i++){
+        let xSerie = new SERIE();
+        let ySerie = new SERIE();
+        xSerie.init(this.series[0].length, "");
+        ySerie.init(this.series[0].length, "");
+        this.series.push(xSerie);
+        this.series.push(ySerie);
       }
     }
     // schrink the data if ppf decreases
-    if(ppf < this.data[0].xs.length){
-      for(let i = 0; i< this.data.length; i++){
-        this.data[i].xs.splice(ppf);
-        this.data[i].ys.splice(ppf);
-      }
+    if(ppf < currentPpf){
+      this.series.splice(ppf * 2 + 1);
     }
-    // update the table
 
+    // Rename series
+    for(let i = 1; i < this.series.length; i+=2){
+      this.series[i].title = this.series.length > 3 ? "x" + i + " (m)" : "x (m)";
+      this.series[i+1].title = this.series.length > 3 ? "y" + i + " (m)" : "y (m)";
+    }
+
+    // update the table
     this.buildTable(player);
     this.updateTable();
   }
 
   setOriginFrame(_id){
     this.originFrame = _id;
-    this.updateTable();
-  }
-
-  changeValue(frameIndex, pointIndex, x, y){
-    this.data[frameIndex].xs[pointIndex] = x;
-    this.data[frameIndex].ys[pointIndex] = y;
-
     this.updateTable();
   }
 
@@ -236,6 +236,7 @@ export default class MEASUREMENT {
   }
 
   updateTable(){
+    let ppf = (this.series[0].length - 1) / 2;
     this.updateScale()
 
     for(let i = 0; i < this.tableBody.children.length; i++){
@@ -243,17 +244,17 @@ export default class MEASUREMENT {
       if(i < this.originFrame){
         $("#" + "t" + i).innerHTML = "";
       } else{
-        $("#" + "t" + i).innerHTML = Math.round(this.data[i].t - this.data[this.originFrame].t) / 1000;
+        $("#" + "t" + i).innerHTML = Math.round(this.series[0].data[i].t - this.series[0].data[this.originFrame].t) / 1000;
       }
 
       // update x and y values
       if(i < this.originFrame){
-        for(let j = 1; j < this.data[i].xs.length + 1; j++){
+        for(let j = 1; j <  + 1; j++){
           $("#" + "x" + j + i).innerHTML = "";
           $("#" + "y" + j + i).innerHTML = "";
         } 
       } else{
-        for(let j = 1; j < this.data[i].xs.length + 1; j++){
+        for(let j = 1; j < ppf + 1; j++){
           if(this.data[i].xs[j - 1] != ""){
             $("#" + "x" + j + i).innerHTML = this.scalex(this.data[i].xs[j - 1]);
           } else {
