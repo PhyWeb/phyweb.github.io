@@ -99,8 +99,8 @@ export default class PLAYER {
   }
 
   drawFrame(_frameID){
-      this.ctx.clearRect(0, 0, this.videoCanvas.width, this.videoCanvas.height);
-      this.ctx.drawImage(this.decodedVideo.frames[_frameID]/*e.target*/, 0, 0 ,this.videoCanvas.width, this.videoCanvas.height);
+    this.ctx.clearRect(0, 0, this.videoCanvas.width, this.videoCanvas.height);
+    this.ctx.drawImage(this.decodedVideo.frames[_frameID]/*e.target*/, 0, 0 ,this.videoCanvas.width, this.videoCanvas.height);
     
     if($("#etalonnage-button").classList.contains("is-active")){
       // Draw the origin
@@ -129,9 +129,9 @@ export default class PLAYER {
   }
 
   drawCrosses(){
-    for(let i = this.measurement.originFrame; i < this.measurement.data.length; i++){
-      for(let j = 0; j < this.measurement.data[i].xs.length; j++){
-        this.drawCross(this.measurement.data[i].xs[j], this.measurement.data[i].ys[j]);
+    for(let i = 0; i < (this.measurement.series.length - 1) / 2; i++){
+      for(let j = 0; j < this.measurement.series[0].data.length; j++){
+        this.drawCross(this.measurement.series[(i * 2) + 1].data[j], this.measurement.series[(i * 2) + 2].data[j]);
       }
     }
   }
@@ -366,7 +366,7 @@ export default class PLAYER {
     this.videoCanvas.style.cursor = "crosshair";
 
 
-    if(this.currentPoint < this.measurement.data[this.currentFrame].xs.length - 1){
+    if(this.currentPoint < ((this.measurement.series.length - 1) / 2) - 1){
       this.currentPoint++
     } else{
       this.nextFrame();
