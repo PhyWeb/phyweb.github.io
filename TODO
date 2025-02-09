@@ -9,7 +9,7 @@ HOME:
 AUDIO:
   - preview wave when loading a file
   - fft add 0s to have a power of two and use faster fft ??
-  - change data format to series ?
+  - change data format to series !
 
 TRACKER:
   - bug? : frame is downloaded only if all points are set
