@@ -12,29 +12,32 @@ function isNumber(str) {
   !isNaN(parseFloat(str)) // ...and ensure strings of whitespace fail
 }
 
-class SERIE {
-  constructor(_title = ""){
+/*----------------------------------------------------------------------------------------------
+--------------------------------------------SERIE CLASS-----------------------------------------
+----------------------------------------------------------------------------------------------*/
+class Serie extends Array {
+  constructor(_title = "", _unit = ""){
+    super();
     this.title = _title;
-    this.data = []
+    this.unit = _unit;
   }
 
   init(_size, _fill){
     for(let i = 0; i < _size; i++){
-      this.data[i] = _fill;
+      this[i] = _fill;
     }
   }
 
   get(_index, _origin, _scale){
-    if(this.data[_index] === ""){
+    if(this[_index] === ""){
       return "";
     }
-    let value = (this.data[_index] - _origin) * _scale
+    let value = (this[_index] - _origin) * _scale
     return value;
   }
-
 }
 /*----------------------------------------------------------------------------------------------
---------------------------------------------MEASUREMENT------------------------------------------
+--------------------------------------------MEASUREMENT-----------------------------------------
 ----------------------------------------------------------------------------------------------*/
 export default class MEASUREMENT {
   constructor() {
@@ -59,12 +62,14 @@ export default class MEASUREMENT {
     this.scale = {
       value : 1,
       getOrientedScaleX : () =>{
-        return this.origin.type === "topright" || "downright" ? this.scale.value : - this.scale.value;
+        let scale = this.origin.type === "topright" || this.origin.type === "downright" ? this.scale.value : 0 - this.scale.value;
+        return scale;
       },
       getOrientedScaleY : () =>{
-        return this.origin.type === "topright" || "topleft" ? - this.scale.value : this.scale.value;
+        return this.origin.type === "topright" || this.origin.type === "topleft" ? 0- this.scale.value : this.scale.value;
       }
     };
+
     this.maxDecimals = 4;
   }   
 
@@ -88,16 +93,14 @@ export default class MEASUREMENT {
     this.scale.value = 1;
     $("#scale-input").value = 1;
 
-    this.series.push(new SERIE("t (s)"));
-    this.series.push(new SERIE("x (m)"));
-    this.series.push(new SERIE("y (m)"));
+    this.series.push(new Serie("t","s"));
+    this.series.push(new Serie("x", "m"));
+    this.series.push(new Serie("y", "m"));
 
     _decodedVideo.frames.forEach((value,i)=>{
-      this.series[0].data[i] = (_decodedVideo.duration / _decodedVideo.frames.length) * i,
-      this.series[1].data[i] = "";
-      this.series[2].data[i] = "";
-
-      // TODO prendre en compte ppf des l'init ?
+      this.series[0][i] = (_decodedVideo.duration / _decodedVideo.frames.length) * i / 1000,
+      this.series[1][i] = "";
+      this.series[2][i] = "";
     });
 
     this.originFrame = 0;
@@ -135,7 +138,7 @@ export default class MEASUREMENT {
 
     this.tableHead.appendChild(titleRow);
 
-    this.series[0].data.forEach((value,i)=>{
+    this.series[0].forEach((value,i)=>{
       let row = document.createElement('tr');
 
       // image index column
@@ -149,7 +152,7 @@ export default class MEASUREMENT {
       let tcell = document.createElement('td');
       let tlabel = document.createElement('label');
       tlabel.id = "t" + i;
-      tlabel.innerHTML = Math.round(this.series[0].data[i]) / 1000;
+      tlabel.innerHTML = this.series[0][i].round(3);
       tcell.appendChild(tlabel);
       row.appendChild(tcell)
 
@@ -180,7 +183,6 @@ export default class MEASUREMENT {
   }
 
   selectRow(index){
-    console.log("selectrow todo")
     const previouslySelectedRow = $("tr.is-selected");
     if (previouslySelectedRow) {
       previouslySelectedRow.classList.remove("is-selected");
@@ -191,7 +193,7 @@ export default class MEASUREMENT {
 
   clearRow(index){
     for(let i = 1; i < this.series.length; i++){
-      this.series[i].data[index] = "";
+      this.series[i][index] = "";
     }
     this.updateTable();
   }
@@ -211,8 +213,8 @@ export default class MEASUREMENT {
     // create new series if ppf increases
     if(ppf > currentPpf){
       for(let i = currentPpf; i < ppf; i++){
-        let xSerie = new SERIE();
-        let ySerie = new SERIE();
+        let xSerie = new Serie("x","m");
+        let ySerie = new Serie("y","m");
         xSerie.init(this.series[0].length, "");
         ySerie.init(this.series[0].length, "");
         this.series.push(xSerie);
@@ -225,9 +227,9 @@ export default class MEASUREMENT {
     }
 
     // Rename series
-    for(let i = 1; i < this.series.length; i+=2){
-      this.series[i].title = this.series.length > 3 ? "x" + i + " (m)" : "x (m)";
-      this.series[i+1].title = this.series.length > 3 ? "y" + i + " (m)" : "y (m)";
+    for(let i = 1; i < ppf + 1; i++){
+      this.series[(i-1)*2+1].title = this.series.length > 3 ? "x" + i : "x";
+      this.series[(i-1)*2+2].title = this.series.length > 3 ? "y" + i: "y";
     }
 
     // update the table
@@ -236,8 +238,8 @@ export default class MEASUREMENT {
   }
 
   changeValue(frameIndex, pointIndex, x, y){
-    this.series[(pointIndex * 2) + 1].data[frameIndex] = x;
-    this.series[(pointIndex * 2) + 2].data[frameIndex] = y;
+    this.series[(pointIndex * 2) + 1][frameIndex] = x;
+    this.series[(pointIndex * 2) + 2][frameIndex] = y;
     this.updateTable();
   }
 
@@ -264,10 +266,13 @@ export default class MEASUREMENT {
       if(i < this.originFrame){
         $("#" + "t" + i).innerHTML = "";
       } else{
-        $("#" + "t" + i).innerHTML = Math.round(this.series[0].data[i] - this.series[0].data[this.originFrame]) / 1000;
+        $("#" + "t" + i).innerHTML = (this.series[0][i] - this.series[0][this.originFrame]).round(3);
       }
 
       // update x and y values
+      const scaleX = this.scale.getOrientedScaleX();
+      const scaleY = this.scale.getOrientedScaleY();
+
       if(i < this.originFrame){
         for(let j = 1; j < ppf + 1; j++){
           $("#" + "x" + j + i).innerHTML = "";
@@ -275,8 +280,8 @@ export default class MEASUREMENT {
         } 
       } else{
         for(let j = 1; j < ppf + 1; j++){
-          $("#" + "x" + j + i).innerHTML = this.series[((j - 1) * 2) + 1].data[i] === "" ? "" : this.series[((j - 1) * 2) + 1].get(i, this.origin.x, this.scale.getOrientedScaleX()).round(this.maxDecimals);
-          $("#" + "y" + j + i).innerHTML = this.series[((j - 1) * 2) + 2].data[i] === "" ? "" : this.series[((j - 1) * 2) + 2].get(i, this.origin.y, this.scale.getOrientedScaleY()).round(this.maxDecimals);
+          $("#" + "x" + j + i).innerHTML = this.series[((j - 1) * 2) + 1][i] === "" ? "" : this.series[((j - 1) * 2) + 1].get(i, this.origin.x, scaleX).round(this.maxDecimals);
+          $("#" + "y" + j + i).innerHTML = this.series[((j - 1) * 2) + 2][i] === "" ? "" : this.series[((j - 1) * 2) + 2].get(i, this.origin.y, scaleY).round(this.maxDecimals);
         }
       }
     }
@@ -285,35 +290,25 @@ export default class MEASUREMENT {
   downloadData(_type, _name){
     this.updateScale()
 
-    let series = []
+    let series = structuredClone(this.series);
+    console.log(series)
 
-    let tSerie = {
-      name: "t",
-      unit: "s",
-      values: []
-    }
-    for(let i = this.originFrame; i < this.data.length; i++){
-      tSerie.values[i] = (this.data[i].t - this.data[this.originFrame].t) / 1000;
-    }
-    series.push(tSerie);
+    const scaleX = this.scale.getOrientedScaleX();
+    const scaleY = this.scale.getOrientedScaleY();
+    
+    for(let i = 0; i < this.series[0].length; i++){
+      // t values
+      if(i < this.originFrame){
+        series[0][i] = "";
+      } else{
+        series[0][i] = this.series[0][i] - this.series[0][this.originFrame];
+      }
 
-    for(let i = 1; i < this.pointsPerFrame + 1; i++){
-      let xSerie = {
-        name: this.pointsPerFrame > 1 ? "x" + i : "x",
-        unit: "m",
-        values: []
+      // x and y values
+      for(let j = 1; j < (this.series.length - 1) / 2 + 1; j++){
+        series[((j - 1) * 2) + 1][i] = this.series[((j - 1) * 2) + 1].get(i, this.origin.x, scaleX);
+        series[((j - 1) * 2) + 2][i] = this.series[((j - 1) * 2) + 2].get(i, this.origin.y, scaleY);
       }
-      let ySerie = {
-        name: this.pointsPerFrame > 1 ? "y" + i : "y",
-        unit: "m",
-        values: []
-      }
-      for(let j = this.originFrame; j < this.data.length; j++){
-        xSerie.values[j] = this.scalex(this.data[j].xs[i-1]);
-        ySerie.values[j] = this.scaley(this.data[j].ys[i-1]);
-      }
-      series.push(xSerie);
-      series.push(ySerie);
     }
 
     let file;

@@ -119,19 +119,12 @@ export default class PLAYER {
     if(this.magnifier === true){
       this.drawMagnifier(_frameID);
     }
-
-    // Update the image label
-    $("#frame-label").innerHTML = "Image n° " + (this.currentFrame + 1) +"/" + this.decodedVideo.frames.length;
-
-    // Update the table
-    this.measurement.selectRow(this.currentFrame);
-
   }
 
   drawCrosses(){
     for(let i = 0; i < (this.measurement.series.length - 1) / 2; i++){
-      for(let j = 0; j < this.measurement.series[0].data.length; j++){
-        this.drawCross(this.measurement.series[(i * 2) + 1].data[j], this.measurement.series[(i * 2) + 2].data[j]);
+      for(let j = this.measurement.originFrame; j < this.measurement.series[0].length; j++){
+        this.drawCross(this.measurement.series[(i * 2) + 1][j], this.measurement.series[(i * 2) + 2][j]);
       }
     }
   }
@@ -272,6 +265,13 @@ export default class PLAYER {
     this.pause();
     this.currentFrame = id;
     this.currentPoint = 0;
+
+    // Update the image label
+    $("#frame-label").innerHTML = "Image n° " + (this.currentFrame + 1) +"/" + this.decodedVideo.frames.length;
+
+    // Update the table
+    this.measurement.selectRow(this.currentFrame);
+
     this.drawFrame(this.currentFrame);
   }
 
@@ -297,6 +297,12 @@ export default class PLAYER {
       if(elapsedTime > this.decodedVideo.duration / this.decodedVideo.frames.length){
         this.dateOrigin = performance.now();
         this.currentFrame++
+        // Update the image label
+        $("#frame-label").innerHTML = "Image n° " + (this.currentFrame + 1) +"/" + this.decodedVideo.frames.length;
+
+        // Update the table
+        this.measurement.selectRow(this.currentFrame);
+
         this.drawFrame(this.currentFrame);
       }
       requestAnimationFrame(this.playing); 
@@ -514,7 +520,7 @@ export default class PLAYER {
 
   setOriginFrame(id) {
     if(isNumber(id) == true){
-      if(id >=0 && id < this.measurement.data.length){
+      if(id >=0 && id < this.measurement.series[0].length){
         //this.measurement.originFrame = id
         this.measurement.setOriginFrame(id);
         this.setFrame(this.currentFrame); // check if currentFrame < originFrame

@@ -14,5 +14,4 @@ AUDIO:
 TRACKER:
   - bug? : frame is downloaded only if all points are set
   - Add vidéos
-  - wip series download
-  - todi bug measurement
+  - reduce fontsize in table ?

@@ -249,7 +249,7 @@ $("#origin-frame-input").addEventListener("keyup", (event)=> {
 });
 $("#origin-frame-input").addEventListener("change", (e)=> {
   if($("#origin-frame-input").value < 1){$("#origin-frame-input").value = 1;}
-  if($("#origin-frame-input").value > measurement.data.length){$("#origin-frame-input").value = measurement.data.length;}
+  if($("#origin-frame-input").value > measurement.series[0].length){$("#origin-frame-input").value = measurement.series[0].length;}
   player.setOriginFrame(e.target.value - 1);
 });
 
