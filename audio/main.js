@@ -1,7 +1,7 @@
 import FOURIER from "./modules/fourier.js"
 import {PhyAudio, convertFloat32ToInt16} from "./modules/audio.js"
 
-import {Common, alertModal, TabManager, downloadFile, exportToCSV, exportToRW3} from "../common/common.js"
+import {Common, alertModal, TabManager, downloadFile, exportToCSV, exportToRW3, Serie} from "../common/common.js"
 
 const $ = document.querySelector.bind(document);
 
@@ -567,23 +567,13 @@ function downloadData(_type, _name){
   let sr = baseSampleRate / saves[tabManager.activeTab-2].displaySampleRateLvl;
 
   let series = [];
-  let tSerie = {
-    name: "Temps",
-    unit: "s",
-    values: []
-  }
-  let aSerie = {
-    name: "Amplitude",
-    unit: "",
-    values: []
-  }
-  aSerie.values = saves[tabManager.activeTab-2].linearData.getData(saves[tabManager.activeTab-2].displaySampleRateLvl);
-  for(let i = 0; i < aSerie.values.length; i++){
-    tSerie.values[i] = i / sr;
-  }
+  series.push(new Serie("Temps","s"));
+  series.push(new Serie("Amplitude",""));
 
-  series.push(tSerie);
-  series.push(aSerie);
+  series[1] = saves[tabManager.activeTab-2].linearData.getData(saves[tabManager.activeTab-2].displaySampleRateLvl);
+  for(let i = 0; i < series[1].length; i++){
+    series[0][i] = i / sr;
+  }
 
   let file;
   if(_type === "csv"){

@@ -1,4 +1,4 @@
-import {downloadFile, exportToCSV, exportToRW3} from "../../common/common.js"
+import {Serie, downloadFile, exportToCSV, exportToRW3} from "../../common/common.js"
 
 const $ = document.querySelector.bind(document);
 
@@ -13,13 +13,13 @@ function isNumber(str) {
 }
 
 /*----------------------------------------------------------------------------------------------
---------------------------------------------MEASUREMENT------------------------------------------
+--------------------------------------------MEASUREMENT-----------------------------------------
 ----------------------------------------------------------------------------------------------*/
 export default class MEASUREMENT {
   constructor() {
     this.tableHead = $("#table-head");
     this.tableBody = $("#table-body");
-    this.data = [];
+    this.series = [];
 
     this.origin = {
       type: "topright",
@@ -35,14 +35,23 @@ export default class MEASUREMENT {
     }
 
     this.originFrame = 0;
-    this.pointsPerFrame = 1;
-    this.scale = 1;
+    this.scale = {
+      value : 1,
+      getOrientedScaleX : () =>{
+        let scale = this.origin.type === "topright" || this.origin.type === "downright" ? this.scale.value : 0 - this.scale.value;
+        return scale;
+      },
+      getOrientedScaleY : () =>{
+        return this.origin.type === "topright" || this.origin.type === "topleft" ? 0- this.scale.value : this.scale.value;
+      }
+    };
+
     this.maxDecimals = 4;
   }   
 
   init(_decodedVideo, player){
     // Inits
-    this.data = [];
+    this.series = [];
     this.origin = {
       type: "topright",
       x: 0,
@@ -55,31 +64,23 @@ export default class MEASUREMENT {
       y2 : null
     }
     
-    this.pointsPerFrame = 1;
     $("#ppf-input").value = 1;
 
-    this.scale = 1;
+    this.scale.value = 1;
     $("#scale-input").value = 1;
 
-    _decodedVideo.frames.forEach((value,index)=>{
-      // create the data object
-      let l = [];
-      let m = [];
+    this.series.push(new Serie("t","s"));
+    this.series.push(new Serie("x", "m"));
+    this.series.push(new Serie("y", "m"));
 
-      for(let i = 0; i < this.pointsPerFrame; i++){
-        l[i]="";
-        m[i]="";
-      }
-
-      this.data[index] = {
-        t: (_decodedVideo.duration / _decodedVideo.frames.length) * index,
-        xs: l,
-        ys: m
-      }
+    _decodedVideo.frames.forEach((value,i)=>{
+      this.series[0][i] = (_decodedVideo.duration / _decodedVideo.frames.length) * i / 1000,
+      this.series[1][i] = "";
+      this.series[2][i] = "";
     });
 
     this.originFrame = 0;
-    $("#origin-frame-input").max = this.data.length;
+    $("#origin-frame-input").max = this.series[0].length;
     $("#origin-frame-input").value = 1;
 
     this.buildTable(player);
@@ -87,6 +88,7 @@ export default class MEASUREMENT {
   }
 
   buildTable(player){
+    let ppf = (this.series.length - 1) / 2;
     this.tableHead.innerHTML="";
     this.tableBody.innerHTML="";
 
@@ -99,53 +101,53 @@ export default class MEASUREMENT {
     cell2.innerHTML = "t (s)"
     cell2.classList.add("has-text-centered");
     titleRow.appendChild(cell2);
-    for(let i = 1; i < this.pointsPerFrame + 1; i++){
+    for(let i = 1; i < ppf + 1; i++){
       let cellx = document.createElement('th');
       cellx.classList.add("has-text-centered");
-      cellx.innerHTML = this.pointsPerFrame > 1 ? "x" + i + " (m)" : "x" + " (m)";
+      cellx.innerHTML = ppf > 1 ? "x" + i + " (m)" : "x" + " (m)";
       let celly = document.createElement('th');
       celly.classList.add("has-text-centered");
-      celly.innerHTML = this.pointsPerFrame > 1 ? "y" + i + " (m)" : "y" + " (m)";
+      celly.innerHTML = ppf > 1 ? "y" + i + " (m)" : "y" + " (m)";
       titleRow.appendChild(cellx);
       titleRow.appendChild(celly);
     }
 
     this.tableHead.appendChild(titleRow);
 
-    this.data.forEach((value,index)=>{
+    this.series[0].forEach((value,i)=>{
       let row = document.createElement('tr');
 
       // image index column
       let cell = document.createElement('td');
       let label = document.createElement('label');
-      label.innerHTML = index + 1;
+      label.innerHTML = i + 1;
       cell.appendChild(label);
       row.appendChild(cell);
 
       // t column
       let tcell = document.createElement('td');
       let tlabel = document.createElement('label');
-      tlabel.id = "t" + index;
-      tlabel.innerHTML = Math.round(this.data[index].t) / 1000;
+      tlabel.id = "t" + i;
+      tlabel.innerHTML = this.series[0][i].round(3);
       tcell.appendChild(tlabel);
       row.appendChild(tcell)
 
       // x&y columns
-      for(let i = 1; i < this.pointsPerFrame + 1; i++){
+      for(let j = 1; j < ppf + 1; j++){
         let xcell = document.createElement('td');
         let xlabel = document.createElement('label');
-        xlabel.id = "x" + i + index;
+        xlabel.id = "x" + j + i;
         xcell.appendChild(xlabel);
         row.appendChild(xcell)
 
         let ycell = document.createElement('td');
         let ylabel = document.createElement('label');
-        ylabel.id = "y" + i + index;
+        ylabel.id = "y" + j + i;
         ycell.appendChild(ylabel);
         row.appendChild(ycell);
       }
 
-      row.id = "row" + index;
+      row.id = "row" + i;
 
       row.onclick = (e) =>{
         this.selectRow(e.currentTarget.id.replace("row",""));
@@ -166,46 +168,54 @@ export default class MEASUREMENT {
   }
 
   clearRow(index){
-    for(let i = 0; i < this.data[index].xs.length; i++){
-      this.changeValue(index, i, "","");
+    for(let i = 1; i < this.series.length; i++){
+      this.series[i][index] = "";
     }
-  }
-
-  clearColumn(){
-    // TODO
+    this.updateTable();
   }
 
   clearTable(){
-    for(let i = 0; i < this.data.length; i++){
+    for(let i = 0; i < this.series[0].length; i++){
       this.clearRow(i);
     }
   }
 
   setPointPerFrame(ppf, player){
-    if(ppf == this.pointsPerFrame){
+    let currentPpf = (this.series.length - 1) / 2;
+    if(ppf === currentPpf){
       return;
     }
-    this.pointsPerFrame = ppf;
 
-    // extend the data if ppf increases
-    if(ppf > this.data[0].xs.length){
-      for(let i = 0; i< this.data.length; i++){
-        for(let j = this.data[i].xs.length ; j < ppf; j++){
-          this.data[i].xs[j] = "";
-          this.data[i].ys[j] = "";
-        }
+    // create new series if ppf increases
+    if(ppf > currentPpf){
+      for(let i = currentPpf; i < ppf; i++){
+        let xSerie = new Serie("x","m");
+        let ySerie = new Serie("y","m");
+        xSerie.init(this.series[0].length, "");
+        ySerie.init(this.series[0].length, "");
+        this.series.push(xSerie);
+        this.series.push(ySerie);
       }
     }
     // schrink the data if ppf decreases
-    if(ppf < this.data[0].xs.length){
-      for(let i = 0; i< this.data.length; i++){
-        this.data[i].xs.splice(ppf);
-        this.data[i].ys.splice(ppf);
-      }
+    if(ppf < currentPpf){
+      this.series.splice(ppf * 2 + 1);
     }
-    // update the table
 
+    // Rename series
+    for(let i = 1; i < ppf + 1; i++){
+      this.series[(i-1)*2+1].title = this.series.length > 3 ? "x" + i : "x";
+      this.series[(i-1)*2+2].title = this.series.length > 3 ? "y" + i: "y";
+    }
+
+    // update the table
     this.buildTable(player);
+    this.updateTable();
+  }
+
+  changeValue(frameIndex, pointIndex, x, y){
+    this.series[(pointIndex * 2) + 1][frameIndex] = x;
+    this.series[(pointIndex * 2) + 2][frameIndex] = y;
     this.updateTable();
   }
 
@@ -214,23 +224,17 @@ export default class MEASUREMENT {
     this.updateTable();
   }
 
-  changeValue(frameIndex, pointIndex, x, y){
-    this.data[frameIndex].xs[pointIndex] = x;
-    this.data[frameIndex].ys[pointIndex] = y;
-
-    this.updateTable();
-  }
-
   updateScale(){
-    this.scale = 1;
+    this.scale.value = 1;
     if(this.scaleSegment.x1 != null && this.scaleSegment.x2 != null && this.scaleSegment.y1 != null && this.scaleSegment.y2 != null){
       if(isNumber($("#scale-input").value) == true){
-        this.scale = $("#scale-input").value / Math.sqrt(Math.pow(this.scaleSegment.x2 - this.scaleSegment.x1 , 2) + Math.pow(this.scaleSegment.y2 - this.scaleSegment.y1 , 2));
+        this.scale.value = $("#scale-input").value / Math.sqrt(Math.pow(this.scaleSegment.x2 - this.scaleSegment.x1 , 2) + Math.pow(this.scaleSegment.y2 - this.scaleSegment.y1 , 2));
       }
     }
   }
 
   updateTable(){
+    let ppf = (this.series.length - 1) / 2;
     this.updateScale()
 
     for(let i = 0; i < this.tableBody.children.length; i++){
@@ -238,108 +242,49 @@ export default class MEASUREMENT {
       if(i < this.originFrame){
         $("#" + "t" + i).innerHTML = "";
       } else{
-        $("#" + "t" + i).innerHTML = Math.round(this.data[i].t - this.data[this.originFrame].t) / 1000;
+        $("#" + "t" + i).innerHTML = (this.series[0][i] - this.series[0][this.originFrame]).round(3);
       }
 
       // update x and y values
+      const scaleX = this.scale.getOrientedScaleX();
+      const scaleY = this.scale.getOrientedScaleY();
+
       if(i < this.originFrame){
-        for(let j = 1; j < this.data[i].xs.length + 1; j++){
+        for(let j = 1; j < ppf + 1; j++){
           $("#" + "x" + j + i).innerHTML = "";
           $("#" + "y" + j + i).innerHTML = "";
         } 
       } else{
-        for(let j = 1; j < this.data[i].xs.length + 1; j++){
-          if(this.data[i].xs[j - 1] != ""){
-            $("#" + "x" + j + i).innerHTML = this.scalex(this.data[i].xs[j - 1]);
-          } else {
-            $("#" + "x" + j + i).innerHTML = "";
-          }
-          if(this.data[i].ys[j - 1] != ""){
-            $("#" + "y" + j + i).innerHTML = this.scaley(this.data[i].ys[j - 1]);
-          } else {
-            $("#" + "y" + j + i).innerHTML = "";
-          }
+        for(let j = 1; j < ppf + 1; j++){
+          $("#" + "x" + j + i).innerHTML = this.series[((j - 1) * 2) + 1][i] === "" ? "" : this.series[((j - 1) * 2) + 1].get(i, this.origin.x, scaleX).round(this.maxDecimals);
+          $("#" + "y" + j + i).innerHTML = this.series[((j - 1) * 2) + 2][i] === "" ? "" : this.series[((j - 1) * 2) + 2].get(i, this.origin.y, scaleY).round(this.maxDecimals);
         }
       }
     }
   }
 
-  scalex(_x){
-    if(_x == ""){
-      return "";
-    }
-    let x = 0;
-    switch(this.origin.type){
-      case "topright":
-        x = (_x - this.origin.x) * this.scale;
-        break;
-      case "topleft":
-        x = - (_x - this.origin.x) * this.scale;
-        break;
-      case "downright":
-        x = (_x - this.origin.x) * this.scale;
-        break;
-      case "downleft":
-        x = - (_x - this.origin.x) * this.scale;
-        break;
-    }
-    return x.round(this.maxDecimals);
-  }
-
-  scaley(_y){
-    if(_y == ""){
-      return "";
-    }
-    let y = 0;
-    switch(this.origin.type){
-      case "topright":
-        y = - (_y - this.origin.y) * this.scale;
-        break;
-      case "topleft":
-        y = - (_y - this.origin.y) * this.scale;
-        break;
-      case "downright":
-        y = (_y - this.origin.y) * this.scale;
-        break;
-      case "downleft":
-        y = (_y - this.origin.y) * this.scale;
-        break;
-    }
-    return y.round(this.maxDecimals);
-  }
-
   downloadData(_type, _name){
     this.updateScale()
 
-    let series = []
+    let series = structuredClone(this.series);
+    console.log(series)
 
-    let tSerie = {
-      name: "t",
-      unit: "s",
-      values: []
-    }
-    for(let i = this.originFrame; i < this.data.length; i++){
-      tSerie.values[i] = (this.data[i].t - this.data[this.originFrame].t) / 1000;
-    }
-    series.push(tSerie);
+    const scaleX = this.scale.getOrientedScaleX();
+    const scaleY = this.scale.getOrientedScaleY();
+    
+    for(let i = 0; i < this.series[0].length; i++){
+      // t values
+      if(i < this.originFrame){
+        series[0][i] = "";
+      } else{
+        series[0][i] = this.series[0][i] - this.series[0][this.originFrame];
+      }
 
-    for(let i = 1; i < this.pointsPerFrame + 1; i++){
-      let xSerie = {
-        name: this.pointsPerFrame > 1 ? "x" + i : "x",
-        unit: "m",
-        values: []
+      // x and y values
+      for(let j = 1; j < (this.series.length - 1) / 2 + 1; j++){
+        series[((j - 1) * 2) + 1][i] = this.series[((j - 1) * 2) + 1].get(i, this.origin.x, scaleX);
+        series[((j - 1) * 2) + 2][i] = this.series[((j - 1) * 2) + 2].get(i, this.origin.y, scaleY);
       }
-      let ySerie = {
-        name: this.pointsPerFrame > 1 ? "y" + i : "y",
-        unit: "m",
-        values: []
-      }
-      for(let j = this.originFrame; j < this.data.length; j++){
-        xSerie.values[j] = this.scalex(this.data[j].xs[i-1]);
-        ySerie.values[j] = this.scaley(this.data[j].ys[i-1]);
-      }
-      series.push(xSerie);
-      series.push(ySerie);
     }
 
     let file;

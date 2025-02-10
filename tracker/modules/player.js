@@ -99,8 +99,8 @@ export default class PLAYER {
   }
 
   drawFrame(_frameID){
-      this.ctx.clearRect(0, 0, this.videoCanvas.width, this.videoCanvas.height);
-      this.ctx.drawImage(this.decodedVideo.frames[_frameID]/*e.target*/, 0, 0 ,this.videoCanvas.width, this.videoCanvas.height);
+    this.ctx.clearRect(0, 0, this.videoCanvas.width, this.videoCanvas.height);
+    this.ctx.drawImage(this.decodedVideo.frames[_frameID]/*e.target*/, 0, 0 ,this.videoCanvas.width, this.videoCanvas.height);
     
     if($("#etalonnage-button").classList.contains("is-active")){
       // Draw the origin
@@ -119,19 +119,12 @@ export default class PLAYER {
     if(this.magnifier === true){
       this.drawMagnifier(_frameID);
     }
-
-    // Update the image label
-    $("#frame-label").innerHTML = "Image n° " + (this.currentFrame + 1) +"/" + this.decodedVideo.frames.length;
-
-    // Update the table
-    this.measurement.selectRow(this.currentFrame);
-
   }
 
   drawCrosses(){
-    for(let i = this.measurement.originFrame; i < this.measurement.data.length; i++){
-      for(let j = 0; j < this.measurement.data[i].xs.length; j++){
-        this.drawCross(this.measurement.data[i].xs[j], this.measurement.data[i].ys[j]);
+    for(let i = 0; i < (this.measurement.series.length - 1) / 2; i++){
+      for(let j = this.measurement.originFrame; j < this.measurement.series[0].length; j++){
+        this.drawCross(this.measurement.series[(i * 2) + 1][j], this.measurement.series[(i * 2) + 2][j]);
       }
     }
   }
@@ -272,6 +265,13 @@ export default class PLAYER {
     this.pause();
     this.currentFrame = id;
     this.currentPoint = 0;
+
+    // Update the image label
+    $("#frame-label").innerHTML = "Image n° " + (this.currentFrame + 1) +"/" + this.decodedVideo.frames.length;
+
+    // Update the table
+    this.measurement.selectRow(this.currentFrame);
+
     this.drawFrame(this.currentFrame);
   }
 
@@ -297,6 +297,12 @@ export default class PLAYER {
       if(elapsedTime > this.decodedVideo.duration / this.decodedVideo.frames.length){
         this.dateOrigin = performance.now();
         this.currentFrame++
+        // Update the image label
+        $("#frame-label").innerHTML = "Image n° " + (this.currentFrame + 1) +"/" + this.decodedVideo.frames.length;
+
+        // Update the table
+        this.measurement.selectRow(this.currentFrame);
+
         this.drawFrame(this.currentFrame);
       }
       requestAnimationFrame(this.playing); 
@@ -366,7 +372,7 @@ export default class PLAYER {
     this.videoCanvas.style.cursor = "crosshair";
 
 
-    if(this.currentPoint < this.measurement.data[this.currentFrame].xs.length - 1){
+    if(this.currentPoint < ((this.measurement.series.length - 1) / 2) - 1){
       this.currentPoint++
     } else{
       this.nextFrame();
@@ -514,7 +520,7 @@ export default class PLAYER {
 
   setOriginFrame(id) {
     if(isNumber(id) == true){
-      if(id >=0 && id < this.measurement.data.length){
+      if(id >=0 && id < this.measurement.series[0].length){
         //this.measurement.originFrame = id
         this.measurement.setOriginFrame(id);
         this.setFrame(this.currentFrame); // check if currentFrame < originFrame

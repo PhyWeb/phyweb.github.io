@@ -615,6 +615,31 @@ function includeLogos(){
 }
 
 /*----------------------------------------------------------------------------------------------
+--------------------------------------------SERIE CLASS-----------------------------------------
+----------------------------------------------------------------------------------------------*/
+class Serie extends Array {
+  constructor(_title = "", _unit = ""){
+    super();
+    this.title = _title;
+    this.unit = _unit;
+  }
+
+  init(_size, _fill){
+    for(let i = 0; i < _size; i++){
+      this[i] = _fill;
+    }
+  }
+
+  get(_index, _origin, _scale){
+    if(this[_index] === ""){
+      return "";
+    }
+    let value = (this[_index] - _origin) * _scale
+    return value;
+  }
+}
+
+/*----------------------------------------------------------------------------------------------
 -------------------------------------EXPORT/IMPORT FUNCTIONS------------------------------------
 ----------------------------------------------------------------------------------------------*/
 
@@ -627,15 +652,15 @@ function exportToCSV(_series, _rowMustBeComplete = false){
   // create the name row and find the length of the biggest serie
   let largestSerieLength = 0;
   for(let i = 0; i < _series.length; i++){
-    if(_series[i].name){
+    if(_series[i].title){
       hasNameFlag = true;
-      row.push(_series[i].name);
+      row.push(_series[i].title);
     } else {
       row.push("");
     }
 
-    if(_series[i].values.length > largestSerieLength){
-      largestSerieLength = _series[i].values.length;
+    if(_series[i].length > largestSerieLength){
+      largestSerieLength = _series[i].length;
     }
   }
   // At least one serie has a name
@@ -648,10 +673,10 @@ function exportToCSV(_series, _rowMustBeComplete = false){
     let row = [];
     let rowIsComplete = true;
     for(let j = 0; j < _series.length; j++){
-      if(_series[j].values[i] === "" || _series[j].values[i] === undefined){
+      if(_series[j][i] === "" || _series[j][i] === undefined){
         rowIsComplete = false;
       }
-      row.push(_series[j].values[i]);
+      row.push(_series[j][i]);
     }
     if(_rowMustBeComplete){
       if(rowIsComplete){
@@ -674,10 +699,10 @@ function exportToRW3(_series, _rowMustBeComplete = false, _title){
   rw3.push("£" + _series.length + " NOM VAR");
   let largestSerieLength = 0;
   for(let i = 0; i < _series.length; i++){
-    rw3.push(_series[i].name);
+    rw3.push(_series[i].title);
 
-    if(_series[i].values.length > largestSerieLength){
-      largestSerieLength = _series[i].values.length;
+    if(_series[i].length > largestSerieLength){
+      largestSerieLength = _series[i].length;
     }
   }
 
@@ -708,13 +733,13 @@ function exportToRW3(_series, _rowMustBeComplete = false, _title){
   rw3.push("");
   rw3.push("£0 GRAPHE VAR");
   rw3.push("&5 X");
-  rw3.push(_series[0].name);
+  rw3.push(_series[0].title);
   rw3.push("");
   rw3.push("");
   rw3.push("");
   rw3.push("");
   rw3.push("&5 Y");
-  rw3.push(_series[1].name);
+  rw3.push(_series[1].title);
   rw3.push("");
   rw3.push("");
   rw3.push("");
@@ -751,10 +776,10 @@ function exportToRW3(_series, _rowMustBeComplete = false, _title){
     let row = [];
     let rowIsComplete = true;
     for(let j = 0; j < _series.length; j++){
-      if(_series[j].values[i] === "" || _series[j].values[i] === undefined){
+      if(_series[j][i] === "" || _series[j][i] === undefined){
         rowIsComplete = false;
       }
-      row.push(_series[j].values[i]);
+      row.push(_series[j][i]);
     }
     if(_rowMustBeComplete){
       if(rowIsComplete){
@@ -804,4 +829,4 @@ async function downloadFile(_file, _type,_name){
   return max;
 }*/
 
-export {Common, ModalManager, alertModal, TabManager, exportToCSV, exportToRW3, downloadFile};
+export {Common, ModalManager, alertModal, TabManager, Serie, exportToCSV, exportToRW3, downloadFile};

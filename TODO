@@ -1,7 +1,6 @@
 COMMON:
   - modal à propos: improve descriptions
   - FULLSCREEN request if screen is too small
-  - change data format to series
 
 HOME:
   - build and check if version number actually shows in about modal
@@ -10,7 +9,9 @@ HOME:
 AUDIO:
   - preview wave when loading a file
   - fft add 0s to have a power of two and use faster fft ??
+  - change data format to series !
 
 TRACKER:
   - bug? : frame is downloaded only if all points are set
   - Add vidéos
+  - reduce fontsize in table ?
