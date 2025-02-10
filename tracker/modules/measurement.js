@@ -267,7 +267,6 @@ export default class MEASUREMENT {
     this.updateScale()
 
     let series = structuredClone(this.series);
-    console.log(series)
 
     const scaleX = this.scale.getOrientedScaleX();
     const scaleY = this.scale.getOrientedScaleY();
