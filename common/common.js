@@ -615,6 +615,31 @@ function includeLogos(){
 }
 
 /*----------------------------------------------------------------------------------------------
+--------------------------------------------SERIE CLASS-----------------------------------------
+----------------------------------------------------------------------------------------------*/
+class Serie extends Array {
+  constructor(_title = "", _unit = ""){
+    super();
+    this.title = _title;
+    this.unit = _unit;
+  }
+
+  init(_size, _fill){
+    for(let i = 0; i < _size; i++){
+      this[i] = _fill;
+    }
+  }
+
+  get(_index, _origin, _scale){
+    if(this[_index] === ""){
+      return "";
+    }
+    let value = (this[_index] - _origin) * _scale
+    return value;
+  }
+}
+
+/*----------------------------------------------------------------------------------------------
 -------------------------------------EXPORT/IMPORT FUNCTIONS------------------------------------
 ----------------------------------------------------------------------------------------------*/
 
@@ -804,4 +829,4 @@ async function downloadFile(_file, _type,_name){
   return max;
 }*/
 
-export {Common, ModalManager, alertModal, TabManager, exportToCSV, exportToRW3, downloadFile};
+export {Common, ModalManager, alertModal, TabManager, Serie, exportToCSV, exportToRW3, downloadFile};

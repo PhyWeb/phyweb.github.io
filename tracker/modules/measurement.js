@@ -1,4 +1,4 @@
-import {downloadFile, exportToCSV, exportToRW3} from "../../common/common.js"
+import {Serie, downloadFile, exportToCSV, exportToRW3} from "../../common/common.js"
 
 const $ = document.querySelector.bind(document);
 
@@ -12,30 +12,6 @@ function isNumber(str) {
   !isNaN(parseFloat(str)) // ...and ensure strings of whitespace fail
 }
 
-/*----------------------------------------------------------------------------------------------
---------------------------------------------SERIE CLASS-----------------------------------------
-----------------------------------------------------------------------------------------------*/
-class Serie extends Array {
-  constructor(_title = "", _unit = ""){
-    super();
-    this.title = _title;
-    this.unit = _unit;
-  }
-
-  init(_size, _fill){
-    for(let i = 0; i < _size; i++){
-      this[i] = _fill;
-    }
-  }
-
-  get(_index, _origin, _scale){
-    if(this[_index] === ""){
-      return "";
-    }
-    let value = (this[_index] - _origin) * _scale
-    return value;
-  }
-}
 /*----------------------------------------------------------------------------------------------
 --------------------------------------------MEASUREMENT-----------------------------------------
 ----------------------------------------------------------------------------------------------*/
