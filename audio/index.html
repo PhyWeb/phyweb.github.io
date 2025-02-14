@@ -316,7 +316,7 @@
               </div>
             </div>
           </div>
-          <button class="button is-fullwidth is-primary js-modal-trigger" id="download-button" data-target="download-modal">
+          <button class="button is-fullwidth is-primary" id="download-button">
             <span class="icon">
               <i class="fas fa-download"></i>
             </span>
@@ -384,6 +384,49 @@
         <button class="delete" aria-label="close"></button>
       </header>
       <section class="modal-card-body ">
+        <p class="title is-5">Durée de l'enregistrement</p>
+        <div class="buttons has-addons is-centered">
+          <button class="button is-link" id="all-data-button">
+            <span>Tout</span>
+          </button>
+          <button class="button" id="on-screen-button">
+            <span>La partie à l'écran</span>
+          </button>
+          <button class="button" id="part-button">
+            <span>Choisir une partie</span>
+          </button>
+        </div>
+        <article class="message is-hidden" id="data-size-panel">
+          <div class="message-body">
+            <div id="duration-size-inputs">
+              <div class="mb-6 mt-2" id="data-slider"></div>
+              <div class="columns block is-vcentered" >
+                <div class="column is-narrow pr-0 ">
+                  <label class="label">Début :</label>
+                </div>
+                <div class="column">
+                  <p class="control">
+                    <input class="input" type="number" min="0" value="0" id="start-size-input"/>
+                  </p>
+                </div>
+                <div class="column is-narrow pl-0 ">
+                  <label class="label">s</label>
+                </div>
+                <div class="column is-narrow pr-0 ">
+                  <label class="label">Fin :</label>
+                </div>
+                <div class="column">
+                  <p class="control">
+                    <input class="input" type="number" min="0" value="0" id="end-size-input"/>
+                  </p>
+                </div>
+                <div class="column is-narrow pl-0 ">
+                  <label class="label">s</label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
         <p class="title is-5">Type de fichier</p>
         <div class="buttons has-addons is-centered">
           <button class="button is-link" id="wav-button">

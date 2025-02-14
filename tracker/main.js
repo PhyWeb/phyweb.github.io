@@ -43,6 +43,12 @@ if ("VideoDecoder" in window) {
 
 // Navbar
 let quitConfirm = (_path)=>{
+  // Check if data exists
+  if(!measurement.series[0]){
+    window.location.replace(_path);
+    return;
+  }
+
   // Check if data is empty
   let empty = true;
   for(let i = measurement.originFrame; i < measurement.series[0].length; i++){

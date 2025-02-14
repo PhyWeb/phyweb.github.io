@@ -523,6 +523,89 @@ let drawDecodedAudio = (_rawData, _length, _start = 0)=>{
 /*----------------------------------------------------------------------------------------------
 --------------------------------------------DOWNLOAD--------------------------------------------
 ----------------------------------------------------------------------------------------------*/
+// SLIDER
+noUiSlider.create($("#data-slider"), {
+	start: [0, 10],
+	connect: true,
+	range: {
+	  'min': 0,
+	  'max': 10
+	},
+	margin: 0.001,
+	behaviour: 'tap-drag',
+	tooltips: false,
+	pips: {
+	  mode: 'steps',
+	  stepped: true,
+	  density: 4
+    // TODO doesnt work for small durations
+	},
+  format:{
+    to: function(value){
+      return value.toFixed(3);
+    },
+    from: function(value){
+      return value;
+    }
+  }
+});
+
+$("#data-slider").noUiSlider.on('update', function (values, handle) {
+  let value = values[handle];
+
+  if (handle) {
+    $("#end-size-input").value = value;
+  } else {
+    $("#start-size-input").value = value;
+  }
+});
+
+$("#start-size-input").addEventListener('change', function () {
+  $("#data-slider").noUiSlider.set([this.value, null]);
+});
+$("#end-size-input").addEventListener('change', function () {
+  $("#data-slider").noUiSlider.set([null, this.value]);
+});
+
+// Download button
+$("#download-button").addEventListener("click", ()=>{
+
+  // Slider reset
+  $("#data-slider").noUiSlider.updateOptions({
+    range:{
+      'min': 0,
+      'max': saves[tabManager.activeTab-2].linearData.getDuration()
+    }
+  });
+  $("#data-slider").noUiSlider.reset();
+
+	// Display save modal
+	$("#download-modal").classList.add("is-active");
+	// Focus the input
+	$("#file-name-input").focus();
+})
+
+// Data part selection
+$("#all-data-button").addEventListener("click", ()=>{
+	$("#all-data-button").classList.add('is-link');
+	$("#on-screen-button").classList.remove('is-link');
+	$("#part-button").classList.remove('is-link');
+	$("#data-size-panel").classList.add('is-hidden');
+});
+$("#on-screen-button").addEventListener("click", ()=>{
+	$("#on-screen-button").classList.add('is-link');
+	$("#part-button").classList.remove('is-link');
+	$("#all-data-button").classList.remove('is-link');
+	$("#data-size-panel").classList.add('is-hidden');
+});
+  $("#part-button").addEventListener("click", ()=>{
+	$("#part-button").classList.add('is-link');
+	$("#on-screen-button").classList.remove('is-link');
+	$("#all-data-button").classList.remove('is-link');
+	$("#data-size-panel").classList.remove('is-hidden');
+});
+
+// Format selection
 $("#wav-button").addEventListener("click", ()=>{
   $("#wav-button").classList.add('is-link');
   $("#csv-button").classList.remove('is-link');
@@ -542,6 +625,7 @@ $("#rw3-button").addEventListener("click", ()=>{
   $("#file-name-input").placeholder = "enregistrement.rw3";
 });
 
+// Actual download
 $("#download-file-button").addEventListener("click", ()=>{
   let filename = "enregistrement";
   if($("#file-name-input").value !== ""){
@@ -571,10 +655,33 @@ function downloadData(_type, _name){
   series.push(new Serie("Amplitude",""));
 
   series[1] = saves[tabManager.activeTab-2].linearData.getData(saves[tabManager.activeTab-2].displaySampleRateLvl);
+
+  // Download only the part selected by the user
+  if($("#part-button").classList.contains('is-link')){
+    let start = parseFloat($("#start-size-input").value);
+    let end = parseFloat($("#end-size-input").value);
+    let startSample = Math.round(start * sr);
+    let endSample = Math.round(end * sr);
+    series[1] = series[1].slice(startSample, endSample);
+  }
+
+  // Download only the on screen part
+  if($("#on-screen-button").classList.contains('is-link')){
+    if(saves[tabManager.activeTab-2].range.xRange[0] ==! undefined){
+      let start = saves[tabManager.activeTab-2].range.xRange[0];
+      let end = saves[tabManager.activeTab-2].range.xRange[1];
+      let startSample = Math.round(start * sr);
+      let endSample = Math.round(end * sr);
+      series[1] = series[1].slice(startSample, endSample);
+    }
+  }
+
+  // Format the time serie
   for(let i = 0; i < series[1].length; i++){
     series[0][i] = i / sr;
   }
 
+  // Download the file
   let file;
   if(_type === "csv"){
     file = exportToCSV(series, true);
@@ -582,7 +689,6 @@ function downloadData(_type, _name){
   if(_type === "rw3"){
     file = exportToRW3(series, true, "Enregistrement PhyWeb Audio");
   }
-  console.log("file : " , file)
   downloadFile(file, _type, _name)
 }
 
