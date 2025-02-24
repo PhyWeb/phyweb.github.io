@@ -3,7 +3,6 @@ COMMON:
   - FULLSCREEN request if screen is too small
 
 HOME:
-  - build and check if version number actually shows in about modal
   - macos and linux package
 
 AUDIO:
