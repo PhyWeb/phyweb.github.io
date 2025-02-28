@@ -12,3 +12,4 @@ AUDIO:
 TRACKER:
   - bug or feature ? : frame is downloaded only if all points are set
   - Add vidéos
+  - pan and zoom
