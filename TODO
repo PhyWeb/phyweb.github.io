@@ -8,12 +8,9 @@ HOME:
 AUDIO:
   - preview wave when loading a file
   - fft add 0s to have a power of two and use faster fft ??
-  - function to download only a part of the recording (selector all, on screen, select a part)
+  - play the selected part of the audio when downloading
   - function to download the dft too
 
 TRACKER:
   - bug or feature ? : frame is downloaded only if all points are set
   - Add vidéos
-
-
-  filename enter shortcut

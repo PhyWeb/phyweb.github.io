@@ -634,22 +634,6 @@ $("#download-file-button").addEventListener("click", ()=>{
 
   let sr = baseSampleRate / saves[tabManager.activeTab-2].displaySampleRateLvl;
 
-  if($("#wav-button").classList.contains("is-link")){
-    let file = audio.generateWavFile(saves[tabManager.activeTab-2].linearData.getData(saves[tabManager.activeTab-2].displaySampleRateLvl), sr);
-    downloadFile(file,"wav",filename);
-  }
-  if($("#csv-button").classList.contains("is-link")){
-    downloadData("csv", filename);
-  }
-  if($("#rw3-button").classList.contains("is-link")){
-    downloadData("rw3", filename);
-  }
-  common.modalManager.closeAllModals();
-});
-
-function downloadData(_type, _name){
-  let sr = baseSampleRate / saves[tabManager.activeTab-2].displaySampleRateLvl;
-
   let series = [];
   series.push(new Serie("Temps","s"));
   series.push(new Serie("Amplitude",""));
@@ -657,7 +641,7 @@ function downloadData(_type, _name){
   series[1] = saves[tabManager.activeTab-2].linearData.getData(saves[tabManager.activeTab-2].displaySampleRateLvl);
 
   // Download only the part selected by the user
-  if($("#part-button").classList.contains('is-link')){
+  if($("#part-button").classList.contains("is-link")){
     let start = parseFloat($("#start-size-input").value);
     let end = parseFloat($("#end-size-input").value);
     let startSample = Math.round(start * sr);
@@ -666,28 +650,42 @@ function downloadData(_type, _name){
   }
 
   // Download only the on screen part
-  if($("#on-screen-button").classList.contains('is-link')){
-    if(saves[tabManager.activeTab-2].range.xRange[0] ==! undefined){
-      let start = saves[tabManager.activeTab-2].range.xRange[0];
-      let end = saves[tabManager.activeTab-2].range.xRange[1];
-      let startSample = Math.round(start * sr);
-      let endSample = Math.round(end * sr);
-      series[1] = series[1].slice(startSample, endSample);
-    }
+  if($("#on-screen-button").classList.contains("is-link")){
+    let start = savWaveChart.xAxis[0].min;
+    let end = savWaveChart.xAxis[0].max;
+    let startSample = Math.round(start * sr);
+    let endSample = Math.round(end * sr);
+    series[1] = series[1].slice(startSample, endSample);
   }
 
+  if($("#wav-button").classList.contains("is-link")){
+    let file = audio.generateWavFile(series[1], sr);
+    downloadFile(file,"wav",filename);
+  }
+  if($("#csv-button").classList.contains("is-link")){
+    downloadData(series, "csv", filename);
+  }
+  if($("#rw3-button").classList.contains("is-link")){
+    downloadData(series, "rw3", filename);
+  }
+  common.modalManager.closeAllModals();
+});
+
+function downloadData(_series, _type, _name){
+  let sr = baseSampleRate / saves[tabManager.activeTab-2].displaySampleRateLvl;
+
   // Format the time serie
-  for(let i = 0; i < series[1].length; i++){
-    series[0][i] = i / sr;
+  for(let i = 0; i < _series[1].length; i++){
+    _series[0][i] = i / sr;
   }
 
   // Download the file
   let file;
   if(_type === "csv"){
-    file = exportToCSV(series, true);
+    file = exportToCSV(_series, true);
   }
   if(_type === "rw3"){
-    file = exportToRW3(series, true, "Enregistrement PhyWeb Audio");
+    file = exportToRW3(_series, true, "Enregistrement PhyWeb Audio");
   }
   downloadFile(file, _type, _name)
 }
