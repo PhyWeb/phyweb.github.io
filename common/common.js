@@ -274,6 +274,9 @@ function aboutModal(_app){
         </ul>
       </div>`
       break;
+    case "Grapherr":
+      description = "Application de TODO."
+      break;
     default:
       console.error("wrong app name in about modal");
   }

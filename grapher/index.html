@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html data-theme="light">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Phyweb Grapher</title>
+
+    <link rel="icon" href="./lib/favicons/favicon.ico" />
+
+    <link rel="stylesheet" href="../common/handsontable/handsontable.min.css">
+    <link rel="stylesheet" href="../common/handsontable/ht-theme-horizon.min.css">
+
+    <link rel="stylesheet" href="../common/bulma/bulma.min.css">
+
+    <link rel="stylesheet" href="../common/common.css">
+
+    <link rel="stylesheet" href="lib/grapher.css">
+
+    <script defer src="../common/fontawesome/solid.min.js"></script>
+    <script defer src="../common/fontawesome/brands.min.js"></script>
+    <script defer src="../common/fontawesome/fontawesome.min.js"></script>
+
+    <script type="text/javascript" src="../common/handsontable/handsontable.full.min.js"></script>
+
+    <script type="module" src="main.js"></script>
+  </head>
+  <body>
+  <div id="app" class="has-background-light" style="overflow:hidden">
+  <!------------------------------------------------------------------------------------------------------------>
+  <!---------------------------------------------------NAVBAR--------------------------------------------------->
+  <!------------------------------------------------------------------------------------------------------------>
+  <nav class="navbar has-box-shadow is-flex-shrink-0" role="navigation" aria-label="main navigation">
+    <div class="navbar-brand">
+      <div class="navbar-item is-size-4 has-text-weight-bold" style="gap:0.3rem">
+        <span class="is-flex has-text-primary">
+          <i class="phyweb-logo"></i>
+        </span>
+        <span>
+          PhyWeb
+        </span>
+      </div>
+    </div>
+    <div class="navbar-menu">
+      <div class="navbar-start">
+        <div id="navbar-dropdown" class="navbar-item has-dropdown is-boxed">
+          <a class="navbar-link has-text-primary is-size-4 has-text-weight-bold">
+            <span class="icon"><i class="fa-solid fa-chart-line"></i></span>
+            <span>Grapher</span>
+          </a>
+          <div class="navbar-dropdown">
+            <a class="navbar-item is-size-5 has-text-weight-bold" id="navbar-home-button">
+              <span class="icon has-text-primary"><i class="fa fa-home"></i></span>
+              <span>PhyWeb</span>
+            </a>
+            <hr class="navbar-divider">
+            <a class="navbar-item  is-size-5 has-text-weight-bold" id="navbar-audio-button">
+              <span class="is-flex has-text-primary">
+                <i class="audio-logo"></i>
+              </span>
+              <span>Audio</span>
+            </a>
+            <hr class="navbar-divider">
+            <a class="navbar-item is-size-5 has-text-weight-bold" id="about-button">
+              <span class="icon has-text-primary"><i class="fa fa-circle-info"></i></span>
+              <span>A propos</span>
+            </a>
+          </div>
+        </div>
+          <div class="tabs pl-6">
+            <ul id="nav-tabs">
+              <li class="is-active" id="tableur-tab"><a class="p-4" >Tableur</a></li>
+              <li id="grapheur-tab"><a class="p-4" >Grapheur</a></li>
+              <li id="calculs-tab"><a class="p-4" >Calculs</a></li>
+            </ul>
+          </div>
+      </div>
+      <div class="navbar-end">
+        <div class="navbar-item" id="expand-button" title="Passer en mode plein écran">
+          <button class="button is-white">
+            <span class="icon is-medium"><i class="fas fa-expand"></i></span>
+          </button>
+        </div>
+        <div class="navbar-item is-hidden" id="compress-button" title="Sortir du mode plein écran">
+          <button class="button is-white">
+            <span class="icon is-medium"><i class="fas fa-compress"></i></span>
+          </button>
+        </div>
+        <div class="navbar-item">
+          <a class="button is-white">
+            <span class="icon">
+              <i class="fa-solid fa-file"></i>
+            </span>
+          </a>
+          <a class="button is-white">
+            <span class="icon">
+              <i class="fa-solid fa-folder-open"></i>
+            </span>
+          </a>
+          <a class="button is-white">
+            <span class="icon">
+              <i class="fa-solid fa-save"></i>
+            </span>
+          </a>
+        </div>
+        <div class="window-controls"></div>
+      </div>
+    </div>
+  </nav>
+  <!------------------------------------------------------------------------------------------------------------>
+  <!--------------------------------------------------Tableur--------------------------------------------------->
+  <!------------------------------------------------------------------------------------------------------------>
+  <div class="box m-3 p-3" style="height:100vh;" id="tableur-panel">
+    <nav class="level">
+      <!-- Left side -->
+      <div class="level-left">
+        <button class="button">
+          <span class="icon">
+            <i class="fa-solid fa-plus"></i>
+          </span>
+          <span>Ajouter</span>
+        </button>
+      </div>
+
+      <!-- Right side -->
+      <div class="level-right">
+        <p class="level-item"><strong>All</strong></p>
+        <p class="level-item"><a>Published</a></p>
+        <p class="level-item"><a>Drafts</a></p>
+        <p class="level-item"><a>Deleted</a></p>
+        <p class="level-item"><a class="button is-success">New</a></p>
+      </div>
+    </nav>
+    <div class="block" style="height: 100%;overflow:auto;">
+      <div id="table" class="ht-theme-horizon"></div>
+    </div>
+  </div>
+  <!------------------------------------------------------------------------------------------------------------>
+  <!--------------------------------------------------Grapheur--------------------------------------------------->
+  <!------------------------------------------------------------------------------------------------------------>
+  <div class="box m-3 p-3 is-hidden" style="height:100vh;" id="grapheur-panel">
+    <nav class="level">
+      <!-- Left side -->
+      <div class="level-left">
+        <button class="button">
+          <span class="icon">
+            <i class="fa-solid fa-arrow-pointer"></i>
+          </span>
+          <span>Outils</span>
+        </button>
+        <button class="button">
+          <span class="icon">
+            <i class="fa-solid fa-arrow-pointer"></i>
+          </span>
+          <span>Courbes</span>
+        </button>
+      </div>
+
+      <!-- Right side -->
+      <div class="level-right">
+        <p class="level-item"><strong>All</strong></p>
+      </div>
+    </nav>
+    <div class="block" style="height: 100%;overflow:auto;">
+      <div id="table" class="ht-theme-horizon"></div>
+    </div>
+  </div>
+  </div>
+  </div>
+  </body>
+</html>
