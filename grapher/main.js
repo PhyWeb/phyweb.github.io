@@ -84,15 +84,20 @@ $("#calculs-tab").addEventListener("click", () => {
 
 // Data
 let data = new Data();
-data.addSerie("x", "m", 100, 22);
-data.addSerie("y", "m", 100, 23);
+data.addCurve("x", "m", 100, 22);
+data.addCurve("y", "m", 100, 23);
 
 // Spreadsheet
-let spreadsheet = new Spreadsheet(data);
+function spreadsheetModifiedData(_change){
+  grapher.updateChart();
+}
+
+let spreadsheet = new Spreadsheet(data, spreadsheetModifiedData);
 spreadsheet.build();
 
 // Grapher
-let grapher = new Grapher();
+let grapher = new Grapher(data);
+grapher.newChart(data.curves[0], data.curves[1]);
 
 
 });

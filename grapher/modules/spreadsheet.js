@@ -1,27 +1,30 @@
 const $ = document.querySelector.bind(document);
 
 /*----------------------------------------------------------------------------------------------
-----------------------------------------------Grapher-------------------------------------------
+--------------------------------------------Spreadsheet-----------------------------------------
 ----------------------------------------------------------------------------------------------*/
 export default class Spreadsheet {
-  constructor(_data) {
+  constructor(_data, _cb) {
+    console.log(_data)
     this.data = _data;
+    this.cb = _cb;
     this.hot;
   }   
 
   build(){
     const container = document.querySelector('#table');
 
-    function afterChange(change, source) {
+    const afterChange = (change, source) =>  {
       if (source === 'loadData') {
         return; //don't save this change
       }
     
       change.forEach(element => {
-        this.data.setValue(element[1], element[0], element[3]);
+        this.data.setValue(element[1], element[0], parseFloat(element[3]));
       });
+
+      this.cb(change);
     
-      console.log("data", this.data.series);
     }
     
     this.hot = new Handsontable(container, {
