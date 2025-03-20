@@ -5,19 +5,42 @@ const $ = document.querySelector.bind(document);
 ----------------------------------------------------------------------------------------------*/
 export default class Spreadsheet {
   constructor(_data, _cb) {
-    console.log(_data)
     this.data = _data;
     this.cb = _cb;
     this.hot;
   }   
 
+  addCurve(_title, _unit, _size, _fill){
+
+    this.data.addCurve(_title, _unit, _size, _fill);
+
+    // Update the spreadsheet
+    this.update();
+  }
+
+  update(){
+    console.log("update");
+    this.data.curves.forEach((curve, i) => {
+      if(curve[curve.length - 1] !== ""){
+        curve.push("");
+      }
+    });
+
+    this.hot.updateSettings({
+      data: data,
+      colHeaders: this.data.getHeaders()
+    });
+  }
+
   build(){
     const container = document.querySelector('#table');
 
     const afterChange = (change, source) =>  {
-      if (source === 'loadData') {
+
+      if (source === "loadData" || source === "updateData") {
         return; //don't save this change
       }
+      console.log(change, source);
     
       change.forEach(element => {
         this.data.setValue(element[1], element[0], parseFloat(element[3]));
@@ -29,6 +52,7 @@ export default class Spreadsheet {
     
     this.hot = new Handsontable(container, {
       data: this.data.getTable(),
+      type: 'numeric',
       rowHeaders: true,
       colHeaders: this.data.getHeaders(),
       height: 'auto',

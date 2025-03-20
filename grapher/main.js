@@ -84,8 +84,7 @@ $("#calculs-tab").addEventListener("click", () => {
 
 // Data
 let data = new Data();
-data.addCurve("x", "m", 100, 22);
-data.addCurve("y", "m", 100, 23);
+
 
 // Spreadsheet
 function spreadsheetModifiedData(_change){
@@ -94,10 +93,79 @@ function spreadsheetModifiedData(_change){
 
 let spreadsheet = new Spreadsheet(data, spreadsheetModifiedData);
 spreadsheet.build();
+//spreadsheet.addCurve("x", "m", 100, 22);
+//spreadsheet.addCurve("y", "m", 100, 23);
+//spreadsheet.addCurve("z", "m", 100, 20);
+
+// DEBUG
+$("#new-file-button").addEventListener("click", () => {
+  console.log(data)
+});
+
+
+$("#add-curve-button").addEventListener("click", () => {
+  // TODO reinit the modal
+  $("#add-curve-modal").classList.add("is-active");
+});
+
+$("#add-curve-confirm-button").addEventListener("click", () => {
+  //TODO enforce proper input
+  const title = $("#empty-curve-symbol-input").value;
+  const unit = $("#empty-curve-unit-input").value;
+
+  spreadsheet.addCurve(title, unit);
+
+  common.modalManager.closeAllModals();
+});
+
+$("#delete-curve-button").addEventListener("click", () => {
+  if(data.curves.length === 0){
+    return;
+  }
+
+  // Populate curve menu
+  $("#delete-curve-menu").innerHTML = "";
+  data.curves.forEach(element => {
+    let li = document.createElement("li");
+    let a = document.createElement("a");
+    a.innerHTML = element.title;
+    li.appendChild(a);
+    $("#delete-curve-menu").appendChild(li);
+    a.addEventListener("click", () => {
+      a.classList.add("is-active");
+      for(let i = 0; i < $("#delete-curve-menu").children.length; i++){
+        if($("#delete-curve-menu").children[i].children[0] !== a){
+          $("#delete-curve-menu").children[i].children[0].classList.remove("is-active");
+        }
+      }
+    });
+  });
+
+  $("#delete-curve-menu").children[0].children[0].classList.add("is-active");
+  $("#delete-curve-modal").classList.add("is-active");
+    
+});
+
+$("#delete-curve-confirm-button").addEventListener("click", () => {
+  let curve = $("#delete-curve-menu").querySelector(".is-active").innerHTML;
+  // Delete the curve
+  data.deleteCurve(curve);
+
+  // Update the graph if needed
+  grapher.updateChart();
+
+  // Update the spreadsheet
+  spreadsheet.hot.updateSettings({
+    data: data.getTable(),
+    colHeaders: data.getHeaders()
+  });
+  common.modalManager.closeAllModals();
+});
+
 
 // Grapher
 let grapher = new Grapher(data);
-grapher.newChart(data.curves[0], data.curves[1]);
+grapher.newChart();
 
 
 });

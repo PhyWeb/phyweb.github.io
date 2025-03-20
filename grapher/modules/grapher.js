@@ -21,8 +21,9 @@ export default class Grapher {
     this.data = _data;
     this.chart;
 
-    this.currentXCurve = this.data.curves[0].title;
-    this.currentYCurves = [this.data.curves[1].title];
+    console.log("Grapher constructor");
+    this.currentXCurve = this.data.curves[0] ? this.data.curves[0].title : null;
+    this.currentYCurves = this.data.curves[1] ? [this.data.curves[1].title] : [null];
   }
 
   formatData(_xCurve, _yCurve){
@@ -34,18 +35,18 @@ export default class Grapher {
     return data;
   }
 
-  newChart(_xCurve, _yCurve){
-    this.currentXCurve = _xCurve.title;
-    this.currentYCurves = [_yCurve.title];
+  newChart(){
 
-    let data = this.formatData(_xCurve, _yCurve)
     this.chart = Highcharts.chart("chart", {
       chart: {
           type: "line"
       },
+      title: {
+        text: null
+      },
       credits: {
         enabled: false
-      },
+      }/*,
       xAxis: {
         title: {
           text: _xCurve.title + " (" + _xCurve.unit + ")"
@@ -59,31 +60,51 @@ export default class Grapher {
       series: [{
           name: _yCurve.title + " (" + _yCurve.unit + ")",
           data: data
-      }]
+      }]*/
     });
   }
 
-  updateChart(){
-    console.log(this.data)
+  updateChart(_xCurve = null, _yCurve = null){
     console.log("updateChart");
 
-    let data = this.formatData(this.data.getCurveByTitle(this.currentXCurve), this.data.getCurveByTitle(this.currentYCurves[0]))
+    this.currentXCurve = _xCurve.title;
+    this.currentYCurves = [_yCurve.title];
 
-    console.log(data)
+
+    if(!this.data.getCurveByTitle(this.currentXCurve)){
+      if(this.data.curves.length > 0){
+        this.currentXCurve = this.data.curves[0].title;
+      } else{
+        this.currentXCurve = null;
+      }
+    }
+    if(!this.data.getCurveByTitle(this.currentYCurves[0])){
+      if(this.data.curves.length > 0){
+        this.currentYCurves[0] = this.data.curves[0].title;
+      } else {
+        this.currentYCurves[0] = null;
+      }
+    };
+
+    let data=[];
+
+    if(this.currentXCurve && this.currentYCurves[0]){
+      data = this.formatData(this.data.getCurveByTitle(this.currentXCurve), this.data.getCurveByTitle(this.currentYCurves[0]))
+    }
 
     this.chart.update({
       xAxis: {
         title: {
-          text: this.currentXCurve + " (" + this.data.getCurveByTitle(this.currentXCurve).unit + ")"
+          text: this.currentXCurve ? this.currentXCurve + " (" + this.data.getCurveByTitle(this.currentXCurve).unit + ")" : ""
       }
       },
       yAxis: {
         title: {
-            text: this.currentYCurves[0] + " (" + this.data.getCurveByTitle(this.currentYCurves[0]).unit + ")"
+            text: this.currentYCurves[0] ? this.currentYCurves[0] + " (" + this.data.getCurveByTitle(this.currentYCurves[0]).unit + ")" : ""
         }
       },
       series: [{
-        name: this.currentYCurves[0] + " (" + this.data.getCurveByTitle(this.currentYCurves[0]).unit + ")",
+        name: this.currentYCurves[0] ? this.currentYCurves[0] + " (" + this.data.getCurveByTitle(this.currentYCurves[0]).unit + ")" : "",
         data: data
     }]
     });

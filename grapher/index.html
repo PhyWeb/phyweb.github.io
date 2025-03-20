@@ -89,7 +89,7 @@
           </button>
         </div>
         <div class="navbar-item">
-          <a class="button is-white">
+          <a class="button is-white" id="new-file-button">
             <span class="icon">
               <i class="fa-solid fa-file"></i>
             </span>
@@ -112,15 +112,21 @@
   <!------------------------------------------------------------------------------------------------------------>
   <!--------------------------------------------------Tableur--------------------------------------------------->
   <!------------------------------------------------------------------------------------------------------------>
-  <div class="box m-3 p-3" style="height:100vh;" id="tableur-panel">
+  <div class="box m-3 p-3" style="height:92vh; display:flex; flex-direction: column" id="tableur-panel">
     <nav class="level">
       <!-- Left side -->
       <div class="level-left">
-        <button class="button">
+        <button class="button" id="add-curve-button">
           <span class="icon">
             <i class="fa-solid fa-plus"></i>
           </span>
           <span>Ajouter</span>
+        </button>
+        <button class="button" id="delete-curve-button">
+          <span class="icon">
+            <i class="fa-solid fa-minus"></i>
+          </span>
+          <span>Sup. colonne</span>
         </button>
       </div>
 
@@ -133,7 +139,7 @@
         <p class="level-item"><a class="button is-success">New</a></p>
       </div>
     </nav>
-    <div class="block" style="height: 100%;overflow:auto;">
+    <div class="block" style="overflow:auto;">
       <div id="table" class="ht-theme-horizon"></div>
     </div>
   </div>
@@ -168,6 +174,100 @@
     </div>
   </div>
   </div>
+  </div>
+  <!------------------------------------------------------------------------------------------------------------>
+  <!-----------------------------------------------ADD CURVE MODAL---------------------------------------------->
+  <!------------------------------------------------------------------------------------------------------------>
+  <div id="add-curve-modal" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card" id="add-curve-modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title">Ajouter une grandeur</p>
+        <button class="delete" aria-label="close"></button>
+      </header>
+      <section class="modal-card-body is-flex">
+        <div class="columns is-flex-grow-1">
+          <div class="column is-narrow">
+            <div class="">
+              <label class="radio block" style="display:block">
+                <input type="radio" name="empty-curve-radio" checked/>
+                Grandeur vierge
+              </label>
+              <label class="radio block" style="display:block">
+                <input type="radio" name="calc-curve-radio" disabled/>
+                Grandeur calculée
+              </label>
+              <label class="radio block">
+                <input type="radio" name="derivate-curve-radio" disabled/>
+                Grandeur dérivée
+              </label>
+            </div>
+          </div>
+          <div class="column is-narrow vertical-divider">
+          </div>
+          <div class="column" id="empty-curve-panel">
+            <div class="field is-horizontal">
+              <div class="field-label is-normal">
+                <label class="label">Symbole</label>
+              </div>
+              <div class="field-body">
+                <div class="field">
+                  <div class="control">
+                    <input class="input" type="text" id="empty-curve-symbol-input">
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="field is-horizontal">
+              <div class="field-label is-normal">
+                <label class="label">Unité</label>
+              </div>
+              <div class="field-body">
+                <div class="field">
+                  <div class="control">
+                    <input class="input" type="text" id="empty-curve-unit-input">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="column is-hidden" id="calc-curve-panel">
+          </div>
+          <div class="column is-hidden" id="derivate-curve-panel">
+          </div>
+        </div>
+      </section>
+      <footer class="modal-card-foot">
+        <div class="buttons">
+          <button class="button is-success" id="add-curve-confirm-button">Ajouter</button>
+          <button class="button modal-close-button">Annuler</button>
+        </div>
+      </footer>
+    </div>
+  </div>
+  <!------------------------------------------------------------------------------------------------------------>
+  <!----------------------------------------------DELETE CURVE MODAL-------------------------------------------->
+  <!------------------------------------------------------------------------------------------------------------>
+  <div id="delete-curve-modal" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card" id="remove-curve-modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title">Supprimer une grandeur</p>
+        <button class="delete" aria-label="close"></button>
+      </header>
+      <section class="modal-card-body is-flex">
+        <aside class="menu">
+          <ul class="menu-list" id="delete-curve-menu">
+          </ul>
+        </aside>
+      </section>
+      <footer class="modal-card-foot">
+        <div class="buttons">
+          <button class="button is-danger" id="delete-curve-confirm-button">Supprimer</button>
+          <button class="button modal-close-button">Annuler</button>
+        </div>
+      </footer>
+    </div>
   </div>
   </body>
 </html>

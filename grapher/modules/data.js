@@ -21,9 +21,15 @@ export default class Data {
 
     if(_size !== undefined){
       curve.init(_size, _fill);
+    } else{
+      curve.init(1, "");
     }
 
     this.curves.push(curve);
+  }
+
+  deleteCurve(_title){
+    this.curves.splice(this.getCurveByTitle(_title), 1);
   }
 
   getTable(){
@@ -46,7 +52,6 @@ export default class Data {
       });
     });
 
-    console.log("table", table);
     return table;
   }
 
@@ -56,7 +61,6 @@ export default class Data {
     this.curves.forEach((curve, i) => {
       headers.push(curve.title + " (" + curve.unit + ")");
     });
-    console.log("headers", headers);
     return headers;
   }
 
