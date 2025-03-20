@@ -21,16 +21,15 @@ export default class Grapher {
     this.data = _data;
     this.chart;
 
-    console.log("Grapher constructor");
-    this.currentXCurve = this.data.curves[0] ? this.data.curves[0].title : null;
-    this.currentYCurves = this.data.curves[1] ? [this.data.curves[1].title] : [null];
+    this.currentXCurve = null;
+    this.currentYCurves = [];
   }
 
   formatData(_xCurve, _yCurve){
     let length = lengthOfTheLongestTable([_xCurve, _yCurve]);
     let data = []
     for(let i = 0; i < length; i++){
-      data.push([_xCurve[i], _yCurve[i]]);
+      data.push([_xCurve[i] === "" ? null : _xCurve[i], _yCurve[i] === "" ? null : _yCurve[i]]);
     }
     return data;
   }
@@ -44,30 +43,42 @@ export default class Grapher {
       title: {
         text: null
       },
-      credits: {
-        enabled: false
-      }/*,
       xAxis: {
         title: {
-          text: _xCurve.title + " (" + _xCurve.unit + ")"
+          text: null
       }
       },
       yAxis: {
         title: {
-            text: _yCurve.title + " (" + _yCurve.unit + ")"
+            text: null
         }
       },
+      credits: {
+        enabled: false
+      },
       series: [{
-          name: _yCurve.title + " (" + _yCurve.unit + ")",
-          data: data
-      }]*/
+          name: "y",
+          data: null
+      }]
     });
   }
 
-  updateChart(_xCurve = null, _yCurve = null){
+  setXCurve(_title){
+    this.currentXCurve = _title;
+    this.updateChart();
+  }
+
+  pushYCurve(_title){
+    console.log("pushYCurve");
+    this.currentYCurves.push(_title);
+    console.log(this.currentYCurves)
+    this.updateChart(this.currentYCurves);
+  }
+
+  updateChart(){
     console.log("updateChart");
 
-    this.currentXCurve = _xCurve.title;
+    /*this.currentXCurve = _xCurve.title;
     this.currentYCurves = [_yCurve.title];
 
 
@@ -86,28 +97,53 @@ export default class Grapher {
       }
     };
 
-    let data=[];
+    let data=[];*/
+    console.log(this.currentXCurve, this.currentYCurves[0]);
+
+    let options = {};
 
     if(this.currentXCurve && this.currentYCurves[0]){
-      data = this.formatData(this.data.getCurveByTitle(this.currentXCurve), this.data.getCurveByTitle(this.currentYCurves[0]))
+      console.log("ok")
+      let data = this.formatData(this.data.getCurveByTitle(this.currentXCurve), this.data.getCurveByTitle(this.currentYCurves[0]))
+      console.log(data)
+      options = {
+        xAxis: {
+          title: {
+            text: this.currentXCurve + " (" + this.data.getCurveByTitle(this.currentXCurve).unit + ")"
+        }
+        },
+        yAxis: {
+          title: {
+              text: this.currentYCurves[0] + " (" + this.data.getCurveByTitle(this.currentYCurves[0]).unit + ")"
+          }
+        },
+        series: [{
+          name: this.currentYCurves[0] + " (" + this.data.getCurveByTitle(this.currentYCurves[0]).unit + ")",
+          data: data
+        }]
+      }
+    } else {
+      options = {
+        xAxis: {
+          title: {
+            text: ""
+        }
+        },
+        yAxis: {
+          title: {
+              text: ""
+          }
+        },
+        series: [{
+          name: "",
+          data: null
+        }]
+      }
     }
 
-    this.chart.update({
-      xAxis: {
-        title: {
-          text: this.currentXCurve ? this.currentXCurve + " (" + this.data.getCurveByTitle(this.currentXCurve).unit + ")" : ""
-      }
-      },
-      yAxis: {
-        title: {
-            text: this.currentYCurves[0] ? this.currentYCurves[0] + " (" + this.data.getCurveByTitle(this.currentYCurves[0]).unit + ")" : ""
-        }
-      },
-      series: [{
-        name: this.currentYCurves[0] ? this.currentYCurves[0] + " (" + this.data.getCurveByTitle(this.currentYCurves[0]).unit + ")" : "",
-        data: data
-    }]
-    });
+
+      // Format the data
+      this.chart.update(options);
   }
 
 }

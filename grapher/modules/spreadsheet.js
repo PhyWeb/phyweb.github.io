@@ -19,15 +19,8 @@ export default class Spreadsheet {
   }
 
   update(){
-    console.log("update");
-    this.data.curves.forEach((curve, i) => {
-      if(curve[curve.length - 1] !== ""){
-        curve.push("");
-      }
-    });
-
     this.hot.updateSettings({
-      data: data,
+      data: this.data.getTable(),
       colHeaders: this.data.getHeaders()
     });
   }
@@ -43,8 +36,10 @@ export default class Spreadsheet {
       console.log(change, source);
     
       change.forEach(element => {
-        this.data.setValue(element[1], element[0], parseFloat(element[3]));
+        this.data.setValue(element[1], element[0], element[3]);
       });
+
+      this.update();
 
       this.cb(change);
     
@@ -53,6 +48,7 @@ export default class Spreadsheet {
     this.hot = new Handsontable(container, {
       data: this.data.getTable(),
       type: 'numeric',
+      minSpareRows: 1,
       rowHeaders: true,
       colHeaders: this.data.getHeaders(),
       height: 'auto',

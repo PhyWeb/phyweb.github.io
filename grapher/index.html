@@ -28,7 +28,7 @@
     <script type="module" src="main.js"></script>
   </head>
   <body>
-  <div id="app" class="has-background-light" style="overflow:hidden">
+  <div id="app" class="has-background-light is-flex is-flex-direction-column" style="overflow:hidden">
   <!------------------------------------------------------------------------------------------------------------>
   <!---------------------------------------------------NAVBAR--------------------------------------------------->
   <!------------------------------------------------------------------------------------------------------------>
@@ -112,7 +112,7 @@
   <!------------------------------------------------------------------------------------------------------------>
   <!--------------------------------------------------Tableur--------------------------------------------------->
   <!------------------------------------------------------------------------------------------------------------>
-  <div class="box m-3 p-3" style="height:92vh; display:flex; flex-direction: column" id="tableur-panel">
+  <div class="box m-3 p-3" style="height:calc(100vh - 80px); display:flex; flex-direction: column" id="tableur-panel">
     <nav class="level">
       <!-- Left side -->
       <div class="level-left">
@@ -146,7 +146,7 @@
   <!------------------------------------------------------------------------------------------------------------>
   <!--------------------------------------------------Grapheur--------------------------------------------------->
   <!------------------------------------------------------------------------------------------------------------>
-  <div class="box m-3 p-3 is-hidden" style="height:100vh;" id="grapheur-panel">
+  <div class="box m-3 p-3 block is-hidden" style="height:calc(100vh - 86px); display:flex; flex-direction: column; flex-grow: 1;" id="grapheur-panel">
     <nav class="level">
       <!-- Left side -->
       <div class="level-left">
@@ -169,8 +169,8 @@
         <p class="level-item"><strong>All</strong></p>
       </div>
     </nav>
-    <div class="block" style="overflow:auto;">
-      <div id="chart" style="width:100%; height:100%"></div>
+    <div class="block" style="overflow:auto;" id="chart-wrapper">
+      <div id="chart" style="height:calc(100vh - 180px); "></div>
     </div>
   </div>
   </div>

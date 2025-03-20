@@ -109,11 +109,19 @@ $("#add-curve-button").addEventListener("click", () => {
 });
 
 $("#add-curve-confirm-button").addEventListener("click", () => {
-  //TODO enforce proper input
+  //TODO enforce proper input style and avoid duplicate
   const title = $("#empty-curve-symbol-input").value;
   const unit = $("#empty-curve-unit-input").value;
 
   spreadsheet.addCurve(title, unit);
+
+  if(data.curves.length === 1){
+    grapher.setXCurve(title);
+  }
+
+  if(data.curves.length === 2){
+    grapher.pushYCurve(title);
+  }
 
   common.modalManager.closeAllModals();
 });
@@ -166,6 +174,10 @@ $("#delete-curve-confirm-button").addEventListener("click", () => {
 // Grapher
 let grapher = new Grapher(data);
 grapher.newChart();
+
+window.addEventListener("resize", () => {
+  grapher.chart.reflow();
+});
 
 
 });
