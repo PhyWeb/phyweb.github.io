@@ -93,18 +93,20 @@ function spreadsheetModifiedData(_change){
 
 let spreadsheet = new Spreadsheet(data, spreadsheetModifiedData);
 spreadsheet.build();
-//spreadsheet.addCurve("x", "m", 100, 22);
-//spreadsheet.addCurve("y", "m", 100, 23);
-//spreadsheet.addCurve("z", "m", 100, 20);
 
 // DEBUG
 $("#new-file-button").addEventListener("click", () => {
   console.log(data)
 });
 
+/*----------------------------------------------------------------------------------------------
+--------------------------------------------SPREADSHEET-----------------------------------------
+----------------------------------------------------------------------------------------------*/
 
+// Add curve
 $("#add-curve-button").addEventListener("click", () => {
-  // TODO reinit the modal
+  $("#empty-curve-symbol-input").value = "";
+  $("#empty-curve-unit-input").value = "";
   $("#add-curve-modal").classList.add("is-active");
 });
 
@@ -126,6 +128,7 @@ $("#add-curve-confirm-button").addEventListener("click", () => {
   common.modalManager.closeAllModals();
 });
 
+// Delete curve
 $("#delete-curve-button").addEventListener("click", () => {
   if(data.curves.length === 0){
     return;
@@ -171,9 +174,86 @@ $("#delete-curve-confirm-button").addEventListener("click", () => {
 });
 
 
-// Grapher
+/*----------------------------------------------------------------------------------------------
+----------------------------------------------Grapher-------------------------------------------
+----------------------------------------------------------------------------------------------*/
 let grapher = new Grapher(data);
 grapher.newChart();
+
+// Choose graphs
+$("#choose-curves-button").addEventListener("click", () => { 
+  populateCurveMenu();
+  populateSelect();
+  $("#choose-curves-modal").classList.add("is-active");
+});
+
+// Populate list
+function populateCurveMenu(){
+  $("#choose-curves-menu").innerHTML = "";
+
+  data.curves.forEach(element => {
+    let li = document.createElement("li");
+    let a = document.createElement("a");
+  
+    let input = document.createElement("input");
+    input.type = "checkbox";
+    input.classList.add("mr-2");
+
+    let label = document.createElement("label");
+    label.innerHTML = element.title;
+  
+    a.appendChild(input);
+    a.appendChild(label);
+    li.appendChild(a);
+  
+    $("#choose-curves-menu").appendChild(li);
+  
+    a.addEventListener("click", () => {
+      a.classList.add("is-active");
+      for(let i = 0; i < $("#choose-curves-menu").children.length; i++){
+        if($("#choose-curves-menu").children[i].children[0] !== a){
+          $("#choose-curves-menu").children[i].children[0].classList.remove("is-active");
+        }
+      }
+    });
+
+    if($("#choose-curves-menu").children.length === 1){
+      a.classList.add("is-active");
+    }
+  });
+}
+
+// Populate select
+function populateSelect(){
+  $("#choose-curves-select").innerHTML = "";
+
+  data.curves.forEach(element => {
+    let option = document.createElement("option");
+    option.innerHTML = element.title;
+    $("#choose-curves-select").appendChild(option);
+  });
+}
+
+$("#choose-curves-confirm-button").addEventListener("click", () => {
+  grapher.setXCurve($("#choose-curves-select").value);
+
+  // Get the list of all the checked curves
+  let activeCurves = [];
+  for(let i = 0; i < $("#choose-curves-menu").children.length; i++){
+    if($("#choose-curves-menu").children[i].children[0].children[0].checked){
+      //console.log($("#choose-curves-menu").children[i].children[1].innerHTML);
+      activeCurves.push($("#choose-curves-menu").children[i].children[0].children[1].innerHTML);
+    }
+  }
+
+
+
+  grapher.updateChart(curveChanged);
+
+
+
+  common.modalManager.closeAllModals();
+});
 
 window.addEventListener("resize", () => {
   grapher.chart.reflow();

@@ -156,7 +156,7 @@
           </span>
           <span>Outils</span>
         </button>
-        <button class="button">
+        <button class="button" id="choose-curves-button">
           <span class="icon">
             <i class="fa-solid fa-arrow-pointer"></i>
           </span>
@@ -265,6 +265,58 @@
         <div class="buttons">
           <button class="button is-danger" id="delete-curve-confirm-button">Supprimer</button>
           <button class="button modal-close-button">Annuler</button>
+        </div>
+      </footer>
+    </div>
+  </div>
+  <!------------------------------------------------------------------------------------------------------------>
+  <!--------------------------------------------CHOOSE CURVES MODAL--------------------------------------------->
+  <!------------------------------------------------------------------------------------------------------------>
+  <div id="choose-curves-modal" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card" id="choose-curves-modal">
+      <header class="modal-card-head">
+        <p class="modal-card-title">Courbes</p>
+        <button class="delete" aria-label="close"></button>
+      </header>
+      <section class="modal-card-body is-flex">
+        <div class="columns is-flex-grow-1">
+          <div class="column is-narrow">
+            <p>
+              Ordonnées
+            </p>
+            <aside class="menu">
+              <ul class="menu-list">
+                <li>
+                  <ul id="choose-curves-menu">
+                    <li>
+                      <a class="is-active"><input class="mr-2" type="checkbox"/>X</a>
+                    </li>
+                    <li><a>X</a></li>
+                    <li><a>X</a></li>
+                  </ul>
+                </li>
+              </ul>
+            </aside>
+            <p class="mb-2">
+              Abscisse
+            </p>
+            <div class="select">
+              <select id="choose-curves-select">
+                <option>Select dropdown</option>
+                <option>With options</option>
+              </select>
+            </div>
+          </div>
+          <div class="column is-narrow vertical-divider">
+          </div>
+          <div class="column">
+          </div>
+        </div>
+      </section>
+      <footer class="modal-card-foot">
+        <div class="buttons">
+          <button class="button is-success" id="choose-curves-confirm-button">Confirmer</button>
         </div>
       </footer>
     </div>

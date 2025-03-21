@@ -40,6 +40,9 @@ export default class Grapher {
       chart: {
           type: "line"
       },
+      accessibility: {
+        enabled: false
+      },
       title: {
         text: null
       },
@@ -63,49 +66,71 @@ export default class Grapher {
     });
   }
 
-  setXCurve(_title){
+  setXCurve(_title, _redraw = true){
     this.currentXCurve = _title;
-    this.updateChart();
+
+    if(_redraw){
+      this.updateChart();
+    }
   }
 
-  pushYCurve(_title){
-    console.log("pushYCurve");
+  pushYCurve(_title, _redraw = true){
     this.currentYCurves.push(_title);
-    console.log(this.currentYCurves)
-    this.updateChart(this.currentYCurves);
+
+    if(_redraw){
+      this.updateChart();
+    }
   }
 
-  updateChart(){
+  deleteYCurve(_title, _redraw = true){
+    
+
+    if(_redraw){
+      this.updateChart();
+    }
+  }
+
+  updateChart(_xCurve,yCurves){
     console.log("updateChart");
 
-    /*this.currentXCurve = _xCurve.title;
-    this.currentYCurves = [_yCurve.title];
+    // TODO
+    let curveChanged = false;
 
-
-    if(!this.data.getCurveByTitle(this.currentXCurve)){
-      if(this.data.curves.length > 0){
-        this.currentXCurve = this.data.curves[0].title;
-      } else{
-        this.currentXCurve = null;
+    // remove all unchecked curve
+    console.log("series in chart",this.chart.series)
+    this.chart.series.forEach(element => {
+      if(!yCurves.includes(element)){
+        curveChanged = true;
+        element.remove();
       }
-    }
-    if(!this.data.getCurveByTitle(this.currentYCurves[0])){
-      if(this.data.curves.length > 0){
-        this.currentYCurves[0] = this.data.curves[0].title;
-      } else {
-        this.currentYCurves[0] = null;
+    });
+  
+    // add all checked curve
+    yCurves.forEach(element => {
+      if(this.chart.series.find(e => e.name === element) === undefined){
+        curveChanged = true;
+        this.chart.addSeries({
+          name: element,
+          data: this.formatData(_xCurve, this.data.getCurveByTitle(element))
+        });
       }
-    };
+    });
 
-    let data=[];*/
-    console.log(this.currentXCurve, this.currentYCurves[0]);
 
     let options = {};
 
     if(this.currentXCurve && this.currentYCurves[0]){
-      console.log("ok")
-      let data = this.formatData(this.data.getCurveByTitle(this.currentXCurve), this.data.getCurveByTitle(this.currentYCurves[0]))
-      console.log(data)
+      // Prepare all Y series
+      let series = [];
+      this.currentYCurves.forEach((curve, i) => {
+        let data = this.formatData(this.data.getCurveByTitle(this.currentXCurve), this.data.getCurveByTitle(curve));
+        series[i] = {
+          name: curve + " (" + this.data.getCurveByTitle(curve).unit + ")",
+          data: data
+        }
+      });
+      console.log("series",series);
+
       options = {
         xAxis: {
           title: {
@@ -118,9 +143,13 @@ export default class Grapher {
           }
         },
         series: [{
-          name: this.currentYCurves[0] + " (" + this.data.getCurveByTitle(this.currentYCurves[0]).unit + ")",
-          data: data
-        }]
+          name: "ya",
+          data: [[1,1]]
+      },
+      {
+        name: "x",
+        data: [[2,2]]
+    }]//series
       }
     } else {
       options = {
