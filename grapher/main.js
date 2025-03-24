@@ -96,7 +96,9 @@ spreadsheet.build();
 
 // DEBUG
 $("#new-file-button").addEventListener("click", () => {
-  console.log(data)
+  console.log("data",data);
+  console.log("chart",grapher.chart);
+
 });
 
 /*----------------------------------------------------------------------------------------------
@@ -122,7 +124,7 @@ $("#add-curve-confirm-button").addEventListener("click", () => {
   }
 
   if(data.curves.length === 2){
-    grapher.pushYCurve(title);
+    grapher.updateChart([title]);
   }
 
   common.modalManager.closeAllModals();
@@ -163,7 +165,7 @@ $("#delete-curve-confirm-button").addEventListener("click", () => {
   data.deleteCurve(curve);
 
   // Update the graph if needed
-  grapher.updateChart();
+  grapher.deleteCurve(curve);
 
   // Update the spreadsheet
   spreadsheet.hot.updateSettings({
@@ -199,6 +201,11 @@ function populateCurveMenu(){
     input.type = "checkbox";
     input.classList.add("mr-2");
 
+    // Check if the curve is already in the graph
+    if(grapher.chart.series.find(e => e.name === element.title)){
+      input.checked = true;
+    }
+
     let label = document.createElement("label");
     label.innerHTML = element.title;
   
@@ -230,6 +237,12 @@ function populateSelect(){
   data.curves.forEach(element => {
     let option = document.createElement("option");
     option.innerHTML = element.title;
+
+    // Select the current X curve
+    if(element.title === grapher.currentXCurve){
+      option.selected = true;
+    }
+
     $("#choose-curves-select").appendChild(option);
   });
 }
@@ -248,7 +261,7 @@ $("#choose-curves-confirm-button").addEventListener("click", () => {
 
 
 
-  grapher.updateChart(curveChanged);
+  grapher.updateChart(activeCurves);
 
 
 

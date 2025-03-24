@@ -33,7 +33,6 @@ export default class Spreadsheet {
       if (source === "loadData" || source === "updateData") {
         return; //don't save this change
       }
-      console.log(change, source);
     
       change.forEach(element => {
         this.data.setValue(element[1], element[0], element[3]);
