@@ -25,6 +25,8 @@ GRAPHER:
   - export image / print
   - style curves
   - reticule
+    https://jsfiddle.net/gh/get/library/pure/highcharts/highcharts/tree/master/samples/highcharts/xaxis/crosshair-both/
   - compute curves
   - derivate curves
   - methode tangente 
+  - modélisation
