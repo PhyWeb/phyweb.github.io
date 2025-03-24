@@ -18,3 +18,4 @@ TRACKER:
 
 GRAPHER:
   - rework new/load/save buttons
+  - specify "line" or "spline" in series not graph
