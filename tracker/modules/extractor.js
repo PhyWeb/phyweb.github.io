@@ -274,7 +274,11 @@ export default class EXTRACTOR {
 
         // compute the progress
         if(frameCount == 0){
-          firstFrameTimestamp = frame.timestamp;
+          if($("#duration-size-input").checked){
+            firstFrameTimestamp = frame.timestamp - (frame.duration);
+          } else {
+            firstFrameTimestamp = 0;
+          }         
         }
         let progress = ((frame.timestamp + frame.duration ) / 1e3 - firstFrameTimestamp / 1e3) / this.decodedVideo.duration * 100;
 
