@@ -42,6 +42,7 @@ export default class VIDEOLIST {
           ul.appendChild(li);
           if(el1.type == "folder"){
             let ul2 = document.createElement("ul");
+            ul2.classList.add("is-hidden"); // initially closed
             for(let el2 of el1.videos){
               let li2 = this.createIconText(el2)
               ul2.appendChild(li2);
