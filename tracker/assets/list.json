@@ -12,21 +12,21 @@
             {
               "type": "video",
               "title": "Mobile autoporteur (0,3N)",
-              "description": "Mobile autoporteur (m = 215g) subissant une force constante (F = 0,3N)",
+              "description": "Mobile autoporteur (m = 215 g) subissant une force constante (F = 0,3 N)",
               "path": "fcste/fcste0.3N-215g.mp4",
               "thumb": "fcste/fcste0.3N-215g.jpg"
             },
             {
               "type": "video",
               "title": "Mobile autoporteur (0,5N)",
-              "description": "Mobile autoporteur (m = 215g) subissant une force constante (F = 0,5N)",
+              "description": "Mobile autoporteur (m = 215 g) subissant une force constante (F = 0,5 N)",
               "path": "fcste/fcste0.5N-215g.mp4",
               "thumb": "fcste/fcste0.5N-215g.jpg"
             },
             {
               "type": "video",
               "title": "Mobile autoporteur (0,7N)",
-              "description": "Mobile autoporteur (m = 215g) subissant une force constante (F = 0,7N)",
+              "description": "Mobile autoporteur (m = 215 g) subissant une force constante (F = 0,7 N)",
               "path": "fcste/fcste0.7N-215g.mp4",
               "thumb": "fcste/fcste0.7N-215g.jpg"
             }
@@ -34,14 +34,28 @@
         },
         {
           "type": "folder",
-          "title": "Autre",
+          "title": "Chutes",
           "videos": [
             {
               "type": "video",
-              "title": "Chute d'une balle",
-              "description": "chute d'une balle de golf sans vitesse initiale. (m = 205g)",
-              "path": "",
-              "thumb": ""
+              "title": "Chute d'une balle de golf",
+              "description": "Chute d'une balle de golf sans vitesse initiale. (m = 47 g). Distance entre les deux scotchs : 0,5 m.",
+              "path": "chutes/chute-balle-golf.mp4",
+              "thumb": "chutes/chute-balle-golf.jpg"
+            },
+            {
+              "type": "video",
+              "title": "Chute d'une médecine balle",
+              "description": "Chute parabolique d'une médecine balle. (m = 3 kg). Distance entre les deux arbres au premier plan : 2,05 m.",
+              "path": "chutes/chute-medecine-balle.mp4",
+              "thumb": "chutes/chute-medecine-balle.jpg"
+            },
+            {
+              "type": "video",
+              "title": "Chute d'un volant de badminton",
+              "description": "Chute parabolique d'un volant de badminton. (m = 5,7 g). Distance entre les deux extrémités de la règle: 1 m.",
+              "path": "chutes/chute-volant.mp4",
+              "thumb": "chutes/chute-volant.jpg"
             }
           ]
         }
