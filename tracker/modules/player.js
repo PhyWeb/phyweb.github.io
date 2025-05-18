@@ -83,6 +83,8 @@ export default class PLAYER {
 
       this.resize();
 
+      this.setFrame(this.currentFrame);
+
       this.animationFrameRequest = requestAnimationFrame(this.loop);
     }
     
@@ -296,6 +298,8 @@ export default class PLAYER {
       let elapsedTime = performance.now() - this.dateOrigin;
       if(elapsedTime > this.decodedVideo.duration / this.decodedVideo.frames.length){
         this.dateOrigin = performance.now();
+
+        this.setFrame(this.currentFrame + 1);
         this.currentFrame++
         // Update the image label
         $("#frame-label").innerHTML = "Image n° " + (this.currentFrame + 1) +"/" + this.decodedVideo.frames.length;
