@@ -105,8 +105,8 @@
         <canvas id="videoCanvas"></canvas>
         <div id="canvas-shadow"></div>
       </div>
-      <div class="has-text-centered is-hidden" id="video-controls">
-        <div class="box is-inline-block is-centered p-3">
+      <div class="is-hidden is-flex is-justify-content-center" id="video-controls">
+        <div class="box has-text-centered p-3 mr-3 mb-0">
           <button class="button is-white" id="play-button">
             <span class="icon is-medium"><i class="fas fa-play fa-lg"></i></span>
           </button>
@@ -126,6 +126,14 @@
             <span class="icon is-medium"><i class="fas fa-forward-step fa-lg"></i></span>
           </button>
           <label class="is-size-4 is-inline-block" id="frame-label">
+          </label>
+        </div>
+        <div class="box p-2 mb-0">
+          <label class="is-size-6 is-block" id="x-coord-label">
+            X = 5584
+          </label>
+          <label class="is-size-6 is-block" id="y-coord-label">
+            Y = 5584
           </label>
         </div>
       </div>
