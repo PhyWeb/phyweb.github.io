@@ -11,24 +11,24 @@
           "videos": [
             {
               "type": "video",
-              "title": "Mobile autoporteur (0,3N)",
-              "description": "Mobile autoporteur (m = 215 g) subissant une force constante (F = 0,3 N)",
-              "path": "fcste/fcste0.3N-215g.mp4",
-              "thumb": "fcste/fcste0.3N-215g.jpg"
-            },
-            {
-              "type": "video",
               "title": "Mobile autoporteur (0,5N)",
-              "description": "Mobile autoporteur (m = 215 g) subissant une force constante (F = 0,5 N)",
-              "path": "fcste/fcste0.5N-215g.mp4",
-              "thumb": "fcste/fcste0.5N-215g.jpg"
+              "description": "Mobile autoporteur (m = 720 g) subissant une force constante (F = 0,5 N)",
+              "path": "mobile/05N.mp4",
+              "thumb": "mobile/05N.png"
             },
             {
               "type": "video",
               "title": "Mobile autoporteur (0,7N)",
-              "description": "Mobile autoporteur (m = 215 g) subissant une force constante (F = 0,7 N)",
-              "path": "fcste/fcste0.7N-215g.mp4",
-              "thumb": "fcste/fcste0.7N-215g.jpg"
+              "description": "Mobile autoporteur (m = 720 g) subissant une force constante (F = 0,7 N)",
+              "path": "mobile/07N.mp4",
+              "thumb": "mobile/07N.png"
+            },
+            {
+              "type": "video",
+              "title": "Mobile autoporteur (0,9N)",
+              "description": "Mobile autoporteur (m = 720 g) subissant une force constante (F = 0,9 N)",
+              "path": "mobile/09N.mp4",
+              "thumb": "mobile/09N.png"
             }
           ]
         },

@@ -109,7 +109,7 @@ export default class PLAYER {
       this.drawOrigin();
 
       // Draw the scale segment
-      if(this.measurement.scaleSegment.x1 != null || this.segment.x1 != null){
+      if(this.measurement.scale.scaleSegment.x1 != null || this.segment.x1 != null){
         this.drawSegment();
       }
     }
@@ -189,17 +189,17 @@ export default class PLAYER {
     }
 
     this.ctx.beginPath();
-    const x = this.videoCanvas.width * this.measurement.origin.x;
-    const y = this.videoCanvas.height * this.measurement.origin.y;
+    const x = this.videoCanvas.width * this.measurement.scale.origin.x;
+    const y = this.videoCanvas.height * this.measurement.scale.origin.y;
 
     //horizontal arrow
-    if(this.measurement.origin.type == "topright" || this.measurement.origin.type == "downright"){
+    if(this.measurement.scale.origin.type == "topright" || this.measurement.scale.origin.type == "downright"){
       canvasArrow(this.ctx, 0, y, this.videoCanvas.width, y);
     } else {
       canvasArrow(this.ctx, this.videoCanvas.width, y, 0, y);
     }
     //vertical arrow
-    if(this.measurement.origin.type == "topright" || this.measurement.origin.type == "topleft"){-
+    if(this.measurement.scale.origin.type == "topright" || this.measurement.scale.origin.type == "topleft"){-
       canvasArrow(this.ctx, x, this.videoCanvas.height, x, 0);
     } else {
       canvasArrow(this.ctx, x, 0, x, this.videoCanvas.height);
@@ -211,10 +211,10 @@ export default class PLAYER {
   }
 
   drawSegment(){
-    let x1 = this.videoCanvas.width * this.measurement.scaleSegment.x1;
-    let y1 = this.videoCanvas.height * this.measurement.scaleSegment.y1;
-    let x2 = this.videoCanvas.width * this.measurement.scaleSegment.x2;
-    let y2 = this.videoCanvas.height * this.measurement.scaleSegment.y2;
+    let x1 = this.videoCanvas.width * this.measurement.scale.scaleSegment.x1;
+    let y1 = this.videoCanvas.height * this.measurement.scale.scaleSegment.y1;
+    let x2 = this.videoCanvas.width * this.measurement.scale.scaleSegment.x2;
+    let y2 = this.videoCanvas.height * this.measurement.scale.scaleSegment.y2;
 
     if(this.segment.x1 != null){
       // draw to mouse instead
@@ -357,6 +357,16 @@ export default class PLAYER {
       x: (this.point.x - this.videoCanvas.width * 0.5) / this.videoCanvas.width,
       y: (this.point.y - this.videoCanvas.height * 0.5) / this.videoCanvas.height
     };	
+
+    // Update the coordinates label
+    if(this.measurement.scale.scaleSegment.x1 != null || this.segment.x1 != null){
+      // a scale has been set
+      $("#x-coord-label").innerHTML = "X : " + (this.distPoint.x + 0.5).round(this.maxDecimals);
+      $("#y-coord-label").innerHTML = "Y : " + (this.distPoint.y + 0.5).round(this.maxDecimals);
+    } else{
+      $("#x-coord-label").innerHTML = "X : " + (this.distPoint.x + 0.5).round(this.maxDecimals);
+      $("#y-coord-label").innerHTML = "Y : " + (this.distPoint.y + 0.5).round(this.maxDecimals);
+    }
   }
 
   onClick = (ev) => {
@@ -433,10 +443,12 @@ export default class PLAYER {
       y: (point.y - this.videoCanvas.height * 0.5) / this.videoCanvas.height
     };
 
-    this.measurement.origin.type = this.originFlag;
+    console.log(this.measurement.scale.origin.type, this.originFlag);
+    this.measurement.scale.origin.type = this.originFlag;
+    console.log(this.measurement.scale.origin.type, this.originFlag);
 
-    this.measurement.origin.x = distPoint.x + 0.5;
-    this.measurement.origin.y = distPoint.y + 0.5;
+    this.measurement.scale.origin.x = distPoint.x + 0.5;
+    this.measurement.scale.origin.y = distPoint.y + 0.5;
 
     $("#topright").classList.remove("is-active");
     $("#topleft").classList.remove("is-active");
@@ -511,10 +523,10 @@ export default class PLAYER {
       this.segment.x2 = distPoint.x + 0.5;
       this.segment.y2 = distPoint.y + 0.5;
 
-      this.measurement.scaleSegment.x1 = this.segment.x1;
-      this.measurement.scaleSegment.y1 = this.segment.y1;
-      this.measurement.scaleSegment.x2 = this.segment.x2;
-      this.measurement.scaleSegment.y2 = this.segment.y2;
+      this.measurement.scale.scaleSegment.x1 = this.segment.x1;
+      this.measurement.scale.scaleSegment.y1 = this.segment.y1;
+      this.measurement.scale.scaleSegment.x2 = this.segment.x2;
+      this.measurement.scale.scaleSegment.y2 = this.segment.y2;
 
       this.measurement.updateTable();
 

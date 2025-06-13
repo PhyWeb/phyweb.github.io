@@ -21,52 +21,69 @@ export default class MEASUREMENT {
     this.tableBody = $("#table-body");
     this.series = [];
 
-    this.origin = {
-      type: "topright",
-      x: 0,
-      y: 1
-    }
-
-    this.scaleSegment = {
-      x1 : null,
-      y1 : null,
-      x2 : null,
-      y2 : null
-    }
-
     this.originFrame = 0;
-    this.scale = {
-      value : 1,
-      getOrientedScaleX : () =>{
-        let scale = this.origin.type === "topright" || this.origin.type === "downright" ? this.scale.value : 0 - this.scale.value;
-        return scale;
-      },
-      getOrientedScaleY : () =>{
-        return this.origin.type === "topright" || this.origin.type === "topleft" ? 0- this.scale.value : this.scale.value;
-      }
-    };
 
     this.maxDecimals = 4;
+
+    this.scale = {
+      value : 1,
+
+      scaleSegment : {
+        x1 : null,
+        y1 : null,
+        x2 : null,
+        y2 : null
+      },
+
+      origin : {
+        type: "topright",
+        x: 0,
+        y: 1
+      },
+
+      getOrientedScaleX(){
+        let scale = this.origin.type === "topright" || this.origin.type === "downright" ? this.value : 0 - this.value;
+        return scale;
+      },
+
+      getOrientedScaleY(){
+        return this.origin.type === "topright" || this.origin.type === "topleft" ? 0- this.value : this.value;
+      },
+
+      init(){
+        this.value = 1;
+        this.origin = {
+          type: "topright",
+          x: 0,
+          y: 1
+        }
+        this.scaleSegment = {
+          x1 : null,
+          y1 : null,
+          x2 : null,
+          y2 : null
+        }
+      },
+
+      update(){
+        console.log(this.origin.type);
+        this.value = 1;
+        if(this.scaleSegment.x1 != null && this.scaleSegment.x2 != null && this.scaleSegment.y1 != null && this.scaleSegment.y2 != null){
+          if(isNumber($("#scale-input").value) == true){
+            this.value = $("#scale-input").value / Math.sqrt(Math.pow(this.scaleSegment.x2 - this.scaleSegment.x1 , 2) + Math.pow(this.scaleSegment.y2 - this.scaleSegment.y1 , 2));
+          }
+        }
+      }
+    }
   }   
 
   init(_decodedVideo, player){
     // Inits
     this.series = [];
-    this.origin = {
-      type: "topright",
-      x: 0,
-      y: 1
-    }
-    this.scaleSegment = {
-      x1 : null,
-      y1 : null,
-      x2 : null,
-      y2 : null
-    }
+
+    this.scale.init();
     
     $("#ppf-input").value = 1;
-
-    this.scale.value = 1;
     $("#scale-input").value = 1;
 
     this.series.push(new Serie("t","s"));
@@ -224,18 +241,9 @@ export default class MEASUREMENT {
     this.updateTable();
   }
 
-  updateScale(){
-    this.scale.value = 1;
-    if(this.scaleSegment.x1 != null && this.scaleSegment.x2 != null && this.scaleSegment.y1 != null && this.scaleSegment.y2 != null){
-      if(isNumber($("#scale-input").value) == true){
-        this.scale.value = $("#scale-input").value / Math.sqrt(Math.pow(this.scaleSegment.x2 - this.scaleSegment.x1 , 2) + Math.pow(this.scaleSegment.y2 - this.scaleSegment.y1 , 2));
-      }
-    }
-  }
-
   updateTable(){
     let ppf = (this.series.length - 1) / 2;
-    this.updateScale()
+    this.scale.update()
 
     for(let i = 0; i < this.tableBody.children.length; i++){
       // update t values
@@ -248,6 +256,7 @@ export default class MEASUREMENT {
       // update x and y values
       const scaleX = this.scale.getOrientedScaleX();
       const scaleY = this.scale.getOrientedScaleY();
+      console.log(scaleX, scaleY);
 
       if(i < this.originFrame){
         for(let j = 1; j < ppf + 1; j++){
@@ -256,15 +265,15 @@ export default class MEASUREMENT {
         } 
       } else{
         for(let j = 1; j < ppf + 1; j++){
-          $("#" + "x" + j + i).innerHTML = this.series[((j - 1) * 2) + 1][i] === "" ? "" : this.series[((j - 1) * 2) + 1].get(i, this.origin.x, scaleX).round(this.maxDecimals);
-          $("#" + "y" + j + i).innerHTML = this.series[((j - 1) * 2) + 2][i] === "" ? "" : this.series[((j - 1) * 2) + 2].get(i, this.origin.y, scaleY).round(this.maxDecimals);
+          $("#" + "x" + j + i).innerHTML = this.series[((j - 1) * 2) + 1][i] === "" ? "" : this.series[((j - 1) * 2) + 1].get(i, this.scale.origin.x, scaleX).round(this.maxDecimals);
+          $("#" + "y" + j + i).innerHTML = this.series[((j - 1) * 2) + 2][i] === "" ? "" : this.series[((j - 1) * 2) + 2].get(i, this.scale.origin.y, scaleY).round(this.maxDecimals);
         }
       }
     }
   }
 
   downloadData(_type, _name){
-    this.updateScale()
+    this.scale.update()
 
     let series = structuredClone(this.series);
 
@@ -281,8 +290,8 @@ export default class MEASUREMENT {
 
       // x and y values
       for(let j = 1; j < (this.series.length - 1) / 2 + 1; j++){
-        series[((j - 1) * 2) + 1][i] = this.series[((j - 1) * 2) + 1].get(i, this.origin.x, scaleX);
-        series[((j - 1) * 2) + 2][i] = this.series[((j - 1) * 2) + 2].get(i, this.origin.y, scaleY);
+        series[((j - 1) * 2) + 1][i] = this.series[((j - 1) * 2) + 1].get(i, this.scale.origin.x, scaleX);
+        series[((j - 1) * 2) + 2][i] = this.series[((j - 1) * 2) + 2].get(i, this.scale.origin.y, scaleY);
       }
     }
 
