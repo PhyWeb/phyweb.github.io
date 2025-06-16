@@ -260,11 +260,13 @@ export default class PLAYER {
     this.setFrame(this.decodedVideo.frames.length - 1);
   }
 
-  setFrame(id){
+  setFrame(id, _pause = true){
     if (id < this.measurement.originFrame){
       id = this.measurement.originFrame;
     }
-    this.pause();
+    if(_pause){
+      this.pause();
+    }
     this.currentFrame = id;
     this.currentPoint = 0;
 
@@ -299,15 +301,14 @@ export default class PLAYER {
       if(elapsedTime > this.decodedVideo.duration / this.decodedVideo.frames.length){
         this.dateOrigin = performance.now();
 
-        this.setFrame(this.currentFrame + 1);
-        this.currentFrame++
+        this.setFrame(this.currentFrame + 1, false);
         // Update the image label
         $("#frame-label").innerHTML = "Image n° " + (this.currentFrame + 1) +"/" + this.decodedVideo.frames.length;
 
         // Update the table
         this.measurement.selectRow(this.currentFrame);
 
-        this.drawFrame(this.currentFrame);
+        //this.drawFrame(this.currentFrame); not usefull since we called setFrame ?
       }
       requestAnimationFrame(this.playing); 
     } else {
