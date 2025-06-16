@@ -17,6 +17,7 @@ TRACKER:
   - pan and zoom
   - add live coordonates display
   - fixed size preview images
+  - checkbox to force settings upon video load (e.g. fps, size, etc.)
 
 GRAPHER:
   - rework new/load/save buttons
