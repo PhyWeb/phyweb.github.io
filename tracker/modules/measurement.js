@@ -256,7 +256,6 @@ export default class MEASUREMENT {
       // update x and y values
       const scaleX = this.scale.getOrientedScaleX();
       const scaleY = this.scale.getOrientedScaleY();
-      console.log(scaleX, scaleY);
 
       if(i < this.originFrame){
         for(let j = 1; j < ppf + 1; j++){

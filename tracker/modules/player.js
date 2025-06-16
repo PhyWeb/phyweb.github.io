@@ -360,13 +360,19 @@ export default class PLAYER {
     };	
 
     // Update the coordinates label
-    if(this.measurement.scale.scaleSegment.x1 != null || this.segment.x1 != null){
+    const scaleX = this.measurement.scale.getOrientedScaleX();
+    const scaleY = this.measurement.scale.getOrientedScaleY();
+
+    const x = (((this.distPoint.x + 0.5) - this.measurement.scale.origin.x) * scaleX).round(this.measurement.maxDecimals);
+    const y = (((this.distPoint.y + 0.5) - this.measurement.scale.origin.y) * scaleY).round(this.measurement.maxDecimals);
+
+    if(this.measurement.scale.scaleSegment.x2 != null || this.segment.x2 != null){
       // a scale has been set
-      $("#x-coord-label").innerHTML = "X : " + (this.distPoint.x + 0.5).round(this.maxDecimals);
-      $("#y-coord-label").innerHTML = "Y : " + (this.distPoint.y + 0.5).round(this.maxDecimals);
+      $("#x-coord-label").innerHTML = "X : " + x + " m";
+      $("#y-coord-label").innerHTML = "Y : " + y + " m";
     } else{
-      $("#x-coord-label").innerHTML = "X : " + (this.distPoint.x + 0.5).round(this.maxDecimals);
-      $("#y-coord-label").innerHTML = "Y : " + (this.distPoint.y + 0.5).round(this.maxDecimals);
+      $("#x-coord-label").innerHTML = "X : " + x;
+      $("#y-coord-label").innerHTML = "Y : " + y;
     }
   }
 
