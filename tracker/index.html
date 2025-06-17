@@ -6,6 +6,7 @@
     <title>Phyweb Tracker</title>
     <link rel="icon" href="./lib/favicons/favicon.ico" />
     <link rel="stylesheet" href="../common/bulma/bulma.min.css">
+    <link rel="stylesheet" href="../common/bulma/bulma-switch.min.css">
     <link rel="stylesheet" href="../common/common.css">
     <link rel="stylesheet" href="lib/tracker.css">
     
@@ -68,9 +69,9 @@
           </button>
         </div>
         <div class="navbar-item pr-0" id="settings-button" title="Paramètres">
-          <button class="button is-white">
+          <a class="button is-white js-modal-trigger" data-target="settings-modal">
             <span class="icon is-medium"><i class="fas fa-cog"></i></span>
-          </button>
+          </a>
         </div>
         <div class="navbar-item" id="expand-button" title="Passer en mode plein écran">
           <button class="button is-white">
@@ -326,6 +327,43 @@
             </div>
           </div>
         </div>
+      </footer>
+    </div>
+  </div>
+  <!------------------------------------------------------------------------------------------------------------>
+  <!-------------------------------------------------SETTINGS MODAL------------------------------------------------->
+  <!------------------------------------------------------------------------------------------------------------>
+  <div id="settings-modal" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card" id="settings-modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title">Paramètres</p>
+        <button class="delete" aria-label="close"></button>
+      </header>
+      <section class="modal-card-body">
+        <div class="is-flex mb-4" style="align-items:center;">
+          <div style="flex: 1 0 20rem;">
+            <label class="label">Afficher les coordonnées</label>
+          </div>
+          <label class="switch is-rounded">
+            <input type="checkbox" value="false" checked>
+            <span class="check"></span>
+          </label>
+        </div>
+        <div class="is-flex" style="align-items:center;">
+          <div style="flex: 1 0 20rem;">
+            <label class="label">Nombre de chiffres décimaux</label>
+          </div>
+          <p class="control">
+            <input class="input" type="number" min="0" max="9" value="4" id="max-digits-input"/>
+          </p>
+        </div>
+      </section>
+      <footer class="modal-card-foot">
+        <div class="buttons">
+          <button class="button is-primary" id="validate-settings-button">Valider</button>
+          <button class="button" id="cancel-settings-button">Annuler</button>
+      </div>
       </footer>
     </div>
   </div>

@@ -16,6 +16,8 @@ TRACKER:
   - Add vidéos
   - pan and zoom
   - fixed size preview images
+  - checkbox to force video load options (to reduce fps)
+  - check integer inputs (origin, ppf, maxdigits)
   - options
     - maxdigits
     - show coordinates
