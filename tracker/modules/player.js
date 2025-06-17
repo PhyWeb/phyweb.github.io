@@ -71,6 +71,7 @@ export default class PLAYER {
       // Display UI
       $("#video-controls").classList.remove("is-hidden");
       $("#magnifier-button").classList.remove("is-hidden");
+      $("#settings-button").classList.remove("is-hidden");
       $("#handler-wrapper").classList.remove("is-hidden");
       $("#background-arrow").classList.add("is-hidden");
       //$("#right-column").classList.add("is-flex");
@@ -363,8 +364,8 @@ export default class PLAYER {
     const scaleX = this.measurement.scale.getOrientedScaleX();
     const scaleY = this.measurement.scale.getOrientedScaleY();
 
-    const x = (((this.distPoint.x + 0.5) - this.measurement.scale.origin.x) * scaleX).round(this.measurement.maxDecimals);
-    const y = (((this.distPoint.y + 0.5) - this.measurement.scale.origin.y) * scaleY).round(this.measurement.maxDecimals);
+    const x = (((this.distPoint.x + 0.5) - this.measurement.scale.origin.x) * scaleX).round(4);
+    const y = (((this.distPoint.y + 0.5) - this.measurement.scale.origin.y) * scaleY).round(4);
 
     if(this.measurement.scale.scaleSegment.x2 != null || this.segment.x2 != null){
       // a scale has been set

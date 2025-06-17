@@ -194,6 +194,35 @@ $("#end-size-input").addEventListener('change', function () {
 // MAGNIFIER
 $("#magnifier-button").addEventListener("click", ()=>{player.toggleMagnifier();});
 
+// SETTINGS
+// Open settings modal
+$("#settings-button").addEventListener("click", ()=>{
+  $("#max-digits-input").value = measurement.maxDigits;
+
+  if($("#coordinates-labels").classList.contains("is-hidden")){
+    $("#show-coordinates-input").checked = false;
+  } else {
+    $("#show-coordinates-input").checked = true;
+  }
+});
+$("#validate-settings-button").addEventListener("click", ()=>{
+  common.modalManager.closeAllModals();
+});
+
+// Coordinates
+$("#show-coordinates-input").addEventListener("change", (e)=>{
+  if(e.target.checked){
+    $("#coordinates-labels").classList.remove("is-hidden");
+  } else {
+    $("#coordinates-labels").classList.add("is-hidden");
+  }
+});
+
+// Max digits
+$("#max-digits-input").addEventListener("change", (e)=> {
+  measurement.setMaxDigits(parseInt(e.target.value));
+});
+
 // CONTROLBAR
 $("#play-button").addEventListener("click", ()=>{player.play();});
 $("#pause-button").addEventListener("click", ()=>{player.pause();});
@@ -245,7 +274,6 @@ $("#scale-input").addEventListener("input", ()=> {
   }
 })
 
-// SETTINGS
 // keyboard shortcut
 $("#origin-frame-input").addEventListener("keyup", (event)=> {
 	if (event.key === "Enter") {

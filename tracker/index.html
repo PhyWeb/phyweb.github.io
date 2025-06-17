@@ -68,7 +68,7 @@
             <span class="icon is-medium"><i class="fas fa-magnifying-glass"></i></span>
           </button>
         </div>
-        <div class="navbar-item pr-0" id="settings-button" title="Paramètres">
+        <div class="navbar-item is-hidden pr-0" id="settings-button" title="Paramètres">
           <a class="button is-white js-modal-trigger" data-target="settings-modal">
             <span class="icon is-medium"><i class="fas fa-cog"></i></span>
           </a>
@@ -100,7 +100,6 @@
   </div>
   <div class="is-hidden container" id="loading-panel">
     <p>Analyse du fichier...</p>
-    
   </div>
   <div class="columns is-flex-grow-1 is-overflow-auto is-hidden main-container" id="handler-wrapper">
     <!------------------------------------------------------------------------------------------------------------>
@@ -134,7 +133,7 @@
           <label class="is-size-4 is-inline-block" id="frame-label">
           </label>
         </div>
-        <div class="box p-2 mb-0" style="width: 122px">
+        <div class="box p-2 mb-0 is-hidden" style="width: 150px" id="coordinates-labels">
           <label class="is-size-6 is-block" id="x-coord-label">
             X
           </label>
@@ -346,7 +345,7 @@
             <label class="label">Afficher les coordonnées</label>
           </div>
           <label class="switch is-rounded">
-            <input type="checkbox" value="false" checked>
+            <input type="checkbox" value="false" id="show-coordinates-input"/>
             <span class="check"></span>
           </label>
         </div>
@@ -362,7 +361,6 @@
       <footer class="modal-card-foot">
         <div class="buttons">
           <button class="button is-primary" id="validate-settings-button">Valider</button>
-          <button class="button" id="cancel-settings-button">Annuler</button>
       </div>
       </footer>
     </div>

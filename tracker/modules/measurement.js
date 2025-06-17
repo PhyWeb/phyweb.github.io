@@ -23,7 +23,7 @@ export default class MEASUREMENT {
 
     this.originFrame = 0;
 
-    this.maxDecimals = 4;
+    this.maxDigits = 4;
 
     this.scale = {
       value : 1,
@@ -66,7 +66,6 @@ export default class MEASUREMENT {
       },
 
       update(){
-        console.log(this.origin.type);
         this.value = 1;
         if(this.scaleSegment.x1 != null && this.scaleSegment.x2 != null && this.scaleSegment.y1 != null && this.scaleSegment.y2 != null){
           if(isNumber($("#scale-input").value) == true){
@@ -230,6 +229,15 @@ export default class MEASUREMENT {
     this.updateTable();
   }
 
+  setMaxDigits(_digits){
+    if(isNumber(_digits) && _digits >= 0){
+      this.maxDigits = parseInt(_digits);
+      this.updateTable();
+    } else {
+      console.error("Invalid max digits value:", _digits);
+    }
+  }
+
   changeValue(frameIndex, pointIndex, x, y){
     this.series[(pointIndex * 2) + 1][frameIndex] = x;
     this.series[(pointIndex * 2) + 2][frameIndex] = y;
@@ -264,8 +272,8 @@ export default class MEASUREMENT {
         } 
       } else{
         for(let j = 1; j < ppf + 1; j++){
-          $("#" + "x" + j + i).innerHTML = this.series[((j - 1) * 2) + 1][i] === "" ? "" : this.series[((j - 1) * 2) + 1].get(i, this.scale.origin.x, scaleX).round(this.maxDecimals);
-          $("#" + "y" + j + i).innerHTML = this.series[((j - 1) * 2) + 2][i] === "" ? "" : this.series[((j - 1) * 2) + 2].get(i, this.scale.origin.y, scaleY).round(this.maxDecimals);
+          $("#" + "x" + j + i).innerHTML = this.series[((j - 1) * 2) + 1][i] === "" ? "" : this.series[((j - 1) * 2) + 1].get(i, this.scale.origin.x, scaleX).round(this.maxDigits);
+          $("#" + "y" + j + i).innerHTML = this.series[((j - 1) * 2) + 2][i] === "" ? "" : this.series[((j - 1) * 2) + 2].get(i, this.scale.origin.y, scaleY).round(this.maxDigits);
         }
       }
     }
