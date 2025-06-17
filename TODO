@@ -15,9 +15,10 @@ TRACKER:
   - bug or feature ? : frame is downloaded only if all points are set
   - Add vidéos
   - pan and zoom
-  - add live coordonates display
   - fixed size preview images
-  - checkbox to force settings upon video load (e.g. fps, size, etc.)
+  - options
+    - maxdigits
+    - show coordinates
 
 GRAPHER:
   - rework new/load/save buttons
