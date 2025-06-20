@@ -21,11 +21,13 @@ export default class EXTRACTOR {
     this.sizeThreshold = 1024;
   }
 
-  checkSize(_file, _checksizeCB, _decodedVideoCB){
+  checkSize(_file, _checksizeCB, _decodedVideoCB, _forceFilesize = false) {
     this.checksizeCB = _checksizeCB;
     this.decodedVideoCB = _decodedVideoCB;
 
     console.log("File: ", _file);
+
+    this.forceFileSize = _forceFilesize;
 
     let chunksize = 1024 * 1024;
 
@@ -162,7 +164,7 @@ export default class EXTRACTOR {
     console.log(`video size ${this.size}  MiB`)
 
     // Check if the video is too big
-    if(this.size < this.sizeThreshold) {
+    if(this.size < this.sizeThreshold && !this.forceFileSize) {
       this.extract();
     } else{
       $("#file-size-modal").classList.add('is-active');

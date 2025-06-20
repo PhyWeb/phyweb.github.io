@@ -114,11 +114,16 @@ $("#mesures-button").addEventListener("click", ()=>{
   $("#etalonnage-panel").classList.add("is-hidden");
 });
 
+// OPEN VIDEO
+$("#open-video-button").addEventListener("click", () => {
+  $("#force-filesize-modal-input").checked = false; // reset the force filesize input
+});
+
 // VIDEOLIST
 videolist.init("assets/list.json");
 $("#open-video").addEventListener("click", ()=>{
   common.modalManager.closeAllModals();
-  player.load("assets/" + $(".video-item.is-active").dataset.path);
+  player.load("assets/" + $(".video-item.is-active").dataset.path, $("#force-filesize-modal-input").checked);
 });
 
 // FILEINPUT
@@ -141,7 +146,7 @@ $("#file-input").addEventListener("change", () => {
     return;
   }
   if($("#file-input").files[0] != undefined){
-    player.load($("#file-input").files[0]);
+    player.load($("#file-input").files[0], $("#force-filesize-modal-input").checked);
   }
 });
 $("#file-input").addEventListener("click", () => {

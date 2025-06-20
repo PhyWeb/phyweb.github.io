@@ -16,11 +16,8 @@ TRACKER:
   - Add vidéos
   - pan and zoom
   - fixed size preview images
-  - checkbox to force video load options (to reduce fps)
+  - add a buton to stop the decode and still exploit the already decoded frames
   - check integer inputs (origin, ppf, maxdigits)
-  - options
-    - maxdigits
-    - show coordinates
 
 GRAPHER:
   - rework new/load/save buttons

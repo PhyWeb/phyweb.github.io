@@ -84,7 +84,7 @@
           </button>
         </div>
         <div class="navbar-item">
-          <a class="button is-primary js-modal-trigger" data-target="open-modal">
+          <a class="button is-primary js-modal-trigger" data-target="open-modal" id="open-video-button" title="Ouvrir une vidéo">
             <span class="icon">
               <i class="fas fa-film"></i>
             </span>
@@ -215,7 +215,7 @@
               </div>
               <div class="column">
                 <p class="control">
-                  <input class="input" type="number" min="1" value="1" id="origin-frame-input"/>
+                  <input class="input" type="number" min="1" value="1" step="1" id="origin-frame-input"/>
                 </p>
               </div>
             </div>
@@ -225,7 +225,7 @@
               </div>
               <div class="column">
                 <p class="control">
-                  <input class="input" type="number" min="1" max="9" value="1" id="ppf-input"/>
+                  <input class="input" type="number" min="1" max="9" step="1" value="1" id="ppf-input"/>
                 </p>
               </div>
             </div>
@@ -325,12 +325,19 @@
               </label>
             </div>
           </div>
+          <div class="column is-narrow vertical-divider"> </div>
+          <div class="column is-narrow">
+            <label class="checkbox">
+              <input type="checkbox" id="force-filesize-modal-input"/>
+              <span>Options avancées</span><span id="force-filesize-modal-label"></span>
+            </label>
+          </div>
         </div>
       </footer>
     </div>
   </div>
   <!------------------------------------------------------------------------------------------------------------>
-  <!-------------------------------------------------SETTINGS MODAL------------------------------------------------->
+  <!----------------------------------------------SETTINGS MODAL------------------------------------------------>
   <!------------------------------------------------------------------------------------------------------------>
   <div id="settings-modal" class="modal">
     <div class="modal-background"></div>

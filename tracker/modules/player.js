@@ -44,7 +44,7 @@ export default class PLAYER {
     this.animationFrameRequest;
   }
 
-  load(_file/*, _defResize = false, _fpsResize = false, _durationResize = false*/){
+  load(_file, _forceFilesize = false){
     // Pause if the video is playing
     this.pause();
     
@@ -74,7 +74,6 @@ export default class PLAYER {
       $("#settings-button").classList.remove("is-hidden");
       $("#handler-wrapper").classList.remove("is-hidden");
       $("#background-arrow").classList.add("is-hidden");
-      //$("#right-column").classList.add("is-flex");
       $(".handler").style.display= "block";
       this.videoCanvas.style.display= "block";
 
@@ -94,10 +93,10 @@ export default class PLAYER {
       fetch(_file)
       .then(res => res.blob()) 
       .then(blob => {
-        this.extractor.checkSize(blob, checksizeCB, decodedVideoCB);
+        this.extractor.checkSize(blob, checksizeCB, decodedVideoCB, _forceFilesize);
       });
     } else {
-      this.extractor.checkSize(_file, checksizeCB, decodedVideoCB);
+      this.extractor.checkSize(_file, checksizeCB, decodedVideoCB, _forceFilesize);
     }
   }
 
