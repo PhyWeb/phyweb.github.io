@@ -296,7 +296,7 @@ export default class EXTRACTOR {
         }
         
         // check if the frame is after the last frame
-        if(progress > 100){
+        if(progress >= 100){
           if(!isOver){
             isOver = true;
             this.onFinish();
@@ -335,14 +335,6 @@ export default class EXTRACTOR {
         }
 
         frameCount++;
-
-        // Check if it's the last frame
-        if(progress == 100){
-          if(!isOver){
-            isOver = true;
-            this.onFinish();
-          }
-        }
       },
       error: function(e) {
         console.error(e);
