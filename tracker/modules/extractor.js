@@ -369,6 +369,7 @@ export default class EXTRACTOR {
   onSamples(samples){
     // Generate and emit an EncodedVideoChunk for each demuxed sample.
     for (const sample of samples) {
+      console.log("sample", sample);
       this.onChunk(new EncodedVideoChunk({
         type: sample.is_sync ? "key" : "delta",
         timestamp: 1e6 * sample.cts / sample.timescale,
