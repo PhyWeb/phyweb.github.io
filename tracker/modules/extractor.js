@@ -1,5 +1,7 @@
 import {alertModal} from "../../common/common.js"
 
+//import * as MP4Box from "../lib/mp4box.all_old.js";
+
 const $ = document.querySelector.bind(document);
 
 /*----------------------------------------------------------------------------------------------
@@ -123,10 +125,12 @@ export default class EXTRACTOR {
 
     // Get the appropriate `description` for a specific track. Assumes that the
     let getDescription = (track) => {
+      console.log(track.mdia.minf.stbl.stsd.entries);
       for (const entry of track.mdia.minf.stbl.stsd.entries) {
         if (entry.avcC || entry.hvcC || entry.av1C || entry.vpcC) {
           const stream = new DataStream(undefined, 0, DataStream.BIG_ENDIAN);
           if (entry.avcC) {
+            console.log("avcC found");
             entry.avcC.write(stream);
           }
           if (entry.hvcC) {
@@ -153,6 +157,8 @@ export default class EXTRACTOR {
       mp4boxFile: this.mp4boxfile,
       info: this.info,
     };
+
+    console.log("config", this.config);
 
     $("#def-size-input").checked = false;
     $("#fps-size-input").checked = false;
@@ -373,6 +379,7 @@ export default class EXTRACTOR {
   }
 
   onChunk(chunk){
+    console.log("chunk", chunk);
     if($("#duration-size-input").checked && (chunk.timestamp - chunk.duration) / 1000000 > (parseInt($("#end-size-input").value) + 1)){
       return;
     }
