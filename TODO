@@ -17,7 +17,6 @@ TRACKER:
   - pan and zoom
   - fixed size preview images
   - add a buton to stop the decode and still exploit the already decoded frames
-  - check integer inputs (origin, ppf, maxdigits)
 
 GRAPHER:
   - rework new/load/save buttons
