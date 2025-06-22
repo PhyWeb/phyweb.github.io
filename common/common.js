@@ -99,6 +99,9 @@ async function electronSetup(){
   }
 }
 
+/*----------------------------------------------------------------------------------------------
+--------------------------------------ENFORCE INTEGER INPUTS------------------------------------
+----------------------------------------------------------------------------------------------*/
 function enforceIntegerInputs(){
   // Enforce integer inputs
   (document.querySelectorAll("input.integer") || []).forEach((input) => {
