@@ -20,6 +20,8 @@ class Common {
     includeLogos();
     electronSetup();
 
+    enforceIntegerInputs();
+
     this.modalManager = new ModalManager();
   }
 
@@ -96,6 +98,25 @@ async function electronSetup(){
     })
   }
 }
+
+function enforceIntegerInputs(){
+  // Enforce integer inputs
+  (document.querySelectorAll("input.integer") || []).forEach((input) => {
+    input.addEventListener("keydown", (e) => {
+      // Allow only digits, backspace, tab, escape, enter, and arrow keys
+      if (e.key === "e" || e.key === "." || e.key === "-" || e.key === "+" || e.key ===",") {
+        e.preventDefault();
+      }
+    });
+    input.addEventListener("input", (e) => {
+      // Remove any non-digit characters
+      if (!/^\d*$/.test(e.target.value)) {
+        e.target.value = e.target.value.replace(/\D/g, '');
+      }
+    });
+  });
+}
+
 /*----------------------------------------------------------------------------------------------
 -----------------------------------------MODALS / ALERTS----------------------------------------
 ----------------------------------------------------------------------------------------------*/

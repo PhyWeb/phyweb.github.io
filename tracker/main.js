@@ -287,8 +287,8 @@ $("#origin-frame-input").addEventListener("keyup", (event)=> {
 	}
 });
 $("#origin-frame-input").addEventListener("change", (e)=> {
-  if($("#origin-frame-input").value < 1){$("#origin-frame-input").value = 1;}
-  if($("#origin-frame-input").value > measurement.series[0].length){$("#origin-frame-input").value = measurement.series[0].length;}
+  if(e.target.value < 1){$("#origin-frame-input").value = 1;}
+  if(e.target.value > measurement.series[0].length){e.target.value = measurement.series[0].length;}
   player.setOriginFrame(e.target.value - 1);
 });
 
@@ -300,6 +300,8 @@ $("#ppf-input").addEventListener("keyup", (event)=> {
 	}
 });
 $("#ppf-input").addEventListener("change", (e)=> {
+  if(e.target.value < 1){e.target.value = 1;}
+  if(e.target.value > 9){e.target.value = 9;}
   measurement.setPointPerFrame(parseInt(e.target.value), player);
 });
 
