@@ -29,7 +29,11 @@ export default class Data {
   }
 
   deleteCurve(_title){
-    this.curves = this.curves.filter(curve => curve.title !== _title);
+    //this.curves = this.curves.filter(curve => curve.title !== _title);
+    const index = array.findIndex(objet => objet.name === _title);
+    if (index !== -1) {
+      array.splice(index, 1);
+    }
   }
 
   getTable(){

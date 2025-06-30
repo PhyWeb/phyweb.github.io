@@ -25,7 +25,6 @@ export default class Grapher {
   }
 
   formatData(_xCurve, _yCurve){
-    console.log("formatData",_xCurve, _yCurve);
     let length = lengthOfTheLongestTable([_xCurve, _yCurve]);
     let data = []
     for(let i = 0; i < length; i++){
@@ -33,7 +32,6 @@ export default class Grapher {
         data.push([_xCurve[i], _yCurve[i]]);
       }
     }
-    console.log("formatData",data);
     return data;
   }
 
@@ -92,7 +90,6 @@ export default class Grapher {
       let curvesToRemove = []
       this.chart.series.forEach(element => {
         if(!_yCurves.includes(element.name)){
-          console.log("remove",element.name);
           curvesToRemove.push(element);
         }
       });
@@ -104,7 +101,6 @@ export default class Grapher {
       // add all checked curve
       _yCurves.forEach(element => {
         if(!this.chart.series.find(e => e.name === element)){
-          console.log("add",element);
           this.chart.addSeries({
             name: element,
             data: this.formatData(this.data.getCurveByTitle(this.currentXCurve), this.data.getCurveByTitle(element))
@@ -118,8 +114,6 @@ export default class Grapher {
       if(this.currentXCurve && this.chart.series[0]){
         // Prepare all Y series
         let series = [];
-        console.log("series", this.chart.series);
-        console.log("data", this.data);
         this.chart.series.forEach((serie , i) => {
           let data = this.formatData(this.data.getCurveByTitle(this.currentXCurve), this.data.getCurveByTitle(serie.name));
 
