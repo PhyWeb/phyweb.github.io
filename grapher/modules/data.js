@@ -29,7 +29,7 @@ export default class Data {
   }
 
   deleteCurve(_title){
-    this.curves.splice(this.getCurveByTitle(_title), 1);
+    this.curves = this.curves.filter(curve => curve.title !== _title);
   }
 
   getTable(){

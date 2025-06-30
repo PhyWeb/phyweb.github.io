@@ -1,5 +1,6 @@
 import {Common, alertModal} from "../common/common.js"
 
+import {App} from "./modules/app.js"
 import {Data} from "./modules/data.js"
 import {Spreadsheet} from "./modules/spreadsheet.js"
 import {Grapher} from "./modules/grapher.js"
@@ -82,9 +83,8 @@ $("#calculs-tab").addEventListener("click", () => {
   //$("#calculs-panel").classList.remove("is-hidden");
 });
 
-// Data
 let data = new Data();
-
+let grapher = new Grapher(data);
 
 // Spreadsheet
 function spreadsheetModifiedData(_change){
@@ -93,6 +93,9 @@ function spreadsheetModifiedData(_change){
 
 let spreadsheet = new Spreadsheet(data, spreadsheetModifiedData);
 spreadsheet.build();
+
+// App
+let app = new App(data, spreadsheet,grapher);
 
 // DEBUG
 $("#new-file-button").addEventListener("click", () => {
@@ -120,15 +123,7 @@ $("#add-curve-confirm-button").addEventListener("click", () => {
   const title = $("#empty-curve-symbol-input").value;
   const unit = $("#empty-curve-unit-input").value;
 
-  spreadsheet.addCurve(title, unit);
-
-  if(data.curves.length === 1){
-    grapher.setXCurve(title);
-  }
-
-  if(data.curves.length === 2){
-    grapher.updateChart([title]);
-  }
+  app.addCurve(title, unit);
 
   common.modalManager.closeAllModals();
 });
@@ -164,17 +159,10 @@ $("#delete-curve-button").addEventListener("click", () => {
 
 $("#delete-curve-confirm-button").addEventListener("click", () => {
   let curve = $("#delete-curve-menu").querySelector(".is-active").innerHTML;
+
   // Delete the curve
-  data.deleteCurve(curve);
+  app.deleteCurve(curve);
 
-  // Update the graph if needed
-  grapher.deleteCurve(curve);
-
-  // Update the spreadsheet
-  spreadsheet.hot.updateSettings({
-    data: data.getTable(),
-    colHeaders: data.getHeaders()
-  });
   common.modalManager.closeAllModals();
 });
 
@@ -182,7 +170,6 @@ $("#delete-curve-confirm-button").addEventListener("click", () => {
 /*----------------------------------------------------------------------------------------------
 ----------------------------------------------Grapher-------------------------------------------
 ----------------------------------------------------------------------------------------------*/
-let grapher = new Grapher(data);
 grapher.newChart();
 
 // Choose graphs
@@ -262,11 +249,7 @@ $("#choose-curves-confirm-button").addEventListener("click", () => {
     }
   }
 
-
-
   grapher.updateChart(activeCurves);
-
-
 
   common.modalManager.closeAllModals();
 });
