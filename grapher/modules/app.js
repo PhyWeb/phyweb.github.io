@@ -96,6 +96,7 @@ export default class App {
 
       console.log("File loaded", this.data);
       this.spreadsheet.update();
+      this.grapher.updateChart();
 
     };
 
