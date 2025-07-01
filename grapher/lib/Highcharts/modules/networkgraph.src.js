@@ -1,11 +1,11 @@
 /**
- * @license Highcharts JS v12.1.2 (2025-01-09)
+ * @license Highcharts JS v12.3.0 (2025-06-21)
  * @module highcharts/modules/networkgraph
  * @requires highcharts
  *
  * Force directed graph module
  *
- * (c) 2010-2024 Torstein Honsi
+ * (c) 2010-2025 Torstein Honsi
  *
  * License: www.highcharts.com/license
  */
@@ -119,7 +119,7 @@ var highcharts_SVGElement_commonjs_highcharts_SVGElement_commonjs2_highcharts_SV
  *
  *  Networkgraph series
  *
- *  (c) 2010-2024 Paweł Fus
+ *  (c) 2010-2025 Paweł Fus
  *
  *  License: www.highcharts.com/license
  *
@@ -150,10 +150,16 @@ function compose(ChartClass) {
  */
 function onChartLoad() {
     const chart = this;
-    let mousedownUnbinder, mousemoveUnbinder, mouseupUnbinder;
+    let mousedownUnbinder, mousemoveUnbinder, mouseupUnbinder, point;
     if (chart.container) {
         mousedownUnbinder = addEvent(chart.container, 'mousedown', (event) => {
-            const point = chart.hoverPoint;
+            if (mousemoveUnbinder) {
+                mousemoveUnbinder();
+            }
+            if (mouseupUnbinder) {
+                mouseupUnbinder();
+            }
+            point = chart.hoverPoint;
             if (point &&
                 point.series &&
                 point.series.hasDraggableNodes &&
@@ -186,6 +192,10 @@ function onChartLoad() {
  *        Browser event, before normalization.
  */
 function onMouseDown(point, event) {
+    const { panKey } = this.chart.options.chart, panKeyPressed = panKey && event[`${panKey}Key`];
+    if (panKeyPressed) {
+        return;
+    }
     const normalizedEvent = this.chart.pointer?.normalize(event) || event;
     point.fixedPosition = {
         chartX: normalizedEvent.chartX,
@@ -281,7 +291,7 @@ const DragNodesComposition = {
  *
  *  Networkgraph series
  *
- *  (c) 2010-2024 Paweł Fus
+ *  (c) 2010-2025 Paweł Fus
  *
  *  License: www.highcharts.com/license
  *
@@ -377,7 +387,8 @@ function onChartRender() {
             afterRender = true;
         }
     };
-    if (this.graphLayoutsLookup) {
+    // Don't animate layout when series is dragged
+    if (this.graphLayoutsLookup && !this.pointer?.hasDragged) {
         setAnimation(false, this);
         // Start simulation
         this.graphLayoutsLookup.forEach((layout) => layout.start());
@@ -682,7 +693,7 @@ var NodesComposition;
  *
  *  Networkgraph series
  *
- *  (c) 2010-2024 Paweł Fus
+ *  (c) 2010-2025 Paweł Fus
  *
  *  License: www.highcharts.com/license
  *
@@ -955,7 +966,7 @@ NetworkgraphPoint_extend(NetworkgraphPoint.prototype, {
  *
  *  Networkgraph series
  *
- *  (c) 2010-2024 Paweł Fus
+ *  (c) 2010-2025 Paweł Fus
  *
  *  License: www.highcharts.com/license
  *
@@ -1520,7 +1531,7 @@ const NetworkgraphSeriesDefaults = {
  *
  *  Networkgraph series
  *
- *  (c) 2010-2024 Paweł Fus
+ *  (c) 2010-2025 Paweł Fus
  *
  *  License: www.highcharts.com/license
  *
@@ -1720,7 +1731,7 @@ const EulerIntegration = {
  *
  *  Networkgraph series
  *
- *  (c) 2010-2024 Paweł Fus
+ *  (c) 2010-2025 Paweł Fus
  *
  *  License: www.highcharts.com/license
  *
@@ -1991,7 +2002,7 @@ class QuadTreeNode {
  *
  *  Networkgraph series
  *
- *  (c) 2010-2024 Paweł Fus
+ *  (c) 2010-2025 Paweł Fus
  *
  *  License: www.highcharts.com/license
  *
@@ -2136,7 +2147,7 @@ class QuadTree {
  *
  *  Networkgraph series
  *
- *  (c) 2010-2024 Paweł Fus
+ *  (c) 2010-2025 Paweł Fus
  *
  *  License: www.highcharts.com/license
  *
@@ -2327,7 +2338,7 @@ const VerletIntegration = {
  *
  *  Networkgraph series
  *
- *  (c) 2010-2024 Paweł Fus
+ *  (c) 2010-2025 Paweł Fus
  *
  *  License: www.highcharts.com/license
  *
@@ -2903,7 +2914,7 @@ const DataLabelsDeferUtils = {
  *
  *  Highcharts module with textPath functionality.
  *
- *  (c) 2009-2024 Torstein Honsi
+ *  (c) 2009-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -3132,7 +3143,7 @@ const TextPath = {
  *
  *  Networkgraph series
  *
- *  (c) 2010-2024 Paweł Fus
+ *  (c) 2010-2025 Paweł Fus
  *
  *  License: www.highcharts.com/license
  *

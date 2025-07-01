@@ -115,8 +115,8 @@ $("#new-file-button").addEventListener("click", () => {
 
 });
 
-// Show the new file modal
-$("#new-file-modal").classList.add("is-active");
+// Show the new file modal TODO
+//$("#new-file-modal").classList.add("is-active");
 
 /*----------------------------------------------------------------------------------------------
 --------------------------------------------SPREADSHEET-----------------------------------------

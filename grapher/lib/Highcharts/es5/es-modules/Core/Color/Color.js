@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -9,8 +9,20 @@
  * */
 'use strict';
 import H from '../Globals.js';
+var win = H.win;
 import U from '../Utilities.js';
-var isNumber = U.isNumber, merge = U.merge, pInt = U.pInt, defined = U.defined;
+var isNumber = U.isNumber, isString = U.isString, merge = U.merge, pInt = U.pInt, defined = U.defined;
+/* *
+ *
+ *  Helpers
+ *
+ * */
+var colorMix = function (color1, color2, weight) {
+    return "color-mix(in srgb,".concat(color1, ",").concat(color2, " ").concat(weight * 100, "%)");
+};
+var isStringColor = function (color) {
+    return isString(color) && !!color && color !== 'none';
+};
 /* *
  *
  *  Class
@@ -24,7 +36,7 @@ var isNumber = U.isNumber, merge = U.merge, pInt = U.pInt, defined = U.defined;
  * @name Highcharts.Color
  *
  * @param {Highcharts.ColorType} input
- * The input color in either rgba or hex format
+ * The input color.
  */
 var Color = /** @class */ (function () {
     /* *
@@ -73,7 +85,7 @@ var Color = /** @class */ (function () {
      * @function Highcharts.Color.parse
      *
      * @param {Highcharts.ColorType} [input]
-     * The input color in either rgba or hex format.
+     * The input color.
      *
      * @return {Highcharts.Color}
      * Color instance.
@@ -99,6 +111,9 @@ var Color = /** @class */ (function () {
      */
     Color.prototype.get = function (format) {
         var input = this.input, rgba = this.rgba;
+        if (this.output) {
+            return this.output;
+        }
         if (typeof input === 'object' &&
             typeof this.stops !== 'undefined') {
             var ret_1 = merge(input);
@@ -142,14 +157,19 @@ var Color = /** @class */ (function () {
             });
         }
         else if (isNumber(alpha) && alpha !== 0) {
-            for (var i = 0; i < 3; i++) {
-                rgba[i] += pInt(alpha * 255);
-                if (rgba[i] < 0) {
-                    rgba[i] = 0;
+            if (isNumber(rgba[0])) {
+                for (var i = 0; i < 3; i++) {
+                    rgba[i] += pInt(alpha * 255);
+                    if (rgba[i] < 0) {
+                        rgba[i] = 0;
+                    }
+                    if (rgba[i] > 255) {
+                        rgba[i] = 255;
+                    }
                 }
-                if (rgba[i] > 255) {
-                    rgba[i] = 255;
-                }
+            }
+            else if (Color.useColorMix && isStringColor(this.input)) {
+                this.output = colorMix(this.input, alpha > 0 ? 'white' : 'black', Math.abs(alpha));
             }
         }
         return this;
@@ -188,6 +208,12 @@ var Color = /** @class */ (function () {
         var fromRgba = this.rgba, toRgba = to.rgba;
         // Unsupported color, return to-color (#3920, #7034)
         if (!isNumber(fromRgba[0]) || !isNumber(toRgba[0])) {
+            if (Color.useColorMix &&
+                isStringColor(this.input) &&
+                isStringColor(to.input) &&
+                pos < 0.99) {
+                return colorMix(this.input, to.input, pos);
+            }
             return to.input || 'none';
         }
         // Check for has alpha, because rgba colors perform worse due to
@@ -200,6 +226,7 @@ var Color = /** @class */ (function () {
         }
         return (hasAlpha ? 'rgba(' : 'rgb(') + rgba.join(',') + ')';
     };
+    var _a;
     /* *
      *
      *  Static Properties
@@ -265,6 +292,12 @@ var Color = /** @class */ (function () {
                 ];
             }
         }];
+    /**
+     * Whether to use CSS `color-mix` for color handling (brightening,
+     * tweening). This can be disabled from the outside.
+     * @private
+     */
+    Color.useColorMix = (_a = win.CSS) === null || _a === void 0 ? void 0 : _a.supports('color', 'color-mix(in srgb,red,blue 9%)');
     // Must be last static member for init cycle
     Color.None = new Color('');
     return Color;
@@ -281,11 +314,7 @@ export default Color;
  *
  * */
 /**
- * A valid color to be parsed and handled by Highcharts. Highcharts internally
- * supports hex colors like `#ffffff`, rgb colors like `rgb(255,255,255)` and
- * rgba colors like `rgba(255,255,255,1)`. Other colors may be supported by the
- * browsers and displayed correctly, but Highcharts is not able to process them
- * and apply concepts like opacity and brightening.
+ * A valid color to be parsed and handled by Highcharts.
  *
  * @typedef {string} Highcharts.ColorString
  */
@@ -389,7 +418,7 @@ export default Color;
  * @function Highcharts.color
  *
  * @param {Highcharts.ColorType} input
- *        The input color in either rgba or hex format
+ *        The input color.
  *
  * @return {Highcharts.Color}
  *         Color instance

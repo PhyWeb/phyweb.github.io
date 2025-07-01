@@ -1,9 +1,9 @@
 /**
- * @license Highcharts JS v@product.version@ (@product.date@)
+ * @license Highcharts JS v12.3.0 (2025-06-21)
  * @module highcharts/modules/histogram-bellcurve
  * @requires highcharts
  *
- * (c) 2010-2024 Highsoft AS
+ * (c) 2010-2025 Highsoft AS
  * Author: Sebastian Domas
  *
  * License: www.highcharts.com/license

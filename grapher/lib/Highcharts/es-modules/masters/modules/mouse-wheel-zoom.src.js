@@ -1,5 +1,5 @@
 /**
- * @license Highcharts JS v@product.version@ (@product.date@)
+ * @license Highcharts JS v12.3.0 (2025-06-21)
  * @module highcharts/modules/mouse-wheel-zoom
  * @requires highcharts
  *

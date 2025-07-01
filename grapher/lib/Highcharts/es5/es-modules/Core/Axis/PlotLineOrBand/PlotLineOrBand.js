@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -214,7 +214,7 @@ var PlotLineOrBand = /** @class */ (function () {
      * @function Highcharts.PlotLineOrBand#renderLabel
      */
     PlotLineOrBand.prototype.renderLabel = function (optionsLabel, path, isBand, zIndex) {
-        var _a;
+        var _a, _b;
         var plotLine = this, axis = plotLine.axis, renderer = axis.chart.renderer, inside = optionsLabel.inside;
         var label = plotLine.label;
         // Add the SVG element
@@ -236,6 +236,11 @@ var PlotLineOrBand = /** @class */ (function () {
             });
             if (!axis.chart.styledMode) {
                 label.css(merge({
+                    // To allow theming, and in lack of a general place to set
+                    // default options for plot lines and bands, default to the
+                    // title color. If we expose the palette, we should use that
+                    // instead.
+                    color: (_a = axis.chart.options.title) === null || _a === void 0 ? void 0 : _a.style.color,
                     fontSize: '0.8em',
                     textOverflow: (isBand && !inside) ? '' : 'ellipsis'
                 }, optionsLabel.style));
@@ -253,11 +258,12 @@ var PlotLineOrBand = /** @class */ (function () {
             width: bBoxWidth,
             height: arrayMax(yBounds) - y
         });
+        label.alignAttr.y -= renderer.fontMetrics(label).b;
         if (!label.alignValue ||
             label.alignValue === 'left' ||
             defined(inside)) {
             label.css({
-                width: (((_a = optionsLabel.style) === null || _a === void 0 ? void 0 : _a.width) || ((!isBand ||
+                width: (((_b = optionsLabel.style) === null || _b === void 0 ? void 0 : _b.width) || ((!isBand ||
                     !inside) ? (label.rotation === 90 ?
                     axis.height - (label.alignAttr.y -
                         axis.top) : (optionsLabel.clip ?
@@ -768,7 +774,7 @@ export default PlotLineOrBand;
  * @apioption xAxis.plotLines.zIndex
  */
 /**
- * Text labels for the plot bands
+ * Text labels for the plot lines
  *
  * @apioption xAxis.plotLines.label
  */
@@ -785,6 +791,14 @@ export default PlotLineOrBand;
  * @default    left
  * @since      2.1
  * @apioption  xAxis.plotLines.label.align
+ */
+/**
+ * Whether or not the label can be hidden if it overlaps with another label.
+ *
+ * @type      {boolean}
+ * @default   undefined
+ * @since     11.4.8
+ * @apioption xAxis.plotBands.label.allowOverlap
  */
 /**
  * Whether to hide labels that are outside the plot area.

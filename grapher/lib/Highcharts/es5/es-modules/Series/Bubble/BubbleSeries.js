@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -25,8 +25,6 @@ var __extends = (this && this.__extends) || (function () {
 })();
 import BubbleLegendComposition from './BubbleLegendComposition.js';
 import BubblePoint from './BubblePoint.js';
-import Color from '../../Core/Color/Color.js';
-var color = Color.parse;
 import H from '../../Core/Globals.js';
 var composed = H.composed, noop = H.noop;
 import SeriesRegistry from '../../Core/Series/SeriesRegistry.js';
@@ -268,12 +266,8 @@ var BubbleSeries = /** @class */ (function (_super) {
      * @private
      */
     BubbleSeries.prototype.pointAttribs = function (point, state) {
-        var markerOptions = this.options.marker, fillOpacity = markerOptions.fillOpacity, attr = Series.prototype.pointAttribs.call(this, point, state);
-        if (fillOpacity !== 1) {
-            attr.fill = color(attr.fill)
-                .setOpacity(fillOpacity)
-                .get('rgba');
-        }
+        var markerOptions = this.options.marker, fillOpacity = markerOptions === null || markerOptions === void 0 ? void 0 : markerOptions.fillOpacity, attr = Series.prototype.pointAttribs.call(this, point, state);
+        attr['fill-opacity'] = fillOpacity !== null && fillOpacity !== void 0 ? fillOpacity : 1;
         return attr;
     };
     /**
@@ -358,7 +352,10 @@ var BubbleSeries = /** @class */ (function (_super) {
             var p1Dist = p1[comparisonProp] || 0;
             var p2Dist = p2[comparisonProp] || 0;
             var ret, flip = false;
-            if (p1Dist < 0 && p2Dist < 0) {
+            if (p1Dist === p2Dist) {
+                ret = p1.index > p2.index ? p1 : p2;
+            }
+            else if (p1Dist < 0 && p2Dist < 0) {
                 ret = (p1Dist - (((_a = p1.marker) === null || _a === void 0 ? void 0 : _a.radius) || 0) >=
                     p2Dist - (((_b = p2.marker) === null || _b === void 0 ? void 0 : _b.radius) || 0)) ?
                     p1 :

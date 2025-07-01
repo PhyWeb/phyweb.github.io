@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2009-2024 Rafal Sebestjanski
+ *  (c) 2009-2025 Rafal Sebestjanski
  *
  *  Full screen for Highcharts
  *
@@ -69,7 +69,7 @@ var Fullscreen = /** @class */ (function () {
          * the fullscreen mode.
          *
          * @name Highcharts.Fullscreen#isOpen
-         * @type {boolean|undefined}
+         * @type {boolean | undefined}
          * @since 8.0.1
          */
         this.isOpen = false;
@@ -228,7 +228,8 @@ var Fullscreen = /** @class */ (function () {
      * @requires modules/full-screen
      */
     Fullscreen.prototype.setButtonText = function () {
-        var chart = this.chart, exportDivElements = chart.exportDivElements, exportingOptions = chart.options.exporting, menuItems = (exportingOptions &&
+        var _a;
+        var chart = this.chart, exportDivElements = (_a = chart.exporting) === null || _a === void 0 ? void 0 : _a.divElements, exportingOptions = chart.options.exporting, menuItems = (exportingOptions &&
             exportingOptions.buttons &&
             exportingOptions.buttons.contextButton.menuItems), lang = chart.options.lang;
         if (exportingOptions &&

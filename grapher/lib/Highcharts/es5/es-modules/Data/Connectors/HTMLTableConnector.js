@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2009-2024 Highsoft AS
+ *  (c) 2009-2025 Highsoft AS
  *
  *  License: www.highcharts.com/license
  *
@@ -81,7 +81,7 @@ var HTMLTableConnector = /** @class */ (function (_super) {
         connector.emit({
             type: 'load',
             detail: eventDetail,
-            table: table,
+            tables: { table: table },
             tableElement: connector.tableElement
         });
         var tableElement;
@@ -100,7 +100,7 @@ var HTMLTableConnector = /** @class */ (function (_super) {
                 type: 'loadError',
                 detail: eventDetail,
                 error: error,
-                table: table
+                tables: { table: table }
             });
             return Promise.reject(new Error(error));
         }
@@ -114,7 +114,7 @@ var HTMLTableConnector = /** @class */ (function (_super) {
             connector.emit({
                 type: 'afterLoad',
                 detail: eventDetail,
-                table: table,
+                tables: { table: table },
                 tableElement: connector.tableElement
             });
             return connector;

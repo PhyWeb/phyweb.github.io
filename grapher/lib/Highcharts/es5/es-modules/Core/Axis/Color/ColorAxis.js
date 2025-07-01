@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -346,7 +346,7 @@ var ColorAxis = /** @class */ (function (_super) {
      * @emits Highcharts.ColorAxis#event:drawCrosshair
      */
     ColorAxis.prototype.drawCrosshair = function (e, point) {
-        var axis = this, legendItem = axis.legendItem || {}, plotX = point && point.plotX, plotY = point && point.plotY, axisPos = axis.pos, axisLen = axis.len;
+        var axis = this, legendItem = axis.legendItem || {}, plotX = point === null || point === void 0 ? void 0 : point.plotX, plotY = point === null || point === void 0 ? void 0 : point.plotY, axisPos = axis.pos, axisLen = axis.len;
         var crossPos;
         if (point) {
             crossPos = axis.toPixels(point.getNestedProperty(point.series.colorKey));
@@ -414,6 +414,7 @@ var ColorAxis = /** @class */ (function (_super) {
      * and call {@link Highcharts.Chart#redraw} after.
      */
     ColorAxis.prototype.update = function (newOptions, redraw) {
+        var _a;
         var axis = this, chart = axis.chart, legend = chart.legend;
         this.series.forEach(function (series) {
             // Needed for Axis.update when choropleth colors change
@@ -425,7 +426,7 @@ var ColorAxis = /** @class */ (function (_super) {
             axis.destroyItems();
         }
         _super.prototype.update.call(this, newOptions, redraw);
-        if (axis.legendItem && axis.legendItem.label) {
+        if ((_a = axis.legendItem) === null || _a === void 0 ? void 0 : _a.label) {
             axis.setLegendColor();
             legend.colorizeItem(this, true);
         }

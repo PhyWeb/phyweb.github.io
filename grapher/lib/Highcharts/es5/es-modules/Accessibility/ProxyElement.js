@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2009-2024 Øystein Moseng
+ *  (c) 2009-2025 Øystein Moseng
  *
  *  Proxy elements are used to shadow SVG elements in HTML for assistive
  *  technology, such as screen readers or voice input software.
@@ -15,7 +15,7 @@
  * */
 'use strict';
 import H from '../Core/Globals.js';
-var doc = H.doc;
+var doc = H.doc, win = H.win;
 import U from '../Core/Utilities.js';
 var attr = U.attr, css = U.css, merge = U.merge;
 import EventProvider from './Utils/EventProvider.js';
@@ -192,10 +192,13 @@ var ProxyElement = /** @class */ (function () {
         var posElement = this.target.visual || clickTargetElement;
         var chartDiv = this.chart.renderTo, pointer = this.chart.pointer;
         if (chartDiv && (posElement === null || posElement === void 0 ? void 0 : posElement.getBoundingClientRect) && pointer) {
-            var rectEl = posElement.getBoundingClientRect(), chartPos = pointer.getChartPosition();
+            var scrollTop = win.scrollY ||
+                doc.documentElement.scrollTop, rectEl = posElement.getBoundingClientRect(), chartPos = pointer.getChartPosition();
             return {
                 x: (rectEl.left - chartPos.left) / chartPos.scaleX,
-                y: (rectEl.top - chartPos.top) / chartPos.scaleY,
+                // #21994, Add scroll position as "getBoundingClientRect"
+                // returns the position from the viewport, not the document top.
+                y: ((rectEl.top + scrollTop) - chartPos.top) / chartPos.scaleY,
                 width: rectEl.right / chartPos.scaleX -
                     rectEl.left / chartPos.scaleX,
                 height: rectEl.bottom / chartPos.scaleY -

@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -11,10 +11,11 @@
 import D from '../../Core/Defaults.js';
 var defaultOptions = D.defaultOptions;
 import H from '../../Core/Globals.js';
+var composed = H.composed;
 import ScrollbarAxis from '../../Core/Axis/ScrollbarAxis.js';
 import ScrollbarDefaults from './ScrollbarDefaults.js';
 import U from '../../Core/Utilities.js';
-var addEvent = U.addEvent, correctFloat = U.correctFloat, crisp = U.crisp, defined = U.defined, destroyObjectProperties = U.destroyObjectProperties, fireEvent = U.fireEvent, merge = U.merge, pick = U.pick, removeEvent = U.removeEvent;
+var addEvent = U.addEvent, correctFloat = U.correctFloat, crisp = U.crisp, defined = U.defined, destroyObjectProperties = U.destroyObjectProperties, extend = U.extend, fireEvent = U.fireEvent, merge = U.merge, pick = U.pick, pushUnique = U.pushUnique, removeEvent = U.removeEvent;
 /* *
  *
  *  Constants
@@ -66,6 +67,9 @@ var Scrollbar = /** @class */ (function () {
      * */
     Scrollbar.compose = function (AxisClass) {
         ScrollbarAxis.compose(AxisClass, Scrollbar);
+        if (pushUnique(composed, 'Scrollbar')) {
+            extend(defaultOptions, { scrollbar: ScrollbarDefaults });
+        }
     };
     /**
      * When we have vertical scrollbar, rifles and arrow in buttons should be
@@ -650,12 +654,6 @@ var Scrollbar = /** @class */ (function () {
     Scrollbar.defaultOptions = ScrollbarDefaults;
     return Scrollbar;
 }());
-/* *
- *
- *  Registry
- *
- * */
-defaultOptions.scrollbar = merge(true, Scrollbar.defaultOptions, defaultOptions.scrollbar);
 /* *
  *
  *  Default Export

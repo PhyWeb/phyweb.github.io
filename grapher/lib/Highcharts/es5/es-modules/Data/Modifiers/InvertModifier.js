@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2009-2024 Highsoft AS
+ *  (c) 2009-2025 Highsoft AS
  *
  *  License: www.highcharts.com/license
  *
@@ -203,8 +203,11 @@ var InvertModifier = /** @class */ (function (_super) {
         modifier.emit({ type: 'modify', detail: eventDetail, table: table });
         var modified = table.modified;
         if (table.hasColumns(['columnNames'])) { // Inverted table
-            var columnNames = ((table.deleteColumns(['columnNames']) || {})
-                .columnNames || []).map(function (column) { return "".concat(column); }), columns = {};
+            var columnNamesColumn = ((table.deleteColumns(['columnNames']) || {})
+                .columnNames || []), columns = {}, columnNames = [];
+            for (var i = 0, iEnd = columnNamesColumn.length; i < iEnd; ++i) {
+                columnNames.push('' + columnNamesColumn[i]);
+            }
             for (var i = 0, iEnd = table.getRowCount(), row = void 0; i < iEnd; ++i) {
                 row = table.getRow(i);
                 if (row) {

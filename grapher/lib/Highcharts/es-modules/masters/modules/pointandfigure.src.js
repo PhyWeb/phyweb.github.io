@@ -1,12 +1,12 @@
 /**
- * @license Highstock JS v@product.version@ (@product.date@)
+ * @license Highstock JS v12.3.0 (2025-06-21)
  * @module highcharts/modules/pointandfigure
  * @requires highcharts
  * @requires highcharts/modules/stock
  *
  * Point and figure series type for Highcharts Stock
  *
- * (c) 2010-2024 Kamil Musialowski
+ * (c) 2010-2025 Kamil Musialowski
  *
  * License: www.highcharts.com/license
  */

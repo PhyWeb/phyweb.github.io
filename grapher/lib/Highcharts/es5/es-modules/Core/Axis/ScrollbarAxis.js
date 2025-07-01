@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -52,8 +52,9 @@ var ScrollbarAxis;
     ScrollbarAxis.compose = compose;
     /** @private */
     function getExtremes(axis) {
-        var axisMin = pick(axis.options && axis.options.min, axis.min);
-        var axisMax = pick(axis.options && axis.options.max, axis.max);
+        var _a, _b;
+        var axisMin = pick((_a = axis.options) === null || _a === void 0 ? void 0 : _a.min, axis.min);
+        var axisMax = pick((_b = axis.options) === null || _b === void 0 ? void 0 : _b.max, axis.max);
         return {
             axisMin: axisMin,
             axisMax: axisMax,
@@ -81,10 +82,9 @@ var ScrollbarAxis;
      * @private
      */
     function onAxisAfterInit() {
+        var _a, _b;
         var axis = this;
-        if (axis.options &&
-            axis.options.scrollbar &&
-            axis.options.scrollbar.enabled) {
+        if ((_b = (_a = axis.options) === null || _a === void 0 ? void 0 : _a.scrollbar) === null || _b === void 0 ? void 0 : _b.enabled) {
             // Predefined options:
             axis.options.scrollbar.vertical = !axis.horiz;
             axis.options.startOnTick = axis.options.endOnTick = false;

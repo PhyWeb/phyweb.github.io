@@ -1,11 +1,11 @@
 /**
- * @license Highcharts JS v12.1.2 (2025-01-09)
+ * @license Highcharts JS v12.3.0 (2025-06-21)
  * @module highcharts/modules/networkgraph
  * @requires highcharts
  *
  * Force directed graph module
  *
- * (c) 2010-2024 Torstein Honsi
+ * (c) 2010-2025 Torstein Honsi
  *
  * License: www.highcharts.com/license
  */
@@ -119,7 +119,7 @@ var highcharts_SVGElement_commonjs_highcharts_SVGElement_commonjs2_highcharts_SV
  *
  *  Networkgraph series
  *
- *  (c) 2010-2024 Paweł Fus
+ *  (c) 2010-2025 Paweł Fus
  *
  *  License: www.highcharts.com/license
  *
@@ -152,10 +152,17 @@ function onChartLoad() {
     var chart = this;
     var mousedownUnbinder,
         mousemoveUnbinder,
-        mouseupUnbinder;
+        mouseupUnbinder,
+        point;
     if (chart.container) {
         mousedownUnbinder = addEvent(chart.container, 'mousedown', function (event) {
-            var point = chart.hoverPoint;
+            if (mousemoveUnbinder) {
+                mousemoveUnbinder();
+            }
+            if (mouseupUnbinder) {
+                mouseupUnbinder();
+            }
+            point = chart.hoverPoint;
             if (point &&
                 point.series &&
                 point.series.hasDraggableNodes &&
@@ -189,6 +196,11 @@ function onChartLoad() {
  */
 function onMouseDown(point, event) {
     var _a;
+    var panKey = this.chart.options.chart.panKey,
+        panKeyPressed = panKey && event["" + panKey + "Key"];
+    if (panKeyPressed) {
+        return;
+    }
     var normalizedEvent = ((_a = this.chart.pointer) === null || _a === void 0 ? void 0 : _a.normalize(event)) || event;
     point.fixedPosition = {
         chartX: normalizedEvent.chartX,
@@ -291,7 +303,7 @@ var DragNodesComposition = {
  *
  *  Networkgraph series
  *
- *  (c) 2010-2024 Paweł Fus
+ *  (c) 2010-2025 Paweł Fus
  *
  *  License: www.highcharts.com/license
  *
@@ -368,6 +380,7 @@ function onChartPredraw() {
  * @private
  */
 function onChartRender() {
+    var _a;
     var systemsStable,
         afterRender = false;
     var layoutStep = function (layout) {
@@ -388,7 +401,8 @@ function onChartRender() {
             afterRender = true;
         }
     };
-    if (this.graphLayoutsLookup) {
+    // Don't animate layout when series is dragged
+    if (this.graphLayoutsLookup && !((_a = this.pointer) === null || _a === void 0 ? void 0 : _a.hasDragged)) {
         setAnimation(false, this);
         // Start simulation
         this.graphLayoutsLookup.forEach(function (layout) { return layout.start(); });
@@ -714,7 +728,7 @@ var NodesComposition;
  *
  *  Networkgraph series
  *
- *  (c) 2010-2024 Paweł Fus
+ *  (c) 2010-2025 Paweł Fus
  *
  *  License: www.highcharts.com/license
  *
@@ -1016,7 +1030,7 @@ NetworkgraphPoint_extend(NetworkgraphPoint.prototype, {
  *
  *  Networkgraph series
  *
- *  (c) 2010-2024 Paweł Fus
+ *  (c) 2010-2025 Paweł Fus
  *
  *  License: www.highcharts.com/license
  *
@@ -1582,7 +1596,7 @@ var NetworkgraphSeriesDefaults = {
  *
  *  Networkgraph series
  *
- *  (c) 2010-2024 Paweł Fus
+ *  (c) 2010-2025 Paweł Fus
  *
  *  License: www.highcharts.com/license
  *
@@ -1785,7 +1799,7 @@ var EulerIntegration = {
  *
  *  Networkgraph series
  *
- *  (c) 2010-2024 Paweł Fus
+ *  (c) 2010-2025 Paweł Fus
  *
  *  License: www.highcharts.com/license
  *
@@ -2060,7 +2074,7 @@ var QuadTreeNode = /** @class */ (function () {
  *
  *  Networkgraph series
  *
- *  (c) 2010-2024 Paweł Fus
+ *  (c) 2010-2025 Paweł Fus
  *
  *  License: www.highcharts.com/license
  *
@@ -2208,7 +2222,7 @@ var QuadTree = /** @class */ (function () {
  *
  *  Networkgraph series
  *
- *  (c) 2010-2024 Paweł Fus
+ *  (c) 2010-2025 Paweł Fus
  *
  *  License: www.highcharts.com/license
  *
@@ -2403,7 +2417,7 @@ var VerletIntegration = {
  *
  *  Networkgraph series
  *
- *  (c) 2010-2024 Paweł Fus
+ *  (c) 2010-2025 Paweł Fus
  *
  *  License: www.highcharts.com/license
  *
@@ -3030,7 +3044,7 @@ var DataLabelsDeferUtils = {
  *
  *  Highcharts module with textPath functionality.
  *
- *  (c) 2009-2024 Torstein Honsi
+ *  (c) 2009-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -3285,7 +3299,7 @@ var TextPath = {
  *
  *  Networkgraph series
  *
- *  (c) 2010-2024 Paweł Fus
+ *  (c) 2010-2025 Paweł Fus
  *
  *  License: www.highcharts.com/license
  *

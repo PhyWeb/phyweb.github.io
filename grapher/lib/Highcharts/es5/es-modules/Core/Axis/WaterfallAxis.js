@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -46,7 +46,8 @@ var WaterfallAxis;
      * @private
      */
     function onAxisAfterBuildStacks() {
-        var axis = this, stacks = axis.waterfall.stacks;
+        var _a;
+        var axis = this, stacks = (_a = axis.waterfall) === null || _a === void 0 ? void 0 : _a.stacks;
         if (stacks) {
             stacks.changed = false;
             delete stacks.alreadyChanged;
@@ -56,9 +57,10 @@ var WaterfallAxis;
      * @private
      */
     function onAxisAfterRender() {
+        var _a;
         var axis = this, stackLabelOptions = axis.options.stackLabels;
-        if (stackLabelOptions && stackLabelOptions.enabled &&
-            axis.waterfall.stacks) {
+        if ((stackLabelOptions === null || stackLabelOptions === void 0 ? void 0 : stackLabelOptions.enabled) &&
+            ((_a = axis.waterfall) === null || _a === void 0 ? void 0 : _a.stacks)) {
             axis.waterfall.renderStackTotals();
         }
     }
@@ -81,7 +83,7 @@ var WaterfallAxis;
             if (serie.options.stacking) {
                 for (var _a = 0, axes_1 = axes; _a < axes_1.length; _a++) {
                     var axis = axes_1[_a];
-                    if (!axis.isXAxis) {
+                    if (!axis.isXAxis && axis.waterfall) {
                         axis.waterfall.stacks.changed = true;
                     }
                 }
@@ -119,7 +121,8 @@ var WaterfallAxis;
          * @function Highcharts.Axis#renderWaterfallStackTotals
          */
         Composition.prototype.renderStackTotals = function () {
-            var yAxis = this.axis, waterfallStacks = yAxis.waterfall.stacks, stackTotalGroup = (yAxis.stacking && yAxis.stacking.stackTotalGroup), dummyStackItem = new StackItem(yAxis, yAxis.options.stackLabels || {}, false, 0, void 0);
+            var _a, _b;
+            var yAxis = this.axis, waterfallStacks = (_a = yAxis.waterfall) === null || _a === void 0 ? void 0 : _a.stacks, stackTotalGroup = (_b = yAxis.stacking) === null || _b === void 0 ? void 0 : _b.stackTotalGroup, dummyStackItem = new StackItem(yAxis, yAxis.options.stackLabels || {}, false, 0, void 0);
             this.dummyStackItem = dummyStackItem;
             // Render each waterfall stack total
             if (stackTotalGroup) {

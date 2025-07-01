@@ -1,11 +1,11 @@
 /**
- * @license Highcharts JS v12.1.2 (2025-01-09)
+ * @license Highcharts JS v12.3.0 (2025-06-21)
  * @module highcharts/modules/sonification
  * @requires highcharts
  *
  * Sonification module
  *
- * (c) 2010-2024 Highsoft AS
+ * (c) 2010-2025 Highsoft AS
  * Author: Øystein Moseng
  *
  * License: www.highcharts.com/license
@@ -24,17 +24,17 @@ return /******/ (function() { // webpackBootstrap
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 984:
-/***/ (function(module) {
-
-module.exports = __WEBPACK_EXTERNAL_MODULE__984__;
-
-/***/ }),
-
 /***/ 944:
 /***/ (function(module) {
 
 module.exports = __WEBPACK_EXTERNAL_MODULE__944__;
+
+/***/ }),
+
+/***/ 984:
+/***/ (function(module) {
+
+module.exports = __WEBPACK_EXTERNAL_MODULE__984__;
 
 /***/ })
 
@@ -108,7 +108,7 @@ var highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default 
 ;// ./code/es5/es-modules/Extensions/Sonification/Options.js
 /* *
  *
- *  (c) 2009-2024 Øystein Moseng
+ *  (c) 2009-2025 Øystein Moseng
  *
  *  Default options for sonification.
  *
@@ -1156,7 +1156,7 @@ var Options = {
 ;// ./code/es5/es-modules/Extensions/Sonification/SynthPatch.js
 /* *
  *
- *  (c) 2009-2024 Øystein Moseng
+ *  (c) 2009-2025 Øystein Moseng
  *
  *  Class representing a Synth Patch, used by Instruments in the
  *  sonification.js module.
@@ -1892,7 +1892,7 @@ var SynthPatch = /** @class */ (function () {
 ;// ./code/es5/es-modules/Extensions/Sonification/InstrumentPresets.js
 /* *
  *
- *  (c) 2009-2024 Øystein Moseng
+ *  (c) 2009-2025 Øystein Moseng
  *
  *  Presets for SynthPatch.
  *
@@ -2768,7 +2768,7 @@ var InstrumentPresets = {
 ;// ./code/es5/es-modules/Extensions/Sonification/SonificationInstrument.js
 /* *
  *
- *  (c) 2009-2024 Øystein Moseng
+ *  (c) 2009-2025 Øystein Moseng
  *
  *  Class representing an Instrument with mappable parameters for sonification.
  *
@@ -3142,7 +3142,7 @@ var SonificationInstrument = /** @class */ (function () {
 ;// ./code/es5/es-modules/Extensions/Sonification/SonificationSpeaker.js
 /* *
  *
- *  (c) 2009-2024 Øystein Moseng
+ *  (c) 2009-2025 Øystein Moseng
  *
  *  Class representing a speech synthesis voice.
  *
@@ -3316,7 +3316,7 @@ var SonificationSpeaker = /** @class */ (function () {
 ;// ./code/es5/es-modules/Extensions/Sonification/TimelineChannel.js
 /* *
  *
- *  (c) 2009-2024 Øystein Moseng
+ *  (c) 2009-2025 Øystein Moseng
  *
  *  Class representing a TimelineChannel with sonification events to play.
  *
@@ -3414,7 +3414,7 @@ var TimelineChannel = /** @class */ (function () {
 ;// ./code/es5/es-modules/Extensions/Sonification/MIDI.js
 /* *
  *
- *  (c) 2009-2024 Øystein Moseng
+ *  (c) 2009-2025 Øystein Moseng
  *
  *  Small MIDI file writer for sonification export.
  *
@@ -3579,7 +3579,7 @@ function toMIDI(channels) {
 ;// ./code/es5/es-modules/Extensions/DownloadURL.js
 /* *
  *
- *  (c) 2015-2024 Oystein Moseng
+ *  (c) 2015-2025 Oystein Moseng
  *
  *  License: www.highcharts.com/license
  *
@@ -3596,6 +3596,8 @@ function toMIDI(channels) {
  * */
 
 var isSafari = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).isSafari, win = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).win, doc = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).win.document;
+
+var error = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).error;
 /* *
  *
  *  Constants
@@ -3609,12 +3611,15 @@ var domurl = win.URL || win.webkitURL || win;
  * */
 /**
  * Convert base64 dataURL to Blob if supported, otherwise returns undefined.
+ *
  * @private
  * @function Highcharts.dataURLtoBlob
+ *
  * @param {string} dataURL
- *        URL to convert
- * @return {string|undefined}
- *         Blob
+ * URL to convert.
+ *
+ * @return {string | undefined}
+ * Blob.
  */
 function dataURLtoBlob(dataURL) {
     var parts = dataURL
@@ -3643,11 +3648,11 @@ function dataURLtoBlob(dataURL) {
  *
  * @private
  * @function Highcharts.downloadURL
- * @param {string|global.URL} dataURL
- *        The dataURL/Blob to download
+ *
+ * @param {string | global.URL} dataURL
+ * The dataURL/Blob to download.
  * @param {string} filename
- *        The name of the resulting file (w/extension)
- * @return {void}
+ * The name of the resulting file (w/extension).
  */
 function downloadURL(dataURL, filename) {
     var nav = win.navigator,
@@ -3698,6 +3703,33 @@ function downloadURL(dataURL, filename) {
         }
     }
 }
+/**
+ * Asynchronously downloads a script from a provided location.
+ *
+ * @private
+ * @function Highcharts.getScript
+ *
+ * @param {string} scriptLocation
+ * The location for the script to fetch.
+ */
+function getScript(scriptLocation) {
+    return new Promise(function (resolve, reject) {
+        var head = doc.getElementsByTagName('head')[0], script = doc.createElement('script');
+        // Set type and location for the script
+        script.type = 'text/javascript';
+        script.src = scriptLocation;
+        // Resolve in case of a succesful script fetching
+        script.onload = function () {
+            resolve();
+        };
+        // Reject in case of fail
+        script.onerror = function () {
+            reject(error("Error loading script ".concat(scriptLocation)));
+        };
+        // Append the newly created script
+        head.appendChild(script);
+    });
+}
 /* *
  *
  *  Default Export
@@ -3705,14 +3737,15 @@ function downloadURL(dataURL, filename) {
  * */
 var DownloadURL = {
     dataURLtoBlob: dataURLtoBlob,
-    downloadURL: downloadURL
+    downloadURL: downloadURL,
+    getScript: getScript
 };
 /* harmony default export */ var Extensions_DownloadURL = (DownloadURL);
 
 ;// ./code/es5/es-modules/Extensions/Sonification/SonificationTimeline.js
 /* *
  *
- *  (c) 2009-2024 Øystein Moseng
+ *  (c) 2009-2025 Øystein Moseng
  *
  *  Class representing a Timeline with sonification events to play.
  *
@@ -4251,7 +4284,7 @@ var highcharts_Templating_commonjs_highcharts_Templating_commonjs2_highcharts_Te
 ;// ./code/es5/es-modules/Extensions/Sonification/TimelineFromChart.js
 /* *
  *
- *  (c) 2009-2024 Øystein Moseng
+ *  (c) 2009-2025 Øystein Moseng
  *
  *  Build a timeline from a chart.
  *
@@ -5147,7 +5180,7 @@ function timelineFromChart(audioContext, destinationNode, chart) {
 ;// ./code/es5/es-modules/Extensions/Sonification/Sonification.js
 /* *
  *
- *  (c) 2009-2024 Øystein Moseng
+ *  (c) 2009-2025 Øystein Moseng
  *
  *  Sonification module.
  *
@@ -5823,7 +5856,7 @@ Sonification_merge(true, defaultOptions, Sonification_Options);
 ;// ./code/es5/es-modules/Extensions/Sonification/Scales.js
 /* *
  *
- *  (c) 2009-2024 Øystein Moseng
+ *  (c) 2009-2025 Øystein Moseng
  *
  *  Musical scales for sonification.
  *

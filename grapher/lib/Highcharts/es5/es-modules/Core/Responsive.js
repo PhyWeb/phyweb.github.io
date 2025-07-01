@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -85,12 +85,12 @@ var Responsive;
         }
         // Merge matching rules
         var mergedOptions = merge.apply(void 0, ruleIds
-            .map(function (ruleId) { return find((options || {}).rules || [], function (rule) { return (rule._id === ruleId); }); })
-            .map(function (rule) { return (rule && rule.chartOptions); }));
+            .map(function (ruleId) { return find((options === null || options === void 0 ? void 0 : options.rules) || [], function (rule) { return (rule._id === ruleId); }); })
+            .map(function (rule) { return rule === null || rule === void 0 ? void 0 : rule.chartOptions; }));
         mergedOptions.isResponsiveOptions = true;
         // Stringified key for the rules that currently apply.
         ruleIds = (ruleIds.toString() || void 0);
-        var currentRuleIds = (currentResponsive && currentResponsive.ruleIds);
+        var currentRuleIds = currentResponsive === null || currentResponsive === void 0 ? void 0 : currentResponsive.ruleIds;
         // Changes in what rules apply
         if (ruleIds !== currentRuleIds) {
             // Undo previous rules. Before we apply a new set of rules, we

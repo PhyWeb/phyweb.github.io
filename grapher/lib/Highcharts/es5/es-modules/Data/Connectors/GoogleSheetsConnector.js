@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2009-2024 Highsoft AS
+ *  (c) 2009-2025 Highsoft AS
  *
  *  License: www.highcharts.com/license
  *
@@ -33,7 +33,7 @@ var __extends = (this && this.__extends) || (function () {
 import DataConnector from './DataConnector.js';
 import GoogleSheetsConverter from '../Converters/GoogleSheetsConverter.js';
 import U from '../../Core/Utilities.js';
-var merge = U.merge, pick = U.pick;
+var merge = U.merge, pick = U.pick, defined = U.defined;
 /* *
  *
  *  Functions
@@ -71,13 +71,17 @@ var GoogleSheetsConnector = /** @class */ (function (_super) {
      *
      * @param {GoogleSheetsConnector.UserOptions} [options]
      * Options for the connector and converter.
+     *
+     * @param {Array<DataTableOptions>} [dataTables]
+     * Multiple connector data tables options.
+     *
      */
-    function GoogleSheetsConnector(options) {
+    function GoogleSheetsConnector(options, dataTables) {
         var _this = this;
         var mergedOptions = merge(GoogleSheetsConnector.defaultOptions, options);
-        _this = _super.call(this, mergedOptions) || this;
-        _this.converter = new GoogleSheetsConverter(mergedOptions);
-        _this.options = mergedOptions;
+        _this = _super.call(this, mergedOptions, dataTables) || this;
+        _this.options = defined(dataTables) ?
+            merge(mergedOptions, { dataTables: dataTables }) : mergedOptions;
         return _this;
     }
     /* *
@@ -95,36 +99,45 @@ var GoogleSheetsConnector = /** @class */ (function (_super) {
      * Same connector instance with modified table.
      */
     GoogleSheetsConnector.prototype.load = function (eventDetail) {
-        var connector = this, converter = connector.converter, table = connector.table, _a = connector.options, dataModifier = _a.dataModifier, dataRefreshRate = _a.dataRefreshRate, enablePolling = _a.enablePolling, firstRowAsNames = _a.firstRowAsNames, googleAPIKey = _a.googleAPIKey, googleSpreadsheetKey = _a.googleSpreadsheetKey, url = GoogleSheetsConnector.buildFetchURL(googleAPIKey, googleSpreadsheetKey, connector.options);
+        var _this = this;
+        var _a;
+        var connector = this, tables = connector.dataTables, _b = connector.options, dataModifier = _b.dataModifier, dataRefreshRate = _b.dataRefreshRate, enablePolling = _b.enablePolling, googleAPIKey = _b.googleAPIKey, googleSpreadsheetKey = _b.googleSpreadsheetKey, dataTables = _b.dataTables, url = GoogleSheetsConnector.buildFetchURL(googleAPIKey, googleSpreadsheetKey, connector.options);
         connector.emit({
             type: 'load',
             detail: eventDetail,
-            table: table,
+            tables: tables,
             url: url
         });
         if (!URL.canParse(url)) {
             throw new Error('Invalid URL: ' + url);
         }
-        return fetch(url)
+        return fetch(url, { signal: (_a = connector === null || connector === void 0 ? void 0 : connector.pollingController) === null || _a === void 0 ? void 0 : _a.signal })
             .then(function (response) { return (response.json()); })
             .then(function (json) {
             if (isGoogleError(json)) {
                 throw new Error(json.error.message);
             }
-            converter.parse({
-                firstRowAsNames: firstRowAsNames,
-                json: json
+            _this.initConverters(json, function (key) {
+                var _a, _b;
+                var options = _this.options;
+                var tableOptions = dataTables === null || dataTables === void 0 ? void 0 : dataTables.find(function (dataTable) { return dataTable.key === key; });
+                // Takes over the connector default options.
+                var mergedTableOptions = {
+                    dataTableKey: key,
+                    firstRowAsNames: (_a = tableOptions === null || tableOptions === void 0 ? void 0 : tableOptions.firstRowAsNames) !== null && _a !== void 0 ? _a : options.firstRowAsNames,
+                    beforeParse: (_b = tableOptions === null || tableOptions === void 0 ? void 0 : tableOptions.beforeParse) !== null && _b !== void 0 ? _b : options.beforeParse
+                };
+                return new GoogleSheetsConverter(merge(_this.options, mergedTableOptions));
+            }, function (converter, data) {
+                converter.parse({ json: data });
             });
-            // If already loaded, clear the current table
-            table.deleteColumns();
-            table.setColumns(converter.getTable().getColumns());
-            return connector.setModifierOptions(dataModifier);
+            return connector.setModifierOptions(dataModifier, dataTables);
         })
             .then(function () {
             connector.emit({
                 type: 'afterLoad',
                 detail: eventDetail,
-                table: table,
+                tables: tables,
                 url: url
             });
             // Polling
@@ -137,7 +150,7 @@ var GoogleSheetsConnector = /** @class */ (function (_super) {
                 type: 'loadError',
                 detail: eventDetail,
                 error: error,
-                table: table
+                tables: tables
             });
             throw error;
         });

@@ -1,11 +1,11 @@
 /**
- * @license Highcharts JS v12.1.2 (2025-01-09)
+ * @license Highcharts JS v12.3.0 (2025-06-21)
  * @module highcharts/modules/color-axis
  * @requires highcharts
  *
  * ColorAxis module
  *
- * (c) 2012-2024 Pawel Potaczek
+ * (c) 2012-2025 Pawel Potaczek
  *
  * License: www.highcharts.com/license
  */
@@ -23,20 +23,6 @@ return /******/ (function() { // webpackBootstrap
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 532:
-/***/ (function(module) {
-
-module.exports = __WEBPACK_EXTERNAL_MODULE__532__;
-
-/***/ }),
-
-/***/ 620:
-/***/ (function(module) {
-
-module.exports = __WEBPACK_EXTERNAL_MODULE__620__;
-
-/***/ }),
-
 /***/ 500:
 /***/ (function(module) {
 
@@ -48,6 +34,20 @@ module.exports = __WEBPACK_EXTERNAL_MODULE__500__;
 /***/ (function(module) {
 
 module.exports = __WEBPACK_EXTERNAL_MODULE__512__;
+
+/***/ }),
+
+/***/ 532:
+/***/ (function(module) {
+
+module.exports = __WEBPACK_EXTERNAL_MODULE__532__;
+
+/***/ }),
+
+/***/ 620:
+/***/ (function(module) {
+
+module.exports = __WEBPACK_EXTERNAL_MODULE__620__;
 
 /***/ }),
 
@@ -134,7 +134,7 @@ var highcharts_Color_commonjs_highcharts_Color_commonjs2_highcharts_Color_root_H
 ;// ./code/es5/es-modules/Core/Axis/Color/ColorAxisComposition.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -237,7 +237,7 @@ var ColorAxisComposition;
             i;
         colorAxes.forEach(function (colorAxis) {
             options = colorAxis.options;
-            if (options && options.showInLegend) {
+            if (options === null || options === void 0 ? void 0 : options.showInLegend) {
                 // Data classes
                 if (options.dataClasses && options.visible) {
                     colorAxisItems = colorAxisItems.concat(colorAxis.getDataClassLegendSymbols());
@@ -293,8 +293,8 @@ var ColorAxisComposition;
      * @private
      */
     function onSeriesAfterTranslate() {
-        if (this.chart.colorAxis &&
-            this.chart.colorAxis.length ||
+        var _a;
+        if (((_a = this.chart.colorAxis) === null || _a === void 0 ? void 0 : _a.length) ||
             this.colorAttribs) {
             this.translateColors();
         }
@@ -416,7 +416,7 @@ var ColorAxisComposition;
 ;// ./code/es5/es-modules/Core/Axis/Color/ColorAxisDefaults.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -890,7 +890,7 @@ var colorAxisDefaults = {
 ;// ./code/es5/es-modules/Core/Axis/Color/ColorAxisLike.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -1061,7 +1061,7 @@ var highcharts_SeriesRegistry_commonjs_highcharts_SeriesRegistry_commonjs2_highc
 ;// ./code/es5/es-modules/Core/Axis/Color/ColorAxis.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -1437,8 +1437,8 @@ var ColorAxis = /** @class */ (function (_super) {
     ColorAxis.prototype.drawCrosshair = function (e, point) {
         var axis = this,
             legendItem = axis.legendItem || {},
-            plotX = point && point.plotX,
-            plotY = point && point.plotY,
+            plotX = point === null || point === void 0 ? void 0 : point.plotX,
+            plotY = point === null || point === void 0 ? void 0 : point.plotY,
             axisPos = axis.pos,
             axisLen = axis.len;
         var crossPos;
@@ -1511,6 +1511,7 @@ var ColorAxis = /** @class */ (function (_super) {
      * and call {@link Highcharts.Chart#redraw} after.
      */
     ColorAxis.prototype.update = function (newOptions, redraw) {
+        var _a;
         var axis = this,
             chart = axis.chart,
             legend = chart.legend;
@@ -1524,7 +1525,7 @@ var ColorAxis = /** @class */ (function (_super) {
             axis.destroyItems();
         }
         _super.prototype.update.call(this, newOptions, redraw);
-        if (axis.legendItem && axis.legendItem.label) {
+        if ((_a = axis.legendItem) === null || _a === void 0 ? void 0 : _a.label) {
             axis.setLegendColor();
             legend.colorizeItem(this, true);
         }

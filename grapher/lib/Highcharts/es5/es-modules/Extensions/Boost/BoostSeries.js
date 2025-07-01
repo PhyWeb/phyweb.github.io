@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2019-2024 Highsoft AS
+ *  (c) 2019-2025 Highsoft AS
  *
  *  Boost module: stripped-down renderer for higher performance
  *
@@ -21,6 +21,7 @@ var composed = H.composed, doc = H.doc, noop = H.noop, win = H.win;
 import U from '../../Core/Utilities.js';
 var addEvent = U.addEvent, destroyObjectProperties = U.destroyObjectProperties, error = U.error, extend = U.extend, fireEvent = U.fireEvent, isArray = U.isArray, isNumber = U.isNumber, pick = U.pick, pushUnique = U.pushUnique, wrap = U.wrap, defined = U.defined;
 import WGLRenderer from './WGLRenderer.js';
+import DataTableCore from '../../Data/DataTableCore.js';
 /* *
  *
  *  Constants
@@ -69,7 +70,7 @@ function boostEnabled(chart) {
 /**
  * @private
  */
-function compose(SeriesClass, seriesTypes, wglMode) {
+function compose(SeriesClass, seriesTypes, PointClass, wglMode) {
     if (pushUnique(composed, 'Boost.Series')) {
         var plotOptions_1 = getOptions().plotOptions, seriesProto_1 = SeriesClass.prototype;
         addEvent(SeriesClass, 'destroy', onSeriesDestroy);
@@ -88,6 +89,16 @@ function compose(SeriesClass, seriesTypes, wglMode) {
             'render'
         ].forEach(function (method) {
             return wrapSeriesFunctions(seriesProto_1, seriesTypes, method);
+        });
+        wrap(PointClass.prototype, 'firePointEvent', function (proceed, type, e) {
+            var _a, _b;
+            if (type === 'click' && this.series.boosted) {
+                var point = e.point;
+                if ((point.dist || point.distX) >= ((_b = (_a = point.series.options.marker) === null || _a === void 0 ? void 0 : _a.radius) !== null && _b !== void 0 ? _b : 10)) {
+                    return;
+                }
+            }
+            return proceed.apply(this, [].slice.call(arguments, 1));
         });
         // Set default options
         Boostables.forEach(function (type) {
@@ -502,7 +513,7 @@ function onSeriesDestroy() {
     var series = this, chart = series.chart;
     if (chart.boost &&
         chart.boost.markerGroup === series.markerGroup) {
-        series.markerGroup = null;
+        series.markerGroup = void 0;
     }
     if (chart.hoverPoints) {
         chart.hoverPoints = chart.hoverPoints.filter(function (point) {
@@ -510,7 +521,7 @@ function onSeriesDestroy() {
         });
     }
     if (chart.hoverPoint && chart.hoverPoint.series === series) {
-        chart.hoverPoint = null;
+        chart.hoverPoint = void 0;
     }
 }
 /**
@@ -664,6 +675,11 @@ function scatterProcessData(force) {
     series.cropped = cropped;
     series.cropStart = 0;
     // For boosted points rendering
+    if (cropped && series.dataTable.modified === series.dataTable) {
+        // Calling setColumns with cropped data must be done on a new instance
+        // to avoid modification of the original (complete) data
+        series.dataTable.modified = new DataTableCore();
+    }
     series.dataTable.modified.setColumns({
         x: processedXData,
         y: processedYData
@@ -679,15 +695,36 @@ function scatterProcessData(force) {
  */
 function seriesRenderCanvas() {
     var _this = this;
+    var _a, _b, _c;
     var options = this.options || {}, chart = this.chart, chartBoost = chart.boost, seriesBoost = this.boost, xAxis = this.xAxis, yAxis = this.yAxis, xData = options.xData || this.getColumn('x', true), yData = options.yData || this.getColumn('y', true), lowData = this.getColumn('low', true), highData = this.getColumn('high', true), rawData = this.processedData || options.data, xExtremes = xAxis.getExtremes(), 
     // Taking into account the offset of the min point #19497
     xMin = xExtremes.min - (xAxis.minPointOffset || 0), xMax = xExtremes.max + (xAxis.minPointOffset || 0), yExtremes = yAxis.getExtremes(), yMin = yExtremes.min - (yAxis.minPointOffset || 0), yMax = yExtremes.max + (yAxis.minPointOffset || 0), pointTaken = {}, sampling = !!this.sampling, enableMouseTracking = options.enableMouseTracking, threshold = options.threshold, isRange = this.pointArrayMap &&
-        this.pointArrayMap.join(',') === 'low,high', isStacked = !!options.stacking, cropStart = this.cropStart || 0, requireSorting = this.requireSorting, useRaw = !xData, compareX = options.findNearestPointBy === 'x', xDataFull = ((this.getColumn('x', true).length ?
-        this.getColumn('x', true) :
+        this.pointArrayMap.join(',') === 'low,high', isStacked = !!options.stacking, cropStart = this.cropStart || 0, requireSorting = this.requireSorting, useRaw = !xData, compareX = options.findNearestPointBy === 'x', xDataFull = ((this.getColumn('x').length ?
+        this.getColumn('x') :
         void 0) ||
         this.options.xData ||
-        this.getColumn('x', true)), lineWidth = pick(options.lineWidth, 1);
+        this.getColumn('x', true)), lineWidth = pick(options.lineWidth, 1), nullYSubstitute = options.nullInteraction && yMin, tooltip = chart.tooltip;
     var renderer = false, lastClientX, yBottom = yAxis.getThreshold(threshold), minVal, maxVal, minI, maxI;
+    // Clear mock points and tooltip after zoom (#20330)
+    if (!this.boosted) {
+        return;
+    }
+    (_a = this.points) === null || _a === void 0 ? void 0 : _a.forEach(function (point) {
+        var _a;
+        (_a = point === null || point === void 0 ? void 0 : point.destroyElements) === null || _a === void 0 ? void 0 : _a.call(point);
+    });
+    this.points = [];
+    if (tooltip && !tooltip.isHidden) {
+        var isSeriesHovered = ((_b = chart.hoverPoint) === null || _b === void 0 ? void 0 : _b.series) === this ||
+            ((_c = chart.hoverPoints) === null || _c === void 0 ? void 0 : _c.some(function (point) { return point.series === _this; }));
+        if (isSeriesHovered) {
+            chart.hoverPoint = chart.hoverPoints = void 0;
+            tooltip.hide(0);
+        }
+    }
+    else if (chart.hoverPoints) {
+        chart.hoverPoints = chart.hoverPoints.filter(function (point) { return point.series !== _this; });
+    }
     // When touch-zooming or mouse-panning, re-rendering the canvas would not
     // perform fast enough. Instead, let the axes redraw, but not the series.
     // The series is scale-translated in an event handler for an approximate
@@ -806,6 +843,7 @@ function seriesRenderCanvas() {
      * @private
      */
     function processPoint(d, i) {
+        var _a, _b;
         var chartDestroyed = typeof chart.index === 'undefined';
         var x, y, clientX, plotY, percentage, low = false, isYInside = true;
         if (!defined(d)) {
@@ -818,7 +856,7 @@ function seriesRenderCanvas() {
             }
             else {
                 x = d;
-                y = yData === null || yData === void 0 ? void 0 : yData[i];
+                y = (_b = (_a = yData[i]) !== null && _a !== void 0 ? _a : nullYSubstitute) !== null && _b !== void 0 ? _b : null;
             }
             // Resolve low and high for range series
             if (isRange) {
@@ -1029,7 +1067,7 @@ function wrapSeriesProcessData(proceed) {
                 return;
             }
             // Extra check for zoomed scatter data
-            if (isScatter && !series.yAxis.treeGrid) {
+            if (isScatter && series.yAxis.type !== 'treegrid') {
                 scatterProcessData.call(series, arguments[1]);
             }
             else {

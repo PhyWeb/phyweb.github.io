@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -22,15 +22,21 @@ var defined = U.defined, isNumber = U.isNumber, pick = U.pick;
 function arc(cx, cy, w, h, options) {
     var arc = [];
     if (options) {
-        var start = options.start || 0, rx = pick(options.r, w), ry = pick(options.r, h || w), 
+        var start = options.start || 0, end = options.end || 0;
+        var rx = pick(options.r, w), ry = pick(options.r, h || w), 
         // Subtract a small number to prevent cos and sin of start and end
         // from becoming equal on 360 arcs (#1561). The size of the circle
         // affects the constant, therefore the division by `rx`. If the
         // proximity is too small, the arc disappears. If it is too great, a
         // gap appears. This can be seen in the animation of the official
-        // bubble demo (#20586).
-        proximity = 0.0002 / (options.borderRadius ? 1 : Math.max(rx, 1)), fullCircle = (Math.abs((options.end || 0) - start - 2 * Math.PI) <
-            proximity), end = (options.end || 0) - (fullCircle ? proximity : 0), innerRadius = options.innerR, open_1 = pick(options.open, fullCircle), cosStart = Math.cos(start), sinStart = Math.sin(start), cosEnd = Math.cos(end), sinEnd = Math.sin(end), 
+        // bubble demo (#20585).
+        proximity = 0.0002 / (options.borderRadius ? 1 : Math.max(rx, 1)), fullCircle = (Math.abs(end - start - 2 * Math.PI) <
+            proximity);
+        if (fullCircle) {
+            start = Math.PI / 2;
+            end = Math.PI * 2.5 - proximity;
+        }
+        var innerRadius = options.innerR, open_1 = pick(options.open, fullCircle), cosStart = Math.cos(start), sinStart = Math.sin(start), cosEnd = Math.cos(end), sinEnd = Math.sin(end), 
         // Proximity takes care of rounding errors around PI (#6971)
         longArc = pick(options.longArc, end - start - Math.PI < proximity ? 0 : 1);
         var arcSegment = [
@@ -89,7 +95,7 @@ function arc(cx, cy, w, h, options) {
  * Callout shape used for default tooltips.
  */
 function callout(x, y, w, h, options) {
-    var arrowLength = 6, halfDistance = 6, r = Math.min((options && options.r) || 0, w, h), safeDistance = r + halfDistance, anchorX = options && options.anchorX, anchorY = options && options.anchorY || 0;
+    var arrowLength = 6, halfDistance = 6, r = Math.min((options === null || options === void 0 ? void 0 : options.r) || 0, w, h), safeDistance = r + halfDistance, anchorX = options === null || options === void 0 ? void 0 : options.anchorX, anchorY = (options === null || options === void 0 ? void 0 : options.anchorY) || 0;
     var path = roundedRect(x, y, w, h, { r: r });
     if (!isNumber(anchorX)) {
         return path;
@@ -174,7 +180,7 @@ function diamond(x, y, w, h) {
  *
  */
 function rect(x, y, w, h, options) {
-    if (options && options.r) {
+    if (options === null || options === void 0 ? void 0 : options.r) {
         return roundedRect(x, y, w, h, options);
     }
     return [

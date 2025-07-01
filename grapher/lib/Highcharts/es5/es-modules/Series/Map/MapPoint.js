@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -109,14 +109,14 @@ var MapPoint = /** @class */ (function (_super) {
         if (bounds) {
             // Cache point bounding box for use to position data labels, bubbles
             // etc
-            var propMiddleLon = properties && properties['hc-middle-lon'], propMiddleLat = properties && properties['hc-middle-lat'];
+            var propMiddleLon = properties === null || properties === void 0 ? void 0 : properties['hc-middle-lon'], propMiddleLat = properties === null || properties === void 0 ? void 0 : properties['hc-middle-lat'];
             if (mapView && isNumber(propMiddleLon) && isNumber(propMiddleLat)) {
                 var projectedPoint = projection.forward([propMiddleLon, propMiddleLat]);
                 bounds.midX = projectedPoint[0];
                 bounds.midY = projectedPoint[1];
             }
             else {
-                var propMiddleX = properties && properties['hc-middle-x'], propMiddleY = properties && properties['hc-middle-y'];
+                var propMiddleX = properties === null || properties === void 0 ? void 0 : properties['hc-middle-x'], propMiddleY = properties === null || properties === void 0 ? void 0 : properties['hc-middle-y'];
                 bounds.midX = (bounds.x1 + (bounds.x2 - bounds.x1) * pick(this.middleX, isNumber(propMiddleX) ? propMiddleX : 0.5));
                 var middleYFraction = pick(this.middleY, isNumber(propMiddleY) ? propMiddleY : 0.5);
                 // No geographic geometry, only path given => flip

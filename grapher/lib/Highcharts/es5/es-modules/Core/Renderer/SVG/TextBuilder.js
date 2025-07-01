@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -34,11 +34,11 @@ var TextBuilder = /** @class */ (function () {
         this.renderer = svgElement.renderer;
         this.svgElement = svgElement;
         this.width = svgElement.textWidth;
-        this.textLineHeight = textStyles && textStyles.lineHeight;
-        this.textOutline = textStyles && textStyles.textOutline;
-        this.ellipsis = Boolean(textStyles && textStyles.textOverflow === 'ellipsis');
+        this.textLineHeight = textStyles === null || textStyles === void 0 ? void 0 : textStyles.lineHeight;
+        this.textOutline = textStyles === null || textStyles === void 0 ? void 0 : textStyles.textOutline;
+        this.ellipsis = Boolean((textStyles === null || textStyles === void 0 ? void 0 : textStyles.textOverflow) === 'ellipsis');
         this.lineClamp = textStyles === null || textStyles === void 0 ? void 0 : textStyles.lineClamp;
-        this.noWrap = Boolean(textStyles && textStyles.whiteSpace === 'nowrap');
+        this.noWrap = Boolean((textStyles === null || textStyles === void 0 ? void 0 : textStyles.whiteSpace) === 'nowrap');
     }
     /**
      * Build an SVG representation of the pseudo HTML given in the object's
@@ -309,7 +309,7 @@ var TextBuilder = /** @class */ (function () {
                 }
             }
             // Modify styling
-            if (style && style.color) {
+            if (style === null || style === void 0 ? void 0 : style.color) {
                 style.fill = style.color;
             }
             // Handle breaks
@@ -318,7 +318,7 @@ var TextBuilder = /** @class */ (function () {
                 node.textContent = '\u200B'; // Zero-width space
                 // Trim whitespace off the beginning of new lines
                 var nextNode = nodes[i + 1];
-                if (nextNode && nextNode.textContent) {
+                if (nextNode === null || nextNode === void 0 ? void 0 : nextNode.textContent) {
                     nextNode.textContent =
                         nextNode.textContent.replace(/^ +/gm, '');
                 }

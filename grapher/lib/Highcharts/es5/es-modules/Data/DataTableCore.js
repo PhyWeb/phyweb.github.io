@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2009-2024 Highsoft AS
+ *  (c) 2009-2025 Highsoft AS
  *
  *  License: www.highcharts.com/license
  *
@@ -13,8 +13,10 @@
  *
  * */
 'use strict';
+import ColumnUtils from './ColumnUtils.js';
+var setLength = ColumnUtils.setLength, splice = ColumnUtils.splice;
 import U from '../Core/Utilities.js';
-var fireEvent = U.fireEvent, isArray = U.isArray, objectEach = U.objectEach, uniqueKey = U.uniqueKey;
+var fireEvent = U.fireEvent, objectEach = U.objectEach, uniqueKey = U.uniqueKey;
 /* *
  *
  *  Class
@@ -60,7 +62,7 @@ var DataTableCore = /** @class */ (function () {
         this.autoId = !options.id;
         this.columns = {};
         /**
-         * ID of the table for indentification purposes.
+         * ID of the table for identification purposes.
          *
          * @name Highcharts.DataTable#id
          * @type {string}
@@ -89,12 +91,42 @@ var DataTableCore = /** @class */ (function () {
      * @param {number} rowCount The new row count.
      */
     DataTableCore.prototype.applyRowCount = function (rowCount) {
+        var _this = this;
         this.rowCount = rowCount;
-        objectEach(this.columns, function (column) {
-            if (isArray(column)) { // Not on typed array
-                column.length = rowCount;
+        objectEach(this.columns, function (column, columnName) {
+            if (column.length !== rowCount) {
+                _this.columns[columnName] = setLength(column, rowCount);
             }
         });
+    };
+    /**
+     * Delete rows. Simplified version of the full
+     * `DataTable.deleteRows` method.
+     *
+     * @param {number} rowIndex
+     * The start row index
+     *
+     * @param {number} [rowCount=1]
+     * The number of rows to delete
+     *
+     * @return {void}
+     *
+     * @emits #afterDeleteRows
+     */
+    DataTableCore.prototype.deleteRows = function (rowIndex, rowCount) {
+        var _this = this;
+        if (rowCount === void 0) { rowCount = 1; }
+        if (rowCount > 0 && rowIndex < this.rowCount) {
+            var length_1 = 0;
+            objectEach(this.columns, function (column, columnName) {
+                _this.columns[columnName] =
+                    splice(column, rowIndex, rowCount).array;
+                length_1 = column.length;
+            });
+            this.rowCount = length_1;
+        }
+        fireEvent(this, 'afterDeleteRows', { rowIndex: rowIndex, rowCount: rowCount });
+        this.versionTag = uniqueKey();
     };
     /**
      * Fetches the given column by the canonical column name. Simplified version
@@ -156,7 +188,7 @@ var DataTableCore = /** @class */ (function () {
      * @param {Highcharts.DataTableColumn} [column]
      * Values to set in the column.
      *
-     * @param {number} [rowIndex=0]
+     * @param {number} [rowIndex]
      * Index of the first row to change. (Default: 0)
      *
      * @param {Record<string, (boolean|number|string|null|undefined)>} [eventDetail]
@@ -172,15 +204,16 @@ var DataTableCore = /** @class */ (function () {
         this.setColumns((_a = {}, _a[columnName] = column, _a), rowIndex, eventDetail);
     };
     /**
-     * * Sets cell values for multiple columns. Will insert new columns, if not
-     * found. Simplified version of the full `DataTable.setColumns`, limited to
-     * full replacement of the columns (undefined `rowIndex`).
+     * Sets cell values for multiple columns. Will insert new columns, if not
+     * found. Simplified version of the full `DataTableCore.setColumns`, limited
+     * to full replacement of the columns (undefined `rowIndex`).
      *
      * @param {Highcharts.DataTableColumnCollection} columns
      * Columns as a collection, where the keys are the column names.
      *
      * @param {number} [rowIndex]
-     * Index of the first row to change. Keep undefined to reset.
+     * Index of the first row to change. Ignored in the `DataTableCore`, as it
+     * always replaces the full column.
      *
      * @param {Record<string, (boolean|number|string|null|undefined)>} [eventDetail]
      * Custom information for pending events.
@@ -210,7 +243,7 @@ var DataTableCore = /** @class */ (function () {
      * Cell values to set.
      *
      * @param {number} [rowIndex]
-     * Index of the row to set. Leave `undefind` to add as a new row.
+     * Index of the row to set. Leave `undefined` to add as a new row.
      *
      * @param {boolean} [insert]
      * Whether to insert the row at the given index, or to overwrite the row.
@@ -228,7 +261,7 @@ var DataTableCore = /** @class */ (function () {
                 (eventDetail === null || eventDetail === void 0 ? void 0 : eventDetail.addColumns) !== false && new Array(indexRowCount);
             if (column) {
                 if (insert) {
-                    column.splice(rowIndex, 0, cellValue);
+                    column = splice(column, rowIndex, 0, true, [cellValue]).array;
                 }
                 else {
                     column[rowIndex] = cellValue;
@@ -258,8 +291,11 @@ export default DataTableCore;
  *
  * */
 /**
+ * A typed array.
+ * @typedef {Int8Array|Uint8Array|Uint8ClampedArray|Int16Array|Uint16Array|Int32Array|Uint32Array|Float32Array|Float64Array} Highcharts.TypedArray
+ * //**
  * A column of values in a data table.
- * @typedef {Array<boolean|null|number|string|undefined>} Highcharts.DataTableColumn
+ * @typedef {Array<boolean|null|number|string|undefined>|Highcharts.TypedArray} Highcharts.DataTableColumn
  */ /**
 * A collection of data table columns defined by a object where the key is the
 * column name and the value is an array of the column values.

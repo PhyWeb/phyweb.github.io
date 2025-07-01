@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -175,6 +175,7 @@ var MapSeries = /** @class */ (function (_super) {
             ColumnSeries.prototype.drawPoints.apply(this);
             // Add class names
             this.points.forEach(function (point) {
+                var _a;
                 var graphic = point.graphic;
                 if (graphic) {
                     var animate_1 = graphic.animate;
@@ -184,7 +185,7 @@ var MapSeries = /** @class */ (function (_super) {
                             'highcharts-name-' +
                                 point.name.replace(/ /g, '-').toLowerCase();
                     }
-                    if (point.properties && point.properties['hc-key']) {
+                    if ((_a = point.properties) === null || _a === void 0 ? void 0 : _a['hc-key']) {
                         className +=
                             ' highcharts-key-' +
                                 point.properties['hc-key'].toString().toLowerCase();
@@ -204,6 +205,7 @@ var MapSeries = /** @class */ (function (_super) {
                             (!point.visible && !point.isNull)) ? 'inherit' : 'hidden'
                     });
                     graphic.animate = function (params, options, complete) {
+                        var _a;
                         var animateIn = (isNumber(params['stroke-width']) &&
                             !isNumber(graphic['stroke-width'])), animateOut = (isNumber(graphic['stroke-width']) &&
                             !isNumber(params['stroke-width']));
@@ -211,8 +213,7 @@ var MapSeries = /** @class */ (function (_super) {
                         if (animateIn || animateOut) {
                             var strokeWidth = pick(series.getStrokeWidth(series.options), 1 // Styled mode
                             ), inheritedStrokeWidth = (strokeWidth /
-                                (chart.mapView &&
-                                    chart.mapView.getScale() ||
+                                (((_a = chart.mapView) === null || _a === void 0 ? void 0 : _a.getScale()) ||
                                     1));
                             // For animating from undefined, .attr() reads the
                             // property as the starting point
@@ -260,8 +261,7 @@ var MapSeries = /** @class */ (function (_super) {
                 (series.points || []).forEach(function (point) {
                     var graphic = point.graphic;
                     var strokeWidth;
-                    if (graphic &&
-                        graphic['stroke-width'] &&
+                    if ((graphic === null || graphic === void 0 ? void 0 : graphic['stroke-width']) &&
                         (strokeWidth = _this.getStrokeWidth(point.options))) {
                         graphic.attr({
                             'stroke-width': strokeWidth / scale
@@ -385,8 +385,7 @@ var MapSeries = /** @class */ (function (_super) {
      */
     MapSeries.prototype.getStrokeWidth = function (options) {
         var pointAttrToOptions = this.pointAttrToOptions;
-        return options[pointAttrToOptions &&
-            pointAttrToOptions['stroke-width'] || 'borderWidth'];
+        return options[(pointAttrToOptions === null || pointAttrToOptions === void 0 ? void 0 : pointAttrToOptions['stroke-width']) || 'borderWidth'];
     };
     /**
      * Define hasData function for non-cartesian series. Returns true if the
@@ -488,7 +487,7 @@ var MapSeries = /** @class */ (function (_super) {
         // Pick up transform definitions for chart
         mapTransforms = chart.mapTransforms =
             chartOptions.mapTransforms ||
-                mapDataObject && mapDataObject['hc-transform'] ||
+                (mapDataObject === null || mapDataObject === void 0 ? void 0 : mapDataObject['hc-transform']) ||
                 chart.mapTransforms;
         var mapPoint, props;
         // Cache cos/sin of transform rotation angle
@@ -638,7 +637,7 @@ var MapSeries = /** @class */ (function (_super) {
      * @private
      */
     MapSeries.prototype.translate = function () {
-        var series = this, doFullTranslate = series.doFullTranslate(), mapView = this.chart.mapView, projection = mapView && mapView.projection;
+        var series = this, doFullTranslate = series.doFullTranslate(), mapView = this.chart.mapView, projection = mapView === null || mapView === void 0 ? void 0 : mapView.projection;
         // Recalculate box on updated data
         if (this.chart.hasRendered && (this.isDirtyData || !this.hasRendered)) {
             this.processData();

@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2010-2024 Sebastian Bochan, Rafal Sebestjanski
+ *  (c) 2010-2025 Sebastian Bochan, Rafal Sebestjanski
  *
  *  License: www.highcharts.com/license
  *
@@ -187,20 +187,21 @@ var DumbbellSeries = /** @class */ (function (_super) {
      * @private
      */
     DumbbellSeries.prototype.drawPoints = function () {
-        var _a;
         var series = this, chart = series.chart, pointLength = series.points.length, seriesLowColor = series.lowColor = series.options.lowColor, seriesLowMarker = series.options.lowMarker;
         var i = 0, lowerGraphicColor, point, zoneColor;
         this.seriesDrawPoints.apply(series, arguments);
         // Draw connectors and color upper markers
         while (i < pointLength) {
             point = series.points[i];
-            var _b = point.graphics || [], lowerGraphic = _b[0], upperGraphic = _b[1];
+            var _a = point.graphics || [], lowerGraphic = _a[0], upperGraphic = _a[1];
             series.drawConnector(point);
             if (upperGraphic) {
                 upperGraphic.element.point = point;
                 upperGraphic.addClass('highcharts-lollipop-high');
             }
-            ((_a = point.connector) === null || _a === void 0 ? void 0 : _a.element).point = point;
+            if (point.connector) {
+                point.connector.element.point = point;
+            }
             if (lowerGraphic) {
                 zoneColor = point.zone && point.zone.color;
                 lowerGraphicColor = pick(point.options.lowColor, seriesLowMarker === null || seriesLowMarker === void 0 ? void 0 : seriesLowMarker.fillColor, seriesLowColor, point.options.color, zoneColor, point.color, series.color);

@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -198,6 +198,7 @@ var HeatmapSeries = /** @class */ (function (_super) {
      * @private
      */
     HeatmapSeries.prototype.markerAttribs = function (point, state) {
+        var _a, _b;
         var shapeArgs = point.shapeArgs || {};
         if (point.hasImage) {
             return {
@@ -208,9 +209,7 @@ var HeatmapSeries = /** @class */ (function (_super) {
         // Setting width and height attributes on image does not affect on its
         // dimensions.
         if (state && state !== 'normal') {
-            var pointMarkerOptions = point.options.marker || {}, seriesMarkerOptions = this.options.marker || {}, seriesStateOptions = (seriesMarkerOptions.states &&
-                seriesMarkerOptions.states[state]) || {}, pointStateOptions = (pointMarkerOptions.states &&
-                pointMarkerOptions.states[state]) || {};
+            var pointMarkerOptions = point.options.marker || {}, seriesMarkerOptions = this.options.marker || {}, seriesStateOptions = ((_a = seriesMarkerOptions.states) === null || _a === void 0 ? void 0 : _a[state]) || {}, pointStateOptions = ((_b = pointMarkerOptions.states) === null || _b === void 0 ? void 0 : _b[state]) || {};
             // Set new width and height basing on state options.
             var width = (pointStateOptions.width ||
                 seriesStateOptions.width ||
@@ -234,30 +233,26 @@ var HeatmapSeries = /** @class */ (function (_super) {
      * @private
      */
     HeatmapSeries.prototype.pointAttribs = function (point, state) {
+        var _a, _b, _c, _d, _e, _f;
         var series = this, attr = Series.prototype.pointAttribs.call(series, point, state), seriesOptions = series.options || {}, plotOptions = series.chart.options.plotOptions || {}, seriesPlotOptions = plotOptions.series || {}, heatmapPlotOptions = plotOptions.heatmap || {}, 
         // Get old properties in order to keep backward compatibility
-        borderColor = (point && point.options.borderColor) ||
+        borderColor = (point === null || point === void 0 ? void 0 : point.options.borderColor) ||
             seriesOptions.borderColor ||
             heatmapPlotOptions.borderColor ||
-            seriesPlotOptions.borderColor, borderWidth = (point && point.options.borderWidth) ||
+            seriesPlotOptions.borderColor, borderWidth = (point === null || point === void 0 ? void 0 : point.options.borderWidth) ||
             seriesOptions.borderWidth ||
             heatmapPlotOptions.borderWidth ||
             seriesPlotOptions.borderWidth ||
             attr['stroke-width'];
         // Apply lineColor, or set it to default series color.
-        attr.stroke = ((point && point.marker && point.marker.lineColor) ||
-            (seriesOptions.marker && seriesOptions.marker.lineColor) ||
+        attr.stroke = (((_a = point === null || point === void 0 ? void 0 : point.marker) === null || _a === void 0 ? void 0 : _a.lineColor) ||
+            ((_b = seriesOptions.marker) === null || _b === void 0 ? void 0 : _b.lineColor) ||
             borderColor ||
             this.color);
         // Apply old borderWidth property if exists.
         attr['stroke-width'] = borderWidth;
         if (state && state !== 'normal') {
-            var stateOptions = merge((seriesOptions.states &&
-                seriesOptions.states[state]), (seriesOptions.marker &&
-                seriesOptions.marker.states &&
-                seriesOptions.marker.states[state]), (point &&
-                point.options.states &&
-                point.options.states[state] || {}));
+            var stateOptions = merge((_c = seriesOptions.states) === null || _c === void 0 ? void 0 : _c[state], (_e = (_d = seriesOptions.marker) === null || _d === void 0 ? void 0 : _d.states) === null || _e === void 0 ? void 0 : _e[state], ((_f = point === null || point === void 0 ? void 0 : point.options.states) === null || _f === void 0 ? void 0 : _f[state]) || {});
             attr.fill =
                 stateOptions.color ||
                     Color.parse(attr.fill).brighten(stateOptions.brightness || 0).get();
@@ -269,13 +264,14 @@ var HeatmapSeries = /** @class */ (function (_super) {
      * @private
      */
     HeatmapSeries.prototype.translate = function () {
-        var series = this, options = series.options, borderRadius = options.borderRadius, marker = options.marker, symbol = marker && marker.symbol || 'rect', shape = symbols[symbol] ? symbol : 'rect', hasRegularShape = ['circle', 'square'].indexOf(shape) !== -1;
+        var _a;
+        var series = this, options = series.options, borderRadius = options.borderRadius, marker = options.marker, symbol = (marker === null || marker === void 0 ? void 0 : marker.symbol) || 'rect', shape = symbols[symbol] ? symbol : 'rect', hasRegularShape = ['circle', 'square'].indexOf(shape) !== -1;
         series.generatePoints();
-        for (var _i = 0, _a = series.points; _i < _a.length; _i++) {
-            var point = _a[_i];
+        for (var _i = 0, _b = series.points; _i < _b.length; _i++) {
+            var point = _b[_i];
             var cellAttr = point.getCellAttributes();
             var x = Math.min(cellAttr.x1, cellAttr.x2), y = Math.min(cellAttr.y1, cellAttr.y2), width = Math.max(Math.abs(cellAttr.x2 - cellAttr.x1), 0), height = Math.max(Math.abs(cellAttr.y2 - cellAttr.y1), 0);
-            point.hasImage = (point.marker && point.marker.symbol || symbol || '').indexOf('url') === 0;
+            point.hasImage = (((_a = point.marker) === null || _a === void 0 ? void 0 : _a.symbol) || symbol || '').indexOf('url') === 0;
             // If marker shape is regular (square), find the shorter cell's
             // side.
             if (hasRegularShape) {

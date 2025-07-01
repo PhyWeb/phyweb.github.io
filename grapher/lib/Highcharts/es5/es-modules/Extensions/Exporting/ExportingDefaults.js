@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -8,6 +8,42 @@
  *
  * */
 'use strict';
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __generator = (this && this.__generator) || function (thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (g && (g = 0, op[0] && (_ = 0)), _) try {
+            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [op[0] & 2, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+};
 import H from '../../Core/Globals.js';
 var isTouchDevice = H.isTouchDevice;
 /* *
@@ -45,7 +81,7 @@ var exporting = {
     /**
      * Allows the end user to sort the data table by clicking on column headers.
      *
-     * @since 10.3.3
+     * @since     10.3.3
      * @apioption exporting.allowTableSorting
      */
     allowTableSorting: true,
@@ -60,7 +96,7 @@ var exporting = {
      *
      * @type      {boolean}
      * @default   false
-     * @since 12.0.0
+     * @since     12.0.0
      * @apioption exporting.applyStyleSheets
      */
     /**
@@ -163,8 +199,8 @@ var exporting = {
      * See [MDN](https://developer.mozilla.org/en-US/docs/Web/API/fetch)
      * for more information
      *
-     * @type {Object}
-     * @since 11.3.0
+     * @type      {Object}
+     * @since     11.3.0
      * @apioption exporting.fetchOptions
      */
     /**
@@ -180,6 +216,27 @@ var exporting = {
      * @since     5.0.0
      * @apioption exporting.libURL
      */
+    libURL: 'https://code.highcharts.com/@product.version@/lib/',
+    /**
+     * Whether the chart should be exported using the browser's built-in
+     * capabilities, allowing offline exports without requiring access to the
+     * Highcharts export server, or sent directly to the export server for
+     * processing and downloading.
+     *
+     * This option is different from `exporting.fallbackToExportServer`, which
+     * controls whether the export server should be used as a fallback only if
+     * the local export fails. In contrast, `exporting.local` explicitly defines
+     * which export method to use.
+     *
+     * @see [fallbackToExportServer](#exporting.fallbackToExportServer)
+     *
+     * @type      {boolean}
+     * @default   true
+     * @since 12.3.0
+     * @requires  modules/exporting
+     * @apioption exporting.local
+     */
+    local: true,
     /**
      * Analogous to [sourceWidth](#exporting.sourceWidth).
      *
@@ -234,7 +291,7 @@ var exporting = {
      *
      * @since 2.0
      */
-    url: 'https://export-svg.highcharts.com/',
+    url: "https://export-svg.highcharts.com?v=".concat(H.version),
     /**
      * Settings for a custom font for the exported PDF, when using the
      * `offline-exporting` module. This is used for languages containing
@@ -252,7 +309,7 @@ var exporting = {
      * @sample {highcharts} highcharts/exporting/offline-download-pdffont/
      *         Download PDF in a language containing non-Latin characters.
      *
-     * @since 10.0.0
+     * @since    10.0.0
      * @requires modules/offline-exporting
      */
     pdfFont: {
@@ -261,25 +318,25 @@ var exporting = {
          * `bold` or `italic` are not defined, the `normal` font will be used
          * for those too.
          *
-         * @type string|undefined
+         * @type string | undefined
          */
         normal: void 0,
         /**
          * The TTF font file for bold text.
          *
-         * @type string|undefined
+         * @type string | undefined
          */
         bold: void 0,
         /**
          * The TTF font file for bold and italic text.
          *
-         * @type string|undefined
+         * @type string | undefined
          */
         bolditalic: void 0,
         /**
          * The TTF font file for italic text.
          *
-         * @type string|undefined
+         * @type string | undefined
          */
         italic: void 0
     },
@@ -382,7 +439,7 @@ var exporting = {
              * @sample highcharts/exporting/buttons-contextbutton-symbol-custom/
              *         Custom shape as symbol
              *
-             * @type  {Highcharts.SymbolKeyValue|"menu"|"menuball"|string}
+             * @type  {Highcharts.SymbolKeyValue | "menu" | "menuball" | string}
              * @since 2.0
              */
             symbol: 'menu',
@@ -403,12 +460,10 @@ var exporting = {
              * By default, there is the "View in full screen" and "Print" menu
              * items, plus one menu item for each of the available export types.
              *
-             * @sample {highcharts} highcharts/exporting/menuitemdefinitions/
+             * @sample highcharts/exporting/menuitemdefinitions/
              *         Menu item definitions
-             * @sample {highstock} highcharts/exporting/menuitemdefinitions/
-             *         Menu item definitions
-             * @sample {highmaps} highcharts/exporting/menuitemdefinitions/
-             *         Menu item definitions
+             * @sample highcharts/exporting/menuitemdefinitions-webp/
+             *         Adding a custom menu item for WebP export
              *
              * @type    {Array<string>}
              * @default ["viewFullscreen", "printChart", "separator", "downloadPNG", "downloadJPEG", "downloadSVG"]
@@ -421,8 +476,7 @@ var exporting = {
                 'downloadPNG',
                 'downloadJPEG',
                 'downloadSVG'
-            ],
-            y: -5
+            ]
         }
     },
     /**
@@ -441,12 +495,10 @@ var exporting = {
      * Custom text for the "exitFullScreen" can be set only in lang options
      * (it is not a separate button).
      *
-     * @sample {highcharts} highcharts/exporting/menuitemdefinitions/
+     * @sample highcharts/exporting/menuitemdefinitions/
      *         Menu item definitions
-     * @sample {highstock} highcharts/exporting/menuitemdefinitions/
-     *         Menu item definitions
-     * @sample {highmaps} highcharts/exporting/menuitemdefinitions/
-     *         Menu item definitions
+     * @sample highcharts/exporting/menuitemdefinitions-webp/
+     *         Adding a custom menu item for WebP export
      *
      *
      * @type    {Highcharts.Dictionary<Highcharts.ExportingMenuObject>}
@@ -460,9 +512,8 @@ var exporting = {
         viewFullscreen: {
             textKey: 'viewFullscreen',
             onclick: function () {
-                if (this.fullscreen) {
-                    this.fullscreen.toggle();
-                }
+                var _a;
+                (_a = this.fullscreen) === null || _a === void 0 ? void 0 : _a.toggle();
             }
         },
         /**
@@ -471,7 +522,8 @@ var exporting = {
         printChart: {
             textKey: 'printChart',
             onclick: function () {
-                this.print();
+                var _a;
+                (_a = this.exporting) === null || _a === void 0 ? void 0 : _a.print();
             }
         },
         /**
@@ -486,7 +538,17 @@ var exporting = {
         downloadPNG: {
             textKey: 'downloadPNG',
             onclick: function () {
-                this.exportChart();
+                return __awaiter(this, void 0, void 0, function () {
+                    var _a;
+                    return __generator(this, function (_b) {
+                        switch (_b.label) {
+                            case 0: return [4 /*yield*/, ((_a = this.exporting) === null || _a === void 0 ? void 0 : _a.exportChart())];
+                            case 1:
+                                _b.sent();
+                                return [2 /*return*/];
+                        }
+                    });
+                });
             }
         },
         /**
@@ -495,8 +557,18 @@ var exporting = {
         downloadJPEG: {
             textKey: 'downloadJPEG',
             onclick: function () {
-                this.exportChart({
-                    type: 'image/jpeg'
+                return __awaiter(this, void 0, void 0, function () {
+                    var _a;
+                    return __generator(this, function (_b) {
+                        switch (_b.label) {
+                            case 0: return [4 /*yield*/, ((_a = this.exporting) === null || _a === void 0 ? void 0 : _a.exportChart({
+                                    type: 'image/jpeg'
+                                }))];
+                            case 1:
+                                _b.sent();
+                                return [2 /*return*/];
+                        }
+                    });
                 });
             }
         },
@@ -506,8 +578,18 @@ var exporting = {
         downloadPDF: {
             textKey: 'downloadPDF',
             onclick: function () {
-                this.exportChart({
-                    type: 'application/pdf'
+                return __awaiter(this, void 0, void 0, function () {
+                    var _a;
+                    return __generator(this, function (_b) {
+                        switch (_b.label) {
+                            case 0: return [4 /*yield*/, ((_a = this.exporting) === null || _a === void 0 ? void 0 : _a.exportChart({
+                                    type: 'application/pdf'
+                                }))];
+                            case 1:
+                                _b.sent();
+                                return [2 /*return*/];
+                        }
+                    });
                 });
             }
         },
@@ -517,8 +599,18 @@ var exporting = {
         downloadSVG: {
             textKey: 'downloadSVG',
             onclick: function () {
-                this.exportChart({
-                    type: 'image/svg+xml'
+                return __awaiter(this, void 0, void 0, function () {
+                    var _a;
+                    return __generator(this, function (_b) {
+                        switch (_b.label) {
+                            case 0: return [4 /*yield*/, ((_a = this.exporting) === null || _a === void 0 ? void 0 : _a.exportChart({
+                                    type: 'image/svg+xml'
+                                }))];
+                            case 1:
+                                _b.sent();
+                                return [2 /*return*/];
+                        }
+                    });
                 });
             }
         }
@@ -659,6 +751,7 @@ var navigation = {
          *
          * @sample highcharts/title/widthadjust
          *         Adjust the spacing when using text button
+         *
          * @since 2.0
          */
         buttonSpacing: 5,
@@ -695,21 +788,20 @@ var navigation = {
          *
          * @type      boolean
          * @default   false
-         * @since 10.3.0
+         * @since     10.3.0
          * @apioption navigation.buttonOptions.useHTML
          */
         /**
          * The vertical offset of the button's position relative to its
-         * `verticalAlign`.
+         * `verticalAlign`. By default adjusted for the chart title alignment.
          *
          * @sample highcharts/navigation/buttonoptions-verticalalign/
          *         Buttons at lower right
          *
-         * @type      {number}
-         * @default   0
          * @since     2.0
          * @apioption navigation.buttonOptions.y
          */
+        y: -5,
         /**
          * The vertical alignment of the buttons. Can be one of `"top"`,
          * `"middle"` or `"bottom"`.
@@ -736,7 +828,7 @@ var navigation = {
          * @sample highcharts/navigation/buttonoptions-symbolfill/
          *         Blue symbol stroke for one of the buttons
          *
-         * @type  {Highcharts.ColorString|Highcharts.GradientColorObject|Highcharts.PatternObject}
+         * @type  {Highcharts.ColorString | Highcharts.GradientColorObject | Highcharts.PatternObject}
          * @since 2.0
          */
         symbolFill: "#666666" /* Palette.neutralColor60 */,
@@ -776,7 +868,7 @@ var navigation = {
             /**
              * The default fill exists only to capture hover events.
              *
-             * @type      {Highcharts.ColorString|Highcharts.GradientColorObject|Highcharts.PatternObject}
+             * @type {Highcharts.ColorString|Highcharts.GradientColorObject|Highcharts.PatternObject}
              */
             fill: "#ffffff" /* Palette.backgroundColor */,
             /**
@@ -786,7 +878,7 @@ var navigation = {
             /**
              * Default stroke for the buttons.
              *
-             * @type      {Highcharts.ColorString}
+             * @type {Highcharts.ColorString}
              */
             stroke: 'none',
             /**

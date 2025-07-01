@@ -1,11 +1,11 @@
 /**
- * @license Highcharts JS v12.1.2 (2025-01-09)
+ * @license Highcharts JS v12.3.0 (2025-06-21)
  * @module highcharts/modules/navigator
  * @requires highcharts
  *
  * Standalone navigator module
  *
- * (c) 2009-2024 Mateusz Bernacik
+ * (c) 2009-2025 Mateusz Bernacik
  *
  * License: www.highcharts.com/license
  */
@@ -23,31 +23,17 @@ return /******/ (function() { // webpackBootstrap
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
+/***/ 512:
+/***/ (function(module) {
+
+module.exports = __WEBPACK_EXTERNAL_MODULE__512__;
+
+/***/ }),
+
 /***/ 532:
 /***/ (function(module) {
 
 module.exports = __WEBPACK_EXTERNAL_MODULE__532__;
-
-/***/ }),
-
-/***/ 960:
-/***/ (function(module) {
-
-module.exports = __WEBPACK_EXTERNAL_MODULE__960__;
-
-/***/ }),
-
-/***/ 620:
-/***/ (function(module) {
-
-module.exports = __WEBPACK_EXTERNAL_MODULE__620__;
-
-/***/ }),
-
-/***/ 608:
-/***/ (function(module) {
-
-module.exports = __WEBPACK_EXTERNAL_MODULE__608__;
 
 /***/ }),
 
@@ -58,10 +44,17 @@ module.exports = __WEBPACK_EXTERNAL_MODULE__540__;
 
 /***/ }),
 
-/***/ 512:
+/***/ 608:
 /***/ (function(module) {
 
-module.exports = __WEBPACK_EXTERNAL_MODULE__512__;
+module.exports = __WEBPACK_EXTERNAL_MODULE__608__;
+
+/***/ }),
+
+/***/ 620:
+/***/ (function(module) {
+
+module.exports = __WEBPACK_EXTERNAL_MODULE__620__;
 
 /***/ }),
 
@@ -69,6 +62,13 @@ module.exports = __WEBPACK_EXTERNAL_MODULE__512__;
 /***/ (function(module) {
 
 module.exports = __WEBPACK_EXTERNAL_MODULE__944__;
+
+/***/ }),
+
+/***/ 960:
+/***/ (function(module) {
+
+module.exports = __WEBPACK_EXTERNAL_MODULE__960__;
 
 /***/ })
 
@@ -148,7 +148,7 @@ var highcharts_Axis_commonjs_highcharts_Axis_commonjs2_highcharts_Axis_root_High
 ;// ./code/es5/es-modules/Stock/Navigator/ChartNavigatorComposition.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -346,7 +346,7 @@ var ChartNavigatorComposition = {
 ;// ./code/es5/es-modules/Core/Axis/NavigatorAxisComposition.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -511,7 +511,7 @@ var highcharts_SeriesRegistry_commonjs_highcharts_SeriesRegistry_commonjs2_highc
 ;// ./code/es5/es-modules/Stock/Navigator/NavigatorDefaults.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -598,7 +598,7 @@ var NavigatorDefaults = {
      * @sample {highstock} stock/navigator/margin/
      *         A margin of 2 draws the navigator closer to the X axis labels
      */
-    margin: 25,
+    margin: 22,
     /**
      * Whether the mask should be inside the range marking the zoomed
      * range, or outside. In Highcharts Stock 1.x it was always `false`.
@@ -1006,7 +1006,7 @@ var NavigatorDefaults = {
         },
         crosshair: false,
         title: {
-            text: null
+            text: void 0
         },
         tickLength: 0,
         tickWidth: 0
@@ -1040,7 +1040,7 @@ var NavigatorDefaults = {
 ;// ./code/es5/es-modules/Core/Renderer/SVG/Symbols.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -1063,7 +1063,8 @@ function arc(cx, cy, w, h, options) {
     var arc = [];
     if (options) {
         var start = options.start || 0,
-            rx = Symbols_pick(options.r,
+            end = options.end || 0;
+        var rx = Symbols_pick(options.r,
             w),
             ry = Symbols_pick(options.r,
             h || w), 
@@ -1072,12 +1073,15 @@ function arc(cx, cy, w, h, options) {
             // affects the constant, therefore the division by `rx`. If the
             // proximity is too small, the arc disappears. If it is too great, a
             // gap appears. This can be seen in the animation of the official
-            // bubble demo (#20586).
+            // bubble demo (#20585).
             proximity = 0.0002 / (options.borderRadius ? 1 : Math.max(rx, 1)),
-            fullCircle = (Math.abs((options.end || 0) - start - 2 * Math.PI) <
-                proximity),
-            end = (options.end || 0) - (fullCircle ? proximity : 0),
-            innerRadius = options.innerR,
+            fullCircle = (Math.abs(end - start - 2 * Math.PI) <
+                proximity);
+        if (fullCircle) {
+            start = Math.PI / 2;
+            end = Math.PI * 2.5 - proximity;
+        }
+        var innerRadius = options.innerR,
             open_1 = Symbols_pick(options.open,
             fullCircle),
             cosStart = Math.cos(start),
@@ -1145,12 +1149,12 @@ function arc(cx, cy, w, h, options) {
 function callout(x, y, w, h, options) {
     var arrowLength = 6,
         halfDistance = 6,
-        r = Math.min((options && options.r) || 0,
+        r = Math.min((options === null || options === void 0 ? void 0 : options.r) || 0,
         w,
         h),
         safeDistance = r + halfDistance,
-        anchorX = options && options.anchorX,
-        anchorY = options && options.anchorY || 0;
+        anchorX = options === null || options === void 0 ? void 0 : options.anchorX,
+        anchorY = (options === null || options === void 0 ? void 0 : options.anchorY) || 0;
     var path = roundedRect(x,
         y,
         w,
@@ -1242,7 +1246,7 @@ function diamond(x, y, w, h) {
  *
  */
 function rect(x, y, w, h, options) {
-    if (options && options.r) {
+    if (options === null || options === void 0 ? void 0 : options.r) {
         return roundedRect(x, y, w, h, options);
     }
     return [
@@ -1314,7 +1318,7 @@ var Symbols = {
 ;// ./code/es5/es-modules/Stock/Navigator/NavigatorSymbols.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -1374,7 +1378,7 @@ var highcharts_RendererRegistry_commonjs_highcharts_RendererRegistry_commonjs2_h
 ;// ./code/es5/es-modules/Stock/Utilities/StockUtilities.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -1417,7 +1421,7 @@ var StockUtilities = {
 ;// ./code/es5/es-modules/Stock/Navigator/NavigatorComposition.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -1426,7 +1430,7 @@ var StockUtilities = {
  * */
 
 
-var setOptions = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).setOptions;
+var defaultOptions = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).defaultOptions;
 
 var composed = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).composed;
 
@@ -1456,8 +1460,8 @@ function NavigatorComposition_compose(ChartClass, AxisClass, SeriesClass) {
     if (pushUnique(composed, 'Navigator')) {
         ChartClass.prototype.setFixedRange = NavigatorComposition_setFixedRange;
         extend(getRendererType().prototype.symbols, Navigator_NavigatorSymbols);
+        extend(defaultOptions, { navigator: Navigator_NavigatorDefaults });
         NavigatorComposition_addEvent(SeriesClass, 'afterUpdate', onSeriesAfterUpdate);
-        setOptions({ navigator: Navigator_NavigatorDefaults });
     }
 }
 /**
@@ -1482,7 +1486,7 @@ var NavigatorComposition = {
 ;// ./code/es5/es-modules/Core/Axis/ScrollbarAxis.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -1534,9 +1538,11 @@ var ScrollbarAxis;
     ScrollbarAxis.compose = compose;
     /** @private */
     function getExtremes(axis) {
-        var axisMin = ScrollbarAxis_pick(axis.options && axis.options.min,
+        var _a,
+            _b;
+        var axisMin = ScrollbarAxis_pick((_a = axis.options) === null || _a === void 0 ? void 0 : _a.min,
             axis.min);
-        var axisMax = ScrollbarAxis_pick(axis.options && axis.options.max,
+        var axisMax = ScrollbarAxis_pick((_b = axis.options) === null || _b === void 0 ? void 0 : _b.max,
             axis.max);
         return {
             axisMin: axisMin,
@@ -1568,10 +1574,10 @@ var ScrollbarAxis;
      * @private
      */
     function onAxisAfterInit() {
+        var _a,
+            _b;
         var axis = this;
-        if (axis.options &&
-            axis.options.scrollbar &&
-            axis.options.scrollbar.enabled) {
+        if ((_b = (_a = axis.options) === null || _a === void 0 ? void 0 : _a.scrollbar) === null || _b === void 0 ? void 0 : _b.enabled) {
             // Predefined options:
             axis.options.scrollbar.vertical = !axis.horiz;
             axis.options.startOnTick = axis.options.endOnTick = false;
@@ -1720,7 +1726,7 @@ var ScrollbarAxis;
 ;// ./code/es5/es-modules/Stock/Scrollbar/ScrollbarDefaults.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -1812,7 +1818,7 @@ var ScrollbarDefaults = {
     /**
      * The margin between the scrollbar and its axis when the scrollbar is
      * applied directly to an axis, or the navigator in case that is enabled.
-     * Defaults to 10 for axis, 0 for navigator.
+     * Defaults to 10 for axis, 3 for navigator.
      *
      * @type {number|undefined}
      */
@@ -1943,7 +1949,7 @@ var ScrollbarDefaults = {
 ;// ./code/es5/es-modules/Stock/Scrollbar/Scrollbar.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -1952,12 +1958,13 @@ var ScrollbarDefaults = {
  * */
 
 
-var defaultOptions = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).defaultOptions;
+var Scrollbar_defaultOptions = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).defaultOptions;
+
+var Scrollbar_composed = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).composed;
 
 
 
-
-var Scrollbar_addEvent = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).addEvent, Scrollbar_correctFloat = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).correctFloat, crisp = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).crisp, Scrollbar_defined = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).defined, destroyObjectProperties = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).destroyObjectProperties, fireEvent = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).fireEvent, Scrollbar_merge = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).merge, Scrollbar_pick = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).pick, removeEvent = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).removeEvent;
+var Scrollbar_addEvent = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).addEvent, Scrollbar_correctFloat = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).correctFloat, crisp = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).crisp, Scrollbar_defined = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).defined, destroyObjectProperties = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).destroyObjectProperties, Scrollbar_extend = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).extend, fireEvent = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).fireEvent, Scrollbar_merge = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).merge, Scrollbar_pick = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).pick, Scrollbar_pushUnique = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).pushUnique, removeEvent = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).removeEvent;
 /* *
  *
  *  Constants
@@ -2009,6 +2016,9 @@ var Scrollbar = /** @class */ (function () {
      * */
     Scrollbar.compose = function (AxisClass) {
         Axis_ScrollbarAxis.compose(AxisClass, Scrollbar);
+        if (Scrollbar_pushUnique(Scrollbar_composed, 'Scrollbar')) {
+            Scrollbar_extend(Scrollbar_defaultOptions, { scrollbar: Scrollbar_ScrollbarDefaults });
+        }
     };
     /**
      * When we have vertical scrollbar, rifles and arrow in buttons should be
@@ -2253,7 +2263,7 @@ var Scrollbar = /** @class */ (function () {
         scroller.scrollbarButtons = [];
         scroller.renderer = renderer;
         scroller.userOptions = options;
-        scroller.options = Scrollbar_merge(Scrollbar_ScrollbarDefaults, defaultOptions.scrollbar, options);
+        scroller.options = Scrollbar_merge(Scrollbar_ScrollbarDefaults, Scrollbar_defaultOptions.scrollbar, options);
         scroller.options.margin = Scrollbar_pick(scroller.options.margin, 10);
         scroller.chart = chart;
         // Backward compatibility
@@ -2648,12 +2658,6 @@ var Scrollbar = /** @class */ (function () {
 }());
 /* *
  *
- *  Registry
- *
- * */
-defaultOptions.scrollbar = Scrollbar_merge(true, Scrollbar.defaultOptions, defaultOptions.scrollbar);
-/* *
- *
  *  Default Export
  *
  * */
@@ -2665,7 +2669,7 @@ var highcharts_SVGRenderer_commonjs_highcharts_SVGRenderer_commonjs2_highcharts_
 ;// ./code/es5/es-modules/Stock/Navigator/Navigator.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -3648,7 +3652,8 @@ var Navigator = /** @class */ (function () {
      * @function Highcharts.Navigator#init
      */
     Navigator.prototype.init = function (chart) {
-        var _a;
+        var _a,
+            _b;
         var chartOptions = chart.options,
             navigatorOptions = chartOptions.navigator || {},
             navigatorEnabled = navigatorOptions.enabled,
@@ -3765,9 +3770,9 @@ var Navigator = /** @class */ (function () {
             navigator.xAxis.navigatorAxis.toFixedRange = (NavigatorAxisComposition.prototype.toFixedRange.bind(navigator.xAxis.navigatorAxis));
         }
         // Initialize the scrollbar
-        if (chart.options.scrollbar.enabled) {
+        if ((_b = chart.options.scrollbar) === null || _b === void 0 ? void 0 : _b.enabled) {
             var options = Navigator_merge(chart.options.scrollbar, { vertical: chart.inverted });
-            if (!Navigator_isNumber(options.margin) && navigator.navigatorEnabled) {
+            if (!Navigator_isNumber(options.margin)) {
                 options.margin = chart.inverted ? -3 : 3;
             }
             chart.scrollbar = navigator.scrollbar = new Scrollbar_Scrollbar(chart.renderer, options, chart);
@@ -4234,6 +4239,7 @@ var Navigator = /** @class */ (function () {
         }), 
         // Make room for the navigator, can be placed around the chart:
         Navigator_addEvent(this.chart, 'getMargins', function () {
+            var _a;
             var chart = this,
                 navigator = chart.navigator;
             var marginName = navigator.opposite ?
@@ -4242,10 +4248,10 @@ var Navigator = /** @class */ (function () {
                 marginName = navigator.opposite ?
                     'marginRight' : 'plotLeft';
             }
-            chart[marginName] =
-                (chart[marginName] || 0) + (navigator.navigatorEnabled || !chart.inverted ?
-                    navigator.height + navigator.scrollbarHeight :
-                    0) + navigator.navigatorOptions.margin;
+            chart[marginName] = (chart[marginName] || 0) + (navigator.navigatorEnabled || !chart.inverted ?
+                navigator.height +
+                    (((_a = this.scrollbar) === null || _a === void 0 ? void 0 : _a.options.margin) || 0) +
+                    navigator.scrollbarHeight : 0) + (navigator.navigatorOptions.margin || 0);
         }), Navigator_addEvent(Navigator, 'setRange', function (e) {
             this.chart.xAxis[0].setExtremes(e.min, e.max, e.redraw, e.animation, e.eventArguments);
         }));
@@ -4289,6 +4295,10 @@ var Navigator = /** @class */ (function () {
         [this.handles].forEach(function (coll) {
             Navigator_destroyObjectProperties(coll);
         });
+        // Clean up linked series
+        this.baseSeries.forEach(function (s) {
+            s.navigatorSeries = void 0;
+        });
         this.navigatorEnabled = false;
     };
     return Navigator;
@@ -4303,7 +4313,7 @@ var Navigator = /** @class */ (function () {
 ;// ./code/es5/es-modules/Stock/Navigator/StandaloneNavigatorDefaults.js
 /* *
  *
- *  (c) 2010-2024 Mateusz Bernacik
+ *  (c) 2010-2025 Mateusz Bernacik
  *
  *  License: www.highcharts.com/license
  *
@@ -4369,7 +4379,7 @@ var standaloneNavigatorDefaults = {
 ;// ./code/es5/es-modules/Stock/Navigator/StandaloneNavigator.js
 /* *
  *
- *  (c) 2010-2024 Mateusz Bernacik
+ *  (c) 2010-2025 Mateusz Bernacik
  *
  *  License: www.highcharts.com/license
  *
@@ -4412,7 +4422,7 @@ var StandaloneNavigator = /** @class */ (function () {
     function StandaloneNavigator(element, userOptions) {
         this.boundAxes = [];
         this.userOptions = userOptions;
-        this.chartOptions = StandaloneNavigator_merge(highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default().getOptions(), StandaloneNavigatorDefaults, { navigator: userOptions });
+        this.chartOptions = StandaloneNavigator_merge(highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default().getOptions(), StandaloneNavigatorDefaults, userOptions.chart, { navigator: userOptions });
         if (this.chartOptions.chart && userOptions.height) {
             this.chartOptions.chart.height = userOptions.height;
         }
@@ -4495,11 +4505,11 @@ var StandaloneNavigator = /** @class */ (function () {
                 function (e) {
                     if (e.trigger === 'pan' ||
                         e.trigger === 'zoom' ||
-                        e.trigger === 'mouseWheelZoom') {
+                        e.trigger === 'mousewheel') {
                         nav.setRange(e.min,
                 e.max,
                 true,
-                e.trigger !== 'pan', { trigger: axis });
+                e.trigger !== 'pan' && e.trigger !== 'mousewheel', { trigger: axis });
                 }
             });
             removeEventCallbacks.push(removeSetExtremesEvent);
@@ -4600,7 +4610,7 @@ var StandaloneNavigator = /** @class */ (function () {
      *         specified, the standalone navigator will be redrawn.
      */
     StandaloneNavigator.prototype.update = function (newOptions, redraw) {
-        this.chartOptions = StandaloneNavigator_merge(this.chartOptions, newOptions.height && { chart: { height: newOptions.height } }, { navigator: newOptions });
+        this.chartOptions = StandaloneNavigator_merge(this.chartOptions, newOptions.height && { chart: { height: newOptions.height } }, newOptions.chart, { navigator: newOptions });
         this.navigator.chart.update(this.chartOptions, redraw);
     };
     /**

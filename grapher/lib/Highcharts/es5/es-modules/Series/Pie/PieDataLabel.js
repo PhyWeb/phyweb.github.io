@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -421,7 +421,7 @@ var ColumnDataLabel;
     function placeDataLabels() {
         this.points.forEach(function (point) {
             (point.dataLabels || []).forEach(function (dataLabel) {
-                var _a;
+                var _a, _b;
                 var labelPosition = dataLabel.dataLabelPosition;
                 if (labelPosition) {
                     // Shorten data labels with ellipsis if they still overflow
@@ -430,8 +430,7 @@ var ColumnDataLabel;
                         dataLabel.css({
                             width: (Math.max(dataLabel.getBBox().width -
                                 labelPosition.sideOverflow, 0)) + 'px',
-                            textOverflow: ((((_a = dataLabel.options) === null || _a === void 0 ? void 0 : _a.style) || {})
-                                .textOverflow ||
+                            textOverflow: (((_b = (_a = dataLabel.options) === null || _a === void 0 ? void 0 : _a.style) === null || _b === void 0 ? void 0 : _b.textOverflow) ||
                                 'ellipsis')
                         });
                         dataLabel.shortened = true;

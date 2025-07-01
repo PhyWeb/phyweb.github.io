@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -247,7 +247,7 @@ var Legend = /** @class */ (function () {
     Legend.prototype.positionItem = function (item) {
         var _this = this;
         var legend = this, _a = item.legendItem || {}, group = _a.group, _b = _a.x, x = _b === void 0 ? 0 : _b, _c = _a.y, y = _c === void 0 ? 0 : _c, options = legend.options, symbolPadding = options.symbolPadding, ltr = !options.rtl, checkbox = item.checkbox;
-        if (group && group.element) {
+        if (group === null || group === void 0 ? void 0 : group.element) {
             var attribs = {
                 translateX: ltr ?
                     x :
@@ -325,7 +325,8 @@ var Legend = /** @class */ (function () {
      * @function Highcharts.Legend#positionCheckboxes
      */
     Legend.prototype.positionCheckboxes = function () {
-        var alignAttr = this.group && this.group.alignAttr, clipHeight = this.clipHeight || this.legendHeight, titleHeight = this.titleHeight;
+        var _a;
+        var alignAttr = (_a = this.group) === null || _a === void 0 ? void 0 : _a.alignAttr, clipHeight = this.clipHeight || this.legendHeight, titleHeight = this.titleHeight;
         var translateY;
         if (alignAttr) {
             translateY = alignAttr.translateY;
@@ -411,6 +412,7 @@ var Legend = /** @class */ (function () {
      * The item to render.
      */
     Legend.prototype.renderItem = function (item) {
+        var _a;
         var legend = this, legendItem = item.legendItem = item.legendItem || {}, chart = legend.chart, renderer = chart.renderer, options = legend.options, horizontal = options.layout === 'horizontal', symbolWidth = legend.symbolWidth, symbolPadding = options.symbolPadding || 0, itemStyle = legend.itemStyle, itemHiddenStyle = legend.itemHiddenStyle, itemDistance = horizontal ? pick(options.itemDistance, 20) : 0, ltr = !options.rtl, isSeries = !item.series, series = !isSeries && item.series.drawLegendSymbol ?
             item.series :
             item, seriesOptions = series.options, showCheckbox = (!!legend.createCheckboxForItem &&
@@ -491,7 +493,7 @@ var Legend = /** @class */ (function () {
         legend.setText(item);
         // Calculate the positions for the next line
         var bBox = label.getBBox();
-        var fontMetricsH = (legend.fontMetrics && legend.fontMetrics.h) || 0;
+        var fontMetricsH = ((_a = legend.fontMetrics) === null || _a === void 0 ? void 0 : _a.h) || 0;
         item.itemWidth = item.checkboxOffset =
             options.itemWidth ||
                 legendItem.labelWidth ||
@@ -562,13 +564,14 @@ var Legend = /** @class */ (function () {
     Legend.prototype.getAllItems = function () {
         var allItems = [];
         this.chart.series.forEach(function (series) {
-            var seriesOptions = series && series.options;
+            var _a;
+            var seriesOptions = series === null || series === void 0 ? void 0 : series.options;
             // Handle showInLegend. If the series is linked to another series,
             // defaults to false.
             if (series && pick(seriesOptions.showInLegend, !defined(seriesOptions.linkedTo) ? void 0 : false, true)) {
                 // Use points or series for the legend item depending on
                 // legendType
-                allItems = allItems.concat((series.legendItem || {}).labels ||
+                allItems = allItems.concat(((_a = series.legendItem) === null || _a === void 0 ? void 0 : _a.labels) ||
                     (seriesOptions.legendType === 'point' ?
                         series.data :
                         series));
@@ -724,8 +727,9 @@ var Legend = /** @class */ (function () {
         legend.renderTitle();
         // Sort by legendIndex
         stableSort(allItems, function (a, b) {
-            return ((a.options && a.options.legendIndex) || 0) -
-                ((b.options && b.options.legendIndex) || 0);
+            var _a, _b;
+            return (((_a = a.options) === null || _a === void 0 ? void 0 : _a.legendIndex) || 0) -
+                (((_b = b.options) === null || _b === void 0 ? void 0 : _b.legendIndex) || 0);
         });
         // Reversed legend
         if (options.reversed) {
@@ -876,7 +880,7 @@ var Legend = /** @class */ (function () {
             }
             return legend[key];
         };
-        var clipHeight, lastY, legendItem, spaceHeight = (chart.spacingBox.height +
+        var clipHeight, lastY, legendItem, lastLegendItem, spaceHeight = (chart.spacingBox.height +
             (alignTop ? -optionsY : optionsY) - padding), nav = this.nav, clipRect = this.clipRect;
         // Adjust the height
         if (options.layout === 'horizontal' &&
@@ -910,8 +914,8 @@ var Legend = /** @class */ (function () {
                 }
                 // Keep track of which page each item is on
                 legendItem.pageIx = len - 1;
-                if (lastY) {
-                    (allItems[i - 1].legendItem || {}).pageIx = len - 1;
+                if (lastY && lastLegendItem) {
+                    lastLegendItem.pageIx = len - 1;
                 }
                 // Add the last page if needed (#2617, #13683)
                 if (
@@ -926,6 +930,7 @@ var Legend = /** @class */ (function () {
                 if (y !== lastY) {
                     lastY = y;
                 }
+                lastLegendItem = legendItem;
             });
             // Only apply clipping if needed. Clipping causes blurred legend in
             // PDF export (#1787)

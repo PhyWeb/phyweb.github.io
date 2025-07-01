@@ -22,6 +22,8 @@ GRAPHER:
   - rework new/load/save buttons
   - specify "line" or "spline" in series not graph
 
+  - add an option to set maxDigits
+
   - import csv/rw3/clipboard
   - export csv/rw3/clipboard
   - export image / print

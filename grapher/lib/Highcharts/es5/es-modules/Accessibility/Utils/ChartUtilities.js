@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2009-2024 Øystein Moseng
+ *  (c) 2009-2025 Øystein Moseng
  *
  *  Utils for dealing with charts.
  *
@@ -30,7 +30,7 @@ var defined = U.defined, find = U.find, fireEvent = U.fireEvent;
 function fireEventOnWrappedOrUnwrappedElement(el, eventObject) {
     var type = eventObject.type;
     var hcEvents = el.hcEvents;
-    if (!!doc.createEvent &&
+    if (!!(doc === null || doc === void 0 ? void 0 : doc.createEvent) &&
         (el.dispatchEvent || el.fireEvent)) {
         if (el.dispatchEvent) {
             el.dispatchEvent(eventObject);

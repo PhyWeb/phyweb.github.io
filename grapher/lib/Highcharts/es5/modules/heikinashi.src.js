@@ -1,12 +1,12 @@
 /**
- * @license Highstock JS v12.1.2 (2025-01-09)
+ * @license Highstock JS v12.3.0 (2025-06-21)
  * @module highcharts/modules/heikinashi
  * @requires highcharts
  * @requires highcharts/modules/stock
  *
  * HeikinAshi series type for Highcharts Stock
  *
- * (c) 2010-2024 Karol Kolodziej
+ * (c) 2010-2025 Karol Kolodziej
  *
  * License: www.highcharts.com/license
  */
@@ -111,7 +111,7 @@ var highcharts_SeriesRegistry_commonjs_highcharts_SeriesRegistry_commonjs2_highc
 ;// ./code/es5/es-modules/Series/HeikinAshi/HeikinAshiPoint.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -161,7 +161,7 @@ var HeikinAshiPoint = /** @class */ (function (_super) {
 ;// ./code/es5/es-modules/Series/HeikinAshi/HeikinAshiSeriesDefaults.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -265,7 +265,7 @@ var HeikinAshiDefaults = {
 ;// ./code/es5/es-modules/Series/HeikinAshi/HeikinAshiSeries.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *

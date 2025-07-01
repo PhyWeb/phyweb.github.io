@@ -1,11 +1,11 @@
 /**
- * @license Highcharts JS v12.1.2 (2025-01-09)
+ * @license Highcharts JS v12.3.0 (2025-06-21)
  * @module highcharts/modules/boost
  * @requires highcharts
  *
  * Boost module
  *
- * (c) 2010-2024 Highsoft AS
+ * (c) 2010-2025 Highsoft AS
  * Author: Torstein Honsi
  *
  * License: www.highcharts.com/license
@@ -109,7 +109,7 @@ var highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default 
 ;// ./code/es5/es-modules/Extensions/Boost/Boostables.js
 /* *
  *
- *  (c) 2019-2024 Highsoft AS
+ *  (c) 2019-2025 Highsoft AS
  *
  *  Boost module: stripped-down renderer for higher performance
  *
@@ -148,7 +148,7 @@ var Boostables = [
 ;// ./code/es5/es-modules/Extensions/Boost/BoostableMap.js
 /* *
  *
- *  (c) 2019-2024 Highsoft AS
+ *  (c) 2019-2025 Highsoft AS
  *
  *  Boost module: stripped-down renderer for higher performance
  *
@@ -184,7 +184,7 @@ Boost_Boostables.forEach(function (item) {
 ;// ./code/es5/es-modules/Extensions/Boost/BoostChart.js
 /* *
  *
- *  (c) 2019-2024 Highsoft AS
+ *  (c) 2019-2025 Highsoft AS
  *
  *  Boost module: stripped-down renderer for higher performance
  *
@@ -239,11 +239,11 @@ function getBoostClipRect(chart, target) {
         clipBox.height = navigator.top + navigator.height - chart.plotTop;
     }
     // Clipping of individual series (#11906, #19039).
-    if (target.getClipBox) {
+    if (target.is) {
         var _a = target,
             xAxis = _a.xAxis,
             yAxis = _a.yAxis;
-        clipBox = target.getClipBox();
+        clipBox = chart.getClipBox(target);
         if (chart.inverted) {
             var lateral = clipBox.width;
             clipBox.width = clipBox.height;
@@ -469,7 +469,7 @@ var highcharts_Color_commonjs_highcharts_Color_commonjs2_highcharts_Color_root_H
 ;// ./code/es5/es-modules/Extensions/Boost/WGLDrawMode.js
 /* *
  *
- *  (c) 2019-2024 Highsoft AS
+ *  (c) 2019-2025 Highsoft AS
  *
  *  Boost module: stripped-down renderer for higher performance
  *
@@ -507,7 +507,7 @@ var WGLDrawMode = {
 ;// ./code/es5/es-modules/Extensions/Boost/WGLShader.js
 /* *
  *
- *  (c) 2019-2024 Highsoft AS
+ *  (c) 2019-2025 Highsoft AS
  *
  *  Boost module: stripped-down renderer for higher performance
  *
@@ -976,7 +976,7 @@ var WGLShader = /** @class */ (function () {
 ;// ./code/es5/es-modules/Extensions/Boost/WGLVertexBuffer.js
 /* *
  *
- *  (c) 2019-2024 Highsoft AS
+ *  (c) 2019-2025 Highsoft AS
  *
  *  Boost module: stripped-down renderer for higher performance
  *
@@ -1170,7 +1170,7 @@ var WGLVertexBuffer = /** @class */ (function () {
 ;// ./code/es5/es-modules/Extensions/Boost/WGLRenderer.js
 /* *
  *
- *  (c) 2019-2024 Highsoft AS
+ *  (c) 2019-2025 Highsoft AS
  *
  *  Boost module: stripped-down renderer for higher performance
  *
@@ -1770,7 +1770,10 @@ var WGLRenderer = /** @class */ (function () {
                 return "continue";
             }
             // Cull points outside the extremes
-            if (y === null || (!isYInside && !nextInside && !prevInside)) {
+            // Continue if `sdata` has only one point as `nextInside` asserts
+            // whether the next point exists and will thus be false. (#22194)
+            if (y === null || (!isYInside && sdata.length > 1 &&
+                !nextInside && !prevInside)) {
                 beginSegment();
                 return "continue";
             }
@@ -2451,10 +2454,459 @@ var WGLRenderer = /** @class */ (function () {
  * */
 /* harmony default export */ var Boost_WGLRenderer = (WGLRenderer);
 
+;// ./code/es5/es-modules/Data/ColumnUtils.js
+/* *
+ *
+ *  (c) 2020-2025 Highsoft AS
+ *
+ *  License: www.highcharts.com/license
+ *
+ *  !!!!!!! SOURCE GETS TRANSPILED BY TYPESCRIPT. EDIT TS FILE ONLY. !!!!!!!
+ *
+ *  Authors:
+ *  - Dawid Dragula
+ *
+ * */
+var __spreadArray = (undefined && undefined.__spreadArray) || function (to, from, pack) {
+    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
+        if (ar || !(i in from)) {
+            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+            ar[i] = from[i];
+        }
+    }
+    return to.concat(ar || Array.prototype.slice.call(from));
+};
+/**
+ * Utility functions for columns that can be either arrays or typed arrays.
+ * @private
+ */
+var ColumnUtils;
+(function (ColumnUtils) {
+    /* *
+    *
+    *  Declarations
+    *
+    * */
+    /* *
+    *
+    * Functions
+    *
+    * */
+    /**
+     * Sets the length of the column array.
+     *
+     * @param {DataTable.Column} column
+     * Column to be modified.
+     *
+     * @param {number} length
+     * New length of the column.
+     *
+     * @param {boolean} asSubarray
+     * If column is a typed array, return a subarray instead of a new array. It
+     * is faster `O(1)`, but the entire buffer will be kept in memory until all
+     * views to it are destroyed. Default is `false`.
+     *
+     * @return {DataTable.Column}
+     * Modified column.
+     *
+     * @private
+     */
+    function setLength(column, length, asSubarray) {
+        if (Array.isArray(column)) {
+            column.length = length;
+            return column;
+        }
+        return column[asSubarray ? 'subarray' : 'slice'](0, length);
+    }
+    ColumnUtils.setLength = setLength;
+    /**
+     * Splices a column array.
+     *
+     * @param {DataTable.Column} column
+     * Column to be modified.
+     *
+     * @param {number} start
+     * Index at which to start changing the array.
+     *
+     * @param {number} deleteCount
+     * An integer indicating the number of old array elements to remove.
+     *
+     * @param {boolean} removedAsSubarray
+     * If column is a typed array, return a subarray instead of a new array. It
+     * is faster `O(1)`, but the entire buffer will be kept in memory until all
+     * views to it are destroyed. Default is `true`.
+     *
+     * @param {Array<number>|TypedArray} items
+     * The elements to add to the array, beginning at the start index. If you
+     * don't specify any elements, `splice()` will only remove elements from the
+     * array.
+     *
+     * @return {SpliceResult}
+     * Object containing removed elements and the modified column.
+     *
+     * @private
+     */
+    function splice(column, start, deleteCount, removedAsSubarray, items) {
+        if (items === void 0) { items = []; }
+        if (Array.isArray(column)) {
+            if (!Array.isArray(items)) {
+                items = Array.from(items);
+            }
+            return {
+                removed: column.splice.apply(column, __spreadArray([start, deleteCount], items, false)),
+                array: column
+            };
+        }
+        var Constructor = Object.getPrototypeOf(column)
+                .constructor;
+        var removed = column[removedAsSubarray ? 'subarray' : 'slice'](start,
+            start + deleteCount);
+        var newLength = column.length - deleteCount + items.length;
+        var result = new Constructor(newLength);
+        result.set(column.subarray(0, start), 0);
+        result.set(items, start);
+        result.set(column.subarray(start + deleteCount), start + items.length);
+        return {
+            removed: removed,
+            array: result
+        };
+    }
+    ColumnUtils.splice = splice;
+})(ColumnUtils || (ColumnUtils = {}));
+/* *
+ *
+ *  Default Export
+ *
+ * */
+/* harmony default export */ var Data_ColumnUtils = (ColumnUtils);
+
+;// ./code/es5/es-modules/Data/DataTableCore.js
+/* *
+ *
+ *  (c) 2009-2025 Highsoft AS
+ *
+ *  License: www.highcharts.com/license
+ *
+ *  !!!!!!! SOURCE GETS TRANSPILED BY TYPESCRIPT. EDIT TS FILE ONLY. !!!!!!!
+ *
+ *  Authors:
+ *  - Sophie Bremer
+ *  - Gøran Slettemark
+ *  - Torstein Hønsi
+ *
+ * */
+
+
+var setLength = Data_ColumnUtils.setLength, splice = Data_ColumnUtils.splice;
+
+var fireEvent = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).fireEvent, DataTableCore_objectEach = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).objectEach, uniqueKey = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).uniqueKey;
+/* *
+ *
+ *  Class
+ *
+ * */
+/**
+ * Class to manage columns and rows in a table structure. It provides methods
+ * to add, remove, and manipulate columns and rows, as well as to retrieve data
+ * from specific cells.
+ *
+ * @class
+ * @name Highcharts.DataTable
+ *
+ * @param {Highcharts.DataTableOptions} [options]
+ * Options to initialize the new DataTable instance.
+ */
+var DataTableCore = /** @class */ (function () {
+    /**
+     * Constructs an instance of the DataTable class.
+     *
+     * @example
+     * const dataTable = new Highcharts.DataTableCore({
+     *   columns: {
+     *     year: [2020, 2021, 2022, 2023],
+     *     cost: [11, 13, 12, 14],
+     *     revenue: [12, 15, 14, 18]
+     *   }
+     * });
+
+     *
+     * @param {Highcharts.DataTableOptions} [options]
+     * Options to initialize the new DataTable instance.
+     */
+    function DataTableCore(options) {
+        if (options === void 0) { options = {}; }
+        var _this = this;
+        /**
+         * Whether the ID was automatic generated or given in the constructor.
+         *
+         * @name Highcharts.DataTable#autoId
+         * @type {boolean}
+         */
+        this.autoId = !options.id;
+        this.columns = {};
+        /**
+         * ID of the table for identification purposes.
+         *
+         * @name Highcharts.DataTable#id
+         * @type {string}
+         */
+        this.id = (options.id || uniqueKey());
+        this.modified = this;
+        this.rowCount = 0;
+        this.versionTag = uniqueKey();
+        var rowCount = 0;
+        DataTableCore_objectEach(options.columns || {}, function (column, columnName) {
+            _this.columns[columnName] = column.slice();
+            rowCount = Math.max(rowCount, column.length);
+        });
+        this.applyRowCount(rowCount);
+    }
+    /* *
+     *
+     *  Functions
+     *
+     * */
+    /**
+     * Applies a row count to the table by setting the `rowCount` property and
+     * adjusting the length of all columns.
+     *
+     * @private
+     * @param {number} rowCount The new row count.
+     */
+    DataTableCore.prototype.applyRowCount = function (rowCount) {
+        var _this = this;
+        this.rowCount = rowCount;
+        DataTableCore_objectEach(this.columns, function (column, columnName) {
+            if (column.length !== rowCount) {
+                _this.columns[columnName] = setLength(column, rowCount);
+            }
+        });
+    };
+    /**
+     * Delete rows. Simplified version of the full
+     * `DataTable.deleteRows` method.
+     *
+     * @param {number} rowIndex
+     * The start row index
+     *
+     * @param {number} [rowCount=1]
+     * The number of rows to delete
+     *
+     * @return {void}
+     *
+     * @emits #afterDeleteRows
+     */
+    DataTableCore.prototype.deleteRows = function (rowIndex, rowCount) {
+        var _this = this;
+        if (rowCount === void 0) { rowCount = 1; }
+        if (rowCount > 0 && rowIndex < this.rowCount) {
+            var length_1 = 0;
+            DataTableCore_objectEach(this.columns, function (column, columnName) {
+                _this.columns[columnName] =
+                    splice(column, rowIndex, rowCount).array;
+                length_1 = column.length;
+            });
+            this.rowCount = length_1;
+        }
+        fireEvent(this, 'afterDeleteRows', { rowIndex: rowIndex, rowCount: rowCount });
+        this.versionTag = uniqueKey();
+    };
+    /**
+     * Fetches the given column by the canonical column name. Simplified version
+     * of the full `DataTable.getRow` method, always returning by reference.
+     *
+     * @param {string} columnName
+     * Name of the column to get.
+     *
+     * @return {Highcharts.DataTableColumn|undefined}
+     * A copy of the column, or `undefined` if not found.
+     */
+    DataTableCore.prototype.getColumn = function (columnName, 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    asReference) {
+        return this.columns[columnName];
+    };
+    /**
+     * Retrieves all or the given columns. Simplified version of the full
+     * `DataTable.getColumns` method, always returning by reference.
+     *
+     * @param {Array<string>} [columnNames]
+     * Column names to retrieve.
+     *
+     * @return {Highcharts.DataTableColumnCollection}
+     * Collection of columns. If a requested column was not found, it is
+     * `undefined`.
+     */
+    DataTableCore.prototype.getColumns = function (columnNames, 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    asReference) {
+        var _this = this;
+        return (columnNames || Object.keys(this.columns)).reduce(function (columns, columnName) {
+            columns[columnName] = _this.columns[columnName];
+            return columns;
+        }, {});
+    };
+    /**
+     * Retrieves the row at a given index.
+     *
+     * @param {number} rowIndex
+     * Row index to retrieve. First row has index 0.
+     *
+     * @param {Array<string>} [columnNames]
+     * Column names to retrieve.
+     *
+     * @return {Record<string, number|string|undefined>|undefined}
+     * Returns the row values, or `undefined` if not found.
+     */
+    DataTableCore.prototype.getRow = function (rowIndex, columnNames) {
+        var _this = this;
+        return (columnNames || Object.keys(this.columns)).map(function (key) { var _a; return (_a = _this.columns[key]) === null || _a === void 0 ? void 0 : _a[rowIndex]; });
+    };
+    /**
+     * Sets cell values for a column. Will insert a new column, if not found.
+     *
+     * @param {string} columnName
+     * Column name to set.
+     *
+     * @param {Highcharts.DataTableColumn} [column]
+     * Values to set in the column.
+     *
+     * @param {number} [rowIndex]
+     * Index of the first row to change. (Default: 0)
+     *
+     * @param {Record<string, (boolean|number|string|null|undefined)>} [eventDetail]
+     * Custom information for pending events.
+     *
+     * @emits #setColumns
+     * @emits #afterSetColumns
+     */
+    DataTableCore.prototype.setColumn = function (columnName, column, rowIndex, eventDetail) {
+        var _a;
+        if (column === void 0) { column = []; }
+        if (rowIndex === void 0) { rowIndex = 0; }
+        this.setColumns((_a = {}, _a[columnName] = column, _a), rowIndex, eventDetail);
+    };
+    /**
+     * Sets cell values for multiple columns. Will insert new columns, if not
+     * found. Simplified version of the full `DataTableCore.setColumns`, limited
+     * to full replacement of the columns (undefined `rowIndex`).
+     *
+     * @param {Highcharts.DataTableColumnCollection} columns
+     * Columns as a collection, where the keys are the column names.
+     *
+     * @param {number} [rowIndex]
+     * Index of the first row to change. Ignored in the `DataTableCore`, as it
+     * always replaces the full column.
+     *
+     * @param {Record<string, (boolean|number|string|null|undefined)>} [eventDetail]
+     * Custom information for pending events.
+     *
+     * @emits #setColumns
+     * @emits #afterSetColumns
+     */
+    DataTableCore.prototype.setColumns = function (columns, rowIndex, eventDetail) {
+        var _this = this;
+        var rowCount = this.rowCount;
+        DataTableCore_objectEach(columns, function (column, columnName) {
+            _this.columns[columnName] = column.slice();
+            rowCount = column.length;
+        });
+        this.applyRowCount(rowCount);
+        if (!(eventDetail === null || eventDetail === void 0 ? void 0 : eventDetail.silent)) {
+            fireEvent(this, 'afterSetColumns');
+            this.versionTag = uniqueKey();
+        }
+    };
+    /**
+     * Sets cell values of a row. Will insert a new row if no index was
+     * provided, or if the index is higher than the total number of table rows.
+     * A simplified version of the full `DateTable.setRow`, limited to objects.
+     *
+     * @param {Record<string, number|string|undefined>} row
+     * Cell values to set.
+     *
+     * @param {number} [rowIndex]
+     * Index of the row to set. Leave `undefined` to add as a new row.
+     *
+     * @param {boolean} [insert]
+     * Whether to insert the row at the given index, or to overwrite the row.
+     *
+     * @param {Record<string, (boolean|number|string|null|undefined)>} [eventDetail]
+     * Custom information for pending events.
+     *
+     * @emits #afterSetRows
+     */
+    DataTableCore.prototype.setRow = function (row, rowIndex, insert, eventDetail) {
+        if (rowIndex === void 0) { rowIndex = this.rowCount; }
+        var columns = this.columns,
+            indexRowCount = insert ? this.rowCount + 1 : rowIndex + 1;
+        DataTableCore_objectEach(row, function (cellValue, columnName) {
+            var column = columns[columnName] ||
+                    (eventDetail === null || eventDetail === void 0 ? void 0 : eventDetail.addColumns) !== false && new Array(indexRowCount);
+            if (column) {
+                if (insert) {
+                    column = splice(column, rowIndex, 0, true, [cellValue]).array;
+                }
+                else {
+                    column[rowIndex] = cellValue;
+                }
+                columns[columnName] = column;
+            }
+        });
+        if (indexRowCount > this.rowCount) {
+            this.applyRowCount(indexRowCount);
+        }
+        if (!(eventDetail === null || eventDetail === void 0 ? void 0 : eventDetail.silent)) {
+            fireEvent(this, 'afterSetRows');
+            this.versionTag = uniqueKey();
+        }
+    };
+    return DataTableCore;
+}());
+/* *
+ *
+ *  Default Export
+ *
+ * */
+/* harmony default export */ var Data_DataTableCore = (DataTableCore);
+/* *
+ *
+ *  API Declarations
+ *
+ * */
+/**
+ * A typed array.
+ * @typedef {Int8Array|Uint8Array|Uint8ClampedArray|Int16Array|Uint16Array|Int32Array|Uint32Array|Float32Array|Float64Array} Highcharts.TypedArray
+ * //**
+ * A column of values in a data table.
+ * @typedef {Array<boolean|null|number|string|undefined>|Highcharts.TypedArray} Highcharts.DataTableColumn
+ */ /**
+* A collection of data table columns defined by a object where the key is the
+* column name and the value is an array of the column values.
+* @typedef {Record<string, Highcharts.DataTableColumn>} Highcharts.DataTableColumnCollection
+*/
+/**
+ * Options for the `DataTable` or `DataTableCore` classes.
+ * @interface Highcharts.DataTableOptions
+ */ /**
+* The column options for the data table. The columns are defined by an object
+* where the key is the column ID and the value is an array of the column
+* values.
+*
+* @name Highcharts.DataTableOptions.columns
+* @type {Highcharts.DataTableColumnCollection|undefined}
+*/ /**
+* Custom ID to identify the new DataTable instance.
+*
+* @name Highcharts.DataTableOptions.id
+* @type {string|undefined}
+*/
+(''); // Keeps doclets above in JS file
+
 ;// ./code/es5/es-modules/Extensions/Boost/BoostSeries.js
 /* *
  *
- *  (c) 2019-2024 Highsoft AS
+ *  (c) 2019-2025 Highsoft AS
  *
  *  Boost module: stripped-down renderer for higher performance
  *
@@ -2473,7 +2925,8 @@ var getOptions = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highc
 
 var BoostSeries_composed = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).composed, BoostSeries_doc = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).doc, noop = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).noop, BoostSeries_win = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).win;
 
-var BoostSeries_addEvent = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).addEvent, destroyObjectProperties = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).destroyObjectProperties, BoostSeries_error = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).error, extend = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).extend, fireEvent = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).fireEvent, isArray = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).isArray, BoostSeries_isNumber = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).isNumber, BoostSeries_pick = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).pick, BoostSeries_pushUnique = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).pushUnique, wrap = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).wrap, defined = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).defined;
+var BoostSeries_addEvent = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).addEvent, destroyObjectProperties = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).destroyObjectProperties, BoostSeries_error = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).error, extend = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).extend, BoostSeries_fireEvent = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).fireEvent, isArray = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).isArray, BoostSeries_isNumber = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).isNumber, BoostSeries_pick = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).pick, BoostSeries_pushUnique = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).pushUnique, wrap = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).wrap, defined = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).defined;
+
 
 /* *
  *
@@ -2523,7 +2976,7 @@ function boostEnabled(chart) {
 /**
  * @private
  */
-function BoostSeries_compose(SeriesClass, seriesTypes, wglMode) {
+function BoostSeries_compose(SeriesClass, seriesTypes, PointClass, wglMode) {
     if (BoostSeries_pushUnique(BoostSeries_composed, 'Boost.Series')) {
         var plotOptions_1 = getOptions().plotOptions,
             seriesProto_1 = SeriesClass.prototype;
@@ -2543,6 +2996,17 @@ function BoostSeries_compose(SeriesClass, seriesTypes, wglMode) {
             'render'
         ].forEach(function (method) {
             return wrapSeriesFunctions(seriesProto_1, seriesTypes, method);
+        });
+        wrap(PointClass.prototype, 'firePointEvent', function (proceed, type, e) {
+            var _a,
+                _b;
+            if (type === 'click' && this.series.boosted) {
+                var point = e.point;
+                if ((point.dist || point.distX) >= ((_b = (_a = point.series.options.marker) === null || _a === void 0 ? void 0 : _a.radius) !== null && _b !== void 0 ? _b : 10)) {
+                    return;
+                }
+            }
+            return proceed.apply(this, [].slice.call(arguments, 1));
         });
         // Set default options
         Boost_Boostables.forEach(function (type) {
@@ -2981,7 +3445,7 @@ function onSeriesDestroy() {
         chart = series.chart;
     if (chart.boost &&
         chart.boost.markerGroup === series.markerGroup) {
-        series.markerGroup = null;
+        series.markerGroup = void 0;
     }
     if (chart.hoverPoints) {
         chart.hoverPoints = chart.hoverPoints.filter(function (point) {
@@ -2989,7 +3453,7 @@ function onSeriesDestroy() {
         });
     }
     if (chart.hoverPoint && chart.hoverPoint.series === series) {
-        chart.hoverPoint = null;
+        chart.hoverPoint = void 0;
     }
 }
 /**
@@ -3165,6 +3629,11 @@ function scatterProcessData(force) {
     series.cropped = cropped;
     series.cropStart = 0;
     // For boosted points rendering
+    if (cropped && series.dataTable.modified === series.dataTable) {
+        // Calling setColumns with cropped data must be done on a new instance
+        // to avoid modification of the original (complete) data
+        series.dataTable.modified = new Data_DataTableCore();
+    }
     series.dataTable.modified.setColumns({
         x: processedXData,
         y: processedYData
@@ -3180,14 +3649,17 @@ function scatterProcessData(force) {
  */
 function seriesRenderCanvas() {
     var _this = this;
+    var _a,
+        _b,
+        _c;
     var options = this.options || {}, chart = this.chart, chartBoost = chart.boost, seriesBoost = this.boost, xAxis = this.xAxis, yAxis = this.yAxis, xData = options.xData || this.getColumn('x', true), yData = options.yData || this.getColumn('y', true), lowData = this.getColumn('low', true), highData = this.getColumn('high', true), rawData = this.processedData || options.data, xExtremes = xAxis.getExtremes(), 
         // Taking into account the offset of the min point #19497
         xMin = xExtremes.min - (xAxis.minPointOffset || 0), xMax = xExtremes.max + (xAxis.minPointOffset || 0), yExtremes = yAxis.getExtremes(), yMin = yExtremes.min - (yAxis.minPointOffset || 0), yMax = yExtremes.max + (yAxis.minPointOffset || 0), pointTaken = {}, sampling = !!this.sampling, enableMouseTracking = options.enableMouseTracking, threshold = options.threshold, isRange = this.pointArrayMap &&
-            this.pointArrayMap.join(',') === 'low,high', isStacked = !!options.stacking, cropStart = this.cropStart || 0, requireSorting = this.requireSorting, useRaw = !xData, compareX = options.findNearestPointBy === 'x', xDataFull = ((this.getColumn('x', true).length ?
-            this.getColumn('x', true) :
+            this.pointArrayMap.join(',') === 'low,high', isStacked = !!options.stacking, cropStart = this.cropStart || 0, requireSorting = this.requireSorting, useRaw = !xData, compareX = options.findNearestPointBy === 'x', xDataFull = ((this.getColumn('x').length ?
+            this.getColumn('x') :
             void 0) ||
             this.options.xData ||
-            this.getColumn('x', true)), lineWidth = BoostSeries_pick(options.lineWidth, 1);
+            this.getColumn('x', true)), lineWidth = BoostSeries_pick(options.lineWidth, 1), nullYSubstitute = options.nullInteraction && yMin, tooltip = chart.tooltip;
     var renderer = false,
         lastClientX,
         yBottom = yAxis.getThreshold(threshold),
@@ -3195,6 +3667,26 @@ function seriesRenderCanvas() {
         maxVal,
         minI,
         maxI;
+    // Clear mock points and tooltip after zoom (#20330)
+    if (!this.boosted) {
+        return;
+    }
+    (_a = this.points) === null || _a === void 0 ? void 0 : _a.forEach(function (point) {
+        var _a;
+        (_a = point === null || point === void 0 ? void 0 : point.destroyElements) === null || _a === void 0 ? void 0 : _a.call(point);
+    });
+    this.points = [];
+    if (tooltip && !tooltip.isHidden) {
+        var isSeriesHovered = ((_b = chart.hoverPoint) === null || _b === void 0 ? void 0 : _b.series) === this ||
+                ((_c = chart.hoverPoints) === null || _c === void 0 ? void 0 : _c.some(function (point) { return point.series === _this; }));
+        if (isSeriesHovered) {
+            chart.hoverPoint = chart.hoverPoints = void 0;
+            tooltip.hide(0);
+        }
+    }
+    else if (chart.hoverPoints) {
+        chart.hoverPoints = chart.hoverPoints.filter(function (point) { return point.series !== _this; });
+    }
     // When touch-zooming or mouse-panning, re-rendering the canvas would not
     // perform fast enough. Instead, let the axes redraw, but not the series.
     // The series is scale-translated in an event handler for an approximate
@@ -3284,7 +3776,7 @@ function seriesRenderCanvas() {
     };
     // Do not start building while drawing
     this.buildKDTree = noop;
-    fireEvent(this, 'renderCanvas');
+    BoostSeries_fireEvent(this, 'renderCanvas');
     if (this.is('line') &&
         lineWidth > 1 &&
         (seriesBoost === null || seriesBoost === void 0 ? void 0 : seriesBoost.target) &&
@@ -3318,6 +3810,8 @@ function seriesRenderCanvas() {
      * @private
      */
     function processPoint(d, i) {
+        var _a,
+            _b;
         var chartDestroyed = typeof chart.index === 'undefined';
         var x,
             y,
@@ -3336,7 +3830,7 @@ function seriesRenderCanvas() {
             }
             else {
                 x = d;
-                y = yData === null || yData === void 0 ? void 0 : yData[i];
+                y = (_b = (_a = yData[i]) !== null && _a !== void 0 ? _a : nullYSubstitute) !== null && _b !== void 0 ? _b : null;
             }
             // Resolve low and high for range series
             if (isRange) {
@@ -3405,7 +3899,7 @@ function seriesRenderCanvas() {
      */
     var boostOptions = renderer.settings,
         doneProcessing = function () {
-            fireEvent(_this, 'renderedCanvas');
+            BoostSeries_fireEvent(_this, 'renderedCanvas');
         // Go back to prototype, ready to build
         delete _this.buildKDTree;
         // Check that options exist, as async processing
@@ -3551,7 +4045,7 @@ function wrapSeriesProcessData(proceed) {
                 return;
             }
             // Extra check for zoomed scatter data
-            if (isScatter && !series.yAxis.treeGrid) {
+            if (isScatter && series.yAxis.type !== 'treegrid') {
                 scatterProcessData.call(series, arguments[1]);
             }
             else {
@@ -3613,7 +4107,7 @@ var BoostSeries = {
 ;// ./code/es5/es-modules/Extensions/Boost/NamedColors.js
 /* *
  *
- *  (c) 2019-2024 Highsoft AS
+ *  (c) 2019-2025 Highsoft AS
  *
  *  Boost module: stripped-down renderer for higher performance
  *
@@ -3787,7 +4281,7 @@ var namedColors = {
 ;// ./code/es5/es-modules/Extensions/Boost/Boost.js
 /* *
  *
- *  (c) 2019-2024 Highsoft AS
+ *  (c) 2019-2025 Highsoft AS
  *
  *  Boost module: stripped-down renderer for higher performance
  *
@@ -3808,7 +4302,7 @@ var __assign = (undefined && undefined.__assign) || function () {
     };
     return __assign.apply(this, arguments);
 };
-var __spreadArray = (undefined && undefined.__spreadArray) || function (to, from, pack) {
+var Boost_spreadArray = (undefined && undefined.__spreadArray) || function (to, from, pack) {
     if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
         if (ar || !(i in from)) {
             if (!ar) ar = Array.prototype.slice.call(from, 0, i);
@@ -3843,7 +4337,7 @@ var Boost_contexts = [
 /**
  * @private
  */
-function Boost_compose(ChartClass, AxisClass, SeriesClass, seriesTypes, ColorClass) {
+function Boost_compose(ChartClass, AxisClass, SeriesClass, seriesTypes, PointClass, ColorClass) {
     var wglMode = hasWebGLSupport();
     if (!wglMode) {
         if (typeof (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).initCanvasBoost !== 'undefined') {
@@ -3859,7 +4353,7 @@ function Boost_compose(ChartClass, AxisClass, SeriesClass, seriesTypes, ColorCla
     }
     // WebGL support is alright, and we're good to go.
     Boost_BoostChart.compose(ChartClass, wglMode);
-    Boost_BoostSeries.compose(SeriesClass, seriesTypes, wglMode);
+    Boost_BoostSeries.compose(SeriesClass, seriesTypes, PointClass, wglMode);
     // Handle zooming by touch/pinch or mouse wheel. Assume that boosted charts
     // are too slow for a live preview while dragging. Instead, just scale the
     // div while `isPanning`.
@@ -3868,7 +4362,7 @@ function Boost_compose(ChartClass, AxisClass, SeriesClass, seriesTypes, ColorCla
         var _b,
             _c;
         // Render targets can be either chart-wide or series-specific
-        var renderTargets = __spreadArray([this.chart],
+        var renderTargets = Boost_spreadArray([this.chart],
             this.series,
             true).map(function (item) { return item.renderTarget; })
                 .filter(Boolean);
@@ -4183,7 +4677,7 @@ var Boost = {
 
 var G = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default());
 G.hasWebGLSupport = Boost_Boost.hasWebGLSupport;
-Boost_Boost.compose(G.Chart, G.Axis, G.Series, G.seriesTypes, G.Color);
+Boost_Boost.compose(G.Chart, G.Axis, G.Series, G.seriesTypes, G.Point, G.Color);
 /* harmony default export */ var boost_src = ((highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()));
 
 __webpack_exports__ = __webpack_exports__["default"];

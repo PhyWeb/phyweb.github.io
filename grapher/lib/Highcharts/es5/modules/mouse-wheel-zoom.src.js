@@ -1,5 +1,5 @@
 /**
- * @license Highcharts JS v12.1.2 (2025-01-09)
+ * @license Highcharts JS v12.3.0 (2025-06-21)
  * @module highcharts/modules/mouse-wheel-zoom
  * @requires highcharts
  *
@@ -100,7 +100,7 @@ var highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default 
 ;// ./code/es5/es-modules/Extensions/Annotations/NavigationBindingsUtilities.js
 /* *
  *
- *  (c) 2009-2024 Highsoft, Black Label
+ *  (c) 2009-2025 Highsoft, Black Label
  *
  *  License: www.highcharts.com/license
  *

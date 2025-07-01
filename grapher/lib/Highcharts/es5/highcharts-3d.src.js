@@ -1,9 +1,11 @@
 /**
- * @license Highcharts JS v12.1.2 (2025-01-09)
+ * @license Highcharts JS v12.3.0 (2025-06-21)
  * @module highcharts/highcharts-3d
  * @requires highcharts
  *
  * 3D features for Highcharts JS
+ *
+ * (c) 2009-2025 Torstein Honsi
  *
  * License: www.highcharts.com/license
  */
@@ -21,6 +23,20 @@ return /******/ (function() { // webpackBootstrap
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
+/***/ 184:
+/***/ (function(module) {
+
+module.exports = __WEBPACK_EXTERNAL_MODULE__184__;
+
+/***/ }),
+
+/***/ 512:
+/***/ (function(module) {
+
+module.exports = __WEBPACK_EXTERNAL_MODULE__512__;
+
+/***/ }),
+
 /***/ 532:
 /***/ (function(module) {
 
@@ -28,17 +44,17 @@ module.exports = __WEBPACK_EXTERNAL_MODULE__532__;
 
 /***/ }),
 
-/***/ 620:
-/***/ (function(module) {
-
-module.exports = __WEBPACK_EXTERNAL_MODULE__620__;
-
-/***/ }),
-
 /***/ 608:
 /***/ (function(module) {
 
 module.exports = __WEBPACK_EXTERNAL_MODULE__608__;
+
+/***/ }),
+
+/***/ 620:
+/***/ (function(module) {
+
+module.exports = __WEBPACK_EXTERNAL_MODULE__620__;
 
 /***/ }),
 
@@ -53,20 +69,6 @@ module.exports = __WEBPACK_EXTERNAL_MODULE__632__;
 /***/ (function(module) {
 
 module.exports = __WEBPACK_EXTERNAL_MODULE__820__;
-
-/***/ }),
-
-/***/ 512:
-/***/ (function(module) {
-
-module.exports = __WEBPACK_EXTERNAL_MODULE__512__;
-
-/***/ }),
-
-/***/ 184:
-/***/ (function(module) {
-
-module.exports = __WEBPACK_EXTERNAL_MODULE__184__;
 
 /***/ }),
 
@@ -150,7 +152,7 @@ var highcharts_Color_commonjs_highcharts_Color_commonjs2_highcharts_Color_root_H
 ;// ./code/es5/es-modules/Core/Math3D.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -418,7 +420,7 @@ var Math3D = {
 ;// ./code/es5/es-modules/Core/Chart/Chart3D.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  Extension for 3D charts
  *
@@ -2149,7 +2151,7 @@ var highcharts_SeriesRegistry_commonjs_highcharts_SeriesRegistry_commonjs2_highc
 ;// ./code/es5/es-modules/Series/Area3D/Area3DSeries.js
 /* *
  *
- *  (c) 2010-2024 Grzegorz Blachliński
+ *  (c) 2010-2025 Grzegorz Blachliński
  *
  *  License: www.highcharts.com/license
  *
@@ -2253,7 +2255,7 @@ var Area3DSeries = {
 ;// ./code/es5/es-modules/Core/Axis/Axis3DDefaults.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  Extension for 3d axes
  *
@@ -2385,7 +2387,7 @@ var Axis3DDefaults = {
 ;// ./code/es5/es-modules/Core/Axis/Tick3DComposition.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  Extension for 3d axes
  *
@@ -2459,7 +2461,7 @@ var Tick3DAdditions = {
 ;// ./code/es5/es-modules/Core/Axis/Axis3DComposition.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  Extension for 3d axes
  *
@@ -2488,10 +2490,11 @@ var Axis3DComposition_addEvent = (highcharts_commonjs_highcharts_commonjs2_highc
  * @private
  */
 function onAxisAfterSetOptions() {
+    var _a;
     var axis = this,
         chart = axis.chart,
         options = axis.options;
-    if (chart.is3d && chart.is3d() && axis.coll !== 'colorAxis') {
+    if (((_a = chart.is3d) === null || _a === void 0 ? void 0 : _a.call(chart)) && axis.coll !== 'colorAxis') {
         options.tickWidth = Axis3DComposition_pick(options.tickWidth, 0);
         options.gridLineWidth = Axis3DComposition_pick(options.gridLineWidth, 1);
     }
@@ -2647,7 +2650,8 @@ function wrapAxisGetPlotLinePath(proceed) {
  * @private
  */
 function wrapAxisGetSlotWidth(proceed, tick) {
-    var _a;
+    var _a,
+        _b;
     var axis = this,
         chart = axis.chart,
         gridGroup = axis.gridGroup,
@@ -2686,7 +2690,7 @@ function wrapAxisGetSlotWidth(proceed, tick) {
         }
         // If next label position is defined, then recalculate its position
         // basing on the perspective.
-        if (nextTick && nextTick.label && nextTick.label.xy) {
+        if ((_b = nextTick === null || nextTick === void 0 ? void 0 : nextTick.label) === null || _b === void 0 ? void 0 : _b.xy) {
             nextLabelPos = Axis3DComposition_perspective3D({
                 x: nextTick.label.xy.x,
                 y: nextTick.label.xy.y,
@@ -3023,7 +3027,7 @@ var highcharts_Series_commonjs_highcharts_Series_commonjs2_highcharts_Series_roo
 ;// ./code/es5/es-modules/Core/Series/Series3D.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  Extension to the Series object in 3D charts.
  *
@@ -3108,7 +3112,7 @@ var Series3D = /** @class */ (function (_super) {
         series.zPadding = stack *
             (seriesOptions.depth || 0 + (seriesOptions.groupZPadding || 1));
         series.data.forEach(function (rawPoint) {
-            if (zAxis && zAxis.translate) {
+            if (zAxis === null || zAxis === void 0 ? void 0 : zAxis.translate) {
                 zValue = zAxis.logarithmic && zAxis.val2lin ?
                     zAxis.val2lin(rawPoint.z) :
                     rawPoint.z; // #4562
@@ -3163,7 +3167,7 @@ var highcharts_StackItem_commonjs_highcharts_StackItem_commonjs2_highcharts_Stac
 ;// ./code/es5/es-modules/Core/Renderer/SVG/SVGElement3D.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  Extensions to the SVGRenderer class to enable 3D shapes
  *
@@ -3273,7 +3277,7 @@ var SVGElement3D = /** @class */ (function (_super) {
             null, (verb || 'attr'),
             duration,
             complete],
-            hasZIndexes = values && values.zIndexes;
+            hasZIndexes = values === null || values === void 0 ? void 0 : values.zIndexes;
         if (!values) {
             newAttr[prop] = val;
             optionsToApply[0] = newAttr;
@@ -3281,7 +3285,7 @@ var SVGElement3D = /** @class */ (function (_super) {
         else {
             // It is needed to deal with the whole group zIndexing
             // in case of graph rotation
-            if (hasZIndexes && hasZIndexes.group) {
+            if (hasZIndexes === null || hasZIndexes === void 0 ? void 0 : hasZIndexes.group) {
                 elem3d.attr({
                     zIndex: hasZIndexes.group
                 });
@@ -3389,7 +3393,7 @@ var SVGElement3D = /** @class */ (function (_super) {
 ;// ./code/es5/es-modules/Core/Renderer/SVG/SVGRenderer3D.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  Extensions to the SVGRenderer class to enable 3D shapes
  *
@@ -3632,7 +3636,7 @@ var SVGRenderer3D;
             return elementProto.attr.apply(this, arguments);
         };
         result.animate = function (params, duration, complete) {
-            if (params && params.faces) {
+            if (params === null || params === void 0 ? void 0 : params.faces) {
                 while (result.faces.length > params.faces.length) {
                     result.faces.pop().destroy();
                 }
@@ -4293,7 +4297,7 @@ var highcharts_Axis_commonjs_highcharts_Axis_commonjs2_highcharts_Axis_root_High
 ;// ./code/es5/es-modules/Core/Axis/ZAxis.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -4430,10 +4434,10 @@ var ZAxis = /** @class */ (function (_super) {
      * @private
      */
     ZAxis.prototype.setAxisSize = function () {
+        var _a;
         var chart = this.chart;
         _super.prototype.setAxisSize.call(this);
-        this.width = this.len = (chart.options.chart.options3d &&
-            chart.options.chart.options3d.depth) || 0;
+        this.width = this.len = ((_a = chart.options.chart.options3d) === null || _a === void 0 ? void 0 : _a.depth) || 0;
         this.right = chart.chartWidth - this.width - this.left;
     };
     return ZAxis;
@@ -4448,7 +4452,7 @@ var ZAxis = /** @class */ (function (_super) {
 ;// ./code/es5/es-modules/Series/Column3D/Column3DComposition.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -4975,7 +4979,7 @@ var Column3DComposition = {
 ;// ./code/es5/es-modules/Series/Pie3D/Pie3DPoint.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  3D pie series
  *
@@ -5041,7 +5045,7 @@ var Pie3DPoint = /** @class */ (function (_super) {
 ;// ./code/es5/es-modules/Series/Pie3D/Pie3DSeries.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  3D pie series
  *
@@ -5303,7 +5307,7 @@ var highcharts_Series_types_scatter_commonjs_highcharts_Series_types_scatter_com
 ;// ./code/es5/es-modules/Series/Scatter3D/Scatter3DPoint.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  Scatter 3D series.
  *
@@ -5370,7 +5374,7 @@ var Scatter3DPoint = /** @class */ (function (_super) {
 ;// ./code/es5/es-modules/Series/Scatter3D/Scatter3DSeriesDefaults.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  Scatter 3D series.
  *
@@ -5490,7 +5494,7 @@ var Scatter3DSeriesDefaults = {
 ;// ./code/es5/es-modules/Series/Scatter3D/Scatter3DSeries.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  Scatter 3D series.
  *
@@ -5601,7 +5605,7 @@ highcharts_SeriesRegistry_commonjs_highcharts_SeriesRegistry_commonjs2_highchart
 
 var G = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default());
 // Compositions
-Area3D_Area3DSeries.compose(G.seriesTypes.area);
+Area3D_Area3DSeries.compose(G.Series.types.area);
 Axis3DComposition.compose(G.Axis, G.Tick);
 Chart_Chart3D.compose(G.Chart, G.Fx);
 Column3D_Column3DComposition.compose(G.Series, (highcharts_StackItem_commonjs_highcharts_StackItem_commonjs2_highcharts_StackItem_root_Highcharts_StackItem_default()));

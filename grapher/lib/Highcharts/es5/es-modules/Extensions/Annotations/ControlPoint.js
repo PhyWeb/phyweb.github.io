@@ -110,7 +110,7 @@ var ControlPoint = /** @class */ (function (_super) {
             .add(chart.controlPointsGroup)
             .css(options.style);
         this.setVisibility(options.visible);
-        // `npm test -- --tests "highcharts/annotations-advanced/*"`
+        // `npm test -- --tests "@highcharts/highcharts/annotations-advanced/*"`
         this.addEvents();
     };
     /**

@@ -2,7 +2,7 @@
  *
  *  Networkgraph series
  *
- *  (c) 2010-2024 Paweł Fus
+ *  (c) 2010-2025 Paweł Fus
  *
  *  License: www.highcharts.com/license
  *
@@ -33,10 +33,16 @@ function compose(ChartClass) {
  */
 function onChartLoad() {
     var chart = this;
-    var mousedownUnbinder, mousemoveUnbinder, mouseupUnbinder;
+    var mousedownUnbinder, mousemoveUnbinder, mouseupUnbinder, point;
     if (chart.container) {
         mousedownUnbinder = addEvent(chart.container, 'mousedown', function (event) {
-            var point = chart.hoverPoint;
+            if (mousemoveUnbinder) {
+                mousemoveUnbinder();
+            }
+            if (mouseupUnbinder) {
+                mouseupUnbinder();
+            }
+            point = chart.hoverPoint;
             if (point &&
                 point.series &&
                 point.series.hasDraggableNodes &&
@@ -70,6 +76,10 @@ function onChartLoad() {
  */
 function onMouseDown(point, event) {
     var _a;
+    var panKey = this.chart.options.chart.panKey, panKeyPressed = panKey && event["".concat(panKey, "Key")];
+    if (panKeyPressed) {
+        return;
+    }
     var normalizedEvent = ((_a = this.chart.pointer) === null || _a === void 0 ? void 0 : _a.normalize(event)) || event;
     point.fixedPosition = {
         chartX: normalizedEvent.chartX,

@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -47,7 +47,7 @@ var addEvent = U.addEvent, clamp = U.clamp, crisp = U.crisp, defined = U.defined
  * @function getDefaultAxisOptions
  */
 function getDefaultAxisOptions(coll, options, defaultOptions) {
-    var _a, _b, _c, _d;
+    var _a, _b;
     if (coll === 'xAxis') {
         return {
             minPadding: 0,
@@ -67,9 +67,7 @@ function getDefaultAxisOptions(coll, options, defaultOptions) {
             options.categories ||
                 options.type === 'category'),
             title: {
-                text: ((_c = defaultOptions.title) === null || _c === void 0 ? void 0 : _c.text) !== 'Values' ?
-                    (_d = defaultOptions.title) === null || _d === void 0 ? void 0 : _d.text :
-                    null
+                text: void 0
             }
         };
     }
@@ -82,10 +80,11 @@ function getDefaultAxisOptions(coll, options, defaultOptions) {
  * @function getForcedAxisOptions
  */
 function getForcedAxisOptions(type, chartOptions) {
+    var _a;
     if (type === 'xAxis') {
         // Always disable startOnTick:true on the main axis when the navigator
         // is enabled (#1090)
-        var navigatorEnabled = pick(chartOptions.navigator && chartOptions.navigator.enabled, NavigatorDefaults.enabled, true);
+        var navigatorEnabled = pick((_a = chartOptions.navigator) === null || _a === void 0 ? void 0 : _a.enabled, NavigatorDefaults.enabled, true);
         var axisOptions = {
             type: 'datetime',
             categories: void 0
@@ -140,10 +139,11 @@ var StockChart = /** @class */ (function (_super) {
      * @emits Highcharts.StockChart#event:afterInit
      */
     StockChart.prototype.init = function (userOptions, callback) {
+        var _a, _b;
         var defaultOptions = getOptions(), xAxisOptions = userOptions.xAxis, yAxisOptions = userOptions.yAxis, 
         // Always disable startOnTick:true on the main axis when the
         // navigator is enabled (#1090)
-        navigatorEnabled = pick(userOptions.navigator && userOptions.navigator.enabled, NavigatorDefaults.enabled, true);
+        navigatorEnabled = pick((_a = userOptions.navigator) === null || _a === void 0 ? void 0 : _a.enabled, NavigatorDefaults.enabled, true);
         // Avoid doing these twice
         userOptions.xAxis = userOptions.yAxis = void 0;
         var options = merge({
@@ -174,7 +174,7 @@ var StockChart = /** @class */ (function (_super) {
                 text: null
             },
             tooltip: {
-                split: pick(defaultOptions.tooltip && defaultOptions.tooltip.split, true),
+                split: pick((_b = defaultOptions.tooltip) === null || _b === void 0 ? void 0 : _b.split, true),
                 crosshairs: true
             },
             legend: {
@@ -258,7 +258,7 @@ addEvent(Chart, 'update', function (e) {
      * @private
      */
     function onAxisAfterDrawCrosshair(event) {
-        var _a, _b, _c;
+        var _a, _b, _c, _d;
         var axis = this;
         // Check if the label has to be drawn
         if (!(((_b = (_a = axis.crosshair) === null || _a === void 0 ? void 0 : _a.label) === null || _b === void 0 ? void 0 : _b.enabled) &&
@@ -288,7 +288,7 @@ addEvent(Chart, 'update', function (e) {
         if (!crossLabel) {
             crossLabel = axis.crossLabel = chart.renderer
                 .label('', 0, void 0, options.shape || 'callout')
-                .addClass('highcharts-crosshair-label highcharts-color-' + (point && point.series ?
+                .addClass('highcharts-crosshair-label highcharts-color-' + ((point === null || point === void 0 ? void 0 : point.series) ?
                 point.series.colorIndex :
                 axis.series[0] && this.series[0].colorIndex))
                 .attr({
@@ -303,9 +303,7 @@ addEvent(Chart, 'update', function (e) {
                 crossLabel
                     .attr({
                     fill: options.backgroundColor ||
-                        ( // #14888
-                        point && point.series &&
-                            point.series.color) ||
+                        ((_d = point === null || point === void 0 ? void 0 : point.series) === null || _d === void 0 ? void 0 : _d.color) || // #14888
                         "#666666" /* Palette.neutralColor60 */,
                     stroke: options.borderColor || '',
                     'stroke-width': options.borderWidth || 0
@@ -339,7 +337,7 @@ addEvent(Chart, 'update', function (e) {
             axis.toValue(horiz ? e.chartX : e.chartY);
         // Crosshair should be rendered within Axis range (#7219) and the point
         // of currentPriceIndicator should be inside the plot area (#14879).
-        var isInside = point && point.series ?
+        var isInside = (point === null || point === void 0 ? void 0 : point.series) ?
             point.series.isPointInside(point) :
             (isNumber(value) && value > min && value < max);
         var text = '';
@@ -550,7 +548,7 @@ addEvent(Chart, 'update', function (e) {
                         var skip = void 0;
                         x1 = axis2.pos;
                         x2 = x1 + axis2.len;
-                        y1 = y2 = Math.round(axisTop + axis.height - transVal);
+                        y1 = y2 = axisTop + axis.height - transVal;
                         // Outside plot area
                         if (force !== 'pass' &&
                             (y1 < axisTop || y1 > axisTop + axis.height)) {

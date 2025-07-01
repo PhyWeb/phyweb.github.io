@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2009-2024 Highsoft AS
+ *  (c) 2009-2025 Highsoft AS
  *
  *  License: www.highcharts.com/license
  *
@@ -133,7 +133,14 @@ var HTMLTableConverter = /** @class */ (function (_super) {
             if (useMultiLevelHeaders) {
                 for (var _i = 0, columnNames_1 = columnNames; _i < columnNames_1.length; _i++) {
                     var name_1 = columnNames_1[_i];
-                    var subhead = (columns[name_1].shift() || '').toString();
+                    var column = columns[name_1];
+                    if (!Array.isArray(column)) {
+                        // Convert to conventional array from typed array
+                        // if needed
+                        column = Array.from(column);
+                    }
+                    var subhead = (column.shift() || '').toString();
+                    columns[name_1] = column;
                     subcategories.push(subhead);
                 }
                 tableHead = this.getTableHeaderHTML(columnNames, subcategories, options);
@@ -212,7 +219,7 @@ var HTMLTableConverter = /** @class */ (function (_super) {
         if (options === void 0) { options = this.options; }
         var useMultiLevelHeaders = options.useMultiLevelHeaders, useRowspanHeaders = options.useRowspanHeaders;
         var html = '<thead>', i = 0, len = subheaders && subheaders.length, next, cur, curColspan = 0, rowspan;
-        // Clean up multiple table headers. Chart.getDataRows() returns two
+        // Clean up multiple table headers. Exporting.getDataRows() returns two
         // levels of headers when using multilevel, not merged. We need to
         // merge identical headers, remove redundant headers, and keep it
         // all marked up nicely.

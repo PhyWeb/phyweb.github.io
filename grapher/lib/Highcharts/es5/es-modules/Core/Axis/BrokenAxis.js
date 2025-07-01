@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2009-2024 Torstein Honsi
+ *  (c) 2009-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -347,7 +347,7 @@ var BrokenAxis;
         Additions.lin2Val = function (val) {
             var axis = this;
             var brokenAxis = axis.brokenAxis;
-            var breakArray = brokenAxis && brokenAxis.breakArray;
+            var breakArray = brokenAxis === null || brokenAxis === void 0 ? void 0 : brokenAxis.breakArray;
             if (!breakArray || !isNumber(val)) {
                 return val;
             }
@@ -372,7 +372,7 @@ var BrokenAxis;
         Additions.val2Lin = function (val) {
             var axis = this;
             var brokenAxis = axis.brokenAxis;
-            var breakArray = brokenAxis && brokenAxis.breakArray;
+            var breakArray = brokenAxis === null || brokenAxis === void 0 ? void 0 : brokenAxis.breakArray;
             if (!breakArray || !isNumber(val)) {
                 return val;
             }

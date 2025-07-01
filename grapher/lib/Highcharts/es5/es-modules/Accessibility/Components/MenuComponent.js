@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2009-2024 Øystein Moseng
+ *  (c) 2009-2025 Øystein Moseng
  *
  *  Accessibility component for exporting menu.
  *
@@ -43,7 +43,8 @@ var getFakeMouseEvent = HTMLUtilities.getFakeMouseEvent;
  * @private
  */
 function getExportMenuButtonElement(chart) {
-    return chart.exportSVGElements && chart.exportSVGElements[0];
+    var _a, _b;
+    return (_b = (_a = chart.exporting) === null || _a === void 0 ? void 0 : _a.svgElements) === null || _b === void 0 ? void 0 : _b[0];
 }
 /**
  * @private
@@ -97,7 +98,8 @@ var MenuComponent = /** @class */ (function (_super) {
      * @private
      */
     MenuComponent.prototype.onMenuHidden = function () {
-        var menu = this.chart.exportContextMenu;
+        var _a;
+        var menu = (_a = this.chart.exporting) === null || _a === void 0 ? void 0 : _a.contextMenuEl;
         if (menu) {
             menu.setAttribute('aria-hidden', 'true');
         }
@@ -107,7 +109,8 @@ var MenuComponent = /** @class */ (function (_super) {
      * @private
      */
     MenuComponent.prototype.onMenuShown = function () {
-        var chart = this.chart, menu = chart.exportContextMenu;
+        var _a;
+        var chart = this.chart, menu = (_a = chart.exporting) === null || _a === void 0 ? void 0 : _a.contextMenuEl;
         if (menu) {
             this.addAccessibleContextMenuAttribs();
             unhideChartElementFromAT(chart, menu);
@@ -128,12 +131,13 @@ var MenuComponent = /** @class */ (function (_super) {
      * proxy overlay.
      */
     MenuComponent.prototype.onChartRender = function () {
+        var _a;
         var chart = this.chart, focusEl = chart.focusElement, a11y = chart.accessibility;
         this.proxyProvider.clearGroup('chartMenu');
         this.proxyMenuButton();
         if (this.exportButtonProxy &&
             focusEl &&
-            focusEl === chart.exportingGroup) {
+            focusEl === ((_a = chart.exporting) === null || _a === void 0 ? void 0 : _a.group)) {
             if (focusEl.focusBorder) {
                 chart.setFocusToElement(focusEl, this.exportButtonProxy.innerElement);
             }
@@ -173,7 +177,8 @@ var MenuComponent = /** @class */ (function (_super) {
      * @private
      */
     MenuComponent.prototype.addAccessibleContextMenuAttribs = function () {
-        var chart = this.chart, exportList = chart.exportDivElements;
+        var _a;
+        var chart = this.chart, exportList = (_a = chart.exporting) === null || _a === void 0 ? void 0 : _a.divElements;
         if (exportList && exportList.length) {
             // Set tabindex on the menu items to allow focusing by script
             // Set role to give screen readers a chance to pick up the contents
@@ -232,15 +237,19 @@ var MenuComponent = /** @class */ (function (_super) {
             // Only run exporting navigation if exporting support exists and is
             // enabled on chart
             validate: function () {
+                var _a, _b, _c;
                 return !!chart.exporting &&
+                    ((_b = (_a = chart
+                        .options
+                        .exporting) === null || _a === void 0 ? void 0 : _a.buttons) === null || _b === void 0 ? void 0 : _b.contextButton.enabled) !== false &&
                     chart.options.exporting.enabled !== false &&
-                    chart.options.exporting.accessibility.enabled !==
-                        false;
+                    (((_c = chart.options.exporting.accessibility) === null || _c === void 0 ? void 0 : _c.enabled) || false) !== false;
             },
             // Focus export menu button
             init: function () {
+                var _a;
                 var proxy = component.exportButtonProxy;
-                var svgEl = component.chart.exportingGroup;
+                var svgEl = (_a = component.chart.exporting) === null || _a === void 0 ? void 0 : _a.group;
                 if (proxy && svgEl) {
                     chart.setFocusToElement(svgEl, proxy.innerElement);
                 }
@@ -281,12 +290,13 @@ var MenuComponent = /** @class */ (function (_super) {
      * @return {number} Response code
      */
     MenuComponent.prototype.onKbdNext = function (keyboardNavigationHandler) {
+        var _a, _b;
         var chart = this.chart;
         var a11yOptions = chart.options.accessibility;
         var response = keyboardNavigationHandler.response;
         // Try to highlight next item in list. Highlighting e.g.
         // separators will fail.
-        for (var i = (chart.highlightedExportItemIx || 0) + 1; i < chart.exportDivElements.length; ++i) {
+        for (var i = (chart.highlightedExportItemIx || 0) + 1; i < (((_b = (_a = chart.exporting) === null || _a === void 0 ? void 0 : _a.divElements) === null || _b === void 0 ? void 0 : _b.length) || 0); ++i) {
             if (chart.highlightExportItem(i)) {
                 return response.success;
             }
@@ -304,14 +314,16 @@ var MenuComponent = /** @class */ (function (_super) {
      * @return {number} Response code
      */
     MenuComponent.prototype.onKbdClick = function (keyboardNavigationHandler) {
+        var _a, _b, _c, _d;
         var chart = this.chart;
-        var curHighlightedItem = chart.exportDivElements[chart.highlightedExportItemIx];
-        var exportButtonElement = getExportMenuButtonElement(chart).element;
-        if (chart.openMenu) {
-            this.fakeClickEvent(curHighlightedItem);
+        var curHighlightedItem = chart.highlightedExportItemIx !== void 0 &&
+            ((_b = (_a = chart.exporting) === null || _a === void 0 ? void 0 : _a.divElements) === null || _b === void 0 ? void 0 : _b[chart.highlightedExportItemIx]);
+        var exportButtonElement = (_c = getExportMenuButtonElement(chart)) === null || _c === void 0 ? void 0 : _c.element;
+        if ((_d = chart.exporting) === null || _d === void 0 ? void 0 : _d.openMenu) {
+            curHighlightedItem && this.fakeClickEvent(curHighlightedItem);
         }
         else {
-            this.fakeClickEvent(exportButtonElement);
+            exportButtonElement && this.fakeClickEvent(exportButtonElement);
             chart.highlightExportItem(0);
         }
         return keyboardNavigationHandler.response.success;
@@ -367,8 +379,11 @@ var MenuComponent = /** @class */ (function (_super) {
      * @function Highcharts.Chart#hideExportMenu
      */
     function chartHideExportMenu() {
-        var chart = this, exportList = chart.exportDivElements;
-        if (exportList && chart.exportContextMenu && chart.openMenu) {
+        var _a, _b, _c;
+        var chart = this, exportList = (_a = chart.exporting) === null || _a === void 0 ? void 0 : _a.divElements;
+        if (exportList &&
+            ((_b = chart.exporting) === null || _b === void 0 ? void 0 : _b.contextMenuEl) &&
+            ((_c = chart.exporting) === null || _c === void 0 ? void 0 : _c.openMenu)) {
             // Reset hover states etc.
             exportList.forEach(function (el) {
                 if (el &&
@@ -379,7 +394,7 @@ var MenuComponent = /** @class */ (function (_super) {
             });
             chart.highlightedExportItemIx = 0;
             // Hide the menu div
-            chart.exportContextMenu.hideMenu();
+            chart.exporting.contextMenuEl.hideMenu();
             // Make sure the chart has focus and can capture keyboard events
             chart.container.focus();
         }
@@ -391,9 +406,9 @@ var MenuComponent = /** @class */ (function (_super) {
      * @function Highcharts.Chart#highlightExportItem
      */
     function chartHighlightExportItem(ix) {
-        var listItem = this.exportDivElements && this.exportDivElements[ix];
-        var curHighlighted = this.exportDivElements &&
-            this.exportDivElements[this.highlightedExportItemIx];
+        var _a, _b, _c, _d;
+        var listItem = (_b = (_a = this.exporting) === null || _a === void 0 ? void 0 : _a.divElements) === null || _b === void 0 ? void 0 : _b[ix], curHighlighted = this.highlightedExportItemIx !== void 0 &&
+            ((_d = (_c = this.exporting) === null || _c === void 0 ? void 0 : _c.divElements) === null || _d === void 0 ? void 0 : _d[this.highlightedExportItemIx]);
         if (listItem &&
             listItem.tagName === 'LI' &&
             !(listItem.children && listItem.children.length)) {
@@ -422,9 +437,10 @@ var MenuComponent = /** @class */ (function (_super) {
      * @function Highcharts.Chart#highlightLastExportItem
      */
     function chartHighlightLastExportItem() {
+        var _a, _b;
         var chart = this;
-        if (chart.exportDivElements) {
-            var i = chart.exportDivElements.length;
+        if ((_a = chart.exporting) === null || _a === void 0 ? void 0 : _a.divElements) {
+            var i = (_b = chart.exporting) === null || _b === void 0 ? void 0 : _b.divElements.length;
             while (i--) {
                 if (chart.highlightExportItem(i)) {
                     return true;

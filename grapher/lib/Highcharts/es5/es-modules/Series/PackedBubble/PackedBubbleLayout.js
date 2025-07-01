@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2010-2024 Grzegorz Blachlinski, Sebastian Bochan
+ *  (c) 2010-2025 Grzegorz Blachlinski, Sebastian Bochan
  *
  *  License: www.highcharts.com/license
  *
@@ -23,11 +23,20 @@ var __extends = (this && this.__extends) || (function () {
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
+var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
+    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
+        if (ar || !(i in from)) {
+            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+            ar[i] = from[i];
+        }
+    }
+    return to.concat(ar || Array.prototype.slice.call(from));
+};
 import GraphLayout from '../GraphLayoutComposition.js';
 import PackedBubbleIntegration from './PackedBubbleIntegration.js';
 import ReingoldFruchtermanLayout from '../Networkgraph/ReingoldFruchtermanLayout.js';
 import U from '../../Core/Utilities.js';
-var addEvent = U.addEvent, pick = U.pick;
+var addEvent = U.addEvent, defined = U.defined, pick = U.pick;
 /* *
  *
  *  Functions
@@ -83,6 +92,9 @@ var PackedBubbleLayout = /** @class */ (function (_super) {
             addEvent(ChartClass, 'beforeRedraw', onChartBeforeRedraw);
             chartProto.getSelectedParentNodes = chartGetSelectedParentNodes;
         }
+        if (!chartProto.allParentNodes) {
+            chartProto.allParentNodes = [];
+        }
     };
     /* *
      *
@@ -109,11 +121,12 @@ var PackedBubbleLayout = /** @class */ (function (_super) {
             this.temperature <= 0;
     };
     PackedBubbleLayout.prototype.setCircularPositions = function () {
-        var layout = this, box = layout.box, nodes = layout.nodes, nodesLength = nodes.length + 1, angle = 2 * Math.PI / nodesLength, radius = layout.options.initialPositionRadius;
+        var _a;
+        var layout = this, box = layout.box, nodes = __spreadArray(__spreadArray([], layout.nodes, true), ((_a = layout === null || layout === void 0 ? void 0 : layout.chart) === null || _a === void 0 ? void 0 : _a.allParentNodes) || [], true), nodesLength = nodes.length + 1, angle = 2 * Math.PI / nodesLength, radius = layout.options.initialPositionRadius;
         var centerX, centerY, index = 0;
         for (var _i = 0, nodes_1 = nodes; _i < nodes_1.length; _i++) {
             var node = nodes_1[_i];
-            if (layout.options.splitSeries &&
+            if (this.resolveSplitSeries(node) &&
                 !node.isParentNode) {
                 centerX = node.series.parentNode.plotX;
                 centerY = node.series.parentNode.plotY;
@@ -132,43 +145,55 @@ var PackedBubbleLayout = /** @class */ (function (_super) {
         }
     };
     PackedBubbleLayout.prototype.repulsiveForces = function () {
-        var layout = this, bubblePadding = layout.options.bubblePadding, nodes = layout.nodes;
-        var force, distanceR, distanceXY;
-        nodes.forEach(function (node) {
+        var _a, _b, _c;
+        var layout = this, options = layout.options, k = layout.k, _d = options.bubblePadding, bubblePadding = _d === void 0 ? 0 : _d, seriesInteraction = options.seriesInteraction, nodes = __spreadArray(__spreadArray([], layout.nodes, true), ((_a = layout === null || layout === void 0 ? void 0 : layout.chart) === null || _a === void 0 ? void 0 : _a.allParentNodes) || [], true);
+        for (var _i = 0, nodes_2 = nodes; _i < nodes_2.length; _i++) {
+            var node = nodes_2[_i];
+            var nodeSeries = node.series, fixedPosition = node.fixedPosition, paddedNodeRadius = ((((_b = node.marker) === null || _b === void 0 ? void 0 : _b.radius) || 0) +
+                bubblePadding);
             node.degree = node.mass;
             node.neighbours = 0;
-            nodes.forEach(function (repNode) {
-                force = 0;
+            for (var _e = 0, nodes_3 = nodes; _e < nodes_3.length; _e++) {
+                var repNode = nodes_3[_e];
+                var repNodeSeries = repNode.series;
                 if (
                 // Node cannot repulse itself:
                 node !== repNode &&
-                    // Only close nodes affect each other:
                     // Not dragged:
-                    !node.fixedPosition &&
-                    (layout.options.seriesInteraction ||
-                        node.series === repNode.series)) {
-                    distanceXY = layout.getDistXY(node, repNode);
-                    distanceR = (layout.vectorLength(distanceXY) -
-                        (node.marker.radius +
-                            repNode.marker.radius +
-                            bubblePadding));
+                    !fixedPosition &&
+                    (seriesInteraction || nodeSeries === repNodeSeries) &&
+                    // Avoiding collision of parentNodes and parented points
+                    !(nodeSeries === repNodeSeries &&
+                        (repNode.isParentNode || node.isParentNode))) {
+                    var distanceXY = layout.getDistXY(node, repNode), distanceR = (layout.vectorLength(distanceXY) -
+                        (paddedNodeRadius + (((_c = repNode.marker) === null || _c === void 0 ? void 0 : _c.radius) || 0)));
+                    var forceTimesMass = void 0;
                     // TODO padding configurable
                     if (distanceR < 0) {
                         node.degree += 0.01;
-                        node.neighbours++;
-                        force = layout.repulsiveForce(-distanceR / Math.sqrt(node.neighbours), layout.k, node, repNode);
+                        forceTimesMass = (layout.repulsiveForce(-distanceR / Math.sqrt(++(node.neighbours)), k, node, repNode) *
+                            repNode.mass);
                     }
-                    layout.force('repulsive', node, force * repNode.mass, distanceXY, repNode, distanceR);
+                    layout.force('repulsive', node, forceTimesMass || 0, distanceXY, repNode, distanceR);
                 }
-            });
-        });
+            }
+        }
+    };
+    PackedBubbleLayout.prototype.resolveSplitSeries = function (node) {
+        var _a, _b, _c, _d, _e, _f, _g, _h;
+        var specificSeriesOpt = (_c = (_b = (_a = node
+            .series) === null || _a === void 0 ? void 0 : _a.options) === null || _b === void 0 ? void 0 : _b.layoutAlgorithm) === null || _c === void 0 ? void 0 : _c.splitSeries;
+        return (!defined(specificSeriesOpt) &&
+            ((_h = (_g = (_f = (_e = (_d = node.series.chart) === null || _d === void 0 ? void 0 : _d.options) === null || _e === void 0 ? void 0 : _e.plotOptions) === null || _f === void 0 ? void 0 : _f.packedbubble) === null || _g === void 0 ? void 0 : _g.layoutAlgorithm) === null || _h === void 0 ? void 0 : _h.splitSeries)) ||
+            specificSeriesOpt ||
+            false;
     };
     PackedBubbleLayout.prototype.applyLimitBox = function (node, box) {
         var layout = this, factor = 0.01;
         var distanceXY, distanceR;
         // `parentNodeLimit` should be used together with seriesInteraction:
         // false
-        if (layout.options.splitSeries &&
+        if (this.resolveSplitSeries(node) &&
             !node.isParentNode &&
             layout.options.parentNodeLimit) {
             distanceXY = layout.getDistXY(node, node.series.parentNode);

@@ -1,11 +1,11 @@
 /**
- * @license Highcharts Gantt JS v12.1.2 (2025-01-09)
+ * @license Highcharts Gantt JS v12.3.0 (2025-06-21)
  * @module highcharts/modules/grid-axis
  * @requires highcharts
  *
  * GridAxis
  *
- * (c) 2016-2024 Lars A. V. Cabrera
+ * (c) 2016-2025 Lars A. V. Cabrera
  *
  * License: www.highcharts.com/license
  */
@@ -317,7 +317,7 @@ function onAfterGetTitlePosition(e) {
             axisTop = axis.top,
             axisWidth = axis.width;
         var tickSize = axis.tickSize();
-        var titleWidth = axisTitle && axisTitle.getBBox().width;
+        var titleWidth = axisTitle === null || axisTitle === void 0 ? void 0 : axisTitle.getBBox().width;
         var xOption = options_1.title.x;
         var yOption = options_1.title.y;
         var titleMargin = pick(options_1.title.margin,
@@ -401,6 +401,8 @@ function onAfterInit() {
  * @private
  */
 function onAfterRender() {
+    var _a,
+        _b;
     var axis = this,
         axisTitle = axis.axisTitle,
         grid = axis.grid,
@@ -431,7 +433,7 @@ function onAfterRender() {
                     > _________________________
         Into this:    |______|______|______|__|
                                                 */
-        if (axis.grid && axis.grid.isOuterAxis() && axis.axisLine) {
+        if (((_a = axis.grid) === null || _a === void 0 ? void 0 : _a.isOuterAxis()) && axis.axisLine) {
             var lineWidth = options.lineWidth;
             if (lineWidth) {
                 var linePath = axis.getLinePath(lineWidth),
@@ -523,13 +525,12 @@ function onAfterRender() {
                 axis.axisLine[axis.showAxis ? 'show' : 'hide']();
             }
         }
-        (grid && grid.columns || []).forEach(function (column) { return column.render(); });
+        ((grid === null || grid === void 0 ? void 0 : grid.columns) || []).forEach(function (column) { return column.render(); });
         // Manipulate the tick mark visibility
         // based on the axis.max- allows smooth scrolling.
         if (!axis.horiz &&
             axis.chart.hasRendered &&
-            (axis.scrollbar ||
-                (axis.linkedParent && axis.linkedParent.scrollbar)) &&
+            (axis.scrollbar || ((_b = axis.linkedParent) === null || _b === void 0 ? void 0 : _b.scrollbar)) &&
             axis.tickPositions.length) {
             var tickmarkOffset = axis.tickmarkOffset,
                 lastTick = axis.tickPositions[axis.tickPositions.length - 1],
@@ -576,8 +577,9 @@ function onAfterRender() {
  * @private
  */
 function onAfterSetAxisTranslation() {
+    var _a;
     var axis = this;
-    var tickInfo = axis.tickPositions && axis.tickPositions.info;
+    var tickInfo = (_a = axis.tickPositions) === null || _a === void 0 ? void 0 : _a.info;
     var options = axis.options;
     var gridOptions = options.grid || {};
     var userLabels = axis.userOptions.labels || {};
@@ -715,9 +717,9 @@ function onAfterSetOptions(e) {
                 !defined(userOptions.tickInterval) &&
                 !defined(userOptions.units)) {
                 gridAxisOptions.tickPositioner = function (min, max) {
-                    var parentInfo = (this.linkedParent &&
-                            this.linkedParent.tickPositions &&
-                            this.linkedParent.tickPositions.info);
+                    var _a,
+                        _b;
+                    var parentInfo = (_b = (_a = this.linkedParent) === null || _a === void 0 ? void 0 : _a.tickPositions) === null || _b === void 0 ? void 0 : _b.info;
                     if (parentInfo) {
                         var units = (gridAxisOptions.units || []);
                         var unitIdx = void 0,
@@ -735,7 +737,7 @@ function onAfterSetOptions(e) {
                         if (unit) {
                             unitName = unit[0] || 'year';
                             var counts = unit[1];
-                            count = counts && counts[0] || 1;
+                            count = (counts === null || counts === void 0 ? void 0 : counts[0]) || 1;
                             // In case the base X axis shows years, make the
                             // secondary axis show ten times the years (#11427)
                         }
@@ -776,7 +778,7 @@ function onAfterSetOptions(e) {
 function onAfterSetOptions2(e) {
     var axis = this;
     var userOptions = e.userOptions;
-    var gridOptions = userOptions && userOptions.grid || {};
+    var gridOptions = (userOptions === null || userOptions === void 0 ? void 0 : userOptions.grid) || {};
     var columns = gridOptions.columns;
     // Add column options to the parent axis. Children has their column options
     // set on init in onGridAxisAfterInit.
@@ -822,7 +824,8 @@ function onAfterTickSize(e) {
  */
 function onChartAfterSetChartSize() {
     this.axes.forEach(function (axis) {
-        (axis.grid && axis.grid.columns || []).forEach(function (column) {
+        var _a;
+        (((_a = axis.grid) === null || _a === void 0 ? void 0 : _a.columns) || []).forEach(function (column) {
             column.setAxisSize();
             column.setAxisTranslation();
         });
@@ -956,10 +959,10 @@ function onTickAfterGetLabelPosition(e) {
  * @private
  */
 function onTickLabelFormat(ctx) {
+    var _a;
     var axis = ctx.axis,
         value = ctx.value;
-    if (axis.options.grid &&
-        axis.options.grid.enabled) {
+    if ((_a = axis.options.grid) === null || _a === void 0 ? void 0 : _a.enabled) {
         var tickPos = axis.tickPositions;
         var series = (axis.linkedParent || axis).series[0];
         var isFirst = value === tickPos[0];
@@ -1003,6 +1006,8 @@ function onTickLabelFormat(ctx) {
  *       ticks and not the labels directly?
  */
 function onTrimTicks() {
+    var _a,
+        _b;
     var axis = this,
         options = axis.options,
         gridOptions = options.grid || {},
@@ -1012,8 +1017,8 @@ function onTrimTicks() {
         secondPos = tickPositions[1],
         lastPos = tickPositions[tickPositions.length - 1],
         beforeLastPos = tickPositions[tickPositions.length - 2],
-        linkedMin = axis.linkedParent && axis.linkedParent.min,
-        linkedMax = axis.linkedParent && axis.linkedParent.max,
+        linkedMin = (_a = axis.linkedParent) === null || _a === void 0 ? void 0 : _a.min,
+        linkedMax = (_b = axis.linkedParent) === null || _b === void 0 ? void 0 : _b.max,
         min = linkedMin || axis.min,
         max = linkedMax || axis.max,
         tickInterval = axis.tickInterval,

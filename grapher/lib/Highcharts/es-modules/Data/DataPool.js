@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2009-2024 Highsoft AS
+ *  (c) 2009-2025 Highsoft AS
  *
  *  License: www.highcharts.com/license
  *
@@ -64,13 +64,13 @@ class DataPool {
      * @param {string} connectorId
      * ID of the connector.
      *
-     * @return {Promise<Data.DataConnector>}
+     * @return {Promise<Data.DataConnectorType>}
      * Returns the connector.
      */
     getConnector(connectorId) {
         const connector = this.connectors[connectorId];
         // Already loaded
-        if (connector) {
+        if (connector?.loaded) {
             return Promise.resolve(connector);
         }
         let waitingList = this.waiting[connectorId];
@@ -172,7 +172,7 @@ class DataPool {
      * @param {Data.DataPoolConnectorOptions} options
      * Options of connector.
      *
-     * @return {Promise<Data.DataConnector>}
+     * @return {Promise<Data.DataConnectorType>}
      * Returns the connector.
      */
     loadConnector(options) {
@@ -185,12 +185,14 @@ class DataPool {
             if (!ConnectorClass) {
                 throw new Error(`Connector type not found. (${options.type})`);
             }
-            const connector = new ConnectorClass(options.options);
+            const connector = this.connectors[options.id] = new ConnectorClass(options.options, options.dataTables);
             // eslint-disable-next-line @typescript-eslint/no-floating-promises
             connector
                 .load()
-                .then((connector) => {
-                this.connectors[options.id] = connector;
+                .then(({ converter, dataTables }) => {
+                connector.dataTables = dataTables;
+                connector.converter = converter;
+                connector.loaded = true;
                 this.emit({
                     type: 'afterLoad',
                     options
@@ -198,6 +200,15 @@ class DataPool {
                 resolve(connector);
             })['catch'](reject);
         });
+    }
+    /**
+     * Cancels all data connectors pending requests.
+     */
+    cancelPendingRequests() {
+        const { connectors } = this;
+        for (const connectorKey of Object.keys(connectors)) {
+            connectors[connectorKey].stopPolling();
+        }
     }
     /**
      * Registers a callback for a specific event.

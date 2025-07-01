@@ -86,17 +86,18 @@ function renderLabelIcon(tick, params) {
  * @private
  */
 function wrapGetLabelPosition(proceed, x, y, label, horiz, labelOptions, tickmarkOffset, index, step) {
-    var tick = this, lbOptions = pick(tick.options && tick.options.labels, labelOptions), pos = tick.pos, axis = tick.axis, isTreeGrid = axis.type === 'treegrid', result = proceed.apply(tick, [x, y, label, horiz, lbOptions, tickmarkOffset, index, step]);
+    var _a;
+    var tick = this, lbOptions = pick((_a = tick.options) === null || _a === void 0 ? void 0 : _a.labels, labelOptions), pos = tick.pos, axis = tick.axis, isTreeGrid = axis.type === 'treegrid', result = proceed.apply(tick, [x, y, label, horiz, lbOptions, tickmarkOffset, index, step]);
     var mapOfPosToGridNode, node, level;
     if (isTreeGrid) {
-        var _a = (lbOptions && isObject(lbOptions.symbol, true) ?
+        var _b = (lbOptions && isObject(lbOptions.symbol, true) ?
             lbOptions.symbol :
-            {}), _b = _a.width, width = _b === void 0 ? 0 : _b, _c = _a.padding, padding = _c === void 0 ? axis.linkedParent ? 0 : 5 : _c, indentation = (lbOptions && isNumber(lbOptions.indentation) ?
+            {}), _c = _b.width, width = _c === void 0 ? 0 : _c, _d = _b.padding, padding = _d === void 0 ? axis.linkedParent ? 0 : 5 : _d, indentation = (lbOptions && isNumber(lbOptions.indentation) ?
             lbOptions.indentation :
             0);
         mapOfPosToGridNode = axis.treeGrid.mapOfPosToGridNode;
-        node = mapOfPosToGridNode && mapOfPosToGridNode[pos];
-        level = (node && node.depth) || 1;
+        node = mapOfPosToGridNode === null || mapOfPosToGridNode === void 0 ? void 0 : mapOfPosToGridNode[pos];
+        level = (node === null || node === void 0 ? void 0 : node.depth) || 1;
         result.x += (
         // Add space for symbols
         (width + (padding * 2)) +
@@ -111,7 +112,7 @@ function wrapGetLabelPosition(proceed, x, y, label, horiz, labelOptions, tickmar
 function wrapRenderLabel(proceed) {
     var tick = this, pos = tick.pos, axis = tick.axis, label = tick.label, tickGrid = tick.treeGrid, tickOptions = tick.options, icon = tickGrid === null || tickGrid === void 0 ? void 0 : tickGrid.labelIcon, labelElement = label === null || label === void 0 ? void 0 : label.element, axisGrid = axis.treeGrid, axisOptions = axis.options, chart = axis.chart, tickPositions = axis.tickPositions, mapOfPosToGridNode = axisGrid.mapOfPosToGridNode, labelOptions = pick(tickOptions === null || tickOptions === void 0 ? void 0 : tickOptions.labels, axisOptions === null || axisOptions === void 0 ? void 0 : axisOptions.labels), symbolOptions = (labelOptions && isObject(labelOptions.symbol, true) ?
         labelOptions.symbol :
-        {}), node = mapOfPosToGridNode && mapOfPosToGridNode[pos], _a = node || {}, descendants = _a.descendants, depth = _a.depth, hasDescendants = node && descendants && descendants > 0, level = depth, isTreeGridElement = (axis.type === 'treegrid') && labelElement, shouldRender = tickPositions.indexOf(pos) > -1, prefixClassName = 'highcharts-treegrid-node-', prefixLevelClass = prefixClassName + 'level-', styledMode = chart.styledMode;
+        {}), node = mapOfPosToGridNode === null || mapOfPosToGridNode === void 0 ? void 0 : mapOfPosToGridNode[pos], _a = node || {}, descendants = _a.descendants, depth = _a.depth, hasDescendants = node && descendants && descendants > 0, level = depth, isTreeGridElement = (axis.type === 'treegrid') && labelElement, shouldRender = tickPositions.indexOf(pos) > -1, prefixClassName = 'highcharts-treegrid-node-', prefixLevelClass = prefixClassName + 'level-', styledMode = chart.styledMode;
     var collapsed, addClassName, removeClassName;
     if (isTreeGridElement && node) {
         // Add class name for hierarchical styling.

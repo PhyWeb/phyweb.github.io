@@ -1,12 +1,12 @@
 /**
- * @license Highmaps JS v12.1.2 (2025-01-09)
+ * @license Highmaps JS v12.3.0 (2025-06-21)
  * @module highcharts/modules/tilemap
  * @requires highcharts
  * @requires highcharts/modules/map
  *
  * Tilemap module
  *
- * (c) 2010-2024 Highsoft AS
+ * (c) 2010-2025 Highsoft AS
  *
  * License: www.highcharts.com/license
  */
@@ -24,17 +24,17 @@ return /******/ (function() { // webpackBootstrap
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 620:
-/***/ (function(module) {
-
-module.exports = __WEBPACK_EXTERNAL_MODULE__620__;
-
-/***/ }),
-
 /***/ 512:
 /***/ (function(module) {
 
 module.exports = __WEBPACK_EXTERNAL_MODULE__512__;
+
+/***/ }),
+
+/***/ 620:
+/***/ (function(module) {
+
+module.exports = __WEBPACK_EXTERNAL_MODULE__620__;
 
 /***/ }),
 
@@ -121,7 +121,7 @@ var highcharts_Color_commonjs_highcharts_Color_commonjs2_highcharts_Color_root_H
 ;// ./code/es5/es-modules/Core/Axis/Color/ColorAxisComposition.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -224,7 +224,7 @@ var ColorAxisComposition;
             i;
         colorAxes.forEach(function (colorAxis) {
             options = colorAxis.options;
-            if (options && options.showInLegend) {
+            if (options === null || options === void 0 ? void 0 : options.showInLegend) {
                 // Data classes
                 if (options.dataClasses && options.visible) {
                     colorAxisItems = colorAxisItems.concat(colorAxis.getDataClassLegendSymbols());
@@ -280,8 +280,8 @@ var ColorAxisComposition;
      * @private
      */
     function onSeriesAfterTranslate() {
-        if (this.chart.colorAxis &&
-            this.chart.colorAxis.length ||
+        var _a;
+        if (((_a = this.chart.colorAxis) === null || _a === void 0 ? void 0 : _a.length) ||
             this.colorAttribs) {
             this.translateColors();
         }
@@ -405,7 +405,7 @@ var ColorAxisComposition;
  *
  *  Tilemaps module
  *
- *  (c) 2010-2024 Highsoft AS
+ *  (c) 2010-2025 Highsoft AS
  *  Author: Øystein Moseng
  *
  *  License: www.highcharts.com/license
@@ -475,7 +475,7 @@ TilemapPoint_extend(TilemapPoint.prototype, {
  *
  *  Tilemaps module
  *
- *  (c) 2010-2024 Highsoft AS
+ *  (c) 2010-2025 Highsoft AS
  *  Author: Øystein Moseng
  *
  *  License: www.highcharts.com/license
@@ -697,7 +697,7 @@ var TilemapSeriesDefaults = {
  *
  *  Tilemaps module
  *
- *  (c) 2010-2024 Highsoft AS
+ *  (c) 2010-2025 Highsoft AS
  *  Author: Øystein Moseng
  *
  *  License: www.highcharts.com/license
@@ -1024,7 +1024,7 @@ var TilemapShapes = {
  *
  *  Tilemaps module
  *
- *  (c) 2010-2024 Highsoft AS
+ *  (c) 2010-2025 Highsoft AS
  *  Author: Øystein Moseng
  *
  *  License: www.highcharts.com/license

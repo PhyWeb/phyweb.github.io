@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2009-2024 Highsoft AS
+ *  (c) 2009-2025 Highsoft AS
  *
  *  License: www.highcharts.com/license
  *
@@ -32,7 +32,7 @@ var __extends = (this && this.__extends) || (function () {
 import CSVConverter from '../Converters/CSVConverter.js';
 import DataConnector from './DataConnector.js';
 import U from '../../Core/Utilities.js';
-var merge = U.merge;
+var merge = U.merge, defined = U.defined;
 /* *
  *
  *  Class
@@ -55,13 +55,17 @@ var CSVConnector = /** @class */ (function (_super) {
      *
      * @param {CSVConnector.UserOptions} [options]
      * Options for the connector and converter.
+     *
+     * @param {Array<DataTableOptions>} [dataTables]
+     * Multiple connector data tables options.
+     *
      */
-    function CSVConnector(options) {
+    function CSVConnector(options, dataTables) {
         var _this = this;
         var mergedOptions = merge(CSVConnector.defaultOptions, options);
-        _this = _super.call(this, mergedOptions) || this;
-        _this.converter = new CSVConverter(mergedOptions);
-        _this.options = mergedOptions;
+        _this = _super.call(this, mergedOptions, dataTables) || this;
+        _this.options = defined(dataTables) ?
+            merge(mergedOptions, { dataTables: dataTables }) : mergedOptions;
         if (mergedOptions.enablePolling) {
             _this.startPolling(Math.max(mergedOptions.dataRefreshRate || 0, 1) * 1000);
         }
@@ -82,26 +86,40 @@ var CSVConnector = /** @class */ (function (_super) {
      * @emits CSVConnector#afterLoad
      */
     CSVConnector.prototype.load = function (eventDetail) {
-        var connector = this, converter = connector.converter, table = connector.table, _a = connector.options, csv = _a.csv, csvURL = _a.csvURL, dataModifier = _a.dataModifier;
+        var _this = this;
+        var _a;
+        var connector = this, tables = connector.dataTables, _b = connector.options, csv = _b.csv, csvURL = _b.csvURL, dataModifier = _b.dataModifier, dataTables = _b.dataTables;
         connector.emit({
             type: 'load',
             csv: csv,
             detail: eventDetail,
-            table: table
+            tables: tables
         });
         return Promise
             .resolve(csvURL ?
-            fetch(csvURL).then(function (response) { return response.text(); }) :
+            fetch(csvURL, {
+                signal: (_a = connector === null || connector === void 0 ? void 0 : connector.pollingController) === null || _a === void 0 ? void 0 : _a.signal
+            }).then(function (response) { return response.text(); }) :
             csv || '')
             .then(function (csv) {
             if (csv) {
-                // If already loaded, clear the current rows
-                table.deleteColumns();
-                converter.parse({ csv: csv });
-                table.setColumns(converter.getTable().getColumns());
+                _this.initConverters(csv, function (key) {
+                    var _a, _b;
+                    var options = _this.options;
+                    var tableOptions = dataTables === null || dataTables === void 0 ? void 0 : dataTables.find(function (dataTable) { return dataTable.key === key; });
+                    // Takes over the connector default options.
+                    var mergedTableOptions = {
+                        dataTableKey: key,
+                        firstRowAsNames: (_a = tableOptions === null || tableOptions === void 0 ? void 0 : tableOptions.firstRowAsNames) !== null && _a !== void 0 ? _a : options.firstRowAsNames,
+                        beforeParse: (_b = tableOptions === null || tableOptions === void 0 ? void 0 : tableOptions.beforeParse) !== null && _b !== void 0 ? _b : options.beforeParse
+                    };
+                    return new CSVConverter(merge(_this.options, mergedTableOptions));
+                }, function (converter, data) {
+                    converter.parse({ csv: data });
+                });
             }
             return connector
-                .setModifierOptions(dataModifier)
+                .setModifierOptions(dataModifier, dataTables)
                 .then(function () { return csv; });
         })
             .then(function (csv) {
@@ -109,7 +127,7 @@ var CSVConnector = /** @class */ (function (_super) {
                 type: 'afterLoad',
                 csv: csv,
                 detail: eventDetail,
-                table: table
+                tables: tables
             });
             return connector;
         })['catch'](function (error) {
@@ -117,7 +135,7 @@ var CSVConnector = /** @class */ (function (_super) {
                 type: 'loadError',
                 detail: eventDetail,
                 error: error,
-                table: table
+                tables: tables
             });
             throw error;
         });

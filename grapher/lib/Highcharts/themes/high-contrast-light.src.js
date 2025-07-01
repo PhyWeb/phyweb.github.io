@@ -1,9 +1,9 @@
 /**
- * @license Highcharts JS v12.1.2 (2025-01-09)
+ * @license Highcharts JS v12.3.0 (2025-06-21)
  * @module highcharts/themes/high-contrast-light
  * @requires highcharts
  *
- * (c) 2009-2024 Highsoft AS
+ * (c) 2009-2025 Highsoft AS
  *
  * License: www.highcharts.com/license
  */
@@ -98,7 +98,7 @@ var highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default 
 ;// ./code/es-modules/Extensions/Themes/HighContrastLight.js
 /* *
  *
- *  (c) 2010-2024 Highsoft AS
+ *  (c) 2010-2025 Highsoft AS
  *
  *  Author: Øystein Moseng
  *

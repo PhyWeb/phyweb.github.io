@@ -1,5 +1,5 @@
 /**
- * @license Highcharts JS v12.1.2 (2025-01-09)
+ * @license Highcharts JS v12.3.0 (2025-06-21)
  * @module modules/arc-diagram
  * @requires highcharts/modules/sankey
  *
@@ -30,6 +30,13 @@ module.exports = __WEBPACK_EXTERNAL_MODULE__28__;
 
 /***/ }),
 
+/***/ 512:
+/***/ (function(module) {
+
+module.exports = __WEBPACK_EXTERNAL_MODULE__512__;
+
+/***/ }),
+
 /***/ 540:
 /***/ (function(module) {
 
@@ -41,13 +48,6 @@ module.exports = __WEBPACK_EXTERNAL_MODULE__540__;
 /***/ (function(module) {
 
 module.exports = __WEBPACK_EXTERNAL_MODULE__820__;
-
-/***/ }),
-
-/***/ 512:
-/***/ (function(module) {
-
-module.exports = __WEBPACK_EXTERNAL_MODULE__512__;
 
 /***/ }),
 
@@ -420,7 +420,7 @@ var NodesComposition;
  *
  *  Arc diagram module
  *
- *  (c) 2018-2024 Torstein Honsi
+ *  (c) 2018-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -732,7 +732,7 @@ var ArcDiagramSeriesDefaults = {
  *
  *  Sankey diagram module
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -992,7 +992,7 @@ var highcharts_SVGElement_commonjs_highcharts_SVGElement_commonjs2_highcharts_SV
  *
  *  Highcharts module with textPath functionality.
  *
- *  (c) 2009-2024 Torstein Honsi
+ *  (c) 2009-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *

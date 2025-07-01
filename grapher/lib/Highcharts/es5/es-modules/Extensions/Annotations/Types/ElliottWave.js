@@ -21,8 +21,51 @@ var __extends = (this && this.__extends) || (function () {
 })();
 import Annotation from '../Annotation.js';
 import CrookedLine from './CrookedLine.js';
+import D from '../../../Core/Defaults.js';
+var defaultOptions = D.defaultOptions;
 import U from '../../../Core/Utilities.js';
 var merge = U.merge;
+if (defaultOptions.annotations) {
+    defaultOptions.annotations.types.elliottWave = merge(defaultOptions.annotations.types.crookedLine, 
+    /**
+     * Options for the elliott wave annotation type.
+     *
+     * @sample highcharts/annotations-advanced/elliott-wave/
+     *         Elliott wave
+     *
+     * @extends      annotations.types.crookedLine
+     * @product      highstock
+     * @optionparent annotations.types.elliottWave
+     */
+    {
+        typeOptions: {
+            /**
+             * @extends   annotations.types.crookedLine.labelOptions
+             * @apioption annotations.types.elliottWave.typeOptions.points.label
+             */
+            /**
+             * @ignore-option
+             */
+            labels: ['(0)', '(A)', '(B)', '(C)', '(D)', '(E)'],
+            line: {
+                strokeWidth: 1
+            }
+        },
+        labelOptions: {
+            align: 'center',
+            allowOverlap: true,
+            crop: true,
+            overflow: 'none',
+            type: 'rect',
+            backgroundColor: 'none',
+            borderWidth: 0,
+            y: -5,
+            style: {
+                color: "#333333" /* Palette.neutralColor80 */
+            }
+        }
+    });
+}
 /* *
  *
  *  Class
@@ -52,42 +95,6 @@ var ElliottWave = /** @class */ (function (_super) {
     };
     return ElliottWave;
 }(CrookedLine));
-ElliottWave.prototype.defaultOptions = merge(CrookedLine.prototype.defaultOptions, 
-/**
- * An elliott wave annotation.
- *
- * @sample highcharts/annotations-advanced/elliott-wave/
- *         Elliott wave
- *
- * @extends      annotations.crookedLine
- * @product      highstock
- * @optionparent annotations.elliottWave
- */
-{
-    typeOptions: {
-        /**
-         * @extends   annotations.crookedLine.labelOptions
-         * @apioption annotations.elliottWave.typeOptions.points.label
-         */
-        /**
-         * @ignore-option
-         */
-        labels: ['(0)', '(A)', '(B)', '(C)', '(D)', '(E)'],
-        line: {
-            strokeWidth: 1
-        }
-    },
-    labelOptions: {
-        align: 'center',
-        allowOverlap: true,
-        crop: true,
-        overflow: 'none',
-        type: 'rect',
-        backgroundColor: 'none',
-        borderWidth: 0,
-        y: -5
-    }
-});
 Annotation.types.elliottWave = ElliottWave;
 /* *
  *

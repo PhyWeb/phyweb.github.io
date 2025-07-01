@@ -1,8 +1,8 @@
 /**
- * @license Highcharts JS v12.1.2 (2025-01-09)
+ * @license Highcharts JS v12.3.0 (2025-06-21)
  * @module highcharts/polyfills
  *
- * (c) 2009-2024 Torstein Honsi
+ * (c) 2009-2025 Torstein Honsi
  *
  * License: www.highcharts.com/license
  */
@@ -37,6 +37,20 @@ if (!Array.prototype.find) {
         }
     };
 }
+if (!Array.prototype.fill) {
+    // eslint-disable-next-line no-extend-native
+    Array.prototype.fill = function (value, start, end) {
+        var O = Object(this), len = O.length >>> 0, relativeStart = Number(start) || 0;
+        var k = relativeStart === -Infinity ? 0 : relativeStart < 0 ?
+            Math.max(len + relativeStart, 0) : Math.min(relativeStart, len);
+        var relativeEnd = end === void 0 ? len : Number(end), final = relativeEnd === -Infinity ? 0 : relativeEnd < 0 ?
+            Math.max(len + relativeEnd, 0) : Math.min(relativeEnd, len);
+        while (k < final) {
+            O[k++] = value;
+        }
+        return O;
+    };
+}
 if (!Object.entries) {
     Object.entries = function (obj) {
         var keys = Object.keys(obj), iEnd = keys.length, entries = [];
@@ -55,12 +69,40 @@ if (!Object.values) {
         return values;
     };
 }
+var ElementPrototype = window.Element.prototype;
+if (typeof ElementPrototype.matches !== 'function') {
+    ElementPrototype.matches = function matches(selector) {
+        var element = this;
+        var elements = element.ownerDocument.querySelectorAll(selector);
+        var index = 0;
+        while (elements[index] && elements[index] !== element) {
+            ++index;
+        }
+        return Boolean(elements[index]);
+    };
+}
+if (typeof ElementPrototype.closest !== 'function') {
+    ElementPrototype.closest = function closest(selector) {
+        var element = this;
+        while (element && element.nodeType === 1) {
+            if (element === null || element === void 0 ? void 0 : element.matches(selector)) {
+                return element;
+            }
+            element = element.parentNode || null;
+        }
+        return null;
+    };
+}
 (function () {
-    if (typeof window.CustomEvent === "function")
+    if (typeof window === 'undefined' ||
+        window.CustomEvent ||
+        !window.document ||
+        !window.Event) {
         return false;
+    }
     function CustomEvent(type, params) {
         params = params || { bubbles: false, cancelable: false, detail: undefined };
-        var evt = document.createEvent('CustomEvent');
+        var evt = window.document.createEvent('CustomEvent');
         evt.initCustomEvent(type, params.bubbles, params.cancelable, params.detail);
         return evt;
     }

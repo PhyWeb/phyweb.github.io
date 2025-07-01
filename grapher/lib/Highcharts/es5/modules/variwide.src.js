@@ -1,11 +1,11 @@
 /**
- * @license Highcharts JS v12.1.2 (2025-01-09)
+ * @license Highcharts JS v12.3.0 (2025-06-21)
  * @module highcharts/modules/variwide
  * @requires highcharts
  *
  * Highcharts variwide module
  *
- * (c) 2010-2024 Torstein Honsi
+ * (c) 2010-2025 Torstein Honsi
  *
  * License: www.highcharts.com/license
  */
@@ -112,7 +112,7 @@ var highcharts_SeriesRegistry_commonjs_highcharts_SeriesRegistry_commonjs2_highc
  *
  *  Highcharts variwide module
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -147,8 +147,9 @@ function compose(AxisClass, TickClass) {
  * @private
  */
 function onAxisAfterDrawCrosshair(e) {
+    var _a;
     if (this.variwide && this.cross) {
-        this.cross.attr('stroke-width', (e.point && e.point.crosshairWidth));
+        this.cross.attr('stroke-width', (_a = e.point) === null || _a === void 0 ? void 0 : _a.crosshairWidth);
     }
 }
 /**
@@ -233,7 +234,7 @@ var VariwideComposition = {
  *
  *  Highcharts variwide module
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -293,7 +294,7 @@ var VariwidePoint = /** @class */ (function (_super) {
  *
  *  Highcharts variwide module
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -424,7 +425,7 @@ var VariwideSeriesDefaults = {
  *
  *  Highcharts variwide module
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -457,7 +458,7 @@ var ColumnSeries = (highcharts_SeriesRegistry_commonjs_highcharts_SeriesRegistry
 
 
 
-var VariwideSeries_addEvent = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).addEvent, crisp = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).crisp, extend = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).extend, merge = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).merge, pick = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).pick;
+var VariwideSeries_addEvent = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).addEvent, arrayMin = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).arrayMin, arrayMax = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).arrayMax, crisp = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).crisp, extend = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).extend, merge = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).merge, pick = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).pick;
 /* *
  *
  *  Class
@@ -570,6 +571,14 @@ var VariwideSeries = /** @class */ (function (_super) {
                 }
             }
         }
+    };
+    VariwideSeries.prototype.getXExtremes = function (xData) {
+        var max = arrayMax(xData),
+            maxZ = this.getColumn('z')[xData.indexOf(max)];
+        return {
+            min: arrayMin(xData),
+            max: max + (this.xAxis.categories ? 0 : maxZ)
+        };
     };
     /* *
      *

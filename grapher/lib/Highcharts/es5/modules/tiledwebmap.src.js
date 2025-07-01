@@ -1,9 +1,9 @@
 /**
- * @license Highcharts JS v12.1.2 (2025-01-09)
+ * @license Highcharts JS v12.3.0 (2025-06-21)
  * @module highcharts/modules/tiledwebmap
  * @requires highcharts
  *
- * (c) 2009-2024
+ * (c) 2009-2025
  *
  * License: www.highcharts.com/license
  */
@@ -524,7 +524,7 @@ var highcharts_SeriesRegistry_commonjs_highcharts_SeriesRegistry_commonjs2_highc
 ;// ./code/es5/es-modules/Series/TiledWebMap/TiledWebMapSeriesDefaults.js
 /* *
  *
- *  (c) 2010-2024 Hubert Kozik, Kamil Musiałowski
+ *  (c) 2010-2025 Hubert Kozik, Kamil Musiałowski
  *
  *  License: www.highcharts.com/license
  *
@@ -670,7 +670,7 @@ var TiledWebMapSeriesDefaults = {
 ;// ./code/es5/es-modules/Series/TiledWebMap/TiledWebMapSeries.js
 /* *
  *
- *  (c) 2010-2024 Hubert Kozik, Kamil Musiałowski
+ *  (c) 2010-2025 Hubert Kozik, Kamil Musiałowski
  *
  *  License: www.highcharts.com/license
  *

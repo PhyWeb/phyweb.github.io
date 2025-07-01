@@ -1,11 +1,11 @@
 /**
- * @license Highstock JS v12.1.2 (2025-01-09)
+ * @license Highstock JS v12.3.0 (2025-06-21)
  * @module highcharts/modules/full-screen
  * @requires highcharts
  *
  * Advanced Highcharts Stock tools
  *
- * (c) 2010-2024 Highsoft AS
+ * (c) 2010-2025 Highsoft AS
  * Author: Torstein Honsi
  *
  * License: www.highcharts.com/license
@@ -111,7 +111,7 @@ var highcharts_AST_commonjs_highcharts_AST_commonjs2_highcharts_AST_root_Highcha
 ;// ./code/es5/es-modules/Extensions/Exporting/Fullscreen.js
 /* *
  *
- *  (c) 2009-2024 Rafal Sebestjanski
+ *  (c) 2009-2025 Rafal Sebestjanski
  *
  *  Full screen for Highcharts
  *
@@ -180,7 +180,7 @@ var Fullscreen = /** @class */ (function () {
          * the fullscreen mode.
          *
          * @name Highcharts.Fullscreen#isOpen
-         * @type {boolean|undefined}
+         * @type {boolean | undefined}
          * @since 8.0.1
          */
         this.isOpen = false;
@@ -345,8 +345,9 @@ var Fullscreen = /** @class */ (function () {
      * @requires modules/full-screen
      */
     Fullscreen.prototype.setButtonText = function () {
+        var _a;
         var chart = this.chart,
-            exportDivElements = chart.exportDivElements,
+            exportDivElements = (_a = chart.exporting) === null || _a === void 0 ? void 0 : _a.divElements,
             exportingOptions = chart.options.exporting,
             menuItems = (exportingOptions &&
                 exportingOptions.buttons &&

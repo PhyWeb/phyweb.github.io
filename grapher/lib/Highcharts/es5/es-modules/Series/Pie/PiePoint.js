@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -54,7 +54,7 @@ var PiePoint = /** @class */ (function (_super) {
         var _a;
         var _this = _super.call(this, series, options, x) || this;
         _this.half = 0;
-        (_a = _this.name) !== null && _a !== void 0 ? _a : (_this.name = 'Slice');
+        (_a = _this.name) !== null && _a !== void 0 ? _a : (_this.name = series.chart.options.lang.pieSliceName);
         // Add event listener for select
         var toggleSlice = function (e) {
             _this.slice(e.type === 'select');

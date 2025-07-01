@@ -2,7 +2,7 @@
  *
  *  Timeline Series.
  *
- *  (c) 2010-2024 Highsoft AS
+ *  (c) 2010-2025 Highsoft AS
  *
  *  Author: Daniel Studencki
  *
@@ -127,15 +127,16 @@ var TimelineSeries = /** @class */ (function (_super) {
     };
     TimelineSeries.prototype.generatePoints = function () {
         _super.prototype.generatePoints.call(this);
-        var series = this, points = series.points, xData = series.getColumn('x');
-        for (var i = 0, iEnd = points.length; i < iEnd; ++i) {
-            points[i].applyOptions({
-                x: xData[i]
-            }, xData[i]);
+        var series = this, points = series.points, pointsLen = points.length, xData = series.getColumn('x');
+        for (var i = 0, iEnd = pointsLen; i < iEnd; ++i) {
+            var x = xData[i];
+            points[i].applyOptions({ x: x }, x);
         }
     };
     TimelineSeries.prototype.getVisibilityMap = function () {
-        var series = this, map = ((series.data.length ? series.data : series.options.data) || []).map(function (point) { return (point && point.visible !== false && !point.isNull ?
+        var series = this, nullInteraction = series.options.nullInteraction, map = ((series.data.length ? series.data : series.options.data) || []).map(function (point) { return (point &&
+            point.visible !== false &&
+            (!point.isNull || nullInteraction) ?
             point :
             false); });
         return map;
@@ -161,7 +162,8 @@ var TimelineSeries = /** @class */ (function (_super) {
                 point.isInside = point.isInside && point.visible;
                 // New way of calculating closestPointRangePx value, which
                 // respects the real point visibility is needed.
-                if (point.visible && !point.isNull) {
+                if (point.visible && (!point.isNull ||
+                    series.options.nullInteraction)) {
                     if (defined(lastPlotX)) {
                         closestPointRangePx = Math.min(closestPointRangePx, Math.abs(point.plotX - lastPlotX));
                     }

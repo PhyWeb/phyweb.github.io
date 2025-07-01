@@ -2,7 +2,7 @@
  *
  *  Networkgraph series
  *
- *  (c) 2010-2024 Paweł Fus
+ *  (c) 2010-2025 Paweł Fus
  *
  *  License: www.highcharts.com/license
  *
@@ -79,6 +79,7 @@ function onChartPredraw() {
  * @private
  */
 function onChartRender() {
+    var _a;
     var systemsStable, afterRender = false;
     var layoutStep = function (layout) {
         if (layout.maxIterations-- &&
@@ -98,7 +99,8 @@ function onChartRender() {
             afterRender = true;
         }
     };
-    if (this.graphLayoutsLookup) {
+    // Don't animate layout when series is dragged
+    if (this.graphLayoutsLookup && !((_a = this.pointer) === null || _a === void 0 ? void 0 : _a.hasDragged)) {
         setAnimation(false, this);
         // Start simulation
         this.graphLayoutsLookup.forEach(function (layout) { return layout.start(); });

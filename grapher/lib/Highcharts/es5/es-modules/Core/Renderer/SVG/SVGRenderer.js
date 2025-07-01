@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -155,6 +155,8 @@ var SVGRenderer = /** @class */ (function () {
      * not when set explicitly through `.attr` and `.css` etc.
      */
     function SVGRenderer(container, width, height, style, forExport, allowHTML, styledMode) {
+        this.x = 0;
+        this.y = 0;
         var renderer = this, boxWrapper = renderer
             .createElement('svg')
             .attr({
@@ -309,7 +311,7 @@ var SVGRenderer = /** @class */ (function () {
                     zIndex: 9e5
                 });
                 var hitElement = doc.elementFromPoint(6, 6);
-                hasInternalReferenceBug = (hitElement && hitElement.id) === 'hitme';
+                hasInternalReferenceBug = (hitElement === null || hitElement === void 0 ? void 0 : hitElement.id) === 'hitme';
                 doc.body.removeChild(svg);
             }
             if (hasInternalReferenceBug) {
@@ -515,18 +517,40 @@ var SVGRenderer = /** @class */ (function () {
      * The contrast color, either `#000000` or `#FFFFFF`.
      */
     SVGRenderer.prototype.getContrast = function (color) {
+        if (color === 'transparent') {
+            return '#000000';
+        }
         // #6216, #17273
-        var rgba = Color.parse(color).rgba
-            .map(function (b8) {
-            var c = b8 / 255;
-            return c <= 0.03928 ?
-                c / 12.92 :
-                Math.pow((c + 0.055) / 1.055, 2.4);
-        });
-        // Relative luminance
-        var l = 0.2126 * rgba[0] + 0.7152 * rgba[1] + 0.0722 * rgba[2];
-        // Use white or black based on which provides more contrast
-        return 1.05 / (l + 0.05) > (l + 0.05) / 0.05 ? '#FFFFFF' : '#000000';
+        var rgba256 = Color.parse(color).rgba, 
+        // For each rgb channel, compute the luminosity based on all
+        // channels. Subtract this from 0.5 and multiply by a huge number,
+        // so that all colors with luminosity < 0.5 result in a negative
+        // number, and all colors > 0.5 end up very high. This is then
+        // clamped into the range 0-1, to result in either black or white.
+        // The subtraction of 0.5, multiplication by 9e9, and clamping are
+        // workarounds for lack of support for the round() function. As of
+        // 2025, it is too fresh in Chrome, and doesn't work in Safari.
+        channelFunc = ' clamp(0,calc(9e9*(0.5 - (0.2126*r + 0.7152*g + 0.0722*b))),1)';
+        // The color is parsable by the Color class parsers
+        if (isNumber(rgba256[0]) || !Color.useColorMix) {
+            var rgba = rgba256.map(function (b8) {
+                var c = b8 / 255;
+                return c <= 0.04 ?
+                    c / 12.92 :
+                    Math.pow((c + 0.055) / 1.055, 2.4);
+            }), 
+            // Relative luminance
+            l = 0.2126 * rgba[0] + 0.7152 * rgba[1] + 0.0722 * rgba[2];
+            // Use white or black based on which provides more contrast
+            return 1.05 / (l + 0.05) > (l + 0.05) / 0.05 ?
+                '#FFFFFF' :
+                '#000000';
+        }
+        // Not parsable, use CSS functions instead
+        return 'color(' +
+            'from ' + color + ' srgb' +
+            channelFunc + channelFunc + channelFunc +
+            ')';
     };
     /**
      * Create a button with preset states. Styles for the button can either be
@@ -645,7 +669,7 @@ var SVGRenderer = /** @class */ (function () {
             .on('touchstart', function (e) { return e.stopPropagation(); })
             .on('click', function (e) {
             if (curState !== 3) {
-                callback.call(label, e);
+                callback === null || callback === void 0 ? void 0 : callback.call(label, e);
             }
         });
     };
@@ -1062,6 +1086,7 @@ var SVGRenderer = /** @class */ (function () {
      * SVG symbol.
      */
     SVGRenderer.prototype.symbol = function (symbol, x, y, width, height, options) {
+        var _a, _b;
         var ren = this, imageRegex = /^url\((.*?)\)$/, isImage = imageRegex.test(symbol), sym = (!isImage && (this.symbols[symbol] ? symbol : 'circle')), 
         // Get the symbol definition function
         symbolFn = (sym && this.symbols[sym]);
@@ -1095,8 +1120,8 @@ var SVGRenderer = /** @class */ (function () {
             // The image width is not always the same as the symbol width. The
             // image may be centered within the symbol, as is the case when
             // image shapes are used as label backgrounds, for example in flags.
-            img_1.imgwidth = pick(options && options.width, symbolSizes[imageSrc] && symbolSizes[imageSrc].width);
-            img_1.imgheight = pick(options && options.height, symbolSizes[imageSrc] && symbolSizes[imageSrc].height);
+            img_1.imgwidth = pick(options === null || options === void 0 ? void 0 : options.width, (_a = symbolSizes[imageSrc]) === null || _a === void 0 ? void 0 : _a.width);
+            img_1.imgheight = pick(options === null || options === void 0 ? void 0 : options.height, (_b = symbolSizes[imageSrc]) === null || _b === void 0 ? void 0 : _b.height);
             /**
              * Set the size and position
              */

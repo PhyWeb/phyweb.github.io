@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2009-2024 Highsoft AS
+ *  (c) 2009-2025 Highsoft AS
  *
  *  License: www.highcharts.com/license
  *
@@ -29,9 +29,10 @@ var __extends = (this && this.__extends) || (function () {
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
+import CU from './ColumnUtils.js';
 import DataTableCore from './DataTableCore.js';
 import U from '../Core/Utilities.js';
-var addEvent = U.addEvent, defined = U.defined, fireEvent = U.fireEvent, extend = U.extend, uniqueKey = U.uniqueKey;
+var addEvent = U.addEvent, defined = U.defined, extend = U.extend, fireEvent = U.fireEvent, isNumber = U.isNumber, uniqueKey = U.uniqueKey;
 /* *
  *
  *  Class
@@ -258,9 +259,12 @@ var DataTable = /** @class */ (function (_super) {
         }
         if (rowCount > 0 && rowIndex < table.rowCount) {
             var columns = table.columns, columnNames = Object.keys(columns);
-            for (var i = 0, iEnd = columnNames.length, column = void 0, deletedCells = void 0; i < iEnd; ++i) {
-                column = columns[columnNames[i]];
-                deletedCells = column.splice(rowIndex, rowCount);
+            for (var i = 0, iEnd = columnNames.length, column = void 0, deletedCells = void 0, columnName = void 0; i < iEnd; ++i) {
+                columnName = columnNames[i];
+                column = columns[columnName];
+                var result = CU.splice(column, rowIndex, rowCount);
+                deletedCells = result.removed;
+                columns[columnName] = column = result.array;
                 if (!i) {
                     table.rowCount = column.length;
                 }
@@ -418,6 +422,8 @@ var DataTable = /** @class */ (function (_super) {
      * type number or `null`. Otherwise it will convert all cells to number
      * type, except `null`.
      *
+     * @deprecated
+     *
      * @function Highcharts.DataTable#getColumnAsNumbers
      *
      * @param {string} columnName
@@ -481,18 +487,29 @@ var DataTable = /** @class */ (function (_super) {
      * @param {boolean} [asReference]
      * Whether to return columns as a readonly reference.
      *
+     * @param {boolean} [asBasicColumns]
+     * Whether to transform all typed array columns to normal arrays.
+     *
      * @return {Highcharts.DataTableColumnCollection}
      * Collection of columns. If a requested column was not found, it is
      * `undefined`.
      */
-    DataTable.prototype.getColumns = function (columnNames, asReference) {
+    DataTable.prototype.getColumns = function (columnNames, asReference, asBasicColumns) {
         var table = this, tableColumns = table.columns, columns = {};
         columnNames = (columnNames || Object.keys(tableColumns));
         for (var i = 0, iEnd = columnNames.length, column = void 0, columnName = void 0; i < iEnd; ++i) {
             columnName = columnNames[i];
             column = tableColumns[columnName];
             if (column) {
-                columns[columnName] = (asReference ? column : column.slice());
+                if (asReference) {
+                    columns[columnName] = column;
+                }
+                else if (asBasicColumns && !Array.isArray(column)) {
+                    columns[columnName] = Array.from(column);
+                }
+                else {
+                    columns[columnName] = column.slice();
+                }
             }
         }
         return columns;
@@ -592,7 +609,15 @@ var DataTable = /** @class */ (function (_super) {
         var table = this;
         var column = table.columns[columnName];
         if (column) {
-            var rowIndex = column.indexOf(cellValue, rowIndexOffset);
+            var rowIndex = -1;
+            if (Array.isArray(column)) {
+                // Normal array
+                rowIndex = column.indexOf(cellValue, rowIndexOffset);
+            }
+            else if (isNumber(cellValue)) {
+                // Typed array
+                rowIndex = column.indexOf(cellValue, rowIndexOffset);
+            }
             if (rowIndex !== -1) {
                 return rowIndex;
             }
@@ -729,8 +754,13 @@ var DataTable = /** @class */ (function (_super) {
     DataTable.prototype.hasRowWith = function (columnName, cellValue) {
         var table = this;
         var column = table.columns[columnName];
-        if (column) {
+        // Normal array
+        if (Array.isArray(column)) {
             return (column.indexOf(cellValue) !== -1);
+        }
+        // Typed array
+        if (defined(cellValue) && Number.isFinite(cellValue)) {
+            return (column.indexOf(+cellValue) !== -1);
         }
         return false;
     };
@@ -844,10 +874,16 @@ var DataTable = /** @class */ (function (_super) {
      * @param {Highcharts.DataTableEventDetail} [eventDetail]
      * Custom information for pending events.
      *
+     * @param {boolean} [typeAsOriginal=false]
+     * Determines whether the original column retains its type when data
+     * replaced. If `true`, the original column keeps its type. If not
+     * (default), the original column will adopt the type of the replacement
+     * column.
+     *
      * @emits #setColumns
      * @emits #afterSetColumns
      */
-    DataTable.prototype.setColumns = function (columns, rowIndex, eventDetail) {
+    DataTable.prototype.setColumns = function (columns, rowIndex, eventDetail, typeAsOriginal) {
         var table = this, tableColumns = table.columns, tableModifier = table.modifier, columnNames = Object.keys(columns);
         var rowCount = table.rowCount;
         table.emit({
@@ -857,20 +893,33 @@ var DataTable = /** @class */ (function (_super) {
             detail: eventDetail,
             rowIndex: rowIndex
         });
-        if (typeof rowIndex === 'undefined') {
+        if (!defined(rowIndex) && !typeAsOriginal) {
             _super.prototype.setColumns.call(this, columns, rowIndex, extend(eventDetail, { silent: true }));
         }
         else {
-            for (var i = 0, iEnd = columnNames.length, column = void 0, columnName = void 0; i < iEnd; ++i) {
+            for (var i = 0, iEnd = columnNames.length, column = void 0, tableColumn = void 0, columnName = void 0, ArrayConstructor = void 0; i < iEnd; ++i) {
                 columnName = columnNames[i];
                 column = columns[columnName];
-                var tableColumn = (tableColumns[columnName] ?
-                    tableColumns[columnName] :
-                    tableColumns[columnName] = new Array(table.rowCount));
+                tableColumn = tableColumns[columnName];
+                ArrayConstructor = Object.getPrototypeOf((tableColumn && typeAsOriginal) ? tableColumn : column).constructor;
+                if (!tableColumn) {
+                    tableColumn = new ArrayConstructor(rowCount);
+                }
+                else if (ArrayConstructor === Array) {
+                    if (!Array.isArray(tableColumn)) {
+                        tableColumn = Array.from(tableColumn);
+                    }
+                }
+                else if (tableColumn.length < rowCount) {
+                    tableColumn =
+                        new ArrayConstructor(rowCount);
+                    tableColumn.set(tableColumns[columnName]);
+                }
+                tableColumns[columnName] = tableColumn;
                 for (var i_1 = (rowIndex || 0), iEnd_1 = column.length; i_1 < iEnd_1; ++i_1) {
                     tableColumn[i_1] = column[i_1];
                 }
-                rowCount = Math.max(rowCount, tableColumn.length);
+                rowCount = Math.max(rowCount, column.length);
             }
             this.applyRowCount(rowCount);
         }
@@ -1023,11 +1072,12 @@ var DataTable = /** @class */ (function (_super) {
             row = rows[i];
             if (row === DataTable.NULL) {
                 for (var j = 0, jEnd = columnNames.length; j < jEnd; ++j) {
+                    var column = columns[columnNames[j]];
                     if (insert) {
-                        columns[columnNames[j]].splice(i2, 0, null);
+                        columns[columnNames[j]] = CU.splice(column, i2, 0, true, [null]).array;
                     }
                     else {
-                        columns[columnNames[j]][i2] = null;
+                        column[i2] = null;
                     }
                 }
             }
@@ -1046,7 +1096,8 @@ var DataTable = /** @class */ (function (_super) {
         if (indexRowCount > table.rowCount) {
             table.rowCount = indexRowCount;
             for (var i = 0, iEnd = columnNames.length; i < iEnd; ++i) {
-                columns[columnNames[i]].length = indexRowCount;
+                var columnName = columnNames[i];
+                columns[columnName] = CU.setLength(columns[columnName], indexRowCount);
             }
         }
         if (modifier) {

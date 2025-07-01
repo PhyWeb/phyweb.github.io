@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -93,7 +93,8 @@ var Tick = /** @class */ (function () {
      * @function Highcharts.Tick#addLabel
      */
     Tick.prototype.addLabel = function () {
-        var tick = this, axis = tick.axis, options = axis.options, chart = axis.chart, categories = axis.categories, log = axis.logarithmic, names = axis.names, pos = tick.pos, labelOptions = pick(tick.options && tick.options.labels, options.labels), tickPositions = axis.tickPositions, isFirst = pos === tickPositions[0], isLast = pos === tickPositions[tickPositions.length - 1], animateLabels = (!labelOptions.step || labelOptions.step === 1) &&
+        var _a, _b;
+        var tick = this, axis = tick.axis, options = axis.options, chart = axis.chart, categories = axis.categories, log = axis.logarithmic, names = axis.names, pos = tick.pos, labelOptions = pick((_a = tick.options) === null || _a === void 0 ? void 0 : _a.labels, options.labels), tickPositions = axis.tickPositions, isFirst = pos === tickPositions[0], isLast = pos === tickPositions[tickPositions.length - 1], animateLabels = (!labelOptions.step || labelOptions.step === 1) &&
             axis.tickInterval === 1, tickPositionInfo = tickPositions.info;
         var label = tick.label, dateTimeLabelFormat, dateTimeLabelFormats, i;
         // The context value
@@ -107,7 +108,7 @@ var Tick = /** @class */ (function () {
         // position, use that. If not, use the general format.
         if (axis.dateTime) {
             if (tickPositionInfo) {
-                dateTimeLabelFormats = chart.time.resolveDTLFormat(options.dateTimeLabelFormats[(!options.grid &&
+                dateTimeLabelFormats = chart.time.resolveDTLFormat(options.dateTimeLabelFormats[(!((_b = options.grid) === null || _b === void 0 ? void 0 : _b.enabled) &&
                     tickPositionInfo.higherRanks[pos]) ||
                     tickPositionInfo.unitName]);
                 dateTimeLabelFormat = dateTimeLabelFormats.main;
@@ -163,7 +164,7 @@ var Tick = /** @class */ (function () {
         };
         var str = labelFormatter.call(ctx, ctx);
         // Set up conditional formatting based on the format list if existing.
-        var list = dateTimeLabelFormats && dateTimeLabelFormats.list;
+        var list = dateTimeLabelFormats === null || dateTimeLabelFormats === void 0 ? void 0 : dateTimeLabelFormats.list;
         if (list) {
             tick.shortenLabel = function () {
                 for (i = 0; i < list.length; i++) {
@@ -221,20 +222,19 @@ var Tick = /** @class */ (function () {
      * @function Highcharts.Tick#createLabel
      */
     Tick.prototype.createLabel = function (str, labelOptions, xy) {
-        var axis = this.axis, _a = axis.chart, renderer = _a.renderer, styledMode = _a.styledMode, label = defined(str) && labelOptions.enabled ?
+        var axis = this.axis, _a = axis.chart, renderer = _a.renderer, styledMode = _a.styledMode, whiteSpace = labelOptions.style.whiteSpace, label = defined(str) && labelOptions.enabled ?
             renderer
                 .text(str, xy === null || xy === void 0 ? void 0 : xy.x, xy === null || xy === void 0 ? void 0 : xy.y, labelOptions.useHTML)
                 .add(axis.labelGroup) :
             void 0;
         // Un-rotated length
         if (label) {
-            var whiteSpace = labelOptions.style.whiteSpace || 'normal';
-            // Without position absolute, IE export sometimes is wrong
             if (!styledMode) {
-                label.css(merge(labelOptions.style, { whiteSpace: 'nowrap' }));
+                label.css(merge(labelOptions.style));
             }
             label.textPxLength = label.getBBox().width;
-            if (!styledMode) {
+            // Apply the white-space setting after we read the full text width
+            if (!styledMode && whiteSpace) {
                 label.css({ whiteSpace: whiteSpace });
             }
         }
@@ -386,6 +386,7 @@ var Tick = /** @class */ (function () {
      * @function Highcharts.Tick#handleOverflow
      */
     Tick.prototype.handleOverflow = function (xy) {
+        var _a;
         var tick = this, axis = this.axis, labelOptions = axis.options.labels, pxPos = xy.x, chartWidth = axis.chart.chartWidth, spacing = axis.chart.spacing, leftBound = pick(axis.labelLeft, Math.min(axis.pos, spacing[3])), rightBound = pick(axis.labelRight, Math.max(!axis.isRadial ? axis.pos + axis.len : 0, chartWidth - spacing[1])), label = this.label, rotation = this.rotation, factor = getAlignFactor(axis.labelAlign || label.attr('align')), labelWidth = label.getBBox().width, slotWidth = axis.getSlotWidth(tick), xCorrection = factor, css = {};
         var modifiedSlotWidth = slotWidth, goRight = 1, leftPos, rightPos, textWidth;
         // Check if the label overshoots the chart spacing box. If it does, move
@@ -414,7 +415,7 @@ var Tick = /** @class */ (function () {
             // need to set a new one because the reported labelWidth will be
             // limited by the box (#3938).
             if (labelWidth > modifiedSlotWidth ||
-                (axis.autoRotation && (label.styles || {}).width)) {
+                (axis.autoRotation && ((_a = label === null || label === void 0 ? void 0 : label.styles) === null || _a === void 0 ? void 0 : _a.width))) {
                 textWidth = modifiedSlotWidth;
             }
             // Add ellipsis to prevent rotated labels to be clipped against the edge
@@ -490,18 +491,18 @@ var Tick = /** @class */ (function () {
      * @param {number} [opacity]
      */
     Tick.prototype.render = function (index, old, opacity) {
+        var _a;
         var tick = this, axis = tick.axis, horiz = axis.horiz, pos = tick.pos, tickmarkOffset = pick(tick.tickmarkOffset, axis.tickmarkOffset), xy = tick.getPosition(horiz, pos, tickmarkOffset, old), x = xy.x, y = xy.y, axisStart = axis.pos, axisEnd = axisStart + axis.len, pxPos = horiz ? x : y;
+        var labelOpacity = pick(opacity, (_a = tick.label) === null || _a === void 0 ? void 0 : _a.newOpacity, // #15528
+        1);
         // Anything that is not between `axis.pos` and `axis.pos + axis.length`
         // should not be visible (#20166). The `correctFloat` is for reversed
         // axes in Safari.
         if (!axis.chart.polar &&
-            tick.isNew &&
             (correctFloat(pxPos) < axisStart || pxPos > axisEnd)) {
             opacity = 0;
         }
-        var labelOpacity = pick(opacity, tick.label && tick.label.newOpacity, // #15528
-        1);
-        opacity = pick(opacity, 1);
+        opacity !== null && opacity !== void 0 ? opacity : (opacity = 1);
         this.isActive = true;
         // Create the grid line
         this.renderGridLine(old, opacity);

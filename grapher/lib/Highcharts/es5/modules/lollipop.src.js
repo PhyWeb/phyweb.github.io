@@ -1,9 +1,9 @@
 /**
- * @license Highcharts JS v12.1.2 (2025-01-09)
+ * @license Highcharts JS v12.3.0 (2025-06-21)
  * @module highcharts/modules/lollipop
  * @requires highcharts
  *
- * (c) 2009-2024 Sebastian Bochan, Rafal Sebestjanski
+ * (c) 2009-2025 Sebastian Bochan, Rafal Sebestjanski
  *
  * License: www.highcharts.com/license
  */
@@ -21,17 +21,17 @@ return /******/ (function() { // webpackBootstrap
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 820:
-/***/ (function(module) {
-
-module.exports = __WEBPACK_EXTERNAL_MODULE__820__;
-
-/***/ }),
-
 /***/ 512:
 /***/ (function(module) {
 
 module.exports = __WEBPACK_EXTERNAL_MODULE__512__;
+
+/***/ }),
+
+/***/ 820:
+/***/ (function(module) {
+
+module.exports = __WEBPACK_EXTERNAL_MODULE__820__;
 
 /***/ }),
 
@@ -115,7 +115,7 @@ var highcharts_SeriesRegistry_commonjs_highcharts_SeriesRegistry_commonjs2_highc
 ;// ./code/es5/es-modules/Series/Lollipop/LollipopPoint.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -173,7 +173,7 @@ var highcharts_Series_commonjs_highcharts_Series_commonjs2_highcharts_Series_roo
 ;// ./code/es5/es-modules/Series/Lollipop/LollipopSeries.js
 /* *
  *
- *  (c) 2010-2024 Sebastian Bochan, Rafal Sebestjanski
+ *  (c) 2010-2025 Sebastian Bochan, Rafal Sebestjanski
  *
  *  License: www.highcharts.com/license
  *

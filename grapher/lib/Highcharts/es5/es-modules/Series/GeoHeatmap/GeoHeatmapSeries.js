@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2010-2024 Highsoft AS
+ *  (c) 2010-2025 Highsoft AS
  *
  *  Authors: Magdalena Gut, Piotr Madej
  *
@@ -35,7 +35,7 @@ var colorFromPoint = IU.colorFromPoint, getContext = IU.getContext;
 import SeriesRegistry from '../../Core/Series/SeriesRegistry.js';
 var MapSeries = SeriesRegistry.seriesTypes.map;
 import U from '../../Core/Utilities.js';
-var addEvent = U.addEvent, extend = U.extend, isNumber = U.isNumber, isObject = U.isObject, merge = U.merge, pick = U.pick;
+var addEvent = U.addEvent, error = U.error, extend = U.extend, isNumber = U.isNumber, isObject = U.isObject, merge = U.merge, pick = U.pick;
 /**
  * Normalize longitute value to -180:180 range.
  * @private
@@ -137,7 +137,7 @@ var GeoHeatmapSeries = /** @class */ (function (_super) {
             var ctx = series.context || getContext(series), canvas = series.canvas, colorAxis = series.colorAxis, image_1 = series.image, chart_1 = series.chart, points = series.points, _a = [
                 pick(seriesOptions.colsize, 1),
                 pick(seriesOptions.rowsize, 1)
-            ], colsize = _a[0], rowsize = _a[1], 
+            ], colsize_1 = _a[0], rowsize_1 = _a[1], 
             // Calculate dimensions based on series bounds
             topLeft = mapView.projectedUnitsToPixels({
                 x: series.bounds.x1,
@@ -147,11 +147,11 @@ var GeoHeatmapSeries = /** @class */ (function (_super) {
                 y: series.bounds.y1
             });
             if (canvas && ctx && colorAxis && topLeft && bottomRight) {
-                var dimensions_1 = {
-                    x: topLeft.x,
-                    y: topLeft.y,
-                    width: bottomRight.x - topLeft.x,
-                    height: bottomRight.y - topLeft.y
+                var x_1 = topLeft.x, y_1 = topLeft.y, width_1 = bottomRight.x - x_1, height_1 = bottomRight.y - y_1, dimensions = {
+                    x: x_1,
+                    y: y_1,
+                    width: width_1,
+                    height: height_1
                 };
                 if (
                 // Do not calculate new canvas if not necessary
@@ -160,17 +160,32 @@ var GeoHeatmapSeries = /** @class */ (function (_super) {
                     series.isDirtyData ||
                     // Always calculate new canvas for Orthographic projection
                     mapView.projection.options.name === 'Orthographic') {
+                    var canvasWidth = canvas.width = ~~(360 / colsize_1) + 1, canvasHeight = canvas.height = ~~(180 / rowsize_1) + 1, canvasArea = canvasWidth * canvasHeight, pixelData = new Uint8ClampedArray(canvasArea * 4), 
+                    // Guess if we have to round lon/lat with this data
+                    _b = points[0].options, _c = _b.lat, lat = _c === void 0 ? 0 : _c, _d = _b.lon, lon = _d === void 0 ? 0 : _d, unEvenLon = lon % rowsize_1 !== 0, unEvenLat = lat % colsize_1 !== 0, getAdjustedLon = (unEvenLon ?
+                        function (lon) { return (Math.round(lon / rowsize_1) * rowsize_1); } :
+                        function (lon) { return lon; }), getAdjustedLat = (unEvenLat ?
+                        function (lat) { return (Math.round(lat / colsize_1) * colsize_1); } :
+                        function (lat) { return lat; }), pointsLen = points.length;
+                    if (unEvenLon || unEvenLat) {
+                        error('Highcharts Warning: For best performance,' +
+                            ' lon/lat datapoints should spaced by a single ' +
+                            'colsize/rowsize', false, series.chart, {
+                            colsize: String(colsize_1),
+                            rowsize: String(rowsize_1)
+                        });
+                    }
+                    // Needed for tooltip
+                    series.directTouch = false;
                     series.isDirtyCanvas = true;
-                    var canvasWidth = canvas.width = ~~(360 / colsize) + 1, canvasHeight = canvas.height = ~~(180 / rowsize) + 1, canvasArea = canvasWidth * canvasHeight, pixelData = new Uint8ClampedArray(canvasArea * 4);
-                    series.directTouch = false; // Needed for tooltip
                     // First pixelData represents the geo coordinates
-                    for (var i = 0; i < points.length; i++) {
-                        var p = points[i], sourceArr = new Uint8ClampedArray(colorFromPoint(p.value, p)), _b = p.options, lon = _b.lon, lat = _b.lat;
-                        if (isNumber(lon) && isNumber(lat)) {
-                            pixelData.set(sourceArr, scaledPointPos(lon, lat, canvasWidth, canvasHeight, colsize, rowsize) * 4);
+                    for (var i = 0; i < pointsLen; i++) {
+                        var p = points[i], _e = p.options, lon_1 = _e.lon, lat_1 = _e.lat;
+                        if (isNumber(lon_1) && isNumber(lat_1)) {
+                            pixelData.set(colorFromPoint(p.value, p), scaledPointPos(getAdjustedLon(lon_1), getAdjustedLat(lat_1), canvasWidth, canvasHeight, colsize_1, rowsize_1) * 4);
                         }
                     }
-                    var blur_1 = series.getInterpolation().blur, blurFactor = blur_1 === 0 ? 1 : blur_1 * 11, upscaledWidth = ~~(canvasWidth * blurFactor), upscaledHeight = ~~(canvasHeight * blurFactor), projectedWidth = ~~dimensions_1.width, projectedHeight = ~~dimensions_1.height, img = new ImageData(pixelData, canvasWidth, canvasHeight);
+                    var blur_1 = series.getInterpolation().blur, blurFactor = blur_1 === 0 ? 1 : blur_1 * 11, upscaledWidth = ~~(canvasWidth * blurFactor), upscaledHeight = ~~(canvasHeight * blurFactor), projectedWidth = ~~width_1, projectedHeight = ~~height_1, img = new ImageData(pixelData, canvasWidth, canvasHeight);
                     canvas.width = upscaledWidth;
                     canvas.height = upscaledHeight;
                     // Next step is to upscale pixelData to big image to get
@@ -183,24 +198,24 @@ var GeoHeatmapSeries = /** @class */ (function (_super) {
                     ctx.globalCompositeOperation = 'copy';
                     // Now we can draw ourself over ourself
                     ctx.drawImage(canvas, 0, 0, img.width, img.height, // Grab the ImageData
-                    0, 0, canvas.width, canvas.height // Scale it
+                    0, 0, upscaledWidth, upscaledHeight // Scale it
                     );
                     // Add projection to upscaled ImageData
-                    var cartesianImageData = ctx.getImageData(0, 0, canvas.width, canvas.height), projectedPixelData = this.getProjectedImageData(mapView, projectedWidth, projectedHeight, cartesianImageData, canvas, dimensions_1.x, dimensions_1.y), projectedImg = new ImageData(projectedPixelData, projectedWidth, projectedHeight);
-                    ctx.globalCompositeOperation = 'copy';
+                    var projectedPixelData = this.getProjectedImageData(mapView, projectedWidth, projectedHeight, ctx.getImageData(0, 0, upscaledWidth, upscaledHeight), canvas, x_1, y_1);
                     canvas.width = projectedWidth;
                     canvas.height = projectedHeight;
-                    ctx.putImageData(projectedImg, 0, 0);
+                    ctx.putImageData(new ImageData(projectedPixelData, projectedWidth, projectedHeight), 0, 0);
                 }
                 if (image_1) {
                     if (chart_1.renderer.globalAnimation && chart_1.hasRendered) {
                         var startX_1 = Number(image_1.attr('x')), startY_1 = Number(image_1.attr('y')), startWidth_1 = Number(image_1.attr('width')), startHeight_1 = Number(image_1.attr('height'));
                         var step_1 = function (now, fx) {
+                            var pos = fx.pos;
                             image_1.attr({
-                                x: (startX_1 + (dimensions_1.x - startX_1) * fx.pos),
-                                y: (startY_1 + (dimensions_1.y - startY_1) * fx.pos),
-                                width: (startWidth_1 + (dimensions_1.width - startWidth_1) * fx.pos),
-                                height: (startHeight_1 + (dimensions_1.height - startHeight_1) * fx.pos)
+                                x: (startX_1 + (x_1 - startX_1) * pos),
+                                y: (startY_1 + (y_1 - startY_1) * pos),
+                                width: (startWidth_1 + (width_1 - startWidth_1) * pos),
+                                height: (startHeight_1 + (height_1 - startHeight_1) * pos)
                             });
                         };
                         var animOptions = merge(animObject(chart_1.renderer.globalAnimation)), userStep_1 = animOptions.step;
@@ -220,14 +235,14 @@ var GeoHeatmapSeries = /** @class */ (function (_super) {
                     }
                     else {
                         stop(image_1);
-                        image_1.attr(merge(dimensions_1, series.isDirtyCanvas ? {
+                        image_1.attr(merge(dimensions, series.isDirtyCanvas ? {
                             href: canvas.toDataURL('image/png', 1)
                         } : void 0));
                     }
                 }
                 else {
                     series.image = chart_1.renderer.image(canvas.toDataURL('image/png', 1))
-                        .attr(dimensions_1)
+                        .attr(dimensions)
                         .add(series.group);
                 }
                 series.isDirtyCanvas = false;

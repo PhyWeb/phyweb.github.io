@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -68,7 +68,7 @@ var Pane = /** @class */ (function () {
      */
     Pane.prototype.setOptions = function (options) {
         // Set options. Angular charts have a default background (#3318)
-        this.options = options = merge(PaneDefaults.pane, this.chart.angular ? { background: {} } : void 0, options);
+        this.options = options = merge(PaneDefaults.pane, { background: this.chart.angular ? {} : void 0 }, options);
     };
     /**
      * Render the pane with its backgrounds.

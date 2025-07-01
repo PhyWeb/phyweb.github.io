@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -214,6 +214,7 @@ var DataLabel;
             seriesProto.alignDataLabel = alignDataLabel;
             seriesProto.drawDataLabels = drawDataLabels;
             seriesProto.justifyDataLabel = justifyDataLabel;
+            seriesProto.mergeArrays = mergeArrays;
             seriesProto.setDataLabelStartPos = setDataLabelStartPos;
             seriesProto.hasDataLabels = hasDataLabels;
         }
@@ -225,7 +226,7 @@ var DataLabel;
      */
     function initDataLabelsGroup() {
         return this.plotGroup('dataLabelsGroup', 'data-labels', this.hasRendered ? 'inherit' : 'hidden', // #5133, #10220
-        this.options.dataLabels.zIndex || 6);
+        this.options.dataLabels.zIndex || 6, this.chart.dataLabelsGroup);
     }
     /**
      * Init the data labels with the correct animation
@@ -269,8 +270,8 @@ var DataLabel;
             dataLabelsGroup = this.initDataLabels(animationConfig);
             // Make the labels for each point
             points.forEach(function (point) {
-                var _a, _b;
-                var dataLabels = point.dataLabels || [];
+                var _a, _b, _c;
+                var dataLabels = point.dataLabels || [], pointColor = point.color || series.color;
                 // Merge in series options for the point.
                 // @note dataLabelAttribs (like pointAttribs) would eradicate
                 // the need for dlOptions, and simplify the section below.
@@ -279,12 +280,13 @@ var DataLabel;
                 point.dlOptions || ((_a = point.options) === null || _a === void 0 ? void 0 : _a.dataLabels)));
                 // Handle each individual data label for this point
                 pointOptions.forEach(function (labelOptions, i) {
+                    var _a;
                     // Options for one datalabel
                     var labelEnabled = (labelOptions.enabled &&
                         (point.visible || point.dataLabelOnHidden) &&
                         // #2282, #4641, #7112, #10049
                         (!point.isNull || point.dataLabelOnNull) &&
-                        applyFilter(point, labelOptions)), backgroundColor = labelOptions.backgroundColor, borderColor = labelOptions.borderColor, distance = labelOptions.distance, _a = labelOptions.style, style = _a === void 0 ? {} : _a;
+                        applyFilter(point, labelOptions)), backgroundColor = labelOptions.backgroundColor, borderColor = labelOptions.borderColor, distance = labelOptions.distance, _b = labelOptions.style, style = _b === void 0 ? {} : _b;
                     var formatString, labelText, rotation, attr = {}, dataLabel = dataLabels[i], isNew = !dataLabel, labelBgColor;
                     if (labelEnabled) {
                         // Create individual options structure that can be
@@ -303,8 +305,10 @@ var DataLabel;
                                 if (backgroundColor !== 'none') {
                                     labelBgColor = backgroundColor;
                                 }
-                                point.contrastColor = renderer.getContrast(labelBgColor !== 'auto' && labelBgColor ||
-                                    (point.color || series.color));
+                                point.contrastColor = renderer.getContrast((labelBgColor !== 'auto' &&
+                                    isString(labelBgColor) &&
+                                    labelBgColor) ||
+                                    (isString(pointColor) ? pointColor : ''));
                                 style.color = (labelBgColor || // #20007
                                     (!defined(distance) &&
                                         labelOptions.inside) ||
@@ -347,7 +351,9 @@ var DataLabel;
                     // build a new one below. #678, #820.
                     if (dataLabel && (!labelEnabled ||
                         !defined(labelText) ||
-                        !!dataLabel.div !== !!labelOptions.useHTML ||
+                        // Changed useHTML value
+                        !!(dataLabel.div ||
+                            ((_a = dataLabel.text) === null || _a === void 0 ? void 0 : _a.foreignObject)) !== !!labelOptions.useHTML ||
                         (
                         // Change from no rotation to rotation and
                         // vice versa. Don't use defined() because
@@ -361,7 +367,9 @@ var DataLabel;
                     // Individual labels are disabled if the are explicitly
                     // disabled in the point options, or if they fall outside
                     // the plot area.
-                    if (labelEnabled && defined(labelText)) {
+                    if (labelEnabled &&
+                        defined(labelText) &&
+                        labelText !== '') {
                         if (!dataLabel) {
                             // Create new label element
                             dataLabel = renderer.label(labelText, 0, 0, labelOptions.shape, void 0, void 0, labelOptions.useHTML, void 0, 'data-label');
@@ -418,8 +426,8 @@ var DataLabel;
                 while (j--) {
                     // The item can be undefined if a disabled data label is
                     // succeeded by an enabled one (#19457)
-                    if (!dataLabels[j] || !dataLabels[j].isActive) {
-                        (_b = dataLabels[j]) === null || _b === void 0 ? void 0 : _b.destroy();
+                    if (!((_b = dataLabels[j]) === null || _b === void 0 ? void 0 : _b.isActive)) {
+                        (_c = dataLabels[j]) === null || _c === void 0 ? void 0 : _c.destroy();
                         dataLabels.splice(j, 1);
                     }
                     else {

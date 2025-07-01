@@ -1,12 +1,12 @@
 /**
- * @license Highstock JS v12.1.2 (2025-01-09)
+ * @license Highstock JS v12.3.0 (2025-06-21)
  * @module highcharts/indicators/tema
  * @requires highcharts
  * @requires highcharts/modules/stock
  *
  * Indicator series type for Highcharts Stock
  *
- * (c) 2010-2024 Rafal Sebestjanski
+ * (c) 2010-2025 Rafal Sebestjanski
  *
  * License: www.highcharts.com/license
  */

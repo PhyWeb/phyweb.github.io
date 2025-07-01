@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -199,8 +199,8 @@ var MapNavigation = /** @class */ (function () {
             // Check the mapNavigation buttons collision with exporting button
             // and translate the mapNavigation button if they overlap.
             var adjustMapNavBtn = function () {
-                var _a;
-                var expBtnBBox = (_a = chart.exportingGroup) === null || _a === void 0 ? void 0 : _a.getBBox();
+                var _a, _b;
+                var expBtnBBox = (_b = (_a = chart.exporting) === null || _a === void 0 ? void 0 : _a.group) === null || _b === void 0 ? void 0 : _b.getBBox();
                 if (expBtnBBox) {
                     var navBtnsBBox = mapNav.navButtonsGroup.getBBox();
                     // If buttons overlap

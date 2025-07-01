@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  Extensions to the SVGRenderer class to enable 3D shapes
  *
@@ -96,7 +96,7 @@ var SVGElement3D = /** @class */ (function (_super) {
      * @private
      */
     SVGElement3D.prototype.singleSetterForParts = function (prop, val, values, verb, duration, complete) {
-        var elem3d = this, newAttr = {}, optionsToApply = [null, null, (verb || 'attr'), duration, complete], hasZIndexes = values && values.zIndexes;
+        var elem3d = this, newAttr = {}, optionsToApply = [null, null, (verb || 'attr'), duration, complete], hasZIndexes = values === null || values === void 0 ? void 0 : values.zIndexes;
         if (!values) {
             newAttr[prop] = val;
             optionsToApply[0] = newAttr;
@@ -104,7 +104,7 @@ var SVGElement3D = /** @class */ (function (_super) {
         else {
             // It is needed to deal with the whole group zIndexing
             // in case of graph rotation
-            if (hasZIndexes && hasZIndexes.group) {
+            if (hasZIndexes === null || hasZIndexes === void 0 ? void 0 : hasZIndexes.group) {
                 elem3d.attr({
                     zIndex: hasZIndexes.group
                 });

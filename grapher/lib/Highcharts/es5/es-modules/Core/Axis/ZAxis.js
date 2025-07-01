@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -132,10 +132,10 @@ var ZAxis = /** @class */ (function (_super) {
      * @private
      */
     ZAxis.prototype.setAxisSize = function () {
+        var _a;
         var chart = this.chart;
         _super.prototype.setAxisSize.call(this);
-        this.width = this.len = (chart.options.chart.options3d &&
-            chart.options.chart.options3d.depth) || 0;
+        this.width = this.len = ((_a = chart.options.chart.options3d) === null || _a === void 0 ? void 0 : _a.depth) || 0;
         this.right = chart.chartWidth - this.width - this.left;
     };
     return ZAxis;

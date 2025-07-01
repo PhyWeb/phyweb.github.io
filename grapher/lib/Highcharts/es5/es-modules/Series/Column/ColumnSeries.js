@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -326,7 +326,13 @@ var ColumnSeries = /** @class */ (function (_super) {
      * @function Highcharts.seriesTypes.column#translate
      */
     ColumnSeries.prototype.translate = function () {
-        var series = this, chart = series.chart, options = series.options, dense = series.dense =
+        var series = this, chart = series.chart, options = series.options, 
+        // For points whithout graphics (null points) this value is used
+        // to reserve space around the point such that:
+        //      - normal/null points are spaced similarily,
+        //      - focusborders of null points are like those of "0" points
+        // This ensures consistent dimensions between null/normal points.
+        dense = series.dense =
             series.closestPointRange * series.xAxis.transA < 2, borderWidth = series.borderWidth = pick(options.borderWidth, dense ? 0 : 1 // #3635
         ), xAxis = series.xAxis, yAxis = series.yAxis, threshold = options.threshold, minPointLength = pick(options.minPointLength, 5), metrics = series.getColumnMetrics(), seriesPointWidth = metrics.width, seriesXOffset = series.pointXOffset = metrics.offset, dataMin = series.dataMin, dataMax = series.dataMax, translatedThreshold = series.translatedThreshold =
             yAxis.getThreshold(threshold);
@@ -412,7 +418,7 @@ var ColumnSeries = /** @class */ (function (_super) {
             // #3169, drilldown from null must have a position to work from.
             // #6585, dataLabel should be placed on xAxis, not floating in
             // the middle of the chart.
-            point.isNull ? translatedThreshold : barY, barW, point.isNull ? 0 : barH);
+            barY, barW, point.isNull ? 0 : barH);
         });
         // Fire a specific event after column translate. We could instead apply
         // all the column logic in an `afterTranslate` event handler, but there
@@ -436,6 +442,7 @@ var ColumnSeries = /** @class */ (function (_super) {
      * @function Highcharts.seriesTypes.column#pointAttribs
      */
     ColumnSeries.prototype.pointAttribs = function (point, state) {
+        var _a, _b;
         var options = this.options, p2o = this.pointAttrToOptions || {}, strokeOption = p2o.stroke || 'borderColor', strokeWidthOption = p2o['stroke-width'] || 'borderWidth';
         var stateOptions, zone, brightness, fill = (point && point.color) || this.color, 
         // Set to fill when borderColor null:
@@ -443,7 +450,9 @@ var ColumnSeries = /** @class */ (function (_super) {
             options[strokeOption] ||
             fill), dashstyle = (point && point.options.dashStyle) || options.dashStyle, strokeWidth = (point && point[strokeWidthOption]) ||
             options[strokeWidthOption] ||
-            this[strokeWidthOption] || 0, opacity = pick(point && point.opacity, options.opacity, 1);
+            this[strokeWidthOption] || 0, opacity = ((point === null || point === void 0 ? void 0 : point.isNull) && options.nullInteraction) ?
+            0 :
+            ((_b = (_a = point === null || point === void 0 ? void 0 : point.opacity) !== null && _a !== void 0 ? _a : options.opacity) !== null && _b !== void 0 ? _b : 1);
         // Handle zone colors
         if (point && this.zones.length) {
             zone = point.getZone();
@@ -498,14 +507,14 @@ var ColumnSeries = /** @class */ (function (_super) {
      */
     ColumnSeries.prototype.drawPoints = function (points) {
         if (points === void 0) { points = this.points; }
-        var series = this, chart = this.chart, options = series.options, renderer = chart.renderer, animationLimit = options.animationLimit || 250;
+        var series = this, chart = this.chart, options = series.options, nullInteraction = options.nullInteraction, renderer = chart.renderer, animationLimit = options.animationLimit || 250;
         var shapeArgs;
         // Draw the columns
         points.forEach(function (point) {
             var plotY = point.plotY;
             var graphic = point.graphic, hasGraphic = !!graphic, verb = graphic && chart.pointCount < animationLimit ?
                 'animate' : 'attr';
-            if (isNumber(plotY) && point.y !== null) {
+            if (isNumber(plotY) && (point.y !== null || nullInteraction)) {
                 shapeArgs = point.shapeArgs;
                 // When updating a series between 2d and 3d or cartesian and
                 // polar, the shape type changes.
@@ -561,17 +570,17 @@ var ColumnSeries = /** @class */ (function (_super) {
         if (points === void 0) { points = this.points; }
         var series = this, chart = series.chart, pointer = chart.pointer, onMouseOver = function (e) {
             pointer === null || pointer === void 0 ? void 0 : pointer.normalize(e);
-            var point = pointer === null || pointer === void 0 ? void 0 : pointer.getPointFromEvent(e), 
-            // Run point events only for points inside plot area, #21136
-            isInsidePlot = chart.scrollablePlotArea ?
-                chart.isInsidePlot(e.chartX - chart.plotLeft, e.chartY - chart.plotTop, {
-                    visiblePlotOnly: true
-                }) : true;
+            var point = pointer === null || pointer === void 0 ? void 0 : pointer.getPointFromEvent(e);
             // Undefined on graph in scatterchart
             if (pointer &&
                 point &&
                 series.options.enableMouseTracking &&
-                isInsidePlot) {
+                (
+                // Run point events only for points inside plot area, #21136
+                chart.isInsidePlot(e.chartX - chart.plotLeft, e.chartY - chart.plotTop, {
+                    visiblePlotOnly: true
+                }) ||
+                    (pointer === null || pointer === void 0 ? void 0 : pointer.inClass(e.target, 'highcharts-data-label')))) {
                 pointer.isDirectTouch = true;
                 point.onMouseOver(e);
             }

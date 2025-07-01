@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -98,7 +98,7 @@ var ColorAxisComposition;
         var colorAxisItems = [], options, i;
         colorAxes.forEach(function (colorAxis) {
             options = colorAxis.options;
-            if (options && options.showInLegend) {
+            if (options === null || options === void 0 ? void 0 : options.showInLegend) {
                 // Data classes
                 if (options.dataClasses && options.visible) {
                     colorAxisItems = colorAxisItems.concat(colorAxis.getDataClassLegendSymbols());
@@ -154,8 +154,8 @@ var ColorAxisComposition;
      * @private
      */
     function onSeriesAfterTranslate() {
-        if (this.chart.colorAxis &&
-            this.chart.colorAxis.length ||
+        var _a;
+        if (((_a = this.chart.colorAxis) === null || _a === void 0 ? void 0 : _a.length) ||
             this.colorAttribs) {
             this.translateColors();
         }

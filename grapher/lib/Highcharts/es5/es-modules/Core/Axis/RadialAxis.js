@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -14,7 +14,7 @@ var defaultOptions = D.defaultOptions;
 import H from '../Globals.js';
 var composed = H.composed, noop = H.noop;
 import U from '../Utilities.js';
-var addEvent = U.addEvent, correctFloat = U.correctFloat, defined = U.defined, extend = U.extend, fireEvent = U.fireEvent, isObject = U.isObject, merge = U.merge, pick = U.pick, pushUnique = U.pushUnique, relativeLength = U.relativeLength, wrap = U.wrap;
+var addEvent = U.addEvent, correctFloat = U.correctFloat, defined = U.defined, extend = U.extend, fireEvent = U.fireEvent, isObject = U.isObject, merge = U.merge, pick = U.pick, pushUnique = U.pushUnique, relativeLength = U.relativeLength, splat = U.splat, wrap = U.wrap;
 /* *
  *
  *  Composition
@@ -104,9 +104,7 @@ var RadialAxis;
                 _this.options.labels &&
                 _this.options.labels.allowOverlap !== true) {
                 return _this.tickPositions
-                    .map(function (pos) {
-                    return _this.ticks[pos] && _this.ticks[pos].label;
-                })
+                    .map(function (pos) { var _a; return (_a = _this.ticks[pos]) === null || _a === void 0 ? void 0 : _a.label; })
                     .filter(function (label) {
                     return Boolean(label);
                 });
@@ -300,9 +298,8 @@ var RadialAxis;
      */
     function getPlotLinePath(options) {
         var _this = this;
-        var center = this.pane.center, chart = this.chart, inverted = chart.inverted, reverse = options.reverse, background = this.pane.options.background ?
-            (this.pane.options.background[0] ||
-                this.pane.options.background) :
+        var center = this.pane.center, chart = this.chart, inverted = chart.inverted, reverse = options.reverse, backgroundOption = this.pane.options.background, background = backgroundOption ?
+            splat(backgroundOption)[0] :
             {}, innerRadius = background.innerRadius || '0%', outerRadius = background.outerRadius || '100%', x1 = center[0] + chart.plotLeft, y1 = center[1] + chart.plotTop, height = this.height, isCrosshair = options.isCrosshair, paneInnerR = center[3] / 2;
         var value = options.value, innerRatio, distance, a, b, otherAxis, xy, tickPositions, crossPos, path;
         var end = this.getPosition(value);
@@ -475,7 +472,7 @@ var RadialAxis;
      * Finalize modification of axis instance with radial logic.
      */
     function onAxisAfterInit() {
-        var chart = this.chart, options = this.options, isHidden = chart.angular && this.isXAxis, pane = this.pane, paneOptions = pane && pane.options;
+        var chart = this.chart, options = this.options, isHidden = chart.angular && this.isXAxis, pane = this.pane, paneOptions = pane === null || pane === void 0 ? void 0 : pane.options;
         if (!isHidden && pane && (chart.angular || chart.polar)) {
             var fullCircle = Math.PI * 2, 
             // Start and end angle options are given in degrees relative to
@@ -518,8 +515,8 @@ var RadialAxis;
      * Remove label collector function on axis remove/update.
      */
     function onAxisDestroy() {
-        if (this.chart &&
-            this.chart.labelCollectors) {
+        var _a;
+        if ((_a = this.chart) === null || _a === void 0 ? void 0 : _a.labelCollectors) {
             var index = (this.labelCollector ?
                 this.chart.labelCollectors.indexOf(this.labelCollector) :
                 -1);

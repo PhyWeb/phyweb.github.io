@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2019-2024 Torstein Honsi
+ *  (c) 2019-2025 Torstein Honsi
  *
  *  Item series type for Highcharts
  *
@@ -195,7 +195,7 @@ var ItemSeries = /** @class */ (function (_super) {
             rows = Math.sqrt(total);
             if (ratio > 1) {
                 rows = Math.ceil(rows);
-                while (rows > 0) {
+                while (rows > 1) {
                     cols = total / rows;
                     if (cols / rows > ratio) {
                         break;

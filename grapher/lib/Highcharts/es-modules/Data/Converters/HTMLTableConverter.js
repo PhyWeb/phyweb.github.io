@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2009-2024 Highsoft AS
+ *  (c) 2009-2025 Highsoft AS
  *
  *  License: www.highcharts.com/license
  *
@@ -102,7 +102,14 @@ class HTMLTableConverter extends DataConverter {
             // of each column is a subcategory
             if (useMultiLevelHeaders) {
                 for (const name of columnNames) {
-                    const subhead = (columns[name].shift() || '').toString();
+                    let column = columns[name];
+                    if (!Array.isArray(column)) {
+                        // Convert to conventional array from typed array
+                        // if needed
+                        column = Array.from(column);
+                    }
+                    const subhead = (column.shift() || '').toString();
+                    columns[name] = column;
                     subcategories.push(subhead);
                 }
                 tableHead = this.getTableHeaderHTML(columnNames, subcategories, options);
@@ -178,7 +185,7 @@ class HTMLTableConverter extends DataConverter {
     getTableHeaderHTML(topheaders = [], subheaders = [], options = this.options) {
         const { useMultiLevelHeaders, useRowspanHeaders } = options;
         let html = '<thead>', i = 0, len = subheaders && subheaders.length, next, cur, curColspan = 0, rowspan;
-        // Clean up multiple table headers. Chart.getDataRows() returns two
+        // Clean up multiple table headers. Exporting.getDataRows() returns two
         // levels of headers when using multilevel, not merged. We need to
         // merge identical headers, remove redundant headers, and keep it
         // all marked up nicely.

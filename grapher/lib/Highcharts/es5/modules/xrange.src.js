@@ -1,11 +1,11 @@
 /**
- * @license Highcharts JS v12.1.2 (2025-01-09)
+ * @license Highcharts JS v12.3.0 (2025-06-21)
  * @module highcharts/modules/xrange
  * @requires highcharts
  *
  * X-range series
  *
- * (c) 2010-2024 Torstein Honsi, Lars A. V. Cabrera
+ * (c) 2010-2025 Torstein Honsi, Lars A. V. Cabrera
  *
  * License: www.highcharts.com/license
  */
@@ -23,17 +23,17 @@ return /******/ (function() { // webpackBootstrap
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 620:
-/***/ (function(module) {
-
-module.exports = __WEBPACK_EXTERNAL_MODULE__620__;
-
-/***/ }),
-
 /***/ 512:
 /***/ (function(module) {
 
 module.exports = __WEBPACK_EXTERNAL_MODULE__512__;
+
+/***/ }),
+
+/***/ 620:
+/***/ (function(module) {
+
+module.exports = __WEBPACK_EXTERNAL_MODULE__620__;
 
 /***/ }),
 
@@ -122,7 +122,7 @@ var highcharts_SeriesRegistry_commonjs_highcharts_SeriesRegistry_commonjs2_highc
  *
  *  X-range series module
  *
- *  (c) 2010-2024 Torstein Honsi, Lars A. V. Cabrera
+ *  (c) 2010-2025 Torstein Honsi, Lars A. V. Cabrera
  *
  *  License: www.highcharts.com/license
  *
@@ -338,7 +338,7 @@ var XRangeSeriesDefaults = {
  *
  *  X-range series module
  *
- *  (c) 2010-2024 Torstein Honsi, Lars A. V. Cabrera
+ *  (c) 2010-2025 Torstein Honsi, Lars A. V. Cabrera
  *
  *  License: www.highcharts.com/license
  *
@@ -413,7 +413,7 @@ var XRangePoint = /** @class */ (function (_super) {
                 colors.length :
                 series.chart.options.chart.colorCount,
             colorIndex = point.y % colorCount,
-            color = colors && colors[colorIndex];
+            color = colors === null || colors === void 0 ? void 0 : colors[colorIndex];
         return {
             colorIndex: colorIndex,
             color: color
@@ -512,7 +512,7 @@ extend(XRangePoint.prototype, {
  *
  *  X-range series module
  *
- *  (c) 2010-2024 Torstein Honsi, Lars A. V. Cabrera
+ *  (c) 2010-2025 Torstein Honsi, Lars A. V. Cabrera
  *
  *  License: www.highcharts.com/license
  *
@@ -702,10 +702,11 @@ var XRangeSeries = /** @class */ (function (_super) {
         return pointIndex;
     };
     XRangeSeries.prototype.alignDataLabel = function (point) {
-        var _a;
+        var _a,
+            _b;
         var oldPlotX = point.plotX;
-        point.plotX = pick(point.dlBox && point.dlBox.centerX, point.plotX);
-        if (point.dataLabel && ((_a = point.shapeArgs) === null || _a === void 0 ? void 0 : _a.width)) {
+        point.plotX = pick((_a = point.dlBox) === null || _a === void 0 ? void 0 : _a.centerX, point.plotX);
+        if (point.dataLabel && ((_b = point.shapeArgs) === null || _b === void 0 ? void 0 : _b.width)) {
             point.dataLabel.css({
                 width: "" + point.shapeArgs.width + "px"
             });
@@ -718,13 +719,14 @@ var XRangeSeries = /** @class */ (function (_super) {
      */
     XRangeSeries.prototype.translatePoint = function (point) {
         var _a,
-            _b;
+            _b,
+            _c;
         var xAxis = this.xAxis,
             yAxis = this.yAxis,
             metrics = this.columnMetrics,
             options = this.options,
             minPointLength = options.minPointLength || 0,
-            oldColWidth = (point.shapeArgs && point.shapeArgs.width || 0) / 2,
+            oldColWidth = (((_a = point.shapeArgs) === null || _a === void 0 ? void 0 : _a.width) || 0) / 2,
             seriesXOffset = this.pointXOffset = metrics.offset,
             posX = pick(point.x2,
             point.x + (point.len || 0)),
@@ -856,7 +858,7 @@ var XRangeSeries = /** @class */ (function (_super) {
         // 'key' to ensure tooltip datetime formatting. Use 'name' only when
         // 'category' is undefined.
         point.key = point.category || point.name;
-        point.yCategory = (_a = yAxis.categories) === null || _a === void 0 ? void 0 : _a[(_b = point.y) !== null && _b !== void 0 ? _b : -1];
+        point.yCategory = (_b = yAxis.categories) === null || _b === void 0 ? void 0 : _b[(_c = point.y) !== null && _c !== void 0 ? _c : -1];
     };
     /**
      * @private

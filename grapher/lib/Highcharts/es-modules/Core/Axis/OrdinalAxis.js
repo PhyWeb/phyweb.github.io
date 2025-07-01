@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -369,14 +369,13 @@ var OrdinalAxis;
     function onChartPan(e) {
         const chart = this, xAxis = chart.xAxis[0], overscroll = xAxis.ordinal.convertOverscroll(xAxis.options.overscroll), chartX = e.originalEvent.chartX, panning = chart.options.chart.panning;
         let runBase = false;
-        if (panning &&
-            panning.type !== 'y' &&
+        if (panning?.type !== 'y' &&
             xAxis.options.ordinal &&
             xAxis.series.length &&
             // On touch devices, let default function handle the pinching
             (!e.touches || e.touches.length <= 1)) {
             const mouseDownX = chart.mouseDownX, extremes = xAxis.getExtremes(), dataMin = extremes.dataMin, dataMax = extremes.dataMax, min = extremes.min, max = extremes.max, hoverPoints = chart.hoverPoints, closestPointRange = (xAxis.closestPointRange ||
-                (xAxis.ordinal && xAxis.ordinal.overscrollPointsRange)), pointPixelWidth = (xAxis.translationSlope *
+                xAxis.ordinal?.overscrollPointsRange), pointPixelWidth = (xAxis.translationSlope *
                 (xAxis.ordinal.slope || closestPointRange)), 
             // How many ordinal units did we move?
             movedUnits = Math.round((mouseDownX - chartX) / pointPixelWidth), 
@@ -389,8 +388,9 @@ var OrdinalAxis;
             }, index2val = xAxis.index2val, val2lin = xAxis.val2lin;
             let trimmedRange, ordinalPositions;
             // Make sure panning to the edges does not decrease the zoomed range
-            if ((min <= dataMin && movedUnits < 0) ||
-                (max + overscroll >= dataMax && movedUnits > 0)) {
+            if ((min <= dataMin && movedUnits <= 0) ||
+                (max >= dataMax + overscroll && movedUnits >= 0)) {
+                e.preventDefault();
                 return;
             }
             // We have an ordinal axis, but the data is equally spaced
@@ -409,8 +409,11 @@ var OrdinalAxis;
                 // If we don't compensate for this, we will be allowed to pan
                 // grouped data series passed the right of the plot area.
                 ordinalPositions = extendedAxis.ordinal.positions;
-                if (dataMax >
-                    ordinalPositions[ordinalPositions.length - 1]) {
+                if (overscroll) { // #21606
+                    ordinalPositions = extendedAxis.ordinal.positions =
+                        ordinalPositions.concat(xAxis.ordinal.getOverscrollPositions());
+                }
+                if (dataMax > ordinalPositions[ordinalPositions.length - 1]) {
                     ordinalPositions.push(dataMax);
                 }
                 // Get the new min and max values by getting the ordinal index
@@ -441,7 +444,7 @@ var OrdinalAxis;
         }
         // Revert to the linear chart.pan version
         if (runBase || (panning && /y/.test(panning.type))) {
-            if (overscroll) {
+            if (overscroll && isNumber(xAxis.dataMax)) {
                 xAxis.max = xAxis.dataMax + overscroll;
             }
         }
@@ -456,7 +459,7 @@ var OrdinalAxis;
         const xAxis = this.xAxis;
         // Destroy the extended ordinal index on updated data
         // and destroy extendedOrdinalPositions, #16055.
-        if (xAxis && xAxis.options.ordinal) {
+        if (xAxis?.options.ordinal) {
             delete xAxis.ordinal.index;
             delete xAxis.ordinal.originalOrdinalRange;
         }
@@ -490,10 +493,8 @@ var OrdinalAxis;
             // Final return value is based on ordinalIndex
         }
         else {
-            extendedOrdinalPositions =
-                ordinal.getExtendedPositions &&
-                    ordinal.getExtendedPositions();
-            if (!(extendedOrdinalPositions && extendedOrdinalPositions.length)) {
+            extendedOrdinalPositions = ordinal.getExtendedPositions?.();
+            if (!extendedOrdinalPositions?.length) {
                 return val;
             }
             const length = extendedOrdinalPositions.length;
@@ -575,7 +576,9 @@ var OrdinalAxis;
          * @private
          */
         beforeSetTickPositions() {
-            const axis = this.axis, ordinal = axis.ordinal, extremes = axis.getExtremes(), min = extremes.min, max = extremes.max, hasBreaks = axis.brokenAxis?.hasBreaks, isOrdinal = axis.options.ordinal;
+            const axis = this.axis, ordinal = axis.ordinal, extremes = axis.getExtremes(), min = extremes.min, max = extremes.max, hasBreaks = axis.brokenAxis?.hasBreaks, isOrdinal = axis.options.ordinal, overscroll = axis.options.overscroll &&
+                axis.ordinal.convertOverscroll(axis.options.overscroll) ||
+                0;
             let len, uniqueOrdinalPositions, dist, minIndex, maxIndex, slope, i, ordinalPositions = [], overscrollPointsRange = Number.MAX_VALUE, useOrdinal = false, adjustOrdinalExtremesPoints = false, isBoosted = false;
             // Apply the ordinal logic
             if (isOrdinal || hasBreaks) { // #4167 YAxis is never ordinal ?
@@ -659,8 +662,8 @@ var OrdinalAxis;
                     // spaced.
                     if (!axis.options.keepOrdinalPadding &&
                         (ordinalPositions[0] - min > dist ||
-                            (max -
-                                ordinalPositions[ordinalPositions.length - 1]) > dist)) {
+                            max - overscroll - ordinalPositions[len - 1] >
+                                dist)) {
                         useOrdinal = true;
                     }
                 }
@@ -673,7 +676,7 @@ var OrdinalAxis;
                     else if (len === 1) {
                         // We have just one point, closest distance is unknown.
                         // Assume then it is last point and overscrolled range:
-                        overscrollPointsRange = axis.ordinal.convertOverscroll(axis.options.overscroll);
+                        overscrollPointsRange = overscroll;
                         ordinalPositions = [
                             ordinalPositions[0],
                             ordinalPositions[0] + overscrollPointsRange
@@ -803,6 +806,9 @@ var OrdinalAxis;
                 // Add the fake series to hold the full data, then apply
                 // processData to it
                 axis.series.forEach((series) => {
+                    if (series.takeOrdinalPosition === false) {
+                        return; // #22657
+                    }
                     fakeSeries = {
                         xAxis: fakeAxis,
                         chart: chart,
@@ -984,7 +990,7 @@ var OrdinalAxis;
             return ret;
         }
         /**
-         * If overscroll is pixel or pecentage value, convert it to axis range.
+         * If overscroll is pixel or percentage value, convert it to axis range.
          *
          * @private
          * @param {number | string} overscroll
@@ -999,6 +1005,16 @@ var OrdinalAxis;
             };
             if (isString(overscroll)) {
                 const overscrollValue = parseInt(overscroll, 10);
+                let isFullRange;
+                // #22334
+                if (defined(axis.min) && defined(axis.max) &&
+                    defined(axis.dataMin) && defined(axis.dataMax)) {
+                    isFullRange =
+                        axis.max - axis.min === axis.dataMax - axis.dataMin;
+                    if (!isFullRange) {
+                        this.originalOrdinalRange = axis.max - axis.min;
+                    }
+                }
                 if (/%$/.test(overscroll)) {
                     // If overscroll is percentage
                     return calculateOverscroll(overscrollValue / 100);
@@ -1007,7 +1023,8 @@ var OrdinalAxis;
                     // If overscroll is pixels, it is limited to 90% of the axis
                     // length to prevent division by zero
                     const limitedOverscrollValue = Math.min(overscrollValue, axis.len * 0.9), pixelToPercent = limitedOverscrollValue / axis.len;
-                    return calculateOverscroll(pixelToPercent / (1 - pixelToPercent));
+                    return calculateOverscroll(pixelToPercent /
+                        (isFullRange ? (1 - pixelToPercent) : 1));
                 }
                 // If overscroll is a string but not pixels or percentage,
                 // return 0 as no overscroll

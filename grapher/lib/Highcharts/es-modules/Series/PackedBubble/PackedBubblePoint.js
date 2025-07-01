@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2010-2024 Grzegorz Blachlinski, Sebastian Bochan
+ *  (c) 2010-2025 Grzegorz Blachlinski, Sebastian Bochan
  *
  *  License: www.highcharts.com/license
  *
@@ -56,6 +56,11 @@ class PackedBubblePoint extends BubblePoint {
         }
         else {
             Point.prototype.select.apply(this, arguments);
+        }
+    }
+    setState(state, move) {
+        if (this?.graphic?.parentGroup?.element) {
+            super.setState(state, move);
         }
     }
 }

@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2009-2024 Øystein Moseng
+ *  (c) 2009-2025 Øystein Moseng
  *
  *  Place desriptions on a series and its points.
  *
@@ -30,14 +30,16 @@ var find = U.find, isNumber = U.isNumber, isString = U.isString, pick = U.pick, 
  * @private
  */
 function findFirstPointWithGraphic(point) {
+    var _a;
     var sourcePointIndex = point.index;
     if (!point.series || !point.series.data || !defined(sourcePointIndex)) {
         return null;
     }
+    var nullInteraction = (_a = point.series.options) === null || _a === void 0 ? void 0 : _a.nullInteraction;
     return find(point.series.data, function (p) {
         return !!(p &&
             typeof p.index !== 'undefined' &&
-            p.index > sourcePointIndex &&
+            (nullInteraction || p.index > sourcePointIndex) &&
             p.graphic &&
             p.graphic.element);
     }) || null;

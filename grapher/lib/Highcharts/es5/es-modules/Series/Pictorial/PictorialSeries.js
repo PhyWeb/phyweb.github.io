@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi, Magdalena Gut
+ *  (c) 2010-2025 Torstein Honsi, Magdalena Gut
  *
  *  License: www.highcharts.com/license
  *
@@ -92,7 +92,7 @@ var PictorialSeries = /** @class */ (function (_super) {
         var animationClipRect = chart.sharedClips[animationClipKey];
         // Initialize the animation. Set up the clipping rectangle.
         if (init && group) {
-            var clipBox = this.getClipBox();
+            var clipBox = chart.getClipBox(this);
             // Create temporary animation clips
             if (!animationClipRect) {
                 clipBox.y = clipBox.height;
@@ -106,7 +106,7 @@ var PictorialSeries = /** @class */ (function (_super) {
         else if (animationClipRect &&
             // Only first series in this pane
             !animationClipRect.hasClass('highcharts-animating')) {
-            var finalBox = this.getClipBox();
+            var finalBox = chart.getClipBox(this);
             animationClipRect
                 .addClass('highcharts-animating')
                 .animate(finalBox, animation);

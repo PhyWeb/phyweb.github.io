@@ -1,12 +1,12 @@
 /**
- * @license Highstock JS v12.1.2 (2025-01-09)
+ * @license Highstock JS v12.3.0 (2025-06-21)
  * @module highcharts/modules/renko
  * @requires highcharts
  * @requires highcharts/modules/stock
  *
  * Renko series type for Highcharts Stock
  *
- * (c) 2010-2024 Pawel Lysy
+ * (c) 2010-2025 Pawel Lysy
  *
  * License: www.highcharts.com/license
  */
@@ -118,7 +118,7 @@ var highcharts_SeriesRegistry_commonjs_highcharts_SeriesRegistry_commonjs2_highc
 ;// ./code/es5/es-modules/Series/Renko/RenkoPoint.js
 /* *
  *
- *  (c) 2010-2024 Pawel Lysy
+ *  (c) 2010-2025 Pawel Lysy
  *
  *  License: www.highcharts.com/license
  *
@@ -170,7 +170,7 @@ var RenkoPoint = /** @class */ (function (_super) {
 ;// ./code/es5/es-modules/Series/Renko/RenkoSeriesDefaults.js
 /* *
  *
- *  (c) 2010-2024 Pawel Lysy
+ *  (c) 2010-2025 Pawel Lysy
  *
  *  License: www.highcharts.com/license
  *
@@ -301,7 +301,7 @@ var highcharts_Series_types_column_commonjs_highcharts_Series_types_column_commo
 ;// ./code/es5/es-modules/Series/Renko/RenkoSeries.js
 /* *
  *
- *  (c) 2010-2024 Pawel Lysy
+ *  (c) 2010-2025 Pawel Lysy
  *
  *  License: www.highcharts.com/license
  *

@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2009-2024 Highsoft, Black Label
+ *  (c) 2009-2025 Highsoft, Black Label
  *
  *  License: www.highcharts.com/license
  *
@@ -9,7 +9,7 @@
  * */
 'use strict';
 import U from '../../Core/Utilities.js';
-const { addEvent, erase, find, fireEvent, pick, wrap } = U;
+const { addEvent, erase, find, fireEvent, isArray, isObject, pick, wrap } = U;
 /* *
  *
  *  Functions
@@ -217,10 +217,14 @@ function chartRemoveAnnotation(idOrAnnotation) {
  * @private
  */
 function onChartAfterInit() {
-    const chart = this;
+    const chart = this, annotationsOption = this.options.annotations, annotationsUserOption = this.userOptions.annotations;
     chart.annotations = [];
-    if (!this.options.annotations) {
+    if (!isArray(this.options.annotations)) {
         this.options.annotations = [];
+    }
+    if (isObject(annotationsUserOption, true) &&
+        isObject(annotationsOption, true)) {
+        this.options.annotations.push(annotationsOption);
     }
 }
 /**

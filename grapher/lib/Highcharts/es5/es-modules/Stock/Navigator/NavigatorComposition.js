@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -9,7 +9,7 @@
  * */
 'use strict';
 import D from '../../Core/Defaults.js';
-var setOptions = D.setOptions;
+var defaultOptions = D.defaultOptions;
 import H from '../../Core/Globals.js';
 var composed = H.composed;
 import NavigatorAxisAdditions from '../../Core/Axis/NavigatorAxisComposition.js';
@@ -39,8 +39,8 @@ function compose(ChartClass, AxisClass, SeriesClass) {
     if (pushUnique(composed, 'Navigator')) {
         ChartClass.prototype.setFixedRange = setFixedRange;
         extend(getRendererType().prototype.symbols, NavigatorSymbols);
+        extend(defaultOptions, { navigator: NavigatorDefaults });
         addEvent(SeriesClass, 'afterUpdate', onSeriesAfterUpdate);
-        setOptions({ navigator: NavigatorDefaults });
     }
 }
 /**

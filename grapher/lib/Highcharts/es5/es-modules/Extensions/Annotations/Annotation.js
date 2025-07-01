@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2009-2024 Highsoft, Black Label
+ *  (c) 2009-2025 Highsoft, Black Label
  *
  *  License: www.highcharts.com/license
  *
@@ -35,6 +35,8 @@ import ControllableImage from './Controllables/ControllableImage.js';
 import ControllableLabel from './Controllables/ControllableLabel.js';
 import ControlPoint from './ControlPoint.js';
 import ControlTarget from './ControlTarget.js';
+import D from '../../Core/Defaults.js';
+var defaultOptions = D.defaultOptions;
 import EventEmitter from './EventEmitter.js';
 import MockPoint from './MockPoint.js';
 import PopupComposition from './Popup/PopupComposition.js';
@@ -154,7 +156,7 @@ var Annotation = /** @class */ (function (_super) {
          * @name Highcharts.Annotation#options
          * @type {Highcharts.AnnotationsOptions}
          */
-        _this.options = merge(_this.defaultOptions, userOptions);
+        _this.setOptions(userOptions);
         /**
          * The user options for the annotations.
          *
@@ -168,7 +170,7 @@ var Annotation = /** @class */ (function (_super) {
         _this.options.labels = labelsAndShapes.labels;
         _this.options.shapes = labelsAndShapes.shapes;
         /**
-         * The callback that reports to the overlapping-labels module which
+         * The callback that reports to the overlapping labels logic which
          * labels it should account for.
          * @private
          * @name Highcharts.Annotation#labelCollector
@@ -514,7 +516,12 @@ var Annotation = /** @class */ (function (_super) {
      *        User options for an annotation
      */
     Annotation.prototype.setOptions = function (userOptions) {
-        this.options = merge(this.defaultOptions, userOptions);
+        this.options = merge(
+        // Shared for all annotation types
+        this.defaultOptions, 
+        // The static typeOptions from the class
+        (userOptions.type &&
+            this.defaultOptions.types[userOptions.type]) || {}, userOptions);
     };
     /**
      * Set the annotation's visibility.
@@ -565,11 +572,6 @@ var Annotation = /** @class */ (function (_super) {
         fireEvent(this, 'afterUpdate');
         this.isUpdating = false;
     };
-    /* *
-     *
-     *  Static Properties
-     *
-     * */
     /**
      * @private
      */
@@ -599,6 +601,7 @@ var Annotation = /** @class */ (function (_super) {
     return Annotation;
 }(EventEmitter));
 Annotation.prototype.defaultOptions = AnnotationDefaults;
+defaultOptions.annotations = AnnotationDefaults;
 /**
  * List of events for `annotation.options.events` that should not be
  * added to `annotation.graphic` but to the `annotation`.

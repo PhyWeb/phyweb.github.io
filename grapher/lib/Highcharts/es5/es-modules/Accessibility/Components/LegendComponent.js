@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2009-2024 Øystein Moseng
+ *  (c) 2009-2025 Øystein Moseng
  *
  *  Accessibility component for chart legend.
  *
@@ -299,7 +299,11 @@ var LegendComponent = /** @class */ (function (_super) {
      * @param {Highcharts.BubbleLegendItem|Point|Highcharts.Series} item
      */
     LegendComponent.prototype.proxyLegendItem = function (item) {
+        var _a, _b, _c;
         var legendItem = item.legendItem || {};
+        var legendItemLabel = (_a = item.legendItem) === null || _a === void 0 ? void 0 : _a.label;
+        var legendLabelEl = legendItemLabel === null || legendItemLabel === void 0 ? void 0 : legendItemLabel.element;
+        var ellipsis = Boolean(((_c = (_b = legendItem.label) === null || _b === void 0 ? void 0 : _b.styles) === null || _c === void 0 ? void 0 : _c.textOverflow) === 'ellipsis');
         if (!legendItem.label || !legendItem.group) {
             return;
         }
@@ -311,8 +315,14 @@ var LegendComponent = /** @class */ (function (_super) {
         var attribs = {
             tabindex: -1,
             'aria-pressed': item.visible,
-            'aria-label': itemLabel
+            'aria-label': itemLabel,
+            title: ''
         };
+        // Check if label contains an ellipsis character (\u2026) #22397
+        if (ellipsis &&
+            (legendLabelEl.textContent || '').indexOf('\u2026') !== -1) {
+            attribs.title = legendItemLabel === null || legendItemLabel === void 0 ? void 0 : legendItemLabel.textStr;
+        }
         // Considers useHTML
         var proxyPositioningElement = legendItem.group.div ?
             legendItem.label :

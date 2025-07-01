@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  Extension for 3d axes
  *
@@ -29,8 +29,9 @@ var addEvent = U.addEvent, merge = U.merge, pick = U.pick, wrap = U.wrap;
  * @private
  */
 function onAxisAfterSetOptions() {
+    var _a;
     var axis = this, chart = axis.chart, options = axis.options;
-    if (chart.is3d && chart.is3d() && axis.coll !== 'colorAxis') {
+    if (((_a = chart.is3d) === null || _a === void 0 ? void 0 : _a.call(chart)) && axis.coll !== 'colorAxis') {
         options.tickWidth = pick(options.tickWidth, 0);
         options.gridLineWidth = pick(options.gridLineWidth, 1);
     }
@@ -169,7 +170,7 @@ function wrapAxisGetPlotLinePath(proceed) {
  * @private
  */
 function wrapAxisGetSlotWidth(proceed, tick) {
-    var _a;
+    var _a, _b;
     var axis = this, chart = axis.chart, gridGroup = axis.gridGroup, tickPositions = axis.tickPositions, ticks = axis.ticks;
     if (axis.categories &&
         chart.frameShapes &&
@@ -196,7 +197,7 @@ function wrapAxisGetSlotWidth(proceed, tick) {
         }
         // If next label position is defined, then recalculate its position
         // basing on the perspective.
-        if (nextTick && nextTick.label && nextTick.label.xy) {
+        if ((_b = nextTick === null || nextTick === void 0 ? void 0 : nextTick.label) === null || _b === void 0 ? void 0 : _b.xy) {
             nextLabelPos = perspective3D({
                 x: nextTick.label.xy.x,
                 y: nextTick.label.xy.y,

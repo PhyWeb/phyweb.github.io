@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -120,19 +120,21 @@ function dateFormat(format, timestamp, upperCaseFirst) {
  *        The context, a collection of key-value pairs where each key is
  *        replaced by its value.
  *
- * @param {Highcharts.Chart} [chart]
- *        A `Chart` instance used to get numberFormatter and time.
+ * @param {Highcharts.Chart} [owner]
+ *        A `Chart` or `DataGrid` instance used to get numberFormatter and time.
  *
  * @return {string}
  *         The formatted string.
  */
-function format(str, ctx, chart) {
+function format(str, ctx, owner) {
+    var _a;
     if (str === void 0) { str = ''; }
-    var regex = /\{([\p{L}\d:\.,;\-\/<>\[\]%_@+"'’= #\(\)]+)\}/gu, 
+    // Notice: using u flag will require a refactor for ES5 (#22450).
+    var regex = /\{([a-zA-Z\u00C0-\u017F\d:\.,;\-\/<>\[\]%_@+"'’= #\(\)]+)\}/g, // eslint-disable-line max-len
     // The sub expression regex is the same as the top expression regex,
     // but except parens and block helpers (#), and surrounded by parens
     // instead of curly brackets.
-    subRegex = /\(([\p{L}\d:\.,;\-\/<>\[\]%_@+"'= ]+)\)/gu, matches = [], floatRegex = /f$/, decRegex = /\.(\d)/, lang = (chart === null || chart === void 0 ? void 0 : chart.options.lang) || defaultOptions.lang, time = chart && chart.time || defaultTime, numberFormatter = chart && chart.numberFormatter || numberFormat;
+    subRegex = /\(([a-zA-Z\u00C0-\u017F\d:\.,;\-\/<>\[\]%_@+"'= ]+)\)/g, matches = [], floatRegex = /f$/, decRegex = /\.(\d)/, lang = ((_a = owner === null || owner === void 0 ? void 0 : owner.options) === null || _a === void 0 ? void 0 : _a.lang) || defaultOptions.lang, time = (owner === null || owner === void 0 ? void 0 : owner.time) || defaultTime, numberFormatter = (owner === null || owner === void 0 ? void 0 : owner.numberFormatter) || numberFormat.bind(owner);
     /*
      * Get a literal or variable value inside a template expression. May be
      * extended with other types like string or null if needed, but keep it
@@ -167,7 +169,7 @@ function format(str, ctx, chart) {
             match = subMatch;
             hasSub = true;
         }
-        if (!currentMatch || !currentMatch.isBlock) {
+        if (!(currentMatch === null || currentMatch === void 0 ? void 0 : currentMatch.isBlock)) {
             currentMatch = {
                 ctx: ctx,
                 expression: match[1],
@@ -259,7 +261,7 @@ function format(str, ctx, chart) {
             // Block helpers may return true or false. They may also return a
             // string, like the `each` helper.
             if (match.isBlock && typeof replacement === 'boolean') {
-                replacement = format(replacement ? body : elseBody, ctx, chart);
+                replacement = format(replacement ? body : elseBody, ctx, owner);
             }
             // Simple variable replacement
         }
@@ -268,9 +270,11 @@ function format(str, ctx, chart) {
                 [expression] : expression.split(':');
             replacement = resolveProperty(valueAndFormat.shift() || '');
             // Format the replacement
-            if (valueAndFormat.length && typeof replacement === 'number') {
+            var isFloat = replacement % 1 !== 0;
+            if (typeof replacement === 'number' &&
+                (valueAndFormat.length || isFloat)) {
                 var segment = valueAndFormat.join(':');
-                if (floatRegex.test(segment)) { // Float
+                if (floatRegex.test(segment) || isFloat) { // Float
                     var decimals = parseInt((segment.match(decRegex) || ['', '-1'])[1], 10);
                     if (replacement !== null) {
                         replacement = numberFormatter(replacement, decimals, lang.decimalPoint, segment.indexOf(',') > -1 ? lang.thousandsSep : '');
@@ -289,7 +293,7 @@ function format(str, ctx, chart) {
         }
         str = str.replace(match.find, pick(replacement, ''));
     });
-    return hasSub ? format(str, ctx, chart) : str;
+    return hasSub ? format(str, ctx, owner) : str;
 }
 /**
  * Format a number and return a string based on input settings.
@@ -366,8 +370,7 @@ function numberFormat(number, decimals, decimalPoint, thousandsSep) {
         options.useGrouping = false;
     }
     var hasSeparators = thousandsSep || decimalPoint, locale = hasSeparators ?
-        'en' :
-        ((this === null || this === void 0 ? void 0 : this.locale) || lang.locale || pageLang), cacheKey = JSON.stringify(options) + locale, nf = (_b = numberFormatCache[cacheKey]) !== null && _b !== void 0 ? _b : (numberFormatCache[cacheKey] = new Intl.NumberFormat(locale, options));
+        'en' : ((this === null || this === void 0 ? void 0 : this.locale) || lang.locale || pageLang), cacheKey = JSON.stringify(options) + locale, nf = (_b = numberFormatCache[cacheKey]) !== null && _b !== void 0 ? _b : (numberFormatCache[cacheKey] = new Intl.NumberFormat(locale, options));
     ret = nf.format(number);
     // If thousandsSep or decimalPoint are set, fall back to using English
     // format with string replacement for the separators.
@@ -402,3 +405,28 @@ var Templating = {
     numberFormat: numberFormat
 };
 export default Templating;
+/* *
+ * API Declarations
+ * */
+/**
+ * @interface Highcharts.Templating
+ *
+ * The Highcharts.Templating interface provides a structure for defining
+ * helpers. Helpers can be used as conditional blocks or functions within
+ * expressions. Highcharts includes several built-in helpers and supports
+ * the addition of custom helpers.
+ *
+ * @see [More information](
+ * https://www.highcharts.com/docs/chart-concepts/templating#helpers)
+ *
+ * @example
+ * // Define a custom helper to return the absolute value of a number
+ * Highcharts.Templating.helpers.abs = value => Math.abs(value);
+ *
+ * // Usage in a format string
+ * format: 'Absolute value: {abs point.y}'
+ *
+ * @name Highcharts.Templating#helpers
+ * @type {Record<string, Function>}
+ */
+(''); // Keeps doclets above in file

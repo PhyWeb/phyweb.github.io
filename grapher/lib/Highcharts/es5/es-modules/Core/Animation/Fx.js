@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -66,7 +66,7 @@ var Fx = /** @class */ (function () {
      *
      */
     Fx.prototype.dSetter = function () {
-        var paths = this.paths, start = paths && paths[0], end = paths && paths[1], now = this.now || 0;
+        var paths = this.paths, start = paths === null || paths === void 0 ? void 0 : paths[0], end = paths === null || paths === void 0 ? void 0 : paths[1], now = this.now || 0;
         var path = [];
         // Land on the final path without adjustment points appended in the ends
         if (now === 1 || !start || !end) {
@@ -248,7 +248,7 @@ var Fx = /** @class */ (function () {
         isArea = elem.isArea, positionFactor = isArea ? 2 : 1, disableAnimation = fromD &&
             toD.length > fromD.length &&
             toD.hasStackedCliffs; // #16925
-        var shift, fullLength, i, reverse, start = fromD && fromD.slice(); // Copy
+        var shift, fullLength, i, reverse, start = fromD === null || fromD === void 0 ? void 0 : fromD.slice(); // Copy
         if (!start || disableAnimation) {
             return [end, end];
         }

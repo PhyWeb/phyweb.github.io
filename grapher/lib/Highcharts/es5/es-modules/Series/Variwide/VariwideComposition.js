@@ -2,7 +2,7 @@
  *
  *  Highcharts variwide module
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -37,8 +37,9 @@ function compose(AxisClass, TickClass) {
  * @private
  */
 function onAxisAfterDrawCrosshair(e) {
+    var _a;
     if (this.variwide && this.cross) {
-        this.cross.attr('stroke-width', (e.point && e.point.crosshairWidth));
+        this.cross.attr('stroke-width', (_a = e.point) === null || _a === void 0 ? void 0 : _a.crosshairWidth);
     }
 }
 /**

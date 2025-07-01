@@ -1,72 +1,30 @@
 /**
- * @license Highcharts JS v12.1.2 (2025-01-09)
+ * @license Highcharts JS v12.3.0 (2025-06-21)
  * @module highcharts/highcharts-more
  * @requires highcharts
  *
- * (c) 2009-2024 Torstein Honsi
+ * (c) 2009-2025 Torstein Honsi
  *
  * License: www.highcharts.com/license
  */
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
-		module.exports = factory(require("highcharts"), require("highcharts")["SeriesRegistry"], require("highcharts")["Series"], require("highcharts")["Series"]["types"]["column"], require("highcharts")["Color"], require("highcharts")["Templating"], require("highcharts")["Point"], require("highcharts")["Chart"], require("highcharts")["SVGElement"], require("highcharts")["StackItem"]);
+		module.exports = factory(require("highcharts"), require("highcharts")["SeriesRegistry"], require("highcharts")["Series"], require("highcharts")["Series"]["types"]["column"], require("highcharts")["Templating"], require("highcharts")["Point"], require("highcharts")["Color"], require("highcharts")["Chart"], require("highcharts")["SVGElement"], require("highcharts")["StackItem"]);
 	else if(typeof define === 'function' && define.amd)
-		define("highcharts/highcharts-more", [["highcharts/highcharts"], ["highcharts/highcharts","SeriesRegistry"], ["highcharts/highcharts","Series"], ["highcharts/highcharts","Series","types","column"], ["highcharts/highcharts","Color"], ["highcharts/highcharts","Templating"], ["highcharts/highcharts","Point"], ["highcharts/highcharts","Chart"], ["highcharts/highcharts","SVGElement"], ["highcharts/highcharts","StackItem"]], factory);
+		define("highcharts/highcharts-more", [["highcharts/highcharts"], ["highcharts/highcharts","SeriesRegistry"], ["highcharts/highcharts","Series"], ["highcharts/highcharts","Series","types","column"], ["highcharts/highcharts","Templating"], ["highcharts/highcharts","Point"], ["highcharts/highcharts","Color"], ["highcharts/highcharts","Chart"], ["highcharts/highcharts","SVGElement"], ["highcharts/highcharts","StackItem"]], factory);
 	else if(typeof exports === 'object')
-		exports["highcharts/highcharts-more"] = factory(require("highcharts"), require("highcharts")["SeriesRegistry"], require("highcharts")["Series"], require("highcharts")["Series"]["types"]["column"], require("highcharts")["Color"], require("highcharts")["Templating"], require("highcharts")["Point"], require("highcharts")["Chart"], require("highcharts")["SVGElement"], require("highcharts")["StackItem"]);
+		exports["highcharts/highcharts-more"] = factory(require("highcharts"), require("highcharts")["SeriesRegistry"], require("highcharts")["Series"], require("highcharts")["Series"]["types"]["column"], require("highcharts")["Templating"], require("highcharts")["Point"], require("highcharts")["Color"], require("highcharts")["Chart"], require("highcharts")["SVGElement"], require("highcharts")["StackItem"]);
 	else
-		root["Highcharts"] = factory(root["Highcharts"], root["Highcharts"]["SeriesRegistry"], root["Highcharts"]["Series"], root["Highcharts"]["Series"]["types"]["column"], root["Highcharts"]["Color"], root["Highcharts"]["Templating"], root["Highcharts"]["Point"], root["Highcharts"]["Chart"], root["Highcharts"]["SVGElement"], root["Highcharts"]["StackItem"]);
-})(this, function(__WEBPACK_EXTERNAL_MODULE__944__, __WEBPACK_EXTERNAL_MODULE__512__, __WEBPACK_EXTERNAL_MODULE__820__, __WEBPACK_EXTERNAL_MODULE__448__, __WEBPACK_EXTERNAL_MODULE__620__, __WEBPACK_EXTERNAL_MODULE__984__, __WEBPACK_EXTERNAL_MODULE__260__, __WEBPACK_EXTERNAL_MODULE__960__, __WEBPACK_EXTERNAL_MODULE__28__, __WEBPACK_EXTERNAL_MODULE__184__) {
+		root["Highcharts"] = factory(root["Highcharts"], root["Highcharts"]["SeriesRegistry"], root["Highcharts"]["Series"], root["Highcharts"]["Series"]["types"]["column"], root["Highcharts"]["Templating"], root["Highcharts"]["Point"], root["Highcharts"]["Color"], root["Highcharts"]["Chart"], root["Highcharts"]["SVGElement"], root["Highcharts"]["StackItem"]);
+})(this, function(__WEBPACK_EXTERNAL_MODULE__944__, __WEBPACK_EXTERNAL_MODULE__512__, __WEBPACK_EXTERNAL_MODULE__820__, __WEBPACK_EXTERNAL_MODULE__448__, __WEBPACK_EXTERNAL_MODULE__984__, __WEBPACK_EXTERNAL_MODULE__260__, __WEBPACK_EXTERNAL_MODULE__620__, __WEBPACK_EXTERNAL_MODULE__960__, __WEBPACK_EXTERNAL_MODULE__28__, __WEBPACK_EXTERNAL_MODULE__184__) {
 return /******/ (function() { // webpackBootstrap
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
-
-/***/ 960:
-/***/ (function(module) {
-
-module.exports = __WEBPACK_EXTERNAL_MODULE__960__;
-
-/***/ }),
-
-/***/ 620:
-/***/ (function(module) {
-
-module.exports = __WEBPACK_EXTERNAL_MODULE__620__;
-
-/***/ }),
-
-/***/ 260:
-/***/ (function(module) {
-
-module.exports = __WEBPACK_EXTERNAL_MODULE__260__;
-
-/***/ }),
 
 /***/ 28:
 /***/ (function(module) {
 
 module.exports = __WEBPACK_EXTERNAL_MODULE__28__;
-
-/***/ }),
-
-/***/ 448:
-/***/ (function(module) {
-
-module.exports = __WEBPACK_EXTERNAL_MODULE__448__;
-
-/***/ }),
-
-/***/ 820:
-/***/ (function(module) {
-
-module.exports = __WEBPACK_EXTERNAL_MODULE__820__;
-
-/***/ }),
-
-/***/ 512:
-/***/ (function(module) {
-
-module.exports = __WEBPACK_EXTERNAL_MODULE__512__;
 
 /***/ }),
 
@@ -77,10 +35,38 @@ module.exports = __WEBPACK_EXTERNAL_MODULE__184__;
 
 /***/ }),
 
-/***/ 984:
+/***/ 260:
 /***/ (function(module) {
 
-module.exports = __WEBPACK_EXTERNAL_MODULE__984__;
+module.exports = __WEBPACK_EXTERNAL_MODULE__260__;
+
+/***/ }),
+
+/***/ 448:
+/***/ (function(module) {
+
+module.exports = __WEBPACK_EXTERNAL_MODULE__448__;
+
+/***/ }),
+
+/***/ 512:
+/***/ (function(module) {
+
+module.exports = __WEBPACK_EXTERNAL_MODULE__512__;
+
+/***/ }),
+
+/***/ 620:
+/***/ (function(module) {
+
+module.exports = __WEBPACK_EXTERNAL_MODULE__620__;
+
+/***/ }),
+
+/***/ 820:
+/***/ (function(module) {
+
+module.exports = __WEBPACK_EXTERNAL_MODULE__820__;
 
 /***/ }),
 
@@ -88,6 +74,20 @@ module.exports = __WEBPACK_EXTERNAL_MODULE__984__;
 /***/ (function(module) {
 
 module.exports = __WEBPACK_EXTERNAL_MODULE__944__;
+
+/***/ }),
+
+/***/ 960:
+/***/ (function(module) {
+
+module.exports = __WEBPACK_EXTERNAL_MODULE__960__;
+
+/***/ }),
+
+/***/ 984:
+/***/ (function(module) {
+
+module.exports = __WEBPACK_EXTERNAL_MODULE__984__;
 
 /***/ })
 
@@ -167,7 +167,7 @@ var highcharts_Series_commonjs_highcharts_Series_commonjs2_highcharts_Series_roo
 ;// ./code/es5/es-modules/Series/CenteredUtilities.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -454,7 +454,7 @@ var PaneComposition = {
 ;// ./code/es5/es-modules/Extensions/Pane/PaneDefaults.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -462,13 +462,16 @@ var PaneComposition = {
  *
  * */
 
+
+var defaultOptions = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).defaultOptions;
 /* *
  *
  *  API Options
  *
  * */
 /**
- * An array of background items for the pane.
+ * A background item or an array of such for the pane. When used in
+ * `Highcharts.setOptions` for theming, the background must be a single item.
  *
  * @sample {highcharts} highcharts/demo/gauge-speedometer/
  *         Speedometer gauge with multiple backgrounds
@@ -572,6 +575,9 @@ var background = {
  * The pane serves as a container for axes and backgrounds for circular
  * gauges and polar charts.
  *
+ * When used in `Highcharts.setOptions` for theming, the pane must be a single
+ * object, otherwise arrays are supported.
+ *
  * @type         {*|Array<*>}
  * @since        2.3.0
  * @product      highcharts
@@ -579,6 +585,7 @@ var background = {
  * @optionparent pane
  */
 var pane = {
+    background: background,
     /**
      * The end angle of the polar X axis or gauge value axis, given in
      * degrees where 0 is north. Defaults to [startAngle](#pane.startAngle)
@@ -641,6 +648,7 @@ var pane = {
      */
     startAngle: 0
 };
+defaultOptions.pane = pane;
 /* *
  *
  *  Default Export
@@ -655,7 +663,7 @@ var PaneDefaults = {
 ;// ./code/es5/es-modules/Extensions/Pane/Pane.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -723,7 +731,7 @@ var Pane = /** @class */ (function () {
      */
     Pane.prototype.setOptions = function (options) {
         // Set options. Angular charts have a default background (#3318)
-        this.options = options = merge(Pane_PaneDefaults.pane, this.chart.angular ? { background: {} } : void 0, options);
+        this.options = options = merge(Pane_PaneDefaults.pane, { background: this.chart.angular ? {} : void 0 }, options);
     };
     /**
      * Render the pane with its backgrounds.
@@ -868,7 +876,7 @@ var Pane = /** @class */ (function () {
 ;// ./code/es5/es-modules/Series/AreaRange/AreaRangePoint.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -1000,7 +1008,7 @@ var AreaRangePoint = /** @class */ (function (_super) {
 ;// ./code/es5/es-modules/Series/AreaRange/AreaRangeSeries.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -1648,7 +1656,7 @@ highcharts_SeriesRegistry_commonjs_highcharts_SeriesRegistry_commonjs2_highchart
 ;// ./code/es5/es-modules/Series/AreaSplineRange/AreaSplineRangeSeries.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -1844,7 +1852,7 @@ highcharts_SeriesRegistry_commonjs_highcharts_SeriesRegistry_commonjs2_highchart
 ;// ./code/es5/es-modules/Series/BoxPlot/BoxPlotSeriesDefaults.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -2298,7 +2306,7 @@ var highcharts_Series_types_column_commonjs_highcharts_Series_types_column_commo
 ;// ./code/es5/es-modules/Series/BoxPlot/BoxPlotSeries.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -2600,7 +2608,7 @@ highcharts_SeriesRegistry_commonjs_highcharts_SeriesRegistry_commonjs2_highchart
 ;// ./code/es5/es-modules/Series/Bubble/BubbleLegendDefaults.js
 /* *
  *
- *  (c) 2010-2024 Highsoft AS
+ *  (c) 2010-2025 Highsoft AS
  *
  *  Author: Paweł Potaczek
  *
@@ -2865,16 +2873,13 @@ var BubbleLegendDefaults = {
  * */
 /* harmony default export */ var Bubble_BubbleLegendDefaults = (BubbleLegendDefaults);
 
-// EXTERNAL MODULE: external {"amd":["highcharts/highcharts","Color"],"commonjs":["highcharts","Color"],"commonjs2":["highcharts","Color"],"root":["Highcharts","Color"]}
-var highcharts_Color_commonjs_highcharts_Color_commonjs2_highcharts_Color_root_Highcharts_Color_ = __webpack_require__(620);
-var highcharts_Color_commonjs_highcharts_Color_commonjs2_highcharts_Color_root_Highcharts_Color_default = /*#__PURE__*/__webpack_require__.n(highcharts_Color_commonjs_highcharts_Color_commonjs2_highcharts_Color_root_Highcharts_Color_);
 // EXTERNAL MODULE: external {"amd":["highcharts/highcharts","Templating"],"commonjs":["highcharts","Templating"],"commonjs2":["highcharts","Templating"],"root":["Highcharts","Templating"]}
 var highcharts_Templating_commonjs_highcharts_Templating_commonjs2_highcharts_Templating_root_Highcharts_Templating_ = __webpack_require__(984);
 var highcharts_Templating_commonjs_highcharts_Templating_commonjs2_highcharts_Templating_root_Highcharts_Templating_default = /*#__PURE__*/__webpack_require__.n(highcharts_Templating_commonjs_highcharts_Templating_commonjs2_highcharts_Templating_root_Highcharts_Templating_);
 ;// ./code/es5/es-modules/Series/Bubble/BubbleLegendItem.js
 /* *
  *
- *  (c) 2010-2024 Highsoft AS
+ *  (c) 2010-2025 Highsoft AS
  *
  *  Author: Paweł Potaczek
  *
@@ -2884,8 +2889,6 @@ var highcharts_Templating_commonjs_highcharts_Templating_commonjs2_highcharts_Te
  *
  * */
 
-
-var color = (highcharts_Color_commonjs_highcharts_Color_commonjs2_highcharts_Color_root_Highcharts_Color_default()).parse;
 
 
 var BubbleLegendItem_noop = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).noop;
@@ -3016,10 +3019,11 @@ var BubbleLegendItem = /** @class */ (function () {
         ranges.forEach(function (range, i) {
             if (!styledMode) {
                 bubbleAttribs.stroke = BubbleLegendItem_pick(range.borderColor, options.borderColor, series.color);
-                bubbleAttribs.fill = BubbleLegendItem_pick(range.color, options.color, fillOpacity !== 1 ?
-                    color(series.color).setOpacity(fillOpacity)
-                        .get('rgba') :
-                    series.color);
+                bubbleAttribs.fill = range.color || options.color;
+                if (!bubbleAttribs.fill) {
+                    bubbleAttribs.fill = series.color;
+                    bubbleAttribs['fill-opacity'] = fillOpacity !== null && fillOpacity !== void 0 ? fillOpacity : 1;
+                }
                 connectorAttribs.stroke = BubbleLegendItem_pick(range.connectorColor, options.connectorColor, series.color);
             }
             // Set options needed for rendering each range
@@ -3371,7 +3375,7 @@ var BubbleLegendItem = /** @class */ (function () {
 ;// ./code/es5/es-modules/Series/Bubble/BubbleLegendComposition.js
 /* *
  *
- *  (c) 2010-2024 Highsoft AS
+ *  (c) 2010-2025 Highsoft AS
  *
  *  Author: Paweł Potaczek
  *
@@ -3662,7 +3666,7 @@ var highcharts_Point_commonjs_highcharts_Point_commonjs2_highcharts_Point_root_H
 ;// ./code/es5/es-modules/Series/Bubble/BubblePoint.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -3723,8 +3727,9 @@ var BubblePoint = /** @class */ (function (_super) {
                 _a = this.series,
                 xAxis = _a.xAxis,
                 yAxis = _a.yAxis,
-                chart = _a.chart;
-            return chart.renderer.symbols.circle(xAxis.len - pos[1] - computedSize, yAxis.len - pos[0] - computedSize, computedSize * 2, computedSize * 2);
+                chart = _a.chart,
+                diameter = computedSize * 2;
+            return chart.renderer.symbols.circle(((xAxis === null || xAxis === void 0 ? void 0 : xAxis.len) || 0) - pos[1] - computedSize, ((yAxis === null || yAxis === void 0 ? void 0 : yAxis.len) || 0) - pos[0] - computedSize, diameter, diameter);
         }
         return highcharts_Point_commonjs_highcharts_Point_commonjs2_highcharts_Point_root_Highcharts_Point_default().prototype.haloPath.call(this, 
         // #6067
@@ -3750,7 +3755,7 @@ BubblePoint_extend(BubblePoint.prototype, {
 ;// ./code/es5/es-modules/Series/Bubble/BubbleSeries.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -3779,8 +3784,6 @@ var BubbleSeries_extends = (undefined && undefined.__extends) || (function () {
 })();
 
 
-
-var BubbleSeries_color = (highcharts_Color_commonjs_highcharts_Color_commonjs2_highcharts_Color_root_Highcharts_Color_default()).parse;
 
 var BubbleSeries_composed = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).composed, BubbleSeries_noop = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).noop;
 
@@ -4058,15 +4061,11 @@ var BubbleSeries = /** @class */ (function (_super) {
      */
     BubbleSeries.prototype.pointAttribs = function (point, state) {
         var markerOptions = this.options.marker,
-            fillOpacity = markerOptions.fillOpacity,
+            fillOpacity = markerOptions === null || markerOptions === void 0 ? void 0 : markerOptions.fillOpacity,
             attr = Series.prototype.pointAttribs.call(this,
             point,
             state);
-        if (fillOpacity !== 1) {
-            attr.fill = BubbleSeries_color(attr.fill)
-                .setOpacity(fillOpacity)
-                .get('rgba');
-        }
+        attr['fill-opacity'] = fillOpacity !== null && fillOpacity !== void 0 ? fillOpacity : 1;
         return attr;
     };
     /**
@@ -4165,7 +4164,10 @@ var BubbleSeries = /** @class */ (function (_super) {
             var p2Dist = p2[comparisonProp] || 0;
             var ret,
                 flip = false;
-            if (p1Dist < 0 && p2Dist < 0) {
+            if (p1Dist === p2Dist) {
+                ret = p1.index > p2.index ? p1 : p2;
+            }
+            else if (p1Dist < 0 && p2Dist < 0) {
                 ret = (p1Dist - (((_a = p1.marker) === null || _a === void 0 ? void 0 : _a.radius) || 0) >=
                     p2Dist - (((_b = p2.marker) === null || _b === void 0 ? void 0 : _b.radius) || 0)) ?
                     p1 :
@@ -4552,7 +4554,7 @@ highcharts_SeriesRegistry_commonjs_highcharts_SeriesRegistry_commonjs2_highchart
 ;// ./code/es5/es-modules/Series/ColumnRange/ColumnRangePoint.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -4616,7 +4618,7 @@ ColumnRangePoint_extend(ColumnRangePoint.prototype, {
 ;// ./code/es5/es-modules/Series/ColumnRange/ColumnRangeSeries.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -4959,7 +4961,7 @@ highcharts_SeriesRegistry_commonjs_highcharts_SeriesRegistry_commonjs2_highchart
 ;// ./code/es5/es-modules/Series/ColumnPyramid/ColumnPyramidSeriesDefaults.js
 /* *
  *
- *  (c) 2010-2024 Sebastian Bochan
+ *  (c) 2010-2025 Sebastian Bochan
  *
  *  License: www.highcharts.com/license
  *
@@ -5086,7 +5088,7 @@ var ColumnPyramidSeriesDefaults = {};
 ;// ./code/es5/es-modules/Series/ColumnPyramid/ColumnPyramidSeries.js
 /* *
  *
- *  (c) 2010-2024 Sebastian Bochan
+ *  (c) 2010-2025 Sebastian Bochan
  *
  *  License: www.highcharts.com/license
  *
@@ -5323,7 +5325,7 @@ highcharts_SeriesRegistry_commonjs_highcharts_SeriesRegistry_commonjs2_highchart
 ;// ./code/es5/es-modules/Series/ErrorBar/ErrorBarSeriesDefaults.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -5472,7 +5474,7 @@ var ErrorBarSeriesDefaults = {
 ;// ./code/es5/es-modules/Series/ErrorBar/ErrorBarSeries.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -5584,7 +5586,7 @@ highcharts_SeriesRegistry_commonjs_highcharts_SeriesRegistry_commonjs2_highchart
 ;// ./code/es5/es-modules/Series/Gauge/GaugePoint.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -5648,7 +5650,7 @@ var GaugePoint = /** @class */ (function (_super) {
 ;// ./code/es5/es-modules/Series/Gauge/GaugeSeries.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -6254,12 +6256,15 @@ highcharts_SeriesRegistry_commonjs_highcharts_SeriesRegistry_commonjs2_highchart
  */
 ''; // Adds the doclets above in the transpiled file
 
+// EXTERNAL MODULE: external {"amd":["highcharts/highcharts","Color"],"commonjs":["highcharts","Color"],"commonjs2":["highcharts","Color"],"root":["Highcharts","Color"]}
+var highcharts_Color_commonjs_highcharts_Color_commonjs2_highcharts_Color_root_Highcharts_Color_ = __webpack_require__(620);
+var highcharts_Color_commonjs_highcharts_Color_commonjs2_highcharts_Color_root_Highcharts_Color_default = /*#__PURE__*/__webpack_require__.n(highcharts_Color_commonjs_highcharts_Color_commonjs2_highcharts_Color_root_Highcharts_Color_);
 ;// ./code/es5/es-modules/Series/DragNodesComposition.js
 /* *
  *
  *  Networkgraph series
  *
- *  (c) 2010-2024 Paweł Fus
+ *  (c) 2010-2025 Paweł Fus
  *
  *  License: www.highcharts.com/license
  *
@@ -6292,10 +6297,17 @@ function onChartLoad() {
     var chart = this;
     var mousedownUnbinder,
         mousemoveUnbinder,
-        mouseupUnbinder;
+        mouseupUnbinder,
+        point;
     if (chart.container) {
         mousedownUnbinder = DragNodesComposition_addEvent(chart.container, 'mousedown', function (event) {
-            var point = chart.hoverPoint;
+            if (mousemoveUnbinder) {
+                mousemoveUnbinder();
+            }
+            if (mouseupUnbinder) {
+                mouseupUnbinder();
+            }
+            point = chart.hoverPoint;
             if (point &&
                 point.series &&
                 point.series.hasDraggableNodes &&
@@ -6329,6 +6341,11 @@ function onChartLoad() {
  */
 function onMouseDown(point, event) {
     var _a;
+    var panKey = this.chart.options.chart.panKey,
+        panKeyPressed = panKey && event["" + panKey + "Key"];
+    if (panKeyPressed) {
+        return;
+    }
     var normalizedEvent = ((_a = this.chart.pointer) === null || _a === void 0 ? void 0 : _a.normalize(event)) || event;
     point.fixedPosition = {
         chartX: normalizedEvent.chartX,
@@ -6431,7 +6448,7 @@ var DragNodesComposition = {
  *
  *  Networkgraph series
  *
- *  (c) 2010-2024 Paweł Fus
+ *  (c) 2010-2025 Paweł Fus
  *
  *  License: www.highcharts.com/license
  *
@@ -6508,6 +6525,7 @@ function onChartPredraw() {
  * @private
  */
 function onChartRender() {
+    var _a;
     var systemsStable,
         afterRender = false;
     var layoutStep = function (layout) {
@@ -6528,7 +6546,8 @@ function onChartRender() {
             afterRender = true;
         }
     };
-    if (this.graphLayoutsLookup) {
+    // Don't animate layout when series is dragged
+    if (this.graphLayoutsLookup && !((_a = this.pointer) === null || _a === void 0 ? void 0 : _a.hasDragged)) {
         setAnimation(false, this);
         // Start simulation
         this.graphLayoutsLookup.forEach(function (layout) { return layout.start(); });
@@ -6565,7 +6584,7 @@ var highcharts_Chart_commonjs_highcharts_Chart_commonjs2_highcharts_Chart_root_H
 ;// ./code/es5/es-modules/Series/PackedBubble/PackedBubblePoint.js
 /* *
  *
- *  (c) 2010-2024 Grzegorz Blachlinski, Sebastian Bochan
+ *  (c) 2010-2025 Grzegorz Blachlinski, Sebastian Bochan
  *
  *  License: www.highcharts.com/license
  *
@@ -6648,6 +6667,13 @@ var PackedBubblePoint = /** @class */ (function (_super) {
         }
         else {
             highcharts_Point_commonjs_highcharts_Point_commonjs2_highcharts_Point_root_Highcharts_Point_default().prototype.select.apply(this, arguments);
+        }
+    };
+    PackedBubblePoint.prototype.setState = function (state, move) {
+        var _a,
+            _b;
+        if ((_b = (_a = this === null || this === void 0 ? void 0 : this.graphic) === null || _a === void 0 ? void 0 : _a.parentGroup) === null || _b === void 0 ? void 0 : _b.element) {
+            _super.prototype.setState.call(this, state, move);
         }
     };
     return PackedBubblePoint;
@@ -6817,7 +6843,7 @@ var PackedBubbleSeriesDefaults = {
             return this.name || '';
         },
         /**
-         * @sample {highcharts} highcharts/series-packedbubble/packed-dashboard
+         * @sample {highcharts} highcharts/demo/packed-bubble-project-status/
          *         Dashboard with dataLabels on parentNodes
          *
          * @declare Highcharts.SeriesPackedBubbleDataLabelsTextPathOptionsObject
@@ -6906,7 +6932,7 @@ var PackedBubbleSeriesDefaults = {
          * In case of split series, this option allows user to drag and
          * drop points between series, for changing point related series.
          *
-         * @sample highcharts/series-packedbubble/packed-dashboard/
+         * @sample highcharts/demo/packed-bubble-project-status/
          *         Example of drag'n drop bubbles for bubble kanban
          */
         dragBetweenSeries: false,
@@ -6982,7 +7008,8 @@ var PackedBubbleSeriesDefaults = {
         maxSpeed: 5,
         gravitationalConstant: 0.01,
         friction: -0.981
-    }
+    },
+    stickyTracking: false
 };
 /* *
  *
@@ -7059,7 +7086,7 @@ var PackedBubbleSeriesDefaults = {
  *
  *  Networkgraph series
  *
- *  (c) 2010-2024 Paweł Fus
+ *  (c) 2010-2025 Paweł Fus
  *
  *  License: www.highcharts.com/license
  *
@@ -7252,7 +7279,7 @@ var VerletIntegration = {
 ;// ./code/es5/es-modules/Series/PackedBubble/PackedBubbleIntegration.js
 /* *
  *
- *  (c) 2010-2024 Grzegorz Blachlinski, Sebastian Bochan
+ *  (c) 2010-2025 Grzegorz Blachlinski, Sebastian Bochan
  *
  *  License: www.highcharts.com/license
  *
@@ -7273,30 +7300,42 @@ var PackedBubbleIntegration_noop = (highcharts_commonjs_highcharts_commonjs2_hig
  */
 function PackedBubbleIntegration_barycenter() {
     var layout = this,
-        gravitationalConstant = layout.options.gravitationalConstant,
+        gravitationalConstant = layout.options.gravitationalConstant || 0,
         box = layout.box,
-        nodes = layout.nodes;
+        nodes = layout.nodes,
+        nodeCountSqrt = Math.sqrt(nodes.length);
     var centerX,
         centerY;
     for (var _i = 0, nodes_1 = nodes; _i < nodes_1.length; _i++) {
         var node = nodes_1[_i];
-        if (layout.options.splitSeries && !node.isParentNode) {
-            centerX = node.series.parentNode.plotX;
-            centerY = node.series.parentNode.plotY;
-        }
-        else {
-            centerX = box.width / 2;
-            centerY = box.height / 2;
-        }
         if (!node.fixedPosition) {
-            node.plotX -=
-                (node.plotX - centerX) *
-                    gravitationalConstant /
-                    (node.mass * Math.sqrt(nodes.length));
-            node.plotY -=
-                (node.plotY - centerY) *
-                    gravitationalConstant /
-                    (node.mass * Math.sqrt(nodes.length));
+            var massTimesNodeCountSqrt = node.mass * nodeCountSqrt,
+                plotX = node.plotX || 0,
+                plotY = node.plotY || 0,
+                series = node.series,
+                parentNode = series.parentNode;
+            if (this.resolveSplitSeries(node) &&
+                parentNode &&
+                !node.isParentNode) {
+                centerX = parentNode.plotX || 0;
+                centerY = parentNode.plotY || 0;
+            }
+            else {
+                centerX = box.width / 2;
+                centerY = box.height / 2;
+            }
+            node.plotX = plotX - ((plotX - centerX) *
+                gravitationalConstant /
+                massTimesNodeCountSqrt);
+            node.plotY = plotY - ((plotY - centerY) *
+                gravitationalConstant /
+                massTimesNodeCountSqrt);
+            if (series.chart.hoverPoint === node &&
+                // If redrawHalo exists we know its a draggable series and any
+                // halo present should be redrawn to update its visual position
+                series.redrawHalo && series.halo) {
+                series.redrawHalo(node);
+            }
         }
     }
 }
@@ -7341,7 +7380,7 @@ var PackedBubbleIntegration = {
  *
  *  Networkgraph series
  *
- *  (c) 2010-2024 Paweł Fus
+ *  (c) 2010-2025 Paweł Fus
  *
  *  License: www.highcharts.com/license
  *
@@ -7544,7 +7583,7 @@ var EulerIntegration = {
  *
  *  Networkgraph series
  *
- *  (c) 2010-2024 Paweł Fus
+ *  (c) 2010-2025 Paweł Fus
  *
  *  License: www.highcharts.com/license
  *
@@ -7819,7 +7858,7 @@ var QuadTreeNode = /** @class */ (function () {
  *
  *  Networkgraph series
  *
- *  (c) 2010-2024 Paweł Fus
+ *  (c) 2010-2025 Paweł Fus
  *
  *  License: www.highcharts.com/license
  *
@@ -7967,7 +8006,7 @@ var QuadTree = /** @class */ (function () {
  *
  *  Networkgraph series
  *
- *  (c) 2010-2024 Paweł Fus
+ *  (c) 2010-2025 Paweł Fus
  *
  *  License: www.highcharts.com/license
  *
@@ -8524,7 +8563,7 @@ var ReingoldFruchtermanLayout = /** @class */ (function () {
 ;// ./code/es5/es-modules/Series/PackedBubble/PackedBubbleLayout.js
 /* *
  *
- *  (c) 2010-2024 Grzegorz Blachlinski, Sebastian Bochan
+ *  (c) 2010-2025 Grzegorz Blachlinski, Sebastian Bochan
  *
  *  License: www.highcharts.com/license
  *
@@ -8551,11 +8590,20 @@ var PackedBubbleLayout_extends = (undefined && undefined.__extends) || (function
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
+var PackedBubbleLayout_spreadArray = (undefined && undefined.__spreadArray) || function (to, from, pack) {
+    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
+        if (ar || !(i in from)) {
+            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+            ar[i] = from[i];
+        }
+    }
+    return to.concat(ar || Array.prototype.slice.call(from));
+};
 
 
 
 
-var PackedBubbleLayout_addEvent = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).addEvent, PackedBubbleLayout_pick = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).pick;
+var PackedBubbleLayout_addEvent = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).addEvent, PackedBubbleLayout_defined = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).defined, PackedBubbleLayout_pick = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).pick;
 /* *
  *
  *  Functions
@@ -8613,6 +8661,9 @@ var PackedBubbleLayout = /** @class */ (function (_super) {
             PackedBubbleLayout_addEvent(ChartClass, 'beforeRedraw', onChartBeforeRedraw);
             chartProto.getSelectedParentNodes = chartGetSelectedParentNodes;
         }
+        if (!chartProto.allParentNodes) {
+            chartProto.allParentNodes = [];
+        }
     };
     /* *
      *
@@ -8639,9 +8690,13 @@ var PackedBubbleLayout = /** @class */ (function (_super) {
             this.temperature <= 0;
     };
     PackedBubbleLayout.prototype.setCircularPositions = function () {
+        var _a;
         var layout = this,
             box = layout.box,
-            nodes = layout.nodes,
+            nodes = PackedBubbleLayout_spreadArray(PackedBubbleLayout_spreadArray([],
+            layout.nodes,
+            true), ((_a = layout === null || layout === void 0 ? void 0 : layout.chart) === null || _a === void 0 ? void 0 : _a.allParentNodes) || [],
+            true),
             nodesLength = nodes.length + 1,
             angle = 2 * Math.PI / nodesLength,
             radius = layout.options.initialPositionRadius;
@@ -8650,7 +8705,7 @@ var PackedBubbleLayout = /** @class */ (function (_super) {
             index = 0;
         for (var _i = 0, nodes_1 = nodes; _i < nodes_1.length; _i++) {
             var node = nodes_1[_i];
-            if (layout.options.splitSeries &&
+            if (this.resolveSplitSeries(node) &&
                 !node.isParentNode) {
                 centerX = node.series.parentNode.plotX;
                 centerY = node.series.parentNode.plotY;
@@ -8669,40 +8724,70 @@ var PackedBubbleLayout = /** @class */ (function (_super) {
         }
     };
     PackedBubbleLayout.prototype.repulsiveForces = function () {
+        var _a,
+            _b,
+            _c;
         var layout = this,
-            bubblePadding = layout.options.bubblePadding,
-            nodes = layout.nodes;
-        var force,
-            distanceR,
-            distanceXY;
-        nodes.forEach(function (node) {
+            options = layout.options,
+            k = layout.k,
+            _d = options.bubblePadding,
+            bubblePadding = _d === void 0 ? 0 : _d,
+            seriesInteraction = options.seriesInteraction,
+            nodes = PackedBubbleLayout_spreadArray(PackedBubbleLayout_spreadArray([],
+            layout.nodes,
+            true), ((_a = layout === null || layout === void 0 ? void 0 : layout.chart) === null || _a === void 0 ? void 0 : _a.allParentNodes) || [],
+            true);
+        for (var _i = 0, nodes_2 = nodes; _i < nodes_2.length; _i++) {
+            var node = nodes_2[_i];
+            var nodeSeries = node.series,
+                fixedPosition = node.fixedPosition,
+                paddedNodeRadius = ((((_b = node.marker) === null || _b === void 0 ? void 0 : _b.radius) || 0) +
+                    bubblePadding);
             node.degree = node.mass;
             node.neighbours = 0;
-            nodes.forEach(function (repNode) {
-                force = 0;
+            for (var _e = 0, nodes_3 = nodes; _e < nodes_3.length; _e++) {
+                var repNode = nodes_3[_e];
+                var repNodeSeries = repNode.series;
                 if (
                 // Node cannot repulse itself:
                 node !== repNode &&
-                    // Only close nodes affect each other:
                     // Not dragged:
-                    !node.fixedPosition &&
-                    (layout.options.seriesInteraction ||
-                        node.series === repNode.series)) {
-                    distanceXY = layout.getDistXY(node, repNode);
-                    distanceR = (layout.vectorLength(distanceXY) -
-                        (node.marker.radius +
-                            repNode.marker.radius +
-                            bubblePadding));
+                    !fixedPosition &&
+                    (seriesInteraction || nodeSeries === repNodeSeries) &&
+                    // Avoiding collision of parentNodes and parented points
+                    !(nodeSeries === repNodeSeries &&
+                        (repNode.isParentNode || node.isParentNode))) {
+                    var distanceXY = layout.getDistXY(node,
+                        repNode),
+                        distanceR = (layout.vectorLength(distanceXY) -
+                            (paddedNodeRadius + (((_c = repNode.marker) === null || _c === void 0 ? void 0 : _c.radius) || 0)));
+                    var forceTimesMass = void 0;
                     // TODO padding configurable
                     if (distanceR < 0) {
                         node.degree += 0.01;
-                        node.neighbours++;
-                        force = layout.repulsiveForce(-distanceR / Math.sqrt(node.neighbours), layout.k, node, repNode);
+                        forceTimesMass = (layout.repulsiveForce(-distanceR / Math.sqrt(++(node.neighbours)), k, node, repNode) *
+                            repNode.mass);
                     }
-                    layout.force('repulsive', node, force * repNode.mass, distanceXY, repNode, distanceR);
+                    layout.force('repulsive', node, forceTimesMass || 0, distanceXY, repNode, distanceR);
                 }
-            });
-        });
+            }
+        }
+    };
+    PackedBubbleLayout.prototype.resolveSplitSeries = function (node) {
+        var _a,
+            _b,
+            _c,
+            _d,
+            _e,
+            _f,
+            _g,
+            _h;
+        var specificSeriesOpt = (_c = (_b = (_a = node
+                .series) === null || _a === void 0 ? void 0 : _a.options) === null || _b === void 0 ? void 0 : _b.layoutAlgorithm) === null || _c === void 0 ? void 0 : _c.splitSeries;
+        return (!PackedBubbleLayout_defined(specificSeriesOpt) &&
+            ((_h = (_g = (_f = (_e = (_d = node.series.chart) === null || _d === void 0 ? void 0 : _d.options) === null || _e === void 0 ? void 0 : _e.plotOptions) === null || _f === void 0 ? void 0 : _f.packedbubble) === null || _g === void 0 ? void 0 : _g.layoutAlgorithm) === null || _h === void 0 ? void 0 : _h.splitSeries)) ||
+            specificSeriesOpt ||
+            false;
     };
     PackedBubbleLayout.prototype.applyLimitBox = function (node, box) {
         var layout = this,
@@ -8711,7 +8796,7 @@ var PackedBubbleLayout = /** @class */ (function (_super) {
             distanceR;
         // `parentNodeLimit` should be used together with seriesInteraction:
         // false
-        if (layout.options.splitSeries &&
+        if (this.resolveSplitSeries(node) &&
             !node.isParentNode &&
             layout.options.parentNodeLimit) {
             distanceXY = layout.getDistXY(node, node.series.parentNode);
@@ -8817,7 +8902,7 @@ var highcharts_SVGElement_commonjs_highcharts_SVGElement_commonjs2_highcharts_SV
  *
  *  Highcharts module with textPath functionality.
  *
- *  (c) 2009-2024 Torstein Honsi
+ *  (c) 2009-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -9070,7 +9155,7 @@ var TextPath = {
 ;// ./code/es5/es-modules/Series/PackedBubble/PackedBubbleSeries.js
 /* *
  *
- *  (c) 2010-2024 Grzegorz Blachlinski, Sebastian Bochan
+ *  (c) 2010-2025 Grzegorz Blachlinski, Sebastian Bochan
  *
  *  License: www.highcharts.com/license
  *
@@ -9098,7 +9183,7 @@ var PackedBubbleSeries_extends = (undefined && undefined.__extends) || (function
     };
 })();
 
-var PackedBubbleSeries_color = (highcharts_Color_commonjs_highcharts_Color_commonjs2_highcharts_Color_root_Highcharts_Color_default()).parse;
+var color = (highcharts_Color_commonjs_highcharts_Color_commonjs2_highcharts_Color_root_Highcharts_Color_default()).parse;
 
 
 
@@ -9326,7 +9411,7 @@ var PackedBubbleSeries = /** @class */ (function (_super) {
             parentMarkerOptions = {
                 radius: this.parentNodeRadius,
                 lineColor: this.color,
-                fillColor: PackedBubbleSeries_color(this.color).brighten(0.4).get()
+                fillColor: color(this.color).brighten(0.4).get()
             };
         if (layoutOptions.parentNodeOptions) {
             parentMarkerOptions = PackedBubbleSeries_merge(layoutOptions.parentNodeOptions.marker || {}, parentMarkerOptions);
@@ -9365,6 +9450,7 @@ var PackedBubbleSeries = /** @class */ (function (_super) {
                     isParentNode: true,
                     seriesIndex: this.index
                 });
+                this.chart.allParentNodes.push(parentNode);
             }
             if (this.parentNode) {
                 parentNode.plotX = this.parentNode.plotX;
@@ -9441,7 +9527,7 @@ var PackedBubbleSeries = /** @class */ (function (_super) {
             nodeMarker = this.layout.options.parentNodeOptions.marker,
             parentOptions = {
                 fill: (nodeMarker.fillColor ||
-                    PackedBubbleSeries_color(this.color).brighten(0.4).get()),
+                    color(this.color).brighten(0.4).get()),
                 opacity: nodeMarker.fillOpacity,
                 stroke: nodeMarker.lineColor || this.color,
                 'stroke-width': PackedBubbleSeries_pick(nodeMarker.lineWidth,
@@ -9578,7 +9664,9 @@ var PackedBubbleSeries = /** @class */ (function (_super) {
                 parentNodeLayout = this.parentNodeLayout;
             var distanceXY_1,
                 distanceR_1;
-            if (parentNodeLayout && layout_1.options.dragBetweenSeries) {
+            if (!point.isParentNode &&
+                parentNodeLayout &&
+                layout_1.options.dragBetweenSeries) {
                 parentNodeLayout.nodes.forEach(function (node) {
                     if (point && point.marker &&
                         node !== point.series.parentNode) {
@@ -10015,7 +10103,7 @@ highcharts_SeriesRegistry_commonjs_highcharts_SeriesRegistry_commonjs2_highchart
 ;// ./code/es5/es-modules/Series/Polygon/PolygonSeriesDefaults.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -10143,7 +10231,7 @@ var PolygonSeriesDefaults = {
 ;// ./code/es5/es-modules/Series/Polygon/PolygonSeries.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -10233,7 +10321,7 @@ highcharts_SeriesRegistry_commonjs_highcharts_SeriesRegistry_commonjs2_highchart
 ;// ./code/es5/es-modules/Core/Axis/RadialAxisDefaults.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  Extension for radial axes
  *
@@ -10360,7 +10448,7 @@ var RadialAxisDefaults = {
 ;// ./code/es5/es-modules/Core/Axis/RadialAxis.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -10370,11 +10458,11 @@ var RadialAxisDefaults = {
 
 
 
-var defaultOptions = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).defaultOptions;
+var RadialAxis_defaultOptions = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).defaultOptions;
 
 var RadialAxis_composed = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).composed, RadialAxis_noop = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).noop;
 
-var RadialAxis_addEvent = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).addEvent, RadialAxis_correctFloat = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).correctFloat, RadialAxis_defined = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).defined, RadialAxis_extend = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).extend, RadialAxis_fireEvent = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).fireEvent, isObject = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).isObject, RadialAxis_merge = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).merge, RadialAxis_pick = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).pick, RadialAxis_pushUnique = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).pushUnique, RadialAxis_relativeLength = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).relativeLength, RadialAxis_wrap = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).wrap;
+var RadialAxis_addEvent = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).addEvent, RadialAxis_correctFloat = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).correctFloat, RadialAxis_defined = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).defined, RadialAxis_extend = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).extend, RadialAxis_fireEvent = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).fireEvent, isObject = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).isObject, RadialAxis_merge = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).merge, RadialAxis_pick = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).pick, RadialAxis_pushUnique = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).pushUnique, RadialAxis_relativeLength = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).relativeLength, RadialAxis_splat = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).splat, RadialAxis_wrap = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).wrap;
 /* *
  *
  *  Composition
@@ -10464,9 +10552,7 @@ var RadialAxis;
                 _this.options.labels &&
                 _this.options.labels.allowOverlap !== true) {
                 return _this.tickPositions
-                    .map(function (pos) {
-                    return _this.ticks[pos] && _this.ticks[pos].label;
-                })
+                    .map(function (pos) { var _a; return (_a = _this.ticks[pos]) === null || _a === void 0 ? void 0 : _a.label; })
                     .filter(function (label) {
                     return Boolean(label);
                 });
@@ -10681,9 +10767,8 @@ var RadialAxis;
      */
     function getPlotLinePath(options) {
         var _this = this;
-        var center = this.pane.center, chart = this.chart, inverted = chart.inverted, reverse = options.reverse, background = this.pane.options.background ?
-                (this.pane.options.background[0] ||
-                    this.pane.options.background) :
+        var center = this.pane.center, chart = this.chart, inverted = chart.inverted, reverse = options.reverse, backgroundOption = this.pane.options.background, background = backgroundOption ?
+                RadialAxis_splat(backgroundOption)[0] :
                 {}, innerRadius = background.innerRadius || '0%', outerRadius = background.outerRadius || '100%', x1 = center[0] + chart.plotLeft, y1 = center[1] + chart.plotTop, height = this.height, isCrosshair = options.isCrosshair, paneInnerR = center[3] / 2;
         var value = options.value,
             innerRatio,
@@ -10872,7 +10957,7 @@ var RadialAxis;
             options = this.options,
             isHidden = chart.angular && this.isXAxis,
             pane = this.pane,
-            paneOptions = pane && pane.options;
+            paneOptions = pane === null || pane === void 0 ? void 0 : pane.options;
         if (!isHidden && pane && (chart.angular || chart.polar)) {
             var fullCircle = Math.PI * 2, 
                 // Start and end angle options are given in degrees relative to
@@ -10916,8 +11001,8 @@ var RadialAxis;
      * Remove label collector function on axis remove/update.
      */
     function onAxisDestroy() {
-        if (this.chart &&
-            this.chart.labelCollectors) {
+        var _a;
+        if ((_a = this.chart) === null || _a === void 0 ? void 0 : _a.labelCollectors) {
             var index = (this.labelCollector ?
                     this.chart.labelCollectors.indexOf(this.labelCollector) :
                     -1);
@@ -11234,18 +11319,18 @@ var RadialAxis;
         var defaultPolarOptions = {};
         if (angular) {
             if (!this.isXAxis) {
-                defaultPolarOptions = RadialAxis_merge(defaultOptions.yAxis, RadialAxis.radialDefaultOptions.radialGauge);
+                defaultPolarOptions = RadialAxis_merge(RadialAxis_defaultOptions.yAxis, RadialAxis.radialDefaultOptions.radialGauge);
             }
         }
         else if (polar) {
             defaultPolarOptions = this.horiz ?
-                RadialAxis_merge(defaultOptions.xAxis, RadialAxis.radialDefaultOptions.circular) :
+                RadialAxis_merge(RadialAxis_defaultOptions.xAxis, RadialAxis.radialDefaultOptions.circular) :
                 RadialAxis_merge(coll === 'xAxis' ?
-                    defaultOptions.xAxis :
-                    defaultOptions.yAxis, RadialAxis.radialDefaultOptions.radial);
+                    RadialAxis_defaultOptions.xAxis :
+                    RadialAxis_defaultOptions.yAxis, RadialAxis.radialDefaultOptions.radial);
         }
         if (inverted && coll === 'yAxis') {
-            defaultPolarOptions.stackLabels = isObject(defaultOptions.yAxis, true) ? defaultOptions.yAxis.stackLabels : {};
+            defaultPolarOptions.stackLabels = isObject(RadialAxis_defaultOptions.yAxis, true) ? RadialAxis_defaultOptions.yAxis.stackLabels : {};
             defaultPolarOptions.reversedStacks = true;
         }
         var options = this.options = RadialAxis_merge(defaultPolarOptions,
@@ -11292,7 +11377,7 @@ var RadialAxis;
 ;// ./code/es5/es-modules/Series/PolarComposition.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -11493,7 +11578,7 @@ function onChartCreateAxes() {
         this.pane = [];
     }
     this.options.pane = PolarComposition_splat(this.options.pane || {});
-    this.options.pane.forEach(function (paneOptions) {
+    PolarComposition_splat(this.userOptions.pane || {}).forEach(function (paneOptions) {
         new Pane_Pane(// eslint-disable-line no-new
         paneOptions, _this);
     }, this);
@@ -12494,7 +12579,7 @@ var highcharts_StackItem_commonjs_highcharts_StackItem_commonjs2_highcharts_Stac
 ;// ./code/es5/es-modules/Core/Axis/WaterfallAxis.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -12540,8 +12625,9 @@ var WaterfallAxis;
      * @private
      */
     function onAxisAfterBuildStacks() {
+        var _a;
         var axis = this,
-            stacks = axis.waterfall.stacks;
+            stacks = (_a = axis.waterfall) === null || _a === void 0 ? void 0 : _a.stacks;
         if (stacks) {
             stacks.changed = false;
             delete stacks.alreadyChanged;
@@ -12551,10 +12637,11 @@ var WaterfallAxis;
      * @private
      */
     function onAxisAfterRender() {
+        var _a;
         var axis = this,
             stackLabelOptions = axis.options.stackLabels;
-        if (stackLabelOptions && stackLabelOptions.enabled &&
-            axis.waterfall.stacks) {
+        if ((stackLabelOptions === null || stackLabelOptions === void 0 ? void 0 : stackLabelOptions.enabled) &&
+            ((_a = axis.waterfall) === null || _a === void 0 ? void 0 : _a.stacks)) {
             axis.waterfall.renderStackTotals();
         }
     }
@@ -12578,7 +12665,7 @@ var WaterfallAxis;
             if (serie.options.stacking) {
                 for (var _a = 0, axes_1 = axes; _a < axes_1.length; _a++) {
                     var axis = axes_1[_a];
-                    if (!axis.isXAxis) {
+                    if (!axis.isXAxis && axis.waterfall) {
                         axis.waterfall.stacks.changed = true;
                     }
                 }
@@ -12616,9 +12703,11 @@ var WaterfallAxis;
          * @function Highcharts.Axis#renderWaterfallStackTotals
          */
         Composition.prototype.renderStackTotals = function () {
+            var _a,
+                _b;
             var yAxis = this.axis,
-                waterfallStacks = yAxis.waterfall.stacks,
-                stackTotalGroup = (yAxis.stacking && yAxis.stacking.stackTotalGroup),
+                waterfallStacks = (_a = yAxis.waterfall) === null || _a === void 0 ? void 0 : _a.stacks,
+                stackTotalGroup = (_b = yAxis.stacking) === null || _b === void 0 ? void 0 : _b.stackTotalGroup,
                 dummyStackItem = new (highcharts_StackItem_commonjs_highcharts_StackItem_commonjs2_highcharts_StackItem_root_Highcharts_StackItem_default())(yAxis,
                 yAxis.options.stackLabels || {},
                 false, 0,
@@ -12655,7 +12744,7 @@ var WaterfallAxis;
 ;// ./code/es5/es-modules/Series/Waterfall/WaterfallPoint.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -12728,7 +12817,7 @@ var WaterfallPoint = /** @class */ (function (_super) {
 ;// ./code/es5/es-modules/Series/Waterfall/WaterfallSeriesDefaults.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -12935,7 +13024,7 @@ var WaterfallSeriesDefaults = {
 ;// ./code/es5/es-modules/Series/Waterfall/WaterfallSeries.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -13098,7 +13187,8 @@ var WaterfallSeries = /** @class */ (function (_super) {
     };
     // Draw columns' connector lines
     WaterfallSeries.prototype.getCrispPath = function () {
-        var _a;
+        var _a,
+            _b;
         var // Skip points where Y is not a number (#18636)
             data = this.data.filter(function (d) { return WaterfallSeries_isNumber(d.y); }),
             yAxis = this.yAxis,
@@ -13121,7 +13211,7 @@ var WaterfallSeries = /** @class */ (function (_super) {
             if (!box || !prevBox) {
                 continue;
             }
-            var prevStack = yAxis.waterfall.stacks[this.stackKey],
+            var prevStack = (_b = yAxis.waterfall) === null || _b === void 0 ? void 0 : _b.stacks[this.stackKey],
                 isPos = prevY > 0 ? -prevBox.height : 0;
             if (prevStack && prevBox && box) {
                 var prevStackX = prevStack[i - 1];
@@ -13268,7 +13358,7 @@ var WaterfallSeries = /** @class */ (function (_super) {
                             actualStackX.negTotal;
                         actualStackX.stackTotal = posTotal + negTotal;
                         statesLen = actualStackX.stackState.length;
-                        if (xPoint && xPoint.isIntermediateSum) {
+                        if (xPoint === null || xPoint === void 0 ? void 0 : xPoint.isIntermediateSum) {
                             calculateStackState(prevSum, actualSum, 0, prevSum);
                             prevSum = actualSum;
                             actualSum = seriesThreshold;
@@ -13277,7 +13367,7 @@ var WaterfallSeries = /** @class */ (function (_super) {
                             interSum ^= stackThreshold;
                             stackThreshold ^= interSum;
                         }
-                        else if (xPoint && xPoint.isSum) {
+                        else if (xPoint === null || xPoint === void 0 ? void 0 : xPoint.isSum) {
                             calculateStackState(seriesThreshold, totalYVal, statesLen, 0);
                             stackThreshold = seriesThreshold;
                         }
@@ -13304,14 +13394,13 @@ var WaterfallSeries = /** @class */ (function (_super) {
     // Extremes for a non-stacked series are recorded in processData.
     // In case of stacking, use Series.stackedYData to calculate extremes.
     WaterfallSeries.prototype.getExtremes = function () {
-        var stacking = this.options.stacking;
-        var yAxis,
-            waterfallStacks,
-            stackedYNeg,
+        var _a;
+        var stacking = this.options.stacking,
+            yAxis = this.yAxis,
+            waterfallStacks = (_a = yAxis.waterfall) === null || _a === void 0 ? void 0 : _a.stacks;
+        var stackedYNeg,
             stackedYPos;
-        if (stacking) {
-            yAxis = this.yAxis;
-            waterfallStacks = yAxis.waterfall.stacks;
+        if (stacking && waterfallStacks) {
             stackedYNeg = this.stackedYNeg = [];
             stackedYPos = this.stackedYPos = [];
             // The visible y range can be different when stacking is set to
@@ -13358,6 +13447,8 @@ WaterfallSeries_extend(WaterfallSeries.prototype, {
 });
 // Translate data points from raw values
 WaterfallSeries_addEvent(WaterfallSeries, 'afterColumnTranslate', function () {
+    var _a,
+        _b;
     var series = this,
         options = series.options,
         points = series.points,
@@ -13366,7 +13457,7 @@ WaterfallSeries_addEvent(WaterfallSeries, 'afterColumnTranslate', function () {
         halfMinPointLength = minPointLength / 2,
         threshold = options.threshold || 0,
         stacking = options.stacking,
-        actualStack = yAxis.waterfall.stacks[series.stackKey],
+        actualStack = (_a = yAxis.waterfall) === null || _a === void 0 ? void 0 : _a.stacks[series.stackKey],
         processedYData = series.getColumn('y',
         true);
     var previousIntermediate = threshold,
@@ -13455,7 +13546,7 @@ WaterfallSeries_addEvent(WaterfallSeries, 'afterColumnTranslate', function () {
                 box.y = yAxis.translate(yPos, false, true, false, true);
                 box.height = Math.abs(box.y -
                     yAxis.translate(hPos, false, true, false, true));
-                var dummyStackItem = yAxis.waterfall.dummyStackItem;
+                var dummyStackItem = (_b = yAxis.waterfall) === null || _b === void 0 ? void 0 : _b.dummyStackItem;
                 if (dummyStackItem) {
                     dummyStackItem.x = i;
                     dummyStackItem.label = actualStack[i].label;

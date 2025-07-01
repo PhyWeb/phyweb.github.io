@@ -1,9 +1,11 @@
 /**
- * @license Highcharts JS v@product.version@ (@product.date@)
+ * @license Highcharts JS v12.3.0 (2025-06-21)
  * @module highcharts/highcharts-3d
  * @requires highcharts
  *
  * 3D features for Highcharts JS
+ *
+ * (c) 2009-2025 Torstein Honsi
  *
  * License: www.highcharts.com/license
  */
@@ -22,7 +24,7 @@ import Pie3DSeries from '../Series/Pie3D/Pie3DSeries.js';
 import '../Series/Scatter3D/Scatter3DSeries.js';
 const G = Highcharts;
 // Compositions
-Area3DSeries.compose(G.seriesTypes.area);
+Area3DSeries.compose(G.Series.types.area);
 Axis3DComposition.compose(G.Axis, G.Tick);
 Chart3D.compose(G.Chart, G.Fx);
 Column3DComposition.compose(G.Series, StackItem);

@@ -200,6 +200,7 @@ function getTreeGridFromData(data, uniqueNames, numberOfSeries) {
 function onBeforeRender(e) {
     var chart = e.target, axes = chart.axes;
     axes.filter(function (axis) { return axis.type === 'treegrid'; }).forEach(function (axis) {
+        var _a;
         var options = axis.options || {}, labelOptions = options.labels, uniqueNames = axis.uniqueNames, max = chart.time.parse(options.max), 
         // Check whether any of series is rendering for the first
         // time, visibility has changed, or its data is dirty, and
@@ -225,10 +226,10 @@ function onBeforeRender(e) {
                 if (s.visible) {
                     // Push all data to array
                     seriesData.forEach(function (pointOptions) {
+                        var _a;
                         // For using keys, or when using primitive points,
                         // rebuild the data structure
-                        if (foundPrimitivePoint ||
-                            (s.options.keys && s.options.keys.length)) {
+                        if (foundPrimitivePoint || ((_a = s.options.keys) === null || _a === void 0 ? void 0 : _a.length)) {
                             pointOptions = s.pointClass.prototype
                                 .optionsToObject
                                 .call({ series: s }, pointOptions);
@@ -296,8 +297,8 @@ function onBeforeRender(e) {
                 getLevelOptions({
                     defaults: labelOptions,
                     from: 1,
-                    levels: labelOptions && labelOptions.levels,
-                    to: axis.treeGrid.tree && axis.treeGrid.tree.height
+                    levels: labelOptions === null || labelOptions === void 0 ? void 0 : labelOptions.levels,
+                    to: (_a = axis.treeGrid.tree) === null || _a === void 0 ? void 0 : _a.height
                 });
             // Setting initial collapsed nodes
             if (e.type === 'beforeRender') {
@@ -538,8 +539,9 @@ function wrapRedraw(proceed) {
     var axis = this, isTreeGrid = this.type === 'treegrid';
     if (isTreeGrid && axis.visible) {
         axis.tickPositions.forEach(function (pos) {
+            var _a;
             var tick = axis.ticks[pos];
-            if (tick.label && tick.label.attachedTreeGridEvents) {
+            if ((_a = tick.label) === null || _a === void 0 ? void 0 : _a.attachedTreeGridEvents) {
                 removeEvent(tick.label.element);
                 tick.label.attachedTreeGridEvents = false;
             }
@@ -693,10 +695,11 @@ var TreeGridAxisAdditions = /** @class */ (function () {
     TreeGridAxisAdditions.prototype.getTickPositions = function () {
         var axis = this.axis, roundedMin = Math.floor(axis.min / axis.tickInterval) * axis.tickInterval, roundedMax = Math.ceil(axis.max / axis.tickInterval) * axis.tickInterval;
         return Object.keys(axis.treeGrid.mapOfPosToGridNode || {}).reduce(function (arr, key) {
+            var _a;
             var pos = +key;
             if (pos >= roundedMin &&
                 pos <= roundedMax &&
-                !(axis.brokenAxis && axis.brokenAxis.isInAnyBreak(pos))) {
+                !((_a = axis.brokenAxis) === null || _a === void 0 ? void 0 : _a.isInAnyBreak(pos))) {
                 arr.push(pos);
             }
             return arr;

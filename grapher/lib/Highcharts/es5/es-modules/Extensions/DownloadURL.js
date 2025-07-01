@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2015-2024 Oystein Moseng
+ *  (c) 2015-2025 Oystein Moseng
  *
  *  License: www.highcharts.com/license
  *
@@ -17,6 +17,8 @@
  * */
 import H from '../Core/Globals.js';
 var isSafari = H.isSafari, win = H.win, doc = H.win.document;
+import U from '../Core/Utilities.js';
+var error = U.error;
 /* *
  *
  *  Constants
@@ -30,12 +32,15 @@ var domurl = win.URL || win.webkitURL || win;
  * */
 /**
  * Convert base64 dataURL to Blob if supported, otherwise returns undefined.
+ *
  * @private
  * @function Highcharts.dataURLtoBlob
+ *
  * @param {string} dataURL
- *        URL to convert
- * @return {string|undefined}
- *         Blob
+ * URL to convert.
+ *
+ * @return {string | undefined}
+ * Blob.
  */
 function dataURLtoBlob(dataURL) {
     var parts = dataURL
@@ -62,11 +67,11 @@ function dataURLtoBlob(dataURL) {
  *
  * @private
  * @function Highcharts.downloadURL
- * @param {string|global.URL} dataURL
- *        The dataURL/Blob to download
+ *
+ * @param {string | global.URL} dataURL
+ * The dataURL/Blob to download.
  * @param {string} filename
- *        The name of the resulting file (w/extension)
- * @return {void}
+ * The name of the resulting file (w/extension).
  */
 function downloadURL(dataURL, filename) {
     var nav = win.navigator, a = doc.createElement('a');
@@ -116,6 +121,33 @@ function downloadURL(dataURL, filename) {
         }
     }
 }
+/**
+ * Asynchronously downloads a script from a provided location.
+ *
+ * @private
+ * @function Highcharts.getScript
+ *
+ * @param {string} scriptLocation
+ * The location for the script to fetch.
+ */
+export function getScript(scriptLocation) {
+    return new Promise(function (resolve, reject) {
+        var head = doc.getElementsByTagName('head')[0], script = doc.createElement('script');
+        // Set type and location for the script
+        script.type = 'text/javascript';
+        script.src = scriptLocation;
+        // Resolve in case of a succesful script fetching
+        script.onload = function () {
+            resolve();
+        };
+        // Reject in case of fail
+        script.onerror = function () {
+            reject(error("Error loading script ".concat(scriptLocation)));
+        };
+        // Append the newly created script
+        head.appendChild(script);
+    });
+}
 /* *
  *
  *  Default Export
@@ -123,6 +155,7 @@ function downloadURL(dataURL, filename) {
  * */
 var DownloadURL = {
     dataURLtoBlob: dataURLtoBlob,
-    downloadURL: downloadURL
+    downloadURL: downloadURL,
+    getScript: getScript
 };
 export default DownloadURL;

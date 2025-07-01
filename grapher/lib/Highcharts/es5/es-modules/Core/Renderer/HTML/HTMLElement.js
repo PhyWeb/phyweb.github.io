@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -36,7 +36,7 @@ var __assign = (this && this.__assign) || function () {
 };
 import AST from './AST.js';
 import H from '../../Globals.js';
-var composed = H.composed;
+var composed = H.composed, isFirefox = H.isFirefox;
 import SVGElement from '../SVG/SVGElement.js';
 import U from '../../Utilities.js';
 var attr = U.attr, css = U.css, createElement = U.createElement, defined = U.defined, extend = U.extend, getAlignFactor = U.getAlignFactor, isNumber = U.isNumber, pInt = U.pInt, pushUnique = U.pushUnique;
@@ -49,10 +49,10 @@ var attr = U.attr, css = U.css, createElement = U.createElement, defined = U.def
  */
 function commonSetter(value, key, elem) {
     var _a;
-    var style = ((_a = this.div) === null || _a === void 0 ? void 0 : _a.style) || elem.style;
+    var style = (_a = this.div) === null || _a === void 0 ? void 0 : _a.style;
     SVGElement.prototype["".concat(key, "Setter")].call(this, value, key, elem);
     if (style) {
-        style[key] = value;
+        elem.style[key] = style[key] = value;
     }
 }
 /**
@@ -89,6 +89,10 @@ var decorateSVGGroup = function (g, container) {
         g.translateXSetter = g.translateYSetter = function (value, key) {
             g[key] = value;
             div_1.style[key === 'translateX' ? 'left' : 'top'] = "".concat(value, "px");
+            g.doTransform = true;
+        };
+        g.scaleXSetter = g.scaleYSetter = function (value, key) {
+            g[key] = value;
             g.doTransform = true;
         };
         g.opacitySetter = g.visibilitySetter = commonSetter;
@@ -135,17 +139,21 @@ var HTMLElement = /** @class */ (function (_super) {
      * */
     function HTMLElement(renderer, nodeName) {
         var _this = _super.call(this, renderer, nodeName) || this;
-        _this.css(__assign({ position: 'absolute' }, (renderer.styledMode ? {} : {
-            fontFamily: renderer.style.fontFamily,
-            fontSize: renderer.style.fontSize
-        })));
+        if (HTMLElement.useForeignObject) {
+            _this.foreignObject = renderer.createElement('foreignObject')
+                .attr({
+                zIndex: 2
+            });
+        }
+        else {
+            _this.css(__assign({ position: 'absolute' }, (renderer.styledMode ? {} : {
+                fontFamily: renderer.style.fontFamily,
+                fontSize: renderer.style.fontSize
+            })));
+        }
+        _this.element.style.whiteSpace = 'nowrap';
         return _this;
     }
-    /* *
-     *
-     *  Static Functions
-     *
-     * */
     /**
      * Compose
      * @private
@@ -197,6 +205,7 @@ var HTMLElement = /** @class */ (function (_super) {
         // Some properties require other properties to be set
         if ((styles === null || styles === void 0 ? void 0 : styles.textOverflow) === 'ellipsis') {
             styles.overflow = 'hidden';
+            styles.whiteSpace = 'nowrap';
         }
         if (styles === null || styles === void 0 ? void 0 : styles.lineClamp) {
             styles.display = '-webkit-box';
@@ -207,7 +216,7 @@ var HTMLElement = /** @class */ (function (_super) {
         // SVG natively supports setting font size as numbers. With HTML, the
         // font size should behave in the same way (#21624).
         if (isNumber(Number(styles === null || styles === void 0 ? void 0 : styles.fontSize))) {
-            styles.fontSize = styles.fontSize + 'px';
+            styles.fontSize += 'px';
         }
         extend(this.styles, styles);
         css(element, styles);
@@ -246,7 +255,7 @@ var HTMLElement = /** @class */ (function (_super) {
             this.alignOnAdd = true;
             return;
         }
-        var _b = this, element = _b.element, renderer = _b.renderer, rotation = _b.rotation, rotationOriginX = _b.rotationOriginX, rotationOriginY = _b.rotationOriginY, scaleX = _b.scaleX, scaleY = _b.scaleY, styles = _b.styles, _c = _b.textAlign, textAlign = _c === void 0 ? 'left' : _c, textWidth = _b.textWidth, _d = _b.translateX, translateX = _d === void 0 ? 0 : _d, _e = _b.translateY, translateY = _e === void 0 ? 0 : _e, _f = _b.x, x = _f === void 0 ? 0 : _f, _g = _b.y, y = _g === void 0 ? 0 : _g, _h = styles.display, display = _h === void 0 ? 'block' : _h, whiteSpace = styles.whiteSpace;
+        var _b = this, element = _b.element, foreignObject = _b.foreignObject, oldTextWidth = _b.oldTextWidth, renderer = _b.renderer, rotation = _b.rotation, rotationOriginX = _b.rotationOriginX, rotationOriginY = _b.rotationOriginY, scaleX = _b.scaleX, scaleY = _b.scaleY, _c = _b.styles, _d = _c.display, display = _d === void 0 ? 'inline-block' : _d, whiteSpace = _c.whiteSpace, _e = _b.textAlign, textAlign = _e === void 0 ? 'left' : _e, textWidth = _b.textWidth, _f = _b.translateX, translateX = _f === void 0 ? 0 : _f, _g = _b.translateY, translateY = _g === void 0 ? 0 : _g, _h = _b.x, x = _h === void 0 ? 0 : _h, _j = _b.y, y = _j === void 0 ? 0 : _j;
         // Get the pixel length of the text
         var getTextPxLength = function () {
             if (_this.textPxLength) {
@@ -261,10 +270,12 @@ var HTMLElement = /** @class */ (function (_super) {
             return element.offsetWidth;
         };
         // Apply translate
-        css(element, {
-            marginLeft: "".concat(translateX, "px"),
-            marginTop: "".concat(translateY, "px")
-        });
+        if (!foreignObject) {
+            css(element, {
+                marginLeft: "".concat(translateX, "px"),
+                marginTop: "".concat(translateY, "px")
+            });
+        }
         if (element.tagName === 'SPAN') {
             var currentTextTransform = [
                 rotation,
@@ -278,25 +289,43 @@ var HTMLElement = /** @class */ (function (_super) {
             // avoid the getTextPxLength function using elem.offsetWidth.
             // Calling offsetWidth affects rendering time as it forces layout
             // (#7656).
-            if (textWidth !== this.oldTextWidth) { // #983, #1254
-                var textPxLength = getTextPxLength(), textWidthNum = textWidth || 0;
-                if (((textWidthNum > this.oldTextWidth) ||
-                    textPxLength > textWidthNum) && (
+            if (textWidth !== oldTextWidth) { // #983, #1254
+                var textPxLength = getTextPxLength(), textWidthNum = textWidth || 0, willOverWrap = element.style.textOverflow === '' &&
+                    element.style.webkitLineClamp;
+                if ((textWidthNum > oldTextWidth ||
+                    textPxLength > textWidthNum ||
+                    willOverWrap) && (
                 // Only set the width if the text is able to word-wrap,
                 // or text-overflow is ellipsis (#9537)
-                /[ \-]/.test(element.textContent || element.innerText) ||
+                /[\-\s\u00AD]/.test(element.textContent || element.innerText) ||
                     element.style.textOverflow === 'ellipsis')) {
+                    var usePxWidth = rotation || scaleX ||
+                        textPxLength > textWidthNum ||
+                        // Set width to prevent over-wrapping (#22609)
+                        willOverWrap;
                     css(element, {
-                        width: ((textPxLength > textWidthNum) ||
-                            rotation ||
-                            scaleX) ?
-                            textWidth + 'px' :
-                            'auto', // #16261
+                        width: usePxWidth && isNumber(textWidth) ?
+                            textWidth + 'px' : 'auto', // #16261
                         display: display,
                         whiteSpace: whiteSpace || 'normal' // #3331
                     });
                     this.oldTextWidth = textWidth;
                 }
+            }
+            if (foreignObject) {
+                css(element, {
+                    // Inline block must be set before we can read the offset
+                    // width
+                    display: 'inline-block',
+                    verticalAlign: 'top'
+                });
+                // In many cases (Firefox always, others on title layout) we
+                // need the foreign object to have a larger width and height
+                // than its content, in order to read its content's size
+                foreignObject.attr({
+                    width: renderer.width,
+                    height: renderer.height
+                });
             }
             // Do the calculations and DOM access only if properties changed
             if (currentTextTransform !== this.cTT) {
@@ -304,9 +333,16 @@ var HTMLElement = /** @class */ (function (_super) {
                 // Renderer specific handling of span rotation, but only if we
                 // have something to update.
                 if (defined(rotation) &&
+                    !foreignObject &&
                     ((rotation !== (this.oldRotation || 0)) ||
                         (textAlign !== this.oldAlign))) {
-                    this.setSpanRotation(rotation, parentPadding, parentPadding);
+                    // CSS transform and transform-origin both supported without
+                    // prefix since Firefox 16 (2012), IE 10 (2012), Chrome 36
+                    // (2014), Safari 9 (2015).;
+                    css(element, {
+                        transform: "rotate(".concat(rotation, "deg)"),
+                        transformOrigin: "".concat(parentPadding, "% ").concat(parentPadding, "px")
+                    });
                 }
                 this.getSpanCorrection(
                 // Avoid elem.offsetWidth if we can, it affects rendering
@@ -317,34 +353,45 @@ var HTMLElement = /** @class */ (function (_super) {
                     element.offsetWidth), baseline, getAlignFactor(textAlign));
             }
             // Apply position with correction and rotation origin
-            var _j = this, _k = _j.xCorr, xCorr = _k === void 0 ? 0 : _k, _l = _j.yCorr, yCorr = _l === void 0 ? 0 : _l, rotOriginX = (rotationOriginX !== null && rotationOriginX !== void 0 ? rotationOriginX : x) - xCorr - x - parentPadding, rotOriginY = (rotationOriginY !== null && rotationOriginY !== void 0 ? rotationOriginY : y) - yCorr - y - parentPadding, styles_1 = {
+            var _k = this, _l = _k.xCorr, xCorr = _l === void 0 ? 0 : _l, _m = _k.yCorr, yCorr = _m === void 0 ? 0 : _m, rotOriginX = (rotationOriginX !== null && rotationOriginX !== void 0 ? rotationOriginX : x) - xCorr - x - parentPadding, rotOriginY = (rotationOriginY !== null && rotationOriginY !== void 0 ? rotationOriginY : y) - yCorr - y - parentPadding, styles = {
                 left: "".concat(x + xCorr, "px"),
                 top: "".concat(y + yCorr, "px"),
                 textAlign: textAlign,
                 transformOrigin: "".concat(rotOriginX, "px ").concat(rotOriginY, "px")
             };
             if (scaleX || scaleY) {
-                styles_1.transform = "scale(".concat(scaleX !== null && scaleX !== void 0 ? scaleX : 1, ",").concat(scaleY !== null && scaleY !== void 0 ? scaleY : 1, ")");
+                styles.transform = "scale(".concat(scaleX !== null && scaleX !== void 0 ? scaleX : 1, ",").concat(scaleY !== null && scaleY !== void 0 ? scaleY : 1, ")");
             }
-            css(element, styles_1);
+            // Move the foreign object
+            if (foreignObject) {
+                _super.prototype.updateTransform.call(this);
+                if (isNumber(x) && isNumber(y)) {
+                    foreignObject.attr({
+                        x: x + xCorr,
+                        y: y + yCorr,
+                        width: element.offsetWidth + 3,
+                        height: element.offsetHeight,
+                        'transform-origin': element
+                            .getAttribute('transform-origin') || '0 0'
+                    });
+                    // Reset, otherwise lineClamp will not work
+                    css(element, { display: display, textAlign: textAlign });
+                }
+                else if (isFirefox) {
+                    foreignObject.attr({
+                        width: 0,
+                        height: 0
+                    });
+                }
+            }
+            else {
+                css(element, styles);
+            }
             // Record current text transform
             this.cTT = currentTextTransform;
             this.oldRotation = rotation;
             this.oldAlign = textAlign;
         }
-    };
-    /**
-     * Set the rotation of an individual HTML span.
-     * @private
-     */
-    HTMLElement.prototype.setSpanRotation = function (rotation, originX, originY) {
-        // CSS transform and transform-origin both supported without prefix
-        // since Firefox 16 (2012), IE 10 (2012), Chrome 36 (2014), Safari 9
-        // (2015).;
-        css(this.element, {
-            transform: "rotate(".concat(rotation, "deg)"),
-            transformOrigin: "".concat(originX, "% ").concat(originY, "px")
-        });
     };
     /**
      * Add the element to a group wrapper. For HTML elements, a parallel div
@@ -353,31 +400,47 @@ var HTMLElement = /** @class */ (function (_super) {
      * @private
      */
     HTMLElement.prototype.add = function (parentGroup) {
-        var container = this.renderer.box
-            .parentNode, parents = [];
-        var div;
-        this.parentGroup = parentGroup;
-        // Create a parallel divs to hold the HTML elements
-        if (parentGroup) {
-            div = parentGroup.div;
-            if (!div) {
-                // Read the parent chain into an array and read from top
-                // down
-                var svgGroup = parentGroup;
-                while (svgGroup) {
-                    parents.push(svgGroup);
-                    // Move up to the next parent group
-                    svgGroup = svgGroup.parentGroup;
-                }
-                // Decorate each of the ancestor group elements with a parallel
-                // div that reflects translation and styling
-                for (var _i = 0, _a = parents.reverse(); _i < _a.length; _i++) {
-                    var parentGroup_1 = _a[_i];
-                    div = decorateSVGGroup(parentGroup_1, container);
+        var _a = this, foreignObject = _a.foreignObject, renderer = _a.renderer, container = renderer.box.parentNode, parents = [];
+        // Foreign object
+        if (foreignObject) {
+            foreignObject.add(parentGroup);
+            _super.prototype.add.call(this, 
+            // Create a body inside the foreignObject
+            renderer.createElement('body')
+                .attr({ xmlns: 'http://www.w3.org/1999/xhtml' })
+                .css({
+                background: 'transparent',
+                // 3px is to avoid clipping on the right
+                margin: '0 3px 0 0' // For export
+            })
+                .add(foreignObject));
+            // Add span next to the SVG
+        }
+        else {
+            var div = void 0;
+            this.parentGroup = parentGroup;
+            // Create a parallel divs to hold the HTML elements
+            if (parentGroup) {
+                div = parentGroup.div;
+                if (!div) {
+                    // Read the parent chain into an array and read from top
+                    // down
+                    var svgGroup = parentGroup;
+                    while (svgGroup) {
+                        parents.push(svgGroup);
+                        // Move up to the next parent group
+                        svgGroup = svgGroup.parentGroup;
+                    }
+                    // Decorate each of the ancestor group elements with a
+                    // parallel div that reflects translation and styling
+                    for (var _i = 0, _b = parents.reverse(); _i < _b.length; _i++) {
+                        var parentGroup_1 = _b[_i];
+                        div = decorateSVGGroup(parentGroup_1, container);
+                    }
                 }
             }
+            (div || container).appendChild(this.element);
         }
-        (div || container).appendChild(this.element);
         this.added = true;
         if (this.alignOnAdd) {
             this.updateTransform();

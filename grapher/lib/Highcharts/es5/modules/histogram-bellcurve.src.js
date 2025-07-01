@@ -1,9 +1,9 @@
 /**
- * @license Highcharts JS v12.1.2 (2025-01-09)
+ * @license Highcharts JS v12.3.0 (2025-06-21)
  * @module highcharts/modules/histogram-bellcurve
  * @requires highcharts
  *
- * (c) 2010-2024 Highsoft AS
+ * (c) 2010-2025 Highsoft AS
  * Author: Sebastian Domas
  *
  * License: www.highcharts.com/license
@@ -22,17 +22,17 @@ return /******/ (function() { // webpackBootstrap
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 820:
-/***/ (function(module) {
-
-module.exports = __WEBPACK_EXTERNAL_MODULE__820__;
-
-/***/ }),
-
 /***/ 512:
 /***/ (function(module) {
 
 module.exports = __WEBPACK_EXTERNAL_MODULE__512__;
+
+/***/ }),
+
+/***/ 820:
+/***/ (function(module) {
+
+module.exports = __WEBPACK_EXTERNAL_MODULE__820__;
 
 /***/ }),
 
@@ -253,7 +253,7 @@ var DerivedComposition;
 ;// ./code/es5/es-modules/Series/Histogram/HistogramSeriesDefaults.js
 /* *
  *
- *  (c) 2010-2024 Highsoft AS
+ *  (c) 2010-2025 Highsoft AS
  *  Author: Sebastian Domas
  *
  *  License: www.highcharts.com/license
@@ -347,7 +347,7 @@ var highcharts_SeriesRegistry_commonjs_highcharts_SeriesRegistry_commonjs2_highc
 ;// ./code/es5/es-modules/Series/Histogram/HistogramSeries.js
 /* *
  *
- *  (c) 2010-2024 Highsoft AS
+ *  (c) 2010-2025 Highsoft AS
  *  Author: Sebastian Domas
  *
  *  License: www.highcharts.com/license
@@ -533,7 +533,7 @@ highcharts_SeriesRegistry_commonjs_highcharts_SeriesRegistry_commonjs2_highchart
 ;// ./code/es5/es-modules/Series/Bellcurve/BellcurveSeriesDefaults.js
 /* *
  *
- *  (c) 2010-2024 Highsoft AS
+ *  (c) 2010-2025 Highsoft AS
  *
  *  Author: Sebastian Domas
  *
@@ -660,7 +660,7 @@ var BellcurveSeriesDefaults = {
 ;// ./code/es5/es-modules/Series/Bellcurve/BellcurveSeries.js
 /* *
  *
- *  (c) 2010-2024 Highsoft AS
+ *  (c) 2010-2025 Highsoft AS
  *
  *  Author: Sebastian Domas
  *

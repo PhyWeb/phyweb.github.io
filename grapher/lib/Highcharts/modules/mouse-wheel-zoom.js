@@ -1,5 +1,5 @@
 !/**
- * Highcharts JS v12.1.2 (2025-01-09)
+ * Highcharts JS v12.3.0 (2025-06-21)
  * @module highcharts/modules/mouse-wheel-zoom
  * @requires highcharts
  *

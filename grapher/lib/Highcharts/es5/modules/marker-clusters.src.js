@@ -1,11 +1,11 @@
 /**
- * @license Highcharts JS v12.1.2 (2025-01-09)
+ * @license Highcharts JS v12.3.0 (2025-06-21)
  * @module highcharts/modules/marker-clusters
  * @requires highcharts
  *
  * Marker clusters module for Highcharts
  *
- * (c) 2010-2024 Wojciech Chmiel
+ * (c) 2010-2025 Wojciech Chmiel
  *
  * License: www.highcharts.com/license
  */
@@ -102,7 +102,7 @@ var highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default 
  *
  *  Marker clusters module.
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  Author: Wojciech Chmiel
  *
@@ -436,10 +436,136 @@ var MarkerClusterDefaults = {
 };
 /* harmony default export */ var MarkerClusters_MarkerClusterDefaults = (MarkerClusterDefaults);
 
+;// ./code/es5/es-modules/Data/ColumnUtils.js
+/* *
+ *
+ *  (c) 2020-2025 Highsoft AS
+ *
+ *  License: www.highcharts.com/license
+ *
+ *  !!!!!!! SOURCE GETS TRANSPILED BY TYPESCRIPT. EDIT TS FILE ONLY. !!!!!!!
+ *
+ *  Authors:
+ *  - Dawid Dragula
+ *
+ * */
+var __spreadArray = (undefined && undefined.__spreadArray) || function (to, from, pack) {
+    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
+        if (ar || !(i in from)) {
+            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+            ar[i] = from[i];
+        }
+    }
+    return to.concat(ar || Array.prototype.slice.call(from));
+};
+/**
+ * Utility functions for columns that can be either arrays or typed arrays.
+ * @private
+ */
+var ColumnUtils;
+(function (ColumnUtils) {
+    /* *
+    *
+    *  Declarations
+    *
+    * */
+    /* *
+    *
+    * Functions
+    *
+    * */
+    /**
+     * Sets the length of the column array.
+     *
+     * @param {DataTable.Column} column
+     * Column to be modified.
+     *
+     * @param {number} length
+     * New length of the column.
+     *
+     * @param {boolean} asSubarray
+     * If column is a typed array, return a subarray instead of a new array. It
+     * is faster `O(1)`, but the entire buffer will be kept in memory until all
+     * views to it are destroyed. Default is `false`.
+     *
+     * @return {DataTable.Column}
+     * Modified column.
+     *
+     * @private
+     */
+    function setLength(column, length, asSubarray) {
+        if (Array.isArray(column)) {
+            column.length = length;
+            return column;
+        }
+        return column[asSubarray ? 'subarray' : 'slice'](0, length);
+    }
+    ColumnUtils.setLength = setLength;
+    /**
+     * Splices a column array.
+     *
+     * @param {DataTable.Column} column
+     * Column to be modified.
+     *
+     * @param {number} start
+     * Index at which to start changing the array.
+     *
+     * @param {number} deleteCount
+     * An integer indicating the number of old array elements to remove.
+     *
+     * @param {boolean} removedAsSubarray
+     * If column is a typed array, return a subarray instead of a new array. It
+     * is faster `O(1)`, but the entire buffer will be kept in memory until all
+     * views to it are destroyed. Default is `true`.
+     *
+     * @param {Array<number>|TypedArray} items
+     * The elements to add to the array, beginning at the start index. If you
+     * don't specify any elements, `splice()` will only remove elements from the
+     * array.
+     *
+     * @return {SpliceResult}
+     * Object containing removed elements and the modified column.
+     *
+     * @private
+     */
+    function splice(column, start, deleteCount, removedAsSubarray, items) {
+        if (items === void 0) { items = []; }
+        if (Array.isArray(column)) {
+            if (!Array.isArray(items)) {
+                items = Array.from(items);
+            }
+            return {
+                removed: column.splice.apply(column, __spreadArray([start, deleteCount], items, false)),
+                array: column
+            };
+        }
+        var Constructor = Object.getPrototypeOf(column)
+                .constructor;
+        var removed = column[removedAsSubarray ? 'subarray' : 'slice'](start,
+            start + deleteCount);
+        var newLength = column.length - deleteCount + items.length;
+        var result = new Constructor(newLength);
+        result.set(column.subarray(0, start), 0);
+        result.set(items, start);
+        result.set(column.subarray(start + deleteCount), start + items.length);
+        return {
+            removed: removed,
+            array: result
+        };
+    }
+    ColumnUtils.splice = splice;
+})(ColumnUtils || (ColumnUtils = {}));
+/* *
+ *
+ *  Default Export
+ *
+ * */
+/* harmony default export */ var Data_ColumnUtils = (ColumnUtils);
+
 ;// ./code/es5/es-modules/Data/DataTableCore.js
 /* *
  *
- *  (c) 2009-2024 Highsoft AS
+ *  (c) 2009-2025 Highsoft AS
  *
  *  License: www.highcharts.com/license
  *
@@ -453,7 +579,9 @@ var MarkerClusterDefaults = {
  * */
 
 
-var fireEvent = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).fireEvent, isArray = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).isArray, objectEach = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).objectEach, uniqueKey = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).uniqueKey;
+var setLength = Data_ColumnUtils.setLength, splice = Data_ColumnUtils.splice;
+
+var fireEvent = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).fireEvent, objectEach = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).objectEach, uniqueKey = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).uniqueKey;
 /* *
  *
  *  Class
@@ -499,7 +627,7 @@ var DataTableCore = /** @class */ (function () {
         this.autoId = !options.id;
         this.columns = {};
         /**
-         * ID of the table for indentification purposes.
+         * ID of the table for identification purposes.
          *
          * @name Highcharts.DataTable#id
          * @type {string}
@@ -528,12 +656,42 @@ var DataTableCore = /** @class */ (function () {
      * @param {number} rowCount The new row count.
      */
     DataTableCore.prototype.applyRowCount = function (rowCount) {
+        var _this = this;
         this.rowCount = rowCount;
-        objectEach(this.columns, function (column) {
-            if (isArray(column)) { // Not on typed array
-                column.length = rowCount;
+        objectEach(this.columns, function (column, columnName) {
+            if (column.length !== rowCount) {
+                _this.columns[columnName] = setLength(column, rowCount);
             }
         });
+    };
+    /**
+     * Delete rows. Simplified version of the full
+     * `DataTable.deleteRows` method.
+     *
+     * @param {number} rowIndex
+     * The start row index
+     *
+     * @param {number} [rowCount=1]
+     * The number of rows to delete
+     *
+     * @return {void}
+     *
+     * @emits #afterDeleteRows
+     */
+    DataTableCore.prototype.deleteRows = function (rowIndex, rowCount) {
+        var _this = this;
+        if (rowCount === void 0) { rowCount = 1; }
+        if (rowCount > 0 && rowIndex < this.rowCount) {
+            var length_1 = 0;
+            objectEach(this.columns, function (column, columnName) {
+                _this.columns[columnName] =
+                    splice(column, rowIndex, rowCount).array;
+                length_1 = column.length;
+            });
+            this.rowCount = length_1;
+        }
+        fireEvent(this, 'afterDeleteRows', { rowIndex: rowIndex, rowCount: rowCount });
+        this.versionTag = uniqueKey();
     };
     /**
      * Fetches the given column by the canonical column name. Simplified version
@@ -595,7 +753,7 @@ var DataTableCore = /** @class */ (function () {
      * @param {Highcharts.DataTableColumn} [column]
      * Values to set in the column.
      *
-     * @param {number} [rowIndex=0]
+     * @param {number} [rowIndex]
      * Index of the first row to change. (Default: 0)
      *
      * @param {Record<string, (boolean|number|string|null|undefined)>} [eventDetail]
@@ -611,15 +769,16 @@ var DataTableCore = /** @class */ (function () {
         this.setColumns((_a = {}, _a[columnName] = column, _a), rowIndex, eventDetail);
     };
     /**
-     * * Sets cell values for multiple columns. Will insert new columns, if not
-     * found. Simplified version of the full `DataTable.setColumns`, limited to
-     * full replacement of the columns (undefined `rowIndex`).
+     * Sets cell values for multiple columns. Will insert new columns, if not
+     * found. Simplified version of the full `DataTableCore.setColumns`, limited
+     * to full replacement of the columns (undefined `rowIndex`).
      *
      * @param {Highcharts.DataTableColumnCollection} columns
      * Columns as a collection, where the keys are the column names.
      *
      * @param {number} [rowIndex]
-     * Index of the first row to change. Keep undefined to reset.
+     * Index of the first row to change. Ignored in the `DataTableCore`, as it
+     * always replaces the full column.
      *
      * @param {Record<string, (boolean|number|string|null|undefined)>} [eventDetail]
      * Custom information for pending events.
@@ -649,7 +808,7 @@ var DataTableCore = /** @class */ (function () {
      * Cell values to set.
      *
      * @param {number} [rowIndex]
-     * Index of the row to set. Leave `undefind` to add as a new row.
+     * Index of the row to set. Leave `undefined` to add as a new row.
      *
      * @param {boolean} [insert]
      * Whether to insert the row at the given index, or to overwrite the row.
@@ -668,7 +827,7 @@ var DataTableCore = /** @class */ (function () {
                     (eventDetail === null || eventDetail === void 0 ? void 0 : eventDetail.addColumns) !== false && new Array(indexRowCount);
             if (column) {
                 if (insert) {
-                    column.splice(rowIndex, 0, cellValue);
+                    column = splice(column, rowIndex, 0, true, [cellValue]).array;
                 }
                 else {
                     column[rowIndex] = cellValue;
@@ -698,8 +857,11 @@ var DataTableCore = /** @class */ (function () {
  *
  * */
 /**
+ * A typed array.
+ * @typedef {Int8Array|Uint8Array|Uint8ClampedArray|Int16Array|Uint16Array|Int32Array|Uint32Array|Float32Array|Float64Array} Highcharts.TypedArray
+ * //**
  * A column of values in a data table.
- * @typedef {Array<boolean|null|number|string|undefined>} Highcharts.DataTableColumn
+ * @typedef {Array<boolean|null|number|string|undefined>|Highcharts.TypedArray} Highcharts.DataTableColumn
  */ /**
 * A collection of data table columns defined by a object where the key is the
 * column name and the value is an array of the column values.
@@ -728,7 +890,7 @@ var DataTableCore = /** @class */ (function () {
  *
  *  Marker clusters module.
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  Author: Wojciech Chmiel
  *
@@ -744,7 +906,7 @@ var animObject = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highc
 
 var clusterDefaults = MarkerClusters_MarkerClusterDefaults.cluster;
 
-var addEvent = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).addEvent, defined = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).defined, error = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).error, MarkerClusterScatter_isArray = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).isArray, isFunction = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).isFunction, isObject = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).isObject, isNumber = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).isNumber, merge = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).merge, MarkerClusterScatter_objectEach = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).objectEach, relativeLength = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).relativeLength, syncTimeout = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).syncTimeout;
+var addEvent = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).addEvent, defined = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).defined, error = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).error, isArray = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).isArray, isFunction = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).isFunction, isObject = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).isObject, isNumber = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).isNumber, merge = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).merge, MarkerClusterScatter_objectEach = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).objectEach, relativeLength = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).relativeLength, syncTimeout = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).syncTimeout;
 /* *
  *
  *  Constants
@@ -1682,7 +1844,7 @@ function seriesGetClusteredData(groupedData, options) {
                 });
                 if (pointUserOptions &&
                     typeof pointUserOptions === 'object' &&
-                    !MarkerClusterScatter_isArray(pointUserOptions)) {
+                    !isArray(pointUserOptions)) {
                     pointOptions = merge(pointUserOptions, { x: point.x, y: point.y });
                 }
                 else {
@@ -1883,7 +2045,7 @@ function seriesIsValidGroupedDataObject(groupedData) {
     }
     MarkerClusterScatter_objectEach(groupedData, function (elem) {
         result = true;
-        if (!MarkerClusterScatter_isArray(elem) || !elem.length) {
+        if (!isArray(elem) || !elem.length) {
             result = false;
             return;
         }
@@ -2048,7 +2210,7 @@ var MarkerClusterScatter = {
  *
  *  Marker clusters module.
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  Author: Wojciech Chmiel
  *
@@ -2234,7 +2396,7 @@ var MarkerClusters = {
  *
  *  Marker clusters module.
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  Author: Wojciech Chmiel
  *

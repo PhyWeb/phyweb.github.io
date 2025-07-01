@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -90,10 +90,12 @@ var Pointer = /** @class */ (function () {
      * Currently hovered points
      */
     Pointer.prototype.applyInactiveState = function (points) {
-        var activeSeries = [], series;
+        var _this = this;
+        if (points === void 0) { points = []; }
+        var activeSeries = [];
         // Get all active series from the hovered points
-        (points || []).forEach(function (item) {
-            series = item.series;
+        points.forEach(function (item) {
+            var series = item.series;
             // Include itself
             activeSeries.push(series);
             // Include parent series
@@ -102,22 +104,28 @@ var Pointer = /** @class */ (function () {
             }
             // Include all child series
             if (series.linkedSeries) {
-                activeSeries = activeSeries.concat(series.linkedSeries);
+                activeSeries.push.apply(activeSeries, series.linkedSeries);
             }
             // Include navigator series
             if (series.navigatorSeries) {
                 activeSeries.push(series.navigatorSeries);
             }
+            // Include boosed series when they share markerGroup
+            if (series.boosted && series.markerGroup) {
+                activeSeries.push.apply(activeSeries, _this.chart.series.filter(function (otherSeries) {
+                    return otherSeries.markerGroup === series.markerGroup;
+                }));
+            }
         });
         // Now loop over all series, filtering out active series
-        this.chart.series.forEach(function (inactiveSeries) {
-            if (activeSeries.indexOf(inactiveSeries) === -1) {
+        this.chart.series.forEach(function (series) {
+            if (activeSeries.indexOf(series) === -1) {
                 // Inactive series
-                inactiveSeries.setState('inactive', true);
+                series.setState('inactive', true);
             }
-            else if (inactiveSeries.options.inactiveOtherPoints) {
+            else if (series.options.inactiveOtherPoints) {
                 // Active series, but other points should be inactivated
-                inactiveSeries.setAllPointsToState('inactive');
+                series.setAllPointsToState('inactive');
             }
         });
     };
@@ -220,8 +228,7 @@ var Pointer = /** @class */ (function () {
             });
             var _d = this.getSelectionMarkerAttrs(chartX, chartY), shapeType = _d.shapeType, attrs = _d.attrs;
             // Make a selection
-            if ((chart.hasCartesianSeries || chart.mapView) &&
-                this.hasZoom &&
+            if (this.hasZoom &&
                 clickedInside &&
                 !panKeyPressed) {
                 if (!selectionMarker) {
@@ -420,7 +427,7 @@ var Pointer = /** @class */ (function () {
                 chartY: y + yAxis.pos
             };
         }
-        if (shapeArgs && shapeArgs.x && shapeArgs.y) {
+        if ((shapeArgs === null || shapeArgs === void 0 ? void 0 : shapeArgs.x) && shapeArgs.y) {
             // E.g. pies do not have axes
             return {
                 chartX: shapeArgs.x,
@@ -543,7 +550,7 @@ var Pointer = /** @class */ (function () {
             existingHoverPoint :
             this.findNearestKDPoint(searchSeries, shared, e);
         // Assign hover series
-        hoverSeries = hoverPoint && hoverPoint.series;
+        hoverSeries = hoverPoint === null || hoverPoint === void 0 ? void 0 : hoverPoint.series;
         // If we have a hoverPoint, assign hoverPoints.
         if (hoverPoint) {
             // When tooltip is shared, it displays more than one point
@@ -554,8 +561,11 @@ var Pointer = /** @class */ (function () {
                 });
                 // Get all points with the same x value as the hoverPoint
                 searchSeries.forEach(function (s) {
+                    var _a;
+                    var nullInteraction = (_a = s.options) === null || _a === void 0 ? void 0 : _a.nullInteraction;
                     var point = find(s.points, function (p) {
-                        return p.x === hoverPoint.x && !p.isNull;
+                        return (p.x === hoverPoint.x && (!p.isNull ||
+                            !!nullInteraction));
                     });
                     if (isObject(point)) {
                         /*
@@ -776,13 +786,14 @@ var Pointer = /** @class */ (function () {
      * @function Highcharts.Pointer#onContainerMouseMove
      */
     Pointer.prototype.onContainerMouseMove = function (e) {
+        var _a;
         var chart = this.chart, tooltip = chart.tooltip, pEvt = this.normalize(e);
         this.setHoverChartIndex(e);
         if (chart.mouseIsDown === 'mousedown' || this.touchSelect(pEvt)) {
             this.drag(pEvt);
         }
         // Show the tooltip and run mouse over events (#977)
-        if (!chart.openMenu &&
+        if (!((_a = chart.exporting) === null || _a === void 0 ? void 0 : _a.openMenu) &&
             (this.inClass(pEvt.target, 'highcharts-tracker') ||
                 chart.isInsidePlot(pEvt.chartX - chart.plotLeft, pEvt.chartY - chart.plotTop, {
                     visiblePlotOnly: true
@@ -790,8 +801,7 @@ var Pointer = /** @class */ (function () {
             // If the tooltip has stickOnContact enabled, do nothing. This
             // applies regardless of any combinations of the `split` and
             // `useHTML` options.
-            !(tooltip &&
-                tooltip.shouldStickOnContact(pEvt))) {
+            !(tooltip === null || tooltip === void 0 ? void 0 : tooltip.shouldStickOnContact(pEvt))) {
             if (this.inClass(pEvt.target, 'highcharts-no-tooltip')) {
                 this.reset(false, 0);
             }
@@ -849,8 +859,7 @@ var Pointer = /** @class */ (function () {
             !chart.isInsidePlot(pEvt.chartX - chart.plotLeft, pEvt.chartY - chart.plotTop, {
                 visiblePlotOnly: true
             }) &&
-            !(tooltip &&
-                tooltip.shouldStickOnContact(pEvt)) && (pEvt.target === chart.container.ownerDocument ||
+            !(tooltip === null || tooltip === void 0 ? void 0 : tooltip.shouldStickOnContact(pEvt)) && (pEvt.target === chart.container.ownerDocument ||
             !this.inClass(pEvt.target, 'highcharts-tracker'))) {
             this.reset();
         }
@@ -1084,7 +1093,7 @@ var Pointer = /** @class */ (function () {
     */
     /**
      * Reset the tracking by hiding the tooltip, the hover series state and the
-     * hover point
+     * hover point.
      *
      * @function Highcharts.Pointer#reset
      *
@@ -1093,9 +1102,10 @@ var Pointer = /** @class */ (function () {
      * possible.
      *
      * @param {number} [delay]
+     * The tooltip hide delay in ms.
      */
     Pointer.prototype.reset = function (allowMove, delay) {
-        var pointer = this, chart = pointer.chart, hoverSeries = chart.hoverSeries, hoverPoint = chart.hoverPoint, hoverPoints = chart.hoverPoints, tooltip = chart.tooltip, tooltipPoints = tooltip && tooltip.shared ?
+        var pointer = this, chart = pointer.chart, hoverSeries = chart.hoverSeries, hoverPoint = chart.hoverPoint, hoverPoints = chart.hoverPoints, tooltip = chart.tooltip, tooltipPoints = (tooltip === null || tooltip === void 0 ? void 0 : tooltip.shared) ?
             hoverPoints :
             hoverPoint;
         // Check if the points have moved outside the plot area (#1003, #4736,
@@ -1175,20 +1185,20 @@ var Pointer = /** @class */ (function () {
      * @emits Highcharts.Point#event:mouseOver
      */
     Pointer.prototype.runPointActions = function (e, p, force) {
-        var pointer = this, chart = pointer.chart, series = chart.series, tooltip = (chart.tooltip && chart.tooltip.options.enabled ?
+        var _a;
+        var pointer = this, chart = pointer.chart, series = chart.series, tooltip = (((_a = chart.tooltip) === null || _a === void 0 ? void 0 : _a.options.enabled) ?
             chart.tooltip :
             void 0), shared = (tooltip ?
             tooltip.shared :
             false);
-        var hoverPoint = p || chart.hoverPoint, hoverSeries = hoverPoint && hoverPoint.series || chart.hoverSeries;
+        var hoverPoint = p || chart.hoverPoint, hoverSeries = (hoverPoint === null || hoverPoint === void 0 ? void 0 : hoverPoint.series) || chart.hoverSeries;
         var // `onMouseOver` or already hovering a series with directTouch
-        isDirectTouch = (!e || e.type !== 'touchmove') && (!!p || ((hoverSeries && hoverSeries.directTouch) &&
+        isDirectTouch = (!e || e.type !== 'touchmove') && (!!p || ((hoverSeries === null || hoverSeries === void 0 ? void 0 : hoverSeries.directTouch) &&
             pointer.isDirectTouch)), hoverData = this.getHoverData(hoverPoint, hoverSeries, series, isDirectTouch, shared, e);
         // Update variables from hoverData.
         hoverPoint = hoverData.hoverPoint;
         hoverSeries = hoverData.hoverSeries;
-        var points = hoverData.hoverPoints, followPointer = hoverSeries &&
-            hoverSeries.tooltipOptions.followPointer &&
+        var points = hoverData.hoverPoints, followPointer = (hoverSeries === null || hoverSeries === void 0 ? void 0 : hoverSeries.tooltipOptions.followPointer) &&
             !hoverSeries.tooltipOptions.split, useSharedTooltip = (shared &&
             hoverSeries &&
             !hoverSeries.noSharedTooltip);
@@ -1197,7 +1207,7 @@ var Pointer = /** @class */ (function () {
         if (hoverPoint &&
             (force ||
                 hoverPoint !== chart.hoverPoint ||
-                (tooltip && tooltip.isHidden))) {
+                (tooltip === null || tooltip === void 0 ? void 0 : tooltip.isHidden))) {
             (chart.hoverPoints || []).forEach(function (p) {
                 if (points.indexOf(p) === -1) {
                     p.setState();
@@ -1268,14 +1278,13 @@ var Pointer = /** @class */ (function () {
         }
         // Issues related to crosshair #4927, #5269 #5066, #5658
         chart.axes.forEach(function drawAxisCrosshair(axis) {
-            var snap = pick((axis.crosshair || {}).snap, true);
+            var _a, _b;
+            var snap = (_b = (_a = axis.crosshair) === null || _a === void 0 ? void 0 : _a.snap) !== null && _b !== void 0 ? _b : true;
             var point;
             if (snap) {
                 point = chart.hoverPoint; // #13002
                 if (!point || point.series[axis.coll] !== axis) {
-                    point = find(points, function (p) {
-                        return p.series && p.series[axis.coll] === axis;
-                    });
+                    point = find(points, function (p) { var _a; return ((_a = p.series) === null || _a === void 0 ? void 0 : _a[axis.coll]) === axis; });
                 }
             }
             // Axis has snapping crosshairs, and one of the hover points belongs
@@ -1395,8 +1404,7 @@ var Pointer = /** @class */ (function () {
             }
             (_a = hoverChart.pointer) === null || _a === void 0 ? void 0 : _a.onContainerMouseLeave(e || relatedTargetObj);
         }
-        if (!hoverChart ||
-            !hoverChart.mouseIsDown) {
+        if (!(hoverChart === null || hoverChart === void 0 ? void 0 : hoverChart.mouseIsDown)) {
             Pointer.hoverChartIndex = chart.index;
         }
     };
@@ -1406,7 +1414,8 @@ var Pointer = /** @class */ (function () {
      * @function Highcharts.Pointer#touch
      */
     Pointer.prototype.touch = function (e, start) {
-        var _a = this, chart = _a.chart, _b = _a.pinchDown, pinchDown = _b === void 0 ? [] : _b;
+        var _a;
+        var _b = this, chart = _b.chart, _c = _b.pinchDown, pinchDown = _c === void 0 ? [] : _c;
         var hasMoved, isInside;
         this.setHoverChartIndex();
         e = this.normalize(e);
@@ -1414,7 +1423,7 @@ var Pointer = /** @class */ (function () {
             isInside = chart.isInsidePlot(e.chartX - chart.plotLeft, e.chartY - chart.plotTop, {
                 visiblePlotOnly: true
             });
-            if (isInside && !chart.openMenu) {
+            if (isInside && !((_a = chart.exporting) === null || _a === void 0 ? void 0 : _a.openMenu)) {
                 // Run mouse events and display tooltip etc
                 if (start) {
                     this.runPointActions(e);

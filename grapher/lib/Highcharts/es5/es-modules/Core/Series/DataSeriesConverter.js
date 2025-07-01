@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2020-2024 Highsoft AS
+ *  (c) 2020-2025 Highsoft AS
  *
  *  License: www.highcharts.com/license
  *
@@ -119,7 +119,7 @@ var DataSeriesConverter = /** @class */ (function () {
     DataSeriesConverter.prototype.updateTable = function (allSeries, eventDetail) {
         var table = this.table;
         var columns, series, seriesMeta, pointArrayMap, pointArrayMapLength, options, keys, data, elem, rowIndex, y, needsArrayMap, xIndex, yIndex, yValueName, yValueIndex, yValueId, id;
-        if (allSeries && allSeries.length) {
+        if (allSeries === null || allSeries === void 0 ? void 0 : allSeries.length) {
             this.options.seriesOptions = [];
             this.seriesMeta = [];
             this.seriesIdMap = {};

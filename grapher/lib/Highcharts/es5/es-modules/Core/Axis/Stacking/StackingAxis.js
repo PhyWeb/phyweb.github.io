@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -31,12 +31,14 @@ function chartGetStacks() {
     var chart = this, inverted = chart.inverted;
     // Reset stacks for each axis
     chart.axes.forEach(function (axis) {
-        if (axis.stacking && axis.stacking.stacks && axis.hasVisibleSeries) {
+        var _a;
+        if (((_a = axis.stacking) === null || _a === void 0 ? void 0 : _a.stacks) && axis.hasVisibleSeries) {
             axis.stacking.oldStacks = axis.stacking.stacks;
         }
     });
     chart.series.forEach(function (series) {
-        var xAxisOptions = series.xAxis && series.xAxis.options || {};
+        var _a;
+        var xAxisOptions = ((_a = series.xAxis) === null || _a === void 0 ? void 0 : _a.options) || {};
         if (series.options.stacking && series.reserveSpace()) {
             series.stackKey = [
                 series.type,

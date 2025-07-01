@@ -2,7 +2,7 @@
  *
  *  Organization chart module
  *
- *  (c) 2018-2024 Torstein Honsi
+ *  (c) 2018-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -58,8 +58,9 @@ var OrganizationSeries = /** @class */ (function (_super) {
      *
      * */
     OrganizationSeries.prototype.alignDataLabel = function (point, dataLabel, options) {
+        var _a;
         // Align the data label to the point graphic
-        var shapeArgs = point.shapeArgs;
+        var shapeArgs = point.shapeArgs, text = dataLabel.text;
         if (options.useHTML && shapeArgs) {
             var padjust = (this.options.borderWidth +
                 2 * this.options.dataLabels.padding);
@@ -70,22 +71,26 @@ var OrganizationSeries = /** @class */ (function (_super) {
             }
             height_1 -= padjust;
             width_1 -= padjust;
-            // Set the size of the surrounding div emulating `g`
-            var text = dataLabel.text;
-            if (text) {
-                css(text.element.parentNode, {
-                    width: width_1 + 'px',
-                    height: height_1 + 'px'
-                });
-                // Set properties for the span emulating `text`
-                css(text.element, {
-                    left: 0,
-                    top: 0,
-                    width: '100%',
-                    height: '100%',
-                    overflow: 'hidden'
-                });
-            }
+            (_a = text.foreignObject) === null || _a === void 0 ? void 0 : _a.attr({
+                x: 0,
+                y: 0,
+                width: width_1,
+                height: height_1
+            });
+            // When foreign object, the parent node is the body. When parallel
+            // HTML, it is the surrounding div emulating `g`
+            css(text.element.parentNode, {
+                width: width_1 + 'px',
+                height: height_1 + 'px'
+            });
+            // Set properties for the span emulating `text`
+            css(text.element, {
+                left: 0,
+                top: 0,
+                width: '100%',
+                height: '100%',
+                overflow: 'hidden'
+            });
             // The getBBox function is used in `alignDataLabel` to align
             // inside the box
             dataLabel.getBBox = function () { return ({ width: width_1, height: height_1, x: 0, y: 0 }); };

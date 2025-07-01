@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2009-2024 Highsoft, Black Label
+ *  (c) 2009-2025 Highsoft, Black Label
  *
  *  License: www.highcharts.com/license
  *
@@ -40,7 +40,9 @@ var EventEmitter = /** @class */ (function () {
         };
         addMouseDownEvent(this.graphic.element);
         (emitter.labels || []).forEach(function (label) {
-            if (label.options.useHTML && label.graphic.text) {
+            if (label.options.useHTML &&
+                label.graphic.text &&
+                !label.graphic.text.foreignObject) {
                 // Mousedown event bound to HTML element (#13070).
                 addMouseDownEvent(label.graphic.text.element);
             }
@@ -74,7 +76,9 @@ var EventEmitter = /** @class */ (function () {
                 };
                 emitter.graphic.css(cssPointer_1);
                 (emitter.labels || []).forEach(function (label) {
-                    if (label.options.useHTML && label.graphic.text) {
+                    if (label.options.useHTML &&
+                        label.graphic.text &&
+                        !label.graphic.text.foreignObject) {
                         label.graphic.text.css(cssPointer_1);
                     }
                 });

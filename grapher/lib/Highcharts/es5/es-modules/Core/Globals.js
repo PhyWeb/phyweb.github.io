@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -24,13 +24,11 @@ var Globals;
      *  Constants
      *
      * */
-    var _a, _b;
+    var _a, _b, _c, _d, _e;
     Globals.SVG_NS = 'http://www.w3.org/2000/svg', Globals.product = 'Highcharts', Globals.version = '@product.version@', Globals.win = (typeof window !== 'undefined' ?
         window :
         {}), // eslint-disable-line node/no-unsupported-features/es-builtins
-    Globals.doc = Globals.win.document, Globals.svg = (Globals.doc &&
-        Globals.doc.createElementNS &&
-        !!Globals.doc.createElementNS(Globals.SVG_NS, 'svg').createSVGRect), Globals.pageLang = (_b = (_a = Globals.doc === null || Globals.doc === void 0 ? void 0 : Globals.doc.documentElement) === null || _a === void 0 ? void 0 : _a.closest('[lang]')) === null || _b === void 0 ? void 0 : _b.lang, Globals.userAgent = (Globals.win.navigator && Globals.win.navigator.userAgent) || '', Globals.isChrome = Globals.win.chrome, Globals.isFirefox = Globals.userAgent.indexOf('Firefox') !== -1, Globals.isMS = /(edge|msie|trident)/i.test(Globals.userAgent) && !Globals.win.opera, Globals.isSafari = !Globals.isChrome && Globals.userAgent.indexOf('Safari') !== -1, Globals.isTouchDevice = /(Mobile|Android|Windows Phone)/.test(Globals.userAgent), Globals.isWebKit = Globals.userAgent.indexOf('AppleWebKit') !== -1, Globals.deg2rad = Math.PI * 2 / 360, Globals.marginNames = [
+    Globals.doc = Globals.win.document, Globals.svg = !!((_b = (_a = Globals.doc === null || Globals.doc === void 0 ? void 0 : Globals.doc.createElementNS) === null || _a === void 0 ? void 0 : _a.call(Globals.doc, Globals.SVG_NS, 'svg')) === null || _b === void 0 ? void 0 : _b.createSVGRect), Globals.pageLang = (_d = (_c = Globals.doc === null || Globals.doc === void 0 ? void 0 : Globals.doc.documentElement) === null || _c === void 0 ? void 0 : _c.closest('[lang]')) === null || _d === void 0 ? void 0 : _d.lang, Globals.userAgent = ((_e = Globals.win.navigator) === null || _e === void 0 ? void 0 : _e.userAgent) || '', Globals.isChrome = Globals.win.chrome, Globals.isFirefox = Globals.userAgent.indexOf('Firefox') !== -1, Globals.isMS = /(edge|msie|trident)/i.test(Globals.userAgent) && !Globals.win.opera, Globals.isSafari = !Globals.isChrome && Globals.userAgent.indexOf('Safari') !== -1, Globals.isTouchDevice = /(Mobile|Android|Windows Phone)/.test(Globals.userAgent), Globals.isWebKit = Globals.userAgent.indexOf('AppleWebKit') !== -1, Globals.deg2rad = Math.PI * 2 / 360, Globals.marginNames = [
         'plotTop',
         'marginRight',
         'marginBottom',

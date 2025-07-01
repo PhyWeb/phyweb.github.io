@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -905,7 +905,7 @@ var Navigator = /** @class */ (function () {
      * @function Highcharts.Navigator#init
      */
     Navigator.prototype.init = function (chart) {
-        var _a;
+        var _a, _b;
         var chartOptions = chart.options, navigatorOptions = chartOptions.navigator || {}, navigatorEnabled = navigatorOptions.enabled, scrollbarOptions = chartOptions.scrollbar || {}, scrollbarEnabled = scrollbarOptions.enabled, height = navigatorEnabled && navigatorOptions.height || 0, scrollbarHeight = scrollbarEnabled && scrollbarOptions.height || 0, scrollButtonSize = scrollbarOptions.buttonsEnabled && scrollbarHeight || 0;
         this.handles = [];
         this.shades = [];
@@ -1011,9 +1011,9 @@ var Navigator = /** @class */ (function () {
             navigator.xAxis.navigatorAxis.toFixedRange = (NavigatorAxisAdditions.prototype.toFixedRange.bind(navigator.xAxis.navigatorAxis));
         }
         // Initialize the scrollbar
-        if (chart.options.scrollbar.enabled) {
+        if ((_b = chart.options.scrollbar) === null || _b === void 0 ? void 0 : _b.enabled) {
             var options = merge(chart.options.scrollbar, { vertical: chart.inverted });
-            if (!isNumber(options.margin) && navigator.navigatorEnabled) {
+            if (!isNumber(options.margin)) {
                 options.margin = chart.inverted ? -3 : 3;
             }
             chart.scrollbar = navigator.scrollbar = new Scrollbar(chart.renderer, options, chart);
@@ -1440,6 +1440,7 @@ var Navigator = /** @class */ (function () {
         }), 
         // Make room for the navigator, can be placed around the chart:
         addEvent(this.chart, 'getMargins', function () {
+            var _a;
             var chart = this, navigator = chart.navigator;
             var marginName = navigator.opposite ?
                 'plotTop' : 'marginBottom';
@@ -1447,10 +1448,10 @@ var Navigator = /** @class */ (function () {
                 marginName = navigator.opposite ?
                     'marginRight' : 'plotLeft';
             }
-            chart[marginName] =
-                (chart[marginName] || 0) + (navigator.navigatorEnabled || !chart.inverted ?
-                    navigator.height + navigator.scrollbarHeight :
-                    0) + navigator.navigatorOptions.margin;
+            chart[marginName] = (chart[marginName] || 0) + (navigator.navigatorEnabled || !chart.inverted ?
+                navigator.height +
+                    (((_a = this.scrollbar) === null || _a === void 0 ? void 0 : _a.options.margin) || 0) +
+                    navigator.scrollbarHeight : 0) + (navigator.navigatorOptions.margin || 0);
         }), addEvent(Navigator, 'setRange', function (e) {
             this.chart.xAxis[0].setExtremes(e.min, e.max, e.redraw, e.animation, e.eventArguments);
         }));
@@ -1493,6 +1494,10 @@ var Navigator = /** @class */ (function () {
         // Destroy elements in collection
         [this.handles].forEach(function (coll) {
             destroyObjectProperties(coll);
+        });
+        // Clean up linked series
+        this.baseSeries.forEach(function (s) {
+            s.navigatorSeries = void 0;
         });
         this.navigatorEnabled = false;
     };

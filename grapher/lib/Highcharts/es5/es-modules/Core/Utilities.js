@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -341,10 +341,10 @@ function isDOMElement(obj) {
  *         True if the argument is a class.
  */
 function isClass(obj) {
-    var c = obj && obj.constructor;
+    var c = obj === null || obj === void 0 ? void 0 : obj.constructor;
     return !!(isObject(obj, true) &&
         !isDOMElement(obj) &&
-        (c && c.name && c.name !== 'Object'));
+        ((c === null || c === void 0 ? void 0 : c.name) && c.name !== 'Object'));
 }
 /**
  * Utility function to check if an item is a number and it is finite (not NaN,
@@ -987,9 +987,8 @@ function destroyObjectProperties(obj, except, destructablesOnly) {
  *        The HTML node to discard.
  */
 function discardElement(element) {
-    if (element && element.parentElement) {
-        element.parentElement.removeChild(element);
-    }
+    var _a;
+    (_a = element === null || element === void 0 ? void 0 : element.parentElement) === null || _a === void 0 ? void 0 : _a.removeChild(element);
 }
 /**
  * Fix JS round off float errors.
@@ -1149,14 +1148,14 @@ function getNestedProperty(path, parent) {
  * The style value.
  */
 function getStyle(el, prop, toInt) {
+    var _a;
     var style;
     // For width and height, return the actual inner pixel size (#4913)
     if (prop === 'width') {
         var offsetWidth = Math.min(el.offsetWidth, el.scrollWidth);
         // In flex boxes, we need to use getBoundingClientRect and floor it,
         // because scrollWidth doesn't support subpixel precision (#6427) ...
-        var boundingClientRectWidth = el.getBoundingClientRect &&
-            el.getBoundingClientRect().width;
+        var boundingClientRectWidth = (_a = el.getBoundingClientRect) === null || _a === void 0 ? void 0 : _a.call(el).width;
         // ...unless if the containing div or its parents are transform-scaled
         // down, in which case the boundingClientRect can't be used as it is
         // also scaled down (#9871, #10498).
@@ -1439,7 +1438,7 @@ function removeEvent(el, type, fn) {
 function fireEvent(el, type, eventArguments, defaultFunction) {
     /* eslint-enable valid-jsdoc */
     eventArguments = eventArguments || {};
-    if (doc.createEvent &&
+    if ((doc === null || doc === void 0 ? void 0 : doc.createEvent) &&
         (el.dispatchEvent ||
             (el.fireEvent &&
                 // Enable firing events on Highcharts instance.

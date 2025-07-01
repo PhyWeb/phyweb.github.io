@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2009-2024 Øystein Moseng
+ *  (c) 2009-2025 Øystein Moseng
  *
  *  Accessibility component for chart info region and table.
  *
@@ -155,7 +155,7 @@ var InfoRegionsComponent = /** @class */ (function (_super) {
         var chart = this.chart;
         var component = this;
         this.initRegionsDefinitions();
-        this.addEvent(chart, 'aftergetTableAST', function (e) {
+        this.addEvent(chart, 'afterGetTableAST', function (e) {
             component.onDataTableCreated(e);
         });
         this.addEvent(chart, 'afterViewData', function (e) {
@@ -331,6 +331,7 @@ var InfoRegionsComponent = /** @class */ (function (_super) {
      * @private
      */
     InfoRegionsComponent.prototype.defaultBeforeChartFormatter = function () {
+        var _a;
         var chart = this.chart, format = chart.options.accessibility.screenReaderSection
             .beforeChartFormat;
         if (!format) {
@@ -350,7 +351,7 @@ var InfoRegionsComponent = /** @class */ (function (_super) {
             yAxisDescription: axesDesc.yAxis,
             playAsSoundButton: shouldHaveSonifyBtn ?
                 this.getSonifyButtonText(sonifyButtonId) : '',
-            viewTableButton: chart.getCSV ?
+            viewTableButton: ((_a = chart.exporting) === null || _a === void 0 ? void 0 : _a.getCSV) ?
                 this.getDataTableButtonText(dataTableButtonId) : '',
             annotationsTitle: annotationsList ? annotationsTitleStr : '',
             annotationsList: annotationsList
@@ -513,7 +514,8 @@ var InfoRegionsComponent = /** @class */ (function (_super) {
             el.onclick = chart.options.accessibility
                 .screenReaderSection.onViewDataTableClick ||
                 function () {
-                    chart.viewData();
+                    var _a;
+                    (_a = chart.exporting) === null || _a === void 0 ? void 0 : _a.viewData();
                 };
         }
     };

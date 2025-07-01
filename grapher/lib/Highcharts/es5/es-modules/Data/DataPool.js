@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2009-2024 Highsoft AS
+ *  (c) 2009-2025 Highsoft AS
  *
  *  License: www.highcharts.com/license
  *
@@ -65,14 +65,14 @@ var DataPool = /** @class */ (function () {
      * @param {string} connectorId
      * ID of the connector.
      *
-     * @return {Promise<Data.DataConnector>}
+     * @return {Promise<Data.DataConnectorType>}
      * Returns the connector.
      */
     DataPool.prototype.getConnector = function (connectorId) {
         var _this = this;
         var connector = this.connectors[connectorId];
         // Already loaded
-        if (connector) {
+        if (connector === null || connector === void 0 ? void 0 : connector.loaded) {
             return Promise.resolve(connector);
         }
         var waitingList = this.waiting[connectorId];
@@ -174,7 +174,7 @@ var DataPool = /** @class */ (function () {
      * @param {Data.DataPoolConnectorOptions} options
      * Options of connector.
      *
-     * @return {Promise<Data.DataConnector>}
+     * @return {Promise<Data.DataConnectorType>}
      * Returns the connector.
      */
     DataPool.prototype.loadConnector = function (options) {
@@ -188,12 +188,15 @@ var DataPool = /** @class */ (function () {
             if (!ConnectorClass) {
                 throw new Error("Connector type not found. (".concat(options.type, ")"));
             }
-            var connector = new ConnectorClass(options.options);
+            var connector = _this.connectors[options.id] = new ConnectorClass(options.options, options.dataTables);
             // eslint-disable-next-line @typescript-eslint/no-floating-promises
             connector
                 .load()
-                .then(function (connector) {
-                _this.connectors[options.id] = connector;
+                .then(function (_a) {
+                var converter = _a.converter, dataTables = _a.dataTables;
+                connector.dataTables = dataTables;
+                connector.converter = converter;
+                connector.loaded = true;
                 _this.emit({
                     type: 'afterLoad',
                     options: options
@@ -201,6 +204,16 @@ var DataPool = /** @class */ (function () {
                 resolve(connector);
             })['catch'](reject);
         });
+    };
+    /**
+     * Cancels all data connectors pending requests.
+     */
+    DataPool.prototype.cancelPendingRequests = function () {
+        var connectors = this.connectors;
+        for (var _i = 0, _a = Object.keys(connectors); _i < _a.length; _i++) {
+            var connectorKey = _a[_i];
+            connectors[connectorKey].stopPolling();
+        }
     };
     /**
      * Registers a callback for a specific event.

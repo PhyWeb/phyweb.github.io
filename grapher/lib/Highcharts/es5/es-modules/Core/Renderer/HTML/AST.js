@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -334,9 +334,9 @@ var AST = /** @class */ (function () {
         'cx',
         'cy',
         'd',
+        'disabled',
         'dx',
         'dy',
-        'disabled',
         'fill',
         'filterUnits',
         'flood-color',
@@ -360,22 +360,22 @@ var AST = /** @class */ (function () {
         'radius',
         'refX',
         'refY',
+        'result',
         'role',
+        'rowspan',
         'scope',
         'slope',
         'src',
         'startOffset',
         'stdDeviation',
-        'stroke',
         'stroke-linecap',
         'stroke-width',
+        'stroke',
         'style',
-        'tableValues',
-        'result',
-        'rowspan',
         'summary',
-        'target',
         'tabindex',
+        'tableValues',
+        'target',
         'text-align',
         'text-anchor',
         'textAnchor',
@@ -432,6 +432,7 @@ var AST = /** @class */ (function () {
      * @type    {Array<string>}
      */
     AST.allowedTags = [
+        '#text',
         'a',
         'abbr',
         'b',
@@ -456,10 +457,10 @@ var AST = /** @class */ (function () {
         'feFuncG',
         'feFuncR',
         'feGaussianBlur',
-        'feMorphology',
-        'feOffset',
         'feMerge',
         'feMergeNode',
+        'feMorphology',
+        'feOffset',
         'filter',
         'h1',
         'h2',
@@ -488,18 +489,17 @@ var AST = /** @class */ (function () {
         'sup',
         'svg',
         'table',
+        'tbody',
+        'td',
         'text',
         'textPath',
+        'th',
         'thead',
         'title',
-        'tbody',
-        'tspan',
-        'td',
-        'th',
         'tr',
+        'tspan',
         'u',
-        'ul',
-        '#text'
+        'ul'
     ];
     AST.emptyHTML = emptyHTML;
     /**

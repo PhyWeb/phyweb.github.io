@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2016-2024 Highsoft AS
+ *  (c) 2016-2025 Highsoft AS
  *
  *  Author: Lars A. V. Cabrera
  *
@@ -106,7 +106,7 @@ var GanttChart = /** @class */ (function (_super) {
         options.xAxis = (!isArray(userOptions.xAxis) ?
             [userOptions.xAxis || {}, {}] :
             userOptions.xAxis).map(function (xAxisOptions, i) {
-            var _a, _b, _c;
+            var _a, _b, _c, _d, _e;
             if (i === 1) { // Second xAxis
                 defaultLinkedTo = 0;
             }
@@ -114,10 +114,11 @@ var GanttChart = /** @class */ (function (_super) {
             // Defaults
             {
                 grid: {
-                    borderColor: "#cccccc" /* Palette.neutralColor20 */,
+                    borderColor: ((_b = (_a = defaultOptions.xAxis) === null || _a === void 0 ? void 0 : _a.grid) === null || _b === void 0 ? void 0 : _b.borderColor) ||
+                        "#cccccc" /* Palette.neutralColor20 */,
                     enabled: true
                 },
-                opposite: (_c = (_b = (_a = defaultOptions.xAxis) === null || _a === void 0 ? void 0 : _a.opposite) !== null && _b !== void 0 ? _b : xAxisOptions.opposite) !== null && _c !== void 0 ? _c : true,
+                opposite: (_e = (_d = (_c = defaultOptions.xAxis) === null || _c === void 0 ? void 0 : _c.opposite) !== null && _d !== void 0 ? _d : xAxisOptions.opposite) !== null && _e !== void 0 ? _e : true,
                 linkedTo: defaultLinkedTo
             }, 
             // User options
@@ -128,21 +129,25 @@ var GanttChart = /** @class */ (function (_super) {
             });
         });
         // Apply Y axis options to both single and multi y axes
-        options.yAxis = (splat(userOptions.yAxis || {})).map(function (yAxisOptions) { return merge(
-        // Defaults
-        {
-            grid: {
-                borderColor: "#cccccc" /* Palette.neutralColor20 */,
-                enabled: true
-            },
-            staticScale: 50,
-            reversed: true,
-            // Set default type treegrid, but only if 'categories' is
-            // undefined
-            type: yAxisOptions.categories ? yAxisOptions.type : 'treegrid'
-        }, 
-        // User options
-        yAxisOptions); });
+        options.yAxis = (splat(userOptions.yAxis || {})).map(function (yAxisOptions) {
+            var _a, _b;
+            return merge(
+            // Defaults
+            {
+                grid: {
+                    borderColor: ((_b = (_a = defaultOptions.yAxis) === null || _a === void 0 ? void 0 : _a.grid) === null || _b === void 0 ? void 0 : _b.borderColor) ||
+                        "#cccccc" /* Palette.neutralColor20 */,
+                    enabled: true
+                },
+                staticScale: 50,
+                reversed: true,
+                // Set default type treegrid, but only if 'categories' is
+                // undefined
+                type: yAxisOptions.categories ? yAxisOptions.type : 'treegrid'
+            }, 
+            // User options
+            yAxisOptions);
+        });
         _super.prototype.init.call(this, options, callback);
     };
     return GanttChart;

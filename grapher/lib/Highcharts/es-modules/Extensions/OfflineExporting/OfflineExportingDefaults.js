@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -10,49 +10,20 @@
 'use strict';
 /* *
  *
- * Declarations
+ *  API Options
  *
  * */
-const OfflineExportingDefaults = {
-    libURL: 'https://code.highcharts.com/@product.version@/lib/',
-    // When offline-exporting is loaded, redefine the menu item definitions
-    // related to download.
-    menuItemDefinitions: {
-        downloadPNG: {
-            textKey: 'downloadPNG',
-            onclick: function () {
-                this.exportChartLocal();
-            }
-        },
-        downloadJPEG: {
-            textKey: 'downloadJPEG',
-            onclick: function () {
-                this.exportChartLocal({
-                    type: 'image/jpeg'
-                });
-            }
-        },
-        downloadSVG: {
-            textKey: 'downloadSVG',
-            onclick: function () {
-                this.exportChartLocal({
-                    type: 'image/svg+xml'
-                });
-            }
-        },
-        downloadPDF: {
-            textKey: 'downloadPDF',
-            onclick: function () {
-                this.exportChartLocal({
-                    type: 'application/pdf'
-                });
-            }
-        }
-    }
-};
+/**
+ * @optionparent exporting
+ * @private
+ */
+const exporting = {};
 /* *
  *
  *  Default Export
  *
  * */
+const OfflineExportingDefaults = {
+    exporting
+};
 export default OfflineExportingDefaults;

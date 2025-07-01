@@ -3,7 +3,7 @@
  *  Experimental Highcharts module which enables visualization of a Venn
  *  diagram.
  *
- *  (c) 2016-2024 Highsoft AS
+ *  (c) 2016-2025 Highsoft AS
  *  Authors: Jon Arild Nygard
  *
  *  Layout algorithm by Ben Frederickson:
@@ -300,11 +300,10 @@ var VennSeries = /** @class */ (function (_super) {
                     // animation
                     if (args.d) {
                         setTimeout(function () {
-                            if (point && point.graphic) {
-                                point.graphic.animate({
-                                    opacity: 1
-                                });
-                            }
+                            var _a;
+                            (_a = point === null || point === void 0 ? void 0 : point.graphic) === null || _a === void 0 ? void 0 : _a.animate({
+                                opacity: 1
+                            });
                         }, animOptions.duration);
                     }
                 }
@@ -342,7 +341,7 @@ var VennSeries = /** @class */ (function (_super) {
                 attribs: attribs,
                 group: group,
                 renderer: renderer,
-                shapeType: shapeArgs && shapeArgs.d ? 'path' : 'circle'
+                shapeType: (shapeArgs === null || shapeArgs === void 0 ? void 0 : shapeArgs.d) ? 'path' : 'circle'
             });
         }
     };
@@ -363,7 +362,7 @@ var VennSeries = /** @class */ (function (_super) {
      * Returns the calculated attributes.
      */
     VennSeries.prototype.pointAttribs = function (point, state) {
-        var series = this, seriesOptions = series.options || {}, pointOptions = point && point.options || {}, stateOptions = (state && seriesOptions.states[state]) || {}, options = merge(seriesOptions, { color: point && point.color }, pointOptions, stateOptions);
+        var series = this, seriesOptions = series.options || {}, pointOptions = (point === null || point === void 0 ? void 0 : point.options) || {}, stateOptions = (state && seriesOptions.states[state]) || {}, options = merge(seriesOptions, { color: point === null || point === void 0 ? void 0 : point.color }, pointOptions, stateOptions);
         // Return resulting values for the attributes.
         return {
             'fill': color(options.color)
@@ -377,13 +376,14 @@ var VennSeries = /** @class */ (function (_super) {
         };
     };
     VennSeries.prototype.translate = function () {
+        var _a;
         var chart = this.chart;
         this.dataTable.modified = this.dataTable;
         this.generatePoints();
         // Process the data before passing it into the layout function.
         var relations = VennUtils.processVennData(this.options.data, VennSeries.splitter);
         // Calculate the positions of each circle.
-        var _a = VennSeries.layout(relations), mapOfIdToShape = _a.mapOfIdToShape, mapOfIdToLabelValues = _a.mapOfIdToLabelValues;
+        var _b = VennSeries.layout(relations), mapOfIdToShape = _b.mapOfIdToShape, mapOfIdToLabelValues = _b.mapOfIdToLabelValues;
         // Calculate the scale, and center of the plot area.
         var field = Object.keys(mapOfIdToShape)
             .filter(function (key) {
@@ -397,9 +397,9 @@ var VennSeries = /** @class */ (function (_super) {
             right: 0
         }), scaling = VennSeries.getScale(chart.plotWidth, chart.plotHeight, field), scale = scaling.scale, centerX = scaling.centerX, centerY = scaling.centerY;
         // Iterate all points and calculate and draw their graphics.
-        for (var _i = 0, _b = this.points; _i < _b.length; _i++) {
-            var point = _b[_i];
-            var sets = isArray(point.sets) ? point.sets : [], id = sets.join(), shape = mapOfIdToShape[id], dataLabelValues = mapOfIdToLabelValues[id] || {}, dlOptions = point.options && point.options.dataLabels;
+        for (var _i = 0, _c = this.points; _i < _c.length; _i++) {
+            var point = _c[_i];
+            var sets = isArray(point.sets) ? point.sets : [], id = sets.join(), shape = mapOfIdToShape[id], dataLabelValues = mapOfIdToLabelValues[id] || {}, dlOptions = (_a = point.options) === null || _a === void 0 ? void 0 : _a.dataLabels;
             var shapeArgs = void 0, dataLabelWidth = dataLabelValues.width, dataLabelPosition = dataLabelValues.position;
             if (shape) {
                 if (shape.r) {

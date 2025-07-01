@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2009-2024 Highsoft AS
+ *  (c) 2009-2025 Highsoft AS
  *
  *  License: www.highcharts.com/license
  *
@@ -29,7 +29,7 @@ var __extends = (this && this.__extends) || (function () {
 import DataConnector from './DataConnector.js';
 import U from '../../Core/Utilities.js';
 import JSONConverter from '../Converters/JSONConverter.js';
-var merge = U.merge;
+var merge = U.merge, defined = U.defined;
 /* *
  *
  *  Class
@@ -52,13 +52,16 @@ var JSONConnector = /** @class */ (function (_super) {
      *
      * @param {JSONConnector.UserOptions} [options]
      * Options for the connector and converter.
+     *
+     * @param {Array<DataTableOptions>} [dataTables]
+     * Multiple connector data tables options.
      */
-    function JSONConnector(options) {
+    function JSONConnector(options, dataTables) {
         var _this = this;
         var mergedOptions = merge(JSONConnector.defaultOptions, options);
-        _this = _super.call(this, mergedOptions) || this;
-        _this.converter = new JSONConverter(mergedOptions);
-        _this.options = mergedOptions;
+        _this = _super.call(this, mergedOptions, dataTables) || this;
+        _this.options = defined(dataTables) ?
+            merge(mergedOptions, { dataTables: dataTables }) : mergedOptions;
         if (mergedOptions.enablePolling) {
             _this.startPolling(Math.max(mergedOptions.dataRefreshRate || 0, 1) * 1000);
         }
@@ -79,32 +82,57 @@ var JSONConnector = /** @class */ (function (_super) {
      * @emits JSONConnector#afterLoad
      */
     JSONConnector.prototype.load = function (eventDetail) {
-        var connector = this, converter = connector.converter, table = connector.table, _a = connector.options, data = _a.data, dataUrl = _a.dataUrl, dataModifier = _a.dataModifier;
+        var _this = this;
+        var _a;
+        var connector = this, tables = connector.dataTables, _b = connector.options, data = _b.data, dataUrl = _b.dataUrl, dataModifier = _b.dataModifier, dataTables = _b.dataTables;
         connector.emit({
             type: 'load',
             data: data,
             detail: eventDetail,
-            table: table
+            tables: tables
         });
         return Promise
             .resolve(dataUrl ?
-            fetch(dataUrl).then(function (json) { return json.json(); }) :
+            fetch(dataUrl, {
+                signal: (_a = connector === null || connector === void 0 ? void 0 : connector.pollingController) === null || _a === void 0 ? void 0 : _a.signal
+            }).then(function (response) { return response.json(); })['catch'](function (error) {
+                connector.emit({
+                    type: 'loadError',
+                    detail: eventDetail,
+                    error: error,
+                    tables: tables
+                });
+                console.warn("Unable to fetch data from ".concat(dataUrl, ".")); // eslint-disable-line no-console
+            }) :
             data || [])
             .then(function (data) {
             if (data) {
-                // If already loaded, clear the current rows
-                table.deleteColumns();
-                converter.parse({ data: data });
-                table.setColumns(converter.getTable().getColumns());
+                _this.initConverters(data, function (key) {
+                    var _a, _b, _c, _d;
+                    var options = _this.options;
+                    var tableOptions = dataTables === null || dataTables === void 0 ? void 0 : dataTables.find(function (dataTable) { return dataTable.key === key; });
+                    // Takes over the connector default options.
+                    var mergedTableOptions = {
+                        dataTableKey: key,
+                        columnNames: (_a = tableOptions === null || tableOptions === void 0 ? void 0 : tableOptions.columnNames) !== null && _a !== void 0 ? _a : options.columnNames,
+                        firstRowAsNames: (_b = tableOptions === null || tableOptions === void 0 ? void 0 : tableOptions.firstRowAsNames) !== null && _b !== void 0 ? _b : options.firstRowAsNames,
+                        orientation: (_c = tableOptions === null || tableOptions === void 0 ? void 0 : tableOptions.orientation) !== null && _c !== void 0 ? _c : options.orientation,
+                        beforeParse: (_d = tableOptions === null || tableOptions === void 0 ? void 0 : tableOptions.beforeParse) !== null && _d !== void 0 ? _d : options.beforeParse
+                    };
+                    return new JSONConverter(merge(_this.options, mergedTableOptions));
+                }, function (converter, data) {
+                    converter.parse({ data: data });
+                });
             }
-            return connector.setModifierOptions(dataModifier).then(function () { return data; });
+            return connector.setModifierOptions(dataModifier, dataTables)
+                .then(function () { return data; });
         })
             .then(function (data) {
             connector.emit({
                 type: 'afterLoad',
                 data: data,
                 detail: eventDetail,
-                table: table
+                tables: tables
             });
             return connector;
         })['catch'](function (error) {
@@ -112,7 +140,7 @@ var JSONConnector = /** @class */ (function (_super) {
                 type: 'loadError',
                 detail: eventDetail,
                 error: error,
-                table: table
+                tables: tables
             });
             throw error;
         });

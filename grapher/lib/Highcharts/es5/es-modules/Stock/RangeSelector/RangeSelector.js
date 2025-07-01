@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -14,6 +14,8 @@ var defaultOptions = D.defaultOptions;
 import H from '../../Core/Globals.js';
 import RangeSelectorComposition from './RangeSelectorComposition.js';
 import SVGElement from '../../Core/Renderer/SVG/SVGElement.js';
+import T from '../../Core/Templating.js';
+var format = T.format;
 import U from '../../Core/Utilities.js';
 import OrdinalAxis from '../../Core/Axis/OrdinalAxis.js';
 var addEvent = U.addEvent, createElement = U.createElement, css = U.css, defined = U.defined, destroyObjectProperties = U.destroyObjectProperties, diffObjects = U.diffObjects, discardElement = U.discardElement, extend = U.extend, fireEvent = U.fireEvent, isNumber = U.isNumber, isString = U.isString, merge = U.merge, objectEach = U.objectEach, pick = U.pick, splat = U.splat;
@@ -79,7 +81,7 @@ var RangeSelector = /** @class */ (function () {
     function RangeSelector(chart) {
         var _this = this;
         this.isDirty = false;
-        this.buttonOptions = RangeSelector.prototype.defaultButtons;
+        this.buttonOptions = [];
         this.initialButtonGroupWidth = 0;
         this.maxButtonWidth = function () {
             var buttonWidth = 0;
@@ -270,7 +272,7 @@ var RangeSelector = /** @class */ (function () {
      * @param {Highcharts.Chart} chart
      */
     RangeSelector.prototype.init = function (chart) {
-        var rangeSelector = this, options = chart.options.rangeSelector, buttonOptions = options.buttons, selectedOption = options.selected, blurInputs = function () {
+        var rangeSelector = this, options = chart.options.rangeSelector, langOptions = chart.options.lang, buttonOptions = options.buttons, selectedOption = options.selected, blurInputs = function () {
             var minInput = rangeSelector.minInput, maxInput = rangeSelector.maxInput;
             // #3274 in some case blur is not defined
             if (minInput && !!minInput.blur) {
@@ -283,7 +285,21 @@ var RangeSelector = /** @class */ (function () {
         rangeSelector.chart = chart;
         rangeSelector.options = options;
         rangeSelector.buttons = [];
-        rangeSelector.buttonOptions = buttonOptions;
+        rangeSelector.buttonOptions = buttonOptions
+            .map(function (opt) {
+            var _a, _b;
+            if (opt.type && langOptions.rangeSelector) {
+                (_a = opt.text) !== null && _a !== void 0 ? _a : (opt.text = langOptions.rangeSelector["".concat(opt.type, "Text")]);
+                (_b = opt.title) !== null && _b !== void 0 ? _b : (opt.title = langOptions.rangeSelector["".concat(opt.type, "Title")]);
+            }
+            opt.text = format(opt.text, {
+                count: opt.count || 1
+            });
+            opt.title = format(opt.title, {
+                count: opt.count || 1
+            });
+            return opt;
+        });
         this.eventsToUnbind = [];
         this.eventsToUnbind.push(addEvent(chart.container, 'mousedown', blurInputs));
         this.eventsToUnbind.push(addEvent(chart, 'resize', blurInputs));
@@ -526,14 +542,14 @@ var RangeSelector = /** @class */ (function () {
     RangeSelector.prototype.setInputExtremes = function (name, min, max) {
         var input = name === 'min' ? this.minInput : this.maxInput;
         if (input) {
-            var format = this.inputTypeFormats[input.type];
+            var format_1 = this.inputTypeFormats[input.type];
             var time = this.chart.time;
-            if (format) {
-                var newMin = time.dateFormat(format, min);
+            if (format_1) {
+                var newMin = time.dateFormat(format_1, min);
                 if (input.min !== newMin) {
                     input.min = newMin;
                 }
-                var newMax = time.dateFormat(format, max);
+                var newMax = time.dateFormat(format_1, max);
                 if (input.max !== newMax) {
                     input.max = newMax;
                 }
@@ -985,14 +1001,15 @@ var RangeSelector = /** @class */ (function () {
     };
     RangeSelector.prototype.createButton = function (rangeOptions, i, width, states) {
         var _this = this;
-        var _a = this, dropdown = _a.dropdown, buttons = _a.buttons, chart = _a.chart, options = _a.options;
+        var _a;
+        var _b = this, dropdown = _b.dropdown, buttons = _b.buttons, chart = _b.chart, options = _b.options;
         var renderer = chart.renderer;
         var buttonTheme = merge(options.buttonTheme);
         dropdown === null || dropdown === void 0 ? void 0 : dropdown.add(createElement('option', {
             textContent: rangeOptions.title || rangeOptions.text
         }), i + 2);
         buttons[i] = renderer
-            .button(rangeOptions.text, 0, 0, function (e) {
+            .button((_a = rangeOptions.text) !== null && _a !== void 0 ? _a : '', 0, 0, function (e) {
             // Extract events from button object and call
             var buttonEvents = (rangeOptions.events && rangeOptions.events.click);
             var callDefaultEvent;

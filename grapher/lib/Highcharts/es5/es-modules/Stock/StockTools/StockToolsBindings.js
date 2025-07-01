@@ -2,7 +2,7 @@
  *
  *  Events generator for Stock tools
  *
- *  (c) 2009-2024 Paweł Fus
+ *  (c) 2009-2025 Paweł Fus
  *
  *  License: www.highcharts.com/license
  *
@@ -44,7 +44,8 @@ var StockToolsBindings = {
         // eslint-disable-next-line valid-jsdoc
         /** @ignore-option */
         start: function (e) {
-            var _a = this.getCoords(e), coordsX = _a[0], coordsY = _a[1];
+            var _a;
+            var _b = this.getCoords(e), coordsX = _b[0], coordsY = _b[1];
             // Exit if clicked out of axes area
             if (!coordsX || !coordsY) {
                 return;
@@ -63,7 +64,7 @@ var StockToolsBindings = {
                             y: coordsY.value
                         }]
                 }
-            }, navigation.annotationsOptions, navigation.bindings.segment.annotationsOptions);
+            }, navigation.annotationsOptions, (_a = navigation.bindings) === null || _a === void 0 ? void 0 : _a.segment.annotationsOptions);
             return this.chart.addAnnotation(options);
         },
         /** @ignore-option */
@@ -85,7 +86,8 @@ var StockToolsBindings = {
         // eslint-disable-next-line valid-jsdoc
         /** @ignore-option */
         start: function (e) {
-            var _a = this.getCoords(e), coordsX = _a[0], coordsY = _a[1];
+            var _a;
+            var _b = this.getCoords(e), coordsX = _b[0], coordsY = _b[1];
             // Exit if clicked out of axes area
             if (!coordsX || !coordsY) {
                 return;
@@ -107,7 +109,7 @@ var StockToolsBindings = {
                             y: coordsY.value
                         }]
                 }
-            }, navigation.annotationsOptions, navigation.bindings.arrowSegment.annotationsOptions);
+            }, navigation.annotationsOptions, (_a = navigation.bindings) === null || _a === void 0 ? void 0 : _a.arrowSegment.annotationsOptions);
             return this.chart.addAnnotation(options);
         },
         /** @ignore-option */
@@ -129,7 +131,8 @@ var StockToolsBindings = {
         // eslint-disable-next-line valid-jsdoc
         /** @ignore-option */
         start: function (e) {
-            var _a = this.getCoords(e), coordsX = _a[0], coordsY = _a[1];
+            var _a;
+            var _b = this.getCoords(e), coordsX = _b[0], coordsY = _b[1];
             // Exit if clicked out of axes area
             if (!coordsX || !coordsY) {
                 return;
@@ -149,7 +152,7 @@ var StockToolsBindings = {
                             y: coordsY.value
                         }]
                 }
-            }, navigation.annotationsOptions, navigation.bindings.ray.annotationsOptions);
+            }, navigation.annotationsOptions, (_a = navigation.bindings) === null || _a === void 0 ? void 0 : _a.ray.annotationsOptions);
             return this.chart.addAnnotation(options);
         },
         /** @ignore-option */
@@ -171,7 +174,8 @@ var StockToolsBindings = {
         // eslint-disable-next-line valid-jsdoc
         /** @ignore-option */
         start: function (e) {
-            var _a = this.getCoords(e), coordsX = _a[0], coordsY = _a[1];
+            var _a;
+            var _b = this.getCoords(e), coordsX = _b[0], coordsY = _b[1];
             // Exit if clicked out of axes area
             if (!coordsX || !coordsY) {
                 return;
@@ -194,7 +198,7 @@ var StockToolsBindings = {
                             y: coordsY.value
                         }]
                 }
-            }, navigation.annotationsOptions, navigation.bindings.arrowRay.annotationsOptions);
+            }, navigation.annotationsOptions, (_a = navigation.bindings) === null || _a === void 0 ? void 0 : _a.arrowRay.annotationsOptions);
             return this.chart.addAnnotation(options);
         },
         /** @ignore-option */
@@ -215,7 +219,8 @@ var StockToolsBindings = {
         // eslint-disable-next-line valid-jsdoc
         /** @ignore-option */
         start: function (e) {
-            var _a = this.getCoords(e), coordsX = _a[0], coordsY = _a[1];
+            var _a;
+            var _b = this.getCoords(e), coordsX = _b[0], coordsY = _b[1];
             // Exit if clicked out of axes area
             if (!coordsX || !coordsY) {
                 return;
@@ -235,7 +240,7 @@ var StockToolsBindings = {
                             y: coordsY.value
                         }]
                 }
-            }, navigation.annotationsOptions, navigation.bindings.infinityLine.annotationsOptions);
+            }, navigation.annotationsOptions, (_a = navigation.bindings) === null || _a === void 0 ? void 0 : _a.infinityLine.annotationsOptions);
             return this.chart.addAnnotation(options);
         },
         /** @ignore-option */
@@ -257,7 +262,8 @@ var StockToolsBindings = {
         // eslint-disable-next-line valid-jsdoc
         /** @ignore-option */
         start: function (e) {
-            var _a = this.getCoords(e), coordsX = _a[0], coordsY = _a[1];
+            var _a;
+            var _b = this.getCoords(e), coordsX = _b[0], coordsY = _b[1];
             // Exit if clicked out of axes area
             if (!coordsX || !coordsY) {
                 return;
@@ -280,8 +286,7 @@ var StockToolsBindings = {
                             y: coordsY.value
                         }]
                 }
-            }, navigation.annotationsOptions, navigation.bindings.arrowInfinityLine
-                .annotationsOptions);
+            }, navigation.annotationsOptions, (_a = navigation.bindings) === null || _a === void 0 ? void 0 : _a.arrowInfinityLine.annotationsOptions);
             return this.chart.addAnnotation(options);
         },
         /** @ignore-option */
@@ -302,7 +307,8 @@ var StockToolsBindings = {
         // eslint-disable-next-line valid-jsdoc
         /** @ignore-option */
         start: function (e) {
-            var _a = this.getCoords(e), coordsX = _a[0], coordsY = _a[1];
+            var _a;
+            var _b = this.getCoords(e), coordsX = _b[0], coordsY = _b[1];
             // Exit if clicked out of axes area
             if (!coordsX || !coordsY) {
                 return;
@@ -320,8 +326,7 @@ var StockToolsBindings = {
                             y: coordsY.value
                         }]
                 }
-            }, navigation.annotationsOptions, navigation.bindings
-                .horizontalLine.annotationsOptions);
+            }, navigation.annotationsOptions, (_a = navigation.bindings) === null || _a === void 0 ? void 0 : _a.horizontalLine.annotationsOptions);
             this.chart.addAnnotation(options);
         }
     },
@@ -338,7 +343,8 @@ var StockToolsBindings = {
         // eslint-disable-next-line valid-jsdoc
         /** @ignore-option */
         start: function (e) {
-            var _a = this.getCoords(e), coordsX = _a[0], coordsY = _a[1];
+            var _a;
+            var _b = this.getCoords(e), coordsX = _b[0], coordsY = _b[1];
             // Exit if clicked out of axes area
             if (!coordsX || !coordsY) {
                 return;
@@ -356,7 +362,7 @@ var StockToolsBindings = {
                             y: coordsY.value
                         }]
                 }
-            }, navigation.annotationsOptions, navigation.bindings.verticalLine.annotationsOptions);
+            }, navigation.annotationsOptions, (_a = navigation.bindings) === null || _a === void 0 ? void 0 : _a.verticalLine.annotationsOptions);
             this.chart.addAnnotation(options);
         }
     },
@@ -375,7 +381,8 @@ var StockToolsBindings = {
         // eslint-disable-next-line valid-jsdoc
         /** @ignore-option */
         start: function (e) {
-            var _a = this.getCoords(e), coordsX = _a[0], coordsY = _a[1];
+            var _a;
+            var _b = this.getCoords(e), coordsX = _b[0], coordsY = _b[1];
             // Exit if clicked out of axes area
             if (!coordsX || !coordsY) {
                 return;
@@ -392,7 +399,7 @@ var StockToolsBindings = {
                         { x: x, y: y }
                     ]
                 }
-            }, navigation.annotationsOptions, navigation.bindings.crooked3.annotationsOptions);
+            }, navigation.annotationsOptions, (_a = navigation.bindings) === null || _a === void 0 ? void 0 : _a.crooked3.annotationsOptions);
             return this.chart.addAnnotation(options);
         },
         /** @ignore-option */
@@ -415,7 +422,8 @@ var StockToolsBindings = {
         // eslint-disable-next-line valid-jsdoc
         /** @ignore-option */
         start: function (e) {
-            var _a = this.getCoords(e), coordsX = _a[0], coordsY = _a[1];
+            var _a;
+            var _b = this.getCoords(e), coordsX = _b[0], coordsY = _b[1];
             // Exit if clicked out of axes area
             if (!coordsX || !coordsY) {
                 return;
@@ -434,7 +442,7 @@ var StockToolsBindings = {
                         { x: x, y: y }
                     ]
                 }
-            }, navigation.annotationsOptions, navigation.bindings.crooked5.annotationsOptions);
+            }, navigation.annotationsOptions, (_a = navigation.bindings) === null || _a === void 0 ? void 0 : _a.crooked5.annotationsOptions);
             return this.chart.addAnnotation(options);
         },
         /** @ignore-option */
@@ -459,7 +467,8 @@ var StockToolsBindings = {
         // eslint-disable-next-line valid-jsdoc
         /** @ignore-option */
         start: function (e) {
-            var _a = this.getCoords(e), coordsX = _a[0], coordsY = _a[1];
+            var _a;
+            var _b = this.getCoords(e), coordsX = _b[0], coordsY = _b[1];
             // Exit if clicked out of axes area
             if (!coordsX || !coordsY) {
                 return;
@@ -476,13 +485,8 @@ var StockToolsBindings = {
                         { x: x, y: y },
                         { x: x, y: y }
                     ]
-                },
-                labelOptions: {
-                    style: {
-                        color: "#666666" /* Palette.neutralColor60 */
-                    }
                 }
-            }, navigation.annotationsOptions, navigation.bindings.elliott3.annotationsOptions);
+            }, navigation.annotationsOptions, (_a = navigation.bindings) === null || _a === void 0 ? void 0 : _a.elliott3.annotationsOptions);
             return this.chart.addAnnotation(options);
         },
         /** @ignore-option */
@@ -506,7 +510,8 @@ var StockToolsBindings = {
         // eslint-disable-next-line valid-jsdoc
         /** @ignore-option */
         start: function (e) {
-            var _a = this.getCoords(e), coordsX = _a[0], coordsY = _a[1];
+            var _a;
+            var _b = this.getCoords(e), coordsX = _b[0], coordsY = _b[1];
             // Exit if clicked out of axes area
             if (!coordsX || !coordsY) {
                 return;
@@ -525,13 +530,8 @@ var StockToolsBindings = {
                         { x: x, y: y },
                         { x: x, y: y }
                     ]
-                },
-                labelOptions: {
-                    style: {
-                        color: "#666666" /* Palette.neutralColor60 */
-                    }
                 }
-            }, navigation.annotationsOptions, navigation.bindings.elliott5.annotationsOptions);
+            }, navigation.annotationsOptions, (_a = navigation.bindings) === null || _a === void 0 ? void 0 : _a.elliott5.annotationsOptions);
             return this.chart.addAnnotation(options);
         },
         /** @ignore-option */
@@ -557,7 +557,8 @@ var StockToolsBindings = {
         // eslint-disable-next-line valid-jsdoc
         /** @ignore-option */
         start: function (e) {
-            var _a = this.getCoords(e), coordsX = _a[0], coordsY = _a[1];
+            var _a;
+            var _b = this.getCoords(e), coordsX = _b[0], coordsY = _b[1];
             // Exit if clicked out of axes area
             if (!coordsX || !coordsY) {
                 return;
@@ -571,27 +572,18 @@ var StockToolsBindings = {
                     yAxis: coordsY.axis.index,
                     point: { x: x, y: y },
                     crosshairX: {
-                        strokeWidth: 1,
-                        stroke: "#000000" /* Palette.neutralColor100 */
+                        strokeWidth: 1
                     },
                     crosshairY: {
                         enabled: false,
-                        strokeWidth: 0,
-                        stroke: "#000000" /* Palette.neutralColor100 */
+                        strokeWidth: 0
                     },
                     background: {
                         width: 0,
-                        height: 0,
-                        strokeWidth: 0,
-                        stroke: "#ffffff" /* Palette.backgroundColor */
-                    }
-                },
-                labelOptions: {
-                    style: {
-                        color: "#666666" /* Palette.neutralColor60 */
+                        height: 0
                     }
                 }
-            }, navigation.annotationsOptions, navigation.bindings.measureX.annotationsOptions);
+            }, navigation.annotationsOptions, (_a = navigation.bindings) === null || _a === void 0 ? void 0 : _a.measureX.annotationsOptions);
             return this.chart.addAnnotation(options);
         },
         /** @ignore-option */
@@ -613,7 +605,8 @@ var StockToolsBindings = {
         // eslint-disable-next-line valid-jsdoc
         /** @ignore-option */
         start: function (e) {
-            var _a = this.getCoords(e), coordsX = _a[0], coordsY = _a[1];
+            var _a;
+            var _b = this.getCoords(e), coordsX = _b[0], coordsY = _b[1];
             // Exit if clicked out of axes area
             if (!coordsX || !coordsY) {
                 return;
@@ -628,26 +621,18 @@ var StockToolsBindings = {
                     point: { x: x, y: y },
                     crosshairX: {
                         enabled: false,
-                        strokeWidth: 0,
-                        stroke: "#000000" /* Palette.neutralColor100 */
+                        strokeWidth: 0
                     },
                     crosshairY: {
-                        strokeWidth: 1,
-                        stroke: "#000000" /* Palette.neutralColor100 */
+                        strokeWidth: 1
                     },
                     background: {
                         width: 0,
                         height: 0,
-                        strokeWidth: 0,
-                        stroke: "#ffffff" /* Palette.backgroundColor */
-                    }
-                },
-                labelOptions: {
-                    style: {
-                        color: "#666666" /* Palette.neutralColor60 */
+                        strokeWidth: 0
                     }
                 }
-            }, navigation.annotationsOptions, navigation.bindings.measureY.annotationsOptions);
+            }, navigation.annotationsOptions, (_a = navigation.bindings) === null || _a === void 0 ? void 0 : _a.measureY.annotationsOptions);
             return this.chart.addAnnotation(options);
         },
         /** @ignore-option */
@@ -669,7 +654,8 @@ var StockToolsBindings = {
         // eslint-disable-next-line valid-jsdoc
         /** @ignore-option */
         start: function (e) {
-            var _a = this.getCoords(e), coordsX = _a[0], coordsY = _a[1];
+            var _a;
+            var _b = this.getCoords(e), coordsX = _b[0], coordsY = _b[1];
             // Exit if clicked out of axes area
             if (!coordsX || !coordsY) {
                 return;
@@ -685,24 +671,16 @@ var StockToolsBindings = {
                     background: {
                         width: 0,
                         height: 0,
-                        strokeWidth: 0,
-                        stroke: "#ffffff" /* Palette.backgroundColor */
+                        strokeWidth: 0
                     },
                     crosshairX: {
-                        strokeWidth: 1,
-                        stroke: "#000000" /* Palette.neutralColor100 */
+                        strokeWidth: 1
                     },
                     crosshairY: {
-                        strokeWidth: 1,
-                        stroke: "#000000" /* Palette.neutralColor100 */
-                    }
-                },
-                labelOptions: {
-                    style: {
-                        color: "#666666" /* Palette.neutralColor60 */
+                        strokeWidth: 1
                     }
                 }
-            }, navigation.annotationsOptions, navigation.bindings.measureXY.annotationsOptions);
+            }, navigation.annotationsOptions, (_a = navigation.bindings) === null || _a === void 0 ? void 0 : _a.measureXY.annotationsOptions);
             return this.chart.addAnnotation(options);
         },
         /** @ignore-option */
@@ -727,7 +705,8 @@ var StockToolsBindings = {
         // eslint-disable-next-line valid-jsdoc
         /** @ignore-option */
         start: function (e) {
-            var _a = this.getCoords(e), coordsX = _a[0], coordsY = _a[1];
+            var _a;
+            var _b = this.getCoords(e), coordsX = _b[0], coordsY = _b[1];
             // Exit if clicked out of axes area
             if (!coordsX || !coordsY) {
                 return;
@@ -742,13 +721,8 @@ var StockToolsBindings = {
                         { x: x, y: y },
                         { x: x, y: y }
                     ]
-                },
-                labelOptions: {
-                    style: {
-                        color: "#666666" /* Palette.neutralColor60 */
-                    }
                 }
-            }, navigation.annotationsOptions, navigation.bindings.fibonacci.annotationsOptions);
+            }, navigation.annotationsOptions, (_a = navigation.bindings) === null || _a === void 0 ? void 0 : _a.fibonacci.annotationsOptions);
             return this.chart.addAnnotation(options);
         },
         /** @ignore-option */
@@ -771,7 +745,8 @@ var StockToolsBindings = {
         // eslint-disable-next-line valid-jsdoc
         /** @ignore-option */
         start: function (e) {
-            var _a = this.getCoords(e), coordsX = _a[0], coordsY = _a[1];
+            var _a;
+            var _b = this.getCoords(e), coordsX = _b[0], coordsY = _b[1];
             // Exit if clicked out of axes area
             if (!coordsX || !coordsY) {
                 return;
@@ -787,8 +762,7 @@ var StockToolsBindings = {
                         { x: x, y: y }
                     ]
                 }
-            }, navigation.annotationsOptions, navigation.bindings.parallelChannel
-                .annotationsOptions);
+            }, navigation.annotationsOptions, (_a = navigation.bindings) === null || _a === void 0 ? void 0 : _a.parallelChannel.annotationsOptions);
             return this.chart.addAnnotation(options);
         },
         /** @ignore-option */
@@ -811,7 +785,8 @@ var StockToolsBindings = {
         // eslint-disable-next-line valid-jsdoc
         /** @ignore-option */
         start: function (e) {
-            var _a = this.getCoords(e), coordsX = _a[0], coordsY = _a[1];
+            var _a;
+            var _b = this.getCoords(e), coordsX = _b[0], coordsY = _b[1];
             // Exit if clicked out of axes area
             if (!coordsX || !coordsY) {
                 return;
@@ -833,15 +808,9 @@ var StockToolsBindings = {
                         },
                         { x: x, y: y },
                         { x: x, y: y }
-                    ],
-                    innerBackground: {
-                        fill: 'rgba(100, 170, 255, 0.8)'
-                    }
-                },
-                shapeOptions: {
-                    strokeWidth: 2
+                    ]
                 }
-            }, navigation.annotationsOptions, navigation.bindings.pitchfork.annotationsOptions);
+            }, navigation.annotationsOptions, (_a = navigation.bindings) === null || _a === void 0 ? void 0 : _a.pitchfork.annotationsOptions);
             return this.chart.addAnnotation(options);
         },
         /** @ignore-option */
@@ -866,6 +835,7 @@ var StockToolsBindings = {
         // eslint-disable-next-line valid-jsdoc
         /** @ignore-option */
         start: function (e) {
+            var _a;
             var closestPoint = attractToPoint(e, this.chart);
             // Exit if clicked out of axes area
             if (!closestPoint) {
@@ -886,19 +856,8 @@ var StockToolsBindings = {
                         offset: closestPoint.below ? 40 : -40,
                         text: this.verticalCounter.toString()
                     }
-                },
-                labelOptions: {
-                    style: {
-                        color: "#666666" /* Palette.neutralColor60 */,
-                        fontSize: '0.7em'
-                    }
-                },
-                shapeOptions: {
-                    stroke: 'rgba(0, 0, 0, 0.75)',
-                    strokeWidth: 1
                 }
-            }, navigation.annotationsOptions, navigation.bindings
-                .verticalCounter.annotationsOptions), annotation = this.chart.addAnnotation(options);
+            }, navigation.annotationsOptions, (_a = navigation.bindings) === null || _a === void 0 ? void 0 : _a.verticalCounter.annotationsOptions), annotation = this.chart.addAnnotation(options);
             this.verticalCounter++;
             annotation.options.events.click.call(annotation, {});
         }
@@ -915,6 +874,7 @@ var StockToolsBindings = {
     timeCycles: {
         className: 'highcharts-time-cycles',
         start: function (e) {
+            var _a;
             var closestPoint = attractToPoint(e, this.chart);
             // Exit if clicked out of axes area
             if (!closestPoint) {
@@ -930,14 +890,9 @@ var StockToolsBindings = {
                             x: closestPoint.x
                         }, {
                             x: closestPoint.x
-                        }],
-                    line: {
-                        stroke: 'rgba(0, 0, 0, 0.75)',
-                        fill: 'transparent',
-                        strokeWidth: 2
-                    }
+                        }]
                 }
-            }, navigation.annotationsOptions, navigation.bindings.timeCycles.annotationsOptions), annotation = this.chart.addAnnotation(options);
+            }, navigation.annotationsOptions, (_a = navigation.bindings) === null || _a === void 0 ? void 0 : _a.timeCycles.annotationsOptions), annotation = this.chart.addAnnotation(options);
             annotation.options.events.click.call(annotation, {});
             return annotation;
         },
@@ -951,6 +906,7 @@ var StockToolsBindings = {
         // eslint-disable-next-line valid-jsdoc
         /** @ignore-option */
         start: function (e) {
+            var _a;
             var closestPoint = attractToPoint(e, this.chart);
             // Exit if clicked out of axes area
             if (!closestPoint) {
@@ -969,19 +925,8 @@ var StockToolsBindings = {
                     label: {
                         offset: closestPoint.below ? 40 : -40
                     }
-                },
-                labelOptions: {
-                    style: {
-                        color: "#666666" /* Palette.neutralColor60 */,
-                        fontSize: '0.7em'
-                    }
-                },
-                shapeOptions: {
-                    stroke: 'rgba(0, 0, 0, 0.75)',
-                    strokeWidth: 1
                 }
-            }, navigation.annotationsOptions, navigation.bindings
-                .verticalLabel.annotationsOptions), annotation = this.chart.addAnnotation(options);
+            }, navigation.annotationsOptions, (_a = navigation.bindings) === null || _a === void 0 ? void 0 : _a.verticalLabel.annotationsOptions), annotation = this.chart.addAnnotation(options);
             annotation.options.events.click.call(annotation, {});
         }
     },
@@ -1002,6 +947,7 @@ var StockToolsBindings = {
         // eslint-disable-next-line valid-jsdoc
         /** @ignore-option */
         start: function (e) {
+            var _a;
             var closestPoint = attractToPoint(e, this.chart);
             // Exit if clicked out of axes area
             if (!closestPoint) {
@@ -1027,13 +973,8 @@ var StockToolsBindings = {
                             "#f21313" /* Palette.negativeColor */ :
                             "#06b535" /* Palette.positiveColor */
                     }
-                },
-                shapeOptions: {
-                    stroke: 'rgba(0, 0, 0, 0.75)',
-                    strokeWidth: 1
                 }
-            }, navigation.annotationsOptions, navigation.bindings
-                .verticalArrow.annotationsOptions), annotation = this.chart.addAnnotation(options);
+            }, navigation.annotationsOptions, (_a = navigation.bindings) === null || _a === void 0 ? void 0 : _a.verticalArrow.annotationsOptions), annotation = this.chart.addAnnotation(options);
             annotation.options.events.click.call(annotation, {});
         }
     },
@@ -1051,7 +992,8 @@ var StockToolsBindings = {
         // eslint-disable-next-line valid-jsdoc
         /** @ignore-option */
         start: function (e) {
-            var _a = this.getCoords(e), coordsX = _a[0], coordsY = _a[1];
+            var _a;
+            var _b = this.getCoords(e), coordsX = _b[0], coordsY = _b[1];
             // Exit if clicked out of axes area
             if (!coordsX || !coordsY) {
                 return;
@@ -1066,8 +1008,7 @@ var StockToolsBindings = {
                             x: coordsX.value
                         }]
                 }
-            }, navigation.annotationsOptions, navigation.bindings.fibonacciTimeZones
-                .annotationsOptions);
+            }, navigation.annotationsOptions, (_a = navigation.bindings) === null || _a === void 0 ? void 0 : _a.fibonacciTimeZones.annotationsOptions);
             return this.chart.addAnnotation(options);
         },
         /** @ignore-option */

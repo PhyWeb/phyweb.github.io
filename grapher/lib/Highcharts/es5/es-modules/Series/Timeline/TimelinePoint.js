@@ -2,7 +2,7 @@
  *
  *  Timeline Series.
  *
- *  (c) 2010-2024 Highsoft AS
+ *  (c) 2010-2025 Highsoft AS
  *
  *  Author: Daniel Studencki
  *
@@ -42,7 +42,12 @@ var TimelinePoint = /** @class */ (function (_super) {
     function TimelinePoint(series, options) {
         var _a;
         var _this = _super.call(this, series, options) || this;
-        (_a = _this.name) !== null && _a !== void 0 ? _a : (_this.name = 'Event');
+        (_a = _this.name) !== null && _a !== void 0 ? _a : (_this.name = 
+        // If options is null, we are dealing with a null point
+        ((options && options.y !== null) ||
+            !series.options.nullInteraction) &&
+            'Event' ||
+            'Null');
         _this.y = 1;
         return _this;
     }
@@ -132,12 +137,14 @@ var TimelinePoint = /** @class */ (function (_super) {
         return [];
     };
     TimelinePoint.prototype.isValid = function () {
-        return this.options.y !== null;
+        return (this.options.y !== null ||
+            this.series.options.nullInteraction ||
+            true);
     };
     TimelinePoint.prototype.setState = function () {
         var proceed = _super.prototype.setState;
         // Prevent triggering the setState method on null points.
-        if (!this.isNull) {
+        if (!this.isNull || this.series.options.nullInteraction) {
             proceed.apply(this, arguments);
         }
     };
@@ -152,9 +159,24 @@ var TimelinePoint = /** @class */ (function (_super) {
         }
     };
     TimelinePoint.prototype.applyOptions = function (options, x) {
-        options = Point.prototype.optionsToObject.call(this, options);
+        var isNull = (this.isNull ||
+            options === null ||
+            options.y === null), series = this.series;
+        if (!x && !(options === null || options === void 0 ? void 0 : options.x)) {
+            if (isNumber(this.x)) {
+                x = this.x;
+            }
+            else if (isNumber(series === null || series === void 0 ? void 0 : series.xIncrement) || NaN) {
+                x = series.xIncrement || 0;
+                series.autoIncrement();
+            }
+        }
+        options = Point.prototype.optionsToObject.call(this, options !== null && options !== void 0 ? options : ((series.options.nullInteraction && { y: 0 }) ||
+            null));
+        var p = _super.prototype.applyOptions.call(this, options, x);
         this.userDLOptions = merge(this.userDLOptions, options.dataLabels);
-        return _super.prototype.applyOptions.call(this, options, x);
+        p.isNull = isNull;
+        return p;
     };
     return TimelinePoint;
 }(LinePoint));

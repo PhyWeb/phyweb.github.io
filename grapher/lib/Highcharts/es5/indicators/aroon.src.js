@@ -1,12 +1,12 @@
 /**
- * @license Highstock JS v12.1.2 (2025-01-09)
+ * @license Highstock JS v12.3.0 (2025-06-21)
  * @module highcharts/indicators/aroon
  * @requires highcharts
  * @requires highcharts/modules/stock
  *
  * Indicator series type for Highcharts Stock
  *
- * (c) 2010-2024 Wojciech Chmiel
+ * (c) 2010-2025 Wojciech Chmiel
  *
  * License: www.highcharts.com/license
  */
@@ -111,7 +111,7 @@ var highcharts_SeriesRegistry_commonjs_highcharts_SeriesRegistry_commonjs2_highc
 ;// ./code/es5/es-modules/Stock/Indicators/MultipleLinesComposition.js
 /**
  *
- *  (c) 2010-2024 Wojciech Chmiel
+ *  (c) 2010-2025 Wojciech Chmiel
  *
  *  License: www.highcharts.com/license
  *

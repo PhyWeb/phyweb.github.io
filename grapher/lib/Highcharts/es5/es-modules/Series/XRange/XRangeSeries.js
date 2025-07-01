@@ -2,7 +2,7 @@
  *
  *  X-range series module
  *
- *  (c) 2010-2024 Torstein Honsi, Lars A. V. Cabrera
+ *  (c) 2010-2025 Torstein Honsi, Lars A. V. Cabrera
  *
  *  License: www.highcharts.com/license
  *
@@ -177,10 +177,10 @@ var XRangeSeries = /** @class */ (function (_super) {
         return pointIndex;
     };
     XRangeSeries.prototype.alignDataLabel = function (point) {
-        var _a;
+        var _a, _b;
         var oldPlotX = point.plotX;
-        point.plotX = pick(point.dlBox && point.dlBox.centerX, point.plotX);
-        if (point.dataLabel && ((_a = point.shapeArgs) === null || _a === void 0 ? void 0 : _a.width)) {
+        point.plotX = pick((_a = point.dlBox) === null || _a === void 0 ? void 0 : _a.centerX, point.plotX);
+        if (point.dataLabel && ((_b = point.shapeArgs) === null || _b === void 0 ? void 0 : _b.width)) {
             point.dataLabel.css({
                 width: "".concat(point.shapeArgs.width, "px")
             });
@@ -192,8 +192,8 @@ var XRangeSeries = /** @class */ (function (_super) {
      * @private
      */
     XRangeSeries.prototype.translatePoint = function (point) {
-        var _a, _b;
-        var xAxis = this.xAxis, yAxis = this.yAxis, metrics = this.columnMetrics, options = this.options, minPointLength = options.minPointLength || 0, oldColWidth = (point.shapeArgs && point.shapeArgs.width || 0) / 2, seriesXOffset = this.pointXOffset = metrics.offset, posX = pick(point.x2, point.x + (point.len || 0)), borderRadius = options.borderRadius, plotTop = this.chart.plotTop, plotLeft = this.chart.plotLeft;
+        var _a, _b, _c;
+        var xAxis = this.xAxis, yAxis = this.yAxis, metrics = this.columnMetrics, options = this.options, minPointLength = options.minPointLength || 0, oldColWidth = (((_a = point.shapeArgs) === null || _a === void 0 ? void 0 : _a.width) || 0) / 2, seriesXOffset = this.pointXOffset = metrics.offset, posX = pick(point.x2, point.x + (point.len || 0)), borderRadius = options.borderRadius, plotTop = this.chart.plotTop, plotLeft = this.chart.plotLeft;
         var plotX = point.plotX, plotX2 = xAxis.translate(posX, 0, 0, 0, 1);
         var length = Math.abs(plotX2 - plotX), inverted = this.chart.inverted, borderWidth = pick(options.borderWidth, 1);
         var widthDifference, partialFill, yOffset = metrics.offset, pointHeight = Math.round(metrics.width), dlLeft, dlRight, dlWidth, clipRectWidth;
@@ -299,7 +299,7 @@ var XRangeSeries = /** @class */ (function (_super) {
         // 'key' to ensure tooltip datetime formatting. Use 'name' only when
         // 'category' is undefined.
         point.key = point.category || point.name;
-        point.yCategory = (_a = yAxis.categories) === null || _a === void 0 ? void 0 : _a[(_b = point.y) !== null && _b !== void 0 ? _b : -1];
+        point.yCategory = (_b = yAxis.categories) === null || _b === void 0 ? void 0 : _b[(_c = point.y) !== null && _c !== void 0 ? _c : -1];
     };
     /**
      * @private

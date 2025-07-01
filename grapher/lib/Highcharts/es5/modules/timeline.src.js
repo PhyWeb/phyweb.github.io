@@ -1,11 +1,11 @@
 /**
- * @license Highcharts JS v12.1.2 (2025-01-09)
+ * @license Highcharts JS v12.3.0 (2025-06-21)
  * @module highcharts/modules/timeline
  * @requires highcharts
  *
  * Timeline series
  *
- * (c) 2010-2024 Highsoft AS
+ * (c) 2010-2025 Highsoft AS
  * Author: Daniel Studencki
  *
  * License: www.highcharts.com/license
@@ -123,7 +123,7 @@ var highcharts_Point_commonjs_highcharts_Point_commonjs2_highcharts_Point_root_H
  *
  *  Timeline Series.
  *
- *  (c) 2010-2024 Highsoft AS
+ *  (c) 2010-2025 Highsoft AS
  *
  *  Author: Daniel Studencki
  *
@@ -166,7 +166,12 @@ var TimelinePoint = /** @class */ (function (_super) {
         var _this = _super.call(this,
             series,
             options) || this;
-        (_a = _this.name) !== null && _a !== void 0 ? _a : (_this.name = 'Event');
+        (_a = _this.name) !== null && _a !== void 0 ? _a : (_this.name = 
+        // If options is null, we are dealing with a null point
+        ((options && options.y !== null) ||
+            !series.options.nullInteraction) &&
+            'Event' ||
+            'Null');
         _this.y = 1;
         return _this;
     }
@@ -278,12 +283,14 @@ var TimelinePoint = /** @class */ (function (_super) {
         return [];
     };
     TimelinePoint.prototype.isValid = function () {
-        return this.options.y !== null;
+        return (this.options.y !== null ||
+            this.series.options.nullInteraction ||
+            true);
     };
     TimelinePoint.prototype.setState = function () {
         var proceed = _super.prototype.setState;
         // Prevent triggering the setState method on null points.
-        if (!this.isNull) {
+        if (!this.isNull || this.series.options.nullInteraction) {
             proceed.apply(this, arguments);
         }
     };
@@ -299,9 +306,27 @@ var TimelinePoint = /** @class */ (function (_super) {
         }
     };
     TimelinePoint.prototype.applyOptions = function (options, x) {
-        options = highcharts_Point_commonjs_highcharts_Point_commonjs2_highcharts_Point_root_Highcharts_Point_default().prototype.optionsToObject.call(this, options);
+        var isNull = (this.isNull ||
+                options === null ||
+                options.y === null),
+            series = this.series;
+        if (!x && !(options === null || options === void 0 ? void 0 : options.x)) {
+            if (isNumber(this.x)) {
+                x = this.x;
+            }
+            else if (isNumber(series === null || series === void 0 ? void 0 : series.xIncrement) || NaN) {
+                x = series.xIncrement || 0;
+                series.autoIncrement();
+            }
+        }
+        options = highcharts_Point_commonjs_highcharts_Point_commonjs2_highcharts_Point_root_Highcharts_Point_default().prototype.optionsToObject.call(this, options !== null && options !== void 0 ? options : ((series.options.nullInteraction && { y: 0 }) ||
+            null));
+        var p = _super.prototype.applyOptions.call(this,
+            options,
+            x);
         this.userDLOptions = merge(this.userDLOptions, options.dataLabels);
-        return _super.prototype.applyOptions.call(this, options, x);
+        p.isNull = isNull;
+        return p;
     };
     return TimelinePoint;
 }(LinePoint));
@@ -317,7 +342,7 @@ var TimelinePoint = /** @class */ (function (_super) {
  *
  *  Timeline Series.
  *
- *  (c) 2010-2024 Highsoft AS
+ *  (c) 2010-2025 Highsoft AS
  *
  *  Author: Daniel Studencki
  *
@@ -573,7 +598,7 @@ var TimelineSeriesDefaults = {
  *
  *  Timeline Series.
  *
- *  (c) 2010-2024 Highsoft AS
+ *  (c) 2010-2025 Highsoft AS
  *
  *  Author: Daniel Studencki
  *
@@ -718,16 +743,19 @@ var TimelineSeries = /** @class */ (function (_super) {
         _super.prototype.generatePoints.call(this);
         var series = this,
             points = series.points,
+            pointsLen = points.length,
             xData = series.getColumn('x');
-        for (var i = 0, iEnd = points.length; i < iEnd; ++i) {
-            points[i].applyOptions({
-                x: xData[i]
-            }, xData[i]);
+        for (var i = 0, iEnd = pointsLen; i < iEnd; ++i) {
+            var x = xData[i];
+            points[i].applyOptions({ x: x }, x);
         }
     };
     TimelineSeries.prototype.getVisibilityMap = function () {
         var series = this,
-            map = ((series.data.length ? series.data : series.options.data) || []).map(function (point) { return (point && point.visible !== false && !point.isNull ?
+            nullInteraction = series.options.nullInteraction,
+            map = ((series.data.length ? series.data : series.options.data) || []).map(function (point) { return (point &&
+                point.visible !== false &&
+                (!point.isNull || nullInteraction) ?
                 point :
                 false); });
         return map;
@@ -756,7 +784,8 @@ var TimelineSeries = /** @class */ (function (_super) {
                 point.isInside = point.isInside && point.visible;
                 // New way of calculating closestPointRangePx value, which
                 // respects the real point visibility is needed.
-                if (point.visible && !point.isNull) {
+                if (point.visible && (!point.isNull ||
+                    series.options.nullInteraction)) {
                     if (TimelineSeries_defined(lastPlotX)) {
                         closestPointRangePx = Math.min(closestPointRangePx, Math.abs(point.plotX - lastPlotX));
                     }

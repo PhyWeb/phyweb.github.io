@@ -1,9 +1,11 @@
 /**
- * @license Highcharts JS v@product.version@ (@product.date@)
+ * @license Highcharts JS v12.3.0 (2025-06-21)
  * @module highcharts/modules/drilldown
  * @requires highcharts
  *
  * Highcharts Drilldown module
+ *
+ * (c) 2009-2025 Torstein Honsi
  *
  * Author: Torstein Honsi
  * License: www.highcharts.com/license

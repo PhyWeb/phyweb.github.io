@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -200,7 +200,7 @@ var MSPointer = /** @class */ (function (_super) {
         var tooltip = this.chart.tooltip;
         _super.prototype.setDOMEvents.call(this);
         if (this.hasZoom ||
-            pick((tooltip && tooltip.options.followTouchMove), true)) {
+            pick((tooltip === null || tooltip === void 0 ? void 0 : tooltip.options.followTouchMove), true)) {
             this.batchMSEvents(addEvent);
         }
     };

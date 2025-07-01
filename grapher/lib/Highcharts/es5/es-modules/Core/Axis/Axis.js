@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -326,7 +326,14 @@ var Axis = /** @class */ (function () {
                     rotation: 90 * this.side
                 }
             };
-        this.options = merge(sideSpecific, defaultOptions[this.coll], userOptions);
+        this.options = merge(sideSpecific, 
+        // Merge in the default title for y-axis, which changes with
+        // language settings
+        this.coll === 'yAxis' ? {
+            title: {
+                text: this.chart.options.lang.yAxisTitle
+            }
+        } : {}, defaultOptions[this.coll], userOptions);
         fireEvent(this, 'afterSetOptions', { userOptions: userOptions });
     };
     /**
@@ -353,7 +360,7 @@ var Axis = /** @class */ (function () {
         numericSymbolDetector = axis.logarithmic ?
             Math.abs(value) :
             axis.tickInterval;
-        var i = numericSymbols && numericSymbols.length, multi, ret;
+        var i = numericSymbols === null || numericSymbols === void 0 ? void 0 : numericSymbols.length, multi, ret;
         if (categories) {
             ret = "".concat(this.value);
         }
@@ -985,6 +992,7 @@ var Axis = /** @class */ (function () {
      * @emits Highcharts.Axis#event:afterSetAxisTranslation
      */
     Axis.prototype.setAxisTranslation = function () {
+        var _a;
         var axis = this, range = axis.max - axis.min, linkedParent = axis.linkedParent, hasCategories = !!axis.categories, isXAxis = axis.isXAxis;
         var pointRange = axis.axisPointRange || 0, closestPointRange, minPointOffset = 0, pointRangePadding = 0, ordinalCorrection, transA = axis.transA;
         // Adjust translation for padding. Y axis with categories need to go
@@ -1029,7 +1037,7 @@ var Axis = /** @class */ (function () {
                 });
             }
             // Record minPointOffset and pointRangePadding
-            ordinalCorrection = (axis.ordinal && axis.ordinal.slope && closestPointRange) ?
+            ordinalCorrection = (((_a = axis.ordinal) === null || _a === void 0 ? void 0 : _a.slope) && closestPointRange) ?
                 axis.ordinal.slope / closestPointRange :
                 1; // #988, #1853
             axis.minPointOffset = minPointOffset =
@@ -1042,7 +1050,7 @@ var Axis = /** @class */ (function () {
             // The `closestPointRange` is the closest distance between points.
             // In columns it is mostly equal to pointRange, but in lines
             // pointRange is 0 while closestPointRange is some other value
-            if (isXAxis && closestPointRange) {
+            if (isXAxis) {
                 axis.closestPointRange = closestPointRange;
             }
         }
@@ -1274,7 +1282,9 @@ var Axis = /** @class */ (function () {
         dateTime &&
             !axis.series.some(function (s) { return !s.sorted; }) ?
             axis.closestPointRange : 0);
-        if (!tickIntervalOption && axis.tickInterval < minTickInterval) {
+        if (!tickIntervalOption &&
+            minTickInterval &&
+            axis.tickInterval < minTickInterval) {
             axis.tickInterval = minTickInterval;
         }
         // For linear axes, normalize the interval
@@ -1435,7 +1445,10 @@ var Axis = /** @class */ (function () {
     Axis.prototype.trimTicks = function (tickPositions, startOnTick, endOnTick) {
         var roundedMin = tickPositions[0], roundedMax = tickPositions[tickPositions.length - 1], minPointOffset = (!this.isOrdinal && this.minPointOffset) || 0; // (#12716)
         fireEvent(this, 'trimTicks');
-        if (!this.isLinked) {
+        if (!this.isLinked ||
+            // Linked non-grid axes should trim ticks, #21743.
+            // Grid axis has custom handling of ticks.
+            !this.grid) {
             if (startOnTick && roundedMin !== -Infinity) { // #6502
                 this.min = roundedMin;
             }
@@ -1702,28 +1715,29 @@ var Axis = /** @class */ (function () {
      * @emits Highcharts.Axis#event:afterSetScale
      */
     Axis.prototype.setScale = function () {
-        var _a, _b;
+        var _a, _b, _c, _d, _e;
         var axis = this, coll = axis.coll, stacking = axis.stacking;
         var isDirtyData = false, isXAxisDirty = false;
         axis.series.forEach(function (series) {
+            var _a;
             isDirtyData = isDirtyData || series.isDirtyData || series.isDirty;
             // When x axis is dirty, we need new data extremes for y as
             // well:
             isXAxisDirty = (isXAxisDirty ||
-                (series.xAxis && series.xAxis.isDirty) ||
+                ((_a = series.xAxis) === null || _a === void 0 ? void 0 : _a.isDirty) ||
                 false);
         });
         // Set the new axisLength
         axis.setAxisSize();
-        var isDirtyAxisLength = axis.len !== (axis.old && axis.old.len);
+        var isDirtyAxisLength = axis.len !== ((_a = axis.old) === null || _a === void 0 ? void 0 : _a.len);
         // Do we really need to go through all this?
         if (isDirtyAxisLength ||
             isDirtyData ||
             isXAxisDirty ||
             axis.isLinked ||
             axis.forceRedraw ||
-            axis.userMin !== (axis.old && axis.old.userMin) ||
-            axis.userMax !== (axis.old && axis.old.userMax) ||
+            axis.userMin !== ((_b = axis.old) === null || _b === void 0 ? void 0 : _b.userMin) ||
+            axis.userMax !== ((_c = axis.old) === null || _c === void 0 ? void 0 : _c.userMax) ||
             axis.alignToOthers()) {
             if (stacking && coll === 'yAxis') {
                 stacking.buildStacks();
@@ -1746,8 +1760,8 @@ var Axis = /** @class */ (function () {
             if (!axis.isDirty) {
                 axis.isDirty =
                     isDirtyAxisLength ||
-                        axis.min !== ((_a = axis.old) === null || _a === void 0 ? void 0 : _a.min) ||
-                        axis.max !== ((_b = axis.old) === null || _b === void 0 ? void 0 : _b.max);
+                        axis.min !== ((_d = axis.old) === null || _d === void 0 ? void 0 : _d.min) ||
+                        axis.max !== ((_e = axis.old) === null || _e === void 0 ? void 0 : _e.max);
             }
         }
         else if (stacking) {
@@ -2142,7 +2156,7 @@ var Axis = /** @class */ (function () {
         }
         // Apply general and specific CSS
         tickPositions.forEach(function (pos) {
-            var tick = ticks[pos], label = tick && tick.label, widthOption = labelStyleOptions.width, css = {};
+            var tick = ticks[pos], label = tick === null || tick === void 0 ? void 0 : tick.label, widthOption = labelStyleOptions.width, css = {};
             if (label) {
                 // This needs to go before the CSS in old IE (#4502)
                 label.attr(attr);
@@ -2380,7 +2394,7 @@ var Axis = /** @class */ (function () {
             var tickSize = this.tickSize('tick');
             axisOffset[side] = Math.max(axisOffset[side], (axis.axisTitleMargin || 0) + titleOffset +
                 directionFactor * axis.offset, labelOffsetPadded, // #3027
-            tickPositions && tickPositions.length && tickSize ?
+            (tickPositions === null || tickPositions === void 0 ? void 0 : tickPositions.length) && tickSize ?
                 tickSize[0] + directionFactor * axis.offset :
                 0 // #4866
             );
@@ -2537,11 +2551,12 @@ var Axis = /** @class */ (function () {
      * Whether the tick should animate in from last computed position
      */
     Axis.prototype.renderTick = function (pos, i, slideIn) {
+        var _a;
         var axis = this, isLinked = axis.isLinked, ticks = axis.ticks;
         // Linked axes need an extra check to find out if
         if (!isLinked ||
             (pos >= axis.min && pos <= axis.max) ||
-            (axis.grid && axis.grid.isColumn)) {
+            ((_a = axis.grid) === null || _a === void 0 ? void 0 : _a.isColumn)) {
             if (!ticks[pos]) {
                 ticks[pos] = new Tick(axis, pos);
             }
@@ -2696,7 +2711,7 @@ var Axis = /** @class */ (function () {
             axisTitle.isNew = false;
         }
         // Stacked totals:
-        if (stackLabelOptions && stackLabelOptions.enabled && axis.stacking) {
+        if ((stackLabelOptions === null || stackLabelOptions === void 0 ? void 0 : stackLabelOptions.enabled) && axis.stacking) {
             axis.stacking.renderStackTotals();
         }
         // End stacked totals
@@ -2809,13 +2824,14 @@ var Axis = /** @class */ (function () {
      * @emits Highcharts.Axis#event:drawCrosshair
      */
     Axis.prototype.drawCrosshair = function (e, point) {
-        var options = this.crosshair, snap = pick(options && options.snap, true), chart = this.chart;
+        var _a, _b;
+        var options = this.crosshair, snap = (_a = options === null || options === void 0 ? void 0 : options.snap) !== null && _a !== void 0 ? _a : true, chart = this.chart;
         var path, pos, categorized, graphic = this.cross, crossOptions;
         fireEvent(this, 'drawCrosshair', { e: e, point: point });
         // Use last available event when updating non-snapped crosshairs without
         // mouse interaction (#5287)
         if (!e) {
-            e = this.cross && this.cross.e;
+            e = (_b = this.cross) === null || _b === void 0 ? void 0 : _b.e;
         }
         if (
         // Disabled in options
@@ -2853,8 +2869,8 @@ var Axis = /** @class */ (function () {
                     // polar chart
                     extend(crossOptions, {
                         isCrosshair: true,
-                        chartX: e && e.chartX,
-                        chartY: e && e.chartY,
+                        chartX: e === null || e === void 0 ? void 0 : e.chartX,
+                        chartY: e === null || e === void 0 ? void 0 : e.chartY,
                         point: point
                     });
                 }

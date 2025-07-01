@@ -1,11 +1,11 @@
 /**
- * @license Highcharts JS v12.1.2 (2025-01-09)
+ * @license Highcharts JS v12.3.0 (2025-06-21)
  * @module highcharts/modules/sankey
  * @requires highcharts
  *
  * Sankey diagram module
  *
- * (c) 2010-2024 Torstein Honsi
+ * (c) 2010-2025 Torstein Honsi
  *
  * License: www.highcharts.com/license
  */
@@ -23,10 +23,10 @@ return /******/ (function() { // webpackBootstrap
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 620:
+/***/ 28:
 /***/ (function(module) {
 
-module.exports = __WEBPACK_EXTERNAL_MODULE__620__;
+module.exports = __WEBPACK_EXTERNAL_MODULE__28__;
 
 /***/ }),
 
@@ -37,17 +37,17 @@ module.exports = __WEBPACK_EXTERNAL_MODULE__260__;
 
 /***/ }),
 
-/***/ 28:
-/***/ (function(module) {
-
-module.exports = __WEBPACK_EXTERNAL_MODULE__28__;
-
-/***/ }),
-
 /***/ 512:
 /***/ (function(module) {
 
 module.exports = __WEBPACK_EXTERNAL_MODULE__512__;
+
+/***/ }),
+
+/***/ 620:
+/***/ (function(module) {
+
+module.exports = __WEBPACK_EXTERNAL_MODULE__620__;
 
 /***/ }),
 
@@ -423,7 +423,7 @@ var highcharts_Point_commonjs_highcharts_Point_commonjs2_highcharts_Point_root_H
  *
  *  Sankey diagram module
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -542,7 +542,7 @@ var SankeyPoint = /** @class */ (function (_super) {
  *
  *  Sankey diagram module
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -1139,7 +1139,7 @@ var SankeySeriesDefaults = {
  *
  *  Sankey diagram module
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -1391,7 +1391,7 @@ var highcharts_Color_commonjs_highcharts_Color_commonjs2_highcharts_Color_root_H
 ;// ./code/es5/es-modules/Series/TreeUtilities.js
 /* *
  *
- *  (c) 2014-2024 Highsoft AS
+ *  (c) 2014-2025 Highsoft AS
  *
  *  Authors: Jon Arild Nygard / Oystein Moseng
  *
@@ -1652,7 +1652,7 @@ var highcharts_SVGElement_commonjs_highcharts_SVGElement_commonjs2_highcharts_SV
  *
  *  Highcharts module with textPath functionality.
  *
- *  (c) 2009-2024 Torstein Honsi
+ *  (c) 2009-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -1907,7 +1907,7 @@ var TextPath = {
  *
  *  Sankey diagram module
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -2123,7 +2123,8 @@ var SankeySeries = /** @class */ (function (_super) {
         }
         // Link attributes
         return {
-            fill: highcharts_Color_commonjs_highcharts_Color_commonjs2_highcharts_Color_root_Highcharts_Color_default().parse(color).setOpacity(values.linkOpacity).get()
+            fill: color,
+            'fill-opacity': values.linkOpacity
         };
     };
     SankeySeries.prototype.drawTracker = function () {

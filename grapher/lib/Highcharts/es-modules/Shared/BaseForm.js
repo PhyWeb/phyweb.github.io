@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2009-2024 Highsoft AS
+ *  (c) 2009-2025 Highsoft AS
  *
  *  License: www.highcharts.com/license
  *
@@ -65,9 +65,12 @@ class BaseForm {
         const popup = this, iconsURL = this.iconsURL;
         // Create close popup button.
         const closeButton = createElement('button', { className }, void 0, this.container);
-        closeButton.style['background-image'] = 'url(' +
-            (iconsURL.match(/png|svg|jpeg|jpg|gif/ig) ?
-                iconsURL : iconsURL + 'close.svg') + ')';
+        createElement('span', {
+            className: 'highcharts-icon'
+        }, {
+            backgroundImage: 'url(' + (iconsURL.match(/png|svg|jpeg|jpg|gif/ig) ?
+                iconsURL : iconsURL + 'close.svg') + ')'
+        }, closeButton);
         ['click', 'touchstart'].forEach((eventName) => {
             addEvent(closeButton, eventName, popup.closeButtonEvents.bind(popup));
         });

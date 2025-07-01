@@ -1,11 +1,11 @@
 /**
- * @license Highcharts JS v12.1.2 (2025-01-09)
+ * @license Highcharts JS v12.3.0 (2025-06-21)
  * @module highcharts/modules/accessibility
  * @requires highcharts
  *
  * Accessibility module
  *
- * (c) 2010-2024 Highsoft AS
+ * (c) 2010-2025 Highsoft AS
  * Author: Oystein Moseng
  *
  * License: www.highcharts.com/license
@@ -24,31 +24,10 @@ return /******/ (function() { // webpackBootstrap
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 660:
-/***/ (function(module) {
-
-module.exports = __WEBPACK_EXTERNAL_MODULE__660__;
-
-/***/ }),
-
-/***/ 532:
-/***/ (function(module) {
-
-module.exports = __WEBPACK_EXTERNAL_MODULE__532__;
-
-/***/ }),
-
 /***/ 239:
 /***/ (function(module) {
 
 module.exports = __WEBPACK_EXTERNAL_MODULE__239__;
-
-/***/ }),
-
-/***/ 632:
-/***/ (function(module) {
-
-module.exports = __WEBPACK_EXTERNAL_MODULE__632__;
 
 /***/ }),
 
@@ -59,10 +38,17 @@ module.exports = __WEBPACK_EXTERNAL_MODULE__260__;
 
 /***/ }),
 
-/***/ 608:
+/***/ 512:
 /***/ (function(module) {
 
-module.exports = __WEBPACK_EXTERNAL_MODULE__608__;
+module.exports = __WEBPACK_EXTERNAL_MODULE__512__;
+
+/***/ }),
+
+/***/ 532:
+/***/ (function(module) {
+
+module.exports = __WEBPACK_EXTERNAL_MODULE__532__;
 
 /***/ }),
 
@@ -73,6 +59,27 @@ module.exports = __WEBPACK_EXTERNAL_MODULE__540__;
 
 /***/ }),
 
+/***/ 608:
+/***/ (function(module) {
+
+module.exports = __WEBPACK_EXTERNAL_MODULE__608__;
+
+/***/ }),
+
+/***/ 632:
+/***/ (function(module) {
+
+module.exports = __WEBPACK_EXTERNAL_MODULE__632__;
+
+/***/ }),
+
+/***/ 660:
+/***/ (function(module) {
+
+module.exports = __WEBPACK_EXTERNAL_MODULE__660__;
+
+/***/ }),
+
 /***/ 820:
 /***/ (function(module) {
 
@@ -80,10 +87,10 @@ module.exports = __WEBPACK_EXTERNAL_MODULE__820__;
 
 /***/ }),
 
-/***/ 512:
+/***/ 944:
 /***/ (function(module) {
 
-module.exports = __WEBPACK_EXTERNAL_MODULE__512__;
+module.exports = __WEBPACK_EXTERNAL_MODULE__944__;
 
 /***/ }),
 
@@ -91,13 +98,6 @@ module.exports = __WEBPACK_EXTERNAL_MODULE__512__;
 /***/ (function(module) {
 
 module.exports = __WEBPACK_EXTERNAL_MODULE__984__;
-
-/***/ }),
-
-/***/ 944:
-/***/ (function(module) {
-
-module.exports = __WEBPACK_EXTERNAL_MODULE__944__;
 
 /***/ })
 
@@ -171,7 +171,7 @@ var highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default 
 ;// ./code/es5/es-modules/Accessibility/Utils/HTMLUtilities.js
 /* *
  *
- *  (c) 2009-2024 Øystein Moseng
+ *  (c) 2009-2025 Øystein Moseng
  *
  *  Utility functions for accessibility module.
  *
@@ -239,7 +239,7 @@ function cloneMouseEvent(e) {
         return new win.MouseEvent(e.type, e);
     }
     // No MouseEvent support, try using initMouseEvent
-    if (doc.createEvent) {
+    if (doc === null || doc === void 0 ? void 0 : doc.createEvent) {
         var evt = doc.createEvent('MouseEvent');
         if (evt.initMouseEvent) {
             evt.initMouseEvent(e.type, e.bubbles, // #10561, #12161
@@ -337,7 +337,7 @@ function getFakeMouseEvent(type, position, relatedTarget) {
         });
     }
     // No MouseEvent support, try using initMouseEvent
-    if (doc.createEvent) {
+    if (doc === null || doc === void 0 ? void 0 : doc.createEvent) {
         var evt = doc.createEvent('MouseEvent');
         if (evt.initMouseEvent) {
             evt.initMouseEvent(type, true, // Bubble
@@ -500,7 +500,7 @@ var highcharts_Templating_commonjs_highcharts_Templating_commonjs2_highcharts_Te
  *
  *  Accessibility module - internationalization support
  *
- *  (c) 2010-2024 Highsoft AS
+ *  (c) 2010-2025 Highsoft AS
  *  Author: Øystein Moseng
  *
  *  License: www.highcharts.com/license
@@ -798,7 +798,7 @@ var A11yI18nComposition;
 ;// ./code/es5/es-modules/Accessibility/Utils/ChartUtilities.js
 /* *
  *
- *  (c) 2009-2024 Øystein Moseng
+ *  (c) 2009-2025 Øystein Moseng
  *
  *  Utils for dealing with charts.
  *
@@ -828,7 +828,7 @@ var defined = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highchar
 function fireEventOnWrappedOrUnwrappedElement(el, eventObject) {
     var type = eventObject.type;
     var hcEvents = el.hcEvents;
-    if (!!ChartUtilities_doc.createEvent &&
+    if (!!(ChartUtilities_doc === null || ChartUtilities_doc === void 0 ? void 0 : ChartUtilities_doc.createEvent) &&
         (el.dispatchEvent || el.fireEvent)) {
         if (el.dispatchEvent) {
             el.dispatchEvent(eventObject);
@@ -1116,7 +1116,7 @@ var ChartUtilities = {
 ;// ./code/es5/es-modules/Accessibility/Utils/DOMElementProvider.js
 /* *
  *
- *  (c) 2009-2024 Øystein Moseng
+ *  (c) 2009-2025 Øystein Moseng
  *
  *  Class that can keep track of elements added to DOM and clean them up on
  *  destroy.
@@ -1189,7 +1189,7 @@ var DOMElementProvider = /** @class */ (function () {
 ;// ./code/es5/es-modules/Accessibility/Utils/EventProvider.js
 /* *
  *
- *  (c) 2009-2024 Øystein Moseng
+ *  (c) 2009-2025 Øystein Moseng
  *
  *  Class that can keep track of events added, and clean them up on destroy.
  *
@@ -1258,7 +1258,7 @@ var EventProvider = /** @class */ (function () {
 ;// ./code/es5/es-modules/Accessibility/AccessibilityComponent.js
 /* *
  *
- *  (c) 2009-2024 Øystein Moseng
+ *  (c) 2009-2025 Øystein Moseng
  *
  *  Accessibility component class definition
  *
@@ -1410,7 +1410,7 @@ var AccessibilityComponent = /** @class */ (function () {
 ;// ./code/es5/es-modules/Accessibility/KeyboardNavigationHandler.js
 /* *
  *
- *  (c) 2009-2024 Øystein Moseng
+ *  (c) 2009-2025 Øystein Moseng
  *
  *  Keyboard navigation handler base class definition
  *
@@ -1540,7 +1540,7 @@ var KeyboardNavigationHandler = /** @class */ (function () {
 ;// ./code/es5/es-modules/Accessibility/Components/ContainerComponent.js
 /* *
  *
- *  (c) 2009-2024 Øystein Moseng
+ *  (c) 2009-2025 Øystein Moseng
  *
  *  Accessibility component for chart container.
  *
@@ -1708,7 +1708,7 @@ var ContainerComponent = /** @class */ (function (_super) {
 ;// ./code/es5/es-modules/Accessibility/FocusBorder.js
 /* *
  *
- *  (c) 2009-2024 Øystein Moseng
+ *  (c) 2009-2025 Øystein Moseng
  *
  *  Extend SVG and Chart classes with focus border capabilities.
  *
@@ -2029,7 +2029,7 @@ var highcharts_AST_commonjs_highcharts_AST_commonjs2_highcharts_AST_root_Highcha
 ;// ./code/es5/es-modules/Accessibility/Utils/Announcer.js
 /* *
  *
- *  (c) 2009-2024 Øystein Moseng
+ *  (c) 2009-2025 Øystein Moseng
  *
  *  Create announcer to speak messages to screen readers and other AT.
  *
@@ -2125,7 +2125,7 @@ var Announcer = /** @class */ (function () {
 ;// ./code/es5/es-modules/Accessibility/Components/AnnotationsA11y.js
 /* *
  *
- *  (c) 2009-2024 Øystein Moseng
+ *  (c) 2009-2025 Øystein Moseng
  *
  *  Annotations accessibility code.
  *
@@ -2288,7 +2288,7 @@ var AnnotationsA11y = {
 ;// ./code/es5/es-modules/Accessibility/Components/InfoRegionsComponent.js
 /* *
  *
- *  (c) 2009-2024 Øystein Moseng
+ *  (c) 2009-2025 Øystein Moseng
  *
  *  Accessibility component for chart info region and table.
  *
@@ -2451,7 +2451,7 @@ var InfoRegionsComponent = /** @class */ (function (_super) {
         var chart = this.chart;
         var component = this;
         this.initRegionsDefinitions();
-        this.addEvent(chart, 'aftergetTableAST', function (e) {
+        this.addEvent(chart, 'afterGetTableAST', function (e) {
             component.onDataTableCreated(e);
         });
         this.addEvent(chart, 'afterViewData', function (e) {
@@ -2631,6 +2631,7 @@ var InfoRegionsComponent = /** @class */ (function (_super) {
      * @private
      */
     InfoRegionsComponent.prototype.defaultBeforeChartFormatter = function () {
+        var _a;
         var chart = this.chart,
             format = chart.options.accessibility.screenReaderSection
                 .beforeChartFormat;
@@ -2657,7 +2658,7 @@ var InfoRegionsComponent = /** @class */ (function (_super) {
                 yAxisDescription: axesDesc.yAxis,
                 playAsSoundButton: shouldHaveSonifyBtn ?
                     this.getSonifyButtonText(sonifyButtonId) : '',
-                viewTableButton: chart.getCSV ?
+                viewTableButton: ((_a = chart.exporting) === null || _a === void 0 ? void 0 : _a.getCSV) ?
                     this.getDataTableButtonText(dataTableButtonId) : '',
                 annotationsTitle: annotationsList ? annotationsTitleStr : '',
                 annotationsList: annotationsList
@@ -2834,7 +2835,8 @@ var InfoRegionsComponent = /** @class */ (function (_super) {
             el.onclick = chart.options.accessibility
                 .screenReaderSection.onViewDataTableClick ||
                 function () {
-                    chart.viewData();
+                    var _a;
+                    (_a = chart.exporting) === null || _a === void 0 ? void 0 : _a.viewData();
                 };
         }
     };
@@ -2899,7 +2901,7 @@ var InfoRegionsComponent = /** @class */ (function (_super) {
 ;// ./code/es5/es-modules/Accessibility/Components/MenuComponent.js
 /* *
  *
- *  (c) 2009-2024 Øystein Moseng
+ *  (c) 2009-2025 Øystein Moseng
  *
  *  Accessibility component for exporting menu.
  *
@@ -2946,7 +2948,9 @@ var MenuComponent_getFakeMouseEvent = Utils_HTMLUtilities.getFakeMouseEvent;
  * @private
  */
 function getExportMenuButtonElement(chart) {
-    return chart.exportSVGElements && chart.exportSVGElements[0];
+    var _a,
+        _b;
+    return (_b = (_a = chart.exporting) === null || _a === void 0 ? void 0 : _a.svgElements) === null || _b === void 0 ? void 0 : _b[0];
 }
 /**
  * @private
@@ -3002,7 +3006,8 @@ var MenuComponent = /** @class */ (function (_super) {
      * @private
      */
     MenuComponent.prototype.onMenuHidden = function () {
-        var menu = this.chart.exportContextMenu;
+        var _a;
+        var menu = (_a = this.chart.exporting) === null || _a === void 0 ? void 0 : _a.contextMenuEl;
         if (menu) {
             menu.setAttribute('aria-hidden', 'true');
         }
@@ -3012,8 +3017,9 @@ var MenuComponent = /** @class */ (function (_super) {
      * @private
      */
     MenuComponent.prototype.onMenuShown = function () {
+        var _a;
         var chart = this.chart,
-            menu = chart.exportContextMenu;
+            menu = (_a = chart.exporting) === null || _a === void 0 ? void 0 : _a.contextMenuEl;
         if (menu) {
             this.addAccessibleContextMenuAttribs();
             MenuComponent_unhideChartElementFromAT(chart, menu);
@@ -3034,6 +3040,7 @@ var MenuComponent = /** @class */ (function (_super) {
      * proxy overlay.
      */
     MenuComponent.prototype.onChartRender = function () {
+        var _a;
         var chart = this.chart,
             focusEl = chart.focusElement,
             a11y = chart.accessibility;
@@ -3041,7 +3048,7 @@ var MenuComponent = /** @class */ (function (_super) {
         this.proxyMenuButton();
         if (this.exportButtonProxy &&
             focusEl &&
-            focusEl === chart.exportingGroup) {
+            focusEl === ((_a = chart.exporting) === null || _a === void 0 ? void 0 : _a.group)) {
             if (focusEl.focusBorder) {
                 chart.setFocusToElement(focusEl, this.exportButtonProxy.innerElement);
             }
@@ -3081,8 +3088,9 @@ var MenuComponent = /** @class */ (function (_super) {
      * @private
      */
     MenuComponent.prototype.addAccessibleContextMenuAttribs = function () {
+        var _a;
         var chart = this.chart,
-            exportList = chart.exportDivElements;
+            exportList = (_a = chart.exporting) === null || _a === void 0 ? void 0 : _a.divElements;
         if (exportList && exportList.length) {
             // Set tabindex on the menu items to allow focusing by script
             // Set role to give screen readers a chance to pick up the contents
@@ -3143,15 +3151,21 @@ var MenuComponent = /** @class */ (function (_super) {
             // Only run exporting navigation if exporting support exists and is
             // enabled on chart
             validate: function () {
+                var _a,
+                    _b,
+                    _c;
                 return !!chart.exporting &&
+                    ((_b = (_a = chart
+                        .options
+                        .exporting) === null || _a === void 0 ? void 0 : _a.buttons) === null || _b === void 0 ? void 0 : _b.contextButton.enabled) !== false &&
                     chart.options.exporting.enabled !== false &&
-                    chart.options.exporting.accessibility.enabled !==
-                        false;
+                    (((_c = chart.options.exporting.accessibility) === null || _c === void 0 ? void 0 : _c.enabled) || false) !== false;
             },
             // Focus export menu button
             init: function () {
+                var _a;
                 var proxy = component.exportButtonProxy;
-                var svgEl = component.chart.exportingGroup;
+                var svgEl = (_a = component.chart.exporting) === null || _a === void 0 ? void 0 : _a.group;
                 if (proxy && svgEl) {
                     chart.setFocusToElement(svgEl, proxy.innerElement);
                 }
@@ -3192,12 +3206,14 @@ var MenuComponent = /** @class */ (function (_super) {
      * @return {number} Response code
      */
     MenuComponent.prototype.onKbdNext = function (keyboardNavigationHandler) {
+        var _a,
+            _b;
         var chart = this.chart;
         var a11yOptions = chart.options.accessibility;
         var response = keyboardNavigationHandler.response;
         // Try to highlight next item in list. Highlighting e.g.
         // separators will fail.
-        for (var i = (chart.highlightedExportItemIx || 0) + 1; i < chart.exportDivElements.length; ++i) {
+        for (var i = (chart.highlightedExportItemIx || 0) + 1; i < (((_b = (_a = chart.exporting) === null || _a === void 0 ? void 0 : _a.divElements) === null || _b === void 0 ? void 0 : _b.length) || 0); ++i) {
             if (chart.highlightExportItem(i)) {
                 return response.success;
             }
@@ -3215,14 +3231,19 @@ var MenuComponent = /** @class */ (function (_super) {
      * @return {number} Response code
      */
     MenuComponent.prototype.onKbdClick = function (keyboardNavigationHandler) {
+        var _a,
+            _b,
+            _c,
+            _d;
         var chart = this.chart;
-        var curHighlightedItem = chart.exportDivElements[chart.highlightedExportItemIx];
-        var exportButtonElement = getExportMenuButtonElement(chart).element;
-        if (chart.openMenu) {
-            this.fakeClickEvent(curHighlightedItem);
+        var curHighlightedItem = chart.highlightedExportItemIx !== void 0 &&
+                ((_b = (_a = chart.exporting) === null || _a === void 0 ? void 0 : _a.divElements) === null || _b === void 0 ? void 0 : _b[chart.highlightedExportItemIx]);
+        var exportButtonElement = (_c = getExportMenuButtonElement(chart)) === null || _c === void 0 ? void 0 : _c.element;
+        if ((_d = chart.exporting) === null || _d === void 0 ? void 0 : _d.openMenu) {
+            curHighlightedItem && this.fakeClickEvent(curHighlightedItem);
         }
         else {
-            this.fakeClickEvent(exportButtonElement);
+            exportButtonElement && this.fakeClickEvent(exportButtonElement);
             chart.highlightExportItem(0);
         }
         return keyboardNavigationHandler.response.success;
@@ -3278,9 +3299,14 @@ var MenuComponent = /** @class */ (function (_super) {
      * @function Highcharts.Chart#hideExportMenu
      */
     function chartHideExportMenu() {
+        var _a,
+            _b,
+            _c;
         var chart = this,
-            exportList = chart.exportDivElements;
-        if (exportList && chart.exportContextMenu && chart.openMenu) {
+            exportList = (_a = chart.exporting) === null || _a === void 0 ? void 0 : _a.divElements;
+        if (exportList &&
+            ((_b = chart.exporting) === null || _b === void 0 ? void 0 : _b.contextMenuEl) &&
+            ((_c = chart.exporting) === null || _c === void 0 ? void 0 : _c.openMenu)) {
             // Reset hover states etc.
             exportList.forEach(function (el) {
                 if (el &&
@@ -3291,7 +3317,7 @@ var MenuComponent = /** @class */ (function (_super) {
             });
             chart.highlightedExportItemIx = 0;
             // Hide the menu div
-            chart.exportContextMenu.hideMenu();
+            chart.exporting.contextMenuEl.hideMenu();
             // Make sure the chart has focus and can capture keyboard events
             chart.container.focus();
         }
@@ -3303,9 +3329,13 @@ var MenuComponent = /** @class */ (function (_super) {
      * @function Highcharts.Chart#highlightExportItem
      */
     function chartHighlightExportItem(ix) {
-        var listItem = this.exportDivElements && this.exportDivElements[ix];
-        var curHighlighted = this.exportDivElements &&
-                this.exportDivElements[this.highlightedExportItemIx];
+        var _a,
+            _b,
+            _c,
+            _d;
+        var listItem = (_b = (_a = this.exporting) === null || _a === void 0 ? void 0 : _a.divElements) === null || _b === void 0 ? void 0 : _b[ix],
+            curHighlighted = this.highlightedExportItemIx !== void 0 &&
+                ((_d = (_c = this.exporting) === null || _c === void 0 ? void 0 : _c.divElements) === null || _d === void 0 ? void 0 : _d[this.highlightedExportItemIx]);
         if (listItem &&
             listItem.tagName === 'LI' &&
             !(listItem.children && listItem.children.length)) {
@@ -3334,9 +3364,11 @@ var MenuComponent = /** @class */ (function (_super) {
      * @function Highcharts.Chart#highlightLastExportItem
      */
     function chartHighlightLastExportItem() {
+        var _a,
+            _b;
         var chart = this;
-        if (chart.exportDivElements) {
-            var i = chart.exportDivElements.length;
+        if ((_a = chart.exporting) === null || _a === void 0 ? void 0 : _a.divElements) {
+            var i = (_b = chart.exporting) === null || _b === void 0 ? void 0 : _b.divElements.length;
             while (i--) {
                 if (chart.highlightExportItem(i)) {
                     return true;
@@ -3356,7 +3388,7 @@ var MenuComponent = /** @class */ (function (_super) {
 ;// ./code/es5/es-modules/Accessibility/KeyboardNavigation.js
 /* *
  *
- *  (c) 2009-2024 Øystein Moseng
+ *  (c) 2009-2025 Øystein Moseng
  *
  *  Main keyboard navigation handling.
  *
@@ -3786,7 +3818,9 @@ var KeyboardNavigation = /** @class */ (function () {
         var chartProto = ChartClass.prototype;
         if (!chartProto.dismissPopupContent) {
             chartProto.dismissPopupContent = chartDismissPopupContent;
-            KeyboardNavigation_addEvent(KeyboardNavigation_doc, 'keydown', documentOnKeydown);
+            if (KeyboardNavigation_doc) {
+                KeyboardNavigation_addEvent(KeyboardNavigation_doc, 'keydown', documentOnKeydown);
+            }
         }
         return ChartClass;
     }
@@ -3834,7 +3868,7 @@ var highcharts_Legend_commonjs_highcharts_Legend_commonjs2_highcharts_Legend_roo
 ;// ./code/es5/es-modules/Accessibility/Components/LegendComponent.js
 /* *
  *
- *  (c) 2009-2024 Øystein Moseng
+ *  (c) 2009-2025 Øystein Moseng
  *
  *  Accessibility component for chart legend.
  *
@@ -4143,7 +4177,13 @@ var LegendComponent = /** @class */ (function (_super) {
      * @param {Highcharts.BubbleLegendItem|Point|Highcharts.Series} item
      */
     LegendComponent.prototype.proxyLegendItem = function (item) {
+        var _a,
+            _b,
+            _c;
         var legendItem = item.legendItem || {};
+        var legendItemLabel = (_a = item.legendItem) === null || _a === void 0 ? void 0 : _a.label;
+        var legendLabelEl = legendItemLabel === null || legendItemLabel === void 0 ? void 0 : legendItemLabel.element;
+        var ellipsis = Boolean(((_c = (_b = legendItem.label) === null || _b === void 0 ? void 0 : _b.styles) === null || _c === void 0 ? void 0 : _c.textOverflow) === 'ellipsis');
         if (!legendItem.label || !legendItem.group) {
             return;
         }
@@ -4156,8 +4196,14 @@ var LegendComponent = /** @class */ (function (_super) {
         var attribs = {
                 tabindex: -1,
                 'aria-pressed': item.visible,
-                'aria-label': itemLabel
+                'aria-label': itemLabel,
+                title: ''
             };
+        // Check if label contains an ellipsis character (\u2026) #22397
+        if (ellipsis &&
+            (legendLabelEl.textContent || '').indexOf('\u2026') !== -1) {
+            attribs.title = legendItemLabel === null || legendItemLabel === void 0 ? void 0 : legendItemLabel.textStr;
+        }
         // Considers useHTML
         var proxyPositioningElement = legendItem.group.div ?
                 legendItem.label :
@@ -4351,7 +4397,7 @@ var highcharts_Axis_commonjs_highcharts_Axis_commonjs2_highcharts_Axis_root_High
 ;// ./code/es5/es-modules/Stock/Navigator/ChartNavigatorComposition.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -4549,7 +4595,7 @@ var ChartNavigatorComposition = {
 ;// ./code/es5/es-modules/Core/Axis/NavigatorAxisComposition.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -4714,7 +4760,7 @@ var highcharts_SeriesRegistry_commonjs_highcharts_SeriesRegistry_commonjs2_highc
 ;// ./code/es5/es-modules/Stock/Navigator/NavigatorDefaults.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -4801,7 +4847,7 @@ var NavigatorDefaults = {
      * @sample {highstock} stock/navigator/margin/
      *         A margin of 2 draws the navigator closer to the X axis labels
      */
-    margin: 25,
+    margin: 22,
     /**
      * Whether the mask should be inside the range marking the zoomed
      * range, or outside. In Highcharts Stock 1.x it was always `false`.
@@ -5209,7 +5255,7 @@ var NavigatorDefaults = {
         },
         crosshair: false,
         title: {
-            text: null
+            text: void 0
         },
         tickLength: 0,
         tickWidth: 0
@@ -5243,7 +5289,7 @@ var NavigatorDefaults = {
 ;// ./code/es5/es-modules/Core/Renderer/SVG/Symbols.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -5266,7 +5312,8 @@ function arc(cx, cy, w, h, options) {
     var arc = [];
     if (options) {
         var start = options.start || 0,
-            rx = Symbols_pick(options.r,
+            end = options.end || 0;
+        var rx = Symbols_pick(options.r,
             w),
             ry = Symbols_pick(options.r,
             h || w), 
@@ -5275,12 +5322,15 @@ function arc(cx, cy, w, h, options) {
             // affects the constant, therefore the division by `rx`. If the
             // proximity is too small, the arc disappears. If it is too great, a
             // gap appears. This can be seen in the animation of the official
-            // bubble demo (#20586).
+            // bubble demo (#20585).
             proximity = 0.0002 / (options.borderRadius ? 1 : Math.max(rx, 1)),
-            fullCircle = (Math.abs((options.end || 0) - start - 2 * Math.PI) <
-                proximity),
-            end = (options.end || 0) - (fullCircle ? proximity : 0),
-            innerRadius = options.innerR,
+            fullCircle = (Math.abs(end - start - 2 * Math.PI) <
+                proximity);
+        if (fullCircle) {
+            start = Math.PI / 2;
+            end = Math.PI * 2.5 - proximity;
+        }
+        var innerRadius = options.innerR,
             open_1 = Symbols_pick(options.open,
             fullCircle),
             cosStart = Math.cos(start),
@@ -5348,12 +5398,12 @@ function arc(cx, cy, w, h, options) {
 function callout(x, y, w, h, options) {
     var arrowLength = 6,
         halfDistance = 6,
-        r = Math.min((options && options.r) || 0,
+        r = Math.min((options === null || options === void 0 ? void 0 : options.r) || 0,
         w,
         h),
         safeDistance = r + halfDistance,
-        anchorX = options && options.anchorX,
-        anchorY = options && options.anchorY || 0;
+        anchorX = options === null || options === void 0 ? void 0 : options.anchorX,
+        anchorY = (options === null || options === void 0 ? void 0 : options.anchorY) || 0;
     var path = roundedRect(x,
         y,
         w,
@@ -5445,7 +5495,7 @@ function diamond(x, y, w, h) {
  *
  */
 function rect(x, y, w, h, options) {
-    if (options && options.r) {
+    if (options === null || options === void 0 ? void 0 : options.r) {
         return roundedRect(x, y, w, h, options);
     }
     return [
@@ -5517,7 +5567,7 @@ var Symbols = {
 ;// ./code/es5/es-modules/Stock/Navigator/NavigatorSymbols.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -5577,7 +5627,7 @@ var highcharts_RendererRegistry_commonjs_highcharts_RendererRegistry_commonjs2_h
 ;// ./code/es5/es-modules/Stock/Utilities/StockUtilities.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -5620,7 +5670,7 @@ var StockUtilities = {
 ;// ./code/es5/es-modules/Stock/Navigator/NavigatorComposition.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -5629,7 +5679,7 @@ var StockUtilities = {
  * */
 
 
-var setOptions = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).setOptions;
+var defaultOptions = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).defaultOptions;
 
 var composed = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).composed;
 
@@ -5659,8 +5709,8 @@ function NavigatorComposition_compose(ChartClass, AxisClass, SeriesClass) {
     if (pushUnique(composed, 'Navigator')) {
         ChartClass.prototype.setFixedRange = NavigatorComposition_setFixedRange;
         extend(getRendererType().prototype.symbols, Navigator_NavigatorSymbols);
+        extend(defaultOptions, { navigator: Navigator_NavigatorDefaults });
         NavigatorComposition_addEvent(SeriesClass, 'afterUpdate', onSeriesAfterUpdate);
-        setOptions({ navigator: Navigator_NavigatorDefaults });
     }
 }
 /**
@@ -5685,7 +5735,7 @@ var NavigatorComposition = {
 ;// ./code/es5/es-modules/Core/Axis/ScrollbarAxis.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -5737,9 +5787,11 @@ var ScrollbarAxis;
     ScrollbarAxis.compose = compose;
     /** @private */
     function getExtremes(axis) {
-        var axisMin = ScrollbarAxis_pick(axis.options && axis.options.min,
+        var _a,
+            _b;
+        var axisMin = ScrollbarAxis_pick((_a = axis.options) === null || _a === void 0 ? void 0 : _a.min,
             axis.min);
-        var axisMax = ScrollbarAxis_pick(axis.options && axis.options.max,
+        var axisMax = ScrollbarAxis_pick((_b = axis.options) === null || _b === void 0 ? void 0 : _b.max,
             axis.max);
         return {
             axisMin: axisMin,
@@ -5771,10 +5823,10 @@ var ScrollbarAxis;
      * @private
      */
     function onAxisAfterInit() {
+        var _a,
+            _b;
         var axis = this;
-        if (axis.options &&
-            axis.options.scrollbar &&
-            axis.options.scrollbar.enabled) {
+        if ((_b = (_a = axis.options) === null || _a === void 0 ? void 0 : _a.scrollbar) === null || _b === void 0 ? void 0 : _b.enabled) {
             // Predefined options:
             axis.options.scrollbar.vertical = !axis.horiz;
             axis.options.startOnTick = axis.options.endOnTick = false;
@@ -5923,7 +5975,7 @@ var ScrollbarAxis;
 ;// ./code/es5/es-modules/Stock/Scrollbar/ScrollbarDefaults.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -6015,7 +6067,7 @@ var ScrollbarDefaults = {
     /**
      * The margin between the scrollbar and its axis when the scrollbar is
      * applied directly to an axis, or the navigator in case that is enabled.
-     * Defaults to 10 for axis, 0 for navigator.
+     * Defaults to 10 for axis, 3 for navigator.
      *
      * @type {number|undefined}
      */
@@ -6146,7 +6198,7 @@ var ScrollbarDefaults = {
 ;// ./code/es5/es-modules/Stock/Scrollbar/Scrollbar.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -6155,12 +6207,13 @@ var ScrollbarDefaults = {
  * */
 
 
-var defaultOptions = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).defaultOptions;
+var Scrollbar_defaultOptions = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).defaultOptions;
+
+var Scrollbar_composed = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).composed;
 
 
 
-
-var Scrollbar_addEvent = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).addEvent, Scrollbar_correctFloat = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).correctFloat, crisp = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).crisp, Scrollbar_defined = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).defined, destroyObjectProperties = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).destroyObjectProperties, Scrollbar_fireEvent = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).fireEvent, Scrollbar_merge = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).merge, Scrollbar_pick = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).pick, removeEvent = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).removeEvent;
+var Scrollbar_addEvent = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).addEvent, Scrollbar_correctFloat = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).correctFloat, crisp = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).crisp, Scrollbar_defined = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).defined, destroyObjectProperties = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).destroyObjectProperties, Scrollbar_extend = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).extend, Scrollbar_fireEvent = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).fireEvent, Scrollbar_merge = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).merge, Scrollbar_pick = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).pick, Scrollbar_pushUnique = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).pushUnique, removeEvent = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).removeEvent;
 /* *
  *
  *  Constants
@@ -6212,6 +6265,9 @@ var Scrollbar = /** @class */ (function () {
      * */
     Scrollbar.compose = function (AxisClass) {
         Axis_ScrollbarAxis.compose(AxisClass, Scrollbar);
+        if (Scrollbar_pushUnique(Scrollbar_composed, 'Scrollbar')) {
+            Scrollbar_extend(Scrollbar_defaultOptions, { scrollbar: Scrollbar_ScrollbarDefaults });
+        }
     };
     /**
      * When we have vertical scrollbar, rifles and arrow in buttons should be
@@ -6456,7 +6512,7 @@ var Scrollbar = /** @class */ (function () {
         scroller.scrollbarButtons = [];
         scroller.renderer = renderer;
         scroller.userOptions = options;
-        scroller.options = Scrollbar_merge(Scrollbar_ScrollbarDefaults, defaultOptions.scrollbar, options);
+        scroller.options = Scrollbar_merge(Scrollbar_ScrollbarDefaults, Scrollbar_defaultOptions.scrollbar, options);
         scroller.options.margin = Scrollbar_pick(scroller.options.margin, 10);
         scroller.chart = chart;
         // Backward compatibility
@@ -6851,12 +6907,6 @@ var Scrollbar = /** @class */ (function () {
 }());
 /* *
  *
- *  Registry
- *
- * */
-defaultOptions.scrollbar = Scrollbar_merge(true, Scrollbar.defaultOptions, defaultOptions.scrollbar);
-/* *
- *
  *  Default Export
  *
  * */
@@ -6868,7 +6918,7 @@ var highcharts_SVGRenderer_commonjs_highcharts_SVGRenderer_commonjs2_highcharts_
 ;// ./code/es5/es-modules/Stock/Navigator/Navigator.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -7851,7 +7901,8 @@ var Navigator = /** @class */ (function () {
      * @function Highcharts.Navigator#init
      */
     Navigator.prototype.init = function (chart) {
-        var _a;
+        var _a,
+            _b;
         var chartOptions = chart.options,
             navigatorOptions = chartOptions.navigator || {},
             navigatorEnabled = navigatorOptions.enabled,
@@ -7968,9 +8019,9 @@ var Navigator = /** @class */ (function () {
             navigator.xAxis.navigatorAxis.toFixedRange = (NavigatorAxisComposition.prototype.toFixedRange.bind(navigator.xAxis.navigatorAxis));
         }
         // Initialize the scrollbar
-        if (chart.options.scrollbar.enabled) {
+        if ((_b = chart.options.scrollbar) === null || _b === void 0 ? void 0 : _b.enabled) {
             var options = Navigator_merge(chart.options.scrollbar, { vertical: chart.inverted });
-            if (!Navigator_isNumber(options.margin) && navigator.navigatorEnabled) {
+            if (!Navigator_isNumber(options.margin)) {
                 options.margin = chart.inverted ? -3 : 3;
             }
             chart.scrollbar = navigator.scrollbar = new Scrollbar_Scrollbar(chart.renderer, options, chart);
@@ -8437,6 +8488,7 @@ var Navigator = /** @class */ (function () {
         }), 
         // Make room for the navigator, can be placed around the chart:
         Navigator_addEvent(this.chart, 'getMargins', function () {
+            var _a;
             var chart = this,
                 navigator = chart.navigator;
             var marginName = navigator.opposite ?
@@ -8445,10 +8497,10 @@ var Navigator = /** @class */ (function () {
                 marginName = navigator.opposite ?
                     'marginRight' : 'plotLeft';
             }
-            chart[marginName] =
-                (chart[marginName] || 0) + (navigator.navigatorEnabled || !chart.inverted ?
-                    navigator.height + navigator.scrollbarHeight :
-                    0) + navigator.navigatorOptions.margin;
+            chart[marginName] = (chart[marginName] || 0) + (navigator.navigatorEnabled || !chart.inverted ?
+                navigator.height +
+                    (((_a = this.scrollbar) === null || _a === void 0 ? void 0 : _a.options.margin) || 0) +
+                    navigator.scrollbarHeight : 0) + (navigator.navigatorOptions.margin || 0);
         }), Navigator_addEvent(Navigator, 'setRange', function (e) {
             this.chart.xAxis[0].setExtremes(e.min, e.max, e.redraw, e.animation, e.eventArguments);
         }));
@@ -8492,6 +8544,10 @@ var Navigator = /** @class */ (function () {
         [this.handles].forEach(function (coll) {
             Navigator_destroyObjectProperties(coll);
         });
+        // Clean up linked series
+        this.baseSeries.forEach(function (s) {
+            s.navigatorSeries = void 0;
+        });
         this.navigatorEnabled = false;
     };
     return Navigator;
@@ -8506,7 +8562,7 @@ var Navigator = /** @class */ (function () {
 ;// ./code/es5/es-modules/Accessibility/Components/NavigatorComponent.js
 /* *
  *
- *  (c) 2009-2024 Highsoft AS
+ *  (c) 2009-2025 Highsoft AS
  *
  *  Accessibility component for the navigator.
  *
@@ -8791,7 +8847,7 @@ var NavigatorComponent = /** @class */ (function (_super) {
 ;// ./code/es5/es-modules/Accessibility/Components/SeriesComponent/SeriesDescriber.js
 /* *
  *
- *  (c) 2009-2024 Øystein Moseng
+ *  (c) 2009-2025 Øystein Moseng
  *
  *  Place desriptions on a series and its points.
  *
@@ -8821,14 +8877,16 @@ var SeriesDescriber_find = (highcharts_commonjs_highcharts_commonjs2_highcharts_
  * @private
  */
 function findFirstPointWithGraphic(point) {
+    var _a;
     var sourcePointIndex = point.index;
     if (!point.series || !point.series.data || !SeriesDescriber_defined(sourcePointIndex)) {
         return null;
     }
+    var nullInteraction = (_a = point.series.options) === null || _a === void 0 ? void 0 : _a.nullInteraction;
     return SeriesDescriber_find(point.series.data, function (p) {
         return !!(p &&
             typeof p.index !== 'undefined' &&
-            p.index > sourcePointIndex &&
+            (nullInteraction || p.index > sourcePointIndex) &&
             p.graphic &&
             p.graphic.element);
     }) || null;
@@ -9274,7 +9332,7 @@ var SeriesDescriber = {
 ;// ./code/es5/es-modules/Accessibility/Components/SeriesComponent/NewDataAnnouncer.js
 /* *
  *
- *  (c) 2009-2024 Øystein Moseng
+ *  (c) 2009-2025 Øystein Moseng
  *
  *  Handle announcing new data for a chart.
  *
@@ -9602,7 +9660,7 @@ var NewDataAnnouncer = /** @class */ (function () {
 ;// ./code/es5/es-modules/Accessibility/ProxyElement.js
 /* *
  *
- *  (c) 2009-2024 Øystein Moseng
+ *  (c) 2009-2025 Øystein Moseng
  *
  *  Proxy elements are used to shadow SVG elements in HTML for assistive
  *  technology, such as screen readers or voice input software.
@@ -9617,7 +9675,7 @@ var NewDataAnnouncer = /** @class */ (function () {
  * */
 
 
-var ProxyElement_doc = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).doc;
+var ProxyElement_doc = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).doc, ProxyElement_win = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).win;
 
 var ProxyElement_attr = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).attr, ProxyElement_css = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).css, ProxyElement_merge = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).merge;
 
@@ -9797,11 +9855,15 @@ var ProxyElement = /** @class */ (function () {
         var chartDiv = this.chart.renderTo,
             pointer = this.chart.pointer;
         if (chartDiv && (posElement === null || posElement === void 0 ? void 0 : posElement.getBoundingClientRect) && pointer) {
-            var rectEl = posElement.getBoundingClientRect(),
+            var scrollTop = ProxyElement_win.scrollY ||
+                    ProxyElement_doc.documentElement.scrollTop,
+                rectEl = posElement.getBoundingClientRect(),
                 chartPos = pointer.getChartPosition();
             return {
                 x: (rectEl.left - chartPos.left) / chartPos.scaleX,
-                y: (rectEl.top - chartPos.top) / chartPos.scaleY,
+                // #21994, Add scroll position as "getBoundingClientRect"
+                // returns the position from the viewport, not the document top.
+                y: ((rectEl.top + scrollTop) - chartPos.top) / chartPos.scaleY,
                 width: rectEl.right / chartPos.scaleX -
                     rectEl.left / chartPos.scaleX,
                 height: rectEl.bottom / chartPos.scaleY -
@@ -9831,7 +9893,7 @@ var ProxyElement = /** @class */ (function () {
 ;// ./code/es5/es-modules/Accessibility/ProxyProvider.js
 /* *
  *
- *  (c) 2009-2024 Øystein Moseng
+ *  (c) 2009-2025 Øystein Moseng
  *
  *  Proxy elements are used to shadow SVG elements in HTML for assistive
  *  technology, such as screen readers or voice input software.
@@ -10160,7 +10222,7 @@ var ProxyProvider = /** @class */ (function () {
 ;// ./code/es5/es-modules/Accessibility/Components/RangeSelectorComponent.js
 /* *
  *
- *  (c) 2009-2024 Øystein Moseng
+ *  (c) 2009-2025 Øystein Moseng
  *
  *  Accessibility component for the range selector.
  *
@@ -10675,7 +10737,7 @@ var RangeSelectorComponent = /** @class */ (function (_super) {
 ;// ./code/es5/es-modules/Accessibility/Components/SeriesComponent/ForcedMarkers.js
 /* *
  *
- *  (c) 2009-2024 Øystein Moseng
+ *  (c) 2009-2025 Øystein Moseng
  *
  *  Handle forcing series markers.
  *
@@ -10918,7 +10980,7 @@ var highcharts_Series_commonjs_highcharts_Series_commonjs2_highcharts_Series_roo
 ;// ./code/es5/es-modules/Accessibility/Components/SeriesComponent/SeriesKeyboardNavigation.js
 /* *
  *
- *  (c) 2009-2024 Øystein Moseng
+ *  (c) 2009-2025 Øystein Moseng
  *
  *  Handle keyboard navigation for series.
  *
@@ -11007,15 +11069,21 @@ function isSkipSeries(series) {
  * @private
  */
 function isSkipPoint(point) {
-    var a11yOptions = point.series.chart.options.accessibility;
-    var pointA11yDisabled = (point.options.accessibility &&
-            point.options.accessibility.enabled === false);
-    return point.isNull &&
-        a11yOptions.keyboardNavigation.seriesNavigation.skipNullPoints ||
+    var _a;
+    var series = point.series,
+        nullInteraction = series.options.nullInteraction,
+        pointOptions = point.options,
+        pointA11yOptions = pointOptions.accessibility,
+        a11yOptions = series.chart.options.accessibility,
+        pointA11yDisabled = (pointA11yOptions === null || pointA11yOptions === void 0 ? void 0 : pointA11yOptions.enabled) === false;
+    return (_a = a11yOptions
+        .keyboardNavigation
+        .seriesNavigation
+        .skipNullPoints) !== null && _a !== void 0 ? _a : (!(!point.isNull || nullInteraction) &&
         point.visible === false ||
         point.isInside === false ||
         pointA11yDisabled ||
-        isSkipSeries(point.series);
+        isSkipSeries(series));
 }
 /**
  * Get the first point that is not a skip point in this series.
@@ -11628,11 +11696,13 @@ var SeriesKeyboardNavigation = /** @class */ (function () {
      */
     function pointHighlight(highlightVisually) {
         var _a,
-            _b;
+            _b,
+            _c;
         if (highlightVisually === void 0) { highlightVisually = true; }
         var chart = this.series.chart,
             tooltipElement = (_b = (_a = chart.tooltip) === null || _a === void 0 ? void 0 : _a.label) === null || _b === void 0 ? void 0 : _b.element;
-        if (!this.isNull && highlightVisually) {
+        if ((!this.isNull ||
+            ((_c = this.series.options) === null || _c === void 0 ? void 0 : _c.nullInteraction)) && highlightVisually) {
             this.onMouseOver(); // Show the hover marker and tooltip
         }
         else {
@@ -11706,7 +11776,7 @@ var SeriesKeyboardNavigation = /** @class */ (function () {
 ;// ./code/es5/es-modules/Accessibility/Components/SeriesComponent/SeriesComponent.js
 /* *
  *
- *  (c) 2009-2024 Øystein Moseng
+ *  (c) 2009-2025 Øystein Moseng
  *
  *  Accessibility component for series and points.
  *
@@ -11862,7 +11932,7 @@ var SeriesComponent = /** @class */ (function (_super) {
 ;// ./code/es5/es-modules/Accessibility/Components/ZoomComponent.js
 /* *
  *
- *  (c) 2009-2024 Øystein Moseng
+ *  (c) 2009-2025 Øystein Moseng
  *
  *  Accessibility component for chart zoom.
  *
@@ -12222,7 +12292,7 @@ var ZoomComponent = /** @class */ (function (_super) {
 ;// ./code/es5/es-modules/Accessibility/HighContrastMode.js
 /* *
  *
- *  (c) 2009-2024 Øystein Moseng
+ *  (c) 2009-2025 Øystein Moseng
  *
  *  Handling for Windows High Contrast Mode.
  *
@@ -12247,11 +12317,6 @@ var HighContrastMode_doc = (highcharts_commonjs_highcharts_commonjs2_highcharts_
  * @return {boolean} Returns true if the browser is in High Contrast mode.
  */
 function isHighContrastModeActive() {
-    // Use media query on Edge, but not on IE
-    var isEdge = /(Edg)/.test(HighContrastMode_win.navigator.userAgent);
-    if (HighContrastMode_win.matchMedia && isEdge) {
-        return HighContrastMode_win.matchMedia('(-ms-high-contrast: active)').matches;
-    }
     // Test BG image for IE
     if (isMS && HighContrastMode_win.getComputedStyle) {
         var testDiv = HighContrastMode_doc.createElement('div');
@@ -12330,7 +12395,7 @@ var whcm = {
 ;// ./code/es5/es-modules/Accessibility/HighContrastTheme.js
 /* *
  *
- *  (c) 2009-2024 Øystein Moseng
+ *  (c) 2009-2025 Øystein Moseng
  *
  *  Default theme for Windows High Contrast Mode.
  *
@@ -12544,7 +12609,7 @@ var theme = {
 ;// ./code/es5/es-modules/Accessibility/Options/A11yDefaults.js
 /* *
  *
- *  (c) 2009-2024 Øystein Moseng
+ *  (c) 2009-2025 Øystein Moseng
  *
  *  Default options for accessibility.
  *
@@ -13186,11 +13251,12 @@ var Options = {
                  */
                 /**
                  * Skip null points when navigating through points with the
-                 * keyboard.
+                 * keyboard. By default this is the opposite of
+                 * [series.nullInteraction](https://api.highcharts.com/highcharts/plotOptions.series.nullInteraction).
                  *
                  * @since 8.0.0
                  */
-                skipNullPoints: true,
+                skipNullPoints: void 0,
                 /**
                  * When a series contains more points than this, we no longer
                  * allow keyboard navigation for it.
@@ -13504,7 +13570,7 @@ var Options = {
 ;// ./code/es5/es-modules/Accessibility/Options/LangDefaults.js
 /* *
  *
- *  (c) 2009-2024 Øystein Moseng
+ *  (c) 2009-2025 Øystein Moseng
  *
  *  Default lang/i18n options for accessibility.
  *
@@ -13946,7 +14012,7 @@ var langOptions = {
 ;// ./code/es5/es-modules/Accessibility/Options/DeprecatedOptions.js
 /* *
  *
- *  (c) 2009-2024 Øystein Moseng
+ *  (c) 2009-2025 Øystein Moseng
  *
  *  Default options for accessibility.
  *
@@ -14222,7 +14288,7 @@ function copyDeprecatedOptions(chart) {
 ;// ./code/es5/es-modules/Accessibility/Accessibility.js
 /* *
  *
- *  (c) 2009-2024 Øystein Moseng
+ *  (c) 2009-2025 Øystein Moseng
  *
  *  Accessibility module for Highcharts
  *
@@ -14298,7 +14364,7 @@ var Accessibility = /** @class */ (function () {
     Accessibility.prototype.init = function (chart) {
         this.chart = chart;
         // Abort on old browsers
-        if (!Accessibility_doc.addEventListener) {
+        if (!(Accessibility_doc === null || Accessibility_doc === void 0 ? void 0 : Accessibility_doc.addEventListener)) {
             this.zombie = true;
             this.components = {};
             chart.renderTo.setAttribute('aria-hidden', true);

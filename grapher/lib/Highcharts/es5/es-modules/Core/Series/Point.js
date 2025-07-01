@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -54,7 +54,7 @@ var Point = /** @class */ (function () {
      * @emits Highcharts.Point#event:afterInit
      */
     function Point(series, options, x) {
-        var _a;
+        var _a, _b;
         this.formatPrefix = 'point';
         this.visible = true;
         // For tooltip and data label formatting
@@ -64,6 +64,7 @@ var Point = /** @class */ (function () {
         // Add a unique ID to the point if none is assigned
         (_a = this.id) !== null && _a !== void 0 ? _a : (this.id = uniqueKey());
         this.resolveColor();
+        (_b = this.dataLabelOnNull) !== null && _b !== void 0 ? _b : (this.dataLabelOnNull = series.options.nullInteraction);
         series.chart.pointCount++;
         fireEvent(this, 'afterInit');
     }
@@ -125,6 +126,12 @@ var Point = /** @class */ (function () {
      *
      * @name Highcharts.Point#percentage
      * @type {number|undefined}
+     */
+    /**
+     * Array of all hovered points when using shared tooltips.
+     *
+     * @name Highcharts.Point#points
+     * @type {Array<Highcharts.Point>|undefined}
      */
     /**
      * The series object associated with the point.
@@ -306,7 +313,7 @@ var Point = /** @class */ (function () {
                 point_1.onMouseOut();
             }
             // Remove properties after animation
-            if (!dataSorting || !dataSorting.enabled) {
+            if (!(dataSorting === null || dataSorting === void 0 ? void 0 : dataSorting.enabled)) {
                 destroyPoint();
             }
             else {
@@ -331,7 +338,7 @@ var Point = /** @class */ (function () {
         });
         props.plural.forEach(function (plural) {
             point[plural].forEach(function (item) {
-                if (item && item.element) {
+                if (item === null || item === void 0 ? void 0 : item.element) {
                     item.destroy();
                 }
             });
@@ -381,6 +388,7 @@ var Point = /** @class */ (function () {
      *         The class names.
      */
     Point.prototype.getClassName = function () {
+        var _a;
         var point = this;
         return 'highcharts-point' +
             (point.selected ? ' highcharts-point-select' : '') +
@@ -389,8 +397,9 @@ var Point = /** @class */ (function () {
             (typeof point.colorIndex !== 'undefined' ?
                 ' highcharts-color-' + point.colorIndex : '') +
             (point.options.className ? ' ' + point.options.className : '') +
-            (point.zone && point.zone.className ? ' ' +
-                point.zone.className.replace('highcharts-negative', '') : '');
+            (((_a = point.zone) === null || _a === void 0 ? void 0 : _a.className) ?
+                ' ' + point.zone.className.replace('highcharts-negative', '') :
+                '');
     };
     /**
      * Get props of all existing graphical point elements.
@@ -459,7 +468,7 @@ var Point = /** @class */ (function () {
         if (!this.nonZonedColor) {
             this.nonZonedColor = this.color;
         }
-        if (zone && zone.color && !this.options.color) {
+        if ((zone === null || zone === void 0 ? void 0 : zone.color) && !this.options.color) {
             this.color = zone.color;
         }
         else {
@@ -758,7 +767,7 @@ var Point = /** @class */ (function () {
             }
             if (isObject(options, true)) {
                 // Destroy so we can get new elements
-                if (graphic && graphic.element) {
+                if (graphic === null || graphic === void 0 ? void 0 : graphic.element) {
                     // "null" is also a valid symbol
                     if (options &&
                         options.marker &&
@@ -988,12 +997,11 @@ var Point = /** @class */ (function () {
      * @emits Highcharts.Point#event:afterSetState
      */
     Point.prototype.setState = function (state, move) {
-        var _a;
+        var _a, _b;
         var point = this, series = point.series, previousState = point.state, stateOptions = (series.options.states[state || 'normal'] ||
             {}), markerOptions = (defaultOptions.plotOptions[series.type].marker &&
-            series.options.marker), normalDisabled = (markerOptions && markerOptions.enabled === false), markerStateOptions = ((markerOptions &&
-            markerOptions.states &&
-            markerOptions.states[state || 'normal']) || {}), stateDisabled = markerStateOptions.enabled === false, pointMarker = point.marker || {}, chart = series.chart, hasMarkers = (markerOptions && series.markerAttribs);
+            series.options.marker), normalDisabled = (markerOptions && markerOptions.enabled === false), markerStateOptions = ((_a = markerOptions === null || markerOptions === void 0 ? void 0 : markerOptions.states) === null || _a === void 0 ? void 0 : _a[state || 'normal']) ||
+            {}, stateDisabled = markerStateOptions.enabled === false, pointMarker = point.marker || {}, chart = series.chart, hasMarkers = (markerOptions && series.markerAttribs);
         var halo = series.halo, markerAttribs, pointAttribs, pointAttribsAnimation, stateMarkerGraphic = series.stateMarkerGraphic, newSymbol;
         state = state || ''; // Empty string
         if (
@@ -1101,9 +1109,8 @@ var Point = /** @class */ (function () {
         // Show me your halo
         var haloOptions = stateOptions.halo;
         var markerGraphic = (point.graphic || stateMarkerGraphic);
-        var markerVisibility = (markerGraphic && markerGraphic.visibility || 'inherit');
-        if (haloOptions &&
-            haloOptions.size &&
+        var markerVisibility = (markerGraphic === null || markerGraphic === void 0 ? void 0 : markerGraphic.visibility) || 'inherit';
+        if ((haloOptions === null || haloOptions === void 0 ? void 0 : haloOptions.size) &&
             markerGraphic &&
             markerVisibility !== 'hidden' &&
             !point.isCluster) {
@@ -1130,7 +1137,7 @@ var Point = /** @class */ (function () {
                 }, AST.filterUserAttributes(haloOptions.attributes || {})));
             }
         }
-        else if (((_a = halo === null || halo === void 0 ? void 0 : halo.point) === null || _a === void 0 ? void 0 : _a.haloPath) &&
+        else if (((_b = halo === null || halo === void 0 ? void 0 : halo.point) === null || _b === void 0 ? void 0 : _b.haloPath) &&
             !halo.point.destroyed) {
             // Animate back to 0 on the current halo point (#6055)
             halo.animate({ d: halo.point.haloPath(0) }, null, 

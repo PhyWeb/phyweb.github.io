@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  Extension to the Series object in 3D charts.
  *
@@ -76,7 +76,7 @@ var Series3D = /** @class */ (function (_super) {
         series.zPadding = stack *
             (seriesOptions.depth || 0 + (seriesOptions.groupZPadding || 1));
         series.data.forEach(function (rawPoint) {
-            if (zAxis && zAxis.translate) {
+            if (zAxis === null || zAxis === void 0 ? void 0 : zAxis.translate) {
                 zValue = zAxis.logarithmic && zAxis.val2lin ?
                     zAxis.val2lin(rawPoint.z) :
                     rawPoint.z; // #4562

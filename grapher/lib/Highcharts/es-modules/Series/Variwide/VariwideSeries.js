@@ -2,7 +2,7 @@
  *
  *  Highcharts variwide module
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -16,7 +16,7 @@ import VariwideComposition from './VariwideComposition.js';
 import VariwidePoint from './VariwidePoint.js';
 import VariwideSeriesDefaults from './VariwideSeriesDefaults.js';
 import U from '../../Core/Utilities.js';
-const { addEvent, crisp, extend, merge, pick } = U;
+const { addEvent, arrayMin, arrayMax, crisp, extend, merge, pick } = U;
 /* *
  *
  *  Class
@@ -119,6 +119,13 @@ class VariwideSeries extends ColumnSeries {
                 }
             }
         }
+    }
+    getXExtremes(xData) {
+        const max = arrayMax(xData), maxZ = this.getColumn('z')[xData.indexOf(max)];
+        return {
+            min: arrayMin(xData),
+            max: max + (this.xAxis.categories ? 0 : maxZ)
+        };
     }
 }
 /* *

@@ -1,6 +1,6 @@
 /* *
  *
- *  (c) 2010-2024 Pawel Lysy
+ *  (c) 2010-2025 Pawel Lysy
  *
  *  License: www.highcharts.com/license
  *
@@ -29,6 +29,8 @@ import SeriesRegistry from '../../Core/Series/SeriesRegistry.js';
 var ColumnSeries = SeriesRegistry.seriesTypes.column;
 import U from '../../Core/Utilities.js';
 var crisp = U.crisp, extend = U.extend, merge = U.merge;
+import D from '../../Core/Defaults.js';
+var defaultOptions = D.defaultOptions;
 /* *
  *
  *  Class
@@ -196,6 +198,14 @@ extend(HLCSeries.prototype, {
     },
     pointValKey: 'close'
 });
+// Extend default lang options with OHLC terms
+var HLCDefaultLangOptions = {
+    stockOpen: 'Open',
+    stockHigh: 'High',
+    stockLow: 'Low',
+    stockClose: 'Close'
+};
+extend(defaultOptions.lang, HLCDefaultLangOptions);
 SeriesRegistry.registerSeriesType('hlc', HLCSeries);
 /* *
  *

@@ -10,22 +10,53 @@
  *
  * */
 'use strict';
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __generator = (this && this.__generator) || function (thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (g && (g = 0, op[0] && (_ = 0)), _) try {
+            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [op[0] & 2, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+};
 import AST from '../../Core/Renderer/HTML/AST.js';
 import Chart from '../../Core/Chart/Chart.js';
 import D from '../../Core/Defaults.js';
-var defaultOptions = D.defaultOptions;
+var getOptions = D.getOptions, setOptions = D.setOptions;
 import DownloadURL from '../DownloadURL.js';
-var downloadURL = DownloadURL.downloadURL;
-import Exporting from '../Exporting/Exporting.js';
-import H from '../../Core/Globals.js';
-var doc = H.doc, win = H.win;
-import HU from '../../Core/HttpUtilities.js';
-var ajax = HU.ajax;
+var downloadURL = DownloadURL.downloadURL, getScript = DownloadURL.getScript;
+import G from '../../Core/Globals.js';
+var composed = G.composed, doc = G.doc, win = G.win;
 import OfflineExportingDefaults from './OfflineExportingDefaults.js';
 import U from '../../Core/Utilities.js';
-var addEvent = U.addEvent, error = U.error, extend = U.extend, fireEvent = U.fireEvent, merge = U.merge;
-AST.allowedAttributes.push('data-z-index', 'fill-opacity', 'filter', 'rx', 'ry', 'stroke-dasharray', 'stroke-linejoin', 'stroke-opacity', 'text-anchor', 'transform', 'version', 'viewBox', 'visibility', 'xmlns', 'xmlns:xlink');
-AST.allowedTags.push('desc', 'clippath', 'g');
+var addEvent = U.addEvent, extend = U.extend, pushUnique = U.pushUnique;
 /* *
  *
  *  Composition
@@ -35,37 +66,98 @@ var OfflineExporting;
 (function (OfflineExporting) {
     /* *
      *
-     *  Declarations
-     *
-     * */
-    /* *
-     *
-     *  Constants
-     *
-     * */
-    // Dummy object so we can reuse our canvas-tools.js without errors
-    OfflineExporting.CanVGRenderer = {}, OfflineExporting.domurl = win.URL || win.webkitURL || win, 
-    // Milliseconds to defer image load event handlers to offset IE bug
-    OfflineExporting.loadEventDeferDelay = H.isMS ? 150 : 0;
-    /* *
-     *
      *  Functions
      *
      * */
-    /* eslint-disable valid-jsdoc */
     /**
-     * Extends OfflineExporting with Chart.
+     * Composition function.
+     *
      * @private
+     * @function compose
+     *
+     * @param {ExportingClass} ExportingClass
+     * Exporting class.
+     *
+     * @requires modules/exporting
+     * @requires modules/offline-exporting
      */
-    function compose(ChartClass) {
-        var chartProto = ChartClass.prototype;
-        if (!chartProto.exportChartLocal) {
-            chartProto.getSVGForLocalExport = getSVGForLocalExport;
-            chartProto.exportChartLocal = exportChartLocal;
-            // Extend the default options to use the local exporter logic
-            merge(true, defaultOptions.exporting, OfflineExportingDefaults);
+    function compose(ExportingClass) {
+        var _a, _b, _c;
+        // Add the downloadSVG event to the Exporting class for local PDF export
+        addEvent(ExportingClass, 'downloadSVG', function (e) {
+            return __awaiter(this, void 0, void 0, function () {
+                var svg, exportingOptions, exporting, preventDefault, _a, type, filename, scale, libURL, error_1;
+                var _b;
+                return __generator(this, function (_c) {
+                    switch (_c.label) {
+                        case 0:
+                            svg = e.svg, exportingOptions = e.exportingOptions, exporting = e.exporting, preventDefault = e.preventDefault;
+                            if (!((exportingOptions === null || exportingOptions === void 0 ? void 0 : exportingOptions.type) === 'application/pdf')) return [3 /*break*/, 9];
+                            // Prevent the default export behavior
+                            preventDefault === null || preventDefault === void 0 ? void 0 : preventDefault();
+                            _c.label = 1;
+                        case 1:
+                            _c.trys.push([1, 7, , 9]);
+                            _a = G.Exporting.prepareImageOptions(exportingOptions), type = _a.type, filename = _a.filename, scale = _a.scale, libURL = _a.libURL;
+                            if (!(type === 'application/pdf')) return [3 /*break*/, 6];
+                            if (!!((_b = win.jspdf) === null || _b === void 0 ? void 0 : _b.jsPDF)) return [3 /*break*/, 4];
+                            // Get jspdf
+                            return [4 /*yield*/, getScript("".concat(libURL, "jspdf.js"))];
+                        case 2:
+                            // Get jspdf
+                            _c.sent();
+                            // Get svg2pdf
+                            return [4 /*yield*/, getScript("".concat(libURL, "svg2pdf.js"))];
+                        case 3:
+                            // Get svg2pdf
+                            _c.sent();
+                            _c.label = 4;
+                        case 4: 
+                        // Call the PDF download if SVG element found
+                        return [4 /*yield*/, downloadPDF(svg, scale, filename, exportingOptions === null || exportingOptions === void 0 ? void 0 : exportingOptions.pdfFont)];
+                        case 5:
+                            // Call the PDF download if SVG element found
+                            _c.sent();
+                            _c.label = 6;
+                        case 6: return [3 /*break*/, 9];
+                        case 7:
+                            error_1 = _c.sent();
+                            // Try to fallback to the server
+                            return [4 /*yield*/, (exporting === null || exporting === void 0 ? void 0 : exporting.fallbackToServer(exportingOptions, error_1))];
+                        case 8:
+                            // Try to fallback to the server
+                            _c.sent();
+                            return [3 /*break*/, 9];
+                        case 9: return [2 /*return*/];
+                    }
+                });
+            });
+        });
+        // Check the composition registry for the OfflineExporting
+        if (!pushUnique(composed, 'OfflineExporting')) {
+            return;
         }
-        return ChartClass;
+        // Adding wrappers for the deprecated functions
+        extend(Chart.prototype, {
+            exportChartLocal: function (exportingOptions, chartOptions) {
+                return __awaiter(this, void 0, void 0, function () {
+                    var _a;
+                    return __generator(this, function (_b) {
+                        switch (_b.label) {
+                            case 0: return [4 /*yield*/, ((_a = this.exporting) === null || _a === void 0 ? void 0 : _a.exportChart(exportingOptions, chartOptions))];
+                            case 1:
+                                _b.sent();
+                                return [2 /*return*/];
+                        }
+                    });
+                });
+            }
+        });
+        // Update with defaults of the offline exporting module
+        setOptions(OfflineExportingDefaults);
+        // Additionaly, extend the menuItems with the offline exporting variants
+        var menuItems = (_c = (_b = (_a = getOptions().exporting) === null || _a === void 0 ? void 0 : _a.buttons) === null || _b === void 0 ? void 0 : _b.contextButton) === null || _c === void 0 ? void 0 : _c.menuItems;
+        menuItems && menuItems.push('downloadPDF');
     }
     OfflineExporting.compose = compose;
     /**
@@ -83,6 +175,7 @@ var OfflineExporting;
      * Highcharts options pointing to our server.
      *
      * @function Highcharts.downloadSVGLocal
+     * @deprecated
      *
      * @param {string} svg
      * The generated SVG
@@ -90,629 +183,342 @@ var OfflineExporting;
      * @param {Highcharts.ExportingOptions} options
      * The exporting options
      *
-     * @param {Function} failCallback
-     * The callback function in case of errors
-     *
-     * @param {Function} [successCallback]
-     * The callback function in case of success
-     *
      */
-    function downloadSVGLocal(svg, options, failCallback, successCallback) {
-        var dummySVGContainer = doc.createElement('div'), imageType = options.type || 'image/png', filename = ((options.filename || 'chart') +
-            '.' +
-            (imageType === 'image/svg+xml' ?
-                'svg' : imageType.split('/')[1])), scale = options.scale || 1;
-        var svgurl, blob, finallyHandler, libURL = (options.libURL || defaultOptions.exporting.libURL), objectURLRevoke = true, pdfFont = options.pdfFont;
-        // Allow libURL to end with or without fordward slash
-        libURL = libURL.slice(-1) !== '/' ? libURL + '/' : libURL;
-        /*
-         * Detect if we need to load TTF fonts for the PDF, then load them and
-         * proceed.
-         *
-         * @private
-         */
-        var loadPdfFonts = function (svgElement, callback) {
-            var hasNonASCII = function (s) { return (
-            // eslint-disable-next-line no-control-regex
-            /[^\u0000-\u007F\u200B]+/.test(s)); };
-            // Register an event in order to add the font once jsPDF is
-            // initialized
-            var addFont = function (variant, base64) {
-                win.jspdf.jsPDF.API.events.push([
-                    'initialized',
-                    function () {
-                        this.addFileToVFS(variant, base64);
-                        this.addFont(variant, 'HighchartsFont', variant);
-                        if (!this.getFontList().HighchartsFont) {
-                            this.setFont('HighchartsFont');
-                        }
-                    }
-                ]);
-            };
-            // If there are no non-ASCII characters in the SVG, do not use
-            // bother downloading the font files
-            if (pdfFont && !hasNonASCII(svgElement.textContent || '')) {
-                pdfFont = void 0;
-            }
-            // Add new font if the URL is declared, #6417.
-            var variants = ['normal', 'italic', 'bold', 'bolditalic'];
-            // Shift the first element off the variants and add as a font.
-            // Then asynchronously trigger the next variant until calling the
-            // callback when the variants are empty.
-            var normalBase64;
-            var shiftAndLoadVariant = function () {
-                var variant = variants.shift();
-                // All variants shifted and possibly loaded, proceed
-                if (!variant) {
-                    return callback();
-                }
-                var url = pdfFont && pdfFont[variant];
-                if (url) {
-                    ajax({
-                        url: url,
-                        responseType: 'blob',
-                        success: function (data, xhr) {
-                            var reader = new FileReader();
-                            reader.onloadend = function () {
-                                if (typeof this.result === 'string') {
-                                    var base64 = this.result.split(',')[1];
-                                    addFont(variant, base64);
-                                    if (variant === 'normal') {
-                                        normalBase64 = base64;
-                                    }
-                                }
-                                shiftAndLoadVariant();
-                            };
-                            reader.readAsDataURL(xhr.response);
-                        },
-                        error: shiftAndLoadVariant
-                    });
-                }
-                else {
-                    // For other variants, fall back to normal text weight/style
-                    if (normalBase64) {
-                        addFont(variant, normalBase64);
-                    }
-                    shiftAndLoadVariant();
-                }
-            };
-            shiftAndLoadVariant();
-        };
-        /*
-         * @private
-         */
-        var downloadPDF = function () {
-            AST.setElementHTML(dummySVGContainer, svg);
-            var textElements = dummySVGContainer.getElementsByTagName('text'), 
-            // Copy style property to element from parents if it's not
-            // there. Searches up hierarchy until it finds prop, or hits the
-            // chart container.
-            setStylePropertyFromParents = function (el, propName) {
-                var curParent = el;
-                while (curParent && curParent !== dummySVGContainer) {
-                    if (curParent.style[propName]) {
-                        var value = curParent.style[propName];
-                        if (propName === 'fontSize' && /em$/.test(value)) {
-                            value = Math.round(parseFloat(value) * 16) + 'px';
-                        }
-                        el.style[propName] = value;
-                        break;
-                    }
-                    curParent = curParent.parentNode;
-                }
-            };
-            var titleElements, outlineElements;
-            // Workaround for the text styling. Making sure it does pick up
-            // settings for parent elements.
-            [].forEach.call(textElements, function (el) {
-                // Workaround for the text styling. making sure it does pick up
-                // the root element
-                ['fontFamily', 'fontSize']
-                    .forEach(function (property) {
-                    setStylePropertyFromParents(el, property);
-                });
-                el.style.fontFamily = pdfFont && pdfFont.normal ?
-                    // Custom PDF font
-                    'HighchartsFont' :
-                    // Generic font (serif, sans-serif etc)
-                    String(el.style.fontFamily &&
-                        el.style.fontFamily.split(' ').splice(-1));
-                // Workaround for plotband with width, removing title from text
-                // nodes
-                titleElements = el.getElementsByTagName('title');
-                [].forEach.call(titleElements, function (titleElement) {
-                    el.removeChild(titleElement);
-                });
-                // Remove all .highcharts-text-outline elements, #17170
-                outlineElements =
-                    el.getElementsByClassName('highcharts-text-outline');
-                while (outlineElements.length > 0) {
-                    var outline = outlineElements[0];
-                    if (outline.parentNode) {
-                        outline.parentNode.removeChild(outline);
-                    }
+    function downloadSVGLocal(svg, options) {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, G.Exporting.prototype.downloadSVG.call(void 0, svg, options)];
+                    case 1:
+                        _a.sent();
+                        return [2 /*return*/];
                 }
             });
-            var svgNode = dummySVGContainer.querySelector('svg');
-            if (svgNode) {
-                loadPdfFonts(svgNode, function () {
-                    svgToPdf(svgNode, 0, scale, function (pdfData) {
-                        try {
-                            downloadURL(pdfData, filename);
-                            if (successCallback) {
-                                successCallback();
-                            }
-                        }
-                        catch (e) {
-                            failCallback(e);
-                        }
-                    });
-                });
-            }
-        };
-        // Initiate download depending on file type
-        if (imageType === 'image/svg+xml') {
-            // SVG download. In this case, we want to use Microsoft specific
-            // Blob if available
-            try {
-                if (typeof win.MSBlobBuilder !== 'undefined') {
-                    blob = new win.MSBlobBuilder();
-                    blob.append(svg);
-                    svgurl = blob.getBlob('image/svg+xml');
-                }
-                else {
-                    svgurl = svgToDataUrl(svg);
-                }
-                downloadURL(svgurl, filename);
-                if (successCallback) {
-                    successCallback();
-                }
-            }
-            catch (e) {
-                failCallback(e);
-            }
-        }
-        else if (imageType === 'application/pdf') {
-            if (win.jspdf && win.jspdf.jsPDF) {
-                downloadPDF();
-            }
-            else {
-                // Must load pdf libraries first. // Don't destroy the object
-                // URL yet since we are doing things asynchronously. A cleaner
-                // solution would be nice, but this will do for now.
-                objectURLRevoke = true;
-                getScript(libURL + 'jspdf.js', function () {
-                    getScript(libURL + 'svg2pdf.js', downloadPDF);
-                });
-            }
-        }
-        else {
-            // PNG/JPEG download - create bitmap from SVG
-            svgurl = svgToDataUrl(svg);
-            finallyHandler = function () {
-                try {
-                    OfflineExporting.domurl.revokeObjectURL(svgurl);
-                }
-                catch (e) {
-                    // Ignore
-                }
-            };
-            // First, try to get PNG by rendering on canvas
-            imageToDataUrl(svgurl, imageType, {}, scale, function (imageURL) {
-                // Success
-                try {
-                    downloadURL(imageURL, filename);
-                    if (successCallback) {
-                        successCallback();
-                    }
-                }
-                catch (e) {
-                    failCallback(e);
-                }
-            }, function () {
-                if (svg.length > 100000000 /* RegexLimits.svgLimit */) {
-                    throw new Error('Input too long');
-                }
-                // Failed due to tainted canvas
-                // Create new and untainted canvas
-                var canvas = doc.createElement('canvas'), ctx = canvas.getContext('2d'), matchedImageWidth = svg.match(
-                // eslint-disable-next-line max-len
-                /^<svg[^>]*\s{,1000}width\s{,1000}=\s{,1000}\"?(\d+)\"?[^>]*>/), matchedImageHeight = svg.match(
-                // eslint-disable-next-line max-len
-                /^<svg[^>]*\s{0,1000}height\s{,1000}=\s{,1000}\"?(\d+)\"?[^>]*>/);
-                if (ctx && matchedImageWidth && matchedImageHeight) {
-                    var imageWidth = +matchedImageWidth[1] * scale, imageHeight = +matchedImageHeight[1] * scale, downloadWithCanVG = function () {
-                        var v = win.canvg.Canvg.fromString(ctx, svg);
-                        v.start();
-                        try {
-                            downloadURL(win.navigator.msSaveOrOpenBlob ?
-                                canvas.msToBlob() :
-                                canvas.toDataURL(imageType), filename);
-                            if (successCallback) {
-                                successCallback();
-                            }
-                        }
-                        catch (e) {
-                            failCallback(e);
-                        }
-                        finally {
-                            finallyHandler();
-                        }
-                    };
-                    canvas.width = imageWidth;
-                    canvas.height = imageHeight;
-                    if (win.canvg) {
-                        // Use preloaded canvg
-                        downloadWithCanVG();
-                    }
-                    else {
-                        // Must load canVG first.
-                        // Don't destroy the object URL yet since we are
-                        // doing things asynchronously. A cleaner solution
-                        // would be nice, but this will do for now.
-                        objectURLRevoke = true;
-                        getScript(libURL + 'canvg.js', downloadWithCanVG);
-                    }
-                }
-            }, 
-            // No canvas support
-            failCallback, 
-            // Failed to load image
-            failCallback, 
-            // Finally
-            function () {
-                if (objectURLRevoke) {
-                    finallyHandler();
-                }
-            });
-        }
+        });
     }
     OfflineExporting.downloadSVGLocal = downloadSVGLocal;
-    /* eslint-disable valid-jsdoc */
     /**
-     * Exporting and offline-exporting modules required. Export a chart to
-     * an image locally in the user's browser.
+     * Converts an SVG string into a PDF file and triggers its download. This
+     * function processes the SVG, applies necessary font adjustments, converts
+     * it to a PDF, and initiates the file download.
      *
-     * @function Highcharts.Chart#exportChartLocal
+     * @private
+     * @async
+     * @function downloadPDF
      *
-     * @param  {Highcharts.ExportingOptions} [exportingOptions]
-     *         Exporting options, the same as in
-     *         {@link Highcharts.Chart#exportChart}.
+     * @param {string} svg
+     * A string representation of the SVG markup to be converted into a PDF.
+     * @param {number} scale
+     * The scaling factor for the PDF output.
+     * @param {string} filename
+     * The name of the downloaded PDF file.
+     * @param {Highcharts.PdfFontOptions} [pdfFont]
+     * An optional object specifying URLs for different font variants (normal,
+     * bold, italic, bolditalic).
      *
-     * @param  {Highcharts.Options} [chartOptions]
-     *         Additional chart options for the exported chart. For example
-     *         a different background color can be added here, or
-     *         `dataLabels` for export only.
-     *
+     * @return {Promise<void>}
+     * A promise that resolves when the PDF has been successfully generated and
+     * downloaded.
      *
      * @requires modules/exporting
      * @requires modules/offline-exporting
      */
-    function exportChartLocal(exportingOptions, chartOptions) {
-        var chart = this, options = merge(chart.options.exporting, exportingOptions), fallbackToExportServer = function (err) {
-            if (options.fallbackToExportServer === false) {
-                if (options.error) {
-                    options.error(options, err);
+    function downloadPDF(svg, scale, filename, pdfFont) {
+        return __awaiter(this, void 0, void 0, function () {
+            var svgNode, pdfData;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        svgNode = preparePDF(svg, pdfFont);
+                        if (!svgNode) return [3 /*break*/, 3];
+                        // Loads all required fonts
+                        return [4 /*yield*/, loadPdfFonts(svgNode, pdfFont)];
+                    case 1:
+                        // Loads all required fonts
+                        _a.sent();
+                        return [4 /*yield*/, svgToPdf(svgNode, 0, scale)];
+                    case 2:
+                        pdfData = _a.sent();
+                        // Download the PDF
+                        downloadURL(pdfData, filename);
+                        _a.label = 3;
+                    case 3: return [2 /*return*/];
                 }
-                else {
-                    error(28, true); // Fallback disabled
-                }
-            }
-            else {
-                chart.exportChart(options);
-            }
-        }, svgSuccess = function (svg) {
-            // If SVG contains foreignObjects PDF fails in all browsers
-            // and all exports except SVG will fail in IE, as both CanVG
-            // and svg2pdf choke on this. Gracefully fall back.
-            if (svg.indexOf('<foreignObject') > -1 &&
-                options.type !== 'image/svg+xml' &&
-                (H.isMS || options.type === 'application/pdf')) {
-                fallbackToExportServer(new Error('Image type not supported for charts with embedded HTML'));
-            }
-            else {
-                OfflineExporting.downloadSVGLocal(svg, extend({ filename: chart.getFilename() }, options), fallbackToExportServer, function () { return fireEvent(chart, 'exportChartLocalSuccess'); });
-            }
-        }, 
-        // Return true if the SVG contains images with external data. With
-        // the boost module there are `image` elements with encoded PNGs,
-        // these are supported by svg2pdf and should pass (#10243).
-        hasExternalImages = function () {
-            return [].some.call(chart.container.getElementsByTagName('image'), function (image) {
-                var href = image.getAttribute('href');
-                return (href !== '' &&
-                    typeof href === 'string' &&
-                    href.indexOf('data:') !== 0);
             });
-        };
-        // If we are on IE and in styled mode, add an allowlist to the renderer
-        // for inline styles that we want to pass through. There are so many
-        // styles by default in IE that we don't want to denylist them all.
-        if (H.isMS && chart.styledMode && !Exporting.inlineAllowlist.length) {
-            Exporting.inlineAllowlist.push(/^blockSize/, /^border/, /^caretColor/, /^color/, /^columnRule/, /^columnRuleColor/, /^cssFloat/, /^cursor/, /^fill$/, /^fillOpacity/, /^font/, /^inlineSize/, /^length/, /^lineHeight/, /^opacity/, /^outline/, /^parentRule/, /^rx$/, /^ry$/, /^stroke/, /^textAlign/, /^textAnchor/, /^textDecoration/, /^transform/, /^vectorEffect/, /^visibility/, /^x$/, /^y$/);
-        }
-        // Always fall back on:
-        // - MS browsers: Embedded images JPEG/PNG, or any PDF
-        // - Embedded images and PDF
-        if ((H.isMS &&
-            (options.type === 'application/pdf' ||
-                chart.container.getElementsByTagName('image').length &&
-                    options.type !== 'image/svg+xml')) || (options.type === 'application/pdf' &&
-            hasExternalImages())) {
-            fallbackToExportServer(new Error('Image type not supported for this chart/browser.'));
-            return;
-        }
-        chart.getSVGForLocalExport(options, chartOptions || {}, fallbackToExportServer, svgSuccess);
-    }
-    /**
-     * Downloads a script and executes a callback when done.
-     *
-     * @private
-     * @function getScript
-     * @param {string} scriptLocation
-     * @param {Function} callback
-     */
-    function getScript(scriptLocation, callback) {
-        var head = doc.getElementsByTagName('head')[0], script = doc.createElement('script');
-        script.type = 'text/javascript';
-        script.src = scriptLocation;
-        script.onload = callback;
-        script.onerror = function () {
-            error('Error loading script ' + scriptLocation);
-        };
-        head.appendChild(script);
-    }
-    OfflineExporting.getScript = getScript;
-    /**
-     * Get SVG of chart prepared for client side export. This converts
-     * embedded images in the SVG to data URIs. It requires the regular
-     * exporting module. The options and chartOptions arguments are passed
-     * to the getSVGForExport function.
-     *
-     * @private
-     * @function Highcharts.Chart#getSVGForLocalExport
-     * @param {Highcharts.ExportingOptions} options
-     * @param {Highcharts.Options} chartOptions
-     * @param {Function} failCallback
-     * @param {Function} successCallback
-     */
-    function getSVGForLocalExport(options, chartOptions, failCallback, successCallback) {
-        var chart = this, 
-        // After grabbing the SVG of the chart's copy container we need
-        // to do sanitation on the SVG
-        sanitize = function (svg) { return chart.sanitizeSVG(svg, chartCopyOptions); }, 
-        // When done with last image we have our SVG
-        checkDone = function () {
-            if (images && imagesEmbedded === imagesLength) {
-                successCallback(sanitize(chartCopyContainer.innerHTML));
-            }
-        }, 
-        // Success handler, we converted image to base64!
-        embeddedSuccess = function (imageURL, imageType, callbackArgs) {
-            ++imagesEmbedded;
-            // Change image href in chart copy
-            callbackArgs.imageElement.setAttributeNS('http://www.w3.org/1999/xlink', 'href', imageURL);
-            checkDone();
-        };
-        var el, chartCopyContainer, chartCopyOptions, href = null, images, imagesLength = 0, imagesEmbedded = 0;
-        // Hook into getSVG to get a copy of the chart copy's
-        // container (#8273)
-        chart.unbindGetSVG = addEvent(chart, 'getSVG', function (e) {
-            chartCopyOptions = e.chartCopy.options;
-            chartCopyContainer = e.chartCopy.container.cloneNode(true);
-            images = chartCopyContainer && chartCopyContainer
-                .getElementsByTagName('image') || [];
-            imagesLength = images.length;
         });
-        // Trigger hook to get chart copy
-        chart.getSVGForExport(options, chartOptions);
-        try {
-            // If there are no images to embed, the SVG is okay now.
-            if (!images || !images.length) {
-                // Use SVG of chart copy
-                successCallback(sanitize(chartCopyContainer.innerHTML));
-                return;
-            }
-            // Go through the images we want to embed
-            for (var i = 0; i < images.length; i++) {
-                el = images[i];
-                href = el.getAttributeNS('http://www.w3.org/1999/xlink', 'href');
-                if (href) {
-                    OfflineExporting.imageToDataUrl(href, 'image/png', { imageElement: el }, options.scale, embeddedSuccess, 
-                    // Tainted canvas
-                    failCallback, 
-                    // No canvas support
-                    failCallback, 
-                    // Failed to load source
-                    failCallback);
-                    // Hidden, boosted series have blank href (#10243)
-                }
-                else {
-                    imagesEmbedded++;
-                    el.parentNode.removeChild(el);
-                    i--;
-                    checkDone();
-                }
-            }
-        }
-        catch (e) {
-            failCallback(e);
-        }
-        // Clean up
-        chart.unbindGetSVG();
     }
     /**
-     * Get data:URL from image URL. Pass in callbacks to handle results.
+     * Loads and registers custom fonts for PDF export if non-ASCII characters
+     * are detected in the given SVG element. This function ensures that text
+     * content with special characters is properly rendered in the exported PDF.
+     *
+     * It fetches font files (if provided in `pdfFont`), converts them to
+     * base64, and registers them with jsPDF.
      *
      * @private
-     * @function Highcharts.imageToDataUrl
+     * @function loadPdfFonts
      *
-     * @param {string} imageURL
+     * @param {SVGElement} svgElement
+     * The generated SVG element containing the text content to be exported.
+     * @param {Highcharts.PdfFontOptions} [pdfFont]
+     * An optional object specifying URLs for different font variants (normal,
+     * bold, italic, bolditalic). If non-ASCII characters are not detected,
+     * fonts are not loaded.
      *
-     * @param {string} imageType
+     * @requires modules/exporting
+     * @requires modules/offline-exporting
+     */
+    function loadPdfFonts(svgElement, pdfFont) {
+        return __awaiter(this, void 0, void 0, function () {
+            var hasNonASCII, addFont, variants, normalBase64, _loop_1, _i, variants_1, variant;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        hasNonASCII = function (s) { return (
+                        // eslint-disable-next-line no-control-regex
+                        /[^\u0000-\u007F\u200B]+/.test(s)); };
+                        addFont = function (variant, base64) {
+                            win.jspdf.jsPDF.API.events.push([
+                                'initialized',
+                                function () {
+                                    var _a;
+                                    this.addFileToVFS(variant, base64);
+                                    this.addFont(variant, 'HighchartsFont', variant);
+                                    if (!((_a = this.getFontList()) === null || _a === void 0 ? void 0 : _a.HighchartsFont)) {
+                                        this.setFont('HighchartsFont');
+                                    }
+                                }
+                            ]);
+                        };
+                        // If there are no non-ASCII characters in the SVG, do not use bother
+                        // downloading the font files
+                        if (pdfFont && !hasNonASCII(svgElement.textContent || '')) {
+                            pdfFont = void 0;
+                        }
+                        variants = ['normal', 'italic', 'bold', 'bolditalic'];
+                        _loop_1 = function (variant) {
+                            var url, response, blob_1, reader_1, base64, e_1;
+                            return __generator(this, function (_b) {
+                                switch (_b.label) {
+                                    case 0:
+                                        url = pdfFont === null || pdfFont === void 0 ? void 0 : pdfFont[variant];
+                                        if (!url) return [3 /*break*/, 7];
+                                        _b.label = 1;
+                                    case 1:
+                                        _b.trys.push([1, 5, , 6]);
+                                        return [4 /*yield*/, win.fetch(url)];
+                                    case 2:
+                                        response = _b.sent();
+                                        if (!response.ok) {
+                                            throw new Error("Failed to fetch font: ".concat(url));
+                                        }
+                                        return [4 /*yield*/, response.blob()];
+                                    case 3:
+                                        blob_1 = _b.sent(), reader_1 = new FileReader();
+                                        return [4 /*yield*/, new Promise(function (resolve, reject) {
+                                                reader_1.onloadend = function () {
+                                                    if (typeof reader_1.result === 'string') {
+                                                        resolve(reader_1.result.split(',')[1]);
+                                                    }
+                                                    else {
+                                                        reject(new Error('Failed to read font as base64'));
+                                                    }
+                                                };
+                                                reader_1.onerror = reject;
+                                                reader_1.readAsDataURL(blob_1);
+                                            })];
+                                    case 4:
+                                        base64 = _b.sent();
+                                        addFont(variant, base64);
+                                        if (variant === 'normal') {
+                                            normalBase64 = base64;
+                                        }
+                                        return [3 /*break*/, 6];
+                                    case 5:
+                                        e_1 = _b.sent();
+                                        return [3 /*break*/, 6];
+                                    case 6: return [3 /*break*/, 8];
+                                    case 7:
+                                        // For other variants, fall back to normal text weight/style
+                                        if (normalBase64) {
+                                            addFont(variant, normalBase64);
+                                        }
+                                        _b.label = 8;
+                                    case 8: return [2 /*return*/];
+                                }
+                            });
+                        };
+                        _i = 0, variants_1 = variants;
+                        _a.label = 1;
+                    case 1:
+                        if (!(_i < variants_1.length)) return [3 /*break*/, 4];
+                        variant = variants_1[_i];
+                        return [5 /*yield**/, _loop_1(variant)];
+                    case 2:
+                        _a.sent();
+                        _a.label = 3;
+                    case 3:
+                        _i++;
+                        return [3 /*break*/, 1];
+                    case 4: return [2 /*return*/];
+                }
+            });
+        });
+    }
+    /**
+     * Prepares an SVG for PDF export by ensuring proper text styling and
+     * removing unnecessary elements. This function extracts an SVG element from
+     * a given SVG string, applies font styles inherited from parent elements,
+     * and removes text outlines and title elements to improve PDF rendering.
      *
-     * @param {*} callbackArgs
-     *        callbackArgs is used only by callbacks.
+     * @private
+     * @function preparePDF
      *
+     * @param {string} svg
+     * A string representation of the SVG markup.
+     * @param {Highcharts.PdfFontOptions} [pdfFont]
+     * An optional object specifying URLs for different font variants (normal,
+     * bold, italic, bolditalic). If provided, the text elements are assigned a
+     * custom PDF font.
+     *
+     * @return {SVGSVGElement | null}
+     * Returns the parsed SVG element from the container or `null` if the SVG is
+     * not found.
+     *
+     * @requires modules/exporting
+     * @requires modules/offline-exporting
+     */
+    function preparePDF(svg, pdfFont) {
+        var dummySVGContainer = doc.createElement('div');
+        AST.setElementHTML(dummySVGContainer, svg);
+        var textElements = dummySVGContainer.getElementsByTagName('text'), 
+        // Copy style property to element from parents if it's not there.
+        // Searches up hierarchy until it finds prop, or hits the chart
+        // container
+        setStylePropertyFromParents = function (el, propName) {
+            var curParent = el;
+            while (curParent && curParent !== dummySVGContainer) {
+                if (curParent.style[propName]) {
+                    var value = curParent.style[propName];
+                    if (propName === 'fontSize' && /em$/.test(value)) {
+                        value = Math.round(parseFloat(value) * 16) + 'px';
+                    }
+                    el.style[propName] = value;
+                    break;
+                }
+                curParent = curParent.parentNode;
+            }
+        };
+        var titleElements, outlineElements;
+        // Workaround for the text styling. Making sure it does pick up
+        // settings for parent elements.
+        [].forEach.call(textElements, function (el) {
+            // Workaround for the text styling. making sure it does pick up
+            // the root element
+            ['fontFamily', 'fontSize']
+                .forEach(function (property) {
+                setStylePropertyFromParents(el, property);
+            });
+            el.style.fontFamily = (pdfFont === null || pdfFont === void 0 ? void 0 : pdfFont.normal) ?
+                // Custom PDF font
+                'HighchartsFont' :
+                // Generic font (serif, sans-serif etc)
+                String(el.style.fontFamily &&
+                    el.style.fontFamily.split(' ').splice(-1));
+            // Workaround for plotband with width, removing title from text
+            // nodes
+            titleElements = el.getElementsByTagName('title');
+            [].forEach.call(titleElements, function (titleElement) {
+                el.removeChild(titleElement);
+            });
+            // Remove all .highcharts-text-outline elements, #17170
+            outlineElements =
+                el.getElementsByClassName('highcharts-text-outline');
+            while (outlineElements.length > 0) {
+                var outline = outlineElements[0];
+                if (outline.parentNode) {
+                    outline.parentNode.removeChild(outline);
+                }
+            }
+        });
+        return dummySVGContainer.querySelector('svg');
+    }
+    /**
+     * Transform from PDF to SVG.
+     *
+     * @async
+     * @private
+     * @function svgToPdf
+     *
+     * @param {Highcharts.SVGElement} svgElement
+     * The SVG element to convert.
+     * @param {number} margin
+     * The margin to apply.
      * @param {number} scale
+     * The scale of the SVG.
      *
-     * @param {Function} successCallback
-     *        Receives four arguments: imageURL, imageType, callbackArgs,
-     *        and scale.
-     *
-     * @param {Function} taintedCallback
-     *        Receives four arguments: imageURL, imageType, callbackArgs,
-     *        and scale.
-     *
-     * @param {Function} noCanvasSupportCallback
-     *        Receives four arguments: imageURL, imageType, callbackArgs,
-     *        and scale.
-     *
-     * @param {Function} failedLoadCallback
-     *        Receives four arguments: imageURL, imageType, callbackArgs,
-     *        and scale.
-     *
-     * @param {Function} [finallyCallback]
-     *        finallyCallback is always called at the end of the process. All
-     *        callbacks receive four arguments: imageURL, imageType,
-     *        callbackArgs, and scale.
+     * @requires modules/exporting
+     * @requires modules/offline-exporting
      */
-    function imageToDataUrl(imageURL, imageType, callbackArgs, scale, successCallback, taintedCallback, noCanvasSupportCallback, failedLoadCallback, finallyCallback) {
-        var img = new win.Image(), taintedHandler;
-        var loadHandler = function () {
-            setTimeout(function () {
-                var canvas = doc.createElement('canvas'), ctx = canvas.getContext && canvas.getContext('2d');
-                var dataURL;
-                try {
-                    if (!ctx) {
-                        noCanvasSupportCallback(imageURL, imageType, callbackArgs, scale);
-                    }
-                    else {
-                        canvas.height = img.height * scale;
-                        canvas.width = img.width * scale;
-                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                        // Now we try to get the contents of the canvas.
-                        try {
-                            dataURL = canvas.toDataURL(imageType);
-                            successCallback(dataURL, imageType, callbackArgs, scale);
+    function svgToPdf(svgElement, margin, scale) {
+        return __awaiter(this, void 0, void 0, function () {
+            var width, height, pdfDoc, gradients, index, gradient, stops, i;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        width = (Number(svgElement.getAttribute('width')) + 2 * margin) *
+                            scale, height = (Number(svgElement.getAttribute('height')) + 2 * margin) *
+                            scale, pdfDoc = new win.jspdf.jsPDF(// eslint-disable-line new-cap
+                        // Setting orientation to portrait if height exceeds width
+                        height > width ? 'p' : 'l', 'pt', [width, height]);
+                        // Workaround for #7090, hidden elements were drawn anyway. It comes
+                        // down to https://github.com/yWorks/svg2pdf.js/issues/28. Check this
+                        // later.
+                        [].forEach.call(svgElement.querySelectorAll('*[visibility="hidden"]'), function (node) {
+                            node.parentNode.removeChild(node);
+                        });
+                        gradients = svgElement.querySelectorAll('linearGradient');
+                        for (index = 0; index < gradients.length; index++) {
+                            gradient = gradients[index];
+                            stops = gradient.querySelectorAll('stop');
+                            i = 0;
+                            while (i < stops.length &&
+                                stops[i].getAttribute('offset') === '0' &&
+                                stops[i + 1].getAttribute('offset') === '0') {
+                                stops[i].remove();
+                                i++;
+                            }
                         }
-                        catch (e) {
-                            taintedHandler(imageURL, imageType, callbackArgs, scale);
-                        }
-                    }
+                        // Workaround for #15135, zero width spaces, which Highcharts uses
+                        // to break lines, are not correctly rendered in PDF. Replace it
+                        // with a regular space and offset by some pixels to compensate.
+                        [].forEach.call(svgElement.querySelectorAll('tspan'), function (tspan) {
+                            if (tspan.textContent === '\u200B') {
+                                tspan.textContent = ' ';
+                                tspan.setAttribute('dx', -5);
+                            }
+                        });
+                        // Transform from PDF to SVG
+                        return [4 /*yield*/, pdfDoc.svg(svgElement, {
+                                x: 0,
+                                y: 0,
+                                width: width,
+                                height: height,
+                                removeInvalid: true
+                            })];
+                    case 1:
+                        // Transform from PDF to SVG
+                        _a.sent();
+                        // Return the output
+                        return [2 /*return*/, pdfDoc.output('datauristring')];
                 }
-                finally {
-                    if (finallyCallback) {
-                        finallyCallback(imageURL, imageType, callbackArgs, scale);
-                    }
-                }
-                // IE bug where image is not always ready despite calling load
-                // event.
-            }, OfflineExporting.loadEventDeferDelay);
-        }, 
-        // Image load failed (e.g. invalid URL)
-        errorHandler = function () {
-            failedLoadCallback(imageURL, imageType, callbackArgs, scale);
-            if (finallyCallback) {
-                finallyCallback(imageURL, imageType, callbackArgs, scale);
-            }
-        };
-        // This is called on load if the image drawing to canvas failed with a
-        // security error. We retry the drawing with crossOrigin set to
-        // Anonymous.
-        taintedHandler = function () {
-            img = new win.Image();
-            taintedHandler = taintedCallback;
-            // Must be set prior to loading image source
-            img.crossOrigin = 'Anonymous';
-            img.onload = loadHandler;
-            img.onerror = errorHandler;
-            img.src = imageURL;
-        };
-        img.onload = loadHandler;
-        img.onerror = errorHandler;
-        img.src = imageURL;
-    }
-    OfflineExporting.imageToDataUrl = imageToDataUrl;
-    /**
-     * Get blob URL from SVG code. Falls back to normal data URI.
-     *
-     * @private
-     * @function Highcharts.svgToDataURL
-     */
-    function svgToDataUrl(svg) {
-        // Webkit and not chrome
-        var userAgent = win.navigator.userAgent;
-        var webKit = (userAgent.indexOf('WebKit') > -1 &&
-            userAgent.indexOf('Chrome') < 0);
-        try {
-            // Safari requires data URI since it doesn't allow navigation to
-            // blob URLs. ForeignObjects also don't work well in Blobs in Chrome
-            // (#14780).
-            if (!webKit && svg.indexOf('<foreignObject') === -1) {
-                return OfflineExporting.domurl.createObjectURL(new win.Blob([svg], {
-                    type: 'image/svg+xml;charset-utf-16'
-                }));
-            }
-        }
-        catch (e) {
-            // Ignore
-        }
-        return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg);
-    }
-    OfflineExporting.svgToDataUrl = svgToDataUrl;
-    /* eslint-disable valid-jsdoc */
-    /**
-     * @private
-     */
-    function svgToPdf(svgElement, margin, scale, callback) {
-        var width = (Number(svgElement.getAttribute('width')) + 2 * margin) *
-            scale, height = (Number(svgElement.getAttribute('height')) + 2 * margin) *
-            scale, pdfDoc = new win.jspdf.jsPDF(// eslint-disable-line new-cap
-        // setting orientation to portrait if height exceeds width
-        height > width ? 'p' : 'l', 'pt', [width, height]);
-        // Workaround for #7090, hidden elements were drawn anyway. It comes
-        // down to https://github.com/yWorks/svg2pdf.js/issues/28. Check this
-        // later.
-        [].forEach.call(svgElement.querySelectorAll('*[visibility="hidden"]'), function (node) {
-            node.parentNode.removeChild(node);
+            });
         });
-        // Workaround for #13948, multiple stops in linear gradient set to 0
-        // causing error in Acrobat
-        var gradients = svgElement.querySelectorAll('linearGradient');
-        for (var index = 0; index < gradients.length; index++) {
-            var gradient = gradients[index];
-            var stops = gradient.querySelectorAll('stop');
-            var i = 0;
-            while (i < stops.length &&
-                stops[i].getAttribute('offset') === '0' &&
-                stops[i + 1].getAttribute('offset') === '0') {
-                stops[i].remove();
-                i++;
-            }
-        }
-        // Workaround for #15135, zero width spaces, which Highcharts uses
-        // to break lines, are not correctly rendered in PDF. Replace it
-        // with a regular space and offset by some pixels to compensate.
-        [].forEach.call(svgElement.querySelectorAll('tspan'), function (tspan) {
-            if (tspan.textContent === '\u200B') {
-                tspan.textContent = ' ';
-                tspan.setAttribute('dx', -5);
-            }
-        });
-        pdfDoc.svg(svgElement, {
-            x: 0,
-            y: 0,
-            width: width,
-            height: height,
-            removeInvalid: true
-        }).then(function () { return callback(pdfDoc.output('datauristring')); });
     }
-    OfflineExporting.svgToPdf = svgToPdf;
 })(OfflineExporting || (OfflineExporting = {}));
 /* *
  *
- * Default Export
+ *  Default Export
  *
  * */
 export default OfflineExporting;

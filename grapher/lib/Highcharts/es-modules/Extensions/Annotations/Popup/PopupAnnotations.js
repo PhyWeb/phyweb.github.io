@@ -2,7 +2,7 @@
  *
  *  Popup generator for Stock tools
  *
- *  (c) 2009-2024 Sebastian Bochan
+ *  (c) 2009-2025 Sebastian Bochan
  *
  *  License: www.highcharts.com/license
  *
@@ -87,12 +87,18 @@ function addToolbar(chart, options, callback) {
         showForm.call(this, 'annotation-edit', chart, options, callback);
     });
     button.className += ' highcharts-annotation-edit-button';
-    button.style['background-image'] = 'url(' +
-        this.iconsURL + 'edit.svg)';
+    createElement('span', {
+        className: 'highcharts-icon'
+    }, {
+        backgroundImage: `url(${this.iconsURL}edit.svg)`
+    }, button);
     button = this.addButton(popupDiv, lang.removeButton || 'Remove', 'remove', popupDiv, callback);
     button.className += ' highcharts-annotation-remove-button';
-    button.style['background-image'] = 'url(' +
-        this.iconsURL + 'destroy.svg)';
+    createElement('span', {
+        className: 'highcharts-icon'
+    }, {
+        backgroundImage: `url(${this.iconsURL}destroy.svg)`
+    }, button);
 }
 /**
  * Create annotation's form fields.

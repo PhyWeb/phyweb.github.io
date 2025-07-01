@@ -1,11 +1,11 @@
 /**
- * @license Highcharts JS v12.1.2 (2025-01-09)
+ * @license Highcharts JS v12.3.0 (2025-06-21)
  * @module highcharts/modules/annotations
  * @requires highcharts
  *
  * Annotations module
  *
- * (c) 2009-2024 Torstein Honsi
+ * (c) 2009-2025 Torstein Honsi
  *
  * License: www.highcharts.com/license
  */
@@ -23,13 +23,6 @@ return /******/ (function() { // webpackBootstrap
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 660:
-/***/ (function(module) {
-
-module.exports = __WEBPACK_EXTERNAL_MODULE__660__;
-
-/***/ }),
-
 /***/ 512:
 /***/ (function(module) {
 
@@ -37,10 +30,10 @@ module.exports = __WEBPACK_EXTERNAL_MODULE__512__;
 
 /***/ }),
 
-/***/ 984:
+/***/ 660:
 /***/ (function(module) {
 
-module.exports = __WEBPACK_EXTERNAL_MODULE__984__;
+module.exports = __WEBPACK_EXTERNAL_MODULE__660__;
 
 /***/ }),
 
@@ -48,6 +41,13 @@ module.exports = __WEBPACK_EXTERNAL_MODULE__984__;
 /***/ (function(module) {
 
 module.exports = __WEBPACK_EXTERNAL_MODULE__944__;
+
+/***/ }),
+
+/***/ 984:
+/***/ (function(module) {
+
+module.exports = __WEBPACK_EXTERNAL_MODULE__984__;
 
 /***/ })
 
@@ -121,7 +121,7 @@ var highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default 
 ;// ./code/es5/es-modules/Extensions/Annotations/AnnotationChart.js
 /* *
  *
- *  (c) 2009-2024 Highsoft, Black Label
+ *  (c) 2009-2025 Highsoft, Black Label
  *
  *  License: www.highcharts.com/license
  *
@@ -130,7 +130,7 @@ var highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default 
  * */
 
 
-var addEvent = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).addEvent, erase = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).erase, find = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).find, fireEvent = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).fireEvent, pick = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).pick, wrap = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).wrap;
+var addEvent = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).addEvent, erase = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).erase, find = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).find, fireEvent = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).fireEvent, isArray = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).isArray, isObject = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).isObject, pick = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).pick, wrap = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).wrap;
 /* *
  *
  *  Functions
@@ -348,10 +348,16 @@ function chartRemoveAnnotation(idOrAnnotation) {
  * @private
  */
 function onChartAfterInit() {
-    var chart = this;
+    var chart = this,
+        annotationsOption = this.options.annotations,
+        annotationsUserOption = this.userOptions.annotations;
     chart.annotations = [];
-    if (!this.options.annotations) {
+    if (!isArray(this.options.annotations)) {
         this.options.annotations = [];
+    }
+    if (isObject(annotationsUserOption, true) &&
+        isObject(annotationsOption, true)) {
+        this.options.annotations.push(annotationsOption);
     }
 }
 /**
@@ -425,20 +431,25 @@ var defined = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highchar
  *
  * */
 /**
- * A basic type of an annotation. It allows to add custom labels
- * or shapes. The items can be tied to points, axis coordinates
- * or chart pixel coordinates.
+ * A collection of annotations to add to the chart. The basic annotation allows
+ * adding custom labels or shapes. The items can be tied to points, axis
+ * coordinates or chart pixel coordinates.
  *
- * @sample highcharts/annotations/basic/
- *         Basic annotations
- * @sample highcharts/demo/annotations/
- *         Advanced annotations
- * @sample highcharts/css/annotations
- *         Styled mode
- * @sample highcharts/annotations-advanced/controllable
- *         Controllable items
+ * General options for all annotations can be set using the
+ * `Highcharts.setOptions` function. In this case only single objects are
+ * supported, because it alters the defaults for all items. For initialization
+ * in the chart constructors however, arrays of annotations are supported.
+ *
+ * See more in the [general docs](https://www.highcharts.com/docs/advanced-chart-features/annotations).
+ *
+ * @sample highcharts/annotations/basic/ Basic annotations
+ * @sample highcharts/demo/annotations/ Annotated chart
+ * @sample highcharts/css/annotations Styled mode
+ * @sample highcharts/annotations-advanced/controllable Controllable items
  * @sample {highstock} stock/annotations/fibonacci-retracements
  *         Custom annotation, Fibonacci retracement
+ * @sample highcharts/annotations/shape/
+ *         Themed crooked line annotation
  *
  * @type         {Array<*>}
  * @since        6.0.0
@@ -453,6 +464,17 @@ var AnnotationDefaults = {
      *
      * @type      {number|string}
      * @apioption annotations.id
+     */
+    /**
+     * For advanced annotations, this option defines the type of annotation. Can
+     * be one of the keys listed under the [types option](#annotations.types).
+     *
+     * @sample    highcharts/annotations-advanced/crooked-line
+     *            Crooked line annotation
+     * @requires  modules/annotations-advanced
+     * @product   highstock
+     * @type      {string}
+     * @apioption annotations.type
      */
     /**
      * Whether the annotation is visible.
@@ -1037,10 +1059,20 @@ var AnnotationDefaults = {
      */
     events: {},
     /**
+     * Option override for specific advanced annotation types. This collection
+     * is intended for general theming using `Highcharts.setOptions()`.
+     *
+     * @sample   highcharts/annotations/shape/
+     *           Themed crooked line annotation
+     * @product highstock
+     * @requires modules/annotations-advanced
+     */
+    types: {},
+    /**
      * The Z index of the annotation.
      */
     zIndex: 6
-}; // Type options are expected but not set
+};
 /* *
  *
  *  Default Export
@@ -1051,7 +1083,7 @@ var AnnotationDefaults = {
 ;// ./code/es5/es-modules/Extensions/Annotations/EventEmitter.js
 /* *
  *
- *  (c) 2009-2024 Highsoft, Black Label
+ *  (c) 2009-2025 Highsoft, Black Label
  *
  *  License: www.highcharts.com/license
  *
@@ -1094,7 +1126,9 @@ var EventEmitter = /** @class */ (function () {
         };
         addMouseDownEvent(this.graphic.element);
         (emitter.labels || []).forEach(function (label) {
-            if (label.options.useHTML && label.graphic.text) {
+            if (label.options.useHTML &&
+                label.graphic.text &&
+                !label.graphic.text.foreignObject) {
                 // Mousedown event bound to HTML element (#13070).
                 addMouseDownEvent(label.graphic.text.element);
             }
@@ -1128,7 +1162,9 @@ var EventEmitter = /** @class */ (function () {
                     };
                 emitter.graphic.css(cssPointer_1);
                 (emitter.labels || []).forEach(function (label) {
-                    if (label.options.useHTML && label.graphic.text) {
+                    if (label.options.useHTML &&
+                        label.graphic.text &&
+                        !label.graphic.text.foreignObject) {
                         label.graphic.text.css(cssPointer_1);
                     }
                 });
@@ -1429,7 +1465,7 @@ var ControlPoint = /** @class */ (function (_super) {
             .add(chart.controlPointsGroup)
             .css(options.style);
         this.setVisibility(options.visible);
-        // `npm test -- --tests "highcharts/annotations-advanced/*"`
+        // `npm test -- --tests "@highcharts/highcharts/annotations-advanced/*"`
         this.addEvents();
     };
     /**
@@ -3731,15 +3767,24 @@ var ControllableLabel = /** @class */ (function (_super) {
     ControllableLabel.prototype.render = function (parent) {
         var options = this.options,
             attrs = this.attrsFromOptions(options),
-            style = options.style;
+            style = options.style,
+            optionsChart = this.annotation.chart.options.chart,
+            chartBackground = optionsChart.plotBackgroundColor ||
+                optionsChart.backgroundColor;
         this.graphic = this.annotation.chart.renderer
             .label('', 0, -9999, // #10055
-        options.shape, null, null, options.useHTML, null, 'annotation-label')
+        options.shape, void 0, void 0, options.useHTML, void 0, 'annotation-label')
             .attr(attrs)
             .add(parent);
         if (!this.annotation.chart.styledMode) {
             if (style.color === 'contrast') {
-                style.color = this.annotation.chart.renderer.getContrast(ControllableLabel.shapesWithoutBackground.indexOf(options.shape) > -1 ? '#FFFFFF' : options.backgroundColor);
+                var background = (ControllableLabel.shapesWithoutBackground.indexOf(options.shape) > -1 ||
+                        options.backgroundColor === 'none') ?
+                        chartBackground :
+                        options.backgroundColor;
+                style.color = this.annotation.chart.renderer.getContrast(typeof background === 'string' ? background :
+                    typeof chartBackground === 'string' ? chartBackground :
+                        '#ffffff');
             }
             this.graphic
                 .css(options.style)
@@ -4031,7 +4076,7 @@ var highcharts_AST_commonjs_highcharts_AST_commonjs2_highcharts_AST_root_Highcha
 ;// ./code/es5/es-modules/Shared/BaseForm.js
 /* *
  *
- *  (c) 2009-2024 Highsoft AS
+ *  (c) 2009-2025 Highsoft AS
  *
  *  License: www.highcharts.com/license
  *
@@ -4101,9 +4146,12 @@ var BaseForm = /** @class */ (function () {
         var closeButton = createElement('button', { className: className },
             void 0,
             this.container);
-        closeButton.style['background-image'] = 'url(' +
-            (iconsURL.match(/png|svg|jpeg|jpg|gif/ig) ?
-                iconsURL : iconsURL + 'close.svg') + ')';
+        createElement('span', {
+            className: 'highcharts-icon'
+        }, {
+            backgroundImage: 'url(' + (iconsURL.match(/png|svg|jpeg|jpg|gif/ig) ?
+                iconsURL : iconsURL + 'close.svg') + ')'
+        }, closeButton);
         ['click', 'touchstart'].forEach(function (eventName) {
             BaseForm_addEvent(closeButton, eventName, popup.closeButtonEvents.bind(popup));
         });
@@ -4166,7 +4214,7 @@ var BaseForm = /** @class */ (function () {
  *
  *  Popup generator for Stock tools
  *
- *  (c) 2009-2024 Sebastian Bochan
+ *  (c) 2009-2025 Sebastian Bochan
  *
  *  License: www.highcharts.com/license
  *
@@ -4177,7 +4225,7 @@ var BaseForm = /** @class */ (function () {
 
 var PopupAnnotations_doc = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).doc, isFirefox = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).isFirefox;
 
-var PopupAnnotations_createElement = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).createElement, isArray = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).isArray, isObject = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).isObject, PopupAnnotations_objectEach = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).objectEach, PopupAnnotations_pick = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).pick, stableSort = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).stableSort;
+var PopupAnnotations_createElement = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).createElement, PopupAnnotations_isArray = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).isArray, PopupAnnotations_isObject = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).isObject, PopupAnnotations_objectEach = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).objectEach, PopupAnnotations_pick = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).pick, stableSort = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).stableSort;
 /* *
  *
  *  Functions
@@ -4262,12 +4310,18 @@ function addToolbar(chart, options, callback) {
             showForm.call(_this, 'annotation-edit', chart, options, callback);
     });
     button.className += ' highcharts-annotation-edit-button';
-    button.style['background-image'] = 'url(' +
-        this.iconsURL + 'edit.svg)';
+    PopupAnnotations_createElement('span', {
+        className: 'highcharts-icon'
+    }, {
+        backgroundImage: "url(".concat(this.iconsURL, "edit.svg)")
+    }, button);
     button = this.addButton(popupDiv, lang.removeButton || 'Remove', 'remove', popupDiv, callback);
     button.className += ' highcharts-annotation-remove-button';
-    button.style['background-image'] = 'url(' +
-        this.iconsURL + 'destroy.svg)';
+    PopupAnnotations_createElement('span', {
+        className: 'highcharts-icon'
+    }, {
+        backgroundImage: "url(".concat(this.iconsURL, "destroy.svg)")
+    }, button);
 }
 /**
  * Create annotation's form fields.
@@ -4297,12 +4351,12 @@ function addFormFields(parentDiv, chart, parentNode, options, storage, isRoot) {
     PopupAnnotations_objectEach(options, function (value, option) {
         // Create name like params.styles.fontSize
         parentFullName = parentNode !== '' ? parentNode + '.' + option : option;
-        if (isObject(value)) {
+        if (PopupAnnotations_isObject(value)) {
             if (
             // Value is object of options
-            !isArray(value) ||
+            !PopupAnnotations_isArray(value) ||
                 // Array of objects with params. i.e labels in Fibonacci
-                (isArray(value) && isObject(value[0]))) {
+                (PopupAnnotations_isArray(value) && PopupAnnotations_isObject(value[0]))) {
                 titleName = lang[option] || option;
                 if (!titleName.match(/\d/g)) {
                     storage.push([
@@ -4361,7 +4415,7 @@ var PopupAnnotations = {
  *
  *  Popup generator for Stock tools
  *
- *  (c) 2009-2024 Sebastian Bochan
+ *  (c) 2009-2025 Sebastian Bochan
  *
  *  License: www.highcharts.com/license
  *
@@ -5010,7 +5064,7 @@ var PopupIndicators = {
  *
  *  Popup generator for Stock tools
  *
- *  (c) 2009-2024 Sebastian Bochan
+ *  (c) 2009-2025 Sebastian Bochan
  *
  *  License: www.highcharts.com/license
  *
@@ -5154,7 +5208,7 @@ var PopupTabs = {
  *
  *  Popup generator for Stock tools
  *
- *  (c) 2009-2024 Sebastian Bochan
+ *  (c) 2009-2025 Sebastian Bochan
  *
  *  License: www.highcharts.com/license
  *
@@ -5423,7 +5477,7 @@ Popup_extend(Popup.prototype, {
  *
  *  Popup generator for Stock tools
  *
- *  (c) 2009-2024 Sebastian Bochan
+ *  (c) 2009-2025 Sebastian Bochan
  *
  *  License: www.highcharts.com/license
  *
@@ -5468,7 +5522,7 @@ function onNavigationBindingsShowPopup(config) {
         this.popup = new Popup_Popup(this.chart.container, (this.chart.options.navigation.iconsURL ||
             (this.chart.options.stockTools &&
                 this.chart.options.stockTools.gui.iconsURL) ||
-            'https://code.highcharts.com/12.1.2/gfx/stock-icons/'), this.chart);
+            'https://code.highcharts.com/12.3.0/gfx/stock-icons/'), this.chart);
     }
     this.popup.showForm(config.formType, this.chart, config.options, config.onSubmit);
 }
@@ -5496,7 +5550,7 @@ var PopupComposition = {
 ;// ./code/es5/es-modules/Extensions/Annotations/Annotation.js
 /* *
  *
- *  (c) 2009-2024 Highsoft, Black Label
+ *  (c) 2009-2025 Highsoft, Black Label
  *
  *  License: www.highcharts.com/license
  *
@@ -5535,6 +5589,8 @@ var getDeferredAnimation = (highcharts_commonjs_highcharts_commonjs2_highcharts_
 
 
 
+
+var defaultOptions = (highcharts_commonjs_highcharts_commonjs2_highcharts_root_Highcharts_default()).defaultOptions;
 
 
 
@@ -5656,7 +5712,7 @@ var Annotation = /** @class */ (function (_super) {
          * @name Highcharts.Annotation#options
          * @type {Highcharts.AnnotationsOptions}
          */
-        _this.options = Annotation_merge(_this.defaultOptions, userOptions);
+        _this.setOptions(userOptions);
         /**
          * The user options for the annotations.
          *
@@ -5671,7 +5727,7 @@ var Annotation = /** @class */ (function (_super) {
         _this.options.labels = labelsAndShapes.labels;
         _this.options.shapes = labelsAndShapes.shapes;
         /**
-         * The callback that reports to the overlapping-labels module which
+         * The callback that reports to the overlapping labels logic which
          * labels it should account for.
          * @private
          * @name Highcharts.Annotation#labelCollector
@@ -6033,7 +6089,12 @@ var Annotation = /** @class */ (function (_super) {
      *        User options for an annotation
      */
     Annotation.prototype.setOptions = function (userOptions) {
-        this.options = Annotation_merge(this.defaultOptions, userOptions);
+        this.options = Annotation_merge(
+        // Shared for all annotation types
+        this.defaultOptions, 
+        // The static typeOptions from the class
+        (userOptions.type &&
+            this.defaultOptions.types[userOptions.type]) || {}, userOptions);
     };
     /**
      * Set the annotation's visibility.
@@ -6092,11 +6153,6 @@ var Annotation = /** @class */ (function (_super) {
         Annotation_fireEvent(this, 'afterUpdate');
         this.isUpdating = false;
     };
-    /* *
-     *
-     *  Static Properties
-     *
-     * */
     /**
      * @private
      */
@@ -6126,6 +6182,7 @@ var Annotation = /** @class */ (function (_super) {
     return Annotation;
 }(Annotations_EventEmitter));
 Annotation.prototype.defaultOptions = Annotations_AnnotationDefaults;
+defaultOptions.annotations = Annotations_AnnotationDefaults;
 /**
  * List of events for `annotation.options.events` that should not be
  * added to `annotation.graphic` but to the `annotation`.
@@ -6193,7 +6250,7 @@ Annotations_ControlTarget.compose(Annotation);
 ;// ./code/es5/es-modules/Core/Chart/ChartNavigationComposition.js
 /**
  *
- *  (c) 2010-2024 Paweł Fus
+ *  (c) 2010-2025 Paweł Fus
  *
  *  License: www.highcharts.com/license
  *
@@ -6287,7 +6344,7 @@ var ChartNavigationComposition;
 ;// ./code/es5/es-modules/Extensions/Annotations/NavigationBindingsUtilities.js
 /* *
  *
- *  (c) 2009-2024 Highsoft, Black Label
+ *  (c) 2009-2025 Highsoft, Black Label
  *
  *  License: www.highcharts.com/license
  *
@@ -6389,7 +6446,7 @@ var NavigationBindingUtilities = {
 ;// ./code/es5/es-modules/Extensions/Annotations/NavigationBindingsDefaults.js
 /* *
  *
- *  (c) 2009-2024 Highsoft, Black Label
+ *  (c) 2009-2025 Highsoft, Black Label
  *
  *  License: www.highcharts.com/license
  *
@@ -6599,7 +6656,7 @@ var navigation = {
                         }
                     ]
                 }, navigation.annotationsOptions, navigation.bindings.ellipseAnnotation
-                    .annotationOptions));
+                    .annotationsOptions));
             },
             steps: [
                 function (e, annotation) {
@@ -6745,7 +6802,7 @@ var navigation = {
      * from a different server.
      *
      * @type      {string}
-     * @default   https://code.highcharts.com/12.1.2/gfx/stock-icons/
+     * @default   https://code.highcharts.com/12.3.0/gfx/stock-icons/
      * @since     7.1.3
      * @apioption navigation.iconsURL
      */
@@ -6824,7 +6881,7 @@ var NavigationBindingDefaults = {
 ;// ./code/es5/es-modules/Extensions/Annotations/NavigationBindings.js
 /* *
  *
- *  (c) 2009-2024 Highsoft, Black Label
+ *  (c) 2009-2025 Highsoft, Black Label
  *
  *  License: www.highcharts.com/license
  *

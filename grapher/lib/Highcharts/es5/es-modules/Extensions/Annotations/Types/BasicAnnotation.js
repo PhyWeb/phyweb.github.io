@@ -21,8 +21,6 @@ var __extends = (this && this.__extends) || (function () {
 })();
 import Annotation from '../Annotation.js';
 import MockPoint from '../MockPoint.js';
-import U from '../../../Core/Utilities.js';
-var merge = U.merge;
 /* *
  *
  *  Class
@@ -235,7 +233,6 @@ var BasicAnnotation = /** @class */ (function (_super) {
     };
     return BasicAnnotation;
 }(Annotation));
-BasicAnnotation.prototype.defaultOptions = merge(Annotation.prototype.defaultOptions, {});
 Annotation.types.basicAnnotation = BasicAnnotation;
 /* *
  *

@@ -1,12 +1,12 @@
 /**
- * @license Highcharts JS v12.1.2 (2025-01-09)
+ * @license Highcharts JS v12.3.0 (2025-06-21)
  * @module highcharts/modules/solid-gauge
  * @requires highcharts
  * @requires highcharts/highcharts-more
  *
  * Solid angular gauge module
  *
- * (c) 2010-2024 Torstein Honsi
+ * (c) 2010-2025 Torstein Honsi
  *
  * License: www.highcharts.com/license
  */
@@ -24,17 +24,17 @@ return /******/ (() => { // webpackBootstrap
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 620:
-/***/ ((module) => {
-
-module.exports = __WEBPACK_EXTERNAL_MODULE__620__;
-
-/***/ }),
-
 /***/ 512:
 /***/ ((module) => {
 
 module.exports = __WEBPACK_EXTERNAL_MODULE__512__;
+
+/***/ }),
+
+/***/ 620:
+/***/ ((module) => {
+
+module.exports = __WEBPACK_EXTERNAL_MODULE__620__;
 
 /***/ }),
 
@@ -503,7 +503,7 @@ var highcharts_Color_commonjs_highcharts_Color_commonjs2_highcharts_Color_root_H
 ;// ./code/es-modules/Core/Axis/Color/ColorAxisLike.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -649,7 +649,7 @@ var ColorAxisLike;
 ;// ./code/es-modules/Core/Axis/SolidGaugeAxis.js
 /* *
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -686,7 +686,7 @@ const SolidGaugeAxis = {
  *
  *  Solid angular gauge module
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -891,7 +891,7 @@ const SolidGaugeSeriesDefaults = {
  *
  *  Solid angular gauge module
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -957,7 +957,7 @@ class SolidGaugeSeries extends GaugeSeries {
                 )) * center[2]) / 200), innerRadius = ((pInt(pick(point.options.innerRadius, options.innerRadius, 60 // %
                 )) * center[2]) / 200), axisMinAngle = Math.min(yAxis.startAngleRad, yAxis.endAngleRad), axisMaxAngle = Math.max(yAxis.startAngleRad, yAxis.endAngleRad);
                 let graphic = point.graphic, rotation = (yAxis.startAngleRad +
-                    yAxis.translate(point.y, void 0, void 0, void 0, true)), shapeArgs, d, toColor = yAxis.toColor(point.y, point);
+                    yAxis.translate(point.y, void 0, void 0, void 0, true)), shapeArgs, d, toColor = yAxis.toColor(point.y, point), className = point.getClassName();
                 if (toColor === 'none') { // #3708
                     toColor = point.color || series.color || 'none';
                 }
@@ -1020,8 +1020,13 @@ class SolidGaugeSeries extends GaugeSeries {
                         'stroke-width': options.borderWidth || 0
                     });
                 }
+                else if (series.yAxis?.stops) {
+                    className = className
+                        .replace(/highcharts-color-\d/gm, '')
+                        .trim();
+                }
                 if (graphic) {
-                    graphic.addClass(point.getClassName(), true);
+                    graphic.addClass(className);
                 }
             }
         }

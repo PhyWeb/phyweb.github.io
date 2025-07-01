@@ -1,11 +1,11 @@
 /**
- * @license Highcharts JS v@product.version@ (@product.date@)
+ * @license Highcharts JS v12.3.0 (2025-06-21)
  * @module highcharts/modules/color-axis
  * @requires highcharts
  *
  * ColorAxis module
  *
- * (c) 2012-2024 Pawel Potaczek
+ * (c) 2012-2025 Pawel Potaczek
  *
  * License: www.highcharts.com/license
  */

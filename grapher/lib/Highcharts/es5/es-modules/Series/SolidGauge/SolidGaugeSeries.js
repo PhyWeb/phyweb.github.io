@@ -2,7 +2,7 @@
  *
  *  Solid angular gauge module
  *
- *  (c) 2010-2024 Torstein Honsi
+ *  (c) 2010-2025 Torstein Honsi
  *
  *  License: www.highcharts.com/license
  *
@@ -71,6 +71,7 @@ var SolidGaugeSeries = /** @class */ (function (_super) {
     };
     // Draw the points where each point is one needle.
     SolidGaugeSeries.prototype.drawPoints = function () {
+        var _a;
         var series = this, yAxis = series.yAxis, center = yAxis.center, options = series.options, renderer = series.chart.renderer, overshoot = options.overshoot, rounded = options.rounded && options.borderRadius === void 0, overshootVal = isNumber(overshoot) ?
             overshoot / 180 * Math.PI :
             0;
@@ -80,15 +81,15 @@ var SolidGaugeSeries = /** @class */ (function (_super) {
             thresholdAngleRad = yAxis.startAngleRad + yAxis.translate(options.threshold, void 0, void 0, void 0, true);
         }
         this.thresholdAngleRad = pick(thresholdAngleRad, yAxis.startAngleRad);
-        for (var _i = 0, _a = series.points; _i < _a.length; _i++) {
-            var point = _a[_i];
+        for (var _i = 0, _b = series.points; _i < _b.length; _i++) {
+            var point = _b[_i];
             // #10630 null point should not be draw
             if (!point.isNull) { // Condition like in pie chart
                 var radius = ((pInt(pick(point.options.radius, options.radius, 100 // %
                 )) * center[2]) / 200), innerRadius = ((pInt(pick(point.options.innerRadius, options.innerRadius, 60 // %
                 )) * center[2]) / 200), axisMinAngle = Math.min(yAxis.startAngleRad, yAxis.endAngleRad), axisMaxAngle = Math.max(yAxis.startAngleRad, yAxis.endAngleRad);
                 var graphic = point.graphic, rotation = (yAxis.startAngleRad +
-                    yAxis.translate(point.y, void 0, void 0, void 0, true)), shapeArgs = void 0, d = void 0, toColor = yAxis.toColor(point.y, point);
+                    yAxis.translate(point.y, void 0, void 0, void 0, true)), shapeArgs = void 0, d = void 0, toColor = yAxis.toColor(point.y, point), className = point.getClassName();
                 if (toColor === 'none') { // #3708
                     toColor = point.color || series.color || 'none';
                 }
@@ -151,8 +152,13 @@ var SolidGaugeSeries = /** @class */ (function (_super) {
                         'stroke-width': options.borderWidth || 0
                     });
                 }
+                else if ((_a = series.yAxis) === null || _a === void 0 ? void 0 : _a.stops) {
+                    className = className
+                        .replace(/highcharts-color-\d/gm, '')
+                        .trim();
+                }
                 if (graphic) {
-                    graphic.addClass(point.getClassName(), true);
+                    graphic.addClass(className);
                 }
             }
         }
