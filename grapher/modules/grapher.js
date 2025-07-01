@@ -84,6 +84,14 @@ export default class Grapher {
     }
   }
 
+  deleteAllCurves() {
+    this.chart.series.forEach(element => {
+      element.remove();
+    });
+
+    this.currentXCurve = null;
+  }
+
   updateChart(_yCurves){
     if(this.currentXCurve && _yCurves){
       // remove all unchecked curve

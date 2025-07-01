@@ -26,14 +26,20 @@ export default class Data {
     }
 
     this.curves.push(curve);
+
+    return curve;
   }
 
   deleteCurve(_title){
     //this.curves = this.curves.filter(curve => curve.title !== _title);
-    const index = array.findIndex(objet => objet.name === _title);
+    const index = this.curves.findIndex(objet => objet.name === _title);
     if (index !== -1) {
-      array.splice(index, 1);
+      this.curves.splice(index, 1);
     }
+  }
+
+  deleteAllCurves() {
+    this.curves = [];
   }
 
   getTable(){

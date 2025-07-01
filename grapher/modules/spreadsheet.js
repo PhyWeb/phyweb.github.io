@@ -12,13 +12,16 @@ export default class Spreadsheet {
 
   addCurve(_title, _unit, _size, _fill){
 
-    this.data.addCurve(_title, _unit, _size, _fill);
+    let curve = this.data.addCurve(_title, _unit, _size, _fill);
 
     // Update the spreadsheet
     this.update();
+
+    return curve;
   }
 
   update(){
+    console.log("Updating spreadsheet with data");
     this.hot.updateSettings({
       data: this.data.getTable(),
       colHeaders: this.data.getHeaders()

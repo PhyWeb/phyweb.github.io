@@ -83,6 +83,17 @@ $("#calculs-tab").addEventListener("click", () => {
   //$("#calculs-panel").classList.remove("is-hidden");
 });
 
+$("#file-input").addEventListener("change", () => {
+  //if($("#file-input").files[0].type !== "video/mp4")
+
+  if($("#file-input").files[0] != undefined){
+    app.loadFile($("#file-input").files[0]);
+  }
+});
+$("#file-input").addEventListener("click", () => {
+  $("#file-input").value = null; // allow the onchange trigger even if the same file is selected twice
+});
+
 let data = new Data();
 let grapher = new Grapher(data);
 
