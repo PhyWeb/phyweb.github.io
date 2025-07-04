@@ -269,5 +269,43 @@ window.addEventListener("resize", () => {
   grapher.chart.reflow();
 });
 
+// Zoom
+let isZoomEnabled = false;
+$("#zoom-button").addEventListener("click", () => {
+  if(!isZoomEnabled){
+    $("#zoom-button").classList.add("is-active");
+    grapher.chart.update({
+      chart: {
+        zooming: {
+          type : "xy", // Enable zooming in both directions
+          resetButton:{
+            theme: {
+              style:{
+                display: "none" // Hide the default reset button
+              }
+            }
+          }
+        },
+      }
+    });
+    isZoomEnabled = true;
+  } else {
+    $("#zoom-button").classList.remove("is-active");
+    grapher.chart.update({
+      chart: {
+        zooming: {
+          type : null // Disable zooming
+        },
+      }
+    });
+    isZoomEnabled = false;
+  }
+});
 
+$("#auto-zoom-button").addEventListener("click", () => {
+  grapher.chart.zoomOut();
+  $("#auto-zoom-button").classList.add("is-hidden");
+  $("#zoom-button").classList.remove("is-active");
+  isZoomEnabled = false;
+});
 });

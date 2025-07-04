@@ -39,7 +39,64 @@ export default class Grapher {
 
     this.chart = Highcharts.chart("chart", {
       chart: {
-          type: "line"
+        type: "line",
+        events: {
+          load : function () {
+            const chart = this;
+
+            // Fonction pour dessiner les flèches
+            function drawArrows() {
+              // Supprimer les anciennes flèches s’il y en a
+              if (chart.customArrows) {
+                  chart.customArrows.forEach(a => a.destroy());
+              }
+
+              chart.customArrows = [];
+
+              const xAxis = chart.xAxis[0];
+              const yAxis = chart.yAxis[0];
+
+              // Flèche X (droite)
+              const xEnd = xAxis.toPixels(xAxis.max);
+              const yPos = chart.plotHeight + chart.plotTop;
+
+              const arrowX = chart.renderer.path([
+                  'M', xEnd, yPos,
+                  'L', xEnd - 10, yPos - 5,
+                  'L', xEnd - 10, yPos + 5,
+                  'Z'
+              ]).attr({ fill: 'black' }).add();
+
+              chart.customArrows.push(arrowX);
+
+              // Flèche Y (haut)
+              const yEnd = yAxis.toPixels(yAxis.max);
+              const xPos = chart.plotLeft;
+
+              const arrowY = chart.renderer.path([
+                  'M', xPos, yEnd,
+                  'L', xPos - 5, yEnd + 10,
+                  'L', xPos + 5, yEnd + 10,
+                  'Z'
+              ]).attr({ fill: 'black' }).add();
+
+              chart.customArrows.push(arrowY);
+            }
+
+            // Dessin initial
+            drawArrows();
+
+            // Re-dessiner à chaque redraw (resize, zoom, etc.)
+            Highcharts.addEvent(chart, 'redraw', drawArrows);
+          },
+          selection: (e) => {
+            // Prevent default button
+            this.resetZoomButton && this.resetZoomButton.hide();
+            // Add custom zoom button
+            $("#zoom-button").click();
+            $("#auto-zoom-button").classList.remove("is-hidden");
+          }
+        }
       },
       accessibility: {
         enabled: false
@@ -50,12 +107,15 @@ export default class Grapher {
       xAxis: {
         title: {
           text: null
-      }
+        },
+        gridLineWidth: 1
       },
       yAxis: {
         title: {
-            text: null
-        }
+          text: null
+        },
+        lineWidth: 1,
+        gridLineWidth: 1,
       },
       credits: {
         enabled: false
