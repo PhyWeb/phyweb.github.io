@@ -13,6 +13,22 @@ function lengthOfTheLongestTable(_tables){
   return size;
 }
 
+// Highcharts symbols --------------------------------------------------------------------------
+// Cross symbol for Highcharts
+Highcharts.SVGRenderer.prototype.symbols.cross = function (x, y, w, h) {
+  const size = Math.min(w, h);
+  const cx = x + w / 2;
+  const cy = y + h / 2;
+  const s = size / 2;
+
+  return [
+    'M', cx - s, cy,
+    'L', cx + s, cy,
+    'M', cx, cy - s,
+    'L', cx, cy + s
+  ];
+};
+
 /*----------------------------------------------------------------------------------------------
 ----------------------------------------------Grapher-------------------------------------------
 ----------------------------------------------------------------------------------------------*/
@@ -171,7 +187,17 @@ export default class Grapher {
         if(!this.chart.series.find(e => e.name === element)){
           this.chart.addSeries({
             name: element,
-            data: this.formatData(this.data.getCurveByTitle(this.currentXCurve), this.data.getCurveByTitle(element))
+            data: this.formatData(this.data.getCurveByTitle(this.currentXCurve), this.data.getCurveByTitle(element)),
+            color: this.data.getCurveByTitle(element).color,
+            lineWidth: this.data.getCurveByTitle(element).lineWidth,
+            dashStyle: this.data.getCurveByTitle(element).lineStyle,
+            marker: {
+              enabled: true,
+              symbol: this.data.getCurveByTitle(element).markerSymbol,
+              radius: this.data.getCurveByTitle(element).markerRadius,
+              lineWidth: this.data.getCurveByTitle(element).markerSymbol === "cross" ?  1 : 0,
+              lineColor: this.data.getCurveByTitle(element).color
+            }
           });
         }
       });

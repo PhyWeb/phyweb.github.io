@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="../common/handsontable/ht-theme-horizon.min.css">
 
     <link rel="stylesheet" href="../common/bulma/bulma.min.css">
+    <link rel="stylesheet" href="../common/bulma/bulma-switch.min.css">
 
     <link rel="stylesheet" href="../common/common.css">
 
@@ -321,34 +322,116 @@
         <div class="columns is-flex-grow-1">
           <div class="column is-narrow">
             <p>
-              Ordonnées
+              <strong>Ordonnées</strong>
             </p>
             <aside class="menu">
               <ul class="menu-list">
                 <li>
                   <ul id="choose-curves-menu">
-                    <li>
-                      <a class="is-active"><input class="mr-2" type="checkbox"/>X</a>
-                    </li>
-                    <li><a>X</a></li>
-                    <li><a>X</a></li>
                   </ul>
                 </li>
               </ul>
             </aside>
             <p class="mb-2">
-              Abscisse
+              <strong>Abscisse</strong>
             </p>
             <div class="select">
-              <select id="choose-curves-select">
-                <option>Select dropdown</option>
-                <option>With options</option>
+              <select id="choose-x-curve-select">
               </select>
             </div>
           </div>
           <div class="column is-narrow vertical-divider">
           </div>
           <div class="column">
+            <p>
+              <strong>Style</strong>
+            </p>
+            <div class="field is-horizontal">
+              <div class="field-label is-normal">
+                <label class="label">Couleur</label>
+              </div>
+              <div class="field-body">
+                <div class="field">
+                  <div class="control">
+                    <div class="select">
+                      <select id="curveColorPicker">
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="field is-horizontal">
+              <div class="field-label is-normal">
+                <label class="label">Points</label>
+              </div>
+              <div class="field-body">
+                <div class="field is-flex is-flex-grow-0 is-align-items-center">
+                  <div class="control">
+                    <label class="switch is-rounded control">
+                      <input type="checkbox" value="false" id="show-markers"/>
+                      <span class="check"></span>
+                    </label>
+                  </div>
+                </div>
+                <div class="field is-flex-grow-0">
+                  <div class="control">
+                    <div class="select is-fullwidth">
+                      <select id="curveMarkerRadiusSelect">
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                <div class="field">
+                  <div class="control">
+                    <div class="select is-fullwidth">
+                      <select id="curveMarkerSymbolSelect">
+                        <option value="circle">Cercle</option>
+                        <option value="cross">Croix</option>
+                        <option value="square">Carré</option>
+                        <option value="diamond">Losange</option>
+                        <option value="triangle">Triangle</option>
+                        <option value="triangle-down">Triangle inversé</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="field is-horizontal">
+              <div class="field-label is-normal">
+                <label class="label">Ligne</label>
+              </div>
+              <div class="field-body">
+                <div class="field is-flex is-flex-grow-0 is-align-items-center">
+                  <div class="control">
+                    <label class="switch is-rounded control">
+                      <input type="checkbox" value="false" id="show-line"/>
+                      <span class="check"></span>
+                    </label>
+                  </div>
+                </div>
+                <div class="field is-flex-grow-0">
+                  <div class="control">
+                    <div class="select">
+                      <select id="curveLineWidthSelect">
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                <div class="field">
+                  <div class="control">
+                    <div class="select is-fullwidth">
+                      <select id="curveLineStyleSelect">
+                        <option value="Solid">Continue</option>
+                        <option value="Dash">Tirets</option>
+                        <option value="Dot">Points</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>

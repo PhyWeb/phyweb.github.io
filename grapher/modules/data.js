@@ -2,9 +2,19 @@ import {Serie} from "../../common/common.js"
 
 const $ = document.querySelector.bind(document);
 
+const COLOR_LIST = [ "#2caffe", "#544fc5", "#00e272", "#fe6a35", "#6b8abc", "#d568fb", "#2ee0ca", "#fa4b42", "#feb56a", "#91e8e1" ]
+
+const DEFAULT_LINE_WIDTH = 2;
+
 class Curve extends Serie {
-  constructor(_title, _unit) {
+  constructor(_title, _unit, _color = "#000000", _lineWidth = 1, _lineStyle = "solid", _markerSymbol = "circle", _markerRadius = 4) {
     super(_title, _unit);
+
+    this.color = _color;
+    this.lineWidth = _lineWidth;
+    this.lineStyle = _lineStyle; // "solid", "dash", "dot"
+    this.markerSymbol = _markerSymbol;
+    this.markerRadius = _markerRadius; // Radius of the marker in pixels
   }
 }
 
@@ -17,7 +27,22 @@ export default class Data {
   }   
 
   addCurve(_title, _unit, _size, _fill){
-    let curve = new Curve(_title, _unit);
+    // Check if the title is already used TODO: modal
+    if(this.curves.find(curve => curve.title === _title)){
+      console.error("Curve with title '" + _title + "' already exists.");
+      return null;
+    }
+
+    // Find a color not already used
+    let color = COLOR_LIST.find(color => !this.curves.some(curve => curve.color === color));
+    /*if(!color){
+      // If no color is available, use a random color
+      color = "#" + Math.floor(Math.random()*16777215).toString(16);
+      console.warn("No more colors available, using random color: " + color);
+    }*/
+
+    // Create the curve
+    let curve = new Curve(_title, _unit, color, DEFAULT_LINE_WIDTH, "Solid");
 
     if(_size !== undefined){
       curve.init(_size, _fill);
@@ -31,8 +56,7 @@ export default class Data {
   }
 
   deleteCurve(_title){
-    //this.curves = this.curves.filter(curve => curve.title !== _title);
-    const index = this.curves.findIndex(objet => objet.name === _title);
+    const index = this.curves.findIndex(objet => objet.title === _title);
     if (index !== -1) {
       this.curves.splice(index, 1);
     }

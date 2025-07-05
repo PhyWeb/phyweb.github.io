@@ -22,12 +22,15 @@ GRAPHER:
   - rework new/load/save buttons
   - specify "line" or "spline" in series not graph
 
+
+
   - add an option to set maxDigits
 
   - import csv/rw3/clipboard
   - export csv/rw3/clipboard
   - export image / print
   - style curves
+    - add cross marker
   - reticule
     https://jsfiddle.net/gh/get/library/pure/highcharts/highcharts/tree/master/samples/highcharts/xaxis/crosshair-both/
   - compute curves

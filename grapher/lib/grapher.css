@@ -2,3 +2,10 @@
   height: 30rem;
   width: 45rem;
 }
+
+#curveColorPicker option {
+  padding-left: 30px;
+  background-repeat: no-repeat;
+  background-position: 5px center;
+  background-size: 15px 15px;
+}
