@@ -21,7 +21,6 @@ export default class Spreadsheet {
   }
 
   update(){
-    console.log("Updating spreadsheet with data");
     this.hot.updateSettings({
       data: this.data.getTable(),
       colHeaders: this.data.getHeaders()

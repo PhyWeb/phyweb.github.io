@@ -403,11 +403,10 @@ function populateMarkersSymbolSelect(){
     curve.markerSymbol = newSymbol;
 
     // Update the marker symbol of the curve in the chart if it exists
-    console.log("Updating marker symbol for curve:", activeCurve, "to", newSymbol);
     if(grapher.chart.series.find(e => e.name === activeCurve)){
       grapher.chart.series.find(e => e.name === activeCurve).update({ marker: { 
         symbol: newSymbol,
-        lineWidth: newSymbol === "cross" ? 1 : 0, // If the symbol is a cross, set the line width to 10
+        lineWidth: newSymbol === "cross" || "crossX" ? 1 : 0, // If the symbol is a cross, set the line width to 10
       } });
     }
   });

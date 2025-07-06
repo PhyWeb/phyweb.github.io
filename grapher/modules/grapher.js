@@ -29,6 +29,20 @@ Highcharts.SVGRenderer.prototype.symbols.cross = function (x, y, w, h) {
   ];
 };
 
+// Cross symbol for Highcharts with X orientation
+Highcharts.SVGRenderer.prototype.symbols.crossX = function (x, y, w, h) {
+  const s = Math.min(w, h) / 2;
+  const cx = x + w / 2;
+  const cy = y + h / 2;
+
+  return [
+    'M', cx - s, cy - s,
+    'L', cx + s, cy + s,
+    'M', cx - s, cy + s,
+    'L', cx + s, cy - s
+  ];
+};
+
 /*----------------------------------------------------------------------------------------------
 ----------------------------------------------Grapher-------------------------------------------
 ----------------------------------------------------------------------------------------------*/
@@ -195,7 +209,7 @@ export default class Grapher {
               enabled: true,
               symbol: this.data.getCurveByTitle(element).markerSymbol,
               radius: this.data.getCurveByTitle(element).markerRadius,
-              lineWidth: this.data.getCurveByTitle(element).markerSymbol === "cross" ?  1 : 0,
+              lineWidth: this.data.getCurveByTitle(element).markerSymbol === "cross" || "crossX" ?  1 : 0,
               lineColor: this.data.getCurveByTitle(element).color
             }
           });
