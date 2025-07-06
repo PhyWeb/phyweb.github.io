@@ -145,6 +145,17 @@ export default class Grapher {
           }
         }
       },
+      legend: {
+        itemStyle: {
+          fontSize: '16px',
+          color: '#000000'
+        },
+        layout: 'horizontal',
+        align: 'left',
+        verticalAlign: 'top',
+        x: 0,
+        y: -10
+      },
       accessibility: {
         enabled: false
       },
