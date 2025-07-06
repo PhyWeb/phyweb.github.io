@@ -4,13 +4,17 @@ const $ = document.querySelector.bind(document);
 
 const COLOR_LIST = [ "#2caffe", "#544fc5", "#00e272", "#fe6a35", "#6b8abc", "#d568fb", "#2ee0ca", "#fa4b42", "#feb56a", "#91e8e1" ]
 
+const DEFAULT_MARKER = true;
+const DEFAULT_LINE = false;
 const DEFAULT_LINE_WIDTH = 2;
 
 class Curve extends Serie {
-  constructor(_title, _unit, _color = "#000000", _lineWidth = 1, _lineStyle = "solid", _markerSymbol = "circle", _markerRadius = 4) {
+  constructor(_title, _unit, _color = "#000000", _line = DEFAULT_LINE, markers = DEFAULT_MARKER, _lineWidth = DEFAULT_LINE_WIDTH, _lineStyle = "Solid", _markerSymbol = "circle", _markerRadius = 4) {
     super(_title, _unit);
 
     this.color = _color;
+    this.line = _line; // true if the curve has a line
+    this.markers = markers; // true if the curve has markers
     this.lineWidth = _lineWidth;
     this.lineStyle = _lineStyle; // "solid", "dash", "dot"
     this.markerSymbol = _markerSymbol;
@@ -42,7 +46,7 @@ export default class Data {
     }*/
 
     // Create the curve
-    let curve = new Curve(_title, _unit, color, DEFAULT_LINE_WIDTH, "Solid");
+    let curve = new Curve(_title, _unit, color);
 
     if(_size !== undefined){
       curve.init(_size, _fill);

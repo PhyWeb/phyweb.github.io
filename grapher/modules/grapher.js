@@ -198,19 +198,20 @@ export default class Grapher {
     
       // add all checked curve
       _yCurves.forEach(element => {
+        let curve = this.data.getCurveByTitle(element);
         if(!this.chart.series.find(e => e.name === element)){
           this.chart.addSeries({
             name: element,
-            data: this.formatData(this.data.getCurveByTitle(this.currentXCurve), this.data.getCurveByTitle(element)),
-            color: this.data.getCurveByTitle(element).color,
-            lineWidth: this.data.getCurveByTitle(element).lineWidth,
-            dashStyle: this.data.getCurveByTitle(element).lineStyle,
+            data: this.formatData(this.data.getCurveByTitle(this.currentXCurve), curve),
+            color: curve.color,
+            lineWidth: curve.line ? curve.lineWidth : 0, // 0 if the curve is not a line
+            dashStyle: curve.lineStyle,
             marker: {
-              enabled: true,
-              symbol: this.data.getCurveByTitle(element).markerSymbol,
-              radius: this.data.getCurveByTitle(element).markerRadius,
-              lineWidth: this.data.getCurveByTitle(element).markerSymbol === "cross" || "crossX" ?  1 : 0,
-              lineColor: this.data.getCurveByTitle(element).color
+              enabled: curve.markers,
+              symbol: curve.markerSymbol,
+              radius: curve.markerRadius,
+              lineWidth: curve.markerSymbol === "cross" || "crossX" ?  1 : 0,
+              lineColor: curve.color
             }
           });
         }

@@ -343,9 +343,6 @@
           <div class="column is-narrow vertical-divider">
           </div>
           <div class="column">
-            <p>
-              <strong>Style</strong>
-            </p>
             <div class="field is-horizontal">
               <div class="field-label is-normal">
                 <label class="label">Couleur</label>
@@ -366,15 +363,15 @@
                 <label class="label">Points</label>
               </div>
               <div class="field-body">
-                <div class="field is-flex is-flex-grow-0 is-align-items-center">
+                <div class="field is-flex is-flex-grow-0 is-align-items-center" style="height: 40px">
                   <div class="control">
-                    <label class="switch is-rounded control">
-                      <input type="checkbox" value="false" id="show-markers"/>
+                    <label class="switch is-rounded">
+                      <input type="checkbox" value="false" id="curveMarkerToggle"/>
                       <span class="check"></span>
                     </label>
                   </div>
                 </div>
-                <div class="field is-flex-grow-0">
+                <div class="field is-flex-grow-0 curveMarkerUI">
                   <div class="control">
                     <div class="select is-fullwidth">
                       <select id="curveMarkerRadiusSelect">
@@ -382,7 +379,7 @@
                     </div>
                   </div>
                 </div>
-                <div class="field">
+                <div class="field curveMarkerUI">
                   <div class="control">
                     <div class="select is-fullwidth">
                       <select id="curveMarkerSymbolSelect">
@@ -404,15 +401,15 @@
                 <label class="label">Ligne</label>
               </div>
               <div class="field-body">
-                <div class="field is-flex is-flex-grow-0 is-align-items-center">
+                <div class="field is-flex is-flex-grow-0 is-align-items-center" style="height: 40px">
                   <div class="control">
                     <label class="switch is-rounded control">
-                      <input type="checkbox" value="false" id="show-line"/>
+                      <input type="checkbox" value="false" id="curveLineToggle"/>
                       <span class="check"></span>
                     </label>
                   </div>
                 </div>
-                <div class="field is-flex-grow-0">
+                <div class="field is-flex-grow-0 curveLineUI">
                   <div class="control">
                     <div class="select">
                       <select id="curveLineWidthSelect">
@@ -420,7 +417,7 @@
                     </div>
                   </div>
                 </div>
-                <div class="field">
+                <div class="field curveLineUI">
                   <div class="control">
                     <div class="select is-fullwidth">
                       <select id="curveLineStyleSelect">

@@ -248,21 +248,51 @@ function populateCurveMenu(){
         }
       }
 
+      const curve = data.curves.find(curve => curve.title === element.title);
+
       // select the good color option
-      $("#curveColorPicker").value = data.curves.find(curve => curve.title === element.title).color;
+      $("#curveColorPicker").value = curve.color;
       $("#curveColorPicker").style.color = $("#curveColorPicker").value; // Update the color of the select
 
+      // select the good marker toggle
+      $("#curveMarkerToggle").checked = curve.markers;
+
+      // Show or hide the marker UI based on the marker toggle
+      if(curve.markers){
+        document.querySelectorAll(".curveMarkerUI").forEach(e => {
+          e.classList.remove("is-hidden");
+        });
+      } else {
+        document.querySelectorAll(".curveMarkerUI").forEach(e => {
+          e.classList.add("is-hidden");
+        });
+      }
+
+      // select the good line toggle
+      $("#curveLineToggle").checked = curve.line;
+
+      // Show or hide the linewidth and lineStyle select based on the line toggle
+      if(curve.line){
+        document.querySelectorAll(".curveLineUI").forEach(e => {
+          e.classList.remove("is-hidden");
+        });
+      } else {
+        document.querySelectorAll(".curveLineUI").forEach(e => {
+          e.classList.add("is-hidden");
+        });
+      }
+
       // select the good line width
-      $("#curveLineWidthSelect").value = data.curves.find(curve => curve.title === element.title).lineWidth;
+      $("#curveLineWidthSelect").value = curve.lineWidth;
 
       // select the good line style
-      $("#curveLineStyleSelect").value = data.curves.find(curve => curve.title === element.title).lineStyle;
+      $("#curveLineStyleSelect").value = curve.lineStyle;
 
       // select the good marker symbol
-      $("#curveMarkerSymbolSelect").value = data.curves.find(curve => curve.title === element.title).markerSymbol;
+      $("#curveMarkerSymbolSelect").value = curve.markerSymbol;
 
       // select the good marker radius
-      $("#curveMarkerRadiusSelect").value = data.curves.find(curve => curve.title === element.title).markerRadius;
+      $("#curveMarkerRadiusSelect").value = curve.markerRadius;
     });
 
     if($("#choose-curves-menu").children.length === 1){
@@ -333,6 +363,58 @@ function populateColors(){
     }
   });
 }
+
+// Marker toggle
+$("#curveMarkerToggle").addEventListener("change", () => {
+  // Find the active curve the select is currently set to
+  const activeCurve = $("#choose-curves-menu").querySelector(".is-active").children[1].innerHTML;
+
+  // Update the marker toggle of the curve in the data
+  const curve = data.curves.find(curve => curve.title === activeCurve);
+  curve.markers = $("#curveMarkerToggle").checked;
+
+  // Show or hide the marker select based on the marker toggle
+  if(curve.markers){
+    document.querySelectorAll(".curveMarkerUI").forEach(e => {
+      e.classList.remove("is-hidden");
+    });
+  } else {
+    document.querySelectorAll(".curveMarkerUI").forEach(e => {
+      e.classList.add("is-hidden");
+    });
+  }
+
+  // Update the line toggle of the curve in the chart if it exists
+  if(grapher.chart.series.find(e => e.name === activeCurve)){
+    grapher.chart.series.find(e => e.name === activeCurve).update({ marker: { enabled: curve.markers,} });
+  }
+});
+
+// line toggle
+$("#curveLineToggle").addEventListener("change", () => {
+  // Find the active curve the select is currently set to
+  const activeCurve = $("#choose-curves-menu").querySelector(".is-active").children[1].innerHTML;
+
+  // Update the line toggle of the curve in the data
+  const curve = data.curves.find(curve => curve.title === activeCurve);
+  curve.line = $("#curveLineToggle").checked;
+
+  // Show or hide the linewidth select based on the line toggle
+  if(curve.line){
+    document.querySelectorAll(".curveLineUI").forEach(e => {
+      e.classList.remove("is-hidden");
+    });
+  } else {
+    document.querySelectorAll(".curveLineUI").forEach(e => {
+      e.classList.add("is-hidden");
+    });
+  }
+
+  // Update the line toggle of the curve in the chart if it exists
+  if(grapher.chart.series.find(e => e.name === activeCurve)){
+    grapher.chart.series.find(e => e.name === activeCurve).update({ lineWidth: curve.line ? curve.lineWidth : 0});
+  }
+});
 
 // Populate line width select
 function populateLineWidthSelect(){
@@ -442,6 +524,8 @@ function populateMarkersRadiusSelect(){
     }
   });
 }
+
+
 
 
 // Zoom ----------------------------------------------------------------------------------------
