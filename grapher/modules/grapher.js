@@ -66,6 +66,7 @@ export default class Grapher {
   }
 
   newChart(){
+    const self = this
 
     this.chart = Highcharts.chart("chart", {
       chart: {
@@ -98,6 +99,22 @@ export default class Grapher {
               ]).attr({ fill: 'black' }).add();
 
               chart.customArrows.push(arrowX);
+
+              // Mesure la largeur du texte
+              const tempText = chart.renderer.text(self.currentXCurve, 0, 0).css({
+                fontSize: '16px'
+              }).add();
+              const textWidth = tempText.getBBox().width;
+              tempText.destroy();
+
+              // Texte pour axe X
+              const labelX = chart.renderer.text(self.currentXCurve, xEnd - textWidth - 5, yPos + 20)
+                .css({
+                  color: 'black',
+                  fontSize: '16px'
+                })
+                .add();
+              chart.customArrows.push(labelX);
 
               // Flèche Y (haut)
               const yEnd = yAxis.toPixels(yAxis.max);
