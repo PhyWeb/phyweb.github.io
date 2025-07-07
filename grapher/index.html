@@ -89,18 +89,17 @@
             <span class="icon is-medium"><i class="fas fa-compress"></i></span>
           </button>
         </div>
-        <input type="file" accept=".csv, .rw3" id="file-input" style="width:0px"/>
         <div class="navbar-item">
-          <a class="button is-white" id="new-file-button">
+          <a class="button is-white" id="debug-button">
             <span class="icon">
-              <i class="fa-solid fa-file"></i>
+              <i class="fa-solid fa-bug"></i>
             </span>
           </a>
-          <label for="file-input" class="button is-white">
+          <a class="button is-white" id="new-file-button">
             <span class="icon">
-              <i class="fa-solid fa-folder-open"></i>
+              <i class="fa-solid fa-file-circle-plus"></i>
             </span>
-          </label>
+          </a>
           <a class="button is-white">
             <span class="icon">
               <i class="fa-solid fa-save"></i>
@@ -197,19 +196,30 @@
       <header class="modal-card-head has-background-primary">
         <p class="modal-card-title">Nouveau</p>
       </header>
-      <section class="modal-card-body has-bottom-round-corner has-text-justified">
-        <div class="buttons is-centered">
-          <button class="button is-medium wrap-button-text" id="simple-mode-button" style="width:20rem">
-            <p>              
-              <span class="icon has-text-primary is-block">
-                <i class="fa-solid fa-file"></i>
-              </span><br/>
-                Fichier vierge
-            </p>
+      <input type="file" accept=".csv, .rw3" id="file-input" style="width:0px; display: none"/>
+      <section class="modal-card-body has-bottom-round-corner">
+        <div class="columns is-mobile has-text-centered">
+          <div class="column">
+            <button class="button is-fullwidth is-medium has-text-centered py-4"
+                    style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+              <i class="fas fa-file-alt fa-2x mb-2" style="line-height: 1;"></i>
+              <span>Nouveau fichier</span>
           </button>
-          <button class="button is-medium wrap-button-text" id="complete-mode-button" style="width:20rem">
-            <p><strong>Mode complet</strong><br/>(Avec analyse fréquentielle)</p>
-          </button>
+          </div>
+          <div class="column">
+            <label for="file-input" class="button is-fullwidth is-medium has-text-centered py-4"
+                    style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+              <i class="fas fa-folder-open fa-2x mb-2" style="line-height: 1;"></i>
+              <span>Ouvrir fichier</span>
+          </label>
+          </div>
+          <div class="column">
+            <button class="button is-fullwidth is-medium has-text-centered py-4"
+                    style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+              <i class="fas fa-paste fa-2x mb-2" style="line-height: 1;"></i>
+              <span>Coller</span>
+            </button>
+          </div>
         </div>
       </section>
     </div>

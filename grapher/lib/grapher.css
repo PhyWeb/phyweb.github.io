@@ -3,6 +3,10 @@
   width: 45rem;
 }
 
+#new-file-modal-card{
+  width: 45rem;
+}
+
 #curveColorPicker option {
   padding-left: 30px;
   background-repeat: no-repeat;

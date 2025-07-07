@@ -88,6 +88,7 @@ $("#file-input").addEventListener("change", () => {
 
   if($("#file-input").files[0] != undefined){
     app.loadFile($("#file-input").files[0]);
+    common.modalManager.closeAllModals();
   }
 });
 $("#file-input").addEventListener("click", () => {
@@ -109,13 +110,16 @@ spreadsheet.build();
 let app = new App(data, spreadsheet,grapher);
 
 // DEBUG
-$("#new-file-button").addEventListener("click", () => {
+$("#debug-button").addEventListener("click", () => {
   console.log("data",data);
   console.log("chart",grapher.chart);
 });
 
 // Show the new file modal TODO
-//$("#new-file-modal").classList.add("is-active");
+$("#new-file-button").addEventListener("click", () => {
+  $("#new-file-modal").classList.add("is-active");
+});
+
 
 /*----------------------------------------------------------------------------------------------
 --------------------------------------------SPREADSHEET-----------------------------------------
