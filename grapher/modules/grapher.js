@@ -43,6 +43,11 @@ Highcharts.SVGRenderer.prototype.symbols.crossX = function (x, y, w, h) {
   ];
 };
 
+function legendClickCB(e){
+  // TODO ouvrir le menu de la courbe
+  return false; // Prevent default action (hide/show series)
+}
+
 /*----------------------------------------------------------------------------------------------
 ----------------------------------------------Grapher-------------------------------------------
 ----------------------------------------------------------------------------------------------*/
@@ -154,7 +159,10 @@ export default class Grapher {
         align: 'left',
         verticalAlign: 'top',
         x: 0,
-        y: -10
+        y: -10,
+        events: {
+          itemClick: legendClickCB
+        }
       },
       accessibility: {
         enabled: false
@@ -238,7 +246,7 @@ export default class Grapher {
               enabled: curve.markers,
               symbol: curve.markerSymbol,
               radius: curve.markerRadius,
-              lineWidth: curve.markerSymbol === "cross" || "crossX" ?  1 : 0,
+              lineWidth: (curve.markerSymbol === "cross" || curve.markerSymbol === "crossX") ? 1 : 0,
               lineColor: curve.color
             }
           });
