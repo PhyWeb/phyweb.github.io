@@ -2,6 +2,23 @@
 
 const $ = document.querySelector.bind(document);
 
+// Utilitaire : split tabulations ou au moins 2 espaces
+function splitFlexible(line) {
+  return line.trim().split(/\t| {2,}/);
+}
+
+function isTabularData(text) {
+  const lines = text.trim().split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  if (lines.length < 2) return false;
+
+  const colCounts = lines.map(line => splitFlexible(line).length);
+  const firstCount = colCounts[0];
+
+  const sameCount = colCounts.filter(c => c === firstCount).length;
+
+  return sameCount >= lines.length - 1 && firstCount >= 2;
+}
+
 /*----------------------------------------------------------------------------------------------
 -------------------------------------------------APP--------------------------------------------
 ----------------------------------------------------------------------------------------------*/
@@ -65,45 +82,65 @@ export default class App {
 
   }
 
-  loadCSVFile(_file, delimiter = ",") {
+  loadClipboard(_data) {
+    // Check if the data is tabular
+    if (!isTabularData(_data)) {
+      console.error("Clipboard data is not tabular");
+      return;
+    }
+
+    // EMPTY DATA
+    this.deleteAllCurves();
+
+    this.loadData(_data, "\t");
+  }
+
+  loadCSVFile(_file) {
     const reader = new FileReader();
 
     reader.onload = (event) =>{
-      const csvText = event.target.result;
-      
-      const lines = csvText.trim().split('\n');
-      const headers = lines[0].split(delimiter).map(h => h.trim());
-
-      // Check if the second lines is a number or a string
-      const isNumber = !isNaN(lines[1].split(delimiter)[0].trim());
-      const units = undefined;
-      if (!isNumber) {
-        // The file has a unit line
-        units = lines[1].split(delimiter).map(u => u.trim());
-        // Remove the unit line from the data
-        lines.splice(1, 1);
-      }
-
-      lines.splice(0, 1); // Remove the header line
-
-      // Initialise un objet avec des tableaux vides pour chaque colonne
-      for(let i = 0; i < headers.length; i++) {
-        let curve = this.addCurve(headers[i], units ? units[i] : "");
-        for(let j = 0; j < lines.length; j++) {
-          curve[j] = parseFloat(lines[j].split(delimiter)[i].trim());
-        }
-      }
-
-      console.log("File loaded", this.data);
-      this.spreadsheet.update();
-      this.grapher.updateChart();
-
+      let data = event.target.result;
+      // Remplacer toutes les virgules par des tabulations
+      data = data.replace(/,/g, '\t');
+      // Remplacer tous les points-virgules par des tabulations
+      data = data.replace(/;/g, '\t');
+      this.loadData(data);
     };
 
     reader.readAsText(_file);
+  }
 
+  loadData(_data) {
+    let lines = _data.trim().split('\n').filter(l => l.trim().length > 0); // ignore les lignes vides
 
+    let headers = splitFlexible(lines[0]).map(h => h.trim());
+
+    // Check if the second line is a number or a string
+    let secondLine = splitFlexible(lines[1]);
+    let isNumber = !isNaN(secondLine[0].replace(',', '.').trim());
+
+    let units = undefined;
+    if (!isNumber) {
+      units = secondLine.map(u => u.trim());
+      lines.splice(1, 1); // supprime la ligne d’unité
+    }
+
+    lines.splice(0, 1); // supprime la ligne d’en-tête
+
+    // Création des courbes
+    for (let i = 0; i < headers.length; i++) {
+      let curve = this.addCurve(headers[i], units ? units[i] : "");
+
+      for (let j = 0; j < lines.length; j++) {
+        let cells = splitFlexible(lines[j]);
+        let value = cells[i] !== undefined ? parseFloat(cells[i].replace(',', '.').trim()) : null;
+        curve[j] = isNaN(value) ? null : value; // fallback si conversion impossible
+      }
+    }
+
+    console.log("data loaded", this.data);
+    this.spreadsheet.update();
+    this.grapher.updateChart();
   }
 }
-
 export {App};

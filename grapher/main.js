@@ -103,6 +103,17 @@ $("#new-file-button").addEventListener("click", () => {
   common.modalManager.closeAllModals();
 });
 
+$("#paste-button").addEventListener('click', async () => {
+  try {
+    let text = await navigator.clipboard.readText();
+    common.modalManager.closeAllModals();
+    console.log('Contenu du presse-papier :', text);
+    app.loadClipboard(text); // Load the data from the clipboard
+  } catch (err) {
+    console.error('Erreur lors de la lecture du presse-papier :', err);
+  }
+});
+
 // Show the new file modal TODO
 $("#new-file-open-modal-button").addEventListener("click", () => {
   $("#new-file-modal").classList.add("is-active");
