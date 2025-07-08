@@ -20,3 +20,7 @@
   background-position: 5px center;
   background-size: 15px 15px;
 }
+
+.navbar, .navbar-dropdown {
+  z-index: 180 !important;
+}
