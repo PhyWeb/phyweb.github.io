@@ -73,8 +73,13 @@ export default class App {
     // EMPTY DATA
     this.deleteAllCurves();
 
-    if(_file.type === "text/csv" || _file.type === "video/m4v"){
+    if(_file.type === "text/csv"){
       this.loadCSVFile(_file);
+      return;
+    }
+
+    if (_file.name.endsWith(".rw3")) {
+      this.loadRW3File(_file);
       return;
     }
 
@@ -105,6 +110,83 @@ export default class App {
       // Remplacer tous les points-virgules par des tabulations
       data = data.replace(/;/g, '\t');
       this.loadData(data);
+    };
+
+    reader.readAsText(_file);
+  }
+
+  loadRW3File(_file) {
+    const reader = new FileReader();
+
+    reader.onload = (event) => {
+      const data = event.target.result;
+      const lines = data.split(/\r?\n/);
+
+      let names = [];
+      let units = [];
+      let values = [];
+
+      let i = 0;
+      let expectedRows = 0;
+
+      while (i < lines.length) {
+        const line = lines[i].trim();
+
+        // Lire les noms de variables
+        if (line.startsWith("£") && line.includes("NOM VAR")) {
+          const count = parseInt(line.match(/£(\d+)/)?.[1]);
+          i++;
+          for (let j = 0; j < count && i < lines.length; j++, i++) {
+            names.push(lines[i].trim());
+          }
+          continue;
+        }
+
+        // Lire les unités
+        if (line.startsWith("£") && line.includes("UNITE VAR")) {
+          const count = parseInt(line.match(/£(\d+)/)?.[1]);
+          i++;
+          for (let j = 0; j < count && i < lines.length; j++, i++) {
+            units.push(lines[i].trim());
+          }
+          continue;
+        }
+
+        // Lire les valeurs
+        if (line.startsWith("&") && line.includes("VALEUR VAR")) {
+          expectedRows = parseInt(line.match(/&(\d+)/)?.[1]) || 0;
+          i++;
+          let rowCount = 0;
+          while (i < lines.length && rowCount < expectedRows) {
+            const valLine = lines[i].trim();
+            if (valLine !== "") {
+              const nums = valLine.split(/\s+/).map(parseFloat);
+              if (nums.length === names.length) {
+                values.push(nums);
+                rowCount++;
+              } else {
+                console.warn(`Ligne ignorée (attendues: ${names.length}, trouvées: ${nums.length}) :`, valLine);
+              }
+            }
+            i++;
+          }
+          break;
+        }
+
+        i++;
+      }
+
+      // Construction du texte tabulé
+      let output = '';
+      output += names.join('\t') + '\n';
+      output += units.join('\t') + '\n';
+      values.forEach(row => {
+        output += row.join('\t') + '\n';
+      });
+
+      console.log("RW3 data parsed:\n" + output);
+
+      this.loadData(output.trim());
     };
 
     reader.readAsText(_file);
