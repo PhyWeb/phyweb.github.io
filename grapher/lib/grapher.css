@@ -7,6 +7,13 @@
   width: 45rem;
 }
 
+.new-file-button{
+  display: flex; 
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
 #curveColorPicker option {
   padding-left: 30px;
   background-repeat: no-repeat;

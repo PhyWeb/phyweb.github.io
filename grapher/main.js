@@ -95,6 +95,25 @@ $("#file-input").addEventListener("click", () => {
   $("#file-input").value = null; // allow the onchange trigger even if the same file is selected twice
 });
 
+$("#new-file-button").addEventListener("click", () => {
+  // Check if data exists TODO
+
+  // Reset the data
+  app.deleteAllCurves();
+  common.modalManager.closeAllModals();
+});
+
+// Show the new file modal TODO
+$("#new-file-open-modal-button").addEventListener("click", () => {
+  $("#new-file-modal").classList.add("is-active");
+});
+
+// DEBUG
+$("#debug-button").addEventListener("click", () => {
+  console.log("data",data);
+  console.log("chart",grapher.chart);
+});
+
 let data = new Data();
 let grapher = new Grapher(data);
 
@@ -108,18 +127,6 @@ spreadsheet.build();
 
 // App
 let app = new App(data, spreadsheet,grapher);
-
-// DEBUG
-$("#debug-button").addEventListener("click", () => {
-  console.log("data",data);
-  console.log("chart",grapher.chart);
-});
-
-// Show the new file modal TODO
-$("#new-file-button").addEventListener("click", () => {
-  $("#new-file-modal").classList.add("is-active");
-});
-
 
 /*----------------------------------------------------------------------------------------------
 --------------------------------------------SPREADSHEET-----------------------------------------
