@@ -5,7 +5,7 @@ const $ = document.querySelector.bind(document);
 ----------------------------------------------------------------------------------------------*/
 class Common {
   colors = {
-    primary: "hsl(171, 100%, 41%)",
+    primary: "hsl(171, 100.00%, 41.00%)",
     link: "hsl(217, 71%, 53%)",
     linkRGB: "rgb(50,115,220)"
   }

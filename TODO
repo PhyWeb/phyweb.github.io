@@ -37,3 +37,11 @@ GRAPHER:
   - derivate curves
   - methode tangente 
   - modélisation
+
+NOTES:
+HANDSONTABLE:
+  - replace #37bc6c with #00d1b2
+  - replace --ht-header-active-background-color with #00d1b2
+  - replace --ht-header-row-active-background-color with #00d1b2
+  - replace --ht-header-active-border-color: with #00d1b2
+
