@@ -27,9 +27,15 @@ class Common {
 
   navbarSetup(){
     if($("#navbar-dropdown")){
-      $("#navbar-dropdown").addEventListener("click",()=>{
+      $("#navbar-dropdown").addEventListener("click",(event)=>{
+        event.stopPropagation();
         $("#navbar-dropdown").classList.toggle("is-active");
       })
+
+      // Close the dropdown when clicking outside
+      document.addEventListener("click", function () {
+        $("#navbar-dropdown").classList.remove("is-active");
+      });
     }
     $("#about-button").addEventListener("click",()=>{
       aboutModal(this.app);

@@ -9,7 +9,21 @@ const $ = document.querySelector.bind(document);
 
 document.addEventListener('DOMContentLoaded', () => {
 // Common
-let common = new Common("Grapher");
+const common = new Common("Grapher");
+
+let data = new Data();
+let grapher = new Grapher(data);
+
+// Spreadsheet
+function spreadsheetModifiedData(_change){
+  grapher.updateChart();
+}
+
+let spreadsheet = new Spreadsheet(data, spreadsheetModifiedData);
+spreadsheet.build();
+
+// App
+let app = new App(data, spreadsheet,grapher);
 
 // Navbar
 /*
@@ -125,19 +139,19 @@ $("#debug-button").addEventListener("click", () => {
   console.log("chart",grapher.chart);
 });
 
-let data = new Data();
-let grapher = new Grapher(data);
+// Menu Dropdown
+const dropdownToggle = $("#menu-dropdown-toggle");
+const dropdownContainer = $("#menu-dropdown-container");
 
-// Spreadsheet
-function spreadsheetModifiedData(_change){
-  grapher.updateChart();
-}
+dropdownToggle.addEventListener("click", function (event) {
+  event.stopPropagation();
+  dropdownContainer.classList.toggle("is-active");
+});
 
-let spreadsheet = new Spreadsheet(data, spreadsheetModifiedData);
-spreadsheet.build();
-
-// App
-let app = new App(data, spreadsheet,grapher);
+// Close the dropdown when clicking outside
+document.addEventListener("click", function () {
+  dropdownContainer.classList.remove("is-active");
+});
 
 /*----------------------------------------------------------------------------------------------
 --------------------------------------------SPREADSHEET-----------------------------------------

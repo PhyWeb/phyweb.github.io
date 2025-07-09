@@ -44,12 +44,12 @@ export default class App {
     return curve;
   }
 
-  deleteCurve(_curve){
+  deleteCurve(_curveTitle){
     // Delete the curve
-    this.data.deleteCurve(_curve);
+    this.data.deleteCurve(_curveTitle);
 
     // Update the graph if needed
-    this.grapher.deleteCurve(_curve);
+    this.grapher.deleteCurve(_curveTitle);
 
     // Update the spreadsheet
     this.spreadsheet.update();
@@ -97,7 +97,7 @@ export default class App {
     // EMPTY DATA
     this.deleteAllCurves();
 
-    this.loadData(_data, "\t");
+    this.loadData(_data);
   }
 
   loadCSVFile(_file) {

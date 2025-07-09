@@ -199,7 +199,10 @@ export default class Grapher {
   }
 
   deleteCurve(_title){
-    this.chart.series.find(e => e.name === _title).remove();
+    const seriesToRemove = this.chart.series.find(e => e.name === title);
+    if (seriesToRemove) {
+        seriesToRemove.remove();
+    }
 
     if(this.currentXCurve === _title){
       if(this.data.curves.length > 0){
@@ -218,12 +221,12 @@ export default class Grapher {
     this.currentXCurve = null;
   }
 
-  updateChart(_yCurves){
-    if(this.currentXCurve && _yCurves){
+  updateChart(_yCurveTitles){
+    if(this.currentXCurve && _yCurveTitles){
       // remove all unchecked curve
       let curvesToRemove = []
       this.chart.series.forEach(element => {
-        if(!_yCurves.includes(element.name)){
+        if(!_yCurveTitles.includes(element.name)){
           curvesToRemove.push(element);
         }
       });
@@ -233,11 +236,15 @@ export default class Grapher {
       });
     
       // add all checked curve
-      _yCurves.forEach(element => {
-        let curve = this.data.getCurveByTitle(element);
-        if(!this.chart.series.find(e => e.name === element)){
+      _yCurveTitles.forEach(title => {
+        let curve = this.data.getCurveByTitle(title);
+        if (!curve) {
+          console.warn(`Curve with title "${title}" not found in data.`);
+          return; // Skip if curve data is missing
+        }
+        if(!this.chart.series.find(e => e.name === title)){
           this.chart.addSeries({
-            name: element,
+            name: title,
             data: this.formatData(this.data.getCurveByTitle(this.currentXCurve), curve),
             color: curve.color,
             lineWidth: curve.line ? curve.lineWidth : 0, // 0 if the curve is not a line

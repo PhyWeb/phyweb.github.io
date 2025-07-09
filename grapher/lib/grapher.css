@@ -24,3 +24,8 @@
 .navbar, .navbar-dropdown {
   z-index: 180 !important;
 }
+
+#menu-dropdown-container .navbar-dropdown {
+  right: 0;
+  left: auto;
+}
