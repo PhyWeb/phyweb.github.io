@@ -9,16 +9,16 @@ const DEFAULT_LINE = false;
 const DEFAULT_LINE_WIDTH = 2;
 
 class Curve extends Serie {
-  constructor(_title, _unit, _color = "#000000", _line = DEFAULT_LINE, markers = DEFAULT_MARKER, _lineWidth = DEFAULT_LINE_WIDTH, _lineStyle = "Solid", _markerSymbol = "circle", _markerRadius = 4) {
-    super(_title, _unit);
+  constructor(title, unit, color = "#000000", line = DEFAULT_LINE, markers = DEFAULT_MARKER, lineWidth = DEFAULT_LINE_WIDTH, lineStyle = "Solid", markerSymbol = "circle", markerRadius = 4) {
+    super(title, unit);
 
-    this.color = _color;
-    this.line = _line; // true if the curve has a line
+    this.color = color;
+    this.line = line; // true if the curve has a line
     this.markers = markers; // true if the curve has markers
-    this.lineWidth = _lineWidth;
-    this.lineStyle = _lineStyle; // "solid", "dash", "dot"
-    this.markerSymbol = _markerSymbol;
-    this.markerRadius = _markerRadius; // Radius of the marker in pixels
+    this.lineWidth = lineWidth;
+    this.lineStyle = lineStyle; // "solid", "dash", "dot"
+    this.markerSymbol = markerSymbol;
+    this.markerRadius = markerRadius; // Radius of the marker in pixels
   }
 }
 
@@ -30,10 +30,10 @@ export default class Data {
     this.curves = [];
   }   
 
-  addCurve(_title, _unit, _size, _fill){
+  addCurve(title, unit, size, fill){
     // Check if the title is already used TODO: modal
-    if(this.curves.find(curve => curve.title === _title)){
-      console.error("Curve with title '" + _title + "' already exists.");
+    if(this.curves.find(curve => curve.title === title)){
+      console.error("Curve with title '" + title + "' already exists.");
       return null;
     }
 
@@ -46,10 +46,10 @@ export default class Data {
     }*/
 
     // Create the curve
-    let curve = new Curve(_title, _unit, color);
+    let curve = new Curve(title, unit, color);
 
-    if(_size !== undefined){
-      curve.init(_size, _fill);
+    if(size !== undefined){
+      curve.init(size, fill);
     } else{
       curve.init(1, "");
     }
@@ -59,8 +59,8 @@ export default class Data {
     return curve;
   }
 
-  deleteCurve(_title){
-    const index = this.curves.findIndex(objet => objet.title === _title);
+  deleteCurve(title){
+    const index = this.curves.findIndex(objet => objet.title === title);
     if (index !== -1) {
       this.curves.splice(index, 1);
     }
@@ -102,12 +102,12 @@ export default class Data {
     return headers;
   }
 
-  setValue(_curveID, _index, _value){
-    this.curves[_curveID][_index] = _value;
+  setValue(curveID, index, value){
+    this.curves[curveID][index] = value;
   }
 
-  getCurveByTitle(_title){
-    return this.curves.find(curve => curve.title === _title);
+  getCurveByTitle(title){
+    return this.curves.find(curve => curve.title === title);
   }
 }
 

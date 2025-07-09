@@ -15,7 +15,7 @@ let data = new Data();
 let grapher = new Grapher(data);
 
 // Spreadsheet
-function spreadsheetModifiedData(_change){
+function spreadsheetModifiedData(e){
   grapher.updateChart();
 }
 

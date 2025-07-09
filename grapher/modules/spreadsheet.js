@@ -4,15 +4,17 @@ const $ = document.querySelector.bind(document);
 --------------------------------------------Spreadsheet-----------------------------------------
 ----------------------------------------------------------------------------------------------*/
 export default class Spreadsheet {
-  constructor(_data, _cb) {
-    this.data = _data;
-    this.cb = _cb;
+  constructor(data, cb) {
+    this.data = data;
+    this.cb = cb;
     this.hot;
+
+    this.maxDigits = 4; // Maximum number of digits after the decimal point
   }   
 
-  addCurve(_title, _unit, _size, _fill){
+  addCurve(title, unit, size, fill){
 
-    let curve = this.data.addCurve(_title, _unit, _size, _fill);
+    let curve = this.data.addCurve(title, unit, size, fill);
 
     // Update the spreadsheet
     this.update();
@@ -20,18 +22,34 @@ export default class Spreadsheet {
     return curve;
   }
 
+  setMaxDigits(digits) {
+    this.maxDigits = digits;
+    this.update(); // met à jour le rendu avec la nouvelle précision
+  }
+
   update(){
+    const maxDigits = this.maxDigits;
+
     this.hot.updateSettings({
       data: this.data.getTable(),
-      colHeaders: this.data.getHeaders()
+      colHeaders: this.data.getHeaders(),
+      cells: (row, col) => ({
+        type: 'numeric',
+        renderer: function (instance, td, row, col, prop, value, cellProperties) {
+          Handsontable.renderers.NumericRenderer.apply(this, arguments);
+          if (typeof value === 'number') {
+            td.textContent = value.toFixed(maxDigits);
+          }
+        }
+      })
     });
   }
 
   build(){
     const container = document.querySelector('#table');
+    const maxDigits = this.maxDigits;
 
     const afterChange = (change, source) =>  {
-
       if (source === "loadData" || source === "updateData") {
         return; //don't save this change
       }
@@ -41,10 +59,8 @@ export default class Spreadsheet {
       });
 
       this.update();
-
       this.cb(change);
-    
-    }
+    };
     
     this.hot = new Handsontable(container, {
       data: this.data.getTable(),
@@ -56,10 +72,18 @@ export default class Spreadsheet {
       autoWrapRow: true,
       autoWrapCol: true,
       afterChange: afterChange,
-      licenseKey: 'non-commercial-and-evaluation' // for non-commercial use only
+      licenseKey: 'non-commercial-and-evaluation', // for non-commercial use only
+      cells: (row, col) => ({
+        type: 'numeric',
+        renderer: function (instance, td, row, col, prop, value, cellProperties) {
+          Handsontable.renderers.NumericRenderer.apply(this, arguments);
+          if (typeof value === 'number') {
+            td.textContent = value.toFixed(maxDigits);
+          }
+        }
+      })
     });
   }
-
 }
 
 export {Spreadsheet};

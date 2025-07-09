@@ -23,33 +23,33 @@ function isTabularData(text) {
 -------------------------------------------------APP--------------------------------------------
 ----------------------------------------------------------------------------------------------*/
 export default class App {
-  constructor(_data, _spreadsheet, _grapher) {
-    this.data = _data;
-    this.spreadsheet = _spreadsheet;
-    this.grapher = _grapher;
+  constructor(data, spreadsheet, grapher) {
+    this.data = data;
+    this.spreadsheet = spreadsheet;
+    this.grapher = grapher;
 
   }   
 
-  addCurve(_title, _unit) {
-    let curve = this.spreadsheet.addCurve(_title, _unit);
+  addCurve(title, unit) {
+    let curve = this.spreadsheet.addCurve(title, unit);
 
     if(this.data.curves.length === 1){
-      this.grapher.setXCurve(_title);
+      this.grapher.setXCurve(title);
     }
 
     if(this.data.curves.length === 2){
-      this.grapher.updateChart([_title]);
+      this.grapher.updateChart([title]);
     }
 
     return curve;
   }
 
-  deleteCurve(_curveTitle){
+  deleteCurve(curveTitle){
     // Delete the curve
-    this.data.deleteCurve(_curveTitle);
+    this.data.deleteCurve(curveTitle);
 
     // Update the graph if needed
-    this.grapher.deleteCurve(_curveTitle);
+    this.grapher.deleteCurve(curveTitle);
 
     // Update the spreadsheet
     this.spreadsheet.update();
@@ -66,20 +66,20 @@ export default class App {
     this.spreadsheet.update();
   }
 
-  loadFile(_file) {
+  loadFile(file) {
     // TODO: warining if unsaved data
-    console.log("loadFile", _file, "type", _file.type);
+    console.log("loadFile", file, "type", file.type);
 
     // EMPTY DATA
     this.deleteAllCurves();
 
-    if(_file.type === "text/csv"){
-      this.loadCSVFile(_file);
+    if(file.type === "text/csv"){
+      this.loadCSVFile(file);
       return;
     }
 
-    if (_file.name.endsWith(".rw3")) {
-      this.loadRW3File(_file);
+    if (file.name.endsWith(".rw3")) {
+      this.loadRW3File(file);
       return;
     }
 
@@ -87,9 +87,9 @@ export default class App {
 
   }
 
-  loadClipboard(_data) {
+  loadClipboard(data) {
     // Check if the data is tabular
-    if (!isTabularData(_data)) {
+    if (!isTabularData(data)) {
       console.error("Clipboard data is not tabular");
       return;
     }
@@ -97,10 +97,10 @@ export default class App {
     // EMPTY DATA
     this.deleteAllCurves();
 
-    this.loadData(_data);
+    this.loadData(data);
   }
 
-  loadCSVFile(_file) {
+  loadCSVFile(file) {
     const reader = new FileReader();
 
     reader.onload = (event) =>{
@@ -112,10 +112,10 @@ export default class App {
       this.loadData(data);
     };
 
-    reader.readAsText(_file);
+    reader.readAsText(file);
   }
 
-  loadRW3File(_file) {
+  loadRW3File(file) {
     const reader = new FileReader();
 
     reader.onload = (event) => {
@@ -189,11 +189,11 @@ export default class App {
       this.loadData(output.trim());
     };
 
-    reader.readAsText(_file);
+    reader.readAsText(file);
   }
 
-  loadData(_data) {
-    let lines = _data.trim().split('\n').filter(l => l.trim().length > 0); // ignore les lignes vides
+  loadData(data) {
+    let lines = data.trim().split('\n').filter(l => l.trim().length > 0); // ignore les lignes vides
 
     let headers = splitFlexible(lines[0]).map(h => h.trim());
 

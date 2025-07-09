@@ -2,10 +2,10 @@ import Chart from '../lib/Highcharts/es-modules/masters/highcharts.src.js';
 
 const $ = document.querySelector.bind(document);
 
-function lengthOfTheLongestTable(_tables){
+function lengthOfTheLongestTable(tables){
   // Find the biggest curve
   let size = 0;
-  _tables.forEach((table, i) => {
+  tables.forEach((table, i) => {
     if(table.length > size){
       size = table.length;
     }
@@ -52,19 +52,19 @@ function legendClickCB(e){
 ----------------------------------------------Grapher-------------------------------------------
 ----------------------------------------------------------------------------------------------*/
 export default class Grapher {
-  constructor(_data) {
-    this.data = _data;
+  constructor(data) {
+    this.data = data;
     this.chart;
 
     this.currentXCurve = null;
   }
 
-  formatData(_xCurve, _yCurve){
-    let length = lengthOfTheLongestTable([_xCurve, _yCurve]);
+  formatData(xCurve, yCurve){
+    let length = lengthOfTheLongestTable([xCurve, yCurve]);
     let data = []
     for(let i = 0; i < length; i++){
-      if(_xCurve[i] !== "" && _yCurve[i] !== "" && _xCurve[i] !== undefined && _yCurve[i] !== undefined){
-        data.push([_xCurve[i], _yCurve[i]]);
+      if(xCurve[i] !== "" && yCurve[i] !== "" && xCurve[i] !== undefined && yCurve[i] !== undefined){
+        data.push([xCurve[i], yCurve[i]]);
       }
     }
     return data;
@@ -190,21 +190,21 @@ export default class Grapher {
     });
   }
 
-  setXCurve(_title, _redraw = true){
-    this.currentXCurve = _title;
+  setXCurve(title, redraw = true){
+    this.currentXCurve = title;
 
-    if(_redraw){
+    if(redraw){
       this.updateChart();
     }
   }
 
-  deleteCurve(_title){
+  deleteCurve(title){
     const seriesToRemove = this.chart.series.find(e => e.name === title);
     if (seriesToRemove) {
         seriesToRemove.remove();
     }
 
-    if(this.currentXCurve === _title){
+    if(this.currentXCurve === title){
       if(this.data.curves.length > 0){
         this.setXCurve(this.data.curves[0].title);
       } else{
@@ -221,12 +221,12 @@ export default class Grapher {
     this.currentXCurve = null;
   }
 
-  updateChart(_yCurveTitles){
-    if(this.currentXCurve && _yCurveTitles){
+  updateChart(yCurveTitles){
+    if(this.currentXCurve && yCurveTitles){
       // remove all unchecked curve
       let curvesToRemove = []
       this.chart.series.forEach(element => {
-        if(!_yCurveTitles.includes(element.name)){
+        if(!yCurveTitles.includes(element.name)){
           curvesToRemove.push(element);
         }
       });
@@ -236,7 +236,7 @@ export default class Grapher {
       });
     
       // add all checked curve
-      _yCurveTitles.forEach(title => {
+      yCurveTitles.forEach(title => {
         let curve = this.data.getCurveByTitle(title);
         if (!curve) {
           console.warn(`Curve with title "${title}" not found in data.`);
