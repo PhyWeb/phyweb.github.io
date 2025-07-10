@@ -4,6 +4,7 @@ import {App} from "./modules/app.js"
 import {Data} from "./modules/data.js"
 import {Spreadsheet} from "./modules/spreadsheet.js"
 import {Grapher} from "./modules/grapher.js"
+import {Calculation} from "./modules/calculation.js"
 
 const $ = document.querySelector.bind(document);
 
@@ -14,6 +15,8 @@ const common = new Common("Grapher");
 let data = new Data();
 let grapher = new Grapher(data);
 
+let calculation = new Calculation(data);
+
 // Spreadsheet
 function spreadsheetModifiedData(e){
   grapher.updateChart();
@@ -23,7 +26,7 @@ let spreadsheet = new Spreadsheet(data, spreadsheetModifiedData);
 spreadsheet.build();
 
 // App
-let app = new App(data, spreadsheet,grapher);
+let app = new App(data, spreadsheet, grapher, calculation);
 
 // Navbar
 /*
@@ -76,7 +79,7 @@ $("#tableur-tab").addEventListener("click", () => {
 
   $("#tableur-panel").classList.remove("is-hidden");
   $("#grapheur-panel").classList.add("is-hidden");
-  //$("#calculs-panel").classList.add("is-hidden");
+  $("#calculs-panel").classList.add("is-hidden");
 });
 $("#grapheur-tab").addEventListener("click", () => {
   $("#tableur-tab").classList.remove("is-active");
@@ -85,7 +88,7 @@ $("#grapheur-tab").addEventListener("click", () => {
 
   $("#tableur-panel").classList.add("is-hidden");
   $("#grapheur-panel").classList.remove("is-hidden");
-  //$("#calculs-panel").classList.add("is-hidden");
+  $("#calculs-panel").classList.add("is-hidden");
 });
 $("#calculs-tab").addEventListener("click", () => {
   $("#tableur-tab").classList.remove("is-active");
@@ -94,11 +97,10 @@ $("#calculs-tab").addEventListener("click", () => {
 
   $("#tableur-panel").classList.add("is-hidden");
   $("#grapheur-panel").classList.add("is-hidden");
-  //$("#calculs-panel").classList.remove("is-hidden");
+  $("#calculs-panel").classList.remove("is-hidden");
 });
 
 $("#file-input").addEventListener("change", () => {
-  //if($("#file-input").files[0].type !== "video/mp4")
 
   if($("#file-input").files[0] != undefined){
     app.loadFile($("#file-input").files[0]);
@@ -603,6 +605,14 @@ $("#auto-zoom-button").addEventListener("click", () => {
   $("#zoom-button").classList.remove("is-active");
   isZoomEnabled = false;
 });
+
+/*----------------------------------------------------------------------------------------------
+--------------------------------------------Calculation-----------------------------------------
+----------------------------------------------------------------------------------------------*/
+$("#apply-calculation-button").addEventListener("click", () => {
+  app.applyCalculation($("#calculation-input").value);
+});
+
 
 window.addEventListener("resize", () => {
   grapher.chart.reflow();

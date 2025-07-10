@@ -43,6 +43,7 @@ Highcharts.SVGRenderer.prototype.symbols.crossX = function (x, y, w, h) {
   ];
 };
 
+// Prevent legend click ------------------------------------------------------------------------
 function legendClickCB(e){
   // TODO ouvrir le menu de la courbe
   return false; // Prevent default action (hide/show series)
