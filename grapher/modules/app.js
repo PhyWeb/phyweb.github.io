@@ -68,30 +68,37 @@ export default class App {
   }
 
   applyCalculation(text) {
+    // --- Phase 1: Nettoyage et Préparation ---
+
+    // 1. Supprime toutes les anciennes courbes ET tous les anciens paramètres calculés.
+    // Le textarea devient la seule source de vérité.
+    this.data.curves = this.data.curves.filter(curve => curve.type !== "calculation");
+    this.data.parameters = {}; // Assurez-vous que this.data.parameters existe.
+
+    const formulasToEvaluate = [];
+    const parsingWarnings = [];
+
+    // Si le texte est vide, on a juste nettoyé, on met à jour et on sort.
     if (!text || text.trim() === "") {
-      console.error("No calculation provided");
+      this.spreadsheet.update();
+      this.grapher.updateChart();
       return;
     }
 
-    // --- Phase 1: Préparation des données pour le moteur de calcul ---
-    
-    const initialScope = {};
-    this.data.curves.forEach(curve => {
-      if (curve.type !== "calculation") {
-        // Modification demandée : passer l'objet courbe entier au scope.
-        // Math.js est capable de le traiter s'il est array-like.
-        initialScope[curve.title] = curve; 
-      }
-    });
-
-    const lines = text.trim().split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    // 2. Parse le texte pour extraire les formules
+    const lines = text.trim().split('\n');
     const validIdentifier = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
-    const formulasToEvaluate = [];
 
     for (const line of lines) {
-      const parts = line.split('=');
+      const trimmedLine = line.trim();
+      // Ignore les lignes vides ou les commentaires
+      if (trimmedLine === '' || trimmedLine.startsWith('#') || trimmedLine.startsWith('//')) {
+        continue;
+      }
+
+      const parts = trimmedLine.split('=');
       if (parts.length !== 2) {
-        console.warn(`Ligne invalide (ignorer) : "${line}"`);
+        parsingWarnings.push(`Syntaxe invalide (ignorer) : "${trimmedLine}"`);
         continue;
       }
 
@@ -99,37 +106,54 @@ export default class App {
       const expression = parts[1].trim();
 
       if (!validIdentifier.test(variableName)) {
-        console.warn(`Nom de variable invalide (ignorer) : "${variableName}"`);
+        parsingWarnings.push(`Nom de variable invalide : "${variableName}"`);
         continue;
       }
       
       formulasToEvaluate.push({ variableName, expression });
     }
 
-    // --- Phase 2: Appel du moteur de calcul ---
+    // --- Phase 2: Exécution des calculs ---
 
+    // 3. Crée le scope initial avec les courbes de base (non calculées)
+    const initialScope = {};
+    this.data.curves.forEach(curve => {
+      initialScope[curve.title] = curve; 
+    });
+
+    // 4. Appelle le moteur de calcul
     const { results, errors } = this.calculation.evaluateBlock(formulasToEvaluate, initialScope);
 
-    // --- Phase 3: Mise à jour de l'application avec les résultats ---
+    // --- Phase 3: Mise à jour des données et de l'interface ---
 
+    // 5. Applique les résultats réussis en distinguant les types
     results.forEach(result => {
-      const existingCurve = this.data.getCurveByTitle(result.variableName);
-      if (existingCurve) {
-        existingCurve.splice(0, existingCurve.length, ...result.data);
-      } else {
+      if (result.type === 'parameter') {
+        // Le résultat est un nombre, on le stocke comme un paramètre.
+        this.data.parameters[result.variableName] = result.data;
+        console.log(`Paramètre calculé : ${result.variableName} = ${result.data}`);
+
+      } else { // result.type === 'curve'
+        // Le résultat est un tableau, on crée une courbe.
         const newCurve = this.addCurve(result.variableName, "");
         newCurve.type = "calculation";
         newCurve.splice(0, newCurve.length, ...result.data);
       }
     });
 
-    if (errors.length > 0) {
-      errors.forEach(calc => {
-        console.error(`Impossible de calculer "${calc.variableName} = ${calc.expression}". Vérifiez les dépendances circulaires ou les variables manquantes.`);
-      });
+    // 6. Gère les erreurs et les avertissements pour l'utilisateur
+    const allErrors = [
+      ...parsingWarnings,
+      ...errors.map(err => `Calcul impossible pour "${err.variableName}": ${err.error}`)
+    ];
+
+    if (allErrors.length > 0) {
+      // Affichez ces erreurs à l'utilisateur dans votre interface.
+      console.error("Erreurs de calcul:", allErrors);
+      alert("Certains calculs ont échoué. Voir la console pour les détails."); // À remplacer par une meilleure UI
     }
 
-    // Mettre à jour le graphique et le tableur une seule fois à la fin
+    // 7. Met à jour le graphique et le tableur une seule fois à la fin
     this.spreadsheet.update();
     this.grapher.updateChart();
   }

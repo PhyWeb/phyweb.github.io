@@ -28,6 +28,7 @@ class Curve extends Serie {
 export default class Data {
   constructor() {
     this.curves = [];
+    this.parameters = []; // For storing parameters (e.g. constants)
   }   
 
   addCurve(title, unit, size, fill){
