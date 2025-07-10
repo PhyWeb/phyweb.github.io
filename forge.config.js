@@ -3,6 +3,7 @@ const { FuseV1Options, FuseVersion } = require('@electron/fuses');
 
 module.exports = {
   packagerConfig: {
+    prune: true,
     asar: true,
     ignore: "/portable",
     icon: '/common/assets/phyweb'
