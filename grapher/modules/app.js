@@ -73,60 +73,66 @@ export default class App {
       return;
     }
 
-    // Parse the calculation
-    const lines = text.trim().split('\n').map(l => l.trim()).filter(l => l.length > 0);
-
-    console.log("Applying calculation:", lines);
-
-    const validIdentifier = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
-
-    lines.forEach((line, idx) => {
-      const parts = line.split('=');
-      if (parts.length !== 2) {
-        console.warn(`Line ${idx + 1} is not a valid formula (missing or multiple '=' signs): "${line}"`);
-        return;
-      }
-
-      const left = parts[0].trim();
-      const right = parts[1].trim();
-
-      if (!validIdentifier.test(left)) {
-        console.warn(`Line ${idx + 1} has invalid variable name: "${left}"`);
-        return;
-      }
-
-      if (right.length === 0) {
-        console.warn(`Line ${idx + 1} has empty expression: "${line}"`);
-        return;
-      }
-
-      // Check if the left side already exists as a curve
-      const existingCurve = this.data.getCurveByTitle(left);
-      if (existingCurve) {
-        if (existingCurve.type === "calculation") {
-          // On remplace la courbe existante
-          let resultData = this.calculation.evaluate(right);
-          existingCurve.splice(0, existingCurve.length, ...resultData);
-        } else {
-          console.warn(`Variable "${left}" already exists and is not a calculated curve`);
-        }
-        return;
-      }
-
-      // Evaluate the expression
-      let resultData = this.calculation.evaluate(right);
-
-      // Create a new curve for the result
-      const newCurve = this.addCurve(left, "");
-      newCurve.type = "calculation"; // Mark as a calculation curve
-      newCurve.splice(0, newCurve.length, ...resultData)
+    // --- Phase 1: Préparation des données pour le moteur de calcul ---
     
+    const initialScope = {};
+    this.data.curves.forEach(curve => {
+      if (curve.type !== "calculation") {
+        // Modification demandée : passer l'objet courbe entier au scope.
+        // Math.js est capable de le traiter s'il est array-like.
+        initialScope[curve.title] = curve; 
+      }
     });
 
-    // Update the grapher with the new curve
+    const lines = text.trim().split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    const validIdentifier = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
+    const formulasToEvaluate = [];
+
+    for (const line of lines) {
+      const parts = line.split('=');
+      if (parts.length !== 2) {
+        console.warn(`Ligne invalide (ignorer) : "${line}"`);
+        continue;
+      }
+
+      const variableName = parts[0].trim();
+      const expression = parts[1].trim();
+
+      if (!validIdentifier.test(variableName)) {
+        console.warn(`Nom de variable invalide (ignorer) : "${variableName}"`);
+        continue;
+      }
+      
+      formulasToEvaluate.push({ variableName, expression });
+    }
+
+    // --- Phase 2: Appel du moteur de calcul ---
+
+    const { results, errors } = this.calculation.evaluateBlock(formulasToEvaluate, initialScope);
+
+    // --- Phase 3: Mise à jour de l'application avec les résultats ---
+
+    results.forEach(result => {
+      const existingCurve = this.data.getCurveByTitle(result.variableName);
+      if (existingCurve) {
+        existingCurve.splice(0, existingCurve.length, ...result.data);
+      } else {
+        const newCurve = this.addCurve(result.variableName, "");
+        newCurve.type = "calculation";
+        newCurve.splice(0, newCurve.length, ...result.data);
+      }
+    });
+
+    if (errors.length > 0) {
+      errors.forEach(calc => {
+        console.error(`Impossible de calculer "${calc.variableName} = ${calc.expression}". Vérifiez les dépendances circulaires ou les variables manquantes.`);
+      });
+    }
+
+    // Mettre à jour le graphique et le tableur une seule fois à la fin
     this.spreadsheet.update();
     this.grapher.updateChart();
-  };
+  }
 
   loadFile(file) {
     // TODO: warining if unsaved data

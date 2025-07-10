@@ -6,6 +6,7 @@ const DIFF_POINTS = 3; // Nombre de points par défaut pour la dérivation numé
 --------------------------------------------Calculation-----------------------------------------
 ----------------------------------------------------------------------------------------------*/
 export default class Calculation {
+
   constructor(data) {
     this.data = data; // Objet de données contenant les courbes
     
@@ -59,12 +60,13 @@ export default class Calculation {
         return originalPow(base, exponent);
       }
     });
-
     mathInstance.import({ pow: typedPow }, { override: true });
+
+    // --- MODIFIÉ : Ajout de la fonction de dérivation numérique avec options de lissage ---
 
     // Définir les paramètres par défaut pour la fonction DIFF
     const DEFAULT_DIFF_POINTS = 3;
-    const DEFAULT_DIFF_CALCULATE_EDGES = false;
+    const DEFAULT_DIFF_CALCULATE_EDGES = true;
 
     /**
      * Calcule la dérivée numérique de y par rapport à x.
@@ -141,19 +143,59 @@ export default class Calculation {
     return mathInstance;
   }
 
-  //Évalue une expression mathématique en utilisant l'instance pré-configurée de math.js.
-  evaluate(expression) {
-    // Crée le 'scope' : un objet où les clés sont les noms des courbes
-    // et les valeurs sont les tableaux de données de ces courbes.
-    const scope = {};
-    if (this.data && this.data.curves) {
-      this.data.curves.forEach(curve => {
-        scope[curve.title] = curve; 
-      });
+  /**
+   * Évalue une seule expression mathématique.
+   * @param {string} expression - La chaîne de caractères de la formule à évaluer.
+   * @param {object} scope - Le scope contenant les variables disponibles pour le calcul.
+   * @returns Le résultat du calcul.
+   */
+  evaluate(expression, scope) {
+    return this.mathInstance.evaluate(expression, scope);
+  }
+
+  /**
+   * Évalue un bloc de formules en gérant les dépendances.
+   * @param {Array<object>} formulas - Un tableau d'objets {variableName, expression}.
+   * @param {object} initialScope - Le scope de base avec les courbes initiales.
+   * @returns {{results: Array<object>, errors: Array<object>}} Un objet contenant les résultats réussis et les calculs échoués.
+   */
+  evaluateBlock(formulas, initialScope) {
+    const scope = { ...initialScope };
+    let pendingCalculations = [...formulas];
+    const successfulResults = [];
+    
+    let progressMade = true;
+    const maxIterations = pendingCalculations.length;
+    let iteration = 0;
+
+    while (pendingCalculations.length > 0 && progressMade && iteration < maxIterations) {
+      progressMade = false;
+      iteration++;
+      
+      const remainingForNextLoop = [];
+
+      for (const calc of pendingCalculations) {
+        try {
+          const resultData = this.evaluate(calc.expression, scope);
+          
+          // Succès !
+          scope[calc.variableName] = resultData;
+          successfulResults.push({ variableName: calc.variableName, data: resultData });
+          progressMade = true;
+
+        } catch (error) {
+          // Échec probable dû à une dépendance manquante, on réessaiera.
+          remainingForNextLoop.push(calc);
+        }
+      }
+      pendingCalculations = remainingForNextLoop;
     }
 
-    // Évalue l'expression directement avec notre instance configurée.
-    return this.mathInstance.evaluate(expression, scope);
+    // Retourne les résultats et les erreurs (calculs restants)
+    return {
+      results: successfulResults,
+      errors: pendingCalculations 
+    };
   }
 
   clear() {

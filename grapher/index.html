@@ -205,31 +205,29 @@
     style="height: calc(100vh - 86px); display: flex; flex-direction: column; flex-grow: 1;"
   >
     <!-- Top bar -->
-    <nav class="level mb-1">
+    <nav class="level">
       <div class="level-left">
-        <button class="button">
-          <span class="icon"><i class="fa-solid fa-arrow-pointer"></i></span>
-          <span>Outils</span>
+        <button class="button" id="add-curve-calculation-button">
+          <span class="icon">
+            <i class="fa-solid fa-plus"></i>
+          </span>
+          <span>Ajouter</span>
         </button>
       </div>
       <div class="level-right">aaa</div>
     </nav>
-
-    <!-- Chart wrapper: flex-grow = 1 to take all available space -->
     <div
-      id="chart-wrapper"
       class="block"
       style="overflow: auto; flex-grow: 1; display: flex; flex-direction: column; min-height: 0;"
     >
       <!-- Form input block -->
       <div style="flex-grow: 1; display: flex; flex-direction: column; min-height: 0;">
-        <label class="label">Formules mathématiques (une par ligne)</label>
-
         <!-- TEXTAREA -->
         <textarea
           id="calculation-input"
           class="textarea"
-          style="flex-grow: 1; resize: none; min-height: 0;"
+          spellcheck="false"
+          style="flex-grow: 1; resize: none; min-height: 0; max-height: none;"
           placeholder="x = [1, 2, 3, 4, 5]&#10;y = 8 * x + 2&#10;z = sqrt(y)"
         ></textarea>
 
