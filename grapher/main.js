@@ -619,10 +619,13 @@ $("#apply-calculation-button").addEventListener("click", () => {
 /**
  * Remplit une liste dans la barre latérale.
  * @param {string} containerId - L'ID de l'élément conteneur.
- * @param {string[]} items - Le tableau de chaînes à afficher.
- * @param {boolean} isFunction - Si true, ajoute des parenthèses et utilise une grille.
+ * @param {string[]|object} items - Le tableau de chaînes ou l'objet de paramètres.
+ * @param {object} options - Options d'affichage.
+ * @param {boolean} options.isFunction - Si true, ajoute des parenthèses et utilise une grille.
+ * @param {boolean} options.isParameter - Si true, traite `items` comme un objet et affiche les valeurs.
  */
-function populateList(containerId, items, isFunction = false) {
+function populateList(containerId, items, options = {}) {
+  const { isFunction = false, isParameter = false } = options;
   const containerElement = document.getElementById(containerId);
   if (!containerElement) return;
   containerElement.innerHTML = ''; // Vide le conteneur
@@ -650,14 +653,30 @@ function populateList(containerId, items, isFunction = false) {
     // Créer une liste simple pour les courbes et paramètres
     const ul = document.createElement('ul');
     ul.className = 'menu-list';
-    items.forEach(item => {
-      const li = document.createElement('li');
-      const a = document.createElement('a');
-      a.textContent = item;
-      a.dataset.value = item;
-      li.appendChild(a);
-      ul.appendChild(li);
-    });
+
+    if (isParameter) {
+      // Pour les paramètres, `items` est un objet { key: value }
+      for (const [key, value] of Object.entries(items)) {
+        const li = document.createElement('li');
+        const a = document.createElement('a');
+        // Formate le nombre pour un affichage plus propre
+        const displayValue = typeof value === 'number' ? parseFloat(value.toPrecision(3)) : value;
+        a.textContent = `${key} = ${displayValue}`;
+        a.dataset.value = key; // On n'insère que le nom
+        li.appendChild(a);
+        ul.appendChild(li);
+      }
+    } else {
+      // Pour les courbes, `items` est un tableau de chaînes
+      items.forEach(item => {
+        const li = document.createElement('li');
+        const a = document.createElement('a');
+        a.textContent = item;
+        a.dataset.value = item;
+        li.appendChild(a);
+        ul.appendChild(li);
+      });
+    }
     containerElement.appendChild(ul);
   }
 }
@@ -703,8 +722,8 @@ sidebar.addEventListener('click', (e) => {
 // Fonction pour mettre à jour la barre latérale
 window.updateCalculationSidebar = () => {
   populateList('calculation-sidebar-curves', data.curves.map(curve => curve.title));
-  populateList('calculation-sidebar-params', Object.keys(data.parameters));
-  populateList('calculation-sidebar-functions', calculation.getAvailableFunctions(), true);
+  populateList('calculation-sidebar-params', data.parameters, { isParameter: true });
+  populateList('calculation-sidebar-functions', calculation.getAvailableFunctions(), { isFunction: true });
 };
 
 window.addEventListener("resize", () => {
