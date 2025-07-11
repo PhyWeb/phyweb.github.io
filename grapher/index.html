@@ -299,20 +299,24 @@
       <section class="modal-card-body is-flex">
         <div class="columns is-flex-grow-1">
           <div class="column is-narrow">
-            <div class="">
-              <label class="radio block" style="display:block">
-                <input type="radio" name="empty-curve-radio" checked/>
-                Grandeur vierge
-              </label>
-              <label class="radio block" style="display:block">
-                <input type="radio" name="calc-curve-radio" disabled/>
-                Grandeur calculée
-              </label>
-              <label class="radio block">
-                <input type="radio" name="derivate-curve-radio" disabled/>
-                Grandeur dérivée
-              </label>
-            </div>
+          <div>
+            <label class="radio block" style="display:block">
+              <input type="radio" name="creation-type" value="empty-curve" checked/>
+              Grandeur vierge
+            </label>
+            <label class="radio block" style="display:block">
+              <input type="radio" name="creation-type" value="calc-curve"/>
+              Grandeur calculée
+            </label>
+            <label class="radio block" style="display:block">
+              <input type="radio" name="creation-type" value="derivate-curve"/>
+              Grandeur dérivée
+            </label>
+            <label class="radio block">
+              <input type="radio" name="creation-type" value="parameter"/>
+              Paramètre vierge
+            </label>
+          </div>
           </div>
           <div class="column is-narrow vertical-divider">
           </div>
@@ -343,8 +347,13 @@
             </div>
           </div>
           <div class="column is-hidden" id="calc-curve-panel">
+            calc
           </div>
           <div class="column is-hidden" id="derivate-curve-panel">
+            derivate
+          </div>
+          <div class="column is-hidden" id="parameter-panel">
+            param
           </div>
         </div>
       </section>

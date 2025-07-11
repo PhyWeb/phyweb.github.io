@@ -159,12 +159,66 @@ document.addEventListener("click", function () {
 --------------------------------------------SPREADSHEET-----------------------------------------
 ----------------------------------------------------------------------------------------------*/
 
-// Add curve
-$("#add-curve-button").addEventListener("click", () => {
+/* Add curve modal ---------------------------------------------------------------------------*/
+// Récupérer les références de tous les boutons radio et des panneaux qu'ils contrôlent
+const addCurveModal = $('#add-curve-modal');
+const radioButtons = addCurveModal.querySelectorAll('input[name="creation-type"]');
+
+// Assurez-vous que vos panneaux ont des IDs correspondants
+const emptyCurvePanel = $('#empty-curve-panel');
+const calcCurvePanel = $('#calc-curve-panel');
+const derivateCurvePanel = $('#derivate-curve-panel');
+const parameterPanel = $('#parameter-panel');
+
+const allPanels = [emptyCurvePanel, calcCurvePanel, derivateCurvePanel, parameterPanel];
+
+// Met à jour le panneau visible en fonction du bouton radio sélectionné.
+function updateVisiblePanel() {
+  // Récupère la valeur du bouton radio qui est actuellement coché
+  const selectedValue = addCurveModal.querySelector('input[name="creation-type"]:checked').value;
+
+  // Cache tous les panneaux
+  allPanels.forEach(panel => {
+    if (panel) panel.classList.add('is-hidden');
+  });
+
+  // Affiche le bon panneau
+  if (selectedValue === 'empty-curve' && emptyCurvePanel) {
+    emptyCurvePanel.classList.remove('is-hidden');
+  } else if (selectedValue === 'calc-curve' && calcCurvePanel) {
+    calcCurvePanel.classList.remove('is-hidden');
+  } else if (selectedValue === 'derivate-curve' && derivateCurvePanel) {
+    derivateCurvePanel.classList.remove('is-hidden');
+  } else if (selectedValue === 'parameter' && parameterPanel) {
+    parameterPanel.classList.remove('is-hidden');
+    }
+}
+
+// Ajoute un écouteur d'événements à chaque bouton radio
+radioButtons.forEach(radio => {
+  radio.addEventListener('change', updateVisiblePanel);
+});
+
+updateVisiblePanel();
+
+function resetAddCurveModal() {
   $("#empty-curve-symbol-input").value = "";
   $("#empty-curve-unit-input").value = "";
   $("#add-curve-modal").classList.add("is-active");
+}
+
+// Open modal
+$("#add-curve-button").addEventListener("click", () => {
+  resetAddCurveModal();
+  // set the radio button to the empty curve
+  $("#add-curve-modal").querySelector('input[name="creation-type"][value="empty-curve"]').click();
 });
+$("#add-curve-calculation-button").addEventListener("click", () => {
+  resetAddCurveModal();
+  // set the radio button to the calculation curve
+  $("#add-curve-modal").querySelector('input[name="creation-type"][value="calc-curve"]').click();
+});
+
 
 $("#add-curve-confirm-button").addEventListener("click", () => {
   //TODO enforce proper input style and avoid duplicate
