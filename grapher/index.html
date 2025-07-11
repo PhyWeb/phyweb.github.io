@@ -299,27 +299,29 @@
       <section class="modal-card-body is-flex">
         <div class="columns is-flex-grow-1">
           <div class="column is-narrow">
-          <div>
-            <label class="radio block" style="display:block">
-              <input type="radio" name="creation-type" value="empty-curve" checked/>
-              Grandeur vierge
-            </label>
-            <label class="radio block" style="display:block">
-              <input type="radio" name="creation-type" value="calc-curve"/>
-              Grandeur calculée
-            </label>
-            <label class="radio block" style="display:block">
-              <input type="radio" name="creation-type" value="derivate-curve"/>
-              Grandeur dérivée
-            </label>
-            <label class="radio block">
-              <input type="radio" name="creation-type" value="parameter"/>
-              Paramètre vierge
-            </label>
-          </div>
+            <div>
+              <label class="radio block" style="display:block">
+                <input type="radio" name="creation-type" value="empty-curve" checked/>
+                Grandeur vierge
+              </label>
+              <label class="radio block" style="display:block">
+                <input type="radio" name="creation-type" value="calc-curve"/>
+                Grandeur calculée
+              </label>
+              <label class="radio block" style="display:block">
+                <input type="radio" name="creation-type" value="derivate-curve"/>
+                Grandeur dérivée
+              </label>
+              <label class="radio block">
+                <input type="radio" name="creation-type" value="parameter"/>
+                Paramètre vierge
+              </label>
+            </div>
           </div>
           <div class="column is-narrow vertical-divider">
           </div>
+          
+          <!-- Panneau pour Grandeur Vierge -->
           <div class="column" id="empty-curve-panel">
             <div class="field is-horizontal">
               <div class="field-label is-normal">
@@ -346,15 +348,92 @@
               </div>
             </div>
           </div>
+
+          <!-- Panneau pour Grandeur Calculée -->
           <div class="column is-hidden" id="calc-curve-panel">
-            calc
+            <div class="field is-horizontal">
+              <div class="field-label is-normal">
+                <label class="label">Symbole</label>
+              </div>
+              <div class="field-body">
+                <div class="field">
+                  <div class="control">
+                    <input class="input" type="text" id="calc-curve-symbol-input" placeholder="Ex: v_x">
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="field is-horizontal">
+              <div class="field-label is-normal">
+                <label class="label">Unité</label>
+              </div>
+              <div class="field-body">
+                <div class="field">
+                  <div class="control">
+                    <input class="input" type="text" id="calc-curve-unit-input" placeholder="Ex: m/s">
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="field is-horizontal">
+              <div class="field-label is-normal">
+                <label class="label">Formule</label>
+              </div>
+              <div class="field-body">
+                <div class="field">
+                  <div class="control">
+                    <input class="input" type="text" id="calc-curve-formula-input" placeholder="Ex: sqrt(x^2 + y^2)">
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
+          
+          <!-- Panneau pour Grandeur Dérivée -->
           <div class="column is-hidden" id="derivate-curve-panel">
-            derivate
+            <p>Ici viendront les options pour la dérivation...</p>
           </div>
+          
+          <!-- Panneau pour Paramètre Vierge -->
           <div class="column is-hidden" id="parameter-panel">
-            param
+            <div class="field is-horizontal">
+              <div class="field-label is-normal">
+                <label class="label">Symbole</label>
+              </div>
+              <div class="field-body">
+                <div class="field">
+                  <div class="control">
+                    <input class="input" type="text" id="parameter-symbol-input" placeholder="Ex: g">
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="field is-horizontal">
+              <div class="field-label is-normal">
+                <label class="label">Unité</label>
+              </div>
+              <div class="field-body">
+                <div class="field">
+                  <div class="control">
+                    <input class="input" type="text" id="parameter-unit-input" placeholder="Ex: m/s^2">
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="field is-horizontal">
+              <div class="field-label is-normal">
+                <label class="label">Valeur</label>
+              </div>
+              <div class="field-body">
+                <div class="field">
+                  <div class="control">
+                    <input class="input" type="number" id="parameter-value-input" placeholder="Ex: 9.81">
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
+          
         </div>
       </section>
       <footer class="modal-card-foot">
