@@ -19,6 +19,7 @@ TRACKER:
   - add a buton to stop the decode and still exploit the already decoded frames
 
 GRAPHER:
+  - display parameters somewhere
   - rework new/load/save buttons
   - specify "line" or "spline" in series not graph
 

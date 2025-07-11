@@ -609,10 +609,103 @@ $("#auto-zoom-button").addEventListener("click", () => {
 /*----------------------------------------------------------------------------------------------
 --------------------------------------------Calculation-----------------------------------------
 ----------------------------------------------------------------------------------------------*/
+const textarea = document.getElementById('calculation-input');
+const sidebar = document.getElementById('calculation-sidebar');
+
 $("#apply-calculation-button").addEventListener("click", () => {
-  app.applyCalculation($("#calculation-input").value);
+  app.applyCalculation(textarea.value);
 });
 
+/**
+ * Remplit une liste dans la barre latérale.
+ * @param {string} containerId - L'ID de l'élément conteneur.
+ * @param {string[]} items - Le tableau de chaînes à afficher.
+ * @param {boolean} isFunction - Si true, ajoute des parenthèses et utilise une grille.
+ */
+function populateList(containerId, items, isFunction = false) {
+  const containerElement = document.getElementById(containerId);
+  if (!containerElement) return;
+  containerElement.innerHTML = ''; // Vide le conteneur
+
+  if (isFunction) {
+    // Créer une grille à 3 colonnes pour les fonctions
+    for (let i = 0; i < items.length; i += 3) {
+      const columnsDiv = document.createElement('div');
+      columnsDiv.className = 'columns is-mobile is-gapless';
+      
+      for (let j = i; j < i + 3 && j < items.length; j++) {
+        const columnDiv = document.createElement('div');
+        columnDiv.className = 'column';
+        
+        const item = items[j];
+        const a = document.createElement('a');
+        a.textContent = `${item}()`;
+        a.dataset.value = `${item}()`;
+        columnDiv.appendChild(a);
+        columnsDiv.appendChild(columnDiv);
+      }
+      containerElement.appendChild(columnsDiv);
+    }
+  } else {
+    // Créer une liste simple pour les courbes et paramètres
+    const ul = document.createElement('ul');
+    ul.className = 'menu-list';
+    items.forEach(item => {
+      const li = document.createElement('li');
+      const a = document.createElement('a');
+      a.textContent = item;
+      a.dataset.value = item;
+      li.appendChild(a);
+      ul.appendChild(li);
+    });
+    containerElement.appendChild(ul);
+  }
+}
+
+/**
+ * Insère du texte à la position actuelle du curseur dans un textarea.
+ * @param {HTMLTextAreaElement} textarea - L'élément textarea.
+ * @param {string} textToInsert - Le texte à insérer.
+ */
+function insertTextAtCursor(textarea, textToInsert) {
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+  const text = textarea.value;
+  const before = text.substring(0, start);
+  const after = text.substring(end, text.length);
+
+  textarea.value = before + textToInsert + after;
+
+  // Place le curseur après le texte inséré
+  const newCursorPos = start + textToInsert.length;
+  textarea.selectionStart = textarea.selectionEnd = newCursorPos;
+  
+  // Si c'est une fonction, place le curseur entre les parenthèses
+  if (textToInsert.endsWith('()')) {
+      textarea.selectionStart = textarea.selectionEnd = newCursorPos - 1;
+  }
+
+  textarea.focus(); // Redonne le focus au textarea
+}
+
+// --- Initialisation et Écouteurs d'événements ---
+
+// Écoute les clics sur la barre latérale (event delegation)
+sidebar.addEventListener('click', (e) => {
+  // Vérifie si un lien a été cliqué
+  if (e.target && e.target.tagName === 'A') {
+      e.preventDefault(); // Empêche le lien de naviguer
+      const text = e.target.dataset.value;
+      insertTextAtCursor(textarea, text);
+  }
+});
+
+// Fonction pour mettre à jour la barre latérale
+window.updateCalculationSidebar = () => {
+  populateList('calculation-sidebar-curves', data.curves.map(curve => curve.title));
+  populateList('calculation-sidebar-params', Object.keys(data.parameters));
+  populateList('calculation-sidebar-functions', calculation.getAvailableFunctions(), true);
+};
 
 window.addEventListener("resize", () => {
   grapher.chart.reflow();

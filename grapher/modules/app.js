@@ -39,6 +39,9 @@ export default class App {
       this.grapher.updateChart([title]);
     }
 
+    // Update the sidebar
+    window.updateCalculationSidebar();
+
     return curve;
   }
 
@@ -51,11 +54,15 @@ export default class App {
 
     // Update the spreadsheet
     this.spreadsheet.update();
+
+    // Update the sidebar
+    window.updateCalculationSidebar();
   }
 
   deleteAllCurves() {
     // Delete all curves
     this.data.deleteAllCurves();
+    this.data.deleteAllParameters();
 
     // Update the graph
     this.grapher.deleteAllCurves(); 
@@ -65,6 +72,9 @@ export default class App {
 
     // Update the spreadsheet
     this.spreadsheet.update();
+
+    // Update the sidebar
+    window.updateCalculationSidebar();
   }
 
   applyCalculation(text) {
@@ -156,6 +166,7 @@ export default class App {
     // 7. Met à jour le graphique et le tableur une seule fois à la fin
     this.spreadsheet.update();
     this.grapher.updateChart();
+    window.updateCalculationSidebar();
   }
 
   loadFile(file) {
@@ -276,8 +287,6 @@ export default class App {
         output += row.join('\t') + '\n';
       });
 
-      console.log("RW3 data parsed:\n" + output);
-
       this.loadData(output.trim());
     };
 
@@ -315,6 +324,8 @@ export default class App {
     console.log("data loaded", this.data);
     this.spreadsheet.update();
     this.grapher.updateChart();
+    // Met à jour la barre latérale de calcul
+    window.updateCalculationSidebar();
   }
 }
 export {App};

@@ -216,28 +216,38 @@
       </div>
       <div class="level-right">aaa</div>
     </nav>
-    <div
-      class="block"
-      style="overflow: auto; flex-grow: 1; display: flex; flex-direction: column; min-height: 0;"
-    >
-      <!-- Form input block -->
-      <div style="flex-grow: 1; display: flex; flex-direction: column; min-height: 0;">
-        <!-- TEXTAREA -->
-        <textarea
-          id="calculation-input"
-          class="textarea"
-          spellcheck="false"
-          style="flex-grow: 1; resize: none; min-height: 0; max-height: none;"
-          placeholder="x = [1, 2, 3, 4, 5]&#10;y = 8 * x + 2&#10;z = sqrt(y)"
-        ></textarea>
-
-        <!-- Button -->
-        <div class="control mt-2">
-          <button class="button is-primary" id="apply-calculation-button">
-            Appliquer
-          </button>
+    <div class="columns" style="flex-grow: 1; min-height: 0;">
+        <!-- Colonne de gauche : Barre latérale avec largeur fixe -->
+        <div class="column is-narrow" style="width: 280px; overflow-y: auto;">
+            <aside id="calculation-sidebar" class="menu">
+                <p class="menu-label">Grandeurs</p>
+                <ul class="menu-list" id="calculation-sidebar-curves"></ul>
+                
+                <p class="menu-label">Paramètres</p>
+                <ul class="menu-list" id="calculation-sidebar-params"></ul>
+                
+                <p class="menu-label">Fonctions</p>
+                <div id="calculation-sidebar-functions"></div>
+            </aside>
         </div>
-      </div>
+
+        <!-- Colonne de droite : Textarea et bouton -->
+        <div class="column">
+            <div style="display: flex; flex-direction: column; height: 100%;">
+                <textarea
+                    id="calculation-input"
+                    class="textarea"
+                    spellcheck="false"
+                    style="flex-grow: 1; resize: none; min-height: 0; max-height: none;"
+                    placeholder="x = [1, 2, 3, 4, 5]&#10;y = 8 * x + 2&#10;z = sqrt(y)"
+                ></textarea>
+                <div class="control mt-4">
+                    <button class="button is-primary" id="apply-calculation-button">
+                        Appliquer
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
   </div>
   </div>

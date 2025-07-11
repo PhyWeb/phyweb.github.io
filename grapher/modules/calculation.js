@@ -13,7 +13,7 @@ export default class Calculation {
     this.scalarFunctions = [
       'sqrt', 'cbrt', 'abs', 'exp', 'log', 'log10', 'log2', 'round', 'floor', 'ceil', 'sign',
       'sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'sinh', 'cosh', 'tanh',
-      'asinh', 'acosh', 'atanh', 'not', 'identity'
+      'asinh', 'acosh', 'atanh'/*, 'not', 'identity'*/
       // Note: min et max ne sont pas inclus ici car ils peuvent prendre plusieurs arguments.
       // Leur redéfinition pour un comportement élément par élément est plus complexe.
     ];
@@ -227,6 +227,13 @@ export default class Calculation {
     this.mathInstance = this.createConfiguredMathInstance();
 
     $("#calculation-input").value = ""; // Réinitialise le champ de saisie
+  }
+
+  getAvailableFunctions() {
+    // Retourne les fonctions scalaires de base plus les fonctions personnalisées.
+    // Le tri assure un affichage alphabétique propre dans la barre latérale.
+    const allFunctions = [...this.scalarFunctions, 'diff'];
+    return allFunctions;
   }
 }
 

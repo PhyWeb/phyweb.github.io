@@ -48,3 +48,21 @@
   flex-grow: 1;
   min-height: 0;
 }
+
+#calculation-sidebar .menu-list a {
+  padding: 4px 8px;
+  font-family: monospace; /* Police plus adaptée pour du code */
+  display: block; /* Assure que le lien remplit son conteneur */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#calculation-sidebar .menu-list a:hover {
+  background-color: #f5f5f5; /* Bulma's background-hover-color */
+}
+/* Rendre les colonnes de fonctions sans espace pour la compacité */
+#calculation-sidebar-functions .columns {
+  margin-left: 0;
+  margin-right: 0;
+  margin-bottom: 0;
+}
