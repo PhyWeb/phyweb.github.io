@@ -685,7 +685,12 @@ function populateColors(){
 
     // Update the color of the curve in the chart if it exists
     if(grapher.chart.series.find(e => e.name === activeCurve)){
-      grapher.chart.series.find(e => e.name === activeCurve).update({ color: newColor });
+      grapher.chart.series.find(e => e.name === activeCurve).update({ 
+        color: newColor,
+        marker: { 
+          lineColor: newColor, 
+        }
+      });
     }
   });
 }
