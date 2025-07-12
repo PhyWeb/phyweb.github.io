@@ -78,96 +78,87 @@ export default class App {
   }
 
   applyCalculation(text) {
-    // --- Phase 1: Nettoyage et Préparation ---
+  // --- Phase 1: Nettoyage et Préparation ---
+  this.data.curves = this.data.curves.filter(curve => curve.type !== "calculation");
+  this.data.parameters = {};
 
-    // 1. Supprime toutes les anciennes courbes ET tous les anciens paramètres calculés.
-    // Le textarea devient la seule source de vérité.
-    this.data.curves = this.data.curves.filter(curve => curve.type !== "calculation");
-    this.data.parameters = {}; // Assurez-vous que this.data.parameters existe.
+  const formulasToEvaluate = [];
+  const parsingWarnings = [];
 
-    const formulasToEvaluate = [];
-    const parsingWarnings = [];
-
-    // Si le texte est vide, on a juste nettoyé, on met à jour et on sort.
-    if (!text || text.trim() === "") {
-      this.spreadsheet.update();
-      this.grapher.updateChart();
-      return;
-    }
-
-    // 2. Parse le texte pour extraire les formules
-    const lines = text.trim().split('\n');
-    const validIdentifier = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
-
-    for (const line of lines) {
-      const trimmedLine = line.trim();
-      // Ignore les lignes vides ou les commentaires
-      if (trimmedLine === '' || trimmedLine.startsWith('#') || trimmedLine.startsWith('//')) {
-        continue;
-      }
-
-      const parts = trimmedLine.split('=');
-      if (parts.length !== 2) {
-        parsingWarnings.push(`Syntaxe invalide (ignorer) : "${trimmedLine}"`);
-        continue;
-      }
-
-      const variableName = parts[0].trim();
-      const expression = parts[1].trim();
-
-      if (!validIdentifier.test(variableName)) {
-        parsingWarnings.push(`Nom de variable invalide : "${variableName}"`);
-        continue;
-      }
-      
-      formulasToEvaluate.push({ variableName, expression });
-    }
-
-    // --- Phase 2: Exécution des calculs ---
-
-    // 3. Crée le scope initial avec les courbes de base (non calculées)
-    const initialScope = {};
-    this.data.curves.forEach(curve => {
-      initialScope[curve.title] = curve; 
-    });
-
-    // 4. Appelle le moteur de calcul
-    const { results, errors } = this.calculation.evaluateBlock(formulasToEvaluate, initialScope);
-
-    // --- Phase 3: Mise à jour des données et de l'interface ---
-
-    // 5. Applique les résultats réussis en distinguant les types
-    results.forEach(result => {
-      if (result.type === 'parameter') {
-        // Le résultat est un nombre, on le stocke comme un paramètre.
-        this.data.parameters[result.variableName] = result.data;
-        console.log(`Paramètre calculé : ${result.variableName} = ${result.data}`);
-
-      } else { // result.type === 'curve'
-        // Le résultat est un tableau, on crée une courbe.
-        const newCurve = this.addCurve(result.variableName, "");
-        newCurve.type = "calculation";
-        newCurve.splice(0, newCurve.length, ...result.data);
-      }
-    });
-
-    // 6. Gère les erreurs et les avertissements pour l'utilisateur
-    const allErrors = [
-      ...parsingWarnings,
-      ...errors.map(err => `Calcul impossible pour "${err.variableName}": ${err.error}`)
-    ];
-
-    if (allErrors.length > 0) {
-      // Affichez ces erreurs à l'utilisateur dans votre interface.
-      console.error("Erreurs de calcul:", allErrors);
-      alert("Certains calculs ont échoué. Voir la console pour les détails."); // À remplacer par une meilleure UI
-    }
-
-    // 7. Met à jour le graphique et le tableur une seule fois à la fin
+  if (!text || text.trim() === "") {
     this.spreadsheet.update();
     this.grapher.updateChart();
-    window.updateCalculationSidebar();
+    return;
   }
+
+  // --- NOUVEAU : Logique de parsing pour le format variable_unité = expression ---
+  const lines = text.trim().split('\n');
+  const validIdentifier = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
+
+  for (const line of lines) {
+    const trimmedLine = line.trim();
+    if (trimmedLine === '' || trimmedLine.startsWith('#') || trimmedLine.startsWith('//')) {
+      continue;
+    }
+
+    const parts = trimmedLine.split('=');
+    if (parts.length !== 2) {
+      parsingWarnings.push(`Syntaxe invalide (ignorer) : "${trimmedLine}"`);
+      continue;
+    }
+
+    const leftPart = parts[0].trim();
+    const expression = parts[1].trim();
+
+    // Sépare le nom de la variable et l'unité
+    const leftParts = leftPart.split('_');
+    const variableName = leftParts[0];
+    const unit = leftParts.length > 1 ? leftParts.slice(1).join('_') : '';
+
+    if (!validIdentifier.test(variableName)) {
+      parsingWarnings.push(`Nom de variable invalide : "${variableName}"`);
+      continue;
+    }
+    
+    formulasToEvaluate.push({ variableName, expression, unit });
+  }
+
+  // --- Phase 2: Exécution des calculs ---
+  const initialScope = {};
+  this.data.curves.forEach(curve => {
+    initialScope[curve.title] = curve; 
+  });
+  for(const key in this.data.parameters) {
+    initialScope[key] = this.data.parameters[key];
+  }
+
+  const { results, errors } = this.calculation.evaluateBlock(formulasToEvaluate, initialScope);
+
+  // --- Phase 3: Mise à jour des données et de l'interface ---
+  results.forEach(result => {
+    if (result.type === 'parameter') {
+      this.data.parameters[result.variableName] = result.data;
+    } else {
+      const newCurve = this.addCurve(result.variableName, result.unit);
+      newCurve.type = "calculation";
+      newCurve.splice(0, newCurve.length, ...result.data);
+    }
+  });
+
+  const allErrors = [
+    ...parsingWarnings,
+    ...errors.map(err => `Calcul impossible pour "${err.variableName}": ${err.error}`)
+  ];
+
+  if (allErrors.length > 0) {
+    console.error("Erreurs de calcul:", allErrors);
+    alert("Certains calculs ont échoué. Voir la console pour les détails.");
+  }
+
+  this.spreadsheet.update();
+  this.grapher.updateChart();
+  window.updateCalculationSidebar();
+}
 
   loadFile(file) {
     // TODO: warining if unsaved data

@@ -160,75 +160,309 @@ document.addEventListener("click", function () {
 ----------------------------------------------------------------------------------------------*/
 
 /* Add curve modal ---------------------------------------------------------------------------*/
-// Récupérer les références de tous les boutons radio et des panneaux qu'ils contrôlent
-const addCurveModal = $('#add-curve-modal');
-const radioButtons = addCurveModal.querySelectorAll('input[name="creation-type"]');
+  // Références aux éléments de la modale
+  const addCurveModal = $('#add-curve-modal');
+  const radioButtons = addCurveModal.querySelectorAll('input[name="creation-type"]');
+  const addCurveConfirmButton = $('#add-curve-confirm-button');
+  const calculationTextarea = $('#calculation-input');
 
-// Assurez-vous que vos panneaux ont des IDs correspondants
-const emptyCurvePanel = $('#empty-curve-panel');
-const calcCurvePanel = $('#calc-curve-panel');
-const derivateCurvePanel = $('#derivate-curve-panel');
-const parameterPanel = $('#parameter-panel');
+  // Panels de la modale
+  const emptyCurvePanel = $('#empty-curve-panel');
+  const calcCurvePanel = $('#calc-curve-panel');
+  const derivateCurvePanel = $('#derivate-curve-panel');
+  const parameterPanel = $('#parameter-panel');
+  const allPanels = [emptyCurvePanel, calcCurvePanel, derivateCurvePanel, parameterPanel];
 
-const allPanels = [emptyCurvePanel, calcCurvePanel, derivateCurvePanel, parameterPanel];
+  // Références aux champs de saisie pour chaque panneau
+  const emptyCurveSymbolInput = $('#empty-curve-symbol-input');
+  const emptyCurveUnitInput = $('#empty-curve-unit-input');
 
-// Met à jour le panneau visible en fonction du bouton radio sélectionné.
-function updateVisiblePanel() {
-  // Récupère la valeur du bouton radio qui est actuellement coché
-  const selectedValue = addCurveModal.querySelector('input[name="creation-type"]:checked').value;
+  const calcCurveSymbolInput = $('#calc-curve-symbol-input');
+  const calcCurveUnitInput = $('#calc-curve-unit-input');
+  const calcCurveFormulaInput = $('#calc-curve-formula-input');
 
-  // Cache tous les panneaux
-  allPanels.forEach(panel => {
-    if (panel) panel.classList.add('is-hidden');
+  const derivateCurveSymbolInput = $('#derivate-curve-symbol-input');
+  const derivateCurveUnitInput = $('#derivate-curve-unit-input');
+  const derivateNumeratorSelect = $('#derivate-numerator-select');
+  const derivateDenominatorSelect = $('#derivate-denominator-select');
+
+  const parameterSymbolInput = $('#parameter-symbol-input');
+  const parameterUnitInput = $('#parameter-unit-input');
+  const parameterValueInput = $('#parameter-value-input');
+
+
+  // --- Fonctions de la modale et de la barre latérale ---
+
+  /**
+   * Met à jour le panneau visible en fonction du bouton radio sélectionné.
+   */
+  function updateVisiblePanel() {
+    const selectedValue = addCurveModal.querySelector('input[name="creation-type"]:checked').value;
+    allPanels.forEach(panel => panel.classList.add('is-hidden'));
+
+    switch (selectedValue) {
+      case 'empty-curve':
+        emptyCurvePanel.classList.remove('is-hidden');
+        break;
+      case 'calc-curve':
+        calcCurvePanel.classList.remove('is-hidden');
+        break;
+      case 'derivate-curve':
+        derivateCurvePanel.classList.remove('is-hidden');
+        break;
+      case 'parameter':
+        parameterPanel.classList.remove('is-hidden');
+        break;
+    }
+  }
+
+  /**
+   * Peuple les menus déroulants pour la dérivation avec les courbes disponibles.
+   * @param {string[]} curveNames - Un tableau des noms des courbes (ex: ['t', 'x', 'y']).
+   */
+  function populateDerivativeSelects(curveNames) {
+    derivateNumeratorSelect.innerHTML = '<option>Choisir numérateur</option>';
+    derivateDenominatorSelect.innerHTML = '<option>Choisir dénominateur</option>';
+
+    curveNames.forEach(name => {
+      const optionNum = document.createElement('option');
+      optionNum.value = name;
+      optionNum.textContent = name;
+      derivateNumeratorSelect.appendChild(optionNum);
+
+      const optionDenom = document.createElement('option');
+      optionDenom.value = name;
+      optionDenom.textContent = name;
+      derivateDenominatorSelect.appendChild(optionDenom);
+    });
+  }
+
+  /**
+   * Réinitialise tous les champs de la modale à leur état par défaut.
+   */
+  function resetAddCurveModal() {
+    emptyCurveSymbolInput.value = "";
+    emptyCurveUnitInput.value = "";
+    calcCurveSymbolInput.value = "";
+    calcCurveUnitInput.value = "";
+    calcCurveFormulaInput.value = "";
+    derivateCurveSymbolInput.value = "";
+    derivateCurveUnitInput.value = "";
+    parameterSymbolInput.value = "";
+    parameterUnitInput.value = "";
+    parameterValueInput.value = "";
+
+    const curveNames = app.data.curves.map(c => c.title);
+    populateDerivativeSelects(curveNames);
+
+    addCurveModal.classList.add("is-active");
+  }
+
+
+  /**
+   * Récupère et valide les entrées de la modale en fonction du type sélectionné.
+   * @param {string} selectedType - La valeur du bouton radio coché.
+   * @returns {object|null} Un objet contenant les informations ou null si la validation échoue.
+   */
+  function getModalInputs(selectedType) {
+    let symbol, unit, formulaLine;
+
+    const symbolExists = (sym) => {
+      if (app.data.getCurveByTitle(sym) || app.data.parameters.hasOwnProperty(sym)) {
+        alert(`Le symbole "${sym}" existe déjà. Veuillez en choisir un autre.`);
+        return true;
+      }
+      return false;
+    };
+
+    const buildVarWithUnit = (sym, u) => u ? `${sym}_${u}` : sym;
+
+    switch (selectedType) {
+      case 'calc-curve': {
+        symbol = calcCurveSymbolInput.value.trim();
+        unit = calcCurveUnitInput.value.trim();
+        const formula = calcCurveFormulaInput.value.trim();
+        if (!symbol || !formula) {
+          alert("Veuillez remplir le symbole et la formule.");
+          return null;
+        }
+        if (symbolExists(symbol)) return null;
+        formulaLine = `${buildVarWithUnit(symbol, unit)} = ${formula}`;
+        return { type: 'formula', formulaLine };
+      }
+      
+      case 'derivate-curve': {
+        symbol = derivateCurveSymbolInput.value.trim();
+        unit = derivateCurveUnitInput.value.trim();
+        const numerator = derivateNumeratorSelect.value;
+        const denominator = derivateDenominatorSelect.value;
+        if (!symbol || numerator.startsWith('Choisir') || denominator.startsWith('Choisir')) {
+          alert("Veuillez remplir le symbole et choisir les deux grandeurs à dériver.");
+          return null;
+        }
+        if (symbolExists(symbol)) return null;
+        
+        // --- CORRECTION : On construit la formule avec les noms de variables simples ---
+        // Le moteur de calcul n'a pas besoin des unités à l'intérieur de la fonction `diff`.
+        const formula = `diff(${numerator}, ${denominator})`;
+        
+        // On construit la ligne complète, avec l'unité à gauche du signe égal.
+        formulaLine = `${buildVarWithUnit(symbol, unit)} = ${formula}`;
+        return { type: 'formula', formulaLine };
+      }
+
+      case 'parameter': {
+        symbol = parameterSymbolInput.value.trim();
+        unit = parameterUnitInput.value.trim();
+        const value = parameterValueInput.value.trim();
+        if (!symbol || !value) {
+          alert("Veuillez remplir le symbole et la valeur.");
+          return null;
+        }
+        if (symbolExists(symbol)) return null;
+        formulaLine = `${buildVarWithUnit(symbol, unit)} = ${value}`;
+        return { type: 'formula', formulaLine };
+      }
+      
+      case 'empty-curve': {
+        symbol = emptyCurveSymbolInput.value.trim();
+        unit = emptyCurveUnitInput.value.trim();
+        if (!symbol) {
+          alert("Veuillez entrer un symbole.");
+          return null;
+        }
+        if (symbolExists(symbol)) return null;
+        return { type: 'empty-curve', symbol, unit };
+      }
+      default:
+        console.error("Type de création inconnu:", selectedType);
+        return null;
+    }
+  }
+
+  /**
+   * Remplit une liste dans la barre latérale.
+   * @param {string} containerId - L'ID de l'élément conteneur.
+   * @param {string[]|object} items - Le tableau de chaînes ou l'objet de paramètres.
+   * @param {object} options - Options d'affichage.
+   * @param {boolean} options.isFunction - Si true, ajoute des parenthèses et utilise une grille.
+   * @param {boolean} options.isParameter - Si true, traite `items` comme un objet et affiche les valeurs.
+   */
+  function populateList(containerId, items, options = {}) {
+    const { isFunction = false, isParameter = false } = options;
+    const containerElement = document.getElementById(containerId);
+    if (!containerElement) return;
+    containerElement.innerHTML = ''; // Vide le conteneur
+
+    if (isFunction) {
+      // Créer une grille à 3 colonnes pour les fonctions
+      for (let i = 0; i < items.length; i += 3) {
+        const columnsDiv = document.createElement('div');
+        columnsDiv.className = 'columns is-mobile is-gapless';
+        
+        for (let j = i; j < i + 3 && j < items.length; j++) {
+          const columnDiv = document.createElement('div');
+          columnDiv.className = 'column';
+          
+          const item = items[j];
+          const a = document.createElement('a');
+          a.textContent = `${item}()`;
+          a.dataset.value = `${item}()`;
+          columnDiv.appendChild(a);
+          columnsDiv.appendChild(columnDiv);
+        }
+        containerElement.appendChild(columnsDiv);
+      }
+    } else {
+      // Créer une liste simple pour les courbes et paramètres
+      const ul = document.createElement('ul');
+      ul.className = 'menu-list';
+
+      if (isParameter) {
+        // Pour les paramètres, `items` est un objet { key: { value, unit } }
+        for (const [key, param] of Object.entries(items)) {
+          const li = document.createElement('li');
+          const a = document.createElement('a');
+          
+          if (typeof param === 'object' && param !== null && param.hasOwnProperty('value')) {
+            const displayValue = parseFloat(param.value.toPrecision(3));
+            const displayUnit = param.unit ? ` ${param.unit}` : '';
+            a.textContent = `${key} = ${displayValue}${displayUnit}`;
+          } else {
+            const displayValue = typeof param === 'number' ? parseFloat(param.toPrecision(3)) : param;
+            a.textContent = `${key} = ${displayValue}`;
+          }
+  
+          a.dataset.value = key;
+          li.appendChild(a);
+          ul.appendChild(li);
+        }
+      } else {
+        // Pour les courbes, `items` est un tableau de chaînes
+        items.forEach(item => {
+          const li = document.createElement('li');
+          const a = document.createElement('a');
+          a.textContent = item;
+          a.dataset.value = item;
+          li.appendChild(a);
+          ul.appendChild(li);
+        });
+      }
+      containerElement.appendChild(ul);
+    }
+  }
+
+
+  // --- Écouteurs d'événements ---
+
+  radioButtons.forEach(radio => {
+    radio.addEventListener('change', updateVisiblePanel);
   });
 
-  // Affiche le bon panneau
-  if (selectedValue === 'empty-curve' && emptyCurvePanel) {
-    emptyCurvePanel.classList.remove('is-hidden');
-  } else if (selectedValue === 'calc-curve' && calcCurvePanel) {
-    calcCurvePanel.classList.remove('is-hidden');
-  } else if (selectedValue === 'derivate-curve' && derivateCurvePanel) {
-    derivateCurvePanel.classList.remove('is-hidden');
-  } else if (selectedValue === 'parameter' && parameterPanel) {
-    parameterPanel.classList.remove('is-hidden');
+  $('#add-curve-button').addEventListener("click", () => {
+    resetAddCurveModal();
+    addCurveModal.querySelector('input[value="empty-curve"]').click();
+  });
+  $('#add-curve-calculation-button').addEventListener("click", () => {
+    resetAddCurveModal();
+    addCurveModal.querySelector('input[value="calc-curve"]').click();
+  });
+
+  // Gère la confirmation de l'ajout
+  addCurveConfirmButton.addEventListener('click', () => {
+    const selectedType = addCurveModal.querySelector('input[name="creation-type"]:checked').value;
+    const newEntry = getModalInputs(selectedType);
+
+    if (!newEntry) {
+      return; 
     }
-}
 
-// Ajoute un écouteur d'événements à chaque bouton radio
-radioButtons.forEach(radio => {
-  radio.addEventListener('change', updateVisiblePanel);
-});
+    if (newEntry.type === 'empty-curve') {
+      app.addCurve(newEntry.symbol, newEntry.unit);
+    } else {
+      const currentText = calculationTextarea.value;
+      const separator = currentText.trim() === '' ? '' : '\n\n'; 
+      calculationTextarea.value = currentText + separator + newEntry.formulaLine;
+      app.applyCalculation(calculationTextarea.value);
+    }
+    
+    // Mettre à jour l'interface
+    app.spreadsheet.update();
+    app.grapher.updateChart();
+    
+    // Mettre à jour la barre latérale
+    window.updateCalculationSidebar(
+      app.data.curves.map(c => c.title),
+      app.data.parameters,
+      app.calculation.getAvailableFunctions()
+    );
+    
+    // Fermer la modale
+    common.modalManager.closeAllModals();
+  });
 
-updateVisiblePanel();
-
-function resetAddCurveModal() {
-  $("#empty-curve-symbol-input").value = "";
-  $("#empty-curve-unit-input").value = "";
-  $("#add-curve-modal").classList.add("is-active");
-}
-
-// Open modal
-$("#add-curve-button").addEventListener("click", () => {
-  resetAddCurveModal();
-  // set the radio button to the empty curve
-  $("#add-curve-modal").querySelector('input[name="creation-type"][value="empty-curve"]').click();
-});
-$("#add-curve-calculation-button").addEventListener("click", () => {
-  resetAddCurveModal();
-  // set the radio button to the calculation curve
-  $("#add-curve-modal").querySelector('input[name="creation-type"][value="calc-curve"]').click();
-});
-
-
-$("#add-curve-confirm-button").addEventListener("click", () => {
-  //TODO enforce proper input style and avoid duplicate
-  const title = $("#empty-curve-symbol-input").value;
-  const unit = $("#empty-curve-unit-input").value;
-
-  app.addCurve(title, unit);
-
-  common.modalManager.closeAllModals();
-});
+  // Initialise l'état de la modale au chargement
+  updateVisiblePanel();
 
 // Delete curve
 $("#delete-curve-button").addEventListener("click", () => {
@@ -709,13 +943,22 @@ function populateList(containerId, items, options = {}) {
     ul.className = 'menu-list';
 
     if (isParameter) {
-      // Pour les paramètres, `items` est un objet { key: value }
-      for (const [key, value] of Object.entries(items)) {
+      // Pour les paramètres, `items` est un objet { key: { value, unit } }
+      for (const [key, param] of Object.entries(items)) {
         const li = document.createElement('li');
         const a = document.createElement('a');
-        // Formate le nombre pour un affichage plus propre
-        const displayValue = typeof value === 'number' ? parseFloat(value.toPrecision(3)) : value;
-        a.textContent = `${key} = ${displayValue}`;
+        
+        // Vérifie si le paramètre est un objet avec une valeur ou un simple nombre
+        if (typeof param === 'object' && param !== null && param.hasOwnProperty('value')) {
+          const displayValue = parseFloat(param.value.toPrecision(3));
+          const displayUnit = param.unit ? ` ${param.unit}` : '';
+          a.textContent = `${key} = ${displayValue}${displayUnit}`;
+        } else {
+          // Fallback pour les paramètres qui sont encore de simples nombres
+          const displayValue = typeof param === 'number' ? parseFloat(param.toPrecision(3)) : param;
+          a.textContent = `${key} = ${displayValue}`;
+        }
+
         a.dataset.value = key; // On n'insère que le nom
         li.appendChild(a);
         ul.appendChild(li);

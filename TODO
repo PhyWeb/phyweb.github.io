@@ -20,6 +20,8 @@ TRACKER:
 
 GRAPHER:
   - display parameters somewhere
+  - dans calculs automatiquement mettre les fonctions en minuscule pour etre compat avec regressi
+  - importer les formules de regressi
   - rework new/load/save buttons
   - specify "line" or "spline" in series not graph
 

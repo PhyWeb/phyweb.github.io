@@ -102,51 +102,51 @@ export default class Calculation {
             throw new Error(`Pas assez de points pour une dérivation à ${points} points. Il en faut au moins ${points}.`);
         }
 
-        const result = new Array(n);
+        // --- CORRECTION : Initialiser le tableau avec null pour éviter les 'undefined' ---
+        const result = new Array(n).fill(null);
         const offset = Math.floor(points / 2);
 
         for (let i = 0; i < n; i++) {
             const isEdgeForRequestedStencil = (i < offset || i >= n - offset);
 
             if (isEdgeForRequestedStencil && !calculateEdges) {
-                result[i] = null;
-                continue;
+                continue; // La valeur reste null
             }
 
             if (points >= 7 && i >= 3 && i < n - 3) {
                 const stencilY = [y[i - 3], y[i - 2], y[i - 1], y[i + 1], y[i + 2], y[i + 3]];
                 const stencilX = [x[i - 3], x[i + 3]];
-                if ([...stencilY, ...stencilX].some(p => p === null)) { result[i] = null; continue; }
+                if ([...stencilY, ...stencilX].some(p => p === null)) { continue; }
                 
                 const h = (x[i + 3] - x[i - 3]) / 6;
-                if (h === 0) { throw new Error(`L'espacement en x est nul au point ${i}, impossible de diviser par zéro.`); }
+                if (h === 0) { continue; } // Évite la division par zéro
                 result[i] = (-y[i - 3] + 9 * y[i - 2] - 45 * y[i - 1] + 45 * y[i + 1] - 9 * y[i + 2] + y[i + 3]) / (60 * h);
             }
             else if (points >= 5 && i >= 2 && i < n - 2) {
                 const stencilY = [y[i - 2], y[i - 1], y[i + 1], y[i + 2]];
                 const stencilX = [x[i - 2], x[i + 2]];
-                if ([...stencilY, ...stencilX].some(p => p === null)) { result[i] = null; continue; }
+                if ([...stencilY, ...stencilX].some(p => p === null)) { continue; }
 
                 const h = (x[i + 2] - x[i - 2]) / 4;
-                if (h === 0) { throw new Error(`L'espacement en x est nul au point ${i}, impossible de diviser par zéro.`); }
+                if (h === 0) { continue; }
                 result[i] = (y[i - 2] - 8 * y[i - 1] + 8 * y[i + 1] - y[i + 2]) / (12 * h);
             }
             else if (i >= 1 && i < n - 1) {
-                if (y[i + 1] === null || y[i - 1] === null || x[i + 1] === null || x[i - 1] === null) { result[i] = null; continue; }
+                if (y[i + 1] === null || y[i - 1] === null || x[i + 1] === null || x[i - 1] === null) { continue; }
                 const dx = x[i + 1] - x[i - 1];
-                if (dx === 0) { throw new Error(`L'espacement en x est nul au point ${i}, impossible de diviser par zéro.`); }
+                if (dx === 0) { continue; }
                 result[i] = (y[i + 1] - y[i - 1]) / dx;
             }
             else if (i === 0) {
-                if (y[1] === null || y[0] === null || x[1] === null || x[0] === null) { result[i] = null; continue; }
+                if (y[1] === null || y[0] === null || x[1] === null || x[0] === null) { continue; }
                 const dx = x[1] - x[0];
-                if (dx === 0) { throw new Error(`L'espacement en x est nul au point 0, impossible de diviser par zéro.`); }
+                if (dx === 0) { continue; }
                 result[i] = (y[1] - y[0]) / dx;
             }
             else { // i === n - 1
-                if (y[n - 1] === null || y[n - 2] === null || x[n - 1] === null || x[n - 2] === null) { result[i] = null; continue; }
+                if (y[n - 1] === null || y[n - 2] === null || x[n - 1] === null || x[n - 2] === null) { continue; }
                 const dx = x[n - 1] - x[n - 2];
-                if (dx === 0) { throw new Error(`L'espacement en x est nul au point ${n - 1}, impossible de diviser par zéro.`); }
+                if (dx === 0) { continue; }
                 result[i] = (y[n - 1] - y[n - 2]) / dx;
             }
         }
@@ -182,34 +182,36 @@ export default class Calculation {
 
   /**
    * Évalue un bloc de formules en gérant les dépendances.
-   * @param {Array<object>} formulas - Un tableau d'objets {variableName, expression}.
-   * @param {object} initialScope - Le scope de base avec les courbes initiales.
+   * @param {Array<object>} formulas - Un tableau d'objets {variableName, expression, unit}.
+   * @param {object} initialScope - Le scope de base avec les courbes et paramètres initiaux.
    * @returns {{results: Array<object>, errors: Array<object>}} Un objet contenant les résultats réussis et les calculs échoués.
    */
   evaluateBlock(formulas, initialScope) {
-    // Helper pour convertir une Matrix en Array, ou laisser un Array tel quel.
     const toArr = (v) => (v && v.toArray ? v.toArray() : v);
 
     const scope = {};
-    // On s'assure que le scope initial ne contient que des Array et on nettoie les données
+    // On s'assure que le scope initial est propre
     for (const key in initialScope) {
-        const rawArray = toArr(initialScope[key]);
-        // --- CORRECTION : Nettoyage plus robuste des données pour éviter les NaN ---
-        const cleanedArray = [];
-        const len = rawArray.length;
-        for (let i = 0; i < len; i++) {
-          const val = rawArray[i];
-          // Si la valeur est null, undefined, ou une chaîne vide (même avec des espaces)
-          if (val === null || val === undefined || String(val).trim() === '') {
-            cleanedArray.push(null);
-            continue;
+      const value = initialScope[key];
+      // Si la valeur est un objet paramètre, on extrait sa valeur.
+      // Sinon, c'est une courbe (tableau) qu'on nettoie.
+      if (typeof value === 'object' && value !== null && !Array.isArray(value) && value.hasOwnProperty('value')) {
+          scope[key] = value.value; 
+      } else {
+          const rawArray = toArr(value);
+          const cleanedArray = [];
+          const len = rawArray.length;
+          for (let i = 0; i < len; i++) {
+            const val = rawArray[i];
+            if (val === null || val === undefined || String(val).trim() === '') {
+              cleanedArray.push(null);
+              continue;
+            }
+            const num = Number(val);
+            cleanedArray.push(isNaN(num) ? null : num);
           }
-          // Tente de convertir en nombre
-          const num = Number(val);
-          // Si la conversion échoue (résultat NaN), retourne null, sinon retourne le nombre
-          cleanedArray.push(isNaN(num) ? null : num);
-        }
-        scope[key] = cleanedArray;
+          scope[key] = cleanedArray;
+      }
     }
 
     let pendingCalculations = [...formulas];
@@ -230,14 +232,24 @@ export default class Calculation {
           const resultData = this.evaluate(calc.expression, scope);
           
           const isParameter = typeof resultData === 'number';
-          const value = isParameter ? resultData : toArr(resultData);
-
-          scope[calc.variableName] = value;
-          successfulResults.push({ 
-            variableName: calc.variableName, 
-            data: value,
-            type: isParameter ? 'parameter' : 'curve' 
-          });
+          
+          if (isParameter) {
+            scope[calc.variableName] = resultData; // Ajoute le nombre brut au scope pour les calculs suivants
+            successfulResults.push({ 
+              variableName: calc.variableName, 
+              data: { value: resultData, unit: calc.unit || '' }, // Crée l'objet final pour l'application
+              type: 'parameter' 
+            });
+          } else {
+            const resultAsArray = toArr(resultData);
+            scope[calc.variableName] = resultAsArray;
+            successfulResults.push({ 
+              variableName: calc.variableName, 
+              data: resultAsArray,
+              type: 'curve',
+              unit: calc.unit || '' // Passe l'unité pour les courbes aussi
+            });
+          }
           progressMade = true;
 
         } catch (error) {

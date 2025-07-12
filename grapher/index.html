@@ -391,7 +391,72 @@
           
           <!-- Panneau pour Grandeur Dérivée -->
           <div class="column is-hidden" id="derivate-curve-panel">
-            <p>Ici viendront les options pour la dérivation...</p>
+            <div class="field is-horizontal">
+              <div class="field-label is-normal">
+                <label class="label">Symbole</label>
+              </div>
+              <div class="field-body">
+                <div class="field">
+                  <div class="control">
+                    <input class="input" type="text" id="derivate-curve-symbol-input" placeholder="Ex: v">
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="field is-horizontal">
+              <div class="field-label is-normal">
+                <label class="label">Unité</label>
+              </div>
+              <div class="field-body">
+                <div class="field">
+                  <div class="control">
+                    <input class="input" type="text" id="derivate-curve-unit-input" placeholder="Ex: m/s">
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="field is-horizontal mt-5">
+              <div class="field-label is-normal">
+                <label class="label">Dérivée</label>
+              </div>
+              <div class="field-body">
+                <div class="field">
+                  <!-- Numérateur -->
+                  <div class="field has-addons">
+                    <p class="control">
+                      <a class="button is-static">
+                        d
+                      </a>
+                    </p>
+                    <p class="control is-expanded">
+                      <span class="select is-fullwidth">
+                        <select id="derivate-numerator-select">
+                          <option>Choisir numérateur</option>
+                        </select>
+                      </span>
+                    </p>
+                  </div>
+                  
+                  <hr class="is-divider m-2" data-content="par">
+                  
+                  <!-- Dénominateur -->
+                  <div class="field has-addons">
+                    <p class="control">
+                      <a class="button is-static">
+                        d
+                      </a>
+                    </p>
+                    <p class="control is-expanded">
+                      <span class="select is-fullwidth">
+                        <select id="derivate-denominator-select">
+                          <option>Choisir dénominateur</option>
+                        </select>
+                      </span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
           
           <!-- Panneau pour Paramètre Vierge -->
