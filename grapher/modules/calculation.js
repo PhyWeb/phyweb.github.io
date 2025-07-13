@@ -102,7 +102,6 @@ export default class Calculation {
             throw new Error(`Pas assez de points pour une dérivation à ${points} points. Il en faut au moins ${points}.`);
         }
 
-        // --- CORRECTION : Initialiser le tableau avec null pour éviter les 'undefined' ---
         const result = new Array(n).fill(null);
         const offset = Math.floor(points / 2);
 
@@ -110,7 +109,7 @@ export default class Calculation {
             const isEdgeForRequestedStencil = (i < offset || i >= n - offset);
 
             if (isEdgeForRequestedStencil && !calculateEdges) {
-                continue; // La valeur reste null
+                continue;
             }
 
             if (points >= 7 && i >= 3 && i < n - 3) {
@@ -119,7 +118,7 @@ export default class Calculation {
                 if ([...stencilY, ...stencilX].some(p => p === null)) { continue; }
                 
                 const h = (x[i + 3] - x[i - 3]) / 6;
-                if (h === 0) { continue; } // Évite la division par zéro
+                if (h === 0) { continue; }
                 result[i] = (-y[i - 3] + 9 * y[i - 2] - 45 * y[i - 1] + 45 * y[i + 1] - 9 * y[i + 2] + y[i + 3]) / (60 * h);
             }
             else if (points >= 5 && i >= 2 && i < n - 2) {
@@ -153,7 +152,6 @@ export default class Calculation {
         return result;
     };
 
-    // Les signatures ne parlent plus que de 'Array' pour plus de simplicité
     const typedDiff = mathInstance.typed('diff', {
       'number, Array': (y, x) => mathInstance.zeros(x.length).toArray(),
       'number, Array, number': (y, x, p) => mathInstance.zeros(x.length).toArray(),
@@ -171,13 +169,41 @@ export default class Calculation {
   }
 
   /**
+   * Normalise la casse des fonctions connues dans une expression.
+   * @param {string} expression - L'expression à traiter.
+   * @returns {string} L'expression avec les fonctions en minuscules.
+   */
+  _normalizeFunctionCases(expression) {
+    const knownFunctions = this.getAvailableFunctions();
+    // Crée une regex insensible à la casse pour toutes les fonctions connues
+    const regex = new RegExp(`\\b(${knownFunctions.join('|')})\\b(?=\\s*\\()`, 'gi');
+    
+    return expression.replace(regex, (match) => match.toLowerCase());
+  }
+
+  /**
+   * Retire les unités des noms de variables dans une expression.
+   * @param {string} expression - Ex: "2 * t_s + g"
+   * @returns {string} - Ex: "2 * t + g"
+   */
+  _preprocessExpression(expression) {
+    // Cette regex trouve les variables suivies d'une unité et ne garde que la variable.
+    return expression.replace(/([a-zA-Z_][a-zA-Z0-9_]*)_([a-zA-Z0-9\/\^\*\s\(\)-]+)/g, '$1');
+  }
+
+  /**
    * Évalue une seule expression mathématique.
    * @param {string} expression - La chaîne de caractères de la formule à évaluer.
    * @param {object} scope - Le scope contenant les variables disponibles pour le calcul.
    * @returns Le résultat du calcul.
    */
   evaluate(expression, scope) {
-    return this.mathInstance.evaluate(expression, scope);
+    // Normalise la casse des fonctions (ex: SQRT -> sqrt)
+    const normalizedExpr = this._normalizeFunctionCases(expression);
+    // Retire les unités des variables (ex: t_s -> t)
+    const cleanExpression = this._preprocessExpression(normalizedExpr);
+    // Évalue l'expression nettoyée
+    return this.mathInstance.evaluate(cleanExpression, scope);
   }
 
   /**
@@ -190,11 +216,8 @@ export default class Calculation {
     const toArr = (v) => (v && v.toArray ? v.toArray() : v);
 
     const scope = {};
-    // On s'assure que le scope initial est propre
     for (const key in initialScope) {
       const value = initialScope[key];
-      // Si la valeur est un objet paramètre, on extrait sa valeur.
-      // Sinon, c'est une courbe (tableau) qu'on nettoie.
       if (typeof value === 'object' && value !== null && !Array.isArray(value) && value.hasOwnProperty('value')) {
           scope[key] = value.value; 
       } else {
@@ -234,10 +257,10 @@ export default class Calculation {
           const isParameter = typeof resultData === 'number';
           
           if (isParameter) {
-            scope[calc.variableName] = resultData; // Ajoute le nombre brut au scope pour les calculs suivants
+            scope[calc.variableName] = resultData;
             successfulResults.push({ 
               variableName: calc.variableName, 
-              data: { value: resultData, unit: calc.unit || '' }, // Crée l'objet final pour l'application
+              data: { value: resultData, unit: calc.unit || '' },
               type: 'parameter' 
             });
           } else {
@@ -247,7 +270,7 @@ export default class Calculation {
               variableName: calc.variableName, 
               data: resultAsArray,
               type: 'curve',
-              unit: calc.unit || '' // Passe l'unité pour les courbes aussi
+              unit: calc.unit || ''
             });
           }
           progressMade = true;

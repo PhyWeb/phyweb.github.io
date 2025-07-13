@@ -18,6 +18,14 @@ export default class Spreadsheet {
 
     // Update the spreadsheet
     this.update();
+    // recalcul différé pour forcer l'adaptation
+    /*setTimeout(() => {
+      const plugin = this.hot.getPlugin('autoColumnSize');
+      if (plugin) {
+        plugin.recalculateAllColumnsWidth();
+        this.hot.render();
+      }
+    }, 200);*/
 
     return curve;
   }
@@ -28,18 +36,21 @@ export default class Spreadsheet {
   }
 
   update(){
+    console.log("Updating spreadsheet...");
     const maxDigits = this.maxDigits;
 
     this.hot.updateSettings({
       data: this.data.getTable(),
       colHeaders: this.data.getHeaders(),
+      autoColumnSize: true,
       cells: (row, col) => ({
         type: 'numeric',
         renderer: function (instance, td, row, col, prop, value, cellProperties) {
-          Handsontable.renderers.NumericRenderer.apply(this, arguments);
           if (typeof value === 'number') {
-            td.textContent = value.toFixed(maxDigits);
+            value = value.toFixed(maxDigits); // Modifie la valeur à afficher
           }
+
+          Handsontable.renderers.TextRenderer.apply(this, [instance, td, row, col, prop, value, cellProperties]);
         }
       })
     });
@@ -58,7 +69,7 @@ export default class Spreadsheet {
         this.data.setValue(element[1], element[0], element[3]);
       });
 
-      this.update();
+      this.update();  // TODO only update cells that changed
       this.cb(change);
     };
     
@@ -68,7 +79,9 @@ export default class Spreadsheet {
       minSpareRows: 1,
       rowHeaders: true,
       colHeaders: this.data.getHeaders(),
-      height: 'auto',
+      autoColumnSize: true,
+      height: 500,
+      viewportRowRenderingOffset: 70,
       autoWrapRow: true,
       autoWrapCol: true,
       afterChange: afterChange,
@@ -76,10 +89,11 @@ export default class Spreadsheet {
       cells: (row, col) => ({
         type: 'numeric',
         renderer: function (instance, td, row, col, prop, value, cellProperties) {
-          Handsontable.renderers.NumericRenderer.apply(this, arguments);
           if (typeof value === 'number') {
-            td.textContent = value.toFixed(maxDigits);
+            value = value.toFixed(maxDigits);
           }
+
+          Handsontable.renderers.TextRenderer.apply(this, [instance, td, row, col, prop, value, cellProperties]);
         }
       })
     });

@@ -88,6 +88,7 @@ export default class App {
   if (!text || text.trim() === "") {
     this.spreadsheet.update();
     this.grapher.updateChart();
+    window.updateCalculationSidebar();
     return;
   }
 

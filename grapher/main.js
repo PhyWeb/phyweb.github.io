@@ -28,6 +28,11 @@ spreadsheet.build();
 // App
 let app = new App(data, spreadsheet, grapher, calculation);
 
+// Exclure le tableau de Handsontable (par exemple <div id="table">)
+const table = document.getElementById('table');
+
+window.FontAwesome.dom.i2svg(); // convertit <i> en SVG manuellement
+
 // Navbar
 /*
 let quitConfirm = (_path)=>{
@@ -1028,7 +1033,15 @@ window.updateCalculationSidebar = () => {
   populateList('calculation-sidebar-functions', calculation.getAvailableFunctions(), { isFunction: true });
 };
 
-window.addEventListener("resize", () => {
+function resize(){
+  let newHeight = $("#table-container").offsetHeight;
+  spreadsheet.hot.updateSettings({ height: newHeight })
   grapher.chart.reflow();
+}
+
+resize();
+
+window.addEventListener("resize", () => {
+  resize();
 });
 });
