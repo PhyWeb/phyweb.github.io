@@ -42,7 +42,7 @@ export default class Spreadsheet {
     this.hot.updateSettings({
       data: this.data.getTable(),
       colHeaders: this.data.getHeaders(),
-      autoColumnSize: true,
+      autoColumnSize: false,
       cells: (row, col) => ({
         type: 'numeric',
         renderer: function (instance, td, row, col, prop, value, cellProperties) {
@@ -79,9 +79,11 @@ export default class Spreadsheet {
       minSpareRows: 1,
       rowHeaders: true,
       colHeaders: this.data.getHeaders(),
-      autoColumnSize: true,
+      autoColumnSize: false,
+      rowHeaderWidth: 80,
+      colWidths: 100,
+      manualColumnResize: true,
       height: 500,
-      viewportRowRenderingOffset: 70,
       autoWrapRow: true,
       autoWrapCol: true,
       afterChange: afterChange,
