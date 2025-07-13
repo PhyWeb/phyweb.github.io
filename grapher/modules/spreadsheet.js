@@ -43,6 +43,7 @@ export default class Spreadsheet {
       data: this.data.getTable(),
       colHeaders: this.data.getHeaders(),
       autoColumnSize: false,
+      autoRowSize: false,
       cells: (row, col) => ({
         type: 'numeric',
         renderer: function (instance, td, row, col, prop, value, cellProperties) {
@@ -69,7 +70,7 @@ export default class Spreadsheet {
         this.data.setValue(element[1], element[0], element[3]);
       });
 
-      this.update();  // TODO only update cells that changed
+      //this.update();  // TODO only update cells that changed
       this.cb(change);
     };
     
@@ -80,6 +81,7 @@ export default class Spreadsheet {
       rowHeaders: true,
       colHeaders: this.data.getHeaders(),
       autoColumnSize: false,
+      autoRowSize: false,
       rowHeaderWidth: 80,
       colWidths: 100,
       manualColumnResize: true,
