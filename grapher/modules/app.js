@@ -67,11 +67,13 @@ export default class App {
     // Update the graph
     this.grapher.deleteAllCurves(); 
 
+    $("#auto-zoom-button").click(); // Reset the zoom
+
     // Update the calculation
     this.calculation.clear();
 
-    // Update the spreadsheet
-    this.spreadsheet.update();
+    // clear the spreadsheet
+    this.spreadsheet.clear();
 
     // Update the sidebar
     window.updateCalculationSidebar();

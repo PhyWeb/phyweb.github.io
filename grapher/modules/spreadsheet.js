@@ -102,6 +102,10 @@ export default class Spreadsheet {
       })
     });
   }
+
+  clear() {
+    this.hot.loadData([]);
+  }
 }
 
 export {Spreadsheet};
