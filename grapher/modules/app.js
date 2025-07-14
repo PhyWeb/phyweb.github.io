@@ -142,7 +142,13 @@ export default class App {
     } else {
       const newCurve = this.addCurve(result.variableName, result.unit);
       newCurve.type = "calculation";
-      newCurve.splice(0, newCurve.length, ...result.data);
+      newCurve.length = 0; // Vider le tableau
+      const dataToAdd = result.data;
+      if (dataToAdd) {
+          for (let i = 0; i < dataToAdd.length; i++) {
+              newCurve.push(dataToAdd[i]);
+          }
+      }
     }
   });
 
@@ -286,38 +292,107 @@ export default class App {
   }
 
   loadData(data) {
-    let lines = data.trim().split('\n').filter(l => l.trim().length > 0); // ignore les lignes vides
-
-    let headers = splitFlexible(lines[0]).map(h => h.trim());
-
-    // Check if the second line is a number or a string
-    let secondLine = splitFlexible(lines[1]);
-    let isNumber = !isNaN(secondLine[0].replace(',', '.').trim());
-
-    let units = undefined;
-    if (!isNumber) {
-      units = secondLine.map(u => u.trim());
-      lines.splice(1, 1); // supprime la ligne d’unité
+    if (this._isLoading) {
+      console.warn("Tentative de chargement récursif des données, opération annulée.");
+      return;
     }
+    this._isLoading = true;
 
-    lines.splice(0, 1); // supprime la ligne d’en-tête
-
-    // Création des courbes
-    for (let i = 0; i < headers.length; i++) {
-      let curve = this.addCurve(headers[i], units ? units[i] : "");
-
-      for (let j = 0; j < lines.length; j++) {
-        let cells = splitFlexible(lines[j]);
-        let value = cells[i] !== undefined ? parseFloat(cells[i].replace(',', '.').trim()) : null;
-        curve[j] = isNaN(value) ? null : value; // fallback si conversion impossible
+    try {
+      const lines = data.trim().split('\n').filter(l => l.trim().length > 0);
+      if (lines.length === 0) {
+        this._isLoading = false; // S'assurer de réinitialiser le drapeau
+        return; // Rien à charger
       }
-    }
 
-    console.log("data loaded", this.data);
-    this.spreadsheet.update();
-    this.grapher.updateChart();
-    // Met à jour la barre latérale de calcul
-    window.updateCalculationSidebar();
+      // Déterminer le nombre maximum de colonnes dans l'ensemble des données
+      const numColumns = lines.reduce((max, line) => Math.max(max, splitFlexible(line).length), 0);
+      if (numColumns === 0) {
+        this._isLoading = false;
+        return;
+      }
+
+      let headers;
+      let units = undefined;
+      let dataLines;
+
+      // Vérifie si la première ligne ressemble à des données (c-à-d, est numérique).
+      const firstLineCells = splitFlexible(lines[0]);
+      const isFirstLineNumeric = firstLineCells.length > 0 && !isNaN(parseFloat(String(firstLineCells[0]).replace(',', '.').trim()));
+
+      if (isFirstLineNumeric) {
+        // Pas de ligne d'en-tête. On génère des en-têtes génériques pour toutes les colonnes.
+        headers = Array.from({
+          length: numColumns
+        }, (_, i) => `Colonne${i + 1}`);
+        units = Array(numColumns).fill(""); // Pas d'unités
+        dataLines = lines; // Toutes les lignes sont des données
+      } else {
+        // La ligne d'en-tête existe.
+        // On s'assure d'avoir un en-tête pour chaque colonne détectée.
+        const rawHeaders = splitFlexible(lines[0]);
+        headers = [];
+        for (let i = 0; i < numColumns; i++) {
+          const h = rawHeaders[i] || ""; // Utilise l'en-tête s'il existe, sinon une chaîne vide
+          const trimmedHeader = h.trim();
+          headers.push(trimmedHeader === "" ? `Colonne${i + 1}` : trimmedHeader);
+        }
+
+        // Vérifie si la deuxième ligne correspond aux unités ou aux données
+        if (lines.length > 1) {
+          const secondLineCells = splitFlexible(lines[1]);
+          const isSecondLineNumeric = secondLineCells.length > 0 && !isNaN(parseFloat(String(secondLineCells[0]).replace(',', '.').trim()));
+
+          if (isSecondLineNumeric) {
+            // La deuxième ligne contient des données, donc pas de ligne d'unités
+            units = Array(numColumns).fill("");
+            dataLines = lines.slice(1);
+          } else {
+            // La deuxième ligne contient les unités. On s'assure d'en avoir pour chaque colonne.
+            const rawUnits = splitFlexible(lines[1]);
+            units = Array.from({
+              length: numColumns
+            }, (_, i) => (rawUnits[i] || "").trim());
+            dataLines = lines.slice(2);
+          }
+        } else {
+          // Il n'y a qu'une ligne d'en-tête, pas de données
+          dataLines = [];
+        }
+      }
+
+      // Crée les courbes et les remplit
+      const curvesData = headers.map(() => []);
+
+      for (const line of dataLines) {
+        const cells = splitFlexible(line);
+        for (let i = 0; i < headers.length; i++) {
+          const rawValue = cells[i];
+          const value = rawValue !== undefined ? parseFloat(String(rawValue).replace(',', '.').trim()) : null;
+          curvesData[i].push(isNaN(value) ? null : value);
+        }
+      }
+
+      // Ajoute les courbes à l'état de l'application
+      for (let i = 0; i < headers.length; i++) {
+        const curve = this.addCurve(headers[i], units ? units[i] : "");
+
+        // Remplacer le contenu de la courbe sans utiliser l'opérateur de décomposition
+        // pour éviter les erreurs de "call stack" avec de grands jeux de données.
+        curve.length = 0; // Vider le tableau existant
+        const dataToAdd = curvesData[i];
+        for (let j = 0; j < dataToAdd.length; j++) {
+          curve.push(dataToAdd[j]);
+        }
+      }
+
+      console.log("data loaded", this.data);
+      this.spreadsheet.update();
+      this.grapher.updateChart();
+      window.updateCalculationSidebar();
+    } finally {
+      this._isLoading = false; // Assure que le drapeau est réinitialisé même en cas d'erreur
+    }
   }
 }
 export {App};
