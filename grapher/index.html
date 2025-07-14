@@ -246,7 +246,7 @@
                     class="textarea"
                     spellcheck="false"
                     style="flex-grow: 1; resize: none; min-height: 0; max-height: none;"
-                    placeholder="x = [1, 2, 3, 4, 5]&#10;y = 8 * x + 2&#10;z = sqrt(y)"
+                    placeholder="x = 8 * x + 2&#10;y = sqrt(y)"
                 ></textarea>
                 <div class="control mt-4">
                     <button class="button is-primary" id="apply-calculation-button">
@@ -668,6 +668,83 @@
       <footer class="modal-card-foot">
         <div class="buttons">
           <button class="button is-success" id="choose-curves-confirm-button">Confirmer</button>
+        </div>
+      </footer>
+    </div>
+  </div>
+  <!-- SETTINGS MODAL -->
+  <div id="settings-modal" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title">Paramètres</p>
+        <button class="delete" aria-label="close"></button>
+      </header>
+      <section class="modal-card-body pt-2">
+        <div class="tabs" id="settings-tabs">
+          <ul>
+            <li class="is-active" data-tab="settings-panel-general"><a>Général</a></li>
+            <li data-tab="settings-panel-graph"><a>Graphe</a></li>
+            <li data-tab="settings-panel-derivatives"><a>Dérivées</a></li>
+          </ul>
+        </div>
+        <div id="settings-panel-general" class="settings-panel-content">
+          <div class="field">
+            <label class="label">Thème</label>
+            <div class="control">
+              <div class="select">
+                <select id="theme-select">
+                  <option value="light">Clair</option>
+                  <option value="dark">Sombre</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="settings-panel-graph" class="settings-panel-content is-hidden">
+          <div class="field">
+            <label class="label">Titre du graphique</label>
+            <div class="control">
+              <input class="input" type="text" id="graph-title-input" placeholder="Mon graphique">
+            </div>
+          </div>
+          <div class="field">
+            <label class="label">Légende</label>
+            <div class="control">
+              <label class="switch">
+                <input type="checkbox" id="graph-legend-switch" checked>
+                <span class="check"></span>
+              </label>
+            </div>
+          </div>
+          <div class="field">
+            <label class="label">Grilles</label>
+            <div class="control">
+              <label class="switch">
+                <input type="checkbox" id="graph-grid-switch" checked>
+                <span class="check"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+        <div id="settings-panel-derivatives" class="settings-panel-content is-hidden">
+          <div class="field">
+            <label class="label">Méthode de dérivation</label>
+            <div class="control">
+              <div class="select">
+                <select id="derivative-method-select">
+                  <option value="centered">Différences finies centrées</option>
+                  <option value="forward">Différences finies avant</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <footer class="modal-card-foot">
+        <div class="buttons">
+          <button class="button is-success" id="settings-save-button">Sauvegarder</button>
+          <button class="button modal-close-button">Annuler</button>
         </div>
       </footer>
     </div>

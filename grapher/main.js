@@ -140,6 +140,11 @@ $("#new-file-open-modal-button").addEventListener("click", () => {
   $("#new-file-modal").classList.add("is-active");
 });
 
+$("#settings-button").addEventListener("click", () => {
+  $("#settings-modal").classList.add("is-active");
+});
+
+
 // DEBUG
 $("#debug-button").addEventListener("click", () => {
   console.log("data",data);
@@ -158,6 +163,26 @@ dropdownToggle.addEventListener("click", function (event) {
 // Close the dropdown when clicking outside
 document.addEventListener("click", function () {
   dropdownContainer.classList.remove("is-active");
+});
+
+/* Settings modal ---------------------------------------------------------------------------*/
+// --- GESTION DES ONGLETS (TABS) DANS LA MODALE DES PARAMÈTRES ---
+const settingsTabs = document.querySelectorAll('#settings-tabs li');
+const settingsTabContents = document.querySelectorAll('.settings-panel-content');
+
+settingsTabs.forEach(tab => {
+  tab.addEventListener('click', () => {
+    const targetPanelId = tab.dataset.tab;
+    
+    settingsTabs.forEach(t => t.classList.remove('is-active'));
+    settingsTabContents.forEach(p => p.classList.add('is-hidden'));
+    tab.classList.add('is-active');
+    
+    const targetPanel = document.getElementById(targetPanelId);
+    if (targetPanel) {
+      targetPanel.classList.remove('is-hidden');
+    }
+  });
 });
 
 /*----------------------------------------------------------------------------------------------
