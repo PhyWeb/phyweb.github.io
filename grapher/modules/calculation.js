@@ -11,9 +11,9 @@ export default class Calculation {
     this.data = data;
     
     this.scalarFunctions = [
-      'sqrt', 'cbrt', 'abs', 'exp', 'log', 'log10', 'log2', 'round', 'floor', 'ceil', 'sign',
+      'sqrt', 'cbrt', 'abs', 'exp', 'log', 'log10', 'log2', 'round', 'floor', 'ceil',
       'sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'sinh', 'cosh', 'tanh',
-      'asinh', 'acosh', 'atanh', 'not', 'identity'
+      'asinh', 'acosh', 'atanh'
       // Note: min et max ne sont pas inclus ici car ils peuvent prendre plusieurs arguments.
       // Leur redéfinition pour un comportement élément par élément est plus complexe.
     ];

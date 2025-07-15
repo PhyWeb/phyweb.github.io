@@ -20,6 +20,7 @@ TRACKER:
   - add a buton to stop the decode and still exploit the already decoded frames
 
 GRAPHER:
+  - T'en était la : s'occuper des fonctions réellement interessante (desambiguer les log et que ca insert direct des diff(,) et tooltip)
   - display parameters somewhere
   - dans calculs automatiquement mettre les fonctions en minuscule pour etre compat avec regressi
   - importer les formules de regressi
