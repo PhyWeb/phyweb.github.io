@@ -160,20 +160,58 @@ document.addEventListener("click", function () {
   dropdownContainer.classList.remove("is-active");
 });
 
+let initialSettings = {};
+function captureInitialSettings() {
+  initialSettings = {
+    maxDigits: spreadsheet.maxDigits,
+    derivatePoints: calculation.derivatePoints,
+    derivateEdges: calculation.derivateEdges
+  };
+}
+
 /* Settings modal ---------------------------------------------------------------------------*/
 // Open the settings modal
 $("#settings-button").addEventListener("click", () => {
+  captureInitialSettings(); // Capture the initial settings before opening the modal
   // Load the previous settings
-  $("#max-digits-select").value = app.spreadsheet.maxDigits;
+  $("#max-digits-select").value = initialSettings.maxDigits;
+  $("#derivative-points-select").value = initialSettings.derivatePoints;
+  $("#derivate-edges-switch").checked = calculation.derivateEdges;
+
+  // Show the settings modal
   $("#settings-modal").classList.add("is-active");
 });
 
 // Save the settings
 $("#settings-save-button").addEventListener("click", () => {
-  // Save the max digits
-  const maxDigits = parseInt($("#max-digits-select").value);
+  const newSettings = {
+    maxDigits: parseInt($("#max-digits-select").value),
+    derivatePoints: parseInt($("#derivative-points-select").value),
+    derivateEdges: $("#derivate-edges-switch").checked
+  };
+  
+  // Liste des paramètres modifiés
+  const changedSettings = {};
+  for (const key in newSettings) {
+    if (newSettings[key] !== initialSettings[key]) {
+      changedSettings[key] = newSettings[key];
+    }
+  }
 
-  app.spreadsheet.setMaxDigits(maxDigits);
+  // Save the max digits
+  if(changedSettings.maxDigits !== undefined) {
+    spreadsheet.setMaxDigits(changedSettings.maxDigits);
+  }
+
+  // Save the derivate points
+  if(changedSettings.derivatePoints !== undefined) {
+    calculation.derivatePoints = changedSettings.derivatePoints;
+  }
+
+  // Save the derivate edges
+  if(changedSettings.derivateEdges !== undefined) {
+    calculation.derivateEdges = changedSettings.derivateEdges;
+  }
 
   // Close the modal
   common.modalManager.closeAllModals();
@@ -339,18 +377,17 @@ settingsTabs.forEach(tab => {
         unit = derivateCurveUnitInput.value.trim();
         const numerator = derivateNumeratorSelect.value;
         const denominator = derivateDenominatorSelect.value;
+
         if (!symbol || numerator.startsWith('Choisir') || denominator.startsWith('Choisir')) {
           alert("Veuillez remplir le symbole et choisir les deux grandeurs à dériver.");
           return null;
         }
         if (symbolExists(symbol)) return null;
         
-        // --- CORRECTION : On construit la formule avec les noms de variables simples ---
-        // Le moteur de calcul n'a pas besoin des unités à l'intérieur de la fonction `diff`.
+        // Construit la formule `diff`
         const formula = `diff(${numerator}, ${denominator})`;
-        
-        // On construit la ligne complète, avec l'unité à gauche du signe égal.
         formulaLine = `${buildVarWithUnit(symbol, unit)} = ${formula}`;
+
         return { type: 'formula', formulaLine };
       }
 
@@ -553,6 +590,9 @@ grapher.newChart();
 
 // Choose graphs -------------------------------------------------------------------------------
 $("#choose-curves-button").addEventListener("click", () => { 
+  if(data.curves.length === 0){
+    return;
+  }
   populateCurveMenu();
   populateCurveSelect();
   populateColors();

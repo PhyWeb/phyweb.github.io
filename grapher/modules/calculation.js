@@ -17,6 +17,9 @@ export default class Calculation {
       // Note: min et max ne sont pas inclus ici car ils peuvent prendre plusieurs arguments.
       // Leur redéfinition pour un comportement élément par élément est plus complexe.
     ];
+
+    this.derivatePoints = 5; // Nombre de points pour la dérivation
+    this.derivateEdges = true; // Calculer les bords ou non
     
     // Créer une instance de math.js pré-configurée pour gérer les opérations sur les tableaux.
     this.mathInstance = this.createConfiguredMathInstance();
@@ -81,10 +84,6 @@ export default class Calculation {
 
     // --- Ajout de la fonction de dérivation numérique avec options de lissage ---
 
-    // Définir les paramètres par défaut pour la fonction diff
-    const DEFAULT_DIFF_POINTS = 3;
-    const DEFAULT_DIFF_CALCULATE_EDGES = true;
-
     /**
      * Calcule la dérivée numérique de y par rapport à x. Gère les valeurs null.
      * @param {Array<number|null>} y Le tableau des valeurs de la fonction.
@@ -93,7 +92,8 @@ export default class Calculation {
      * @param {boolean} [calculateEdges=true] Si false, les points sur les bords qui ne peuvent pas utiliser le stencil complet retourneront null.
      * @returns {Array<number|null>} La dérivée numérique.
      */
-    const numericalDerivative = (y, x, points = DEFAULT_DIFF_POINTS, calculateEdges = DEFAULT_DIFF_CALCULATE_EDGES) => {
+    const numericalDerivative = (y, x, points = 5, calculateEdges = true) => {
+      console.log(points, calculateEdges);
         const n = y.length;
         if (n !== x.length) {
             throw new Error('Les tableaux pour la dérivation (diff) doivent avoir la même longueur.');
@@ -154,14 +154,7 @@ export default class Calculation {
 
     const typedDiff = mathInstance.typed('diff', {
       'number, Array': (y, x) => mathInstance.zeros(x.length).toArray(),
-      'number, Array, number': (y, x, p) => mathInstance.zeros(x.length).toArray(),
-      'number, Array, number, boolean': (y, x, p, c) => mathInstance.zeros(x.length).toArray(),
-      'Array, Array': (y, x) => 
-          numericalDerivative(y, x, DEFAULT_DIFF_POINTS, DEFAULT_DIFF_CALCULATE_EDGES),
-      'Array, Array, number': (y, x, p) => 
-          numericalDerivative(y, x, p, DEFAULT_DIFF_CALCULATE_EDGES),
-      'Array, Array, number, boolean': (y, x, p, c) => 
-          numericalDerivative(y, x, p, c),
+      'Array, Array': (y, x) => numericalDerivative(y, x, this.derivatePoints, this.derivateEdges),
     });
     mathInstance.import({ diff: typedDiff }, { override: true });
 
