@@ -140,11 +140,6 @@ $("#new-file-open-modal-button").addEventListener("click", () => {
   $("#new-file-modal").classList.add("is-active");
 });
 
-$("#settings-button").addEventListener("click", () => {
-  $("#settings-modal").classList.add("is-active");
-});
-
-
 // DEBUG
 $("#debug-button").addEventListener("click", () => {
   console.log("data",data);
@@ -166,6 +161,24 @@ document.addEventListener("click", function () {
 });
 
 /* Settings modal ---------------------------------------------------------------------------*/
+// Open the settings modal
+$("#settings-button").addEventListener("click", () => {
+  // Load the previous settings
+  $("#max-digits-select").value = app.spreadsheet.maxDigits;
+  $("#settings-modal").classList.add("is-active");
+});
+
+// Save the settings
+$("#settings-save-button").addEventListener("click", () => {
+  // Save the max digits
+  const maxDigits = parseInt($("#max-digits-select").value);
+
+  app.spreadsheet.setMaxDigits(maxDigits);
+
+  // Close the modal
+  common.modalManager.closeAllModals();
+});
+
 // --- GESTION DES ONGLETS (TABS) DANS LA MODALE DES PARAMÈTRES ---
 const settingsTabs = document.querySelectorAll('#settings-tabs li');
 const settingsTabContents = document.querySelectorAll('.settings-panel-content');

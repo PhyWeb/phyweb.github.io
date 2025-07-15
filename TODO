@@ -26,7 +26,7 @@ GRAPHER:
   - rework new/load/save buttons
   - specify "line" or "spline" in series not graph
 
-
+  - parameters in the sidebar dont use maxDigits
 
   - add an option to set maxDigits
 
