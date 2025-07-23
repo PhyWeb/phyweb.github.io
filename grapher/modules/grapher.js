@@ -57,6 +57,8 @@ export default class Grapher {
     this.data = data;
     this.chart;
 
+    this.grid = true; // Default value for grid visibility
+
     this.currentXCurve = null;
   }
 
@@ -313,6 +315,20 @@ export default class Grapher {
 
       
 
+    }
+  }
+
+  setGridVisibility(visible) {
+    this.grid = visible;
+    if (this.chart) {
+      this.chart.update({
+        xAxis: {
+          gridLineWidth: visible ? 1 : 0
+        },
+        yAxis: {
+          gridLineWidth: visible ? 1 : 0
+        }
+      });
     }
   }
 }

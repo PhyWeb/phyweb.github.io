@@ -164,6 +164,7 @@ let initialSettings = {};
 function captureInitialSettings() {
   initialSettings = {
     maxDigits: spreadsheet.maxDigits,
+    grapherGrid: grapher.grid,
     derivatePoints: calculation.derivatePoints,
     derivateEdges: calculation.derivateEdges
   };
@@ -177,6 +178,7 @@ $("#settings-button").addEventListener("click", () => {
   $("#max-digits-select").value = initialSettings.maxDigits;
   $("#derivative-points-select").value = initialSettings.derivatePoints;
   $("#derivate-edges-switch").checked = calculation.derivateEdges;
+  $("#graph-grid-switch").checked = grapher.grid;
 
   // Show the settings modal
   $("#settings-modal").classList.add("is-active");
@@ -186,6 +188,7 @@ $("#settings-button").addEventListener("click", () => {
 $("#settings-save-button").addEventListener("click", () => {
   const newSettings = {
     maxDigits: parseInt($("#max-digits-select").value),
+    grapherGrid: $("#graph-grid-switch").checked,
     derivatePoints: parseInt($("#derivative-points-select").value),
     derivateEdges: $("#derivate-edges-switch").checked
   };
@@ -201,6 +204,12 @@ $("#settings-save-button").addEventListener("click", () => {
   // Save the max digits
   if(changedSettings.maxDigits !== undefined) {
     spreadsheet.setMaxDigits(changedSettings.maxDigits);
+  }
+
+
+  // Save the grid visibility
+  if(changedSettings.grapherGrid !== undefined) {
+    grapher.setGridVisibility(changedSettings.grapherGrid);
   }
 
   // Save the derivate points
@@ -1015,7 +1024,7 @@ const functionTooltips = {
   asinh: 'Arc sinus hyperbolique',
   acosh: 'Arc cosinus hyperbolique',
   atanh: 'Arc tangente hyperbolique',
-  diff: 'Dérivée numérique ex: diff(y, t)'
+  diff: 'Dérivée numérique ex: diff(y,t)'
 };
 
 /**
@@ -1108,17 +1117,28 @@ function insertTextAtCursor(textarea, textToInsert) {
   const before = text.substring(0, start);
   const after = text.substring(end, text.length);
 
-  textarea.value = before + textToInsert + after;
+  let finalInsert = textToInsert;
+  let cursorOffset;
 
-  // Place le curseur après le texte inséré
-  const newCursorPos = start + textToInsert.length;
-  textarea.selectionStart = textarea.selectionEnd = newCursorPos;
-  
-  // Si c'est une fonction, place le curseur entre les parenthèses
-  if (textToInsert.endsWith('()')) {
-      textarea.selectionStart = textarea.selectionEnd = newCursorPos - 1;
+  // Cas spécial pour la fonction diff
+  if (textToInsert === 'diff()') {
+    finalInsert = 'diff(,)';
+    cursorOffset = finalInsert.indexOf(','); // Place le curseur avant la virgule
+  } 
+  // Cas général pour les autres fonctions
+  else if (textToInsert.endsWith('()')) {
+    cursorOffset = finalInsert.length - 1; // Place le curseur avant la parenthèse fermante
+  } 
+  // Cas pour les variables et paramètres
+  else {
+    cursorOffset = finalInsert.length; // Place le curseur à la fin
   }
 
+  textarea.value = before + finalInsert + after;
+
+  // Définit la nouvelle position du curseur
+  textarea.selectionStart = textarea.selectionEnd = start + cursorOffset;
+  
   textarea.focus(); // Redonne le focus au textarea
 }
 
