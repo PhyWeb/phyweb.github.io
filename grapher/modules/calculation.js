@@ -11,11 +11,10 @@ export default class Calculation {
     this.data = data;
     
     this.scalarFunctions = [
-      'sqrt', 'cbrt', 'abs', 'exp', 'log', 'log10', 'log2', 'round', 'floor', 'ceil',
-      'sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'sinh', 'cosh', 'tanh',
-      'asinh', 'acosh', 'atanh'
-      // Note: min et max ne sont pas inclus ici car ils peuvent prendre plusieurs arguments.
-      // Leur redéfinition pour un comportement élément par élément est plus complexe.
+      'sqrt', 'cbrt', 'abs', 'exp', 'log', 'ln', 
+      'round', 'floor', 'ceil',
+      'sin', 'cos', 'tan', 'asin', 'acos', 'atan', 
+      'sinh', 'cosh', 'tanh', 'asinh', 'acosh', 'atanh'
     ];
 
     this.derivatePoints = 5; // Nombre de points pour la dérivation
@@ -34,22 +33,52 @@ export default class Calculation {
   createConfiguredMathInstance() {
     const mathInstance = math.create(math.all);
 
+    // Créer 'ln' comme un alias pour la fonction 'log' (logarithme népérien par défaut)
+    mathInstance.import({ ln: mathInstance.log });
+    
+    // Redéfinir 'log' pour qu'il soit le logarithme en base 10
+    mathInstance.import({ log: mathInstance.log10 }, { override: true });
+
     // Redéfinir les fonctions scalaires pour qu'elles fonctionnent sur les tableaux
     this.scalarFunctions.forEach(name => {
       const originalFn = mathInstance[name];
       if (typeof originalFn !== 'function') return;
 
-      const typedFn = mathInstance.typed(name, {
-        'Array | Matrix': function(x) {
-          return mathInstance.map(x, val => (val === null ? null : originalFn(val)));
-        },
-        // Comportement par défaut pour les autres types (nombres, etc.)
-        'any': function(x) {
-          return originalFn(x);
-        }
-      });
-      
-      mathInstance.import({ [name]: typedFn }, { override: true });
+      // Gestion spéciale pour les fonctions qui peuvent retourner des nombres complexes
+      if (['sqrt', 'log', 'ln'].includes(name)) {
+        const typedFn = mathInstance.typed(name, {
+          'Array | Matrix': function(x) {
+            return mathInstance.map(x, val => {
+              // Si la valeur est négative ou nulle, on ne calcule pas.
+              if (val === null || val < 0) {
+                return null;
+              }
+              // Pour le log, 0 n'est pas défini non plus.
+              if (name.includes('log') && val === 0) {
+                return null;
+              }
+              return originalFn(val);
+            });
+          },
+          'any': function(x) {
+            if (x === null || x < 0) return null;
+            if (name.includes('log') && x === 0) return null;
+            return originalFn(x);
+          }
+        });
+        mathInstance.import({ [name]: typedFn }, { override: true });
+      } else {
+        // Comportement standard pour les autres fonctions
+        const typedFn = mathInstance.typed(name, {
+          'Array | Matrix': function(x) {
+            return mathInstance.map(x, val => (val === null ? null : originalFn(val)));
+          },
+          'any': function(x) {
+            return originalFn(x);
+          }
+        });
+        mathInstance.import({ [name]: typedFn }, { override: true });
+      }
     });
 
     // Rendre les opérateurs arithmétiques "null-aware"
@@ -93,7 +122,6 @@ export default class Calculation {
      * @returns {Array<number|null>} La dérivée numérique.
      */
     const numericalDerivative = (y, x, points = 5, calculateEdges = true) => {
-      console.log(points, calculateEdges);
         const n = y.length;
         if (n !== x.length) {
             throw new Error('Les tableaux pour la dérivation (diff) doivent avoir la même longueur.');
