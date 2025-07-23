@@ -992,6 +992,32 @@ $("#apply-calculation-button").addEventListener("click", () => {
   app.applyCalculation(textarea.value);
 });
 
+// Tooltips
+const functionTooltips = {
+  sqrt: 'Racine carrée',
+  cbrt: 'Racine cubique',
+  abs: 'Valeur absolue',
+  exp: 'Exponentielle (e^x)',
+  log: 'Logarithme en base 10',
+  ln: 'Logarithme népérien',
+  round: 'Arrondi à l\'entier le plus proche',
+  floor: 'Partie entière (arrondi inférieur)',
+  ceil: 'Arrondi supérieur',
+  sin: 'Sinus (en radians)',
+  cos: 'Cosinus (en radians)',
+  tan: 'Tangente (en radians)',
+  asin: 'Arc sinus',
+  acos: 'Arc cosinus',
+  atan: 'Arc tangente',
+  sinh: 'Sinus hyperbolique',
+  cosh: 'Cosinus hyperbolique',
+  tanh: 'Tangente hyperbolique',
+  asinh: 'Arc sinus hyperbolique',
+  acosh: 'Arc cosinus hyperbolique',
+  atanh: 'Arc tangente hyperbolique',
+  diff: 'Dérivée numérique ex: diff(y, t)'
+};
+
 /**
  * Remplit une liste dans la barre latérale.
  * @param {string} containerId - L'ID de l'élément conteneur.
@@ -1020,6 +1046,10 @@ function populateList(containerId, items, options = {}) {
         const a = document.createElement('a');
         a.textContent = `${item}()`;
         a.dataset.value = `${item}()`;
+        // Add a tooltip if it exists
+        if (functionTooltips[item]) {
+          a.setAttribute('title', functionTooltips[item]);
+        }
         columnDiv.appendChild(a);
         columnsDiv.appendChild(columnDiv);
       }
