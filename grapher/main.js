@@ -1319,4 +1319,8 @@ resize();
 window.addEventListener("resize", () => {
   resize();
 });
+
+// Ouvre la modale "Nouveau" au démarrage de l'application
+$("#new-file-modal").classList.add("is-active");
+
 });
