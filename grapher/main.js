@@ -163,7 +163,7 @@ document.addEventListener("click", function () {
 let initialSettings = {};
 function captureInitialSettings() {
   initialSettings = {
-    maxDigits: spreadsheet.maxDigits,
+    maxDigits: data.settings.maxDigits,
     grapherGrid: grapher.grid,
     derivatePoints: calculation.derivatePoints,
     derivateEdges: calculation.derivateEdges
@@ -203,7 +203,8 @@ $("#settings-save-button").addEventListener("click", () => {
 
   // Save the max digits
   if(changedSettings.maxDigits !== undefined) {
-    spreadsheet.setMaxDigits(changedSettings.maxDigits);
+    data.settings.maxDigits = changedSettings.maxDigits;
+    spreadsheet.update(); 
   }
 
 
@@ -676,6 +677,71 @@ $("#delete-curve-confirm-button").addEventListener("click", () => {
 ----------------------------------------------------------------------------------------------*/
 grapher.newChart();
 
+// Outils Dropdown ------------------------------------------------------------------------------------
+const toolsDropdown = $("#tools-dropdown");
+const toolItems = document.querySelectorAll(".tool-item");
+let activeToolElement = null;
+
+// Gère l'affichage de la coche et l'état de l'outil actif
+function setActiveTool(clickedItem) {
+  const isDeselecting = activeToolElement === clickedItem;
+
+  // 1. On efface toutes les coches
+  toolItems.forEach(item => {
+    const checkmarkContainer = item.querySelector('.tool-checkmark-container');
+    if (checkmarkContainer) checkmarkContainer.innerHTML = '';
+  });
+
+  if (isDeselecting) {
+    activeToolElement = null;
+    console.log("Outil désactivé.");
+
+    grapher.setCrosshairMode(null); // On passe 'null' pour tout désactiver
+    
+    return;
+  }
+
+  // 3. Sinon, on active le nouvel outil
+  activeToolElement = clickedItem;
+  const checkmarkContainer = clickedItem.querySelector('.tool-checkmark-container');
+  if (checkmarkContainer) {
+    checkmarkContainer.innerHTML = '<i class="fa-solid fa-check"></i>';
+    setTimeout(() => {
+      window.FontAwesome.dom.i2svg({ node: toolsDropdown });
+    }, 0);
+  }
+}
+
+// Ouvre et ferme le menu déroulant
+toolsDropdown.addEventListener("click", (event) => {
+  event.stopPropagation();
+  toolsDropdown.classList.toggle("is-active");
+});
+
+// Ferme le menu si on clique ailleurs
+document.addEventListener("click", () => {
+  toolsDropdown.classList.remove("is-active");
+});
+
+// Ajoute un écouteur d'événement unique pour tous les outils
+toolItems.forEach(item => {
+  item.addEventListener('click', () => {
+    setActiveTool(item);
+
+    // On s'assure que le bouton zoom est bien désactivé
+    $("#zoom-button").classList.remove("is-active");
+    isZoomEnabled = false;
+
+    if (activeToolElement) {
+      if (item.id === 'tool-crosshair-data') {
+        grapher.setCrosshairMode('data');
+      } else if (item.id === 'tool-crosshair-free') {
+        grapher.setCrosshairMode('free');
+      }
+    }
+  });
+});
+
 // Choose graphs -------------------------------------------------------------------------------
 $("#choose-curves-button").addEventListener("click", () => { 
   if(data.curves.length === 0){
@@ -1068,6 +1134,8 @@ $("#auto-zoom-button").addEventListener("click", () => {
   $("#auto-zoom-button").classList.add("is-hidden");
   $("#zoom-button").classList.remove("is-active");
   isZoomEnabled = false;
+
+  grapher.chart.update({ chart: { zooming: { type: null } } });
 });
 
 /*----------------------------------------------------------------------------------------------

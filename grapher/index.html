@@ -169,12 +169,33 @@
     <nav class="level mb-1">
       <!-- Left side -->
       <div class="level-left">
-        <button class="button">
-          <span class="icon">
-            <i class="fa-solid fa-arrow-pointer"></i>
-          </span>
-          <span>Outils</span>
-        </button>
+        <div class="dropdown" id="tools-dropdown">
+          <div class="dropdown-trigger">
+            <button class="button" aria-haspopup="true" aria-controls="tools-dropdown-menu">
+              <span class="icon">
+                <i class="fa-solid fa-toolbox"></i>
+              </span>
+              <span>Outils</span>
+              <span class="icon is-small">
+                <i class="fas fa-angle-down" aria-hidden="true"></i>
+              </span>
+            </button>
+          </div>
+          <div class="dropdown-menu" id="tools-dropdown-menu" role="menu">
+            <div class="dropdown-content">
+              <button class="dropdown-item tool-item" id="tool-crosshair-data" type="button">
+                <span>Réticule Donnée</span>
+                <span class="icon tool-checkmark-container ml-auto">
+                  </span>
+              </button>
+              <button class="dropdown-item tool-item" id="tool-crosshair-free" type="button">
+                <span>Réticule Libre</span>
+                <span class="icon tool-checkmark-container ml-auto">
+                  </span>
+              </button>
+            </div>
+          </div>
+        </div>
         <button class="button" id="choose-curves-button">
           <span class="icon">
             <i class="fa-solid fa-list-check"></i>

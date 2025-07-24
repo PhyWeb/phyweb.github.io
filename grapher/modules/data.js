@@ -29,6 +29,11 @@ export default class Data {
   constructor() {
     this.curves = [];
     this.parameters = {}; // For storing parameters (e.g. constants)
+
+    // AJOUTEZ CET OBJET
+    this.settings = {
+      maxDigits: 4 
+    };
   }   
 
   addCurve(title, unit, size, fill){

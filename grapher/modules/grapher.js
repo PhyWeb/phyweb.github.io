@@ -60,6 +60,10 @@ export default class Grapher {
     this.grid = true; // Default value for grid visibility
 
     this.currentXCurve = null;
+
+    // Pour le réticule libre manuel
+    this.crosshairMode = 'data'; // Mode par défaut
+    this.freeCrosshair = null;   // Pour stocker les éléments du réticule
   }
 
   formatData(xCurve, yCurve){
@@ -148,7 +152,6 @@ export default class Grapher {
             // Prevent default button
             this.resetZoomButton && this.resetZoomButton.hide();
             // Add custom zoom button
-            $("#zoom-button").click();
             $("#auto-zoom-button").classList.remove("is-hidden");
           }
         }
@@ -166,6 +169,44 @@ export default class Grapher {
         events: {
           itemClick: legendClickCB
         }
+      },
+      tooltip: {
+        enabled: false,
+        useHTML: true, // Toujours nécessaire pour le formatage du contenu
+
+        shape: 'callout',
+        backgroundColor: 'white',
+        borderColor: '#dbdbdb',
+        borderWidth: 1,
+        borderRadius: 6,
+        shadow: false,
+        style: {
+          fontSize: '14px',
+          padding: '10px'
+        },
+
+        formatter: function () {
+          const chart = this.series.chart;
+          const grapher = chart.options.customGrapherInstance; 
+          if (!grapher) return '';
+
+          const maxDigits = grapher.data.settings.maxDigits ?? 2;
+          const formatNumber = n => (typeof n === 'number' ? n.toFixed(maxDigits).replace('.', ',') : n);
+
+          const xCurve = grapher.currentXCurve;
+          const xCurveObj = grapher.data.getCurveByTitle(xCurve);
+          const xUnit = xCurveObj?.unit || '';
+          const xLabel = `<strong>${xCurve} =</strong> ${formatNumber(this.x)} ${xUnit}`;
+
+          const yCurveObj = grapher.data.getCurveByTitle(this.series.name);
+          const yUnit = yCurveObj?.unit || '';
+          const yLabel = `<strong>${this.series.name} =</strong> ${formatNumber(this.y)} ${yUnit}`;
+          
+          return `${xLabel}<br>${yLabel}`;
+        }
+      },
+      zooming: {
+        type: null
       },
       accessibility: {
         enabled: false
@@ -189,7 +230,35 @@ export default class Grapher {
       credits: {
         enabled: false
       },
+      plotOptions: {
+        series: {
+          stickyTracking: false,
+          states: {
+            hover: {
+              enabled: false,
+              lineWidthPlus: 0 
+            }
+          }
+        }
+      },
       series: []
+    });
+
+    // Set the custom grapher instance for tooltip formatting
+    this.chart.options.customGrapherInstance = this;
+
+    this.chart.container.addEventListener('mousemove', (e) => {
+      if (this.crosshairMode !== 'free') return;
+
+      const chartPosition = this.chart.pointer.getChartPosition();
+      const chartX = e.pageX - chartPosition.left;
+      const chartY = e.pageY - chartPosition.top;
+
+      this._drawFreeCrosshair({ chartX, chartY });
+    });
+
+    Highcharts.addEvent(this.chart.container, 'mouseleave', () => {
+      this._hideFreeCrosshair(); // On cache toujours quand la souris sort
     });
   }
 
@@ -329,6 +398,138 @@ export default class Grapher {
           gridLineWidth: visible ? 1 : 0
         }
       });
+    }
+  }
+
+  setCrosshairMode(mode) {
+    if (!this.chart) return;
+    this.crosshairMode = mode;
+
+    const isDataMode = (mode === 'data');
+
+    this._hideFreeCrosshair();
+
+    // Changer le curseur
+    if (this.chart && this.chart.container) {
+      this.chart.container.style.cursor = mode === 'free' ? 'crosshair' : 'default';
+    }
+
+    // Mise à jour groupée de toutes les options nécessaires
+    this.chart.update({
+      // On s'assure que le zoom est DÉSACTIVÉ quand on utilise un outil
+      chart: {
+        zooming: {
+          type: null
+        }
+      },
+      tooltip: {
+        enabled: isDataMode
+      },
+      plotOptions: {
+        series: {
+          stickyTracking: false,
+          enableMouseTracking: isDataMode,
+          states: {
+            hover: {
+              enabled: isDataMode,
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // MÉTHODE PRIVÉE pour dessiner le réticule manuellement
+_drawFreeCrosshair(event) {
+  const chart = this.chart;
+  if (!chart.pointer) return;
+
+  if (typeof event.chartX === 'undefined' || typeof event.chartY === 'undefined') {
+    return; 
+  }
+
+  const plotLeft = chart.plotLeft;
+  const plotTop = chart.plotTop;
+  const plotWidth = chart.plotWidth;
+  const plotHeight = chart.plotHeight;
+
+  if (
+    event.chartX < plotLeft ||
+    event.chartX > plotLeft + plotWidth ||
+    event.chartY < plotTop ||
+    event.chartY > plotTop + plotHeight
+  ) {
+    this._hideFreeCrosshair();
+    return;
+  }
+
+  if (!this.freeCrosshair) {
+    this.freeCrosshair = {
+      xLine: chart.renderer.path(['M', 0, 0])
+        .attr({ 'stroke-width': 1, stroke: 'dimgray', dashstyle: 'shortdot', zIndex: 5 }).add(),
+      yLine: chart.renderer.path(['M', 0, 0])
+        .attr({ 'stroke-width': 1, stroke: 'dimgray', dashstyle: 'shortdot', zIndex: 5 }).add(),
+        xLabel: chart.renderer.label('', 0, 0, 'callout')
+          .attr({
+            fill: 'white',
+            stroke: '#dbdbdb',
+            'stroke-width': 1,
+            r: 6, // Coins arrondis
+            padding: 8,
+            zIndex: 6
+          })
+          .css({ color: 'black', fontSize: '14px' })
+          .add(),
+        yLabel: chart.renderer.label('', 0, 0, 'callout')
+          .attr({
+            fill: 'white',
+            stroke: '#dbdbdb',
+            'stroke-width': 1,
+            r: 6,
+            padding: 8,
+            zIndex: 6
+          })
+          .css({ color: 'black', fontSize: '14px' })
+          .add()
+    };
+  }
+
+  // Mouvements des lignes
+  this.freeCrosshair.xLine.attr({
+    d: ['M', event.chartX, plotTop, 'L', event.chartX, plotTop + plotHeight]
+  });
+
+  this.freeCrosshair.yLine.attr({
+    d: ['M', plotLeft, event.chartY, 'L', plotLeft + plotWidth, event.chartY]
+  });
+
+  // Valeurs numériques
+  const xValue = chart.xAxis[0].toValue(event.chartX);
+  const yValue = chart.yAxis[0].toValue(event.chartY);
+  const precision = this.data.settings.maxDigits;
+
+  // --- Label X ---
+  this.freeCrosshair.xLabel.attr({ text: xValue.toFixed(precision) });
+  const xLabelBBox = this.freeCrosshair.xLabel.getBBox();
+  this.freeCrosshair.xLabel.translate(
+    event.chartX - xLabelBBox.width / 2,
+    plotTop + plotHeight - xLabelBBox.height - 5
+  );
+
+  // --- Label Y ---
+  this.freeCrosshair.yLabel.attr({ text: yValue.toFixed(precision) });
+  const yLabelBBox = this.freeCrosshair.yLabel.getBBox();
+  this.freeCrosshair.yLabel.translate(
+    plotLeft + 5,
+    event.chartY - yLabelBBox.height / 2
+  );
+}
+
+  // MÉTHODE PRIVÉE pour cacher le réticule
+  _hideFreeCrosshair() {
+    if (this.freeCrosshair) {
+      Object.values(this.freeCrosshair).forEach(el => el.destroy());
+      this.freeCrosshair = null;
     }
   }
 }

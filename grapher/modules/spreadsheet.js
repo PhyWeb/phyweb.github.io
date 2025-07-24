@@ -8,8 +8,6 @@ export default class Spreadsheet {
     this.data = data;
     this.cb = cb;
     this.hot;
-
-    this.maxDigits = 4; // Maximum number of digits after the decimal point
   }   
 
   addCurve(title, unit, size, fill){
@@ -30,14 +28,9 @@ export default class Spreadsheet {
     return curve;
   }
 
-  setMaxDigits(digits) {
-    this.maxDigits = digits;
-    this.update(); // met à jour le rendu avec la nouvelle précision
-  }
-
   update(){
     console.log("Updating spreadsheet...");
-    const maxDigits = this.maxDigits;
+    const maxDigits = this.data.settings.maxDigits;
 
     this.hot.updateSettings({
       data: this.data.getTable(),
@@ -59,7 +52,7 @@ export default class Spreadsheet {
 
   build(){
     const container = document.querySelector('#table');
-    const maxDigits = this.maxDigits;
+    const maxDigits = this.data.settings.maxDigits; 
 
     const afterChange = (change, source) =>  {
       if (source === "loadData" || source === "updateData") {
