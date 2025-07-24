@@ -268,7 +268,7 @@
       <header class="modal-card-head has-background-primary">
         <p class="modal-card-title">Nouveau</p>
       </header>
-      <input type="file" accept=".csv, .rw3" id="file-input" style="width:0px; display: none"/>
+      <input type="file" accept=".pw, .csv, .rw3" id="file-input" style="width:0px; display: none"/>
       <section class="modal-card-body has-bottom-round-corner">
         <div class="columns has-text-centered">
           <div class="column">
@@ -751,6 +751,55 @@
           <button class="button is-success" id="settings-save-button">Sauvegarder</button>
           <button class="button modal-close-button">Annuler</button>
         </div>
+      </footer>
+    </div>
+  </div>
+  <!------------------------------------------------------------------------------------------------------------>
+  <!-----------------------------------------------DOWNLOAD MODAL----------------------------------------------->
+  <!------------------------------------------------------------------------------------------------------------>
+  <div id="download-modal" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card" id="download-modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title">Sauvegarder la session</p>
+        <button class="delete" aria-label="close"></button>
+      </header>
+      <section class="modal-card-body ">
+        <p class="title is-5">Type de fichier</p>
+        <div class="buttons has-addons is-centered">
+          <button class="button is-link" id="pw-button">
+            <span class="icon">
+              <i class="fas fa-save"></i>
+            </span>
+            <span>Session PhyWeb (.pw)</span>
+          </button>
+          <button class="button" id="csv-button">
+            <span class="icon">
+              <i class="fas fa-lg fa-file-csv"></i>
+            </span>
+            <span>Tableur (.csv)</span>
+          </button>
+          <button class="button" id="rw3-button">
+            <span class="icon">
+              <i class="rw3-logo"></i>
+            </span>
+            <span>Regressi (.rw3)</span>
+          </button>
+        </div>
+        <div class="field">
+          <label class="label">Nom du fichier</label>
+          <div class="control">
+            <input class="input rounded" type="text" placeholder="session.pw" id="file-name-input"/>
+          </div>
+        </div>
+      </section>
+      <footer class="modal-card-foot">
+        <button class="button is-fullwidth is-primary" id="download-file-button">
+          <span class="icon">
+            <i class="fas fa-download"></i>
+          </span>
+          <span>Télécharger le fichier</span>
+        </button>
       </footer>
     </div>
   </div>

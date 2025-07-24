@@ -1,3 +1,5 @@
+import { Curve } from './data.js';
+
 const $ = document.querySelector.bind(document);
 
 // Utilitaire : split tabulations ou au moins 2 espaces
@@ -169,25 +171,29 @@ export default class App {
   window.updateCalculationSidebar();
 }
 
+  /**
+   * Méthode principale de chargement, modifiée pour gérer .pw
+   */
   loadFile(file) {
-    // TODO: warining if unsaved data
+    // TODO ... avertissement sur les données non sauvegardées ...
     console.log("loadFile", file, "type", file.type);
 
-    // EMPTY DATA
     this.deleteAllCurves();
 
-    if(file.type === "text/csv"){
+    if (file.name.endsWith(".pw")) { // Gère le nouveau format
+      this.loadPWFile(file);
+      return;
+    }
+    if (file.type === "text/csv") {
       this.loadCSVFile(file);
       return;
     }
-
     if (file.name.endsWith(".rw3")) {
       this.loadRW3File(file);
       return;
     }
 
-    console.error("Unsupported file type");
-
+    console.error("Type de fichier non supporté");
   }
 
   loadClipboard(data) {
@@ -201,6 +207,67 @@ export default class App {
     this.deleteAllCurves();
 
     this.loadData(data);
+  }
+
+  /**
+   * Charge et restaure une session depuis un fichier .pw. (Version améliorée)
+   * @param {File} file - Le fichier .pw à charger.
+   */
+  loadPWFile(file) {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const state = JSON.parse(event.target.result);
+
+        // 1. Restaurer les paramètres
+        if (state.settings) {
+            this.spreadsheet.setMaxDigits(state.settings.maxDigits);
+            this.calculation.derivatePoints = state.settings.derivatePoints;
+            this.calculation.derivateEdges = state.settings.derivateEdges;
+        }
+        if (state.grapher) {
+            this.grapher.setGridVisibility(state.grapher.grid);
+        }
+
+        // 2. Restaurer les données
+        this.data.curves = state.data.curves.map(savedCurve => {
+            // Crée une nouvelle instance de Curve avec son titre et son unité
+            const newCurve = new Curve(savedCurve.title, savedCurve.unit);
+
+            // Copie toutes les autres métadonnées (couleur, style, type etc.)
+            Object.assign(newCurve, savedCurve);
+
+            // Peuple la courbe avec les données du tableau "values"
+            if (savedCurve.values && Array.isArray(savedCurve.values)) {
+                savedCurve.values.forEach(val => newCurve.push(val));
+            }
+            
+            return newCurve;
+        });
+        this.data.parameters = state.data.parameters || {};
+
+        // 3. Restaurer les calculs
+        $("#calculation-input").value = state.calculations || "";
+
+        // 4. Mettre à jour l'interface
+        this.spreadsheet.update();
+        if (state.grapher && state.grapher.xCurve) {
+            this.grapher.setXCurve(state.grapher.xCurve, false);
+            this.grapher.updateChart(state.grapher.yCurves);
+        } else {
+            this.grapher.deleteAllCurves(); // Assure que le graphe est vide
+            this.grapher.updateChart();
+        }
+        window.updateCalculationSidebar();
+
+        console.log("Session .pw restaurée avec succès !");
+
+      } catch (e) {
+        console.error("ERREUR lors du chargement de la session .pw :", e);
+        alert("Le fichier de session est corrompu ou invalide. Vérifiez la console (F12) pour les détails.");
+      }
+    };
+    reader.readAsText(file);
   }
 
   loadCSVFile(file) {
@@ -263,7 +330,7 @@ export default class App {
           while (i < lines.length && rowCount < expectedRows) {
             const valLine = lines[i].trim();
             if (valLine !== "") {
-              const nums = valLine.split(/\s+/).map(parseFloat);
+              const nums = valLine.split(/\s+/).map(s => parseFloat(String(s).replace(',', '.')));
               if (nums.length === names.length) {
                 values.push(nums);
                 rowCount++;
@@ -395,6 +462,180 @@ export default class App {
     } finally {
       this._isLoading = false; // Assure que le drapeau est réinitialisé même en cas d'erreur
     }
+  }
+
+  /**
+   * Méthode principale de sauvegarde
+   */
+  saveFile(fileName, format) {
+    let content = '';
+    const separator = '\t';
+
+    if (format === 'csv') {
+      content = this._generateCSV(separator);
+    } else if (format === 'rw3') {
+      content = this._generateRW3();
+    } else if (format === 'pw') {
+      content = this._generatePW(); // Nouvelle méthode
+    } else {
+      console.error("Format de fichier non supporté:", format);
+      return;
+    }
+
+    this._triggerDownload(content, fileName);
+  }
+
+  /**
+   * Génère le contenu JSON pour un fichier de session .pw. (Version améliorée)
+   * @returns {string} Le contenu du fichier .pw (chaîne JSON).
+   * @private
+   */
+  _generatePW() {
+    const yCurves = this.grapher.chart.series.map(s => s.name);
+
+    // Crée une représentation "propre" et explicite des données pour une sérialisation sûre
+    const cleanData = {
+      curves: this.data.curves.map(curve => ({
+        // Copie de toutes les métadonnées de style
+        title: curve.title,
+        unit: curve.unit,
+        color: curve.color,
+        line: curve.line,
+        markers: curve.markers,
+        lineWidth: curve.lineWidth,
+        lineStyle: curve.lineStyle,
+        markerSymbol: curve.markerSymbol,
+        markerRadius: curve.markerRadius,
+        type: curve.type,
+        
+        // Stocke les données du tableau dans une propriété dédiée "values"
+        values: Array.from(curve)
+      })),
+      parameters: this.data.parameters
+    };
+
+    const state = {
+      version: "1.1",
+      data: cleanData,
+      calculations: $("#calculation-input").value,
+      grapher: {
+        xCurve: this.grapher.currentXCurve,
+        yCurves: yCurves,
+        grid: this.grapher.grid
+      },
+      settings: {
+        maxDigits: this.spreadsheet.maxDigits,
+        derivatePoints: this.calculation.derivatePoints,
+        derivateEdges: this.calculation.derivateEdges
+      }
+    };
+    
+    return JSON.stringify(state, null, 2);
+  }
+
+  /**
+   * Génère le contenu pour un fichier CSV.
+   * @param {string} separator - Le séparateur de colonnes.
+   * @returns {string} Le contenu du fichier CSV.
+   * @private
+   */
+  _generateCSV(separator) {
+    const headers = this.data.curves.map(c => c.title).join(separator);
+    const units = this.data.curves.map(c => c.unit).join(separator);
+    const tableData = this.data.getTable();
+
+    const dataRows = tableData.map(row => {
+      // Remplace les null/undefined par des chaînes vides et les points par des virgules pour le format FR
+      return row.map(cell => (cell === null || cell === undefined) ? '' : String(cell).replace('.', ',')).join(separator);
+    }).join('\n');
+
+    return `${headers}\n${units}\n${dataRows}`;
+  }
+
+  /**
+   * Génère le contenu pour un fichier au format Regressi (.rw3). (Version finale corrigée)
+   * @returns {string} Le contenu du fichier .rw3.
+   * @private
+   */
+  _generateRW3() {
+    // 1. On ne sélectionne QUE les courbes qui ne sont PAS issues d'un calcul.
+    const rawCurves = this.data.curves.filter(c => c.type !== 'calculation');
+    
+    // 2. Les noms et unités ne proviennent QUE de ces courbes brutes.
+    const rawNames = rawCurves.map(c => c.title);
+    const rawUnits = rawCurves.map(c => c.unit);
+
+    // 3. On construit le fichier en utilisant uniquement les données brutes.
+    let output = "EVARISTE REGRESSI WINDOWS 1.0\n";
+    
+    output += `£${rawNames.length} NOM VAR\n`;
+    output += rawNames.join('\n') + '\n';
+    
+    output += `£${rawUnits.length} UNITE VAR\n`;
+    output += rawUnits.join('\n') + '\n';
+    
+    output += "£1 PAGE COMMENT\n\n";
+    
+    // Le tableau de valeurs est aussi construit UNIQUEMENT à partir des courbes brutes.
+    const numRows = rawCurves.reduce((max, curve) => Math.max(max, curve.length), 0);
+    const dataRows = [];
+
+    for (let i = 0; i < numRows; i++) {
+        const row = rawCurves.map(curve => {
+            const cell = curve[i];
+            return (cell === null || cell === undefined) ? '' : String(cell).replace('.', ',');
+        });
+        dataRows.push(row.join('\t'));
+    }
+
+    output += `&${numRows} VALEUR VAR\n`;
+    output += dataRows.join('\n');
+
+    // 4. On ajoute les formules pour que Regressi puisse créer les grandeurs calculées.
+    const calculationsText = $("#calculation-input").value;
+    if (calculationsText) {
+      const memoLines = calculationsText.split('\n').map(line => {
+        const trimmedLine = line.trim();
+        if (trimmedLine === '') { return ''; }
+        if (trimmedLine.startsWith('//')) { return "'" + trimmedLine.substring(2).trim(); }
+        if (trimmedLine.startsWith('#')) { return "'" + trimmedLine.substring(1).trim(); }
+        if (trimmedLine.includes('=')) {
+          const parts = trimmedLine.split('=');
+          const leftPart = parts[0].trim();
+          const expression = parts.slice(1).join('=').trim();
+          const variableName = leftPart.split('_')[0];
+          return `${variableName}=${expression}`;
+        }
+        return "'" + trimmedLine;
+      });
+
+      if (memoLines.length > 0) {
+        output += `\n£${memoLines.length} MEMO GRANDEURS\n`;
+        output += memoLines.join('\n');
+      }
+    }
+    
+    return output;
+  }
+
+  /**
+   * Crée un lien de téléchargement et le clique pour télécharger le contenu.
+   * @param {string} content - Le contenu du fichier.
+   * @param {string} fileName - Le nom du fichier.
+   * @private
+   */
+  _triggerDownload(content, fileName) {
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute("href", url);
+    link.setAttribute("download", fileName);
+    link.style.visibility = 'hidden';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 }
 export {App};

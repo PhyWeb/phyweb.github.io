@@ -101,9 +101,24 @@ export default class Calculation {
     // Redéfinir la fonction de puissance (pour l'opérateur ^)
     const originalPow = mathInstance.pow;
     const typedPow = mathInstance.typed('pow', {
+      // signature pour le cas: Array ^ Array
+      'Array | Matrix, Array | Matrix': function(base, exponent) {
+        return mathInstance.map(base, exponent, (b, e) => {
+          if (b === null || e === null) return null;
+          // Gère le cas des bases négatives avec exposants non-entiers qui donnerait un résultat complexe
+          if (b < 0 && e % 1 !== 0) {
+            return null;
+          }
+          return originalPow(b, e);
+        });
+      },
+
+      // Signature pour le cas: Array ^ Nombre
       'Array | Matrix, any': function(base, exponent) {
         return mathInstance.map(base, (b) => (b === null) ? null : originalPow(b, exponent));
       },
+      
+      // Signature de base pour le cas: Nombre ^ Nombre
       'any, any': function(base, exponent) {
         return originalPow(base, exponent);
       }

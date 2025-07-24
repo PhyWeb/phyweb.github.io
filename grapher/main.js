@@ -245,6 +245,57 @@ settingsTabs.forEach(tab => {
   });
 });
 
+/* Save modal ---------------------------------------------------------------------------*/
+const downloadModal = $("#download-modal");
+const pwButton = $("#pw-button");
+const csvButton = $("#csv-button");
+const rw3Button = $("#rw3-button");
+const fileNameInput = $("#file-name-input");
+const downloadFileButton = $("#download-file-button");
+let selectedFormat = 'pw'; // Le format par défaut
+
+// Ouvre la modale de sauvegarde
+$("#save-button").addEventListener("click", () => {
+  if (data.curves.length === 0 && $("#calculation-input").value.trim() === '') {
+    alert("Aucune donnée à sauvegarder !");
+    return;
+  }
+  // Réinitialise le nom du fichier à chaque ouverture
+  fileNameInput.value = `session.${selectedFormat}`;
+  downloadModal.classList.add("is-active");
+});
+
+function updateFormatSelection(newFormat) {
+  selectedFormat = newFormat;
+  
+  // Met à jour l'état des boutons
+  pwButton.classList.toggle("is-link", newFormat === 'pw');
+  csvButton.classList.toggle("is-link", newFormat === 'csv');
+  rw3Button.classList.toggle("is-link", newFormat === 'rw3');
+
+  // Met à jour le placeholder et la valeur du nom de fichier
+  const baseName = (fileNameInput.value.split('.')[0] || 'session');
+  fileNameInput.placeholder = `${baseName}.${newFormat}`;
+  fileNameInput.value = `${baseName}.${newFormat}`;
+}
+
+// Gère les clics sur les boutons de format
+pwButton.addEventListener("click", () => updateFormatSelection('pw'));
+csvButton.addEventListener("click", () => updateFormatSelection('csv'));
+rw3Button.addEventListener("click", () => updateFormatSelection('rw3'));
+
+// Gère le téléchargement final
+downloadFileButton.addEventListener("click", () => {
+  const fileName = fileNameInput.value || fileNameInput.placeholder;
+  if (!fileName) {
+    alert("Veuillez entrer un nom de fichier.");
+    return;
+  }
+  
+  app.saveFile(fileName, selectedFormat);
+  common.modalManager.closeAllModals();
+});
+
 /*----------------------------------------------------------------------------------------------
 --------------------------------------------SPREADSHEET-----------------------------------------
 ----------------------------------------------------------------------------------------------*/

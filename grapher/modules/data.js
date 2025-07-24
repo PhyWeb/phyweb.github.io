@@ -116,4 +116,4 @@ export default class Data {
   }
 }
 
-export {Data};
+export {Data, Curve};
