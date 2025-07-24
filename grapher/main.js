@@ -257,7 +257,11 @@ let selectedFormat = 'pw'; // Le format par défaut
 // Ouvre la modale de sauvegarde
 $("#save-button").addEventListener("click", () => {
   if (data.curves.length === 0 && $("#calculation-input").value.trim() === '') {
-    alert("Aucune donnée à sauvegarder !");
+    alertModal({
+      title: "Aucune donnée",
+      body: "Aucune donnée à sauvegarder.",
+      confirm: "OK"
+    });
     return;
   }
   // Réinitialise le nom du fichier à chaque ouverture
@@ -288,7 +292,11 @@ rw3Button.addEventListener("click", () => updateFormatSelection('rw3'));
 downloadFileButton.addEventListener("click", () => {
   const fileName = fileNameInput.value || fileNameInput.placeholder;
   if (!fileName) {
-    alert("Veuillez entrer un nom de fichier.");
+    alertModal({
+      title: "Nom de fichier manquant",
+      body: "Veuillez entrer un nom de fichier.",
+      confirm: "OK"
+    });
     return;
   }
   
@@ -410,7 +418,11 @@ downloadFileButton.addEventListener("click", () => {
 
     const symbolExists = (sym) => {
       if (app.data.getCurveByTitle(sym) || app.data.parameters.hasOwnProperty(sym)) {
-        alert(`Le symbole "${sym}" existe déjà. Veuillez en choisir un autre.`);
+        alertModal({
+          title: "Symbole déjà utilisé",
+          body: `Le symbole "${sym}" existe déjà. Veuillez en choisir un autre.`,
+          confirm: "OK"
+        });
         return true;
       }
       return false;
@@ -424,7 +436,11 @@ downloadFileButton.addEventListener("click", () => {
         unit = calcCurveUnitInput.value.trim();
         const formula = calcCurveFormulaInput.value.trim();
         if (!symbol || !formula) {
-          alert("Veuillez remplir le symbole et la formule.");
+          alertModal({
+            title: "Symbole ou formule manquant",
+            body: "Veuillez remplir le symbole et la formule.",
+            confirm: "OK"
+          });
           return null;
         }
         if (symbolExists(symbol)) return null;
@@ -439,7 +455,11 @@ downloadFileButton.addEventListener("click", () => {
         const denominator = derivateDenominatorSelect.value;
 
         if (!symbol || numerator.startsWith('Choisir') || denominator.startsWith('Choisir')) {
-          alert("Veuillez remplir le symbole et choisir les deux grandeurs à dériver.");
+          alertModal({
+            title: "Symbole ou grandeurs manquants",
+            body: "Veuillez remplir le symbole et choisir les deux grandeurs à dériver.",
+            confirm: "OK"
+          });
           return null;
         }
         if (symbolExists(symbol)) return null;
@@ -456,7 +476,11 @@ downloadFileButton.addEventListener("click", () => {
         unit = parameterUnitInput.value.trim();
         const value = parameterValueInput.value.trim();
         if (!symbol || !value) {
-          alert("Veuillez remplir le symbole et la valeur.");
+          alertModal({
+            title: "Symbole ou valeur manquants",
+            body: "Veuillez remplir le symbole et la valeur.",
+            confirm: "OK"
+          });
           return null;
         }
         if (symbolExists(symbol)) return null;
@@ -468,7 +492,11 @@ downloadFileButton.addEventListener("click", () => {
         symbol = emptyCurveSymbolInput.value.trim();
         unit = emptyCurveUnitInput.value.trim();
         if (!symbol) {
-          alert("Veuillez entrer un symbole.");
+          alertModal({
+            title: "Symbole manquant",
+            body: "Veuillez entrer un symbole.",
+            confirm: "OK"
+          });
           return null;
         }
         if (symbolExists(symbol)) return null;

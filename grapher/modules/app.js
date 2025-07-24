@@ -1,4 +1,5 @@
 import { Curve } from './data.js';
+import { alertModal } from '../../common/common.js';
 
 const $ = document.querySelector.bind(document);
 
@@ -163,7 +164,11 @@ export default class App {
 
   if (allErrors.length > 0) {
     console.error("Erreurs de calcul:", allErrors);
-    alert("Certains calculs ont échoué. Voir la console pour les détails.");
+    alertModal({
+      title: "Erreurs de calcul",
+      body: "Certains calculs ont échoué.",
+      confirm: "OK"
+    });
   }
 
   this.spreadsheet.update();
@@ -199,7 +204,11 @@ export default class App {
   loadClipboard(data) {
     // Check if the data is tabular
     if (!isTabularData(data)) {
-      console.error("Clipboard data is not tabular");
+      alertModal({
+        title: "Données non tabulaires",
+        body: "Les données du presse-papiers ne sont pas au format tabulaire. Veuillez copier des données au format CSV ou similaire.",
+        confirm: "OK"
+      });
       return;
     }
 
@@ -264,7 +273,11 @@ export default class App {
 
       } catch (e) {
         console.error("ERREUR lors du chargement de la session .pw :", e);
-        alert("Le fichier de session est corrompu ou invalide. Vérifiez la console (F12) pour les détails.");
+        alertModal({
+          title: "Erreur de chargement",
+          body: "Le fichier de session est corrompu ou invalide.",
+          confirm: "OK"
+        });
       }
     };
     reader.readAsText(file);

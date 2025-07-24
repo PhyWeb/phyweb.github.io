@@ -210,6 +210,8 @@ function alertModal(_config){
   }
   if(_config.type){
     head.classList.add("has-background-"+_config.type);
+  } else {
+    head.classList.add("has-background-warning");
   }
   if(_config.delete){
     let deleteButton = createElement("button", "delete", head);
