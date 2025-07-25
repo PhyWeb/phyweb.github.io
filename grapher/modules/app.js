@@ -240,57 +240,36 @@ export default class App {
     reader.onload = (event) => {
       try {
         const state = JSON.parse(event.target.result);
-
-        // 1. Restaurer les paramètres
-        if (state.settings) {
-            this.spreadsheet.setMaxDigits(state.settings.maxDigits);
-            this.calculation.derivatePoints = state.settings.derivatePoints;
-            this.calculation.derivateEdges = state.settings.derivateEdges;
+        if (state.data && state.data.curves) {
+          this.data.curves = state.data.curves.map(c => {
+            const newCurve = new Curve(c.title, c.unit);
+            Object.assign(newCurve, c);
+            if (c.values) {
+              c.values.forEach(val => newCurve.push(val));
+            }
+            return newCurve;
+          });
+          this.data.parameters = state.data.parameters || {};
+        } else {
+            throw new Error("Le fichier de session est invalide ou corrompu (données manquantes).");
         }
         if (state.grapher) {
             this.grapher.setGridVisibility(state.grapher.grid);
         }
-
-        // 2. Restaurer les données
-        this.data.curves = state.data.curves.map(savedCurve => {
-            // Crée une nouvelle instance de Curve avec son titre et son unité
-            const newCurve = new Curve(savedCurve.title, savedCurve.unit);
-
-            // Copie toutes les autres métadonnées (couleur, style, type etc.)
-            Object.assign(newCurve, savedCurve);
-
-            // Peuple la courbe avec les données du tableau "values"
-            if (savedCurve.values && Array.isArray(savedCurve.values)) {
-                savedCurve.values.forEach(val => newCurve.push(val));
-            }
-            
-            return newCurve;
-        });
-        this.data.parameters = state.data.parameters || {};
-
-        // 3. Restaurer les calculs
         $("#calculation-input").value = state.calculations || "";
-
-        // 4. Mettre à jour l'interface
         this.spreadsheet.update();
         if (state.grapher && state.grapher.xCurve) {
             this.grapher.setXCurve(state.grapher.xCurve, false);
             this.grapher.updateChart(state.grapher.yCurves);
         } else {
-            this.grapher.deleteAllCurves(); // Assure que le graphe est vide
+            this.grapher.deleteAllCurves();
             this.grapher.updateChart();
         }
         window.updateCalculationSidebar();
-
-        console.log("Session .pw restaurée avec succès !");
-
+        console.log("Session .pw restaurée avec succès (les paramètres locaux sont conservés).");
       } catch (e) {
         console.error("ERREUR lors du chargement de la session .pw :", e);
-        alertModal({
-          title: "Erreur de chargement",
-          body: "Le fichier de session est corrompu ou invalide.",
-          confirm: "OK"
-        });
+        alertModal({ title: "Erreur de chargement", body: "Le fichier de session est corrompu ou invalide. Vérifiez la console (F12) pour les détails." });
       }
     };
     reader.readAsText(file);
@@ -519,10 +498,8 @@ export default class App {
   _generatePW() {
     const yCurves = this.grapher.chart.series.map(s => s.name);
 
-    // Crée une représentation "propre" et explicite des données pour une sérialisation sûre
-    const cleanData = {
+    const dataToSave = {
       curves: this.data.curves.map(curve => ({
-        // Copie de toutes les métadonnées de style
         title: curve.title,
         unit: curve.unit,
         color: curve.color,
@@ -533,26 +510,19 @@ export default class App {
         markerSymbol: curve.markerSymbol,
         markerRadius: curve.markerRadius,
         type: curve.type,
-        
-        // Stocke les données du tableau dans une propriété dédiée "values"
         values: Array.from(curve)
       })),
       parameters: this.data.parameters
     };
 
     const state = {
-      version: "1.1",
-      data: cleanData,
+      version: "1.3",
+      data: dataToSave,
       calculations: $("#calculation-input").value,
       grapher: {
         xCurve: this.grapher.currentXCurve,
         yCurves: yCurves,
         grid: this.grapher.grid
-      },
-      settings: {
-        maxDigits: this.spreadsheet.maxDigits,
-        derivatePoints: this.calculation.derivatePoints,
-        derivateEdges: this.calculation.derivateEdges
       }
     };
     
