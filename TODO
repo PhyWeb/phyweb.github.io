@@ -20,7 +20,9 @@ TRACKER:
   - add a buton to stop the decode and still exploit the already decoded frames
 
 GRAPHER:
-  - éviter les noms de courbes avec des espaces
+  - utiliser des chiffres significatifs et pas des chiffres décimaux
+
+  - permettre voir autoriser les notations 3e-15
 
   - réticule persistant quand on clique
 
