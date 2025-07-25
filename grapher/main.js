@@ -639,34 +639,26 @@ $("#delete-curve-button").addEventListener("click", () => {
     return;
   }
 
-  // Populate curve menu
-  $("#delete-curve-menu").innerHTML = "";
-  data.curves.forEach(element => {
-    let li = document.createElement("li");
-    let a = document.createElement("a");
-    a.innerHTML = element.title;
-    li.appendChild(a);
-    $("#delete-curve-menu").appendChild(li);
-    a.addEventListener("click", () => {
-      a.classList.add("is-active");
-      for(let i = 0; i < $("#delete-curve-menu").children.length; i++){
-        if($("#delete-curve-menu").children[i].children[0] !== a){
-          $("#delete-curve-menu").children[i].children[0].classList.remove("is-active");
-        }
-      }
-    });
+  const selectElement = $("#delete-curve-select");
+  selectElement.innerHTML = ""; // Vide les anciennes options
+
+  // Peuple le menu déroulant avec les grandeurs disponibles
+  data.curves.forEach(curve => {
+    const option = document.createElement("option");
+    option.value = curve.title;
+    option.textContent = `${curve.title} (${curve.unit || 'sans unité'})`;
+    selectElement.appendChild(option);
   });
 
-  $("#delete-curve-menu").children[0].children[0].classList.add("is-active");
   $("#delete-curve-modal").classList.add("is-active");
-    
 });
 
 $("#delete-curve-confirm-button").addEventListener("click", () => {
-  let curve = $("#delete-curve-menu").querySelector(".is-active").innerHTML;
+  const curveTitleToDelete = $("#delete-curve-select").value;
 
-  // Delete the curve
-  app.deleteCurve(curve);
+  if (curveTitleToDelete) {
+    app.deleteCurve(curveTitleToDelete);
+  }
 
   common.modalManager.closeAllModals();
 });
@@ -690,7 +682,7 @@ $("#delete-line-button").addEventListener("click", () => {
   const rowLabel = amount > 1 ? 'lignes' : 'ligne';
 
   alertModal({
-    type: "warning",
+    type: "danger",
     title: "Confirmer la suppression",
     body: `<p>Êtes-vous sûr de vouloir supprimer <strong>${amount} ${rowLabel}</strong> ?<br>Cette action est irréversible.</p>`,
     confirm: {

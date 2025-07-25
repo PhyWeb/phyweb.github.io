@@ -544,16 +544,23 @@
   <!------------------------------------------------------------------------------------------------------------>
   <div id="delete-curve-modal" class="modal">
     <div class="modal-background"></div>
-    <div class="modal-card" id="remove-curve-modal-card">
-      <header class="modal-card-head">
+    <div class="modal-card">
+      <header class="modal-card-head has-background-danger">
         <p class="modal-card-title">Supprimer une grandeur</p>
         <button class="delete" aria-label="close"></button>
       </header>
-      <section class="modal-card-body is-flex">
-        <aside class="menu">
-          <ul class="menu-list" id="delete-curve-menu">
-          </ul>
-        </aside>
+      <section class="modal-card-body">
+        <div class="field">
+          <label class="label">Grandeur à supprimer</label>
+          <div class="control is-expanded">
+            <div class="select is-fullwidth">
+              <select id="delete-curve-select"></select>
+            </div>
+          </div>
+        </div>
+        <p class="help is-danger mt-3">
+          Attention : la suppression d'une grandeur est irréversible.
+        </p>
       </section>
       <footer class="modal-card-foot">
         <div class="buttons">
