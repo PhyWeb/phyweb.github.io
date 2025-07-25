@@ -22,6 +22,8 @@ TRACKER:
 GRAPHER:
   - utiliser des chiffres significatifs et pas des chiffres décimaux
 
+  - utiliser des puissances de 10 dans les axes du graph
+
   - permettre voir autoriser les notations 3e-15
 
   - réticule persistant quand on clique
