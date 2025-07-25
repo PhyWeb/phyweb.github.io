@@ -304,8 +304,27 @@ function aboutModal(_app){
         </ul>
       </div>`
       break;
-    case "Grapherr":
-      description = "Application de TODO."
+    case "Grapher":
+      description = `<div class="content">
+        <p>
+          <strong>PhyWeb Grapher</strong> est une application web conçue pour l'analyse et la visualisation de données, directement dans le navigateur.
+          Elle permet d'importer des fichiers (CSV, .rw3), de modifier les mesures dans un tableur, et de représenter les données sur un graphique 2D entièrement personnalisable.
+        </p>
+        <ul>
+          <li>
+            <strong>Tableur interactif</strong> : Saisissez, collez et modifiez vos séries de mesures.
+          </li>
+          <li>
+            <strong>Grapheur personnalisable</strong> : Générez des graphiques 2D et contrôlez l'affichage de chaque courbe (couleurs, marqueurs, styles).
+          </li>
+          <li>
+            <strong>Moteur de calcul</strong> : Créez de nouvelles grandeurs à partir de vos données via des formules mathématiques, incluant la dérivation numérique.
+          </li>
+          <li>
+            <strong>Import et Export</strong> : Ouvrez vos fichiers CSV et Regressi (.rw3), et sauvegardez votre session de travail complète au format .pw.
+          </li>
+        </ul>
+      </div>`
       break;
     default:
       console.error("wrong app name in about modal");
@@ -315,6 +334,7 @@ function aboutModal(_app){
   const d = new Date();
   let year = d.getFullYear();
   alertModal({
+    id: "about-modal",
     title: "A propos de PhyWeb " + _app + version,
     delete: true,
     width: "50rem",
@@ -388,6 +408,11 @@ function aboutModal(_app){
   $("#licence-header").addEventListener("click", ()=>{
     $("#licence-body").classList.toggle("is-hidden");
   });
+
+  // Convert icons to SVG
+  if (window.FontAwesome) {
+    window.FontAwesome.dom.i2svg({ node: $("#about-modal") });
+  }
 }
 
 /*----------------------------------------------------------------------------------------------

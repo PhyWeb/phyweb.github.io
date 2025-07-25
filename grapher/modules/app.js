@@ -217,6 +217,7 @@ export default class App {
     // Check if the data is tabular
     if (!isTabularData(data)) {
       alertModal({
+        type: "warning",
         title: "Données non tabulaires",
         body: "Les données du presse-papiers ne sont pas au format tabulaire. Veuillez copier des données au format CSV ou similaire.",
         confirm: "OK"
