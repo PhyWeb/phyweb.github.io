@@ -95,98 +95,120 @@ export default class App {
   }
 
   applyCalculation(text) {
-  // --- Phase 1: Nettoyage et Préparation ---
-  this.data.curves = this.data.curves.filter(curve => curve.type !== "calculation");
-  this.data.parameters = {};
+    // --- Phase 1: Analyse et Validation ---
+    const formulasToEvaluate = [];
+    const parsingWarnings = [];
 
-  const formulasToEvaluate = [];
-  const parsingWarnings = [];
+    if (!text || text.trim() === "") {
+      this.data.curves = this.data.curves.filter(curve => curve.type !== "calculation");
+      this.data.parameters = {};
+      this.spreadsheet.update();
+      this.grapher.updateChart();
+      window.updateCalculationSidebar();
+      return;
+    }
 
-  if (!text || text.trim() === "") {
+    const lines = text.trim().split('\n');
+    const validSymbolRegex = /^[a-zA-Z][a-zA-Z0-9_]*$/; // Ne commence PAS par un underscore
+    const definedInBlock = new Set();
+    const rawCurveTitles = this.data.curves.filter(c => c.type !== 'calculation').map(c => c.title);
+
+    for (const line of lines) {
+      const trimmedLine = line.trim();
+      if (trimmedLine === '' || trimmedLine.startsWith('#') || trimmedLine.startsWith('//')) {
+        continue;
+      }
+
+      const parts = trimmedLine.split('=');
+      if (parts.length < 2) {
+        parsingWarnings.push(`Syntaxe invalide (ignorée) : "${trimmedLine}"`);
+        continue;
+      }
+
+      const leftPart = parts[0].trim();
+      const expression = parts.slice(1).join('=').trim();
+      const leftParts = leftPart.split('_');
+      
+      const variableName = leftParts[0].trim().replace(/\s+/g, '');
+      const unit = leftParts.length > 1 ? leftParts.slice(1).join('_').trim().replace(/\s+/g, '') : '';
+
+      if (!validSymbolRegex.test(variableName)) {
+        alertModal({
+          title: "Symbole invalide",
+          body: `Le symbole "${variableName}" est invalide. Il doit commencer par une lettre et ne peut contenir que des lettres, des chiffres et des underscores.`,
+          confirm: "OK"
+        });
+        return;
+      }
+
+      if (rawCurveTitles.includes(variableName)) {
+          alertModal({
+              title: "Conflit de nom",
+              body: `Le symbole "${variableName}" est déjà utilisé par une grandeur non-calculée et ne peut pas être redéfini ici.`,
+              confirm: "OK"
+          });
+          return;
+      }
+
+      if (definedInBlock.has(variableName)) {
+          alertModal({
+              title: "Symbole dupliqué",
+              body: `Le symbole "${variableName}" est défini plusieurs fois dans ce bloc de calcul.`,
+              confirm: "OK"
+          });
+          return;
+      }
+      definedInBlock.add(variableName);
+
+      formulasToEvaluate.push({ variableName, expression, unit });
+    }
+
+    // --- Phase 2: Exécution (uniquement si toutes les validations sont passées) ---
+    this.data.curves = this.data.curves.filter(curve => curve.type !== "calculation");
+    this.data.parameters = {};
+
+    const initialScope = {};
+    this.data.curves.forEach(curve => {
+      initialScope[curve.title] = curve; 
+    });
+    
+    const { results, errors } = this.calculation.evaluateBlock(formulasToEvaluate, initialScope);
+
+    // --- Phase 3: Mise à jour des données et de l'interface ---
+    results.forEach(result => {
+      if (result.type === 'parameter') {
+        this.data.parameters[result.variableName] = result.data;
+      } else {
+        const newCurve = this.addCurve(result.variableName, result.unit);
+        newCurve.type = "calculation";
+        newCurve.length = 0;
+        const dataToAdd = result.data;
+        if (dataToAdd) {
+            for (let i = 0; i < dataToAdd.length; i++) {
+                newCurve.push(dataToAdd[i]);
+            }
+        }
+      }
+    });
+
+    const allErrors = [
+      ...parsingWarnings,
+      ...errors.map(err => `Calcul impossible pour "${err.variableName}": ${err.error}`)
+    ];
+
+    if (allErrors.length > 0) {
+      console.error("Erreurs de calcul:", allErrors);
+      alertModal({
+        title: "Erreurs de calcul",
+        body: "Certains calculs ont échoué. Voir la console (F12) pour les détails.",
+        confirm: "OK"
+      });
+    }
+
     this.spreadsheet.update();
     this.grapher.updateChart();
     window.updateCalculationSidebar();
-    return;
   }
-
-  // --- NOUVEAU : Logique de parsing pour le format variable_unité = expression ---
-  const lines = text.trim().split('\n');
-  const validIdentifier = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
-
-  for (const line of lines) {
-    const trimmedLine = line.trim();
-    if (trimmedLine === '' || trimmedLine.startsWith('#') || trimmedLine.startsWith('//')) {
-      continue;
-    }
-
-    const parts = trimmedLine.split('=');
-    if (parts.length !== 2) {
-      parsingWarnings.push(`Syntaxe invalide (ignorer) : "${trimmedLine}"`);
-      continue;
-    }
-
-    const leftPart = parts[0].trim();
-    const expression = parts[1].trim();
-
-    // Sépare le nom de la variable et l'unité
-    const leftParts = leftPart.split('_');
-    const variableName = leftParts[0];
-    const unit = leftParts.length > 1 ? leftParts.slice(1).join('_') : '';
-
-    if (!validIdentifier.test(variableName)) {
-      parsingWarnings.push(`Nom de variable invalide : "${variableName}"`);
-      continue;
-    }
-    
-    formulasToEvaluate.push({ variableName, expression, unit });
-  }
-
-  // --- Phase 2: Exécution des calculs ---
-  const initialScope = {};
-  this.data.curves.forEach(curve => {
-    initialScope[curve.title] = curve; 
-  });
-  for(const key in this.data.parameters) {
-    initialScope[key] = this.data.parameters[key];
-  }
-
-  const { results, errors } = this.calculation.evaluateBlock(formulasToEvaluate, initialScope);
-
-  // --- Phase 3: Mise à jour des données et de l'interface ---
-  results.forEach(result => {
-    if (result.type === 'parameter') {
-      this.data.parameters[result.variableName] = result.data;
-    } else {
-      const newCurve = this.addCurve(result.variableName, result.unit);
-      newCurve.type = "calculation";
-      newCurve.length = 0; // Vider le tableau
-      const dataToAdd = result.data;
-      if (dataToAdd) {
-          for (let i = 0; i < dataToAdd.length; i++) {
-              newCurve.push(dataToAdd[i]);
-          }
-      }
-    }
-  });
-
-  const allErrors = [
-    ...parsingWarnings,
-    ...errors.map(err => `Calcul impossible pour "${err.variableName}": ${err.error}`)
-  ];
-
-  if (allErrors.length > 0) {
-    console.error("Erreurs de calcul:", allErrors);
-    alertModal({
-      title: "Erreurs de calcul",
-      body: "Certains calculs ont échoué.",
-      confirm: "OK"
-    });
-  }
-
-  this.spreadsheet.update();
-  this.grapher.updateChart();
-  window.updateCalculationSidebar();
-}
 
   /**
    * Méthode principale de chargement, modifiée pour gérer .pw

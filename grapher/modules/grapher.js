@@ -286,104 +286,56 @@ export default class Grapher {
   }
 
   deleteAllCurves() {
-    this.chart.series.forEach(element => {
-      element.remove();
-    });
-
+    while(this.chart.series.length > 0) {
+      this.chart.series[0].remove(false); // false pour ne pas redessiner à chaque fois
+    }
+    this.chart.redraw(); // Un seul redessin à la fin
     this.currentXCurve = null;
   }
 
   updateChart(yCurveTitles){
+    // Cas 1: Mise à jour depuis la modale "Courbes" (on sait quelles courbes afficher)
     if(this.currentXCurve && yCurveTitles){
-      // remove all unchecked curve
-      let curvesToRemove = []
-      this.chart.series.forEach(element => {
-        if(!yCurveTitles.includes(element.name)){
-          curvesToRemove.push(element);
+      // Supprime les séries qui ne sont plus cochées
+      let i = this.chart.series.length;
+      while (i--) {
+        const serie = this.chart.series[i];
+        if (yCurveTitles.indexOf(serie.name) === -1) {
+            serie.remove();
         }
-      });
-
-      curvesToRemove.forEach(element => {
-        element.remove();
-      });
-    
-      // add all checked curve
-      yCurveTitles.forEach(title => {
-        let curve = this.data.getCurveByTitle(title);
-        if (!curve) {
-          console.warn(`Curve with title "${title}" not found in data.`);
-          return; // Skip if curve data is missing
-        }
-        if(!this.chart.series.find(e => e.name === title)){
-          this.chart.addSeries({
-            name: title,
-            data: this.formatData(this.data.getCurveByTitle(this.currentXCurve), curve),
-            color: curve.color,
-            lineWidth: curve.line ? curve.lineWidth : 0, // 0 if the curve is not a line
-            dashStyle: curve.lineStyle,
-            marker: {
-              enabled: curve.markers,
-              symbol: curve.markerSymbol,
-              radius: curve.markerRadius,
-              lineWidth: (curve.markerSymbol === "cross" || curve.markerSymbol === "crossX") ? 1 : 0,
-              lineColor: curve.color
-            }
-          });
-        }
-      });
-    } else {
-      let options = {};
-
-      // At least X and one Y curve is needed to update the chart
-      if(this.currentXCurve && this.chart.series[0]){
-        // Prepare all Y series
-        let series = [];
-        this.chart.series.forEach((serie , i) => {
-          let data = this.formatData(this.data.getCurveByTitle(this.currentXCurve), this.data.getCurveByTitle(serie.name));
-
-          /*series[i] = {
-            name: serie.name,
-            data: data
-          }*/
-         serie.setData(data);
-        });
-
-        options = {
-          xAxis: {
-            title: {
-              text: this.currentXCurve + " (" + this.data.getCurveByTitle(this.currentXCurve).unit + ")"
-          }
-          },
-          yAxis: {
-            title: {
-                text: this.chart.series[0].name + " (" + this.data.getCurveByTitle(this.chart.series[0].name).unit + ")"
-            }
-          },
-          series: series
-        }
-      } else {
-        options = {
-          xAxis: {
-            title: {
-              text: ""
-          }
-          },
-          yAxis: {
-            title: {
-                text: ""
-            }
-          },
-          series: [{
-            name: "",
-            data: null
-          }]
-        }
-
-        this.chart.update(options);
       }
-
       
-
+      // Ajoute les nouvelles séries cochées
+      yCurveTitles.forEach(title => {
+        if (!this.chart.series.some(s => s.name === title)) {
+            const curve = this.data.getCurveByTitle(title);
+            if (curve) {
+                this.chart.addSeries({
+                    name: title,
+                    data: this.formatData(this.data.getCurveByTitle(this.currentXCurve), curve),
+                    color: curve.color,
+                    lineWidth: curve.line ? curve.lineWidth : 0,
+                    dashStyle: curve.lineStyle,
+                    marker: {
+                        enabled: curve.markers,
+                        symbol: curve.markerSymbol,
+                        radius: curve.markerRadius,
+                        lineWidth: (curve.markerSymbol === "cross" || curve.markerSymbol === "crossX") ? 1 : 0,
+                        lineColor: curve.color
+                    }
+                });
+            }
+        }
+      });
+    // Cas 2: Mise à jour générale (après une modification du tableur)
+    } else if (this.currentXCurve && this.chart.series.length > 0) {
+        this.chart.series.forEach((serie) => {
+            const curveData = this.data.getCurveByTitle(serie.name);
+            const xCurveData = this.data.getCurveByTitle(this.currentXCurve);
+            if (curveData && xCurveData) {
+                serie.setData(this.formatData(xCurveData, curveData), true); // true pour redessiner
+            }
+        });
     }
   }
 

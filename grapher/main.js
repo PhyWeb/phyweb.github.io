@@ -407,6 +407,31 @@ downloadFileButton.addEventListener("click", () => {
   function getModalInputs(selectedType) {
     let symbol, unit, formulaLine;
 
+    const validSymbolRegex = /^[a-zA-Z][a-zA-Z0-9]*$/; 
+
+    // Fonction pour nettoyer et valider le symbole
+    const processAndValidateSymbol = (element) => {
+      let value = element.value.trim().replace(/\s+/g, ''); // Retire les espaces
+      element.value = value; // Met à jour l'affichage
+
+      if (value && !validSymbolRegex.test(value)) {
+        alertModal({
+          title: "Symbole invalide",
+          body: "Le symbole doit commencer par une lettre et ne peut contenir que des lettres et des chiffres.",
+          confirm: "OK"
+        });
+        return null;
+      }
+      return value;
+    };
+
+    // Fonction pour nettoyer l'unité
+    const processUnit = (element) => {
+        let value = element.value.trim().replace(/\s+/g, ''); // Retire les espaces
+        element.value = value; // Met à jour l'affichage
+        return value;
+    };
+
     const symbolExists = (sym) => {
       if (app.data.getCurveByTitle(sym) || app.data.parameters.hasOwnProperty(sym)) {
         alertModal({
@@ -423,8 +448,9 @@ downloadFileButton.addEventListener("click", () => {
 
     switch (selectedType) {
       case 'calc-curve': {
-        symbol = calcCurveSymbolInput.value.trim();
-        unit = calcCurveUnitInput.value.trim();
+        symbol = processAndValidateSymbol(calcCurveSymbolInput);
+        if (symbol === null) return null;
+        unit = processUnit(calcCurveUnitInput);
         const formula = calcCurveFormulaInput.value.trim();
         if (!symbol || !formula) {
           alertModal({
@@ -440,8 +466,9 @@ downloadFileButton.addEventListener("click", () => {
       }
       
       case 'derivate-curve': {
-        symbol = derivateCurveSymbolInput.value.trim();
-        unit = derivateCurveUnitInput.value.trim();
+        symbol = processAndValidateSymbol(derivateCurveSymbolInput);
+        if (symbol === null) return null;
+        unit = processUnit(derivateCurveUnitInput);
         const numerator = derivateNumeratorSelect.value;
         const denominator = derivateDenominatorSelect.value;
 
@@ -463,8 +490,9 @@ downloadFileButton.addEventListener("click", () => {
       }
 
       case 'parameter': {
-        symbol = parameterSymbolInput.value.trim();
-        unit = parameterUnitInput.value.trim();
+        symbol = processAndValidateSymbol(parameterSymbolInput);
+        if (symbol === null) return null;
+        unit = processUnit(parameterUnitInput);
         const value = parameterValueInput.value.trim();
         if (!symbol || !value) {
           alertModal({
@@ -480,8 +508,9 @@ downloadFileButton.addEventListener("click", () => {
       }
       
       case 'empty-curve': {
-        symbol = emptyCurveSymbolInput.value.trim();
-        unit = emptyCurveUnitInput.value.trim();
+        symbol = processAndValidateSymbol(emptyCurveSymbolInput);
+        if (symbol === null) return null;
+        unit = processUnit(emptyCurveUnitInput);
         if (!symbol) {
           alertModal({
             title: "Symbole manquant",
