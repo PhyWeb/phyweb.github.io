@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>FFmpeg.wasm Demo</title>
+    <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.0/dist/ffmpeg.min.js"></script>
+    <style>
+        body { font-family: sans-serif; }
+        #frames-container img { max-width: 150px; margin: 5px; border: 1px solid #ccc; }
+    </style>
+</head>
+<body>
+    <h1>Extraire des frames avec FFmpeg.wasm</h1>
+    <input type="file" id="uploader">
+    <p id="status">En attente...</p>
+    <div id="frames-container"></div>
+
+    <script>
+        const { createFFmpeg, fetchFile } = FFmpeg;
+        const ffmpeg = createFFmpeg({
+            log: true, // Affiche les logs de FFmpeg dans la console du navigateur
+            corePath: 'https://unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js',
+        });
+
+        const uploader = document.getElementById('uploader');
+        const status = document.getElementById('status');
+
+        uploader.addEventListener('change', async ({ target: { files } }) => {
+            const file = files[0];
+            if (!file) return;
+
+            status.textContent = 'Chargement de FFmpeg-core...';
+            await ffmpeg.load();
+            
+            status.textContent = 'Copie du fichier en mémoire...';
+            ffmpeg.FS('writeFile', file.name, await fetchFile(file));
+
+            status.textContent = 'Extraction des frames en cours... (cela peut prendre du temps)';
+            
+            // Exécution de la commande FFmpeg pour extraire 1 frame par seconde
+            await ffmpeg.run('-i', file.name, '-vf', 'fps=1', 'output%03d.png');
+
+            status.textContent = 'Extraction terminée. Affichage des images...';
+            const framesContainer = document.getElementById('frames-container');
+            framesContainer.innerHTML = '';
+
+            // Lecture des fichiers de sortie depuis le système de fichiers virtuel
+            for (let i = 1; ; i++) {
+                const frameName = `output${String(i).padStart(3, '0')}.png`;
+                try {
+                    const data = ffmpeg.FS('readFile', frameName);
+                    const url = URL.createObjectURL(new Blob([data.buffer], { type: 'image/png' }));
+                    const img = document.createElement('img');
+                    img.src = url;
+                    framesContainer.appendChild(img);
+                } catch (e) {
+                    // Si le fichier n'existe pas, on a atteint la fin
+                    break;
+                }
+            }
+            status.textContent = 'Terminé !';
+        });
+    </script>
+</body>
+</html>
