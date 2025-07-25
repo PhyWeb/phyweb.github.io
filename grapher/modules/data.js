@@ -80,6 +80,12 @@ export default class Data {
     this.parameters = {};
   }
 
+  deleteRow(index, amount = 1) {
+    this.curves.forEach(curve => {
+      curve.splice(index, amount);
+    });
+  }
+
   getTable(){
     let table = [];
 

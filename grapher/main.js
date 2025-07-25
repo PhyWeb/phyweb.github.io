@@ -671,6 +671,40 @@ $("#delete-curve-confirm-button").addEventListener("click", () => {
   common.modalManager.closeAllModals();
 });
 
+// Delete line
+$("#delete-line-button").addEventListener("click", () => {
+  const selectedRange = spreadsheet.hot.getSelectedRangeLast();
+
+  if (!selectedRange) {
+    alertModal({
+      title: "Aucune sélection",
+      body: "Veuillez sélectionner une ou plusieurs lignes à supprimer.",
+      confirm: "OK"
+    });
+    return;
+  }
+
+  const startRow = Math.min(selectedRange.from.row, selectedRange.to.row);
+  const endRow = Math.max(selectedRange.from.row, selectedRange.to.row);
+  const amount = (endRow - startRow) + 1;
+  const rowLabel = amount > 1 ? 'lignes' : 'ligne';
+
+  alertModal({
+    type: "warning",
+    title: "Confirmer la suppression",
+    body: `<p>Êtes-vous sûr de vouloir supprimer <strong>${amount} ${rowLabel}</strong> ?<br>Cette action est irréversible.</p>`,
+    confirm: {
+      label: "Supprimer",
+      type: "danger", // Pour un bouton rouge
+      cb: () => { 
+        app.deleteRow(startRow, amount); 
+      }
+    },
+    cancel: "Annuler"
+  });
+});
+
+
 
 /*----------------------------------------------------------------------------------------------
 ----------------------------------------------Grapher-------------------------------------------

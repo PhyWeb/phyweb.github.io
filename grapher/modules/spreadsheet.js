@@ -82,6 +82,7 @@ export default class Spreadsheet {
       autoWrapRow: true,
       autoWrapCol: true,
       afterChange: afterChange,
+      outsideClickDeselects: false,
       licenseKey: 'non-commercial-and-evaluation', // for non-commercial use only
       cells: (row, col) => ({
         type: 'numeric',

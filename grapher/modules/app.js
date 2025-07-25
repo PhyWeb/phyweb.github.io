@@ -82,6 +82,18 @@ export default class App {
     window.updateCalculationSidebar();
   }
 
+  deleteRow(startRow, amount) {
+    // On vérifie que les arguments sont valides
+    if (typeof startRow === 'undefined' || typeof amount === 'undefined' || amount < 1) {
+      return;
+    }
+    
+    this.data.deleteRow(startRow, amount);
+
+    this.spreadsheet.update();
+    this.grapher.updateChart();
+  }
+
   applyCalculation(text) {
   // --- Phase 1: Nettoyage et Préparation ---
   this.data.curves = this.data.curves.filter(curve => curve.type !== "calculation");
