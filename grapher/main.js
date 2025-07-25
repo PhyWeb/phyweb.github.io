@@ -34,47 +34,37 @@ const table = document.getElementById('table');
 window.FontAwesome.dom.i2svg(); // convertit <i> en SVG manuellement
 
 // Navbar
-/*
+
 let quitConfirm = (_path)=>{
   // Check if data exists
-  if(!measurement.series[0]){
+  if(data.curves.length === 0 && $("#calculation-input").value.trim() === ''){
     window.location.replace(_path);
     return;
   }
 
-  // Check if data is empty
-  let empty = true;
-  for(let i = measurement.originFrame; i < measurement.series[0].length; i++){
-    for(let j = 0; j < (measurement.series.length - 1) / 2; j++){
-      if(measurement.series[(j * 2) + 1][i] !== ""){
-        empty = false
-      }
-    }
-  }
-  if(empty){
-    window.location.replace(_path);
-    return;
-  }
   alertModal({
-    type: "warning",
+    type: "danger",
     title: "Quitter l'application",
     body: `<p>Etes-vous sûr de vouloir quitter l'application. Les données seront perdues.</p>`,
     confirm:{
       label: "Quitter",
-      type:"warning",
+      type:"danger",
       cb: ()=>{window.location.replace(_path);}
     },
     cancel: "Annuler",
     width: "42rem"
   })
-}*/
+}
 
-/*$("#navbar-home-button").addEventListener("click", () => {
+$("#navbar-home-button").addEventListener("click", () => {
   quitConfirm("../index.html");
 });
 $("#navbar-audio-button").addEventListener("click", () => {
   quitConfirm("../audio/index.html");
-});*/
+});
+$("#navbar-tracker-button").addEventListener("click", () => {
+  quitConfirm("../tracker/index.html");
+});
 
 // Navbar
 $("#tableur-tab").addEventListener("click", () => {

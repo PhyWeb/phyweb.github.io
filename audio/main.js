@@ -121,12 +121,15 @@ let quitConfirm = (_path)=>{
 	})
 }
   
-  $("#navbar-home-button").addEventListener("click", () => {
-	quitConfirm("../index.html");
-  });
-  $("#navbar-tracker-button").addEventListener("click", () => {
-	quitConfirm("../tracker/index.html");
-  });
+$("#navbar-home-button").addEventListener("click", () => {
+  quitConfirm("../index.html");
+});
+$("#navbar-tracker-button").addEventListener("click", () => {
+  quitConfirm("../tracker/index.html");
+});
+$("#navbar-grapher-button").addEventListener("click", () => {
+  quitConfirm("../grapher/index.html");
+});
 
 /*----------------------------------------------------------------------------------------------
 ------------------------------------------CONFIG MODAL------------------------------------------

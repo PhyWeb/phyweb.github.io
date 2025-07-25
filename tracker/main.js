@@ -82,6 +82,9 @@ $("#navbar-home-button").addEventListener("click", () => {
 $("#navbar-audio-button").addEventListener("click", () => {
   quitConfirm("../audio/index.html");
 });
+$("#navbar-grapher-button").addEventListener("click", () => {
+  quitConfirm("../grapher/index.html");
+});
 
 // NAV
 $("#etalonnage-button").addEventListener("click", ()=>{
