@@ -66,3 +66,7 @@
   margin-right: 0;
   margin-bottom: 0;
 }
+
+.chart-free-crosshair {
+  cursor: crosshair !important;
+}

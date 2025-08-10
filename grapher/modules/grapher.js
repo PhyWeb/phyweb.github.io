@@ -361,14 +361,15 @@ export default class Grapher {
 
     this._hideFreeCrosshair();
 
-    // Changer le curseur
-    if (this.chart && this.chart.container) {
-      this.chart.container.style.cursor = mode === 'free' ? 'crosshair' : 'default';
+    // Application de la classe CSS pour forcer le curseur
+    if (mode === 'free') {
+      this.chart.container.classList.add('chart-free-crosshair');
+    } else {
+      this.chart.container.classList.remove('chart-free-crosshair');
     }
 
     // Mise à jour groupée de toutes les options nécessaires
     this.chart.update({
-      // On s'assure que le zoom est DÉSACTIVÉ quand on utilise un outil
       chart: {
         zooming: {
           type: null
