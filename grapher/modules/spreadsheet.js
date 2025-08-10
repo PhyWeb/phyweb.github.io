@@ -1,4 +1,5 @@
 const $ = document.querySelector.bind(document);
+import { formatNumber } from '../../common/formatter.js';
 
 /*----------------------------------------------------------------------------------------------
 --------------------------------------------Spreadsheet-----------------------------------------
@@ -30,20 +31,16 @@ export default class Spreadsheet {
 
   update(){
     console.log("Updating spreadsheet...");
-    const maxDigits = this.data.settings.maxDigits;
+    const significantDigits = this.data.settings.significantDigits;
 
     this.hot.updateSettings({
       data: this.data.getTable(),
       colHeaders: this.data.getHeaders(),
       autoColumnSize: false,
       autoRowSize: false,
-      cells: (row, col) => ({
-        type: 'numeric',
-        renderer: function (instance, td, row, col, prop, value, cellProperties) {
-          if (typeof value === 'number') {
-            value = value.toFixed(maxDigits); // Modifie la valeur à afficher
-          }
-
+      cells: (row, col, prop) => ({
+        renderer: (instance, td, row, col, prop, value, cellProperties) => {
+          value = formatNumber(value, significantDigits);
           Handsontable.renderers.TextRenderer.apply(this, [instance, td, row, col, prop, value, cellProperties]);
         }
       })
@@ -52,7 +49,7 @@ export default class Spreadsheet {
 
   build(){
     const container = document.querySelector('#table');
-    const maxDigits = this.data.settings.maxDigits; 
+    const significantDigits = this.data.settings.significantDigits;
 
     const afterChange = (change, source) =>  {
       if (source === "loadData" || source === "updateData") {
@@ -85,12 +82,8 @@ export default class Spreadsheet {
       outsideClickDeselects: false,
       licenseKey: 'non-commercial-and-evaluation', // for non-commercial use only
       cells: (row, col) => ({
-        type: 'numeric',
-        renderer: function (instance, td, row, col, prop, value, cellProperties) {
-          if (typeof value === 'number') {
-            value = value.toFixed(maxDigits);
-          }
-
+        renderer: (instance, td, row, col, prop, value, cellProperties) => {
+          value = formatNumber(value, significantDigits);
           Handsontable.renderers.TextRenderer.apply(this, [instance, td, row, col, prop, value, cellProperties]);
         }
       })

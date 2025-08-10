@@ -1,4 +1,5 @@
 import Chart from '../lib/Highcharts/es-modules/masters/highcharts.src.js';
+import { formatNumber } from '../../common/formatter.js';
 
 const $ = document.querySelector.bind(document);
 
@@ -190,17 +191,16 @@ export default class Grapher {
           const grapher = chart.options.customGrapherInstance; 
           if (!grapher) return '';
 
-          const maxDigits = grapher.data.settings.maxDigits ?? 2;
-          const formatNumber = n => (typeof n === 'number' ? n.toFixed(maxDigits).replace('.', ',') : n);
+          const significantDigits = grapher.data.settings.significantDigits ?? 4;
 
           const xCurve = grapher.currentXCurve;
           const xCurveObj = grapher.data.getCurveByTitle(xCurve);
           const xUnit = xCurveObj?.unit || '';
-          const xLabel = `<strong>${xCurve} =</strong> ${formatNumber(this.x)} ${xUnit}`;
+          const xLabel = `<strong>${xCurve} =</strong> ${formatNumber(this.x, significantDigits)} ${xUnit}`;
 
           const yCurveObj = grapher.data.getCurveByTitle(this.series.name);
           const yUnit = yCurveObj?.unit || '';
-          const yLabel = `<strong>${this.series.name} =</strong> ${formatNumber(this.y)} ${yUnit}`;
+          const yLabel = `<strong>${this.series.name} =</strong> ${formatNumber(this.y, significantDigits)} ${yUnit}`;
           
           return `${xLabel}<br>${yLabel}`;
         }
@@ -458,10 +458,10 @@ _drawFreeCrosshair(event) {
   // Valeurs numériques
   const xValue = chart.xAxis[0].toValue(event.chartX);
   const yValue = chart.yAxis[0].toValue(event.chartY);
-  const precision = this.data.settings.maxDigits;
+  const significantDigits = this.data.settings.significantDigits;
 
   // --- Label X ---
-  this.freeCrosshair.xLabel.attr({ text: xValue.toFixed(precision) });
+  this.freeCrosshair.xLabel.attr({ text: formatNumber(xValue, significantDigits) });
   const xLabelBBox = this.freeCrosshair.xLabel.getBBox();
   this.freeCrosshair.xLabel.translate(
     event.chartX - xLabelBBox.width / 2,
@@ -469,7 +469,7 @@ _drawFreeCrosshair(event) {
   );
 
   // --- Label Y ---
-  this.freeCrosshair.yLabel.attr({ text: yValue.toFixed(precision) });
+  this.freeCrosshair.yLabel.attr({ text: formatNumber(yValue, significantDigits) });
   const yLabelBBox = this.freeCrosshair.yLabel.getBBox();
   this.freeCrosshair.yLabel.translate(
     plotLeft + 5,

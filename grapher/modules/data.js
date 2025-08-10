@@ -32,7 +32,7 @@ export default class Data {
 
     // AJOUTEZ CET OBJET
     this.settings = {
-      maxDigits: 4 
+      significantDigits: 4
     };
   }   
 

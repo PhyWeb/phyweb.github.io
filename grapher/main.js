@@ -1,4 +1,5 @@
 import {Common, alertModal} from "../common/common.js"
+import { formatNumber } from '../common/formatter.js';
 
 import {App} from "./modules/app.js"
 import {Data} from "./modules/data.js"
@@ -153,7 +154,7 @@ document.addEventListener("click", function () {
 let initialSettings = {};
 function captureInitialSettings() {
   initialSettings = {
-    maxDigits: data.settings.maxDigits,
+    significantDigits: data.settings.significantDigits,
     grapherGrid: grapher.grid,
     derivatePoints: calculation.derivatePoints,
     derivateEdges: calculation.derivateEdges
@@ -165,7 +166,7 @@ function captureInitialSettings() {
 $("#settings-button").addEventListener("click", () => {
   captureInitialSettings(); // Capture the initial settings before opening the modal
   // Load the previous settings
-  $("#max-digits-select").value = initialSettings.maxDigits;
+  $("#significant-digits-select").value = initialSettings.significantDigits;
   $("#derivative-points-select").value = initialSettings.derivatePoints;
   $("#derivate-edges-switch").checked = calculation.derivateEdges;
   $("#graph-grid-switch").checked = grapher.grid;
@@ -177,7 +178,7 @@ $("#settings-button").addEventListener("click", () => {
 // Save the settings
 $("#settings-save-button").addEventListener("click", () => {
   const newSettings = {
-    maxDigits: parseInt($("#max-digits-select").value),
+    significantDigits: parseInt($("#significant-digits-select").value),
     grapherGrid: $("#graph-grid-switch").checked,
     derivatePoints: parseInt($("#derivative-points-select").value),
     derivateEdges: $("#derivate-edges-switch").checked
@@ -192,8 +193,8 @@ $("#settings-save-button").addEventListener("click", () => {
   }
 
   // Save the max digits
-  if(changedSettings.maxDigits !== undefined) {
-    data.settings.maxDigits = changedSettings.maxDigits;
+  if(changedSettings.significantDigits !== undefined) {
+    data.settings.significantDigits = changedSettings.significantDigits;
     spreadsheet.update(); 
   }
 
@@ -525,78 +526,6 @@ downloadFileButton.addEventListener("click", () => {
       default:
         console.error("Type de création inconnu:", selectedType);
         return null;
-    }
-  }
-
-  /**
-   * Remplit une liste dans la barre latérale.
-   * @param {string} containerId - L'ID de l'élément conteneur.
-   * @param {string[]|object} items - Le tableau de chaînes ou l'objet de paramètres.
-   * @param {object} options - Options d'affichage.
-   * @param {boolean} options.isFunction - Si true, ajoute des parenthèses et utilise une grille.
-   * @param {boolean} options.isParameter - Si true, traite `items` comme un objet et affiche les valeurs.
-   */
-  function populateList(containerId, items, options = {}) {
-    const { isFunction = false, isParameter = false } = options;
-    const containerElement = document.getElementById(containerId);
-    if (!containerElement) return;
-    containerElement.innerHTML = ''; // Vide le conteneur
-
-    if (isFunction) {
-      // Créer une grille à 3 colonnes pour les fonctions
-      for (let i = 0; i < items.length; i += 3) {
-        const columnsDiv = document.createElement('div');
-        columnsDiv.className = 'columns is-mobile is-gapless';
-        
-        for (let j = i; j < i + 3 && j < items.length; j++) {
-          const columnDiv = document.createElement('div');
-          columnDiv.className = 'column';
-          
-          const item = items[j];
-          const a = document.createElement('a');
-          a.textContent = `${item}()`;
-          a.dataset.value = `${item}()`;
-          columnDiv.appendChild(a);
-          columnsDiv.appendChild(columnDiv);
-        }
-        containerElement.appendChild(columnsDiv);
-      }
-    } else {
-      // Créer une liste simple pour les courbes et paramètres
-      const ul = document.createElement('ul');
-      ul.className = 'menu-list';
-
-      if (isParameter) {
-        // Pour les paramètres, `items` est un objet { key: { value, unit } }
-        for (const [key, param] of Object.entries(items)) {
-          const li = document.createElement('li');
-          const a = document.createElement('a');
-          
-          if (typeof param === 'object' && param !== null && param.hasOwnProperty('value')) {
-            const displayValue = parseFloat(param.value.toPrecision(3));
-            const displayUnit = param.unit ? ` ${param.unit}` : '';
-            a.textContent = `${key} = ${displayValue}${displayUnit}`;
-          } else {
-            const displayValue = typeof param === 'number' ? parseFloat(param.toPrecision(3)) : param;
-            a.textContent = `${key} = ${displayValue}`;
-          }
-  
-          a.dataset.value = key;
-          li.appendChild(a);
-          ul.appendChild(li);
-        }
-      } else {
-        // Pour les courbes, `items` est un tableau de chaînes
-        items.forEach(item => {
-          const li = document.createElement('li');
-          const a = document.createElement('a');
-          a.textContent = item;
-          a.dataset.value = item;
-          li.appendChild(a);
-          ul.appendChild(li);
-        });
-      }
-      containerElement.appendChild(ul);
     }
   }
 
@@ -1261,7 +1190,8 @@ function populateList(containerId, items, options = {}) {
     const ul = document.createElement('ul');
     ul.className = 'menu-list';
 
-    if (isParameter) {
+    if (isParameter) { // MODIFIÉ
+      const significantDigits = data.settings.significantDigits;
       // Pour les paramètres, `items` est un objet { key: { value, unit } }
       for (const [key, param] of Object.entries(items)) {
         const li = document.createElement('li');
@@ -1269,13 +1199,11 @@ function populateList(containerId, items, options = {}) {
         
         // Vérifie si le paramètre est un objet avec une valeur ou un simple nombre
         if (typeof param === 'object' && param !== null && param.hasOwnProperty('value')) {
-          const displayValue = parseFloat(param.value.toPrecision(3));
+          const displayValue = formatNumber(param.value, significantDigits);
           const displayUnit = param.unit ? ` ${param.unit}` : '';
           a.textContent = `${key} = ${displayValue}${displayUnit}`;
         } else {
-          // Fallback pour les paramètres qui sont encore de simples nombres
-          const displayValue = typeof param === 'number' ? parseFloat(param.toPrecision(3)) : param;
-          a.textContent = `${key} = ${displayValue}`;
+          a.textContent = `${key} = ${formatNumber(param, significantDigits)}`;
         }
 
         a.dataset.value = key; // On n'insère que le nom
