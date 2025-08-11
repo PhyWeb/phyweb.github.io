@@ -116,17 +116,36 @@ export default class Grapher {
               // Récupérer l'unité de l'axe X
               const xCurveObj = self.data.getCurveByTitle(self.currentXCurve);
               const xUnit = xCurveObj?.unit || '';
-              const labelText = xUnit ? `${self.currentXCurve} (${xUnit})` : self.currentXCurve;
+              const xExponent = xAxis.exponent;
+
+              let exponentPart = '';
+              if (xExponent) {
+                exponentPart = `&times;10<sup>${xExponent}</sup>`;
+              }
+
+              let unitText = '';
+              if (exponentPart && xUnit) {
+                unitText = `${exponentPart} ${xUnit}`;
+              } else if (exponentPart) {
+                unitText = exponentPart;
+              } else if (xUnit) {
+                unitText = xUnit;
+              }
+
+              let labelText = self.currentXCurve;
+              if (unitText) {
+                labelText += ` (${unitText})`;
+              }
 
               // Mesure la largeur du texte
-              const tempText = chart.renderer.text(labelText, 0, 0).css({
+              const tempText = chart.renderer.label(labelText, 0, -9999, null, null, null, true).css({
                 fontSize: '16px'
               }).add();
               const textWidth = tempText.getBBox().width;
               tempText.destroy();
 
               // Texte pour axe X
-              const labelX = chart.renderer.text(labelText, xEnd - textWidth - 5, yPos + 20)
+              const labelX = chart.renderer.label(labelText, xEnd - textWidth - 5, yPos + 20, null, null, null, true)
                 .css({
                   color: 'black',
                   fontSize: '16px'
@@ -163,14 +182,32 @@ export default class Grapher {
         }
       },
       legend: {
+        useHTML: true,
         itemStyle: {
           fontSize: '16px',
           color: '#000000'
         },
         labelFormatter: function () {
-          const unit = this.userOptions.unit;
-          if (unit) {
-            return `${this.name} (${unit})`;
+          const unit = this.userOptions.unit || '';
+          const yAxis = this.chart.yAxis[0];
+          const yExponent = yAxis.exponent;
+
+          let exponentPart = '';
+          if (yExponent) {
+            exponentPart = `&times;10<sup>${yExponent}</sup>`;
+          }
+
+          let content = '';
+          if (exponentPart && unit) {
+            content = `${exponentPart} ${unit}`;
+          } else if (exponentPart) {
+            content = exponentPart;
+          } else if (unit) {
+            content = unit;
+          }
+
+          if (content) {
+            return `${this.name} (${content})`;
           }
           return this.name;
         },
@@ -230,7 +267,33 @@ export default class Grapher {
         title: {
           text: null
         },
-        gridLineWidth: 1
+        gridLineWidth: 1,
+        events: {
+          afterSetExtremes: function () {
+            const oldExponent = this.exponent;
+            const xMax = Math.max(Math.abs(this.max), Math.abs(this.min));
+            if (xMax === 0) {
+              this.exponent = 0;
+            } else {
+              const power = Math.round(Math.log10(xMax));
+              if (power >= 3 || power <= -3) {
+                this.exponent = Math.trunc(power / 3) * 3;
+              } else {
+                this.exponent = 0;
+              }
+            }
+            if (oldExponent !== this.exponent) {
+              this.chart.redraw(false);
+            }
+          }
+        },
+        labels: {
+          formatter: function () {
+            const exponent = this.axis.exponent || 0;
+            const value = this.value / Math.pow(10, exponent);
+            return formatNumber(value, 2, { useScientificNotation: false });
+          }
+        }
       },
       yAxis: {
         title: {
@@ -238,6 +301,32 @@ export default class Grapher {
         },
         lineWidth: 1,
         gridLineWidth: 1,
+        events: {
+          afterSetExtremes: function () {
+            const yMax = Math.max(Math.abs(this.max), Math.abs(this.min));
+            let oldExponent = this.exponent;
+            if (yMax === 0) {
+              this.exponent = 0;
+            } else {
+                const power = Math.round(Math.log10(yMax));
+                if (power >= 3 || power <= -3) {
+                    this.exponent = Math.trunc(power / 3) * 3;
+                } else {
+                    this.exponent = 0;
+                }
+            }
+            if (oldExponent !== this.exponent) {
+                this.chart.legend.update({});
+            }
+          }
+        },
+        labels: {
+          formatter: function () {
+            const exponent = this.axis.exponent || 0;
+            const value = this.value / Math.pow(10, exponent);
+            return formatNumber(value, 2, { useScientificNotation: false });
+          }
+        }
       },
       credits: {
         enabled: false

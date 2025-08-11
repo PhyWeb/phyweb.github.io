@@ -3,9 +3,12 @@
  * Utilise la notation scientifique (ex: "1,23·10⁵") pour les grands et petits nombres.
  * @param {*} value La valeur à formater.
  * @param {number} significantDigits Le nombre de chiffres significatifs.
+ * @param {object} [options] Options de formatage.
+ * @param {boolean} [options.useScientificNotation=true] Indique s'il faut utiliser la notation scientifique.
  * @returns {string} La valeur formatée.
  */
-export function formatNumber(value, significantDigits) {
+export function formatNumber(value, significantDigits, options = {}) {
+  const { useScientificNotation = true } = options;
   // Pour les cellules vides (null, undefined), retourner une chaîne vide.
   if (value === null || typeof value === 'undefined') {
     return '';
@@ -27,7 +30,7 @@ export function formatNumber(value, significantDigits) {
   const absValue = Math.abs(value);
 
   // Utiliser la notation scientifique pour les nombres très grands ou très petits (sauf zéro).
-  if (value !== 0 && (absValue < lowerThreshold || absValue >= upperThreshold)) {
+  if (useScientificNotation && value !== 0 && (absValue < lowerThreshold || absValue >= upperThreshold)) {
     // toExponential donne la notation 'e' avec un chiffre avant la virgule.
     // Le nombre de chiffres après la virgule est significantDigits - 1.
     const exponentialStr = value.toExponential(significantDigits - 1);
