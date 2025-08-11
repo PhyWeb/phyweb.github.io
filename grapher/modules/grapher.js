@@ -113,15 +113,20 @@ export default class Grapher {
 
               chart.customArrows.push(arrowX);
 
+              // Récupérer l'unité de l'axe X
+              const xCurveObj = self.data.getCurveByTitle(self.currentXCurve);
+              const xUnit = xCurveObj?.unit || '';
+              const labelText = xUnit ? `${self.currentXCurve} (${xUnit})` : self.currentXCurve;
+
               // Mesure la largeur du texte
-              const tempText = chart.renderer.text(self.currentXCurve, 0, 0).css({
+              const tempText = chart.renderer.text(labelText, 0, 0).css({
                 fontSize: '16px'
               }).add();
               const textWidth = tempText.getBBox().width;
               tempText.destroy();
 
               // Texte pour axe X
-              const labelX = chart.renderer.text(self.currentXCurve, xEnd - textWidth - 5, yPos + 20)
+              const labelX = chart.renderer.text(labelText, xEnd - textWidth - 5, yPos + 20)
                 .css({
                   color: 'black',
                   fontSize: '16px'
@@ -161,6 +166,13 @@ export default class Grapher {
         itemStyle: {
           fontSize: '16px',
           color: '#000000'
+        },
+        labelFormatter: function () {
+          const unit = this.userOptions.unit;
+          if (unit) {
+            return `${this.name} (${unit})`;
+          }
+          return this.name;
         },
         layout: 'horizontal',
         align: 'left',
@@ -322,7 +334,8 @@ export default class Grapher {
                         radius: curve.markerRadius,
                         lineWidth: (curve.markerSymbol === "cross" || curve.markerSymbol === "crossX") ? 1 : 0,
                         lineColor: curve.color
-                    }
+                    },
+                    unit: curve.unit
                 });
             }
         }
