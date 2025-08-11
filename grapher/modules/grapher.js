@@ -145,7 +145,7 @@ export default class Grapher {
               tempText.destroy();
 
               // Texte pour axe X
-              const labelX = chart.renderer.label(labelText, xEnd - textWidth - 5, yPos + 20, null, null, null, true)
+              const labelX = chart.renderer.label(labelText, xEnd - textWidth, yPos + 24, null, null, null, true)
                 .css({
                   color: 'black',
                   fontSize: '16px'
@@ -206,10 +206,14 @@ export default class Grapher {
             content = unit;
           }
 
+          let labelText = this.name;
           if (content) {
-            return `${this.name} (${content})`;
+            labelText += ` (${content})`;
           }
-          return this.name;
+
+          const topAdjustment = yExponent ? -5 : -2;
+
+          return `<span style="position: relative; top: ${topAdjustment}px;">${labelText}</span>`;
         },
         layout: 'horizontal',
         align: 'left',

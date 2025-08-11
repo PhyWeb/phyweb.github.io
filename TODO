@@ -35,6 +35,8 @@ GRAPHER:
 
   - utiliser local storage pour eviter de tout perdre si on quitte la page
 
+  - possibilité d'avoir 2 axes x
+
 
 NOTES:
 HANDSONTABLE:
