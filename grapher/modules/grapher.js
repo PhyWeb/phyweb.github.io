@@ -495,90 +495,90 @@ export default class Grapher {
   }
 
   // MÉTHODE PRIVÉE pour dessiner le réticule manuellement
-_drawFreeCrosshair(event) {
-  const chart = this.chart;
-  if (!chart.pointer) return;
+  _drawFreeCrosshair(event) {
+    const chart = this.chart;
+    if (!chart.pointer) return;
 
-  if (typeof event.chartX === 'undefined' || typeof event.chartY === 'undefined') {
-    return; 
+    if (typeof event.chartX === 'undefined' || typeof event.chartY === 'undefined') {
+      return; 
+    }
+
+    const plotLeft = chart.plotLeft;
+    const plotTop = chart.plotTop;
+    const plotWidth = chart.plotWidth;
+    const plotHeight = chart.plotHeight;
+
+    if (
+      event.chartX < plotLeft ||
+      event.chartX > plotLeft + plotWidth ||
+      event.chartY < plotTop ||
+      event.chartY > plotTop + plotHeight
+    ) {
+      this._hideFreeCrosshair();
+      return;
+    }
+
+    if (!this.freeCrosshair) {
+      this.freeCrosshair = {
+        xLine: chart.renderer.path(['M', 0, 0])
+          .attr({ 'stroke-width': 1, stroke: 'dimgray', dashstyle: 'shortdot', zIndex: 5 }).add(),
+        yLine: chart.renderer.path(['M', 0, 0])
+          .attr({ 'stroke-width': 1, stroke: 'dimgray', dashstyle: 'shortdot', zIndex: 5 }).add(),
+          xLabel: chart.renderer.label('', 0, 0, 'callout')
+            .attr({
+              fill: 'white',
+              stroke: '#dbdbdb',
+              'stroke-width': 1,
+              r: 6, // Coins arrondis
+              padding: 8,
+              zIndex: 6
+            })
+            .css({ color: 'black', fontSize: '14px' })
+            .add(),
+          yLabel: chart.renderer.label('', 0, 0, 'callout')
+            .attr({
+              fill: 'white',
+              stroke: '#dbdbdb',
+              'stroke-width': 1,
+              r: 6,
+              padding: 8,
+              zIndex: 6
+            })
+            .css({ color: 'black', fontSize: '14px' })
+            .add()
+      };
+    }
+
+    // Mouvements des lignes
+    this.freeCrosshair.xLine.attr({
+      d: ['M', event.chartX, plotTop, 'L', event.chartX, plotTop + plotHeight]
+    });
+
+    this.freeCrosshair.yLine.attr({
+      d: ['M', plotLeft, event.chartY, 'L', plotLeft + plotWidth, event.chartY]
+    });
+
+    // Valeurs numériques
+    const xValue = chart.xAxis[0].toValue(event.chartX);
+    const yValue = chart.yAxis[0].toValue(event.chartY);
+    const significantDigits = this.data.settings.significantDigits;
+
+    // --- Label X ---
+    this.freeCrosshair.xLabel.attr({ text: formatNumber(xValue, significantDigits) });
+    const xLabelBBox = this.freeCrosshair.xLabel.getBBox();
+    this.freeCrosshair.xLabel.translate(
+      event.chartX - xLabelBBox.width / 2,
+      plotTop + plotHeight - xLabelBBox.height - 5
+    );
+
+    // --- Label Y ---
+    this.freeCrosshair.yLabel.attr({ text: formatNumber(yValue, significantDigits) });
+    const yLabelBBox = this.freeCrosshair.yLabel.getBBox();
+    this.freeCrosshair.yLabel.translate(
+      plotLeft + 5,
+      event.chartY - yLabelBBox.height / 2
+    );
   }
-
-  const plotLeft = chart.plotLeft;
-  const plotTop = chart.plotTop;
-  const plotWidth = chart.plotWidth;
-  const plotHeight = chart.plotHeight;
-
-  if (
-    event.chartX < plotLeft ||
-    event.chartX > plotLeft + plotWidth ||
-    event.chartY < plotTop ||
-    event.chartY > plotTop + plotHeight
-  ) {
-    this._hideFreeCrosshair();
-    return;
-  }
-
-  if (!this.freeCrosshair) {
-    this.freeCrosshair = {
-      xLine: chart.renderer.path(['M', 0, 0])
-        .attr({ 'stroke-width': 1, stroke: 'dimgray', dashstyle: 'shortdot', zIndex: 5 }).add(),
-      yLine: chart.renderer.path(['M', 0, 0])
-        .attr({ 'stroke-width': 1, stroke: 'dimgray', dashstyle: 'shortdot', zIndex: 5 }).add(),
-        xLabel: chart.renderer.label('', 0, 0, 'callout')
-          .attr({
-            fill: 'white',
-            stroke: '#dbdbdb',
-            'stroke-width': 1,
-            r: 6, // Coins arrondis
-            padding: 8,
-            zIndex: 6
-          })
-          .css({ color: 'black', fontSize: '14px' })
-          .add(),
-        yLabel: chart.renderer.label('', 0, 0, 'callout')
-          .attr({
-            fill: 'white',
-            stroke: '#dbdbdb',
-            'stroke-width': 1,
-            r: 6,
-            padding: 8,
-            zIndex: 6
-          })
-          .css({ color: 'black', fontSize: '14px' })
-          .add()
-    };
-  }
-
-  // Mouvements des lignes
-  this.freeCrosshair.xLine.attr({
-    d: ['M', event.chartX, plotTop, 'L', event.chartX, plotTop + plotHeight]
-  });
-
-  this.freeCrosshair.yLine.attr({
-    d: ['M', plotLeft, event.chartY, 'L', plotLeft + plotWidth, event.chartY]
-  });
-
-  // Valeurs numériques
-  const xValue = chart.xAxis[0].toValue(event.chartX);
-  const yValue = chart.yAxis[0].toValue(event.chartY);
-  const significantDigits = this.data.settings.significantDigits;
-
-  // --- Label X ---
-  this.freeCrosshair.xLabel.attr({ text: formatNumber(xValue, significantDigits) });
-  const xLabelBBox = this.freeCrosshair.xLabel.getBBox();
-  this.freeCrosshair.xLabel.translate(
-    event.chartX - xLabelBBox.width / 2,
-    plotTop + plotHeight - xLabelBBox.height - 5
-  );
-
-  // --- Label Y ---
-  this.freeCrosshair.yLabel.attr({ text: formatNumber(yValue, significantDigits) });
-  const yLabelBBox = this.freeCrosshair.yLabel.getBBox();
-  this.freeCrosshair.yLabel.translate(
-    plotLeft + 5,
-    event.chartY - yLabelBBox.height / 2
-  );
-}
 
   // MÉTHODE PRIVÉE pour cacher le réticule
   _hideFreeCrosshair() {
