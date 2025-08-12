@@ -108,13 +108,13 @@ let quitConfirm = (_path)=>{
   }
 	
 	alertModal({
-	  type: "warning",
+	  type: "danger",
 	  title: "Quitter l'application",
 	  body: `<p>Etes-vous sûr de vouloir quitter l'application. Les données seront perdues.</p>`,
 	  confirm:{
-      label: "Quitter",
-      type:"warning",
-      cb: ()=>{window.location.replace(_path);}
+		label: "Quitter",
+		type:"danger",
+		cb: ()=>{window.location.replace(_path);}
 	  },
 	  cancel: "Annuler",
 	  width: "42rem"
