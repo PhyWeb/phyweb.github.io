@@ -24,12 +24,13 @@ function isTabularData(text) {
 -------------------------------------------------APP--------------------------------------------
 ----------------------------------------------------------------------------------------------*/
 export default class App {
-  constructor(data, spreadsheet, grapher, calculation) {
+  constructor(data, spreadsheet, grapher, calculation, uiUpdaterCallback) {
     this.data = data;
     this.spreadsheet = spreadsheet;
     this.grapher = grapher;
     this.calculation = calculation;
-  }   
+    this.uiUpdater = uiUpdaterCallback;
+  }  
 
   addCurve(title, unit) {
     let curve = this.spreadsheet.addCurve(title, unit);
@@ -42,8 +43,8 @@ export default class App {
       this.grapher.updateChart([title]);
     }
 
-    // Update the sidebar
-    window.updateCalculationSidebar();
+    // Update the calculation tab
+    this.uiUpdater();
 
     return curve;
   }
@@ -58,8 +59,8 @@ export default class App {
     // Update the spreadsheet
     this.spreadsheet.update();
 
-    // Update the sidebar
-    window.updateCalculationSidebar();
+    // Update the calculation tab
+    this.uiUpdater();
   }
 
   deleteAllCurves() {
@@ -78,8 +79,8 @@ export default class App {
     // clear the spreadsheet
     this.spreadsheet.clear();
 
-    // Update the sidebar
-    window.updateCalculationSidebar();
+    // Update the calculation tab
+    this.uiUpdater();
   }
 
   deleteRow(startRow, amount) {
@@ -104,7 +105,7 @@ export default class App {
       this.data.parameters = {};
       this.spreadsheet.update();
       this.grapher.updateChart();
-      window.updateCalculationSidebar();
+      this.uiUpdater();
       return;
     }
 
@@ -207,7 +208,7 @@ export default class App {
 
     this.spreadsheet.update();
     this.grapher.updateChart();
-    window.updateCalculationSidebar();
+    this.uiUpdater();
   }
 
   /**
@@ -287,7 +288,8 @@ export default class App {
             this.grapher.deleteAllCurves();
             this.grapher.updateChart();
         }
-        window.updateCalculationSidebar();
+        // Update the calculation tab
+        this.uiUpdater();
         console.log("Session .pw restaurée avec succès (les paramètres locaux sont conservés).");
       } catch (e) {
         console.error("ERREUR lors du chargement de la session .pw :", e);
@@ -485,7 +487,7 @@ export default class App {
       console.log("data loaded", this.data);
       this.spreadsheet.update();
       this.grapher.updateChart();
-      window.updateCalculationSidebar();
+      this.uiUpdater();
     } finally {
       this._isLoading = false; // Assure que le drapeau est réinitialisé même en cas d'erreur
     }

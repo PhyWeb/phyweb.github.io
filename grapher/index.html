@@ -24,6 +24,11 @@
       };
     </script>
 
+    <link rel="stylesheet" href="../common/codemirror/codemirror.min.css">
+
+    <script type="text/javascript" src="../common/codemirror/codemirror.min.js"></script>
+    <script type="text/javascript" src="../common/codemirror/overlay.min.js"></script>
+
     <script defer src="../common/fontawesome/solid.min.js"></script>
     <script defer src="../common/fontawesome/brands.min.js"></script>
     <script defer src="../common/fontawesome/fontawesome.min.js"></script>
@@ -267,20 +272,14 @@
         </div>
 
         <!-- Colonne de droite : Textarea et bouton -->
-        <div class="column">
-            <div style="display: flex; flex-direction: column; height: 100%;">
-                <textarea
-                    id="calculation-input"
-                    class="textarea"
-                    spellcheck="false"
-                    style="flex-grow: 1; resize: none; min-height: 0; max-height: none;"
-                    placeholder="x = 8 * x + 2&#10;y = sqrt(y)"
-                ></textarea>
-                <div class="control mt-4">
-                    <button class="button is-primary" id="apply-calculation-button">
-                        Appliquer
-                    </button>
-                </div>
+        <div class="column is-flex is-flex-direction-column">
+          
+          <textarea id="calculation-input"></textarea>
+
+          <div class="control mt-4">
+                <button class="button is-primary" id="apply-calculation-button">
+                    Appliquer
+                </button>
             </div>
         </div>
     </div>

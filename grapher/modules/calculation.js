@@ -242,87 +242,104 @@ export default class Calculation {
     return this.mathInstance.evaluate(cleanExpression, scope);
   }
 
-  /**
-   * Évalue un bloc de formules en gérant les dépendances.
-   * @param {Array<object>} formulas - Un tableau d'objets {variableName, expression, unit}.
-   * @param {object} initialScope - Le scope de base avec les courbes et paramètres initiaux.
-   * @returns {{results: Array<object>, errors: Array<object>}} Un objet contenant les résultats réussis et les calculs échoués.
-   */
-  evaluateBlock(formulas, initialScope) {
-    const toArr = (v) => (v && v.toArray ? v.toArray() : v);
+/**
+ * Évalue un bloc de formules en gérant les dépendances et en validant les variables.
+ * @param {Array<object>} formulas - Un tableau d'objets {variableName, expression, unit}.
+ * @param {object} initialScope - Le scope de base avec les courbes et paramètres initiaux.
+ * @returns {{results: Array<object>, errors: Array<object>}} Un objet contenant les résultats et les erreurs.
+ */
+evaluateBlock(formulas, initialScope) {
+  const toArr = (v) => (v && v.toArray ? v.toArray() : v);
 
-    const scope = {};
-    for (const key in initialScope) {
-      const value = initialScope[key];
-      if (typeof value === 'object' && value !== null && !Array.isArray(value) && value.hasOwnProperty('value')) {
-          scope[key] = value.value; 
-      } else {
-          const rawArray = toArr(value);
-          const cleanedArray = [];
-          const len = rawArray.length;
-          for (let i = 0; i < len; i++) {
-            const val = rawArray[i];
-            if (val === null || val === undefined || String(val).trim() === '') {
-              cleanedArray.push(null);
-              continue;
-            }
-            const num = Number(val);
-            cleanedArray.push(isNaN(num) ? null : num);
-          }
-          scope[key] = cleanedArray;
-      }
-    }
-
-    let pendingCalculations = [...formulas];
-    const successfulResults = [];
-    
-    let progressMade = true;
-    const maxIterations = pendingCalculations.length;
-    let iteration = 0;
-
-    while (pendingCalculations.length > 0 && progressMade && iteration < maxIterations) {
-      progressMade = false;
-      iteration++;
-      
-      const remainingForNextLoop = [];
-
-      for (const calc of pendingCalculations) {
-        try {
-          const resultData = this.evaluate(calc.expression, scope);
-          
-          const isParameter = typeof resultData === 'number';
-          
-          if (isParameter) {
-            scope[calc.variableName] = resultData;
-            successfulResults.push({ 
-              variableName: calc.variableName, 
-              data: { value: resultData, unit: calc.unit || '' },
-              type: 'parameter' 
-            });
-          } else {
-            const resultAsArray = toArr(resultData);
-            scope[calc.variableName] = resultAsArray;
-            successfulResults.push({ 
-              variableName: calc.variableName, 
-              data: resultAsArray,
-              type: 'curve',
-              unit: calc.unit || ''
-            });
-          }
-          progressMade = true;
-
-        } catch (error) {
-          remainingForNextLoop.push({ ...calc, error: error.message });
+  const scope = {};
+  for (const key in initialScope) {
+    const value = initialScope[key];
+    if (typeof value === 'object' && value !== null && !Array.isArray(value) && value.hasOwnProperty('value')) {
+      scope[key] = value.value; 
+    } else {
+      const rawArray = toArr(value);
+      const cleanedArray = [];
+      const len = rawArray.length;
+      for (let i = 0; i < len; i++) {
+        const val = rawArray[i];
+        if (val === null || val === undefined || String(val).trim() === '') {
+          cleanedArray.push(null);
+          continue;
         }
+        const num = Number(val);
+        cleanedArray.push(isNaN(num) ? null : num);
       }
-      pendingCalculations = remainingForNextLoop;
+      scope[key] = cleanedArray;
     }
-
-    return {
-      results: successfulResults,
-      errors: pendingCalculations 
-    };
   }
+
+  let pendingCalculations = [...formulas];
+  const successfulResults = [];
+  
+  let progressMade = true;
+  const maxIterations = pendingCalculations.length;
+  let iteration = 0;
+
+  while (pendingCalculations.length > 0 && progressMade && iteration < maxIterations) {
+    progressMade = false;
+    iteration++;
+    
+    const remainingForNextLoop = [];
+
+    for (const calc of pendingCalculations) {
+      try {
+        // On remplace les virgules décimales par des points
+        const cleanExpression = calc.expression.replace(/(\d),(\d)/g, '$1.$2');
+
+        const expressionNode = this.mathInstance.parse(cleanExpression);
+        expressionNode.traverse((node, path, parent) => {
+          // On vérifie que chaque variable (SymbolNode) est bien définie
+          if (node.isSymbolNode) {
+            const symbol = node.name;
+            // La variable doit exister soit dans nos données (scope), soit être une fonction mathématique
+            if (!(symbol in scope) && !(symbol in this.mathInstance)) {
+              // Si elle n'existe pas, on lève une erreur claire et on arrête tout.
+              throw new Error(`La variable "${symbol}" n'est pas définie.`);
+            }
+          }
+        });
+
+        const resultData = this.evaluate(cleanExpression, scope);
+        
+        const isParameter = typeof resultData === 'number';
+        
+        if (isParameter) {
+          scope[calc.variableName] = resultData;
+          successfulResults.push({ 
+            variableName: calc.variableName, 
+            data: { value: resultData, unit: calc.unit || '' },
+            type: 'parameter' 
+          });
+        } else {
+          const resultAsArray = toArr(resultData);
+          scope[calc.variableName] = resultAsArray;
+          successfulResults.push({ 
+            variableName: calc.variableName, 
+            data: resultAsArray,
+            type: 'curve',
+            unit: calc.unit || ''
+          });
+        }
+        progressMade = true;
+
+      } catch (error) {
+        // Si une erreur est levée (par nous ou par math.js), on la stocke
+        remainingForNextLoop.push({ ...calc, error: error.message });
+      }
+    }
+    pendingCalculations = remainingForNextLoop;
+  }
+
+  return {
+    results: successfulResults,
+    errors: pendingCalculations 
+  };
+}
 
   clear() {
     // Réinitialise l'instance math.js pour libérer la mémoire et réinitialiser les fonctions.

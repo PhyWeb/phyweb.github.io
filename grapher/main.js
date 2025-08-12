@@ -13,10 +13,10 @@ document.addEventListener('DOMContentLoaded', () => {
 // Common
 const common = new Common("Grapher");
 
-let data = new Data();
-let grapher = new Grapher(data);
-
-let calculation = new Calculation(data);
+const data = new Data();
+const grapher = new Grapher(data);
+const calculation = new Calculation(data);
+let editor;
 
 // Spreadsheet
 function spreadsheetModifiedData(e){
@@ -27,18 +27,15 @@ let spreadsheet = new Spreadsheet(data, spreadsheetModifiedData);
 spreadsheet.build();
 
 // App
-let app = new App(data, spreadsheet, grapher, calculation);
+const app = new App(data, spreadsheet, grapher, calculation, updateCalculationUI);
 
-// Exclure le tableau de Handsontable (par exemple <div id="table">)
-const table = document.getElementById('table');
-
-window.FontAwesome.dom.i2svg(); // convertit <i> en SVG manuellement
+// convertit <i> en SVG manuellement
+window.FontAwesome.dom.i2svg(); 
 
 // Navbar
-
 let quitConfirm = (_path)=>{
   // Check if data exists
-  if(data.curves.length === 0 && $("#calculation-input").value.trim() === ''){
+  if(data.curves.length === 0 && editor.getValue().trim() === ''){
     window.location.replace(_path);
     return;
   }
@@ -248,7 +245,7 @@ let selectedFormat = 'pw'; // Le format par défaut
 
 // Ouvre la modale de sauvegarde
 $("#save-button").addEventListener("click", () => {
-  if (data.curves.length === 0 && $("#calculation-input").value.trim() === '') {
+  if (data.curves.length === 0 && editor.getValue().trim() === '') {
     alertModal({
       title: "Aucune donnée",
       body: "Aucune donnée à sauvegarder.",
@@ -305,7 +302,6 @@ downloadFileButton.addEventListener("click", () => {
   const addCurveModal = $('#add-curve-modal');
   const radioButtons = addCurveModal.querySelectorAll('input[name="creation-type"]');
   const addCurveConfirmButton = $('#add-curve-confirm-button');
-  const calculationTextarea = $('#calculation-input');
 
   // Panels de la modale
   const emptyCurvePanel = $('#empty-curve-panel');
@@ -557,22 +553,12 @@ downloadFileButton.addEventListener("click", () => {
     if (newEntry.type === 'empty-curve') {
       app.addCurve(newEntry.symbol, newEntry.unit);
     } else {
-      const currentText = calculationTextarea.value;
+      const currentText = editor.getValue();
       const separator = currentText.trim() === '' ? '' : '\n\n'; 
-      calculationTextarea.value = currentText + separator + newEntry.formulaLine;
-      app.applyCalculation(calculationTextarea.value);
+      const newContent = currentText + separator + newEntry.formulaLine;
+      editor.setValue(newContent);
+      app.applyCalculation(editor.getValue());
     }
-    
-    // Mettre à jour l'interface
-    app.spreadsheet.update();
-    app.grapher.updateChart();
-    
-    // Mettre à jour la barre latérale
-    window.updateCalculationSidebar(
-      app.data.curves.map(c => c.title),
-      app.data.parameters,
-      app.calculation.getAvailableFunctions()
-    );
     
     // Fermer la modale
     common.modalManager.closeAllModals();
@@ -1115,12 +1101,6 @@ $("#auto-zoom-button").addEventListener("click", () => {
 /*----------------------------------------------------------------------------------------------
 --------------------------------------------Calculation-----------------------------------------
 ----------------------------------------------------------------------------------------------*/
-const textarea = document.getElementById('calculation-input');
-const sidebar = document.getElementById('calculation-sidebar');
-
-$("#apply-calculation-button").addEventListener("click", () => {
-  app.applyCalculation(textarea.value);
-});
 
 // Tooltips
 const functionTooltips = {
@@ -1148,6 +1128,104 @@ const functionTooltips = {
   diff: 'Dérivée numérique ex: diff(y,t)'
 };
 
+// Initialisation de l'éditeur de code
+function initializeEditor() {
+  const editorTextarea = document.getElementById('calculation-input');
+  editor = CodeMirror.fromTextArea(editorTextarea, {
+    lineNumbers: true,
+    mode: 'text/x-javascript',
+    theme: 'material',
+    autofocus: true
+  });
+
+  editor.getWrapperElement().classList.add('textarea');
+  editor.getWrapperElement().classList.add('p-0');
+
+  // Met à jour l'affichage quand on change d'onglet
+  $("#calculs-tab").addEventListener("click", () => {
+    setTimeout(() => editor.refresh(), 1);
+  });
+}
+  
+function updateCalculationUI() {
+  populateList('calculation-sidebar-curves', data.curves);
+  populateList('calculation-sidebar-params', data.parameters, { isParameter: true });
+  populateList('calculation-sidebar-functions', calculation.getAvailableFunctions(), { isFunction: true });
+
+  const curveNames = data.curves.map(c => c.title);
+  const parameterNames = Object.keys(data.parameters);
+  const functionNames = calculation.getAvailableFunctions();
+  
+  CodeMirror.defineMode("phyweb-calc", function() {
+    return {
+      token: function(stream) {
+        if (stream.eatSpace()) return null;
+
+        // Regex qui capture un "mot" (variable + unité complexe) jusqu'à un séparateur.
+        // Un séparateur est un espace, une virgule, ou un opérateur mathématique principal.
+        if (stream.match(/^[a-zA-Z_][^=+\-*(),\s]*/)) {
+          const word = stream.current();
+          
+          if (functionNames.includes(word)) {
+            return "phyweb-function";
+          }
+
+          const baseName = word.split('_')[0];
+          if (curveNames.includes(baseName)) {
+            return "variable-2";
+          }
+          if (parameterNames.includes(baseName)) {
+            return "def";
+          }
+          
+          // Si le mot n'est pas reconnu, il n'est pas coloré.
+          return null;
+        }
+
+        // --- Si ce n'est pas un mot, on cherche le reste ---
+
+        if (stream.match(/^#.*/) || stream.match(/^\/\/.*/) || stream.match(/^'.*/)) return "comment";
+        if (stream.match(/^[0-9]+([,.][0-9]+)?/)) return "number"; // Gère les nombres avec . ou ,
+        if (stream.match(/^[=+\-*/^(),]/)) return "operator";
+
+        // Fallback pour ne jamais bloquer
+        stream.next();
+        return null;
+      }
+    };
+  });
+  
+  editor.setOption("mode", "phyweb-calc");
+}
+
+/**
+ * Insère du texte dans CodeMirror.
+ * @param {string} textToInsert - Le texte à insérer.
+ */
+function insertTextInEditor(textToInsert) {
+  let finalInsert = textToInsert;
+  let cursorOffset = textToInsert.length;
+
+  if (textToInsert.endsWith('()')) {
+    finalInsert = textToInsert === 'diff()' ? 'diff(,)' : textToInsert.slice(0, -1);
+    cursorOffset = finalInsert.indexOf(',') !== -1 ? finalInsert.indexOf(',') : finalInsert.length;
+  }
+
+  editor.replaceSelection(finalInsert);
+  const cursor = editor.getCursor();
+  editor.setCursor({ line: cursor.line, ch: cursor.ch - (finalInsert.length - cursorOffset) });
+  editor.focus();
+}
+
+initializeEditor(); // Initialise l'éditeur
+updateCalculationUI(); // Met à jour l'UI une première fois
+
+const sidebar = document.getElementById('calculation-sidebar');
+
+$("#apply-calculation-button").addEventListener("click", () => {
+  app.applyCalculation(editor.getValue());
+});
+
 /**
  * Remplit une liste dans la barre latérale.
  * @param {string} containerId - L'ID de l'élément conteneur.
@@ -1161,6 +1239,13 @@ function populateList(containerId, items, options = {}) {
   const containerElement = document.getElementById(containerId);
   if (!containerElement) return;
   containerElement.innerHTML = ''; // Vide le conteneur
+
+
+  const colors = {
+    function: '#544fc5',
+    variable: '#008000',
+    parameter: '#d568fb'
+  };
 
   if (isFunction) {
     // Créer une grille à 3 colonnes pour les fonctions
@@ -1176,6 +1261,7 @@ function populateList(containerId, items, options = {}) {
         const a = document.createElement('a');
         a.textContent = `${item}()`;
         a.dataset.value = `${item}()`;
+        a.style.color = colors.function;
         // Add a tooltip if it exists
         if (functionTooltips[item]) {
           a.setAttribute('title', functionTooltips[item]);
@@ -1190,33 +1276,29 @@ function populateList(containerId, items, options = {}) {
     const ul = document.createElement('ul');
     ul.className = 'menu-list';
 
-    if (isParameter) { // MODIFIÉ
+    if (isParameter) {
       const significantDigits = data.settings.significantDigits;
-      // Pour les paramètres, `items` est un objet { key: { value, unit } }
       for (const [key, param] of Object.entries(items)) {
         const li = document.createElement('li');
         const a = document.createElement('a');
         
-        // Vérifie si le paramètre est un objet avec une valeur ou un simple nombre
-        if (typeof param === 'object' && param !== null && param.hasOwnProperty('value')) {
-          const displayValue = formatNumber(param.value, significantDigits);
-          const displayUnit = param.unit ? ` ${param.unit}` : '';
-          a.textContent = `${key} = ${displayValue}${displayUnit}`;
-        } else {
-          a.textContent = `${key} = ${formatNumber(param, significantDigits)}`;
-        }
+        const unitText = param.unit ? ` ${param.unit}` : '';
+        const displayValue = formatNumber(param.value, significantDigits);
 
-        a.dataset.value = key; // On n'insère que le nom
+        a.innerHTML = `<span style="color: ${colors.parameter}; font-weight: bold;">${key}</span> = ${displayValue}<span style="color: #7a7a7a;">${unitText}</span>`;
+        a.dataset.value = key;
         li.appendChild(a);
         ul.appendChild(li);
       }
-    } else {
-      // Pour les courbes, `items` est un tableau de chaînes
-      items.forEach(item => {
+    } else { // C'est une grandeur
+      items.forEach(curve => {
         const li = document.createElement('li');
         const a = document.createElement('a');
-        a.textContent = item;
-        a.dataset.value = item;
+        
+        const unitText = curve.unit ? ` (${curve.unit})` : '';
+        
+        a.innerHTML = `<span style="color: ${colors.variable}; font-weight: bold;">${curve.title}</span><span style="color: #7a7a7a;">${unitText}</span>`;
+        a.dataset.value = curve.title; // On insère toujours juste le nom
         li.appendChild(a);
         ul.appendChild(li);
       });
@@ -1225,61 +1307,17 @@ function populateList(containerId, items, options = {}) {
   }
 }
 
-/**
- * Insère du texte à la position actuelle du curseur dans un textarea.
- * @param {HTMLTextAreaElement} textarea - L'élément textarea.
- * @param {string} textToInsert - Le texte à insérer.
- */
-function insertTextAtCursor(textarea, textToInsert) {
-  const start = textarea.selectionStart;
-  const end = textarea.selectionEnd;
-  const text = textarea.value;
-  const before = text.substring(0, start);
-  const after = text.substring(end, text.length);
-
-  let finalInsert = textToInsert;
-  let cursorOffset;
-
-  // Cas spécial pour la fonction diff
-  if (textToInsert === 'diff()') {
-    finalInsert = 'diff(,)';
-    cursorOffset = finalInsert.indexOf(','); // Place le curseur avant la virgule
-  } 
-  // Cas général pour les autres fonctions
-  else if (textToInsert.endsWith('()')) {
-    cursorOffset = finalInsert.length - 1; // Place le curseur avant la parenthèse fermante
-  } 
-  // Cas pour les variables et paramètres
-  else {
-    cursorOffset = finalInsert.length; // Place le curseur à la fin
-  }
-
-  textarea.value = before + finalInsert + after;
-
-  // Définit la nouvelle position du curseur
-  textarea.selectionStart = textarea.selectionEnd = start + cursorOffset;
-  
-  textarea.focus(); // Redonne le focus au textarea
-}
-
 // --- Initialisation et Écouteurs d'événements ---
 
 // Écoute les clics sur la barre latérale (event delegation)
 sidebar.addEventListener('click', (e) => {
   // Vérifie si un lien a été cliqué
   if (e.target && e.target.tagName === 'A') {
-      e.preventDefault(); // Empêche le lien de naviguer
-      const text = e.target.dataset.value;
-      insertTextAtCursor(textarea, text);
+    e.preventDefault(); // Empêche le lien de naviguer
+    const text = e.target.dataset.value;
+    insertTextInEditor(text);
   }
 });
-
-// Fonction pour mettre à jour la barre latérale
-window.updateCalculationSidebar = () => {
-  populateList('calculation-sidebar-curves', data.curves.map(curve => curve.title));
-  populateList('calculation-sidebar-params', data.parameters, { isParameter: true });
-  populateList('calculation-sidebar-functions', calculation.getAvailableFunctions(), { isFunction: true });
-};
 
 function resize(){
   let newHeight = $("#table-container").offsetHeight;
