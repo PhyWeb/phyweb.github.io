@@ -1,4 +1,4 @@
-import Chart from '../lib/Highcharts/es-modules/masters/highcharts.src.js';
+import Chart from '../../common/Highcharts/es-modules/masters/highcharts.src.js';
 import { formatNumber } from '../../common/formatter.js';
 
 const $ = document.querySelector.bind(document);
