@@ -1,4 +1,4 @@
-import {Common, alertModal} from "../common/common.js"
+import {Common, alertModal, quitConfirmationModal} from "../common/common.js"
 import { formatNumber } from '../common/formatter.js';
 
 import {App} from "./modules/app.js"
@@ -17,6 +17,7 @@ const data = new Data();
 const grapher = new Grapher(data);
 const calculation = new Calculation(data);
 let editor;
+let isNavigationConfirmed = false; // Pour eviter la double demande de confirmation quand on change de page
 
 // Spreadsheet
 function spreadsheetModifiedData(e){
@@ -40,18 +41,12 @@ let quitConfirm = (_path)=>{
     return;
   }
 
-  alertModal({
-    type: "danger",
-    title: "Quitter l'application",
-    body: `<p>Etes-vous sûr de vouloir quitter l'application. Les données seront perdues.</p>`,
-    confirm:{
-      label: "Quitter",
-      type:"danger",
-      cb: ()=>{window.location.replace(_path);}
-    },
-    cancel: "Annuler",
-    width: "42rem"
-  })
+  quitConfirmationModal(
+    ()=>{
+      isNavigationConfirmed = true; //On lève le drapeau pour que 'beforeunload' ignore.
+      window.location.replace(_path);
+    }
+  )
 }
 
 $("#navbar-home-button").addEventListener("click", () => {
@@ -93,34 +88,61 @@ $("#calculs-tab").addEventListener("click", () => {
   $("#calculs-panel").classList.remove("is-hidden");
 });
 
-$("#file-input").addEventListener("change", () => {
-
-  if($("#file-input").files[0] != undefined){
-    app.loadFile($("#file-input").files[0]);
-    common.modalManager.closeAllModals();
+// Utility function to confirm new data
+function newDataConfirmation(cb){
+  // Check if data exists
+  if(data.curves.length === 0 && editor.getValue().trim() === ''){
+    cb();
+    return;
+  } else{
+    alertModal({
+      type: "danger",
+      title: "Attention",
+      body: "Cette action supprimera toutes les données actuelles. Êtes-vous sûr de vouloir continuer ?",
+      confirm: {
+        label: "Oui, supprimer",
+        type: "danger", // Pour un bouton rouge
+        cb: () => { 
+          cb();
+        }
+      },
+      cancel: "Annuler"
+    });
+    return;
   }
+}
+
+$("#file-input").addEventListener("change", () => {
+  newDataConfirmation(() => {
+  // Check if a file is selected
+    if($("#file-input").files[0] != undefined){
+      app.loadFile($("#file-input").files[0]);
+      common.modalManager.closeAllModals();
+    }
+  });
 });
 $("#file-input").addEventListener("click", () => {
   $("#file-input").value = null; // allow the onchange trigger even if the same file is selected twice
 });
 
 $("#new-file-button").addEventListener("click", () => {
-  // Check if data exists TODO
-
-  // Reset the data
-  app.deleteAllCurves();
-  common.modalManager.closeAllModals();
+  newDataConfirmation(() => {
+    app.deleteAllCurves();
+    common.modalManager.closeAllModals();
+  });
 });
 
 $("#paste-button").addEventListener('click', async () => {
-  try {
-    let text = await navigator.clipboard.readText();
-    common.modalManager.closeAllModals();
-    console.log('Contenu du presse-papier :', text);
-    app.loadClipboard(text); // Load the data from the clipboard
-  } catch (err) {
-    console.error('Erreur lors de la lecture du presse-papier :', err);
-  }
+  newDataConfirmation(async () => {
+    try {
+      let text = await navigator.clipboard.readText();
+      common.modalManager.closeAllModals();
+      console.log('Contenu du presse-papier :', text);
+      app.loadClipboard(text); // Load the data from the clipboard
+    } catch (err) {
+      console.error('Erreur lors de la lecture du presse-papier :', err);
+    }
+  });
 });
 
 // Show the new file modal TODO
@@ -1330,6 +1352,26 @@ resize();
 window.addEventListener("resize", () => {
   resize();
 });
+
+// --- Gestion de la fermeture de l'application ---
+const localHosts = ['localhost', '127.0.0.1'];
+if (!localHosts.includes(window.location.hostname)) {
+  window.addEventListener('beforeunload', (event) => {
+    // Si la navigation a déjà été confirmée par notre code, on ne fait rien.
+    if (isNavigationConfirmed) {
+      return;
+    }
+    
+    const hasUnsavedData = data.curves.length > 0 || (editor && editor.getValue().trim() !== '');
+
+    if (hasUnsavedData) {
+      event.preventDefault();
+      event.returnValue = 'Êtes-vous sûr de vouloir quitter ? Vos données non sauvegardées seront perdues.';
+      return 'Êtes-vous sûr de vouloir quitter ? Vos données non sauvegardées seront perdues.';
+    }
+  });
+}
+
 
 // Ouvre la modale "Nouveau" au démarrage de l'application
 $("#new-file-modal").classList.add("is-active");

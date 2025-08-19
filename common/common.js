@@ -277,6 +277,22 @@ function alertModal(_config){
   return modal;
 }
 
+function quitConfirmationModal(_cb){
+  alertModal({
+    type: "danger",
+    title: "Quitter l'application",
+    body: `<p>Etes-vous sûr de vouloir quitter l'application?</p>
+    <p> Les données non sauvegardées seront perdues.</p>`,
+    confirm:{
+      label: "Quitter",
+      type:"danger",
+      cb: _cb
+    },
+    cancel: "Annuler",
+    width: "42rem"
+  })
+}
+
 function aboutModal(_app){
   // electron
   let version = ""
@@ -887,4 +903,4 @@ async function downloadFile(_file, _type,_name){
   return max;
 }*/
 
-export {Common, ModalManager, alertModal, TabManager, Serie, exportToCSV, exportToRW3, downloadFile};
+export {Common, ModalManager, alertModal, quitConfirmationModal, TabManager, Serie, exportToCSV, exportToRW3, downloadFile};

@@ -2,6 +2,11 @@ COMMON:
   - modal à propos: improve descriptions
   - FULLSCREEN request if screen is too small
 
+  - add a link to the github repo in the modal about
+  - centraliser la gestion des confirmations de quitter (et l'étendre à quand on ferme onglet, charge d'autres données...)
+
+  - Glisser-déposer : Permettre de charger un fichier par glisser-déposer (drag and drop)
+
 HOME:
   - macos and linux package
 
@@ -38,7 +43,9 @@ GRAPHER:
 
   - utiliser local storage pour eviter de tout perdre si on quitte la page
 
-  - possibilité d'avoir 2 axes x
+  - possibilité d'avoir 2 axes y
+
+  - Validation des symboles : La validation des symboles (noms de variables) est effectuée à plusieurs endroits. Cette logique pourrait être centralisée dans une fonction utilitaire pour éviter la duplication de code et garantir une validation cohérente partout dans l'application.
 
 
 NOTES:
