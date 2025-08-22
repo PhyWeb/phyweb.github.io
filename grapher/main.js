@@ -1097,6 +1097,7 @@ $("#zoom-button").addEventListener("click", () => {
         },
       }
     });
+    grapher.chart.container.classList.add('chart-free-crosshair');
     isZoomEnabled = true;
   } else {
     $("#zoom-button").classList.remove("is-active");
@@ -1107,6 +1108,7 @@ $("#zoom-button").addEventListener("click", () => {
         },
       }
     });
+    grapher.chart.container.classList.remove('chart-free-crosshair');
     isZoomEnabled = false;
   }
 });
@@ -1115,6 +1117,7 @@ $("#auto-zoom-button").addEventListener("click", () => {
   grapher.chart.zoomOut();
   $("#auto-zoom-button").classList.add("is-hidden");
   $("#zoom-button").classList.remove("is-active");
+  grapher.chart.container.classList.remove('chart-free-crosshair');
   isZoomEnabled = false;
 
   grapher.chart.update({ chart: { zooming: { type: null } } });
