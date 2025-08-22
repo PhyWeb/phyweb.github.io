@@ -1353,11 +1353,15 @@ function populateList(containerId, items, options = {}) {
 
 // Écoute les clics sur la barre latérale (event delegation)
 sidebar.addEventListener('click', (e) => {
+  const link = e.target.closest('a');
+
   // Vérifie si un lien a été cliqué
-  if (e.target && e.target.tagName === 'A') {
+  if (link) {
     e.preventDefault(); // Empêche le lien de naviguer
-    const text = e.target.dataset.value;
-    insertTextInEditor(text);
+    const text = link.dataset.value;
+    if (text) {
+      insertTextInEditor(text);
+    }
   }
 });
 
