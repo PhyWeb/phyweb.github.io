@@ -1,3 +1,11 @@
+/*
+ * Cette règle garantit que lorsqu'un élément flex (comme .is-flex)
+ * doit être caché (.is-hidden), il le soit sans équivoque.
+*/
+.is-flex.is-hidden {
+  display: none !important;
+}
+
 #add-curve-modal-card{
   height: 30rem;
   width: 45rem;
@@ -32,8 +40,6 @@
 
 #grapheur-panel {
   flex-grow: 1;
-  display: flex;
-  flex-direction: column;
   overflow: hidden;
 }
 

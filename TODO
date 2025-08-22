@@ -25,9 +25,9 @@ TRACKER:
   - add a buton to stop the decode and still exploit the already decoded frames
 
 GRAPHER:
-  - utiliser des puissances de 10 dans les axes du graph
+  - utiliser des puissances de 10 dans les axes du graph (déjà OK ? A verifier)
 
-  - permettre voir autoriser les notations 3e-15
+  - permettre voir autoriser les notations 3e-15 (deja partiellemnt possible, à vérifier partout)
 
   - réticule persistant quand on clique
   - autres outils

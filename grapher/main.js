@@ -1121,6 +1121,26 @@ $("#auto-zoom-button").addEventListener("click", () => {
 });
 
 /*----------------------------------------------------------------------------------------------
+-------------------------------------------Modelisation-----------------------------------------
+----------------------------------------------------------------------------------------------*/
+
+$("#expand-modelisation-button").addEventListener("click", () => {
+  $("#modelisation-panel").classList.remove("is-hidden");
+
+  $("#expand-modelisation-button").classList.add("is-hidden");
+  $("#compress-modelisation-button").classList.remove("is-hidden");
+});
+
+$("#compress-modelisation-button").addEventListener("click", () => {
+  $("#modelisation-panel").classList.add("is-hidden");
+
+  $("#expand-modelisation-button").classList.remove("is-hidden");
+  $("#compress-modelisation-button").classList.add("is-hidden");
+});
+
+
+
+/*----------------------------------------------------------------------------------------------
 --------------------------------------------Calculation-----------------------------------------
 ----------------------------------------------------------------------------------------------*/
 

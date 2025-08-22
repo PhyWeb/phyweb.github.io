@@ -175,67 +175,97 @@
     </div>
   </div>
   <!------------------------------------------------------------------------------------------------------------>
-  <!--------------------------------------------------Grapheur--------------------------------------------------->
+  <!--------------------------------------------------Grapheur-------------------------------------------------->
   <!------------------------------------------------------------------------------------------------------------>
-  <div class="box m-3 p-3 block is-hidden" style="height:calc(100vh - 86px); display:flex; flex-direction: column; flex-grow: 1;" id="grapheur-panel">
-    <nav class="level mb-1">
-      <!-- Left side -->
-      <div class="level-left">
-        <div class="dropdown" id="tools-dropdown">
-          <div class="dropdown-trigger">
-            <button class="button" aria-haspopup="true" aria-controls="tools-dropdown-menu">
-              <span class="icon">
-                <i class="fa-solid fa-toolbox"></i>
-              </span>
-              <span>Outils</span>
-              <span class="icon is-small">
-                <i class="fas fa-angle-down" aria-hidden="true"></i>
-              </span>
-            </button>
-          </div>
-          <div class="dropdown-menu" id="tools-dropdown-menu" role="menu">
-            <div class="dropdown-content">
-              <button class="dropdown-item tool-item" id="tool-crosshair-data" type="button">
-                <span>Réticule Donnée</span>
-                <span class="icon tool-checkmark-container ml-auto">
-                  </span>
-              </button>
-              <button class="dropdown-item tool-item" id="tool-crosshair-free" type="button">
-                <span>Réticule Libre</span>
-                <span class="icon tool-checkmark-container ml-auto">
-                  </span>
+  <div id="grapheur-panel" class="is-flex is-hidden" style="height: calc(100vh - 86px);">
+    <div class="box p-3 m-3 block is-flex is-flex-direction-column" style="flex: 1; min-width: 0;">
+      <nav class="level mb-1">
+        <!-- Left side -->
+        <div class="level-left">
+          <div class="dropdown" id="tools-dropdown">
+            <div class="dropdown-trigger">
+              <button class="button" aria-haspopup="true" aria-controls="tools-dropdown-menu">
+                <span class="icon">
+                  <i class="fa-solid fa-toolbox"></i>
+                </span>
+                <span>Outils</span>
+                <span class="icon is-small">
+                  <i class="fas fa-angle-down" aria-hidden="true"></i>
+                </span>
               </button>
             </div>
+            <div class="dropdown-menu" id="tools-dropdown-menu" role="menu">
+              <div class="dropdown-content">
+                <button class="dropdown-item tool-item" id="tool-crosshair-data" type="button">
+                  <span>Réticule Donnée</span>
+                  <span class="icon tool-checkmark-container ml-auto">
+                    </span>
+                </button>
+                <button class="dropdown-item tool-item" id="tool-crosshair-free" type="button">
+                  <span>Réticule Libre</span>
+                  <span class="icon tool-checkmark-container ml-auto">
+                    </span>
+                </button>
+              </div>
+            </div>
           </div>
+          <button class="button" id="choose-curves-button">
+            <span class="icon">
+              <i class="fa-solid fa-list-check"></i>
+            </span>
+            <span>Courbes</span>
+          </button>
+          <button class="button" id="zoom-button">
+            <span class="icon">
+              <i class="fa-solid fa-magnifying-glass"></i>
+            </span>
+            <span>Zoom</span>
+          </button>
+          <button class="button is-hidden" id="auto-zoom-button">
+            <span class="icon">
+              <i class="fa-solid fa-magnifying-glass"></i>
+            </span>
+            <span>Zoom auto</span>
+          </button>
         </div>
-        <button class="button" id="choose-curves-button">
-          <span class="icon">
-            <i class="fa-solid fa-list-check"></i>
-          </span>
-          <span>Courbes</span>
-        </button>
+        <!-- Right side -->
+        <div class="level-right">
+          <button class="button" id="expand-modelisation-button">
+            <span class="icon">
+              <i class="fa-solid fa-arrow-right-to-bracket fa-flip-horizontal"></i>
+            </span>
+            <span>Panneau modélisation</span>
+          </button>
+          <button class="button is-hidden" id="compress-modelisation-button">
+            <span class="icon">
+              <i class="fa-solid fa-arrow-right-from-bracket"></i>
+            </span>
+            <span>Panneau modélisation</span>
+          </button>
+        </div>
+      </nav>
+      <div class="block" style="overflow:auto;" id="chart-wrapper">
+        <div id="chart"></div>
       </div>
-
-      <!-- Right side -->
-      <div class="level-right">
-        <button class="button" id="zoom-button">
-          <span class="icon">
-            <i class="fa-solid fa-magnifying-glass"></i>
-          </span>
-          <span>Zoom</span>
-        </button>
-        <button class="button is-hidden" id="auto-zoom-button">
-          <span class="icon">
-            <i class="fa-solid fa-magnifying-glass"></i>
-          </span>
-          <span>Zoom auto</span>
-        </button>
+    </div>
+    <div id="modelisation-panel" class="box p-3 mt-3 mb-3 mr-3 ml-0 is-hidden" style="width: 250px; flex-shrink: 0;">
+      <h2 class="title is-5">Modélisation</h2>
+      <p>Le contenu de votre nouveau panneau (paramètres, modèles, etc.) ira ici.</p>
+      <div class="field">
+        <label class="label">Modèle</label>
+          <div class="control">
+            <div class="select is-fullwidth">
+              <select>
+                <option>Linéaire</option>
+                <option>Quadratique</option>
+              </select>
+             </div>
+        </div>
       </div>
-    </nav>
-    <div class="block" style="overflow:auto;" id="chart-wrapper">
-      <div id="chart"></div>
     </div>
   </div>
+
+
   <!------------------------------------------------------------------------------------------------------------>
   <!--------------------------------------------------Calculs--------------------------------------------------->
   <!------------------------------------------------------------------------------------------------------------>
