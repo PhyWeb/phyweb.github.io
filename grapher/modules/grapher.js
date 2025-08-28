@@ -65,6 +65,8 @@ export default class Grapher {
     // Pour le réticule libre manuel
     this.crosshairMode = 'data'; // Mode par défaut
     this.freeCrosshair = null;   // Pour stocker les éléments du réticule
+
+
   }
 
   formatData(xCurve, yCurve){
@@ -365,6 +367,11 @@ export default class Grapher {
     Highcharts.addEvent(this.chart.container, 'mouseleave', () => {
       this._hideFreeCrosshair(); // On cache toujours quand la souris sort
     });
+
+    // Ajoute un écouteur pour l'événement redraw pour les modèles
+    Highcharts.addEvent(this.chart, 'redraw', () => {
+      this.redrawAllModels();
+    });
   }
 
   setXCurve(title, redraw = true){
@@ -589,6 +596,62 @@ export default class Grapher {
     if (this.freeCrosshair) {
       Object.values(this.freeCrosshair).forEach(el => el.destroy());
       this.freeCrosshair = null;
+    }
+  }
+
+  /**
+   * Met à jour les données de TOUS les modèles visibles sur le graphique.
+   * Cette fonction est appelée par l'événement 'redraw' (zoom, déplacement).
+   */
+  redrawAllModels() {
+    if (!this.chart) return;
+    const extremes = this.chart.xAxis[0].getExtremes();
+
+    this.data.models.forEach(model => {
+      if (model.visible && model.x && model.y) {
+        const seriesId = `model-${model.y.title}-vs-${model.x.title}`;
+        const existingSeries = this.chart.get(seriesId);
+        
+        if (existingSeries) {
+          const modelData = model.getHighResData(extremes.min, extremes.max);
+          // Met à jour les points de la série sans déclencher un nouveau redraw.
+          existingSeries.setData(modelData, false);
+        }
+      }
+    });
+  }
+
+  /**
+   * CRÉE la série pour un nouveau modèle sur le graphique.
+   * N'est appelée qu'une seule fois lors de l'ajout d'un modèle.
+   * @param {Model} model - L'objet modèle à tracer.
+   */
+  addModelSeries(model) {
+    if (!this.chart || !model || !model.x || !model.y) {
+      console.error("Impossible de tracer le modèle : données de courbe X ou Y manquantes.", model);
+      return;
+    }
+
+    const extremes = this.chart.xAxis[0].getExtremes();
+    const modelData = model.getHighResData(extremes.min, extremes.max);
+    
+    const seriesId = `model-${model.y.title}-vs-${model.x.title}`;
+    const existingSeries = this.chart.get(seriesId);
+
+    // On s'assure de ne pas ajouter une série qui existerait déjà
+    if (!existingSeries) {
+      this.chart.addSeries({
+        id: seriesId,
+        name: `Modèle (${model.y.title})`,
+        data: modelData,
+        type: 'line',
+        color: model.y.color,
+        dashStyle: 'Dash',
+        lineWidth: 2,
+        marker: { enabled: false },
+        enableMouseTracking: false,
+        zIndex: 1
+      }, false); // 'false' est crucial pour ne pas déclencher un redraw ici.
     }
   }
 }

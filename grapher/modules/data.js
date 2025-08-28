@@ -1,5 +1,7 @@
 import {Serie} from "../../common/common.js"
 
+import {Alglib} from 'https://cdn.jsdelivr.net/gh/Pterodactylus/Alglib.js@master/Alglib-v1.1.0.js'
+
 const $ = document.querySelector.bind(document);
 
 const COLOR_LIST = [ "#2caffe", "#544fc5", "#00e272", "#fe6a35", "#6b8abc", "#d568fb", "#2ee0ca", "#fa4b42", "#feb56a", "#91e8e1" ]
@@ -21,6 +23,132 @@ class Curve extends Serie {
     this.markerRadius = markerRadius; // Radius of the marker in pixels
   }
 }
+// Dans le fichier : modules/data.js
+
+class Model {
+  constructor(x,y) {
+    this.x = x; // Courbe pour les valeurs x
+    this.y = y; // Courbe pour les valeurs y
+
+    this.type = ""; // Ex: "Linear", "Quadratic"
+    this.visible = true; // Si le modèle est visible sur le graphe
+    this.parameters = []; // Paramètres du modèle (a, b, c...)
+  }
+
+  getEquationString() {
+    if (Object.keys(this.parameters).length === 0) return "Calcul en cours...";
+    
+    switch(this.type){
+      case "Linear":
+        // Affiche le signe correctement pour les valeurs négatives
+        const sign = this.parameters.b < 0 ? '-' : '+';
+        const absB = Math.abs(this.parameters.b);
+        return `y = ${this.parameters.a.toPrecision(3)}x ${sign} ${absB.toPrecision(3)}`;
+      default:
+        return "Modèle non défini";
+    }
+  }
+
+  _getFunction(){
+    switch(this.type){
+      case "Linear":
+        // y = a*x + b  => le solveur attend [b, a]
+        return (a_n, x) => a_n[1] * x + a_n[0];
+      case "Quadratic":
+        // y = a*x^2 + b*x + c => le solveur attend [c, b, a]
+        return (a_n, x) => a_n[2] * Math.pow(x, 2) + a_n[1] * x + a_n[0];
+      case "Cubic":
+        return (a_n, x) => a_n[3] * Math.pow(x, 3) + a_n[2] * Math.pow(x, 2) + a_n[1] * x + a_n[0];
+      default:
+        return () => 0; // Fonction par défaut
+      }
+  }
+
+  _buildData(){
+    let data = [];
+    for(let i = 0; i < this.x.length; i++){
+      // **LA CORRECTION PRINCIPALE EST ICI**
+      // On vérifie que les deux points x et y sont des nombres valides avant de les ajouter.
+      const xVal = this.x[i];
+      const yVal = this.y[i];
+      if (xVal !== null && yVal !== null && xVal !== '' && yVal !== '' && isFinite(xVal) && isFinite(yVal)) {
+        data.push([xVal, yVal]);
+      }
+    }
+    return data;
+  }
+
+  async fit(){
+    const data = this._buildData();
+    if (data.length < 2) { // Il faut au moins 2 points pour une régression linéaire
+        console.error("Pas assez de données valides pour effectuer une modélisation.");
+        return this;
+    };
+
+    const f = this._getFunction();
+
+    const fn1 = function(a){
+      let sum = 0;
+      for (let i = 0; i < data.length; ++i) {
+            sum += Math.pow(data[i][1] - f(a, data[i][0]), 2);
+        }
+        return Math.sqrt(sum);
+	}
+
+    let solver = new Alglib();
+    solver.add_function(fn1);
+
+    await solver.promise;
+    console.log("Solver ready");
+
+    let guess_size = 2;
+    if (this.type === 'Quadratic') guess_size = 3;
+    if (this.type === 'Cubic') guess_size = 4;
+    
+    solver.solve("min", Array(guess_size).fill(1));
+    let a = solver.get_results();
+    console.log("Fitting results:", a);
+    
+    this.parameters = a;
+
+    solver.remove();
+    return this;
+  }
+
+  getHighResData(minX, maxX, points = 200) {
+    const data = [];
+    const step = (maxX - minX) / (points - 1);
+
+    switch(this.type){
+      case "Linear":
+        for (let i = 0; i < points; i++) {
+          const x = minX + i * step;
+          const y = this.parameters[1] * x + this.parameters[0];
+          data.push([x, y]);
+        }
+        break;
+      case "Quadratic":
+        for (let i = 0; i < points; i++) {
+          const x = minX + i * step;
+          const y = this.parameters[2] * Math.pow(x, 2) + this.parameters[1] * x + this.parameters[0];
+          data.push([x, y]);
+        }
+        break;
+      case "Cubic":
+        for (let i = 0; i < points; i++) {
+          const x = minX + i * step;
+          const y = this.parameters[3] * Math.pow(x, 3) + this.parameters[2] * Math.pow(x, 2) + this.parameters[1] * x + this.parameters[0];
+          data.push([x, y]);
+        }
+        break;
+      default:
+        console.error("Modèle non pris en charge pour la génération de données haute résolution.");
+        break;
+    }
+    
+    return data;
+  }
+}
 
 /*----------------------------------------------------------------------------------------------
 ------------------------------------------------Data--------------------------------------------
@@ -30,7 +158,8 @@ export default class Data {
     this.curves = [];
     this.parameters = {}; // For storing parameters (e.g. constants)
 
-    // AJOUTEZ CET OBJET
+    this.models = []; // For storing models
+
     this.settings = {
       significantDigits: 4
     };
@@ -84,6 +213,14 @@ export default class Data {
     this.curves.forEach(curve => {
       curve.splice(index, amount);
     });
+  }
+
+  async addModel(){
+    let model = new Model(this.curves[0], this.curves[1]);
+    model.type = "Quadratic";
+    await model.fit();
+    this.models.push(model);
+    return model;
   }
 
   getTable(){

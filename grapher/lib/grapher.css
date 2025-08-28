@@ -43,6 +43,11 @@
   overflow: hidden;
 }
 
+.model-toggle {
+  cursor: pointer;
+  background-color: var(--darker-bg-color);
+}
+
 #chart-wrapper {
   flex-grow: 1;
   display: flex;
@@ -61,9 +66,6 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-#calculation-sidebar .menu-list a:hover {
-  background-color: #f5f5f5; /* Bulma's background-hover-color */
 }
 /* Rendre les colonnes de fonctions sans espace pour la compacité */
 #calculation-sidebar-functions .columns {

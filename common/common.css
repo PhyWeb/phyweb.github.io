@@ -1,5 +1,19 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
 
+:root {
+  --main-bg-color: #f5f5f5;
+  --main-text-color: #363636;
+  --primary-color: #00d1b2; /* Couleur primaire de Bulma */
+  --secondary-color: #3273dc; /* Couleur secondaire de Bulma */
+  --accent-color: #ffdd57; /* Couleur d'accentuation de Bulma */
+  --info-color: #209cee; /* Couleur info de Bulma */
+  --success-color: #23d160; /* Couleur succès de Bulma */
+  --warning-color: #ffdd57; /* Couleur avertissement de Bulma */
+  --danger-color: #ff3860; /* Couleur danger de Bulma */
+
+  --darker-bg-color: hsl(0, 0%, 85%);
+}
+
 body, html {
   font-family: "Inter", sans-serif;
   user-select: none;

@@ -95,6 +95,26 @@ export default class App {
     this.grapher.updateChart();
   }
 
+  async addModel(){
+    let model = await this.data.addModel();
+
+    if (model) {
+      // 1. Crée la série du modèle sans redessiner le graphique
+      this.grapher.addModelSeries(model);
+      
+      // 2. Déclenche manuellement UN SEUL redraw.
+      // Cet appel va mettre à jour le graphique et l'événement 'redraw'
+      // s'assurera que tous les modèles sont correctement tracés.
+      this.grapher.chart.redraw();
+    } else {
+      alertModal({
+        title: "Modélisation impossible",
+        body: "Pour créer un modèle, vous devez avoir au moins deux grandeurs dans votre tableur.",
+        confirm: "OK"
+      });
+    }
+  }
+
   applyCalculation(text) {
     // --- Phase 1: Analyse et Validation ---
     const formulasToEvaluate = [];

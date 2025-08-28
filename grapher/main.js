@@ -1143,6 +1143,37 @@ $("#compress-modelisation-button").addEventListener("click", () => {
 
 
 
+// Modelisation panel collapsible messages
+/*const modelToggleHeaders = document.querySelectorAll("#modelisation-panel .model-toggle");
+
+modelToggleHeaders.forEach(toggleHeader => {
+  toggleHeader.addEventListener("click", (event) => {
+    const message = toggleHeader.closest(".message");
+    const body = message.querySelector(".message-body");
+    const icon = toggleHeader.querySelector(".icon").firstElementChild;
+
+    console.log(icon)
+
+    toggleHeader.classList.toggle("is-active");
+    body.classList.toggle("is-hidden");
+
+    if (toggleHeader.classList.contains("is-active")) {
+      icon.classList.remove("fa-angle-down");
+      icon.classList.add("fa-angle-up");
+    } else {
+      icon.classList.remove("fa-angle-up");
+      icon.classList.add("fa-angle-down");
+    }
+  });
+});*/
+
+$("#add-model-button").addEventListener("click", async () => {
+  await app.addModel();
+  console.log("Model added");
+});
+
+
+
 /*----------------------------------------------------------------------------------------------
 --------------------------------------------Calculation-----------------------------------------
 ----------------------------------------------------------------------------------------------*/
