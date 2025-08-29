@@ -1169,7 +1169,6 @@ modelToggleHeaders.forEach(toggleHeader => {
 
 $("#add-model-button").addEventListener("click", async () => {
   await app.addModel();
-  console.log("Model added");
 });
 
 

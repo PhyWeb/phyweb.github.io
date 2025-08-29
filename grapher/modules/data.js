@@ -67,8 +67,6 @@ class Model {
   _buildData(){
     let data = [];
     for(let i = 0; i < this.x.length; i++){
-      // **LA CORRECTION PRINCIPALE EST ICI**
-      // On vérifie que les deux points x et y sont des nombres valides avant de les ajouter.
       const xVal = this.x[i];
       const yVal = this.y[i];
       if (xVal !== null && yVal !== null && xVal !== '' && yVal !== '' && isFinite(xVal) && isFinite(yVal)) {
@@ -80,7 +78,7 @@ class Model {
 
   async fit(){
     const data = this._buildData();
-    if (data.length < 2) { // Il faut au moins 2 points pour une régression linéaire
+    if (data.length < 2) { // Il faut au moins 2 points pour une régression
         console.error("Pas assez de données valides pour effectuer une modélisation.");
         return this;
     };
@@ -218,6 +216,7 @@ export default class Data {
   async addModel(){
     let model = new Model(this.curves[0], this.curves[1]);
     model.type = "Quadratic";
+    model.visible = true;
     await model.fit();
     this.models.push(model);
     return model;

@@ -269,7 +269,7 @@ export default class Grapher {
       title: {
         text: null
       },
-      xAxis: {
+      xAxis: [{
         title: {
           text: null
         },
@@ -301,7 +301,12 @@ export default class Grapher {
           }
         }
       },
-      yAxis: {
+      { // Axe X Secondaire (index 1) pour les modèles
+        visible: false, // On le cache
+        linkedTo: 0
+      }
+      ],
+      yAxis: [{
         title: {
           text: null
         },
@@ -334,6 +339,10 @@ export default class Grapher {
           }
         }
       },
+      { // Axe Y Secondaire (index 1) pour les modèles
+        visible: false, // On le cache
+        linkedTo: 0
+      }],
       credits: {
         enabled: false
       },
@@ -644,6 +653,8 @@ export default class Grapher {
         id: seriesId,
         name: `Modèle (${model.y.title})`,
         data: modelData,
+        xAxis: 1, // Utilise l'axe X secondaire (invisible)
+        yAxis: 1, // Utilise l'axe Y secondaire (invisible)
         type: 'line',
         color: model.y.color,
         dashStyle: 'Dash',
