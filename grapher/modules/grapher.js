@@ -618,7 +618,7 @@ export default class Grapher {
 
     this.data.models.forEach(model => {
       if (model.visible && model.x && model.y) {
-        const seriesId = `model-${model.y.title}-vs-${model.x.title}`;
+        const seriesId = `model-${model.id}`; // Utiliser un ID unique du modèle
         const existingSeries = this.chart.get(seriesId);
         
         if (existingSeries) {
@@ -644,14 +644,14 @@ export default class Grapher {
     const extremes = this.chart.xAxis[0].getExtremes();
     const modelData = model.getHighResData(extremes.min, extremes.max);
     
-    const seriesId = `model-${model.y.title}-vs-${model.x.title}`;
+    const seriesId = `model-${model.id}`; // Utiliser un ID unique du modèle
     const existingSeries = this.chart.get(seriesId);
 
     // On s'assure de ne pas ajouter une série qui existerait déjà
     if (!existingSeries) {
       this.chart.addSeries({
         id: seriesId,
-        name: `Modèle (${model.y.title})`,
+        name: model.name || `Modèle (${model.y.title})`, // Utiliser le nom du modèle s'il existe
         data: modelData,
         xAxis: 1, // Utilise l'axe X secondaire (invisible)
         yAxis: 1, // Utilise l'axe Y secondaire (invisible)

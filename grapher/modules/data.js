@@ -30,13 +30,15 @@ class Model {
     this.x = x; // Courbe pour les valeurs x
     this.y = y; // Courbe pour les valeurs y
 
+    this.id = Highcharts.uniqueKey();
+
     this.type = type; // Ex: "Linear", "Quadratic"
     this.visible = true; // Si le modèle est visible sur le graphe
     this.parameters = []; // Paramètres du modèle (a, b, c...)
   }
 
   getEquationString() {
-    if (Object.keys(this.parameters).length === 0) return "Calcul en cours...";
+    /*if (Object.keys(this.parameters).length === 0) return "Calcul en cours...";
     
     switch(this.type){
       case "Linear":
@@ -46,7 +48,7 @@ class Model {
         return `y = ${this.parameters.a.toPrecision(3)}x ${sign} ${absB.toPrecision(3)}`;
       default:
         return "Modèle non défini";
-    }
+    }*/
   }
 
   _getFunction(){
