@@ -1115,7 +1115,6 @@ $("#zoom-button").addEventListener("click", () => {
 
 $("#auto-zoom-button").addEventListener("click", () => {
   grapher.chart.zoomOut();
-  $("#auto-zoom-button").classList.add("is-hidden");
   $("#zoom-button").classList.remove("is-active");
   grapher.chart.container.classList.remove('chart-free-crosshair');
   isZoomEnabled = false;
