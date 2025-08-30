@@ -26,11 +26,11 @@ class Curve extends Serie {
 // Dans le fichier : modules/data.js
 
 class Model {
-  constructor(x,y) {
+  constructor(x, y, type) {
     this.x = x; // Courbe pour les valeurs x
     this.y = y; // Courbe pour les valeurs y
 
-    this.type = ""; // Ex: "Linear", "Quadratic"
+    this.type = type; // Ex: "Linear", "Quadratic"
     this.visible = true; // Si le modèle est visible sur le graphe
     this.parameters = []; // Paramètres du modèle (a, b, c...)
   }
@@ -51,14 +51,21 @@ class Model {
 
   _getFunction(){
     switch(this.type){
-      case "Linear":
-        // y = a*x + b  => le solveur attend [b, a]
-        return (a_n, x) => a_n[1] * x + a_n[0];
-      case "Quadratic":
-        // y = a*x^2 + b*x + c => le solveur attend [c, b, a]
-        return (a_n, x) => a_n[2] * Math.pow(x, 2) + a_n[1] * x + a_n[0];
+      case "linear":
+        // y = a*x
+        return (a_n, x) => a_n[0] * x;
+      case "affine":
+        // y = a*x + b 
+        return (a_n, x) => a_n[0] * x + a_n[1];
+      case "quadratic":
+        // y = a*x^2 + b*x + c
+        return (a_n, x) => a_n[0] * Math.pow(x, 2) + a_n[1] * x + a_n[2];
       case "Cubic":
-        return (a_n, x) => a_n[3] * Math.pow(x, 3) + a_n[2] * Math.pow(x, 2) + a_n[1] * x + a_n[0];
+        // y = a*x^3 + b*x^2 + c*x + d
+        return (a_n, x) => a_n[0] * Math.pow(x, 3) + a_n[1] * Math.pow(x, 2) + a_n[2] * x + a_n[3];
+      case "power":
+        // y = a*x^b
+        return (a_n, x) => a_n[0] * Math.pow(x, a_n[1]);
       default:
         return () => 0; // Fonction par défaut
       }
@@ -100,8 +107,11 @@ class Model {
     console.log("Solver ready");
 
     let guess_size = 2;
-    if (this.type === 'Quadratic') guess_size = 3;
-    if (this.type === 'Cubic') guess_size = 4;
+    if (this.type === 'linear') guess_size = 1;
+    if (this.type === 'affine') guess_size = 2;
+    if (this.type === 'quadratic') guess_size = 3;
+    if (this.type === 'cubic') guess_size = 4;
+    if (this.type === 'power') guess_size = 2;
     
     solver.solve("min", Array(guess_size).fill(1));
     let a = solver.get_results();
@@ -118,24 +128,38 @@ class Model {
     const step = (maxX - minX) / (points - 1);
 
     switch(this.type){
-      case "Linear":
+      case "linear":
         for (let i = 0; i < points; i++) {
           const x = minX + i * step;
-          const y = this.parameters[1] * x + this.parameters[0];
+          const y = this.parameters[0] * x;
           data.push([x, y]);
         }
         break;
-      case "Quadratic":
+        case "affine":
+          for (let i = 0; i < points; i++) {
+            const x = minX + i * step;
+            const y = this.parameters[0] * x + this.parameters[1];
+            data.push([x, y]);
+          }
+          break;
+      case "quadratic":
         for (let i = 0; i < points; i++) {
           const x = minX + i * step;
-          const y = this.parameters[2] * Math.pow(x, 2) + this.parameters[1] * x + this.parameters[0];
+          const y = this.parameters[0] * Math.pow(x, 2) + this.parameters[1] * x + this.parameters[2];
           data.push([x, y]);
         }
         break;
-      case "Cubic":
+      case "cubic":
         for (let i = 0; i < points; i++) {
           const x = minX + i * step;
           const y = this.parameters[3] * Math.pow(x, 3) + this.parameters[2] * Math.pow(x, 2) + this.parameters[1] * x + this.parameters[0];
+          data.push([x, y]);
+        }
+        break;
+      case "power":
+        for (let i = 0; i < points; i++) {
+          const x = minX + i * step;
+          const y = this.parameters[0] * Math.pow(x, this.parameters[1]);
           data.push([x, y]);
         }
         break;
@@ -213,9 +237,10 @@ export default class Data {
     });
   }
 
-  async addModel(){
-    let model = new Model(this.curves[0], this.curves[1]);
-    model.type = "Quadratic";
+  async addModel(x, y, type){
+    let datax = this.getCurveByTitle(x);
+    let datay = this.getCurveByTitle(y);
+    let model = new Model(datax, datay, type);
     model.visible = true;
     await model.fit();
     this.models.push(model);

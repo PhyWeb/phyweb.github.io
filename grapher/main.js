@@ -1166,8 +1166,64 @@ modelToggleHeaders.forEach(toggleHeader => {
   });
 });*/
 
-$("#add-model-button").addEventListener("click", async () => {
-  await app.addModel();
+// --- Logique pour la modale d'ajout de modèle ---
+const addModelModal = document.getElementById('add-model-modal');
+const modelCurveSelect = document.getElementById('model-curve-select');
+const modelTypeContainer = document.getElementById('model-type-container');
+let selectedModelType = null;
+
+function openAddModelModal() {
+  // Peuple le sélecteur de courbes
+  modelCurveSelect.innerHTML = '';
+  if (grapher.chart && grapher.currentXCurve) {
+    grapher.chart.series.forEach(series => {
+      // On ne modélise pas un modèle existant
+      if (series.type !== 'spline' && !series.name.startsWith('Modèle')) {
+        const option = document.createElement('option');
+        option.value = series.name;
+        option.textContent = `${series.name} = f(${grapher.currentXCurve})`;
+        modelCurveSelect.appendChild(option);
+      }
+    });
+  }
+  
+  // Réinitialise la sélection
+  const activeItem = modelTypeContainer.querySelector('.is-active');
+  if (activeItem) {
+    activeItem.classList.remove('is-active', 'has-background-primary-light');
+  }
+  selectedModelType = null;
+
+  addModelModal.classList.add('is-active');
+}
+
+// Ouvre la modale
+$('#add-model-button').addEventListener('click', openAddModelModal);
+
+// Gère la sélection d'un type de modèle
+modelTypeContainer.addEventListener('click', (e) => {
+  const targetItem = e.target.closest('.model-type-item');
+  if (targetItem) {
+    // Enlève la classe active des autres éléments
+    modelTypeContainer.querySelectorAll('.model-type-item').forEach(item => {
+      item.classList.remove('is-active', 'has-background-primary-light');
+    });
+    // Ajoute la classe active à l'élément cliqué
+    targetItem.classList.add('is-active', 'has-background-primary-light');
+    selectedModelType = targetItem.dataset.modelType;
+  }
+});
+
+// Le bouton "Créer"
+document.getElementById('add-model-confirm-button').addEventListener('click', async () => {
+  const curveToModel = modelCurveSelect.value;
+  if (curveToModel && selectedModelType) {
+    console.log(`Création d'un modèle '${selectedModelType}' pour la courbe '${curveToModel}'`);
+    common.modalManager.closeAllModals();
+    await app.addModel(grapher.currentXCurve, curveToModel, selectedModelType);
+  } else {
+    alert("Veuillez sélectionner une courbe et un type de modèle.");
+  }
 });
 
 

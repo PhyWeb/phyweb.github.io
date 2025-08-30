@@ -129,3 +129,16 @@
   color: #999;
   font-style: italic;
 }
+
+/* Modèles*/
+
+.model-type-item {
+  width: 120px;
+  border: 1px solid #dbdbdb;
+  transition: all 0.2s ease-in-out;
+}
+
+.model-type-item.is-active {
+  border-color: var(--bulma-primary);
+  box-shadow: 0 0 0 0.125em hsla(var(--bulma-primary-h), var(--bulma-primary-s), var(--bulma-primary-l), 0.25);
+}

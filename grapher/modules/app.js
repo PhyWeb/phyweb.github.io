@@ -95,8 +95,8 @@ export default class App {
     this.grapher.updateChart();
   }
 
-  async addModel(){
-    let model = await this.data.addModel();
+  async addModel(x, y, type) {
+    let model = await this.data.addModel(x, y, type);
 
     if (model) {
       // 1. Crée la série du modèle sans redessiner le graphique

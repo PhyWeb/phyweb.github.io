@@ -904,5 +904,61 @@
       </footer>
     </div>
   </div>
+  <!------------------------------------------------------------------------------------------------------------>
+  <!--------------------------------------------------ADD MODEL MODAL------------------------------------------->
+  <!------------------------------------------------------------------------------------------------------------>
+  <div id="add-model-modal" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title">Nouvelle modélisation</p>
+        <button class="delete" aria-label="close"></button>
+      </header>
+      <section class="modal-card-body">
+        <div class="field">
+          <label class="label">Courbe à modéliser</label>
+          <div class="control">
+            <div class="select is-fullwidth">
+              <select id="model-curve-select">
+                <!-- Les options seront ajoutées par JavaScript -->
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <label class="label">Type de modèle</label>
+          <div id="model-type-container" class="is-flex is-flex-wrap-wrap" style="gap: 1rem;">
+            <div class="model-type-item box is-clickable p-3 has-text-centered is-flex-grow-1" data-model-type="linear">
+              <span class="icon is-large has-text-info"><i class="fas fa-chart-line fa-2x"></i></span>
+              <p class="has-text-weight-semibold mt-2">Linéaire</p>
+              <p class="is-size-7">y = a.x</p>
+            </div>
+            <div class="model-type-item box is-clickable p-3 has-text-centered is-flex-grow-1" data-model-type="affine">
+              <span class="icon is-large has-text-info"><i class="fas fa-chart-line fa-2x"></i></span>
+              <p class="has-text-weight-semibold mt-2">Affine</p>
+              <p class="is-size-7">y = a.x + b</p>
+            </div>
+            <div class="model-type-item box is-clickable p-3 has-text-centered is-flex-grow-1" data-model-type="quadratic">
+              <span class="icon is-large has-text-info"><i class="fas fa-wave-square fa-2x"></i></span>
+              <p class="has-text-weight-semibold mt-2">Parabole</p>
+              <p class="is-size-7">y = ax²+bx+c</p>
+            </div>
+            <div class="model-type-item box is-clickable p-3 has-text-centered is-flex-grow-1 mb-3" data-model-type="power">
+              <span class="icon is-large has-text-info"><i class="fas fa-chart-area fa-2x"></i></span>
+              <p class="has-text-weight-semibold mt-2">Puissance</p>
+              <p class="is-size-7">y = a.x^b</p>
+            </div>
+            <!-- Ajoutez d'autres modèles ici si nécessaire -->
+          </div>
+        </div>
+      </section>
+      <footer class="modal-card-foot">
+        <div class="buttons">
+          <button class="button is-success" id="add-model-confirm-button">Créer</button>
+          <button class="button modal-close-button">Annuler</button>
+        </div>
+      </footer>
+    </div>
+  </div>
   </body>
 </html>
