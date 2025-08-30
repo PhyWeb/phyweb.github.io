@@ -429,24 +429,24 @@ export default class Grapher {
       // Ajoute les nouvelles séries cochées
       yCurveTitles.forEach(title => {
         if (!this.chart.series.some(s => s.name === title)) {
-            const curve = this.data.getCurveByTitle(title);
-            if (curve) {
-                this.chart.addSeries({
-                    name: title,
-                    data: this.formatData(this.data.getCurveByTitle(this.currentXCurve), curve),
-                    color: curve.color,
-                    lineWidth: curve.line ? curve.lineWidth : 0,
-                    dashStyle: curve.lineStyle,
-                    marker: {
-                        enabled: curve.markers,
-                        symbol: curve.markerSymbol,
-                        radius: curve.markerRadius,
-                        lineWidth: (curve.markerSymbol === "cross" || curve.markerSymbol === "crossX") ? 1 : 0,
-                        lineColor: curve.color
-                    },
-                    unit: curve.unit
-                });
-            }
+          const curve = this.data.getCurveByTitle(title);
+          if (curve) {
+            this.chart.addSeries({
+              name: title,
+              data: this.formatData(this.data.getCurveByTitle(this.currentXCurve), curve),
+              color: curve.color,
+              lineWidth: curve.line ? curve.lineWidth : 0,
+              dashStyle: curve.lineStyle,
+              marker: {
+                enabled: curve.markers,
+                symbol: curve.markerSymbol,
+                radius: curve.markerRadius,
+                lineWidth: (curve.markerSymbol === "cross" || curve.markerSymbol === "crossX") ? 1 : 0,
+                lineColor: curve.color
+              },
+              unit: curve.unit
+            });
+          }
         }
       });
     // Cas 2: Mise à jour générale (après une modification du tableur)
@@ -661,7 +661,16 @@ export default class Grapher {
         lineWidth: 2,
         marker: { enabled: false },
         enableMouseTracking: false,
-        zIndex: 1
+        zIndex: 1,
+        showInLegend: false, // N'affiche pas le modèle dans la légende
+        states: {
+          hover: {
+            enabled: false // Désactive l'effet de survol
+          },
+          inactive: {
+            enabled: false // Empêche le modèle de s'estomper quand une autre série est survolée
+          }
+        }
       }, false); // 'false' est crucial pour ne pas déclencher un redraw ici.
     }
   }
