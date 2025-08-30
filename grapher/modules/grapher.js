@@ -609,6 +609,36 @@ export default class Grapher {
   }
 
   /**
+   * Zooms in or out on all axes.
+   * @param {('in'|'out')} direction - The direction to zoom.
+   */
+  zoom(direction) {
+    const factor = direction === 'in' ? 0.8 : 1.25;
+
+    const extremeX = this.chart.xAxis[0].getExtremes();
+    const extremeY = this.chart.yAxis[0].getExtremes();
+
+    const rangeX = extremeX.max - extremeX.min;
+    const rangeY = extremeY.max - extremeY.min;
+
+    const newRangeX = rangeX * factor;
+    const newRangeY = rangeY * factor;
+
+    const centerX = (extremeX.max + extremeX.min) / 2;
+    const centerY = (extremeY.max + extremeY.min) / 2;
+    
+    const newMinX = centerX - newRangeX / 2;
+    const newMaxX = centerX + newRangeX / 2;
+    const newMinY = centerY - newRangeY / 2;
+    const newMaxY = centerY + newRangeY / 2;
+
+    this.chart.xAxis[0].setExtremes(newMinX, newMaxX, false, undefined);
+    this.chart.yAxis[0].setExtremes(newMinY, newMaxY, false, undefined);
+
+    this.chart.redraw();
+  }
+
+  /**
    * Met à jour les données de TOUS les modèles visibles sur le graphique.
    * Cette fonction est appelée par l'événement 'redraw' (zoom, déplacement).
    */

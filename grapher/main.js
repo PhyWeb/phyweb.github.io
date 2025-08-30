@@ -1122,6 +1122,16 @@ $("#auto-zoom-button").addEventListener("click", () => {
   grapher.chart.update({ chart: { zooming: { type: null } } });
 });
 
+$("#zoom-in-button").addEventListener("click", () => {
+  grapher.zoom('in');
+});
+
+$("#zoom-out-button").addEventListener("click", () => {
+  grapher.zoom('out');
+});
+
+  
+
 /*----------------------------------------------------------------------------------------------
 -------------------------------------------Modelisation-----------------------------------------
 ----------------------------------------------------------------------------------------------*/
