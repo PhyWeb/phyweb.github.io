@@ -10,6 +10,12 @@ const DEFAULT_MARKER = true;
 const DEFAULT_LINE = false;
 const DEFAULT_LINE_WIDTH = 2;
 
+const DEFAULT_MODEL_RESOLUTION = 200; // Number of points to generate for the model curve
+
+/*----------------------------------------------------------------------------------------------
+-----------------------------------------------Curve--------------------------------------------
+----------------------------------------------------------------------------------------------*/
+
 class Curve extends Serie {
   constructor(title, unit, color = "#000000", line = DEFAULT_LINE, markers = DEFAULT_MARKER, lineWidth = DEFAULT_LINE_WIDTH, lineStyle = "Solid", markerSymbol = "circle", markerRadius = 4) {
     super(title, unit);
@@ -23,7 +29,10 @@ class Curve extends Serie {
     this.markerRadius = markerRadius; // Radius of the marker in pixels
   }
 }
-// Dans le fichier : modules/data.js
+
+/*----------------------------------------------------------------------------------------------
+-----------------------------------------------Model--------------------------------------------
+----------------------------------------------------------------------------------------------*/
 
 class Model {
   constructor(x, y, type) {
@@ -124,7 +133,7 @@ class Model {
     return this;
   }
 
-  getHighResData(minX, maxX, points = 200) {
+  getHighResData(minX, maxX, points = DEFAULT_MODEL_RESOLUTION){ {
     const data = [];
     const step = (maxX - minX) / (points - 1);
 
