@@ -1,6 +1,6 @@
 import {Serie} from "../../common/common.js"
 
-import {Alglib} from 'https://cdn.jsdelivr.net/gh/Pterodactylus/Alglib.js@master/Alglib-v1.1.0.js'
+import {Alglib} from '../lib/Alglib-v1.1.0.js';
 
 const $ = document.querySelector.bind(document);
 
@@ -133,7 +133,7 @@ class Model {
     return this;
   }
 
-  getHighResData(minX, maxX, points = DEFAULT_MODEL_RESOLUTION){ {
+  getHighResData(minX, maxX, points = DEFAULT_MODEL_RESOLUTION){
     const data = [];
     const step = (maxX - minX) / (points - 1);
 
