@@ -106,7 +106,6 @@ class Model {
     solver.add_function(fn1);
 
     await solver.promise;
-    console.log("Solver ready");
 
     let guess_size = 2;
     if (this.type === 'linear') guess_size = 1;

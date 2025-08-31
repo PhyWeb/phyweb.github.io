@@ -1228,7 +1228,6 @@ modelTypeContainer.addEventListener('click', (e) => {
 document.getElementById('add-model-confirm-button').addEventListener('click', async () => {
   const curveToModel = modelCurveSelect.value;
   if (curveToModel && selectedModelType) {
-    console.log(`Création d'un modèle '${selectedModelType}' pour la courbe '${curveToModel}'`);
     common.modalManager.closeAllModals();
     await app.addModel(grapher.currentXCurve, curveToModel, selectedModelType);
   } else {

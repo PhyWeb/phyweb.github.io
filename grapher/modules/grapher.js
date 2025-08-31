@@ -66,7 +66,7 @@ export default class Grapher {
     this.crosshairMode = 'data'; // Mode par défaut
     this.freeCrosshair = null;   // Pour stocker les éléments du réticule
 
-
+    this._suppressModelAutoUpdate = false; // used to avoid double updates
   }
 
   formatData(xCurve, yCurve){
@@ -312,6 +312,8 @@ export default class Grapher {
         },
         lineWidth: 1,
         gridLineWidth: 1,
+        startOnTick: false,
+        endOnTick: false,
         events: {
           afterSetExtremes: function () {
             const yMax = Math.max(Math.abs(this.max), Math.abs(this.min));
@@ -379,7 +381,14 @@ export default class Grapher {
 
     // Ajoute un écouteur pour l'événement redraw pour les modèles
     Highcharts.addEvent(this.chart, 'redraw', () => {
-      this.redrawAllModels();
+      // If we're in a programmatic update sequence, skip the automatic update
+      if (this._suppressModelAutoUpdate) return;
+
+      // Read real extremes and only update if they actually changed
+      const ex = this.chart.xAxis[0].getExtremes();
+
+      // Ask redrawAllModels to use these extremes
+      this.redrawAllModels(ex.min, ex.max);
     });
   }
 
@@ -614,6 +623,7 @@ export default class Grapher {
    */
   zoom(direction) {
     const factor = direction === 'in' ? 0.8 : 1.25;
+    // TODO pas meme facteur pour x et y pour garder meme aspect ratio
 
     const extremeX = this.chart.xAxis[0].getExtremes();
     const extremeY = this.chart.yAxis[0].getExtremes();
@@ -632,19 +642,37 @@ export default class Grapher {
     const newMinY = centerY - newRangeY / 2;
     const newMaxY = centerY + newRangeY / 2;
 
-    this.chart.xAxis[0].setExtremes(newMinX, newMaxX, false, undefined);
-    this.chart.yAxis[0].setExtremes(newMinY, newMaxY, false, undefined);
+    // suppress automatic redraw-driven model updates while we do the manual update
+    this._suppressModelAutoUpdate = true;
+    try {
+      // apply extremes without immediate redraw
+      this.chart.xAxis[0].setExtremes(newMinX, newMaxX, false);
+      this.chart.yAxis[0].setExtremes(newMinY, newMaxY, false);
 
-    this.chart.redraw();
+      // update models using the exact range we computed
+      this.redrawAllModels(newMinX, newMaxX);
+
+      // single redraw at the end
+      this.chart.redraw(false);
+    } finally {
+      // always re-enable auto-updates
+      this._suppressModelAutoUpdate = false;
+    }
   }
 
   /**
    * Met à jour les données de TOUS les modèles visibles sur le graphique.
    * Cette fonction est appelée par l'événement 'redraw' (zoom, déplacement).
    */
-  redrawAllModels() {
-    if (!this.chart) return;
-    const extremes = this.chart.xAxis[0].getExtremes();
+  redrawAllModels(viewMin, viewMax) {
+    // determine range to use
+    let min, max;
+    if (typeof viewMin === 'number' && typeof viewMax === 'number') {
+      min = viewMin; max = viewMax;
+    } else {
+      const ex = this.chart.xAxis[0].getExtremes();
+      min = ex.min; max = ex.max;
+    }
 
     this.data.models.forEach(model => {
       if (model.visible && model.x && model.y) {
@@ -652,9 +680,10 @@ export default class Grapher {
         const existingSeries = this.chart.get(seriesId);
         
         if (existingSeries) {
-          const modelData = model.getHighResData(extremes.min, extremes.max);
+          const modelData = model.getHighResData(min, max);
           // Met à jour les points de la série sans déclencher un nouveau redraw.
-          existingSeries.setData(modelData, false);
+          // Le troisième argument (true) active l'animation.
+          existingSeries.setData(modelData, false, true);
         }
       }
     });
