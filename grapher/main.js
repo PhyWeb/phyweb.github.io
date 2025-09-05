@@ -1253,6 +1253,8 @@ function closeAllModelPanels() {
     body.classList.add('is-hidden');
     toggleUpIcon.classList.add('is-hidden');
     toggleDownIcon.classList.remove('is-hidden');
+
+    header.style.borderRadius = '6px';
     
     window.FontAwesome.dom.i2svg({ node: header });
   });
@@ -1457,6 +1459,8 @@ function createModelPanel(modelID){
     const toggleDownIcon = header.querySelector('.toggle-down');
     const isActive = header.classList.toggle('is-active');
     body.classList.toggle('is-hidden', !isActive);
+
+    header.style.borderRadius = isActive ? '6px 6px 0 0' : '6px';
 
     toggleUpIcon.classList.toggle('is-hidden', !isActive);
     toggleDownIcon.classList.toggle('is-hidden', isActive);
