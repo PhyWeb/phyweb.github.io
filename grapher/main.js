@@ -867,6 +867,7 @@ function populateCurveSelect(){
 $("#choose-x-curve-select").addEventListener("change", () => {
   // Update the X curve in the grapher
   grapher.setXCurve($("#choose-x-curve-select").value, true);
+  updateAllModelPanelVisibilityIcons();
 });
 
 $("#choose-curves-confirm-button").addEventListener("click", () => {
@@ -1247,6 +1248,19 @@ function updateModelPanel(model) {
   }
 }
 
+function updateAllModelPanelVisibilityIcons() {
+  data.models.forEach(model => {
+    const panel = $(`#model-list article[data-model-id="${model.id}"]`);
+    if (panel) {
+      const visibleButton = panel.querySelector('.fa-eye, .fa-eye-slash').closest('button');
+      const isVisible = model.x.title === grapher.currentXCurve && model.visible;
+      visibleButton.innerHTML = `<span class="icon"><i class="fas fa-${isVisible ? 'eye' : 'eye-slash'}"></i></span>`;
+      window.FontAwesome.dom.i2svg({ node: visibleButton });
+    }
+  });
+}
+
+
 function createModelPanel(modelID){
   const modelList = $('#model-list');
   const model = data.models.find(m => m.id === modelID);
@@ -1314,17 +1328,22 @@ function createModelPanel(modelID){
   // ----- Buttons functionality -----
   // Visible button
   visibleButton.addEventListener('click', () => {
-    model.visible = !model.visible;
-    const series = grapher.chart.get(`model-${model.id}`);
-    if(series) {
-      if(model.visible) {
-        series.show();
-      } else {
-        series.hide();
-      }
+    // Verification que l'abscisse est la bonne
+    if (model.visible === false && model.x.title !== grapher.currentXCurve) {
+      alertModal({
+        type: "",
+        title: "Affichage impossible",
+        body: `Pour afficher ce modèle, vous devez sélectionner <strong>${model.x.title}</strong> comme grandeur en abscisse.`,
+        confirm: "OK"
+      });
+      return; // Empêche le reste du code de s'exécuter
     }
-    visibleButton.innerHTML = `<span class="icon"><i class="fas ${model.visible ? 'fa-eye' : 'fa-eye-slash'}"></i></span>`;
-    window.FontAwesome.dom.i2svg({ node: visibleButton });
+
+    model.visible = !model.visible;
+    // L'icône est mise à jour par la fonction updateAllModelPanelVisibilityIcons()
+    updateAllModelPanelVisibilityIcons();
+    // La visibilité de la série est gérée par grapher.updateModelVisibility()
+    grapher.updateModelVisibility();
   });
 
   // Edit button

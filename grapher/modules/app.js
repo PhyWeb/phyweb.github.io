@@ -112,6 +112,8 @@ export default class App {
     if (model) {
       // 1. Crée la série du modèle sans redessiner le graphique
       this.grapher.addModelSeries(model);
+
+      this.grapher.updateModelVisibility();
       
       // 2. Déclenche manuellement UN SEUL redraw.
       // Cet appel va mettre à jour le graphique et l'événement 'redraw'

@@ -394,7 +394,7 @@ export default class Grapher {
 
   setXCurve(title, redraw = true){
     this.currentXCurve = title;
-
+    this.updateModelVisibility(); // Appeler la méthode de mise à jour de la visibilité des modèles.
     if(redraw){
       this.updateChart();
     }
@@ -668,14 +668,17 @@ export default class Grapher {
     // determine range to use
     let min, max;
     if (typeof viewMin === 'number' && typeof viewMax === 'number') {
-      min = viewMin; max = viewMax;
+      min = viewMin; 
+      max = viewMax;
     } else {
       const ex = this.chart.xAxis[0].getExtremes();
-      min = ex.min; max = ex.max;
+      min = ex.min; 
+      max = ex.max;
     }
 
     this.data.models.forEach(model => {
-      if (model.visible && model.x && model.y) {
+      // Modèle est visible si la courbe en x correspond ET que l'utilisateur ne l'a pas caché
+      if (model.x.title === this.currentXCurve && model.visible) {
         const seriesId = `model-${model.id}`; // Utiliser un ID unique du modèle
         const existingSeries = this.chart.get(seriesId);
         
@@ -708,6 +711,8 @@ export default class Grapher {
 
     // On s'assure de ne pas ajouter une série qui existerait déjà
     if (!existingSeries) {
+      // Déterminer la visibilité initiale du modèle
+      const isVisible = model.x.title === this.currentXCurve && model.visible;
       this.chart.addSeries({
         id: seriesId,
         name: model.name || `Modèle (${model.y.title})`, // Utiliser le nom du modèle s'il existe
@@ -722,6 +727,7 @@ export default class Grapher {
         enableMouseTracking: false,
         zIndex: 1,
         showInLegend: false, // N'affiche pas le modèle dans la légende
+        visible: isVisible, // Définir la visibilité initiale
         states: {
           hover: {
             enabled: false // Désactive l'effet de survol
@@ -732,6 +738,19 @@ export default class Grapher {
         }
       }, false); // 'false' est crucial pour ne pas déclencher un redraw ici.
     }
+  }
+  updateModelVisibility() {
+    this.data.models.forEach(model => {
+      const series = this.chart.get(`model-${model.id}`);
+      if (series) {
+        const isVisible = model.x.title === this.currentXCurve && model.visible;
+        if (isVisible) {
+          series.show();
+        } else {
+          series.hide();
+        }
+      }
+    });
   }
 }
 
