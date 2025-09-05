@@ -426,12 +426,12 @@ export default class Grapher {
   updateChart(yCurveTitles){
     // Cas 1: Mise à jour depuis la modale "Courbes" (on sait quelles courbes afficher)
     if(this.currentXCurve && yCurveTitles){
-      // Supprime les séries qui ne sont plus cochées
+      // Supprime les séries qui ne sont plus cochées, en ignorant les modèles
       let i = this.chart.series.length;
       while (i--) {
         const serie = this.chart.series[i];
-        if (yCurveTitles.indexOf(serie.name) === -1) {
-            serie.remove();
+        if (yCurveTitles.indexOf(serie.name) === -1 && !serie.options.id?.startsWith('model-')) {
+          serie.remove();
         }
       }
       
