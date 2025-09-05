@@ -31,8 +31,6 @@ GRAPHER:
 
   - permettre de definir des bornes aux modèles (pour l'instant c'est toujours sur toute la plage de données)
 
-  - BUG : la premiere fois que l'on clique sur l'header d'un model, il ne se ferme pas
-
   - permettre voir autoriser les notations 3e-15 (deja partiellemnt possible, à vérifier partout)
 
   - réticule persistant quand on clique

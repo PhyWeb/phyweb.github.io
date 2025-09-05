@@ -146,6 +146,8 @@ export default class App {
       for (const model of this.data.models) {
         // Recalcule les paramètres du modèle
         await model.fit();
+         // Met à jour le panneau du modèle avec les nouveaux résultats
+        this.uiUpdater.updateModelPanel(model);
       }
       
       // Met à jour la visibilité et redessine le graphique

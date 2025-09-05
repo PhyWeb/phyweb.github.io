@@ -973,50 +973,53 @@
         <button class="delete" aria-label="close"></button>
       </header>
       <section class="modal-card-body">
-        <div class="field is-horizontal">
-          <div class="field-label is-normal">
-            <label class="label">Couleur</label>
+        <div class="columns is-mobile">
+          <div class="column is-narrow">
+            <div class="field is-horizontal">
+              <div class="field-label is-normal">
+                <label class="label">Couleur</label>
+              </div>
+              <div class="field-body">
+                <div class="control">
+                  <div class="select is-fullwidth">
+                    <select id="model-edit-color-picker"></select>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="field-body">
-            <div class="field">
-              <div class="control">
-                <div class="select is-fullwidth">
-                  <select id="model-edit-color-picker"></select>
+
+          <div class="column">
+            <div class="field is-horizontal">
+              <div class="field-label is-normal">
+                <label class="label">Ligne</label>
+              </div>
+              <div class="field-body">
+                <div class="field is-flex-grow-0">
+                  <div class="control">
+                    <div class="select">
+                      <select id="model-edit-linewidth-select"></select>
+                    </div>
+                  </div>
+                </div>
+                <div class="field">
+                  <div class="control">
+                    <div class="select is-fullwidth">
+                      <select id="model-edit-linestyle-select">
+                        <option value="Solid">Continue</option>
+                        <option value="Dash">Tirets</option>
+                        <option value="Dot">Points</option>
+                      </select>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div class="field is-horizontal">
-          <div class="field-label is-normal">
-            <label class="label">Ligne</label>
-          </div>
-          <div class="field-body">
-            <div class="field is-flex-grow-0">
-              <div class="control">
-                <div class="select">
-                  <select id="model-edit-linewidth-select"></select>
-                </div>
-              </div>
-            </div>
-            <div class="field">
-              <div class="control">
-                <div class="select is-fullwidth">
-                  <select id="model-edit-linestyle-select">
-                    <option value="Solid">Continue</option>
-                    <option value="Dash">Tirets</option>
-                    <option value="Dot">Points</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        
         <p class="title is-6 mt-4">Paramètres</p>
         <div id="model-edit-parameters-container"></div>
-        
       </section>
       <footer class="modal-card-foot">
         <div class="buttons">

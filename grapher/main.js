@@ -29,10 +29,9 @@ spreadsheet.build();
 
 // App
 const app = new App(data, spreadsheet, grapher, calculation, {
-  // Conserver les fonctions existantes
   updateCalculationUI: updateCalculationUI,
-  // Ajouter la nouvelle fonction
-  updateRecalculateButtonVisibility: updateRecalculateButtonVisibility
+  updateRecalculateButtonVisibility: updateRecalculateButtonVisibility,
+  updateModelPanel: updateModelPanel
 });
 
 // convertit <i> en SVG manuellement
@@ -1226,6 +1225,23 @@ function updateModelPanel(model) {
       icon.classList.remove('fa-eye');
       icon.classList.add('fa-eye-slash');
     }
+
+    // On met à jour l'affichage de l'écart-type et du R²
+    const ul2 = panel.querySelector('ul:last-of-type');
+    if (ul2) {
+      const significantDigits = data.settings.significantDigits;
+      ul2.innerHTML = ''; // Nettoyer la liste avant de la mettre à jour
+      
+      // Ajout de l'écart-type
+      const liRmse = document.createElement('li');
+      liRmse.innerHTML = `Écart-type : ${formatNumber(model.rmse, significantDigits)}`;
+      ul2.appendChild(liRmse);
+      
+      // Ajout du R²
+      const liRSquared = document.createElement('li');
+      liRSquared.innerHTML = `Coefficient de corrélation R² : ${formatNumber(model.rSquared, 8)}`;
+      ul2.appendChild(liRSquared);
+    }
   }
 }
 
@@ -1324,6 +1340,14 @@ function createModelPanel(modelID){
   p4.innerHTML = `<strong>Qualité de l'ajustement :</strong>`;
   body.appendChild(p4);
   const ul2 = document.createElement('ul');
+  // Ajout de la valeur de l'écart-type
+  const liRmse = document.createElement('li');
+  liRmse.innerHTML = `Écart-type : ${formatNumber(model.rmse, significantDigits)}`;
+  ul2.appendChild(liRmse);
+  // Ajout du R²
+  const liRSquared = document.createElement('li');
+  liRSquared.innerHTML = `Coefficient de corrélation R² : ${formatNumber(model.rSquared, 8)}`;
+  ul2.appendChild(liRSquared);
   body.appendChild(ul2);
 
   // ----- Buttons functionality -----
