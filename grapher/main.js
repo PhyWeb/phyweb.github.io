@@ -1153,15 +1153,13 @@ $("#compress-modelisation-button").addEventListener("click", () => {
 
 
 // Modelisation panel collapsible messages
-/*const modelToggleHeaders = document.querySelectorAll("#modelisation-panel .model-toggle");
+const modelToggleHeaders = document.querySelectorAll("#modelisation-panel .model-toggle");
 
 modelToggleHeaders.forEach(toggleHeader => {
   toggleHeader.addEventListener("click", (event) => {
     const message = toggleHeader.closest(".message");
     const body = message.querySelector(".message-body");
     const icon = toggleHeader.querySelector(".icon").firstElementChild;
-
-    console.log(icon)
 
     toggleHeader.classList.toggle("is-active");
     body.classList.toggle("is-hidden");
@@ -1174,7 +1172,7 @@ modelToggleHeaders.forEach(toggleHeader => {
       icon.classList.add("fa-angle-down");
     }
   });
-});*/
+});
 
 // --- Logique pour la modale d'ajout de modèle ---
 const addModelModal = document.getElementById('add-model-modal');
@@ -1224,12 +1222,260 @@ modelTypeContainer.addEventListener('click', (e) => {
   }
 });
 
+function updateModelPanel(model) {
+  const panel = $(`#model-list article[data-model-id="${model.id}"]`);
+  if (panel) {
+    panel.querySelector('.message-header p').innerHTML = `${model.y.title} = f(${model.x.title})`;
+    panel.querySelector('.message-body p:nth-of-type(2)').innerHTML = model.getEquationString();
+    const ul = panel.querySelector('ul');
+    ul.innerHTML = '';
+    const significantDigits = data.settings.significantDigits;
+    model.parameters.forEach(param => {
+      const li = document.createElement('li');
+      const displayValue = formatNumber(param.value, significantDigits);
+      li.innerHTML = `${param.name} = ${displayValue}`;
+      ul.appendChild(li);
+    });
+    const icon = panel.querySelector('.fa-eye, .fa-eye-slash');
+    if (model.visible) {
+      icon.classList.remove('fa-eye-slash');
+      icon.classList.add('fa-eye');
+    } else {
+      icon.classList.remove('fa-eye');
+      icon.classList.add('fa-eye-slash');
+    }
+  }
+}
+
+function createModelPanel(modelID){
+  const modelList = $('#model-list');
+  const model = data.models.find(m => m.id === modelID);
+  if(!model){
+    return;
+  }
+
+  const article = document.createElement('article');
+  article.classList.add('message', 'is-light', 'mb-2');
+  article.setAttribute('data-model-id', model.id);
+  const header = document.createElement('div');
+  header.classList.add('message-header', 'model-toggle');
+  header.innerHTML = `
+    <p>${model.y.title} = f(${model.x.title})</p>
+    <span class="icon"><i class="fa-solid fa-angle-down"></i></span>
+  `;
+  const body = document.createElement('div');
+  body.classList.add('message-body', 'is-hidden', 'model-content', 'pt-2');
+  const p = document.createElement('p');
+  p.classList.add('has-text-centered');
+  p.innerHTML = `<strong>${model.getModelName()}</strong>`;
+  body.appendChild(p);
+  const p2 = document.createElement('p');
+  p2.classList.add('has-text-centered');
+  p2.innerHTML = model.getEquationString();
+  body.appendChild(p2);
+  const div = document.createElement('div');
+  div.classList.add('is-flex', 'is-justify-content-space-around', 'mt-2');
+  const visibleButton = document.createElement('button');
+  visibleButton.classList.add('button', 'is-light');
+  visibleButton.innerHTML = `<span class="icon"><i class="fas fa-eye"></i></span>`;
+  visibleButton.title = "Afficher/Masquer le modèle";
+  div.appendChild(visibleButton);
+  const editButton = document.createElement('button');
+  editButton.classList.add('button', 'is-light');
+  editButton.innerHTML = `<span class="icon"><i class="fas fa-pencil-alt"></i></span>`
+  editButton.title = "Modifier le modèle";
+  div.appendChild(editButton);
+  const deleteButton = document.createElement('button');
+  deleteButton.classList.add('button', 'is-light');
+  deleteButton.innerHTML = `<span class="icon"><i class="fas fa-trash"></i></span>`;
+  deleteButton.title = "Supprimer le modèle";
+  div.appendChild(deleteButton);
+  body.appendChild(div);
+  const p3 = document.createElement('p');
+  p3.classList.add('mt-2');
+  p3.innerHTML = `<strong>Paramètres :</strong>`;
+  body.appendChild(p3);
+  const ul = document.createElement('ul');
+  const significantDigits = data.settings.significantDigits;
+  model.parameters.forEach(param => {
+    const li = document.createElement('li');
+    const displayValue = formatNumber(param.value, significantDigits);
+    li.innerHTML = `${param.name} = ${displayValue}`;
+    ul.appendChild(li);
+  });
+  body.appendChild(ul);
+  const p4 = document.createElement('p');
+  p4.classList.add('mt-2');
+  p4.innerHTML = `<strong>Qualité de l'ajustement :</strong>`;
+  body.appendChild(p4);
+  const ul2 = document.createElement('ul');
+  body.appendChild(ul2);
+
+  // ----- Buttons functionality -----
+  // Visible button
+  visibleButton.addEventListener('click', () => {
+    model.visible = !model.visible;
+    const series = grapher.chart.get(`model-${model.id}`);
+    if(series) {
+      if(model.visible) {
+        series.show();
+      } else {
+        series.hide();
+      }
+    }
+    visibleButton.innerHTML = `<span class="icon"><i class="fas ${model.visible ? 'fa-eye' : 'fa-eye-slash'}"></i></span>`;
+    window.FontAwesome.dom.i2svg({ node: visibleButton });
+  });
+
+  // Edit button
+    editButton.addEventListener('click', () => {
+      const editModelModal = $('#edit-model-modal');
+      const colorPicker = $('#model-edit-color-picker');
+      const lineWidthSelect = $('#model-edit-linewidth-select');
+      
+      // Réinitialisation des menus déroulants et attribution des valeurs actuelles
+      populateModelColors(colorPicker);
+      colorPicker.value = model.color;
+      colorPicker.style.color = model.color; // Met à jour la couleur du sélecteur
+      populateModelLineWidthSelect(lineWidthSelect);
+      lineWidthSelect.value = model.lineWidth;
+      $('#model-edit-linestyle-select').value = model.lineStyle;
+
+      // Déclaration de la variable parametersContainer ici pour qu'elle soit accessible
+      const parametersContainer = $('#model-edit-parameters-container');
+      parametersContainer.innerHTML = '';
+      model.parameters.forEach(param => {
+        const field = document.createElement('div');
+        field.className = 'field is-horizontal';
+        field.innerHTML = `
+          <div class="field-label is-normal">
+            <label class="label">Nom</label>
+          </div>
+          <div class="field-body">
+            <div class="field">
+              <div class="control">
+                <input class="input" type="text" value="${param.name}" data-old-name="${param.name}" />
+              </div>
+            </div>
+            <div class="field-label is-normal has-text-right">
+              <label class="label">Valeur</label>
+            </div>
+            <div class="field">
+              <div class="control">
+                <input class="input" type="text" value="${param.value}" disabled />
+              </div>
+            </div>
+          </div>
+        `;
+        parametersContainer.appendChild(field);
+      });
+      
+      $('#model-edit-save-button').onclick = () => {      
+        model.color = colorPicker.value;
+        model.lineWidth = lineWidthSelect.value;
+        model.lineStyle = $('#model-edit-linestyle-select').value;
+        
+        const allNewNames = new Set();
+        let hasConflict = false;
+        const newParamNames = {};
+        
+        parametersContainer.querySelectorAll('input[data-old-name]').forEach(input => {
+          const oldName = input.dataset.oldName;
+          const newName = input.value.trim();
+          if (!newName.match(/^[a-zA-Z][a-zA-Z0-9]*$/)) {
+            alertModal({ title: "Nom de paramètre invalide", body: `Le nom "${newName}" doit commencer par une lettre et ne contenir que des lettres et des chiffres.`, confirm: "OK" });
+            hasConflict = true;
+            return;
+          }
+          if (allNewNames.has(newName)) {
+            alertModal({ title: "Nom de paramètre en double", body: `Le nom "${newName}" est utilisé plusieurs fois.`, confirm: "OK" });
+            hasConflict = true;
+            return;
+          }
+          allNewNames.add(newName);
+          newParamNames[oldName] = newName;
+        });
+        
+        if(hasConflict) return;
+        
+        const updatedParams = {};
+        model.parameters.forEach(param => {
+          const oldName = param.name;
+          const newName = newParamNames[oldName];
+          updatedParams[newName] = { value: param.value, unit: '', type: 'model' };
+          
+          delete data.parameters[oldName];
+        });
+        
+        model.parameters = Object.entries(updatedParams).map(([name, obj]) => ({ name, value: obj.value }));
+        Object.assign(data.parameters, updatedParams);
+        
+        const series = grapher.chart.get(`model-${model.id}`);
+        if(series) {
+          series.update({
+            color: model.color,
+            lineWidth: model.lineWidth,
+            dashStyle: model.lineStyle,
+          });
+        }
+        
+        updateModelPanel(model);
+        updateCalculationUI();
+        editModelModal.classList.remove('is-active');
+      };
+      
+      editModelModal.classList.add('is-active');
+    });
+
+  // Delete button
+  deleteButton.addEventListener('click', () => {
+    app.deleteModel(model.id);
+    article.remove();
+  });
+
+  header.addEventListener('click', () => {
+    body.classList.toggle('is-hidden');
+    header.classList.toggle('is-active');
+  });
+
+  article.appendChild(header);
+  article.appendChild(body);
+  modelList.appendChild(article);
+  window.FontAwesome.dom.i2svg({ node: article });
+}
+
+function populateModelColors(selectElement){
+  const colors = Highcharts.getOptions().colors;
+  selectElement.innerHTML = "";
+  colors.forEach((color) => {
+    const option = document.createElement('option');
+    option.value = color;
+    option.style.color = color;
+    option.textContent = "■■■■■■■■■";
+    selectElement.appendChild(option);
+  });
+  selectElement.addEventListener('change', function () {
+    this.style.color = this.value;
+  });
+}
+
+function populateModelLineWidthSelect(selectElement){
+  selectElement.innerHTML = "";
+  for(let i = 1; i <= 10; i++){
+    const option = document.createElement('option');
+    option.value = i;
+    option.textContent = i;
+    selectElement.appendChild(option);
+  }
+}
+
 // Le bouton "Créer"
 document.getElementById('add-model-confirm-button').addEventListener('click', async () => {
   const curveToModel = modelCurveSelect.value;
   if (curveToModel && selectedModelType) {
     common.modalManager.closeAllModals();
-    await app.addModel(grapher.currentXCurve, curveToModel, selectedModelType);
+    let model = await app.addModel(grapher.currentXCurve, curveToModel, selectedModelType);
+    createModelPanel(model.id);
   } else {
     alert("Veuillez sélectionner une courbe et un type de modèle.");
   }

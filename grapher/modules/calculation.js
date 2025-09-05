@@ -249,6 +249,7 @@ export default class Calculation {
  * @returns {{results: Array<object>, errors: Array<object>}} Un objet contenant les résultats et les erreurs.
  */
 evaluateBlock(formulas, initialScope) {
+  console.log('Évaluation des formules avec le scope initial:', initialScope);
   const toArr = (v) => (v && v.toArray ? v.toArray() : v);
 
   const scope = {};

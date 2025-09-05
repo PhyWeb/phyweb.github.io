@@ -66,7 +66,18 @@ export default class App {
   deleteAllCurves() {
     // Delete all curves
     this.data.deleteAllCurves();
-    this.data.deleteAllParameters();
+    // this.data.deleteAllParameters();
+    // Conserver uniquement les paramètres de type 'model'
+    const parametersToKeep = {};
+    for (const key in this.data.parameters) {
+      if (Object.prototype.hasOwnProperty.call(this.data.parameters, key)) {
+        const param = this.data.parameters[key];
+        if (param && param.type === 'model') {
+            parametersToKeep[key] = param;
+        }
+      }
+    }
+    this.data.parameters = parametersToKeep;
 
     // Update the graph
     this.grapher.deleteAllCurves(); 
@@ -106,6 +117,11 @@ export default class App {
       // Cet appel va mettre à jour le graphique et l'événement 'redraw'
       // s'assurera que tous les modèles sont correctement tracés.
       this.grapher.chart.redraw();
+
+      // 3. Met à jour la page de calcul
+      this.uiUpdater();
+
+      return model;
     } else {
       alertModal({
         title: "Modélisation impossible",
@@ -115,6 +131,23 @@ export default class App {
     }
   }
 
+  deleteModel(modelID) {
+    const model = this.data.models.find(m => m.id === modelID);
+    if (!model) return;
+
+    // Supprime la série du graphique
+    const series = this.grapher.chart.get(`model-${model.id}`);
+    if (series) {
+      series.remove();
+    }
+
+    // Supprime le modèle de l'objet de données
+    this.data.deleteModel(modelID);
+
+    // Met à jour l'interface utilisateur de calcul
+    this.uiUpdater();
+  }
+
   applyCalculation(text) {
     // --- Phase 1: Analyse et Validation ---
     const formulasToEvaluate = [];
@@ -122,7 +155,17 @@ export default class App {
 
     if (!text || text.trim() === "") {
       this.data.curves = this.data.curves.filter(curve => curve.type !== "calculation");
-      this.data.parameters = {};
+      // Conserver uniquement les paramètres de type 'model'
+      const parametersToKeep = {};
+      for (const key in this.data.parameters) {
+        if (Object.prototype.hasOwnProperty.call(this.data.parameters, key)) {
+          const param = this.data.parameters[key];
+          if (param && param.type === 'model') {
+              parametersToKeep[key] = param;
+          }
+        }
+      }
+      this.data.parameters = parametersToKeep;
       this.spreadsheet.update();
       this.grapher.updateChart();
       this.uiUpdater();
@@ -133,6 +176,7 @@ export default class App {
     const validSymbolRegex = /^[a-zA-Z][a-zA-Z0-9_]*$/; // Ne commence PAS par un underscore
     const definedInBlock = new Set();
     const rawCurveTitles = this.data.curves.filter(c => c.type !== 'calculation').map(c => c.title);
+    const modelParameterNames = Object.keys(this.data.parameters).filter(key => this.data.parameters[key].type === 'model');
 
     for (const line of lines) {
       const trimmedLine = line.trim();
@@ -162,6 +206,15 @@ export default class App {
         return;
       }
 
+      if (modelParameterNames.includes(variableName)) {
+        alertModal({
+          title: "Conflit de nom",
+          body: `Le symbole "${variableName}" est un paramètre de modèle et ne peut pas être redéfini.`,
+          confirm: "OK"
+        });
+        return;
+      }
+
       if (rawCurveTitles.includes(variableName)) {
           alertModal({
               title: "Conflit de nom",
@@ -186,12 +239,29 @@ export default class App {
 
     // --- Phase 2: Exécution (uniquement si toutes les validations sont passées) ---
     this.data.curves = this.data.curves.filter(curve => curve.type !== "calculation");
-    this.data.parameters = {};
+    // Conserver uniquement les paramètres de type 'model'
+    const parametersToKeep = {};
+    for (const key in this.data.parameters) {
+      if (Object.prototype.hasOwnProperty.call(this.data.parameters, key)) {
+        const param = this.data.parameters[key];
+        if (param && param.type === 'model') {
+            parametersToKeep[key] = param;
+        }
+      }
+    }
+    this.data.parameters = parametersToKeep;
 
     const initialScope = {};
+    // Ajoute toutes les courbes au scope
     this.data.curves.forEach(curve => {
       initialScope[curve.title] = curve; 
     });
+    // Ajoute tous les paramètres au scope
+    for (const key in this.data.parameters) {
+        if (Object.prototype.hasOwnProperty.call(this.data.parameters, key)) {
+            initialScope[key] = this.data.parameters[key];
+        }
+    }
     
     const { results, errors } = this.calculation.evaluateBlock(formulasToEvaluate, initialScope);
 

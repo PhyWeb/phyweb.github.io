@@ -27,6 +27,8 @@ TRACKER:
 GRAPHER:
   - utiliser des puissances de 10 dans les axes du graph (déjà OK ? A verifier)
 
+  - quand on ouvre "courbes" ,selectionner par defaut la premiere courbe reelement affichée (voir rework la modale en entier)
+
   - permettre voir autoriser les notations 3e-15 (deja partiellemnt possible, à vérifier partout)
 
   - réticule persistant quand on clique

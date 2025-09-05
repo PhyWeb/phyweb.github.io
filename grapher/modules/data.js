@@ -35,29 +35,61 @@ class Curve extends Serie {
 ----------------------------------------------------------------------------------------------*/
 
 class Model {
-  constructor(x, y, type) {
+  constructor(x, y, type, dataParameters, color, line, lineWidth, lineStyle) {
     this.x = x; // Courbe pour les valeurs x
     this.y = y; // Courbe pour les valeurs y
 
     this.id = Highcharts.uniqueKey();
 
+    this.dataParameters = dataParameters; // Référence aux paramètres de données (pour ajouter les paramètres du modèle)
+
     this.type = type; // Ex: "Linear", "Quadratic"
     this.visible = true; // Si le modèle est visible sur le graphe
     this.parameters = []; // Paramètres du modèle (a, b, c...)
+
+    this.color = color;
+    this.line = line;
+    this.lineWidth = lineWidth;
+    this.lineStyle = lineStyle;
   }
 
   getEquationString() {
-    /*if (Object.keys(this.parameters).length === 0) return "Calcul en cours...";
-    
     switch(this.type){
-      case "Linear":
-        // Affiche le signe correctement pour les valeurs négatives
-        const sign = this.parameters.b < 0 ? '-' : '+';
-        const absB = Math.abs(this.parameters.b);
-        return `y = ${this.parameters.a.toPrecision(3)}x ${sign} ${absB.toPrecision(3)}`;
+      case "linear":
+        // y = a*x
+        return `${this.y.title} = ${this.parameters[0].name}·${this.x.title}`;
+      case "affine":
+        // y = a*x + b
+        return `${this.y.title} = ${this.parameters[0].name}·${this.x.title} + ${this.parameters[1].name}`;
+      case "quadratic":
+        // y = a*x^2 + b*x + c
+        return `${this.y.title} = ${this.parameters[0].name}·${this.x.title}² + ${this.parameters[1].name}·${this.x.title} + ${this.parameters[2].name}`;
+      case "cubic":
+        // y = a*x^3 + b*x^2 + c*x + d
+        return `${this.y.title} = ${this.parameters[0].name}·${this.x.title}³ + ${this.parameters[1].name}·${this.x.title}² + ${this.parameters[2].name}·${this.x.title} + ${this.parameters[3].name}`;
+      case "power":
+        // y = a*x^b
+        return `${this.y.title} = ${this.parameters[0].name}·${this.x.title}^{${this.parameters[1].name}}`;
       default:
         return "Modèle non défini";
-    }*/
+    }
+  }
+
+  getModelName(){
+    switch(this.type){
+      case "linear":
+        return "Linéaire";
+      case "affine":
+        return "Affine";
+      case "quadratic":
+        return "Parabole";
+      case "cubic":
+        return "Cubique ?";
+      case "power":
+        return "Puissance";
+      default:
+        return "Modèle inconnu";
+    }
   }
 
   _getFunction(){
@@ -124,10 +156,28 @@ class Model {
     if (this.type === 'power') guess_size = 2;
     
     solver.solve("min", Array(guess_size).fill(1));
-    let a = solver.get_results();
-    console.log("Fitting results:", a);
-    
-    this.parameters = a;
+    let params = solver.get_results();
+
+    // Vide les anciens paramètres du modèle
+    this.parameters = [];
+    const baseNames = ['a', 'b', 'c', 'd', 'e', 'f']; // Pour les 6 premiers paramètres
+
+    params.forEach((paramValue, i) => {
+      let baseName = baseNames[i] || `p${i}`; // Utilise a,b,c... ou p_i si plus de 6
+      let finalName = baseName;
+      let counter = 1;
+
+      // Cherche un nom unique si le nom de base est déjà pris
+      while (this.dataParameters.hasOwnProperty(finalName)) {
+        finalName = `${baseName}${counter}`;
+        counter++;
+      }
+
+      this.parameters.push({ name: finalName, value: paramValue });
+      this.dataParameters[finalName] = {value:paramValue,unit:"",type:"model"};
+    });
+
+    console.log("Fitted parameters with names:", this.parameters);
 
     solver.remove();
     return this;
@@ -141,35 +191,35 @@ class Model {
       case "linear":
         for (let i = 0; i < points; i++) {
           const x = minX + i * step;
-          const y = this.parameters[0] * x;
+          const y = this.parameters[0].value * x;
           data.push([x, y]);
         }
         break;
         case "affine":
           for (let i = 0; i < points; i++) {
             const x = minX + i * step;
-            const y = this.parameters[0] * x + this.parameters[1];
+            const y = this.parameters[0].value * x + this.parameters[1].value;
             data.push([x, y]);
           }
           break;
       case "quadratic":
         for (let i = 0; i < points; i++) {
           const x = minX + i * step;
-          const y = this.parameters[0] * Math.pow(x, 2) + this.parameters[1] * x + this.parameters[2];
+          const y = this.parameters[0].value * Math.pow(x, 2) + this.parameters[1].value * x + this.parameters[2].value;
           data.push([x, y]);
         }
         break;
       case "cubic":
         for (let i = 0; i < points; i++) {
           const x = minX + i * step;
-          const y = this.parameters[3] * Math.pow(x, 3) + this.parameters[2] * Math.pow(x, 2) + this.parameters[1] * x + this.parameters[0];
+          const y = this.parameters[3].value * Math.pow(x, 3) + this.parameters[2].value * Math.pow(x, 2) + this.parameters[1].value * x + this.parameters[0].value;
           data.push([x, y]);
         }
         break;
       case "power":
         for (let i = 0; i < points; i++) {
           const x = minX + i * step;
-          const y = this.parameters[0] * Math.pow(x, this.parameters[1]);
+          const y = this.parameters[0].value * Math.pow(x, this.parameters[1].value);
           data.push([x, y]);
         }
         break;
@@ -200,7 +250,6 @@ export default class Data {
   addCurve(title, unit, size, fill){
     // Check if the title is already used TODO: modal
     if(this.curves.find(curve => curve.title === title)){
-      console.error("Curve with title '" + title + "' already exists.");
       return null;
     }
 
@@ -247,14 +296,28 @@ export default class Data {
     });
   }
 
-  async addModel(x, y, type){
-    let datax = this.getCurveByTitle(x);
-    let datay = this.getCurveByTitle(y);
-    let model = new Model(datax, datay, type);
+  async addModel(xName, yName, type){
+    let x = this.getCurveByTitle(xName);
+    let y = this.getCurveByTitle(yName);
+    let model = new Model(x, y, type, this.parameters,y.color,true,2,"Dash");
     model.visible = true;
     await model.fit();
     this.models.push(model);
     return model;
+  }
+
+  deleteModel(modelID) {
+    const index = this.models.findIndex(m => m.id === modelID);
+    if (index !== -1) {
+      const model = this.models[index];
+      
+      // Supprime les paramètres du modèle de l'objet parameters
+      model.parameters.forEach(param => {
+        delete this.parameters[param.name];
+      });
+      
+      this.models.splice(index, 1);
+    }
   }
 
   getTable(){
