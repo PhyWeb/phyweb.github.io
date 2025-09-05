@@ -266,33 +266,14 @@
     </div>
     <div id="modelisation-panel" class="box p-3 mt-3 mb-3 mr-3 ml-0 is-hidden" style="width: 300px; flex-shrink: 0;">
       <h2 class="title is-5 has-text-centered mt-3">Modélisations</h2>
-      <!-- Closed model -->
+      <button class="button is-fullwidth is-info is-light mt-2 mb-4 is-hidden" id="recalculate-models-button">
+        <span class="icon">
+          <i class="fas fa-redo-alt"></i>
+        </span>
+        <span>Recalculer les modèles</span>
+      </button>
       <div id="model-list">
-        <!-- <article class="message is-light mb-2">
-          <div class="message-header model-toggle">
-            <p>y = f(t)</p>
-            <span class="icon is-clickable"><i class="fas fa-angle-down"></i></span>
-          </div>
-          <div class="message-body is-hidden model-content pt-2">
-            <p class="has-text-centered"><strong>Exponentielle</strong></p>
-            <p class="has-text-centered">y = a * x + b</p>
-            <div class="is-flex is-justify-content-space-around mt-2">
-              <button class="button is-light"><span class="icon"><i class="fas fa-eye"></i></span></button>
-              <button class="button is-light"><span class="icon"><i class="fas fa-pencil-alt"></i></span></button>
-              <button class="button is-light"><span class="icon"><i class="fas fa-trash"></i></span></button>
-            </div>
-              <p class="mt-2"><strong>Paramètres :</strong></p>
-              <ul>
-                  <li>a = 2.5 ± 0.1</li>
-                  <li>b = 1.2 ± 0.2</li>
-              </ul>
-              <p class="mt-2"><strong>Qualité de l'ajustement :</strong></p>
-              <ul>
-                  <li>R² = 0.98</li>
-              </ul>
-          </div>
-        </article>-->
-      </div>
+        </div>
       <button class="button is-fullwidth is-text mt-2" id="add-model-button">
         <span class="icon">
           <i class="fas fa-plus"></i>

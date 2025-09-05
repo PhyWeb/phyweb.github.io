@@ -69,7 +69,7 @@ class Model {
         return `${this.y.title} = ${this.parameters[0].name}·${this.x.title}³ + ${this.parameters[1].name}·${this.x.title}² + ${this.parameters[2].name}·${this.x.title} + ${this.parameters[3].name}`;
       case "power":
         // y = a*x^b
-        return `${this.y.title} = ${this.parameters[0].name}·${this.x.title}^{${this.parameters[1].name}}`;
+        return `${this.y.title} = ${this.parameters[0].name}·${this.x.title}^${this.parameters[1].name}`;
       default:
         return "Modèle non défini";
     }
@@ -158,8 +158,14 @@ class Model {
     solver.solve("min", Array(guess_size).fill(1));
     let params = solver.get_results();
 
-    // Vide les anciens paramètres du modèle
+    // Vider les anciens paramètres du modèle de l'objet global
+    this.parameters.forEach(param => {
+        delete this.dataParameters[param.name];
+    });
+
+    // Vide le tableau de paramètres du modèle lui-même
     this.parameters = [];
+
     const baseNames = ['a', 'b', 'c', 'd', 'e', 'f']; // Pour les 6 premiers paramètres
 
     params.forEach((paramValue, i) => {

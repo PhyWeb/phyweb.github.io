@@ -28,7 +28,12 @@ let spreadsheet = new Spreadsheet(data, spreadsheetModifiedData);
 spreadsheet.build();
 
 // App
-const app = new App(data, spreadsheet, grapher, calculation, updateCalculationUI);
+const app = new App(data, spreadsheet, grapher, calculation, {
+  // Conserver les fonctions existantes
+  updateCalculationUI: updateCalculationUI,
+  // Ajouter la nouvelle fonction
+  updateRecalculateButtonVisibility: updateRecalculateButtonVisibility
+});
 
 // convertit <i> en SVG manuellement
 window.FontAwesome.dom.i2svg(); 
@@ -1151,30 +1156,6 @@ $("#compress-modelisation-button").addEventListener("click", () => {
   $("#compress-modelisation-button").classList.add("is-hidden");
 });
 
-
-
-// Modelisation panel collapsible messages
-const modelToggleHeaders = document.querySelectorAll("#modelisation-panel .model-toggle");
-
-modelToggleHeaders.forEach(toggleHeader => {
-  toggleHeader.addEventListener("click", (event) => {
-    const message = toggleHeader.closest(".message");
-    const body = message.querySelector(".message-body");
-    const icon = toggleHeader.querySelector(".icon").firstElementChild;
-
-    toggleHeader.classList.toggle("is-active");
-    body.classList.toggle("is-hidden");
-
-    if (toggleHeader.classList.contains("is-active")) {
-      icon.classList.remove("fa-angle-down");
-      icon.classList.add("fa-angle-up");
-    } else {
-      icon.classList.remove("fa-angle-up");
-      icon.classList.add("fa-angle-down");
-    }
-  });
-});
-
 // --- Logique pour la modale d'ajout de modèle ---
 const addModelModal = document.getElementById('add-model-modal');
 const modelCurveSelect = document.getElementById('model-curve-select');
@@ -1260,6 +1241,23 @@ function updateAllModelPanelVisibilityIcons() {
   });
 }
 
+function closeAllModelPanels() {
+  const panels = document.querySelectorAll('#model-list article');
+  panels.forEach(panel => {
+    const header = panel.querySelector('.message-header');
+    const body = panel.querySelector('.message-body');
+    const toggleUpIcon = header.querySelector('.toggle-up');
+    const toggleDownIcon = header.querySelector('.toggle-down');
+    
+    header.classList.remove('is-active');
+    body.classList.add('is-hidden');
+    toggleUpIcon.classList.add('is-hidden');
+    toggleDownIcon.classList.remove('is-hidden');
+    
+    window.FontAwesome.dom.i2svg({ node: header });
+  });
+}
+
 
 function createModelPanel(modelID){
   const modelList = $('#model-list');
@@ -1275,10 +1273,11 @@ function createModelPanel(modelID){
   header.classList.add('message-header', 'model-toggle');
   header.innerHTML = `
     <p>${model.y.title} = f(${model.x.title})</p>
-    <span class="icon"><i class="fa-solid fa-angle-down"></i></span>
+    <span class="icon toggle-icon toggle-up"><i class="fa-solid fa-angle-up"></i></span>
+    <span class="icon toggle-icon toggle-down is-hidden"><i class="fa-solid fa-angle-down"></i></span>
   `;
   const body = document.createElement('div');
-  body.classList.add('message-body', 'is-hidden', 'model-content', 'pt-2');
+  body.classList.add('message-body', 'model-content', 'pt-2');
   const p = document.createElement('p');
   p.classList.add('has-text-centered');
   p.innerHTML = `<strong>${model.getModelName()}</strong>`;
@@ -1453,8 +1452,16 @@ function createModelPanel(modelID){
   });
 
   header.addEventListener('click', () => {
-    body.classList.toggle('is-hidden');
-    header.classList.toggle('is-active');
+    const body = article.querySelector('.message-body');
+    const toggleUpIcon = header.querySelector('.toggle-up');
+    const toggleDownIcon = header.querySelector('.toggle-down');
+    const isActive = header.classList.toggle('is-active');
+    body.classList.toggle('is-hidden', !isActive);
+
+    toggleUpIcon.classList.toggle('is-hidden', !isActive);
+    toggleDownIcon.classList.toggle('is-hidden', isActive);
+    
+    window.FontAwesome.dom.i2svg({ node: header });
   });
 
   article.appendChild(header);
@@ -1492,12 +1499,22 @@ function populateModelLineWidthSelect(selectElement){
 document.getElementById('add-model-confirm-button').addEventListener('click', async () => {
   const curveToModel = modelCurveSelect.value;
   if (curveToModel && selectedModelType) {
+    // Ferme tous les panneaux existants avant de créer le nouveau
+    closeAllModelPanels(); 
+
     common.modalManager.closeAllModals();
+
     let model = await app.addModel(grapher.currentXCurve, curveToModel, selectedModelType);
+
     createModelPanel(model.id);
   } else {
     alert("Veuillez sélectionner une courbe et un type de modèle.");
   }
+});
+
+// Le bouton "Recalculer tous les modèles"
+$("#recalculate-models-button").addEventListener("click", () => {
+    app.recalculateAllModels();
 });
 
 
@@ -1600,6 +1617,17 @@ function updateCalculationUI() {
   });
   
   editor.setOption("mode", "phyweb-calc");
+}
+
+function updateRecalculateButtonVisibility() {
+  const recalculateButton = $("#recalculate-models-button");
+  if (recalculateButton) {
+    if (data.models.length > 0) {
+      recalculateButton.classList.remove('is-hidden');
+    } else {
+      recalculateButton.classList.add('is-hidden');
+    }
+  }
 }
 
 /**

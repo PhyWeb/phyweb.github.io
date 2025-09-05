@@ -24,12 +24,12 @@ function isTabularData(text) {
 -------------------------------------------------APP--------------------------------------------
 ----------------------------------------------------------------------------------------------*/
 export default class App {
-  constructor(data, spreadsheet, grapher, calculation, uiUpdaterCallback) {
+  constructor(data, spreadsheet, grapher, calculation, uiUpdater) {
     this.data = data;
     this.spreadsheet = spreadsheet;
     this.grapher = grapher;
     this.calculation = calculation;
-    this.uiUpdater = uiUpdaterCallback;
+    this.uiUpdater = uiUpdater;
   }  
 
   addCurve(title, unit) {
@@ -44,7 +44,7 @@ export default class App {
     }
 
     // Update the calculation tab
-    this.uiUpdater();
+    this.uiUpdater.updateCalculationUI();
 
     return curve;
   }
@@ -91,7 +91,7 @@ export default class App {
     this.spreadsheet.clear();
 
     // Update the calculation tab
-    this.uiUpdater();
+    this.uiUpdater.updateCalculationUI();
   }
 
   deleteRow(startRow, amount) {
@@ -120,14 +120,48 @@ export default class App {
       // s'assurera que tous les modèles sont correctement tracés.
       this.grapher.chart.redraw();
 
-      // 3. Met à jour la page de calcul
-      this.uiUpdater();
+      // 3. Met à jour l'UI'
+      this.uiUpdater.updateCalculationUI();
+      this.uiUpdater.updateRecalculateButtonVisibility();
 
       return model;
     } else {
       alertModal({
         title: "Modélisation impossible",
         body: "Pour créer un modèle, vous devez avoir au moins deux grandeurs dans votre tableur.",
+        confirm: "OK"
+      });
+    }
+  }
+
+  /**
+   * Recalcule tous les modèles existants.
+   */
+  async recalculateAllModels() {
+    if (this.data.models.length === 0) {
+      return;
+    }
+
+    try {
+      for (const model of this.data.models) {
+        // Recalcule les paramètres du modèle
+        await model.fit();
+      }
+      
+      // Met à jour la visibilité et redessine le graphique
+      this.grapher.updateModelVisibility();
+      this.grapher.chart.redraw();
+      
+      // Met à jour l'interface utilisateur de calcul (pour les paramètres) et ferme la modale
+      this.uiUpdater.updateCalculationUI();
+      this.uiUpdater.updateRecalculateButtonVisibility();
+
+    } catch (e) {
+      console.error("Erreur lors du recalcul des modèles:", e);
+      alertModal({
+        type: "danger",
+        title: "Erreur de recalcul",
+        body: "Une erreur est survenue lors du recalcul des modèles. Veuillez vérifier la console pour plus de détails.",
         confirm: "OK"
       });
     }
@@ -146,8 +180,9 @@ export default class App {
     // Supprime le modèle de l'objet de données
     this.data.deleteModel(modelID);
 
-    // Met à jour l'interface utilisateur de calcul
-    this.uiUpdater();
+    // Met à jour l'UI
+      this.uiUpdater.updateCalculationUI();
+      this.uiUpdater.updateRecalculateButtonVisibility();
   }
 
   applyCalculation(text) {
@@ -170,7 +205,7 @@ export default class App {
       this.data.parameters = parametersToKeep;
       this.spreadsheet.update();
       this.grapher.updateChart();
-      this.uiUpdater();
+      this.uiUpdater.updateCalculationUI();
       return;
     }
 
@@ -300,7 +335,7 @@ export default class App {
 
     this.spreadsheet.update();
     this.grapher.updateChart();
-    this.uiUpdater();
+    this.uiUpdater.updateCalculationUI();
   }
 
   /**
@@ -381,7 +416,7 @@ export default class App {
             this.grapher.updateChart();
         }
         // Update the calculation tab
-        this.uiUpdater();
+        this.uiUpdater.updateCalculationUI();
         console.log("Session .pw restaurée avec succès (les paramètres locaux sont conservés).");
       } catch (e) {
         console.error("ERREUR lors du chargement de la session .pw :", e);
@@ -579,7 +614,7 @@ export default class App {
       console.log("data loaded", this.data);
       this.spreadsheet.update();
       this.grapher.updateChart();
-      this.uiUpdater();
+      this.uiUpdater.updateCalculationUI();
     } finally {
       this._isLoading = false; // Assure que le drapeau est réinitialisé même en cas d'erreur
     }
