@@ -912,26 +912,45 @@
           <label class="label">Type de modèle</label>
           <div id="model-type-container" class="is-flex is-flex-wrap-wrap" style="gap: 1rem;">
             <div class="model-type-item box is-clickable p-3 has-text-centered is-flex-grow-1" data-model-type="linear">
-              <span class="icon is-large has-text-info"><i class="fas fa-chart-line fa-2x"></i></span>
+              <span class="icon is-large has-text-info">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+                  <path fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" d="M6 42 L42 42 M6 42 L6 6"/>
+                  <path fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" d="M6 42 L42 6"/>
+                </svg>
+              </span>
               <p class="has-text-weight-semibold mt-2">Linéaire</p>
-              <p class="is-size-7">y = a.x</p>
+              <p class="is-size-7">y = a·x</p>
             </div>
             <div class="model-type-item box is-clickable p-3 has-text-centered is-flex-grow-1" data-model-type="affine">
-              <span class="icon is-large has-text-info"><i class="fas fa-chart-line fa-2x"></i></span>
+              <span class="icon is-large has-text-info">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+                  <path fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" d="M6 42 L42 42 M6 42 L6 6"/>
+                  <path fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" d="M6 30 L42 12"/>
+                </svg>
+              </span>
               <p class="has-text-weight-semibold mt-2">Affine</p>
-              <p class="is-size-7">y = a.x + b</p>
+              <p class="is-size-7">y = a·x + b</p>
             </div>
             <div class="model-type-item box is-clickable p-3 has-text-centered is-flex-grow-1" data-model-type="quadratic">
-              <span class="icon is-large has-text-info"><i class="fas fa-wave-square fa-2x"></i></span>
+              <span class="icon is-large has-text-info">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+                  <path fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" d="M6 42 L42 42 M6 42 L6 6"/>
+                  <path fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" d="M6 36 Q24 6 42 36"/>
+                </svg>
+              </span>
               <p class="has-text-weight-semibold mt-2">Parabole</p>
-              <p class="is-size-7">y = ax²+bx+c</p>
+              <p class="is-size-7">y = a·x² + b·x + c</p>
             </div>
             <div class="model-type-item box is-clickable p-3 has-text-centered is-flex-grow-1 mb-3" data-model-type="power">
-              <span class="icon is-large has-text-info"><i class="fas fa-chart-area fa-2x"></i></span>
-              <p class="has-text-weight-semibold mt-2">Puissance</p>
-              <p class="is-size-7">y = a.x^b</p>
+            <span class="icon is-large has-text-info">
+              <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+                <path fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" d="M6 42 L42 42 M6 42 L6 6"/>
+                <path fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" d="M6 42 C18 42 30 30 42 6"/>
+              </svg>
+            </span>
+            <p class="has-text-weight-semibold mt-2">Puissance</p>
+              <p class="is-size-7">y = a·x^b</p>
             </div>
-            <!-- Ajoutez d'autres modèles ici si nécessaire -->
           </div>
         </div>
       </section>
