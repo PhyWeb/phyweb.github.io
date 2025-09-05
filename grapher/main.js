@@ -1272,7 +1272,7 @@ function createModelPanel(modelID){
   article.classList.add('message', 'is-light', 'mb-2');
   article.setAttribute('data-model-id', model.id);
   const header = document.createElement('div');
-  header.classList.add('message-header', 'model-toggle');
+  header.classList.add('message-header', 'model-toggle', 'is-active');
   header.innerHTML = `
     <p>${model.y.title} = f(${model.x.title})</p>
     <span class="icon toggle-icon toggle-up"><i class="fa-solid fa-angle-up"></i></span>
