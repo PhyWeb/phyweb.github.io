@@ -1362,7 +1362,7 @@ function createModelPanel(modelID){
             </div>
             <div class="field">
               <div class="control">
-                <input class="input" type="text" value="${param.value}" disabled />
+                <input class="input" type="text" value="${formatNumber(param.value, significantDigits)}" disabled />
               </div>
             </div>
           </div>
