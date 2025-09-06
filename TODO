@@ -27,8 +27,6 @@ TRACKER:
 GRAPHER:
   - utiliser des puissances de 10 dans les axes du graph (déjà OK ? A verifier)
 
-  - quand on ouvre "courbes" ,selectionner par defaut la premiere courbe reelement affichée (voir rework la modale en entier)
-
   - permettre de definir des bornes aux modèles (pour l'instant c'est toujours sur toute la plage de données)
 
   - permettre voir autoriser les notations 3e-15 (deja partiellemnt possible, à vérifier partout)
