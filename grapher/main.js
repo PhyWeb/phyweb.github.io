@@ -741,7 +741,12 @@ $("#choose-curves-button").addEventListener("click", () => {
   populateMarkersSymbolSelect()
   populateMarkersRadiusSelect()
 
-  $("#choose-curves-menu").firstElementChild.children[0].click(); // Select the first curve by default
+  // Cherche la première courbe affichée (cochée) et la sélectionne
+  const firstCheckedCurve = $("#choose-curves-menu").querySelector("input:checked");
+  if (firstCheckedCurve) {
+    firstCheckedCurve.closest("a").click();
+  }
+
   $("#choose-x-curve-select").value = grapher.currentXCurve; // Set the current X curve in the select
 
   $("#choose-curves-modal").classList.add("is-active");
@@ -1239,7 +1244,7 @@ function updateModelPanel(model) {
       
       // Ajout du R²
       const liRSquared = document.createElement('li');
-      liRSquared.innerHTML = `Coefficient de corrélation R² : ${formatNumber(model.rSquared, 8)}`;
+      liRSquared.innerHTML = `Coeff de corrélation : ${formatNumber(model.rSquared, 5)}`;
       ul2.appendChild(liRSquared);
     }
   }
@@ -1346,7 +1351,7 @@ function createModelPanel(modelID){
   ul2.appendChild(liRmse);
   // Ajout du R²
   const liRSquared = document.createElement('li');
-  liRSquared.innerHTML = `Coefficient de corrélation R² : ${formatNumber(model.rSquared, 8)}`;
+  liRSquared.innerHTML = `Coeff de corrélation : ${formatNumber(model.rSquared, 5)}`;
   ul2.appendChild(liRSquared);
   body.appendChild(ul2);
 

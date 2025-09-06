@@ -66,7 +66,6 @@ export default class App {
   deleteAllCurves() {
     // Delete all curves
     this.data.deleteAllCurves();
-    // this.data.deleteAllParameters();
     // Conserver uniquement les paramètres de type 'model'
     const parametersToKeep = {};
     for (const key in this.data.parameters) {
