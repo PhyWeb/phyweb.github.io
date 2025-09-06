@@ -142,3 +142,15 @@
   border-color: var(--bulma-primary);
   box-shadow: 0 0 0 0.125em hsla(var(--bulma-primary-h), var(--bulma-primary-s), var(--bulma-primary-l), 0.25);
 }
+
+#modelisation-panel {
+  width: 300px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+#model-list {
+  flex-grow: 1;
+  overflow-y: auto;
+}
