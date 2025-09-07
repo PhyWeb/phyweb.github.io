@@ -1052,12 +1052,20 @@ $("#zoom-button").addEventListener("click", () => {
 });
 
 $("#auto-zoom-button").addEventListener("click", () => {
-  grapher.chart.zoomOut();
+  // 1. On réinitialise manuellement les axes à leur étendue maximale.
+  //    Passer 'null' à setExtremes a pour effet de réinitialiser l'axe.
+  grapher.chart.xAxis[0].setExtremes(null, null, false);
+  grapher.chart.yAxis[0].setExtremes(null, null, false);
+  grapher.chart.redraw(); // Un seul redessin pour la performance.
+
+  // 2. On désactive le mode zoom s'il était actif.
   $("#zoom-button").classList.remove("is-active");
   grapher.chart.container.classList.remove('chart-free-crosshair');
   isZoomEnabled = false;
-
   grapher.chart.update({ chart: { zooming: { type: null } } });
+  
+  // 3. On cache le bouton de zoom auto, car on n'est plus en mode zoomé.
+  $("#auto-zoom-button").classList.add("is-hidden");
 });
 
 $("#zoom-in-button").addEventListener("click", () => {

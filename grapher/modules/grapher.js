@@ -86,6 +86,7 @@ export default class Grapher {
     this.chart = Highcharts.chart("chart", {
       chart: {
         type: "line",
+        alignTicks: false,
         events: {
           load : function () {
             const chart = this;
@@ -176,9 +177,17 @@ export default class Grapher {
             Highcharts.addEvent(chart, 'redraw', drawArrows);
           },
           selection: (e) => {
-            // Prevent default button
-            this.resetZoomButton && this.resetZoomButton.hide();
-            // Add custom zoom button
+            // 1. On empêche le zoom par défaut.
+            e.preventDefault();
+
+            // 2. On applique les nouvelles limites SANS redessiner le graphique immédiatement.
+            this.chart.xAxis[0].setExtremes(e.xAxis[0].min, e.xAxis[0].max, false);
+            this.chart.yAxis[0].setExtremes(e.yAxis[0].min, e.yAxis[0].max, false);
+            
+            // 3. On déclenche UN SEUL redessin manuel pour appliquer tous les changements.
+            this.chart.redraw();
+
+            // 4. On affiche notre bouton personnalisé.
             $("#auto-zoom-button").classList.remove("is-hidden");
           }
         }
@@ -274,20 +283,31 @@ export default class Grapher {
           text: null
         },
         gridLineWidth: 1,
+        startOnTick: false,
+        endOnTick: false,
+        minPadding: 0,
+        maxPadding: 0,
+        minRange: 1e-30, // Pour éviter les zooms extrêmes
         events: {
           afterSetExtremes: function () {
             const oldExponent = this.exponent;
-            const xMax = Math.max(Math.abs(this.max), Math.abs(this.min));
-            if (xMax === 0) {
-              this.exponent = 0;
-            } else {
-              const power = Math.round(Math.log10(xMax));
-              if (power >= 3 || power <= -3) {
-                this.exponent = Math.trunc(power / 3) * 3;
-              } else {
-                this.exponent = 0;
+            const maxAbs = Math.max(Math.abs(this.max), Math.abs(this.min));
+            
+            this.exponent = 0;
+
+            if (maxAbs > 0) {
+              const power = Math.floor(Math.log10(maxAbs));
+              const range = Math.abs(this.max - this.min);
+
+              if (power >= 3 || power < -3) {
+                if (power >= 3 && range > 0 && Math.log10(maxAbs / range) > 2) {
+                  this.exponent = 0;
+                } else {
+                  this.exponent = Math.floor(power / 3) * 3;
+                }
               }
             }
+            
             if (oldExponent !== this.exponent) {
               this.chart.redraw(false);
             }
@@ -297,15 +317,21 @@ export default class Grapher {
           formatter: function () {
             const exponent = this.axis.exponent || 0;
             const value = this.value / Math.pow(10, exponent);
-            return formatNumber(value, 2, { useScientificNotation: false });
+            const tickInterval = this.axis.tickInterval;
+            const scaledTickInterval = tickInterval / Math.pow(10, exponent);
+            let decimals = 0;
+            if (scaledTickInterval > 0) {
+              decimals = Math.max(0, -Math.floor(Math.log10(scaledTickInterval)) + 1);
+            }
+            decimals = Math.min(decimals, 15);
+            return Highcharts.numberFormat(value, decimals, ',', ' ');
           }
         }
       },
       { // Axe X Secondaire (index 1) pour les modèles
-        visible: false, // On le cache
+        visible: false,
         linkedTo: 0
-      }
-      ],
+      }],
       yAxis: [{
         title: {
           text: null
@@ -314,22 +340,26 @@ export default class Grapher {
         gridLineWidth: 1,
         startOnTick: false,
         endOnTick: false,
+        minPadding: 0,
+        maxPadding: 0,
         events: {
           afterSetExtremes: function () {
-            const yMax = Math.max(Math.abs(this.max), Math.abs(this.min));
-            let oldExponent = this.exponent;
-            if (yMax === 0) {
-              this.exponent = 0;
-            } else {
-                const power = Math.round(Math.log10(yMax));
-                if (power >= 3 || power <= -3) {
-                    this.exponent = Math.trunc(power / 3) * 3;
+            const oldExponent = this.exponent;
+            const maxAbs = Math.max(Math.abs(this.max), Math.abs(this.min));
+            this.exponent = 0;
+            if (maxAbs > 0) {
+              const power = Math.floor(Math.log10(maxAbs));
+              const range = Math.abs(this.max - this.min);
+              if (power >= 3 || power < -3) {
+                if (power >= 3 && range > 0 && Math.log10(maxAbs / range) > 2) {
+                  this.exponent = 0;
                 } else {
-                    this.exponent = 0;
+                  this.exponent = Math.floor(power / 3) * 3;
                 }
+              }
             }
             if (oldExponent !== this.exponent) {
-                this.chart.legend.update({});
+              this.chart.legend.update({});
             }
           }
         },
@@ -337,12 +367,19 @@ export default class Grapher {
           formatter: function () {
             const exponent = this.axis.exponent || 0;
             const value = this.value / Math.pow(10, exponent);
-            return formatNumber(value, 2, { useScientificNotation: false });
+            const tickInterval = this.axis.tickInterval;
+            const scaledTickInterval = tickInterval / Math.pow(10, exponent);
+            let decimals = 0;
+            if (scaledTickInterval > 0) {
+              decimals = Math.max(0, -Math.floor(Math.log10(scaledTickInterval)) + 1);
+            }
+            decimals = Math.min(decimals, 15);
+            return Highcharts.numberFormat(value, decimals, ',', ' ');
           }
         }
       },
       { // Axe Y Secondaire (index 1) pour les modèles
-        visible: false, // On le cache
+        visible: false,
         linkedTo: 0
       }],
       credits: {
@@ -623,7 +660,6 @@ export default class Grapher {
    */
   zoom(direction) {
     const factor = direction === 'in' ? 0.8 : 1.25;
-    // TODO pas meme facteur pour x et y pour garder meme aspect ratio
 
     const extremeX = this.chart.xAxis[0].getExtremes();
     const extremeY = this.chart.yAxis[0].getExtremes();
@@ -654,6 +690,9 @@ export default class Grapher {
 
       // single redraw at the end
       this.chart.redraw(false);
+
+      // show the "reset zoom" button
+      $("#auto-zoom-button").classList.remove("is-hidden");
     } finally {
       // always re-enable auto-updates
       this._suppressModelAutoUpdate = false;
