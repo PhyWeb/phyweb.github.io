@@ -629,9 +629,9 @@
   <!------------------------------------------------------------------------------------------------------------>
   <!--------------------------------------------CHOOSE CURVES MODAL--------------------------------------------->
   <!------------------------------------------------------------------------------------------------------------>
-  <div id="choose-curves-modal" class="modal">
+<div id="choose-curves-modal" class="modal">
     <div class="modal-background"></div>
-    <div class="modal-card" id="choose-curves-modal">
+    <div class="modal-card" id="choose-curves-modal-card">
       <header class="modal-card-head">
         <p class="modal-card-title">Courbes</p>
         <button class="delete" aria-label="close"></button>
@@ -639,28 +639,26 @@
       <section class="modal-card-body is-flex">
         <div class="columns is-flex-grow-1">
           <div class="column is-narrow">
-            <p>
-              <strong>Ordonnées</strong>
+            <p class="mb-2">
+              <strong>Axe des abscisses (X)</strong>
+            </p>
+            <div class="select is-fullwidth">
+              <select id="choose-x-curve-select"></select>
+            </div>
+            <p class="mt-4 mb-2">
+              <strong>Courbes des ordonnées (Y)</strong>
             </p>
             <aside class="menu">
-              <ul class="menu-list">
-                <li>
-                  <ul id="choose-curves-menu">
-                  </ul>
-                </li>
+              <ul class="menu-list" id="choose-curves-menu">
               </ul>
             </aside>
-            <p class="mb-2">
-              <strong>Abscisse</strong>
-            </p>
-            <div class="select">
-              <select id="choose-x-curve-select">
-              </select>
-            </div>
           </div>
           <div class="column is-narrow vertical-divider">
           </div>
-          <div class="column">
+          <div id="curve-details-panel" class="column is-hidden">
+            <p class="mb-2">
+              <strong>Personnalisation</strong>
+            </p>
             <div class="field is-horizontal">
               <div class="field-label is-normal">
                 <label class="label">Couleur</label>
@@ -668,9 +666,8 @@
               <div class="field-body">
                 <div class="field">
                   <div class="control">
-                    <div class="select">
-                      <select id="curveColorPicker">
-                      </select>
+                    <div class="select is-fullwidth">
+                      <select id="curveColorPicker"></select>
                     </div>
                   </div>
                 </div>
@@ -691,9 +688,8 @@
                 </div>
                 <div class="field is-flex-grow-0 curveMarkerUI">
                   <div class="control">
-                    <div class="select is-fullwidth">
-                      <select id="curveMarkerRadiusSelect">
-                      </select>
+                    <div class="select">
+                      <select id="curveMarkerRadiusSelect"></select>
                     </div>
                   </div>
                 </div>
@@ -730,8 +726,7 @@
                 <div class="field is-flex-grow-0 curveLineUI">
                   <div class="control">
                     <div class="select">
-                      <select id="curveLineWidthSelect">
-                      </select>
+                      <select id="curveLineWidthSelect"></select>
                     </div>
                   </div>
                 </div>
@@ -757,7 +752,7 @@
         </div>
       </footer>
     </div>
-  </div>
+</div>
   <!------------------------------------------------------------------------------------------------------------>
   <!-----------------------------------------------SETTINGS MODAL----------------------------------------------->
   <!------------------------------------------------------------------------------------------------------------>

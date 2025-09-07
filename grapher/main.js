@@ -1,3 +1,5 @@
+// grapher/main.js (Version corrigée)
+
 import {Common, alertModal, quitConfirmationModal} from "../common/common.js"
 import { formatNumber } from '../common/formatter.js';
 
@@ -745,6 +747,9 @@ $("#choose-curves-button").addEventListener("click", () => {
   const firstCheckedCurve = $("#choose-curves-menu").querySelector("input:checked");
   if (firstCheckedCurve) {
     firstCheckedCurve.closest("a").click();
+  } else {
+    // Si aucune courbe n'est cochée, masquer le panneau de détails
+    $("#curve-details-panel").classList.add("is-hidden");
   }
 
   $("#choose-x-curve-select").value = grapher.currentXCurve; // Set the current X curve in the select
@@ -754,107 +759,173 @@ $("#choose-curves-button").addEventListener("click", () => {
 
 // Populate curve list
 function populateCurveMenu(){
-  $("#choose-curves-menu").innerHTML = "";
+  const menu = $("#choose-curves-menu");
+  const panel = $("#curve-details-panel");
+  menu.innerHTML = "";
 
-  data.curves.forEach(element => {
-    let li = document.createElement("li");
-    let a = document.createElement("a");
-  
-    let input = document.createElement("input");
+  data.curves.forEach(curve => {
+    const li = document.createElement("li");
+    const a = document.createElement("a");
+    a.dataset.title = curve.title;
+
+    const input = document.createElement("input");
     input.type = "checkbox";
     input.classList.add("mr-2");
+    input.checked = grapher.chart.series.some(s => s.name === curve.title);
 
-    // Check if the curve is already in the graph
-    if(grapher.chart.series.find(e => e.name === element.title)){
-      input.checked = true;
-    }
+    const span = document.createElement("span");
+    span.classList.add("ml-2");
+    span.innerHTML = curve.title + (curve.unit ? ` (${curve.unit})` : '');
 
-    input.addEventListener("change", () => {
-      // Get the list of all the checked curves
-      let activeCurves = [];
-      for(let i = 0; i < $("#choose-curves-menu").children.length; i++){
-        if($("#choose-curves-menu").children[i].children[0].children[0].checked){
-          activeCurves.push($("#choose-curves-menu").children[i].children[0].children[1].innerHTML);
-        }
-      }
-      // Update the chart with the active curves
+    const colorSwatch = document.createElement("span");
+    colorSwatch.style.backgroundColor = curve.color;
+    colorSwatch.style.width = '16px';
+    colorSwatch.style.height = '16px';
+    colorSwatch.style.display = 'inline-block';
+    colorSwatch.style.border = '1px solid #dbdbdb';
+    colorSwatch.style.verticalAlign = 'middle';
+    colorSwatch.style.marginLeft = '5px';
+
+    a.appendChild(input);
+    a.appendChild(colorSwatch);
+    a.appendChild(span);
+
+    li.appendChild(a);
+    menu.appendChild(li);
+
+    // Event listener for the checkbox
+    input.addEventListener("change", (e) => {
+      e.stopPropagation(); // Empêche l'événement de se propager au lien parent
+      const activeCurves = Array.from(menu.querySelectorAll("input:checked")).map(
+        (cb) => cb.closest("a").dataset.title
+      );
       grapher.updateChart(activeCurves);
     });
 
-    let label = document.createElement("label");
-    label.innerHTML = element.title;
-  
-    a.appendChild(input);
-    a.appendChild(label);
-    li.appendChild(a);
-  
-    $("#choose-curves-menu").appendChild(li);
-  
-    a.addEventListener("click", () => {
-
-      // active the curve
+    // Event listener for the list item click
+    a.addEventListener("click", (e) => {
+      if (e.target.type !== 'checkbox') {
+        e.preventDefault();
+      }
+      
+      // Remove 'is-active' from all other items
+      menu.querySelectorAll("a").forEach(item => item.classList.remove("is-active"));
+      // Add 'is-active' to the clicked item
       a.classList.add("is-active");
 
-      // deactivate the other curves
-      for(let i = 0; i < $("#choose-curves-menu").children.length; i++){
-        if($("#choose-curves-menu").children[i].children[0] !== a){
-          $("#choose-curves-menu").children[i].children[0].classList.remove("is-active");
-        }
-      }
-
-      const curve = data.curves.find(curve => curve.title === element.title);
-
-      // select the good color option
-      $("#curveColorPicker").value = curve.color;
-      $("#curveColorPicker").style.color = $("#curveColorPicker").value; // Update the color of the select
-
-      // select the good marker toggle
-      $("#curveMarkerToggle").checked = curve.markers;
-
-      // Show or hide the marker UI based on the marker toggle
-      if(curve.markers){
-        document.querySelectorAll(".curveMarkerUI").forEach(e => {
-          e.classList.remove("is-hidden");
-        });
-      } else {
-        document.querySelectorAll(".curveMarkerUI").forEach(e => {
-          e.classList.add("is-hidden");
-        });
-      }
-
-      // select the good line toggle
-      $("#curveLineToggle").checked = curve.line;
-
-      // Show or hide the linewidth and lineStyle select based on the line toggle
-      if(curve.line){
-        document.querySelectorAll(".curveLineUI").forEach(e => {
-          e.classList.remove("is-hidden");
-        });
-      } else {
-        document.querySelectorAll(".curveLineUI").forEach(e => {
-          e.classList.add("is-hidden");
-        });
-      }
-
-      // select the good line width
-      $("#curveLineWidthSelect").value = curve.lineWidth;
-
-      // select the good line style
-      $("#curveLineStyleSelect").value = curve.lineStyle;
-
-      // select the good marker symbol
-      $("#curveMarkerSymbolSelect").value = curve.markerSymbol;
-
-      // select the good marker radius
-      $("#curveMarkerRadiusSelect").value = curve.markerRadius;
+      // Populate and show the details panel
+      populateCurveDetails(curve);
+      panel.classList.remove("is-hidden");
     });
-
-    if($("#choose-curves-menu").children.length === 1){
-      // If this is the first curve, select it by default
-      a.classList.add("is-active");
-    }
   });
+
+  // Select the first curve by default if available
+  const firstCurveAnchor = menu.querySelector("a");
+  if (firstCurveAnchor) {
+    firstCurveAnchor.click();
+  }
 }
+
+// Populate the details panel with the selected curve's options
+function populateCurveDetails(curve) {
+  const panel = $("#curve-details-panel");
+  panel.setAttribute("data-active-curve", curve.title);
+
+  // Set the color picker
+  const colorPicker = $("#curveColorPicker");
+  colorPicker.value = curve.color;
+  colorPicker.style.color = curve.color;
+
+  // Set the marker options
+  const markerToggle = $("#curveMarkerToggle");
+  markerToggle.checked = curve.markers;
+  const markerUIs = panel.querySelectorAll(".curveMarkerUI");
+  markerUIs.forEach(el => el.classList.toggle("is-hidden", !curve.markers));
+  $("#curveMarkerRadiusSelect").value = curve.markerRadius;
+  $("#curveMarkerSymbolSelect").value = curve.markerSymbol;
+
+  // Set the line options
+  const lineToggle = $("#curveLineToggle");
+  lineToggle.checked = curve.line;
+  const lineUIs = panel.querySelectorAll(".curveLineUI");
+  lineUIs.forEach(el => el.classList.toggle("is-hidden", !curve.line));
+  $("#curveLineWidthSelect").value = curve.lineWidth;
+  $("#curveLineStyleSelect").value = curve.lineStyle;
+}
+
+
+// #######################################################################################
+// ## DEBUT BLOC CORRIGÉ: Un seul gestionnaire d'événements pour la modale
+// #######################################################################################
+$("#choose-curves-modal").addEventListener('change', (e) => {
+    const panel = $("#curve-details-panel");
+    const activeCurveTitle = panel.getAttribute("data-active-curve");
+    
+    if (!activeCurveTitle) return;
+    
+    const curve = data.getCurveByTitle(activeCurveTitle);
+    if (!curve) {
+      console.error("Impossible de trouver la courbe :", activeCurveTitle);
+      return;
+    }
+  
+    const targetId = e.target.id;
+    const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+  
+    switch(targetId) {
+      case 'curveColorPicker':
+        curve.color = value;
+        e.target.style.color = value;
+        break;
+      case 'curveMarkerToggle':
+        curve.markers = value;
+        panel.querySelectorAll(".curveMarkerUI").forEach(el => el.classList.toggle("is-hidden", !value));
+        break;
+      case 'curveMarkerRadiusSelect':
+        curve.markerRadius = parseInt(value, 10);
+        break;
+      case 'curveMarkerSymbolSelect':
+        curve.markerSymbol = value;
+        break;
+      case 'curveLineToggle':
+        curve.line = value;
+        panel.querySelectorAll(".curveLineUI").forEach(el => el.classList.toggle("is-hidden", !value));
+        break;
+      case 'curveLineWidthSelect':
+        curve.lineWidth = parseInt(value, 10);
+        break;
+      case 'curveLineStyleSelect':
+        curve.lineStyle = value;
+        break;
+    }
+    
+    // Update the chart to reflect the changes
+    const series = grapher.chart.series.find(s => s.name === activeCurveTitle);
+    if (series) {
+      series.update({
+        color: curve.color,
+        lineWidth: curve.line ? curve.lineWidth : 0,
+        dashStyle: curve.lineStyle,
+        marker: {
+          enabled: curve.markers,
+          symbol: curve.markerSymbol,
+          radius: curve.markerRadius,
+          lineWidth: (curve.markerSymbol === "cross" || curve.markerSymbol === "crossX") ? 1 : 0,
+          lineColor: curve.color
+        }
+      });
+    }
+  
+    // Update the color swatch in the list
+    const activeAnchor = $(`#choose-curves-menu a[data-title="${activeCurveTitle}"]`);
+    if (activeAnchor) {
+      activeAnchor.querySelector('span:nth-child(2)').style.backgroundColor = curve.color;
+    }
+});
+// #######################################################################################
+// ## FIN BLOC CORRIGÉ
+// #######################################################################################
+
 
 // Populate the x curve select
 function populateCurveSelect(){
@@ -897,192 +968,45 @@ function populateColors(){
     option.textContent = "■■■■■■■■■"; // On peut aussi mettre un code couleur ici
     select.appendChild(option);
   });
-
-  // Au changement de sélection, mettre à jour la couleur
-  select.addEventListener('change', function () {
-    const newColor = this.value;
-
-    // Update the color of the select
-    this.style.color = newColor;
-
-    // Find the active curve the select is currently set to
-    const activeCurve = $("#choose-curves-menu").querySelector(".is-active").children[1].innerHTML;
-
-    // Update the color of the curve in the data
-    const curve = data.curves.find(curve => curve.title === activeCurve);
-    curve.color = newColor;
-
-    // Update the color of the curve in the chart if it exists
-    if(grapher.chart.series.find(e => e.name === activeCurve)){
-      grapher.chart.series.find(e => e.name === activeCurve).update({ 
-        color: newColor,
-        marker: { 
-          lineColor: newColor, 
-        }
-      });
-    }
-  });
 }
-
-// Marker toggle
-$("#curveMarkerToggle").addEventListener("change", () => {
-  // Find the active curve the select is currently set to
-  const activeCurve = $("#choose-curves-menu").querySelector(".is-active").children[1].innerHTML;
-
-  // Update the marker toggle of the curve in the data
-  const curve = data.curves.find(curve => curve.title === activeCurve);
-  curve.markers = $("#curveMarkerToggle").checked;
-
-  // Show or hide the marker select based on the marker toggle
-  if(curve.markers){
-    document.querySelectorAll(".curveMarkerUI").forEach(e => {
-      e.classList.remove("is-hidden");
-    });
-  } else {
-    document.querySelectorAll(".curveMarkerUI").forEach(e => {
-      e.classList.add("is-hidden");
-    });
-  }
-
-  // Update the line toggle of the curve in the chart if it exists
-  if(grapher.chart.series.find(e => e.name === activeCurve)){
-    grapher.chart.series.find(e => e.name === activeCurve).update({ marker: { enabled: curve.markers,} });
-  }
-});
-
-// line toggle
-$("#curveLineToggle").addEventListener("change", () => {
-  // Find the active curve the select is currently set to
-  const activeCurve = $("#choose-curves-menu").querySelector(".is-active").children[1].innerHTML;
-
-  // Update the line toggle of the curve in the data
-  const curve = data.curves.find(curve => curve.title === activeCurve);
-  curve.line = $("#curveLineToggle").checked;
-
-  // Show or hide the linewidth select based on the line toggle
-  if(curve.line){
-    document.querySelectorAll(".curveLineUI").forEach(e => {
-      e.classList.remove("is-hidden");
-    });
-  } else {
-    document.querySelectorAll(".curveLineUI").forEach(e => {
-      e.classList.add("is-hidden");
-    });
-  }
-
-  // Update the line toggle of the curve in the chart if it exists
-  if(grapher.chart.series.find(e => e.name === activeCurve)){
-    grapher.chart.series.find(e => e.name === activeCurve).update({ lineWidth: curve.line ? curve.lineWidth : 0});
-  }
-});
 
 // Populate line width select
 function populateLineWidthSelect(){
   const select = document.getElementById("curveLineWidthSelect");
-
-  // Create the options
   select.innerHTML = ""; // Clear previous options
   for(let i = 1; i <= 10; i++){
     const option = document.createElement('option');
     option.value = i;
-    option.textContent = i; // Display the line width in pixels
+    option.textContent = i;
     select.appendChild(option);
   }
-
-  // On change, update the line width of the active curve
-  select.addEventListener('change', function () {
-    const newLineWidth = parseInt(this.value, 10);
-
-    // Find the active curve the select is currently set to
-    const activeCurve = $("#choose-curves-menu").querySelector(".is-active").children[1].innerHTML;
-
-    // Update the line width of the curve in the data
-    const curve = data.curves.find(curve => curve.title === activeCurve);
-    curve.lineWidth = newLineWidth;
-
-    // Update the line width of the curve in the chart if it exists
-    if(grapher.chart.series.find(e => e.name === activeCurve)){
-      grapher.chart.series.find(e => e.name === activeCurve).update({ lineWidth: newLineWidth });
-    }
-  });
 }
 
 // Populate line style select
 function populateLineStyleSelect(){
+  // Cette fonction n'a plus besoin d'ajouter d'écouteur, juste de s'assurer que le HTML est là.
+  // On la garde au cas où on voudrait la remplir dynamiquement plus tard.
   const select = document.getElementById("curveLineStyleSelect");
-
-  // On change, update the line style of the active curve
-  select.addEventListener('change', function () {
-    const newLineStyle = this.value;
-
-    // Find the active curve the select is currently set to
-    const activeCurve = $("#choose-curves-menu").querySelector(".is-active").children[1].innerHTML;
-
-    // Update the line style of the curve in the data
-    const curve = data.curves.find(curve => curve.title === activeCurve);
-    curve.lineStyle = newLineStyle;
-
-    // Update the line style of the curve in the chart if it exists
-    if(grapher.chart.series.find(e => e.name === activeCurve)){
-      grapher.chart.series.find(e => e.name === activeCurve).update({ dashStyle: newLineStyle });
-    }
-  });
+  if (select.options.length === 0) {
+      // Si vide, on pourrait la peupler, mais le HTML est déjà bon.
+  }
 }
 
 // Populate markers symbol select
 function populateMarkersSymbolSelect(){
-  const select = document.getElementById("curveMarkerSymbolSelect");
-
-  // On change, update the marker symbol of the active curve
-  select.addEventListener('change', function () {
-    const newSymbol = this.value;
-
-    // Find the active curve the select is currently set to
-    const activeCurve = $("#choose-curves-menu").querySelector(".is-active").children[1].innerHTML;
-
-    // Update the marker symbol of the curve in the data
-    const curve = data.curves.find(curve => curve.title === activeCurve);
-    curve.markerSymbol = newSymbol;
-
-    // Update the marker symbol of the curve in the chart if it exists
-    if(grapher.chart.series.find(e => e.name === activeCurve)){
-      grapher.chart.series.find(e => e.name === activeCurve).update({ marker: { 
-        symbol: newSymbol,
-        lineWidth: newSymbol === "cross" || "crossX" ? 1 : 0, // If the symbol is a cross, set the line width to 10
-      } });
-    }
-  });
+  // Idem que populateLineStyleSelect
 }
 
 // Populate the markers symbol radius select
 function populateMarkersRadiusSelect(){
   const select = document.getElementById("curveMarkerRadiusSelect");
-
-  // Create the options
   select.innerHTML = ""; // Clear previous options
   for(let i = 1; i <= 15; i++){
     const option = document.createElement('option');
     option.value = i;
-    option.textContent = i; // Display the marker radius in pixels
+    option.textContent = i;
     select.appendChild(option);
   }
-
-  // On change, update the marker radius of the active curve
-  select.addEventListener('change', function () {
-    const newRadius = parseInt(this.value, 10);
-
-    // Find the active curve the select is currently set to
-    const activeCurve = $("#choose-curves-menu").querySelector(".is-active").children[1].innerHTML;
-
-    // Update the marker radius of the curve in the data
-    const curve = data.curves.find(curve => curve.title === activeCurve);
-    curve.markerRadius = newRadius;
-
-    // Update the marker radius of the curve in the chart if it exists
-    if(grapher.chart.series.find(e => e.name === activeCurve)){
-      grapher.chart.series.find(e => e.name === activeCurve).update({ marker: { radius: newRadius } });
-    }
-  });
 }
 
 
@@ -1103,8 +1027,8 @@ $("#zoom-button").addEventListener("click", () => {
                 display: "none" // Hide the default reset button
               }
             }
-          }
-        },
+          },
+        }
       }
     });
     grapher.chart.container.classList.add('chart-free-crosshair');
