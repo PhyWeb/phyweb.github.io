@@ -74,6 +74,10 @@ $("#tableur-tab").addEventListener("click", () => {
   $("#tableur-panel").classList.remove("is-hidden");
   $("#grapheur-panel").classList.add("is-hidden");
   $("#calculs-panel").classList.add("is-hidden");
+
+  // Redimensionne le tableau pour qu'il s'affiche correctement
+  let newHeight = $("#table-container").offsetHeight;
+  spreadsheet.hot.updateSettings({ height: newHeight })
 });
 $("#grapheur-tab").addEventListener("click", () => {
   $("#tableur-tab").classList.remove("is-active");
