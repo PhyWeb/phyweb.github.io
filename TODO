@@ -27,6 +27,8 @@ TRACKER:
 GRAPHER:
   - utiliser des puissances de 10 dans les axes du graph (déjà OK ? A verifier)
 
+  - BUG, on peut renommer un parametre de modèle avec le meme nom qu'une grandeur (et peut etre aussi qu'un autre paramertre de modèle)
+
   - permettre de definir des bornes aux modèles (pour l'instant c'est toujours sur toute la plage de données)
 
   - permettre voir autoriser les notations 3e-15 (deja partiellemnt possible, à vérifier partout)
