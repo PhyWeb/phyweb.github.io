@@ -30,20 +30,18 @@ GRAPHER:
   - BUG, on peut renommer un parametre de modèle avec le meme nom qu'une grandeur (et peut etre aussi qu'un autre paramertre de modèle)
 
   - permettre de definir des bornes aux modèles (pour l'instant c'est toujours sur toute la plage de données)
+  - ajouter d'autres modèles
 
   - permettre voir autoriser les notations 3e-15 (deja partiellemnt possible, à vérifier partout)
 
   - réticule persistant quand on clique
-  - autres outils
+  - autres outils (réticule modèle, tangente, méthode des tangentes...)
 
   - icones personnalisées
 
-  - specify "line" or "spline" in series not graph
+  - specify "line" or "spline" in series not graph ???
 
   - export image / print
-
-  - methode tangente 
-  - modélisation
 
   - utiliser local storage pour eviter de tout perdre si on quitte la page
 
