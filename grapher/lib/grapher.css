@@ -136,6 +136,10 @@
 
 /* Modèles*/
 
+#add-model-modal-card {
+  width: 50rem;
+}
+
 .model-type-item {
   width: 120px;
   border: 1px solid #dbdbdb;

@@ -30,7 +30,8 @@ GRAPHER:
   - BUG, on peut renommer un parametre de modèle avec le meme nom qu'une grandeur (et peut etre aussi qu'un autre paramertre de modèle)
 
   - permettre de definir des bornes aux modèles (pour l'instant c'est toujours sur toute la plage de données)
-  - ajouter d'autres modèles
+
+  - bonnes icones pour les modèles
 
   - permettre voir autoriser les notations 3e-15 (deja partiellemnt possible, à vérifier partout)
 

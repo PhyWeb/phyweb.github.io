@@ -888,7 +888,7 @@
   <!------------------------------------------------------------------------------------------------------------>
   <div id="add-model-modal" class="modal">
     <div class="modal-background"></div>
-    <div class="modal-card">
+    <div class="modal-card" id="add-model-modal-card">
       <header class="modal-card-head">
         <p class="modal-card-title">Nouvelle modélisation</p>
         <button class="delete" aria-label="close"></button>
@@ -945,8 +945,95 @@
               </svg>
             </span>
             <p class="has-text-weight-semibold mt-2">Puissance</p>
-              <p class="is-size-7">y = a·x^b</p>
+            <p class="is-size-7">y = a·x^b</p>
             </div>
+          </div>
+          <div class="more-models-container is-hidden is-flex is-flex-wrap-wrap is-fullwidth" style="gap: 1rem;">
+            <div class="model-type-item box is-clickable p-3 has-text-centered is-flex-grow-1" data-model-type="exp1">
+              <span class="icon is-large has-text-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+                  <path fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" d="M6 42 L42 42 M6 42 L6 6"/>
+                  <path fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" d="M8 8 Q 40 10 42 40"/>
+                </svg>
+              </span>
+              <p class="has-text-weight-semibold mt-2">Exponentielle 1</p>
+              <p class="is-size-7">y = a·e<sup>-x/b</sup></p>
+            </div>
+            <div class="model-type-item box is-clickable p-3 has-text-centered is-flex-grow-1" data-model-type="exp2">
+              <span class="icon is-large has-text-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+                  <path fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" d="M6 42 L42 42 M6 42 L6 6"/>
+                  <path fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" d="M8 40 Q 10 8 42 8"/>
+                </svg>        
+              </span>
+              <p class="has-text-weight-semibold mt-2">Exponentielle 2</p>
+              <p class="is-size-7">y = a·(1-e<sup>-x/b</sup>)</p>
+            </div>
+            <div class="model-type-item box is-clickable p-3 has-text-centered is-flex-grow-1" data-model-type="ln">
+              <span class="icon is-large has-text-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+                    <path fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" d="M6 42 L42 42 M6 42 L6 6"/>
+                    <path fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" d="M8 42 Q 10 10 42 8"/>
+                </svg>
+              </span>
+              <p class="has-text-weight-semibold mt-2">Log népérien</p>
+              <p class="is-size-7">y = a·ln(x) + b</p>
+            </div>
+            <div class="model-type-item box is-clickable p-3 has-text-centered is-flex-grow-1 mb-3" data-model-type="log">
+              <span class="icon is-large has-text-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+                    <path fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" d="M6 42 L42 42 M6 42 L6 6"/>
+                    <path fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" d="M8 42 Q 15 15 42 12"/>
+                </svg>
+              </span>
+              <p class="has-text-weight-semibold mt-2">Log décimal</p>
+              <p class="is-size-7">y = a·log(x) + b</p>
+            </div>
+          </div>
+          <div class="more-models-container is-hidden is-flex is-flex-wrap-wrap is-fullwidth" style="gap: 1rem;">
+            <div class="model-type-item box is-clickable p-3 has-text-centered is-flex-grow-1" data-model-type="sin">
+              <span class="icon is-large has-text-warning">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+                  <path fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" d="M6 42 L42 42 M6 42 L6 6"/>
+                  <path fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" d="M8 8 Q 40 10 42 40"/>
+                </svg>
+              </span>
+              <p class="has-text-weight-semibold mt-2">Sinus</p>
+              <p class="is-size-7">y = a·sin(b·x + c) + d</p>
+            </div>
+            <div class="model-type-item box is-clickable p-3 has-text-centered is-flex-grow-1" data-model-type="cos">
+              <span class="icon is-large has-text-warning">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+                  <path fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" d="M6 42 L42 42 M6 42 L6 6"/>
+                  <path fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" d="M8 40 Q 10 8 42 8"/>
+                </svg>        
+              </span>
+              <p class="has-text-weight-semibold mt-2">Cosinus</p>
+              <p class="is-size-7">y = a·cos(b·x + c) + d</p>
+            </div>
+            <div class="model-type-item box is-clickable p-3 has-text-centered is-flex-grow-1" data-model-type="dampedsin">
+              <span class="icon is-large has-text-warning">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+                    <path fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" d="M6 42 L42 42 M6 42 L6 6"/>
+                    <path fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" d="M8 42 Q 10 10 42 8"/>
+                </svg>
+              </span>
+              <p class="has-text-weight-semibold mt-2">Sin amorti</p>
+              <p class="is-size-7">y = a·sin(b·x+c)·e<sup>-x/d</sup> + e</p>
+            </div>
+            <div class="model-type-item box is-clickable p-3 has-text-centered is-flex-grow-1 mb-3" data-model-type="dampedcos">
+              <span class="icon is-large has-text-warning">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+                    <path fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" d="M6 42 L42 42 M6 42 L6 6"/>
+                    <path fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" d="M8 42 Q 15 15 42 12"/>
+                </svg>
+              </span>
+              <p class="has-text-weight-semibold mt-2">Cos amorti</p>
+              <p class="is-size-7">y = a·cos(b·x+c)·e<sup>-x/d</sup> + e</p>
+            </div>
+          </div>
+          <div class="is-flex is-flex-wrap-wrap is-fullwidth">
+            <button class="button is-fullwidth is-white" id="show-more-models-button">Afficher plus de modèles</button>
           </div>
         </div>
       </section>

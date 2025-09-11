@@ -1117,11 +1117,10 @@ function openAddModelModal() {
     });
   }
   
-  // Réinitialise la sélection
-  const activeItem = modelTypeContainer.querySelector('.is-active');
-  if (activeItem) {
-    activeItem.classList.remove('is-active', 'has-background-primary-light');
-  }
+  // Réinitialise la sélection de tous les modèles
+  addModelModal.querySelectorAll('.model-type-item').forEach(item => {
+    item.classList.remove('is-active', 'has-background-primary-light');
+  });
   selectedModelType = null;
 
   addModelModal.classList.add('is-active');
@@ -1131,16 +1130,33 @@ function openAddModelModal() {
 $('#add-model-button').addEventListener('click', openAddModelModal);
 
 // Gère la sélection d'un type de modèle
-modelTypeContainer.addEventListener('click', (e) => {
+addModelModal.addEventListener('click', (e) => {
   const targetItem = e.target.closest('.model-type-item');
   if (targetItem) {
     // Enlève la classe active des autres éléments
-    modelTypeContainer.querySelectorAll('.model-type-item').forEach(item => {
+    addModelModal.querySelectorAll('.model-type-item').forEach(item => {
       item.classList.remove('is-active', 'has-background-primary-light');
     });
     // Ajoute la classe active à l'élément cliqué
     targetItem.classList.add('is-active', 'has-background-primary-light');
     selectedModelType = targetItem.dataset.modelType;
+  }
+});
+
+// Affichage des modèles supplémentaires
+$("#show-more-models-button").addEventListener("click", () => {
+  const moreModelsContainers = document.querySelectorAll(".more-models-container");
+  const button = $("#show-more-models-button");
+
+  moreModelsContainers.forEach(container => {
+    container.classList.toggle("is-hidden");
+  });
+
+  // Met à jour le texte du bouton en se basant sur l'état du premier conteneur
+  if (moreModelsContainers.length > 0 && moreModelsContainers[0].classList.contains("is-hidden")) {
+    button.textContent = "Afficher plus de modèles";
+  } else {
+    button.textContent = "Masquer les modèles supplémentaires";
   }
 });
 

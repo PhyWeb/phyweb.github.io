@@ -67,12 +67,33 @@ class Model {
       case "quadratic":
         // y = a*x^2 + b*x + c
         return `${this.y.title} = ${this.parameters[0].name}·${this.x.title}² + ${this.parameters[1].name}·${this.x.title} + ${this.parameters[2].name}`;
-      case "cubic":
-        // y = a*x^3 + b*x^2 + c*x + d
-        return `${this.y.title} = ${this.parameters[0].name}·${this.x.title}³ + ${this.parameters[1].name}·${this.x.title}² + ${this.parameters[2].name}·${this.x.title} + ${this.parameters[3].name}`;
       case "power":
         // y = a*x^b
-        return `${this.y.title} = ${this.parameters[0].name}·${this.x.title}^${this.parameters[1].name}`;
+        return `${this.y.title} = ${this.parameters[0].name}·${this.x.title}<sup>${this.parameters[1].name}</sup>`;
+      case "exp1":
+        // y = a*e^(-x/b)
+        return `${this.y.title} = ${this.parameters[0].name}·e<sup>-${this.x.title}/${this.parameters[1].name}</sup>`;
+      case "exp2":
+        // y = a*(1 - e^(-x/b))
+        return `${this.y.title} = ${this.parameters[0].name}·(1 - e<sup>-${this.x.title}/${this.parameters[1].name}</sup>)`;
+      case "ln":
+        // y = a*ln(x) + b
+        return `${this.y.title} = ${this.parameters[0].name}·ln(${this.x.title}) + ${this.parameters[1].name}`;
+      case "log":
+        // y = a*log10(x) + b
+        return `${this.y.title} = ${this.parameters[0].name}·log(${this.x.title}) + ${this.parameters[1].name}`;
+      case "sin":
+        // y = a*sin(b*x + c) + d
+        return `${this.y.title} = ${this.parameters[0].name}·sin(${this.parameters[1].name}·${this.x.title} + ${this.parameters[2].name}) + ${this.parameters[3].name}`;
+      case "cos":
+        // y = a*cos(b*x + c) + d
+        return `${this.y.title} = ${this.parameters[0].name}·cos(${this.parameters[1].name}·${this.x.title} + ${this.parameters[2].name}) + ${this.parameters[3].name}`;
+      case "dampedsin":
+        // y = a*sin(b*x + c)*e^(-x/d) + e
+        return `${this.y.title} = ${this.parameters[0].name}·sin(${this.parameters[1].name}·${this.x.title} + ${this.parameters[2].name})·e<sup>-${this.x.title}/${this.parameters[3].name}</sup> + ${this.parameters[4].name}`;
+      case "dampedcos":
+        // y = a*cos(b*x + c)*e^(-x/d) + e
+        return `${this.y.title} = ${this.parameters[0].name}·cos(${this.parameters[1].name}·${this.x.title} + ${this.parameters[2].name})·e<sup>-${this.x.title}/${this.parameters[3].name}</sup> + ${this.parameters[4].name}`;
       default:
         return "Modèle non défini";
     }
@@ -86,10 +107,24 @@ class Model {
         return "Affine";
       case "quadratic":
         return "Parabole";
-      case "cubic":
-        return "Cubique ?";
       case "power":
         return "Puissance";
+      case "exp1":
+        return "Exponentielle 1";
+      case "exp2":
+        return "Exponentielle 2";
+      case "ln":
+        return "Logarithme népérien";
+      case "log":
+        return "Logarithme décimal";
+      case "sin":
+        return "Sinus";
+      case "cos":
+        return "Cosinus";
+      case "dampedsin":
+        return "Sin amorti";
+      case "dampedcos":
+        return "Cos amorti";
       default:
         return "Modèle inconnu";
     }
@@ -106,12 +141,33 @@ class Model {
       case "quadratic":
         // y = a*x^2 + b*x + c
         return (a_n, x) => a_n[0] * Math.pow(x, 2) + a_n[1] * x + a_n[2];
-      case "Cubic":
-        // y = a*x^3 + b*x^2 + c*x + d
-        return (a_n, x) => a_n[0] * Math.pow(x, 3) + a_n[1] * Math.pow(x, 2) + a_n[2] * x + a_n[3];
       case "power":
         // y = a*x^b
         return (a_n, x) => a_n[0] * Math.pow(x, a_n[1]);
+      case "exp1":
+        // y = a*e^(-x/b)
+        return (a_n, x) => a_n[0] * Math.exp(-x / a_n[1]);
+      case "exp2":
+        // y = a*(1 - e^(-x/b))
+        return (a_n, x) => a_n[0] * (1 - Math.exp(-x / a_n[1]));
+      case "ln":
+        // y = a*ln(x) + b
+        return (a_n, x) => a_n[0] * Math.log(x) + a_n[1];
+      case "log":
+        // y = a*log10(x) + b
+        return (a_n, x) => a_n[0] * Math.log10(x) + a_n[1];
+      case "sin":
+        // y = a*sin(b*x + c) + d
+        return (a_n, x) => a_n[0] * Math.sin(a_n[1] * x + a_n[2]) + a_n[3];
+      case "cos":
+        // y = a*cos(b*x + c) + d
+        return (a_n, x) => a_n[0] * Math.cos(a_n[1] * x + a_n[2]) + a_n[3];
+      case "dampedsin":
+        // y = a*sin(b*x + c)*e^(-x/d) + e
+        return (a_n, x) => a_n[0] * Math.sin(a_n[1] * x + a_n[2]) * Math.exp(-x / a_n[3]) + a_n[4];
+      case "dampedcos":
+        // y = a*cos(b*x + c)*e^(-x/d) + e
+        return (a_n, x) => a_n[0] * Math.cos(a_n[1] * x + a_n[2]) * Math.exp(-x / a_n[3]) + a_n[4];
       default:
         return () => 0; // Fonction par défaut
       }
@@ -153,10 +209,12 @@ class Model {
 
     let guess_size = 2;
     if (this.type === 'linear') guess_size = 1;
-    if (this.type === 'affine') guess_size = 2;
     if (this.type === 'quadratic') guess_size = 3;
     if (this.type === 'cubic') guess_size = 4;
-    if (this.type === 'power') guess_size = 2;
+    if (this.type === 'sin') guess_size = 4;
+    if (this.type === 'cos') guess_size = 4;
+    if (this.type === 'dampedsin') guess_size = 5;
+    if (this.type === 'dampedcos') guess_size = 5;
     
     solver.solve("min", Array(guess_size).fill(1));
     let params = solver.get_results();
@@ -232,6 +290,62 @@ class Model {
         for (let i = 0; i < points; i++) {
           const x = minX + i * step;
           const y = this.parameters[0].value * Math.pow(x, this.parameters[1].value);
+          data.push([x, y]);
+        }
+        break;
+      case "exp1":
+        for (let i = 0; i < points; i++) {
+          const x = minX + i * step;
+          const y = this.parameters[0].value * Math.exp(-x / this.parameters[1].value);
+          data.push([x, y]);
+        }
+        break;
+      case "exp2":
+        for (let i = 0; i < points; i++) {
+          const x = minX + i * step;
+          const y = this.parameters[0].value * (1 - Math.exp(-x / this.parameters[1].value));
+          data.push([x, y]);
+        }
+        break;
+      case "ln":
+        for (let i = 0; i < points; i++) {
+          const x = minX + i * step;
+          const y = this.parameters[0].value * Math.log(x) + this.parameters[1].value;
+          data.push([x, y]);
+        }
+        break;
+      case "log":
+        for (let i = 0; i < points; i++) {
+          const x = minX + i * step;
+          const y = this.parameters[0].value * Math.log10(x) + this.parameters[1].value;
+          data.push([x, y]);
+        }
+        break;
+      case "sin":
+        for (let i = 0; i < points; i++) {
+          const x = minX + i * step;
+          const y = this.parameters[0].value * Math.sin(this.parameters[1].value * x + this.parameters[2].value) + this.parameters[3].value;
+          data.push([x, y]);
+        }
+        break;
+      case "cos":
+        for (let i = 0; i < points; i++) {
+          const x = minX + i * step;
+          const y = this.parameters[0].value * Math.cos(this.parameters[1].value * x + this.parameters[2].value) + this.parameters[3].value;
+          data.push([x, y]);
+        }
+        break;
+      case "dampedsin":
+        for (let i = 0; i < points; i++) {
+          const x = minX + i * step;
+          const y = this.parameters[0].value * Math.sin(this.parameters[1].value * x + this.parameters[2].value) * Math.exp(-x / this.parameters[3].value) + this.parameters[4].value;
+          data.push([x, y]);
+        }
+        break;
+      case "dampedcos":
+        for (let i = 0; i < points; i++) {
+          const x = minX + i * step;
+          const y = this.parameters[0].value * Math.cos(this.parameters[1].value * x + this.parameters[2].value) * Math.exp(-x / this.parameters[3].value) + this.parameters[4].value;
           data.push([x, y]);
         }
         break;
