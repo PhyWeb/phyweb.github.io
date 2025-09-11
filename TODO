@@ -33,6 +33,8 @@ GRAPHER:
 
   - bonnes icones pour les modèles
 
+  - gerer quand la modélisation donne des ecart type ou r2 "infinity"
+
   - permettre voir autoriser les notations 3e-15 (deja partiellemnt possible, à vérifier partout)
 
   - réticule persistant quand on clique
