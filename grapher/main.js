@@ -1333,6 +1333,29 @@ function createModelPanel(modelID){
       const editModelModal = $('#edit-model-modal');
       const colorPicker = $('#model-edit-color-picker');
       const lineWidthSelect = $('#model-edit-linewidth-select');
+      const borneDebutInput = $('#model-edit-borne-debut-input');
+      const borneFinInput = $('#model-edit-borne-fin-input');
+      const borneToutCheckbox = $('#model-edit-borne-tout-checkbox');
+
+      const xData = model.x;
+      let minX = Infinity;
+      let maxX = -Infinity;
+
+      // On parcourt les données une seule fois pour trouver le min et le max
+      for (let i = 0; i < xData.length; i++) {
+        const val = xData[i];
+        if (val !== null && isFinite(val)) {
+          if (val < minX) {
+            minX = val;
+          }
+          if (val > maxX) {
+            maxX = val;
+          }
+        }
+      }
+      // Si aucune donnée valide n'a été trouvée, on met des valeurs par défaut
+      if (minX === Infinity) minX = 0;
+      if (maxX === -Infinity) maxX = 0;
       
       // Réinitialisation des menus déroulants et attribution des valeurs actuelles
       populateModelColors(colorPicker);
@@ -1341,6 +1364,19 @@ function createModelPanel(modelID){
       populateModelLineWidthSelect(lineWidthSelect);
       lineWidthSelect.value = model.lineWidth;
       $('#model-edit-linestyle-select').value = model.lineStyle;
+
+      const inputsDisabled = model.borne_debut === null && model.borne_fin === null;
+      borneToutCheckbox.checked = inputsDisabled;
+      borneDebutInput.disabled = inputsDisabled;
+      borneFinInput.disabled = inputsDisabled;
+
+      // On charge les valeurs actuelles des bornes dans les champs
+      borneDebutInput.value = model.borne_debut !== null ? model.borne_debut : '';
+      borneFinInput.value = model.borne_fin !== null ? model.borne_fin : '';
+
+      // On met à jour les "placeholders" pour guider l'utilisateur
+      borneDebutInput.placeholder = `Min: ${formatNumber(minX, 4)}`;
+      borneFinInput.placeholder = `Max: ${formatNumber(maxX, 4)}`;
 
       // Déclaration de la variable parametersContainer ici pour qu'elle soit accessible
       const parametersContainer = $('#model-edit-parameters-container');
@@ -1370,12 +1406,99 @@ function createModelPanel(modelID){
         `;
         parametersContainer.appendChild(field);
       });
+
+      // GESTIONNAIRE D'ÉVÉNEMENT POUR LA CASE À COCHER
+      borneToutCheckbox.onchange = () => {
+        const disabled = borneToutCheckbox.checked;
+        borneDebutInput.disabled = disabled;
+        borneFinInput.disabled = disabled;
+        // Si on coche "Tout", on vide les champs pour plus de clarté
+        if (disabled) {
+          borneDebutInput.value = '';
+          borneFinInput.value = '';
+        }
+      };
+
+      // GESTIONNAIRES D'ÉVÉNEMENTS POUR LA CORRECTION AUTOMATIQUE
+      // Fonction générique pour corriger une borne
+      const clampBorne = (inputElement, min, max) => {
+        const valueStr = inputElement.value.trim().replace(',', '.');
+        if (valueStr === '') return; // Ne rien faire si le champ est vide
+
+        let value = parseFloat(valueStr);
+        if (isNaN(value)) { // Si la saisie n'est pas un nombre
+            inputElement.value = '';
+            return;
+        }
+
+        // On s'assure que la valeur est dans l'intervalle [min, max]
+        const clampedValue = Math.max(min, Math.min(value, max));
+        if (clampedValue !== value) {
+            inputElement.value = clampedValue;
+        }
+      };
+
+      // Écouteur pour la borne de début
+      borneDebutInput.onblur = () => {
+        clampBorne(borneDebutInput, minX, maxX);
+        // On s'assure que début <= fin
+        const debut = parseFloat(borneDebutInput.value);
+        const fin = parseFloat(borneFinInput.value);
+        if (!isNaN(debut) && !isNaN(fin) && debut > fin) {
+          borneFinInput.value = debut;
+        }
+      };
+
+      // Écouteur pour la borne de fin
+      borneFinInput.onblur = () => {
+        clampBorne(borneFinInput, minX, maxX);
+        // On s'assure que début <= fin
+        const debut = parseFloat(borneDebutInput.value);
+        const fin = parseFloat(borneFinInput.value);
+        if (!isNaN(debut) && !isNaN(fin) && debut > fin) {
+          borneDebutInput.value = fin;
+        }
+      };
       
-      $('#model-edit-save-button').onclick = () => {      
+      $('#model-edit-save-button').onclick = async () => {      
         model.color = colorPicker.value;
         model.lineWidth = lineWidthSelect.value;
         model.lineStyle = $('#model-edit-linestyle-select').value;
         
+        let newBorneDebut = null;
+        let newBorneFin = null;
+
+        // Si la case "Tout" n'est PAS cochée, on lit les valeurs des champs
+        if (!borneToutCheckbox.checked) {
+          const newBorneDebutStr = borneDebutInput.value.trim();
+          const newBorneFinStr = borneFinInput.value.trim();
+          newBorneDebut = newBorneDebutStr === '' ? null : parseFloat(newBorneDebutStr.replace(',', '.'));
+          newBorneFin = newBorneFinStr === '' ? null : parseFloat(newBorneFinStr.replace(',', '.'));
+        }
+
+        // Validation : s'il y a des bornes, on vérifie qu'il y a au moins 2 points dans l'intervalle
+        const pointsDansIntervalle = model.x.filter(val => {
+          if (val === null || !isFinite(val)) return false;
+          const estApresDebut = (newBorneDebut === null) || (val >= newBorneDebut);
+          const estAvantFin = (newBorneFin === null) || (val <= newBorneFin);
+          return estApresDebut && estAvantFin;
+        }).length;
+
+        if (pointsDansIntervalle < 2) {
+          alertModal({
+            title: "Données insuffisantes",
+            body: `L'intervalle de calcul sélectionné ne contient pas assez de points pour réaliser une modélisation.`,
+            confirm: "OK"
+          });
+          return; // On arrête la sauvegarde
+        }
+        
+        const boundsChanged = model.borne_debut !== newBorneDebut || model.borne_fin !== newBorneFin;
+
+        model.borne_debut = newBorneDebut;
+        model.borne_fin = newBorneFin;
+        
+        let namesHaveChanged = false;
         const allNewNames = new Set();
         let hasConflict = false;
         const newParamNames = {};
@@ -1383,6 +1506,7 @@ function createModelPanel(modelID){
         parametersContainer.querySelectorAll('input[data-old-name]').forEach(input => {
           const oldName = input.dataset.oldName;
           const newName = input.value.trim();
+          if(oldName !== newName) namesHaveChanged = true;
           if (!newName.match(/^[a-zA-Z][a-zA-Z0-9]*$/)) {
             alertModal({ title: "Nom de paramètre invalide", body: `Le nom "${newName}" doit commencer par une lettre et ne contenir que des lettres et des chiffres.`, confirm: "OK" });
             hasConflict = true;
@@ -1399,17 +1523,24 @@ function createModelPanel(modelID){
         
         if(hasConflict) return;
         
-        const updatedParams = {};
-        model.parameters.forEach(param => {
-          const oldName = param.name;
-          const newName = newParamNames[oldName];
-          updatedParams[newName] = { value: param.value, unit: '', type: 'model' };
+        if (boundsChanged) {
+            await model.fit();
+        }
+
+        if(namesHaveChanged){
+          const updatedParams = {};
+          model.parameters.forEach(param => {
+            const oldName = param.name;
+            const newName = newParamNames[oldName] || oldName;
+            updatedParams[newName] = { value: param.value, unit: '', type: 'model' };
+            if(oldName !== newName){
+              delete data.parameters[oldName];
+            }
+          });
           
-          delete data.parameters[oldName];
-        });
-        
-        model.parameters = Object.entries(updatedParams).map(([name, obj]) => ({ name, value: obj.value }));
-        Object.assign(data.parameters, updatedParams);
+          model.parameters = Object.entries(updatedParams).map(([name, obj]) => ({ name, value: obj.value }));
+          Object.assign(data.parameters, updatedParams);
+        }
         
         const series = grapher.chart.get(`model-${model.id}`);
         if(series) {
@@ -1422,6 +1553,9 @@ function createModelPanel(modelID){
         
         updateModelPanel(model);
         updateCalculationUI();
+        grapher.updateModelVisibility();
+        grapher.chart.redraw();
+        
         editModelModal.classList.remove('is-active');
       };
       

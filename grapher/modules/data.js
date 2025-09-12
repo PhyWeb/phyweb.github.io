@@ -54,6 +54,9 @@ class Model {
     this.line = line;
     this.lineWidth = lineWidth;
     this.lineStyle = lineStyle;
+
+    this.borne_debut = null;
+    this.borne_fin = null;
   }
 
   getEquationString() {
@@ -178,6 +181,15 @@ class Model {
     for(let i = 0; i < this.x.length; i++){
       const xVal = this.x[i];
       const yVal = this.y[i];
+
+      // On ne prend en compte que les points dans les bornes définies
+      if (this.borne_debut !== null && xVal < this.borne_debut) {
+        continue;
+      }
+      if (this.borne_fin !== null && xVal > this.borne_fin) {
+        continue;
+      }
+      
       if (xVal !== null && yVal !== null && xVal !== '' && yVal !== '' && isFinite(xVal) && isFinite(yVal)) {
         data.push([xVal, yVal]);
       }
