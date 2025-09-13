@@ -1191,12 +1191,12 @@ function updateModelPanel(model) {
       
       // Ajout de l'écart-type
       const liRmse = document.createElement('li');
-      liRmse.innerHTML = `Écart-type : ${formatNumber(model.rmse, significantDigits)}`;
+      liRmse.innerHTML = `Écart-type : ${model.rmse !== null ? formatNumber(model.rmse, significantDigits) : 'Indéfini'}`;
       ul2.appendChild(liRmse);
       
       // Ajout du R²
       const liRSquared = document.createElement('li');
-      liRSquared.innerHTML = `Coeff de corrélation : ${formatNumber(model.rSquared, 5)}`;
+      liRSquared.innerHTML = `Coeff de corrélation : ${model.rSquared !== null ? formatNumber(model.rSquared, 5) : 'Indéfini'}`;
       ul2.appendChild(liRSquared);
     }
   }
@@ -1299,11 +1299,11 @@ function createModelPanel(modelID){
   const ul2 = document.createElement('ul');
   // Ajout de la valeur de l'écart-type
   const liRmse = document.createElement('li');
-  liRmse.innerHTML = `Écart-type : ${formatNumber(model.rmse, significantDigits)}`;
+  liRmse.innerHTML = `Écart-type : ${model.rmse !== null ? formatNumber(model.rmse, significantDigits) : 'Indéfini'}`;
   ul2.appendChild(liRmse);
   // Ajout du R²
   const liRSquared = document.createElement('li');
-  liRSquared.innerHTML = `Coeff de corrélation : ${formatNumber(model.rSquared, 5)}`;
+  liRSquared.innerHTML = `Coeff de corrélation : ${model.rSquared !== null ? formatNumber(model.rSquared, 5) : 'Indéfini'}`;
   ul2.appendChild(liRSquared);
   body.appendChild(ul2);
 

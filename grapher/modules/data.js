@@ -189,7 +189,7 @@ class Model {
       if (this.borne_fin !== null && xVal > this.borne_fin) {
         continue;
       }
-      
+
       if (xVal !== null && yVal !== null && xVal !== '' && yVal !== '' && isFinite(xVal) && isFinite(yVal)) {
         data.push([xVal, yVal]);
       }
@@ -392,7 +392,10 @@ class Model {
       }
     }
     
-    this.rmse = validPointsCount > 0 ? Math.sqrt(sumOfSquaredErrors / validPointsCount) : 0;
+    const rmseValue = validPointsCount > 0 ? Math.sqrt(sumOfSquaredErrors / validPointsCount) : 0;
+
+    // On vérifie si le résultat est un nombre fini (ni Infinity, ni NaN)
+    this.rmse = isFinite(rmseValue) ? rmseValue : null;
   }
 
   calculateRSquared(data) {
@@ -424,11 +427,15 @@ class Model {
     }
     
     // Calculer le R²
+    let rSquaredValue;
     if (totalSumOfSquares === 0) {
-      this.rSquared = 1; // Si toutes les valeurs y sont identiques, R² est 1
+      rSquaredValue = 1; // Si toutes les valeurs y sont identiques, R² est 1
     } else {
-      this.rSquared = 1 - (residualSumOfSquares / totalSumOfSquares);
+      rSquaredValue = 1 - (residualSumOfSquares / totalSumOfSquares);
     }
+
+    // On vérifie si le résultat est un nombre fini
+    this.rSquared = isFinite(rSquaredValue) ? rSquaredValue : null;
   }
 }
 
