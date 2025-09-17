@@ -60,7 +60,7 @@ export default class App {
     this.spreadsheet.update();
 
     // Update the calculation tab
-    this.uiUpdater();
+    this.uiUpdater.updateCalculationUI();
   }
 
   deleteAllCurves() {
