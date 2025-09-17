@@ -427,20 +427,113 @@ export default class App {
     reader.readAsText(file);
   }
 
-  loadCSVFile(file) {
-    const reader = new FileReader();
+loadCSVFile(file) {
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    const raw = (event.target.result || "").replace(/^\uFEFF/, ""); // retire BOM
 
-    reader.onload = (event) =>{
-      let data = event.target.result;
-      // Remplacer toutes les virgules par des tabulations
-      data = data.replace(/,/g, '\t');
-      // Remplacer tous les points-virgules par des tabulations
-      data = data.replace(/;/g, '\t');
-      this.loadData(data);
+    // 1) Détection du séparateur le plus probable parmi ; , \t
+    const detectDelimiter = (text) => {
+      const candidates = [";", ",", "\t"];  // ordre volontaire pour FR puis US puis TSV
+      const sample = text.split(/\r?\n/).slice(0, 20); // échantillon
+      const score = {};
+      for (const d of candidates) {
+        let counts = [];
+        for (const line of sample) {
+          let inQuotes = false, count = 0;
+          for (let i = 0; i < line.length; i++) {
+            const ch = line[i];
+            if (ch === '"') {
+              // gérer "" à l'intérieur des champs
+              if (inQuotes && line[i + 1] === '"') { i++; continue; }
+              inQuotes = !inQuotes;
+            } else if (!inQuotes && ch === d) {
+              count++;
+            }
+          }
+          counts.push(count);
+        }
+        // Consistance: on privilégie le séparateur avec un nombre de séparateurs non nul
+        // et un écart‑type faible sur les lignes de l’échantillon
+        const nonZero = counts.filter(c => c > 0);
+        if (nonZero.length === 0) { score[d] = {mean: 0, stdev: 1e9, used: 0}; continue; }
+        const mean = nonZero.reduce((a,b)=>a+b,0)/nonZero.length;
+        const variance = nonZero.reduce((a,b)=>a+(b-mean)*(b-mean),0)/nonZero.length;
+        score[d] = {mean, stdev: Math.sqrt(variance), used: nonZero.length};
+      }
+      // Choix: le plus utilisé avec la meilleure régularité (stdev minimal), puis mean maximal
+      const ranked = Object.entries(score).sort((a,b)=>{
+        if (b[1].used !== a[1].used) return b[1].used - a[1].used;
+        if (a[1].stdev !== b[1].stdev) return a[1].stdev - b[1].stdev;
+        return b[1].mean - a[1].mean;
+      });
+      const best = ranked[0]?.[0] || ";";
+      return best;
     };
 
-    reader.readAsText(file);
-  }
+    // Parser CSV en respectant les guillemets
+    const parseCSV = (text, delimiter) => {
+      const rows = [];
+      let row = [];
+      let field = "";
+      let inQuotes = false;
+
+      const pushField = () => {
+        row.push(field);
+        field = "";
+      };
+      const pushRow = () => {
+        rows.push(row);
+        row = [];
+      };
+
+      for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+
+        if (ch === '"') {
+          if (inQuotes && text[i + 1] === '"') {
+            field += '"'; // séquence "" -> "
+            i++;
+          } else {
+            inQuotes = !inQuotes;
+          }
+          continue;
+        }
+
+        if (!inQuotes && (ch === "\n" || ch === "\r")) {
+          // fin de ligne (gérer CRLF)
+          pushField();
+          pushRow();
+          if (ch === "\r" && text[i + 1] === "\n") i++;
+          continue;
+        }
+
+        if (!inQuotes && ch === delimiter) {
+          pushField();
+          continue;
+        }
+
+        field += ch;
+      }
+      // Dernier champ / dernière ligne
+      pushField();
+      if (row.length > 1 || (row.length === 1 && row[0] !== "")) pushRow();
+
+      return rows;
+    };
+
+    const delimiter = detectDelimiter(raw);
+    const rows = parseCSV(raw, delimiter);
+
+    // Conversion en TSV attendu par loadData (escape des tabs éventuels)
+    const toTSV = rows
+      .map(r => r.map(cell => String(cell).replace(/\t/g, " ")).join("\t"))
+      .join("\n");
+
+    this.loadData(toTSV);
+  };
+  reader.readAsText(file);
+}
 
   loadRW3File(file) {
     const reader = new FileReader();
