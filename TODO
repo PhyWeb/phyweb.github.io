@@ -35,6 +35,8 @@ GRAPHER:
 
   - ajouter un mode qui utilise un modele pour calculer une valeur
 
+  - supprimer les modèles quand les courbes sont supprimées (adapter la modale pour le préciser)
+
   - gerer quand la modélisation donne des ecart type ou r2 "infinity"
 
   - permettre voir autoriser les notations 3e-15 (deja partiellemnt possible, à vérifier partout)
