@@ -535,79 +535,93 @@ loadCSVFile(file) {
   reader.readAsText(file);
 }
 
-  loadRW3File(file) {
-    const reader = new FileReader();
+  // Charge et parse un fichier Regressi (.rw3), puis injecte les données en TSV dans this.loadData.
+  async loadRW3File(file) {
+    // Lecture + fallback d'encodage (UTF-8 puis Windows-1252 si heuristique déclenchée)
+    const buf = await file.arrayBuffer();
+    let data = new TextDecoder('utf-8', { fatal: false }).decode(buf);
+    const looksBroken = !/NOM VAR|GENRE VAR|VALEUR VAR/i.test(data) && /Â£\s*\d+\s+NOM VAR/i.test(data);
+    if (looksBroken) data = new TextDecoder('windows-1252', { fatal: false }).decode(buf);
 
-    reader.onload = (event) => {
-      const data = event.target.result;
-      const lines = data.split(/\r?\n/);
+    // Tokenisation en lignes
+    const lines = data.split(/\r?\n/);
 
-      let names = [];
-      let units = [];
-      let values = [];
+    const names = [];
+    const units = [];
+    const genres = []; // 0 = mesurée, 1 = calculée
+    const rows = [];   // lignes mesurées uniquement
 
-      let i = 0;
-      let expectedRows = 0;
+    let i = 0;
+    let expectedRows = 0;
 
-      while (i < lines.length) {
-        const line = lines[i].trim();
-
-        // Lire les noms de variables
-        if (line.startsWith("£") && line.includes("NOM VAR")) {
-          const count = parseInt(line.match(/£(\d+)/)?.[1]);
-          i++;
-          for (let j = 0; j < count && i < lines.length; j++, i++) {
-            names.push(lines[i].trim());
-          }
-          continue;
-        }
-
-        // Lire les unités
-        if (line.startsWith("£") && line.includes("UNITE VAR")) {
-          const count = parseInt(line.match(/£(\d+)/)?.[1]);
-          i++;
-          for (let j = 0; j < count && i < lines.length; j++, i++) {
-            units.push(lines[i].trim());
-          }
-          continue;
-        }
-
-        // Lire les valeurs
-        if (line.startsWith("&") && line.includes("VALEUR VAR")) {
-          expectedRows = parseInt(line.match(/&(\d+)/)?.[1]) || 0;
-          i++;
-          let rowCount = 0;
-          while (i < lines.length && rowCount < expectedRows) {
-            const valLine = lines[i].trim();
-            if (valLine !== "") {
-              const nums = valLine.split(/\s+/).map(s => parseFloat(String(s).replace(',', '.')));
-              if (nums.length === names.length) {
-                values.push(nums);
-                rowCount++;
-              } else {
-                console.warn(`Ligne ignorée (attendues: ${names.length}, trouvées: ${nums.length}) :`, valLine);
-              }
-            }
-            i++;
-          }
-          break;
-        }
-
-        i++;
-      }
-
-      // Construction du texte tabulé
-      let output = '';
-      output += names.join('\t') + '\n';
-      output += units.join('\t') + '\n';
-      values.forEach(row => {
-        output += row.join('\t') + '\n';
-      });
-
-      this.loadData(output.trim());
+    // Lecture d'un bloc "£<n> <KEY>" -> n lignes
+    const readBlock = (key, target, parser = s => s.trim()) => {
+      const line = lines[i]?.trim() ?? '';
+      const m = line.match(new RegExp(String.raw`(\d+)\s+${key}\b`, 'i'));
+      if (!m) return false;
+      const count = parseInt(m[1], 10) || 0;
+      i++;
+      for (let j = 0; j < count && i < lines.length; j++, i++) target.push(parser(lines[i]));
+      return true;
     };
 
-    reader.readAsText(file);
+    // Parcours des sections utiles
+    while (i < lines.length) {
+      const line = lines[i]?.trim() ?? '';
+
+      if (/NOM VAR/i.test(line)) { readBlock('NOM VAR', names); continue; }
+      if (/GENRE VAR/i.test(line)) { readBlock('GENRE VAR', genres, s => parseInt(String(s).trim(), 10) || 0); continue; }
+      if (/UNITE VAR/i.test(line)) { readBlock('UNITE VAR', units, s => String(s).trim()); continue; }
+
+      // Bloc valeurs: on ne gère que le cas “colonnes mesurées”
+      const mVal = line.match(/&\s*(\d+)\s+VALEUR VAR/i);
+      if (mVal) {
+        expectedRows = parseInt(mVal[1], 10) || 0;
+        i++;
+
+        // Indices des variables mesurées (fallback: toutes si GENRE absent)
+        const measuredIdx = genres.length === names.length
+          ? genres.map((g, idx) => (g === 0 ? idx : -1)).filter(idx => idx !== -1)
+          : names.map((_, idx) => idx);
+        const mCount = measuredIdx.length;
+
+        let count = 0;
+        while (i < lines.length && count < expectedRows) {
+          const val = lines[i].trim();
+          if (val) {
+            const cols = val.split(/\s+/).map(s => Number.parseFloat(String(s).replace(',', '.')));
+            if (cols.length === mCount && cols.every(Number.isFinite)) {
+              rows.push(cols);
+              count++;
+            }
+            // Sinon: on ignore (pas de support du cas “toutes les colonnes”)
+          }
+          i++;
+        }
+        break; // on sort après VALEUR VAR
+      }
+
+      i++;
+    }
+
+    if (names.length === 0) throw new Error('No NOM VAR block found'); // garde-fou minimal [attached_file:84]
+
+    // Préparer les en-têtes mesurés uniquement
+    const measuredIdx = genres.length === names.length
+      ? genres.map((g, idx) => (g === 0 ? idx : -1)).filter(idx => idx !== -1)
+      : names.map((_, idx) => idx);
+
+    const headerNames = measuredIdx.map(i => names[i]);
+    const headerUnits = (units.length ? measuredIdx.map(i => units[i]) : measuredIdx.map(() => ''));
+
+    // Sérialisation TSV: 2 en-têtes + lignes “mesurées”
+    let output = '';
+    output += headerNames.join('\t') + '\n';
+    output += headerUnits.join('\t') + '\n';
+    for (const r of rows) output += r.join('\t') + '\n';
+
+    // Injection des données
+    this.loadData(output.trim());
   }
 
   loadData(data) {
