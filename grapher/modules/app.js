@@ -24,11 +24,12 @@ function isTabularData(text) {
 -------------------------------------------------APP--------------------------------------------
 ----------------------------------------------------------------------------------------------*/
 export default class App {
-  constructor(data, spreadsheet, grapher, calculation, uiUpdater) {
+  constructor(data, spreadsheet, grapher, calculation, editor, uiUpdater) {
     this.data = data;
     this.spreadsheet = spreadsheet;
     this.grapher = grapher;
     this.calculation = calculation;
+    this.editor = editor;
     this.uiUpdater = uiUpdater;
   }  
 
@@ -218,7 +219,12 @@ export default class App {
 
     for (const line of lines) {
       const trimmedLine = line.trim();
-      if (trimmedLine === '' || trimmedLine.startsWith('#') || trimmedLine.startsWith('//')) {
+      if (
+        trimmedLine === '' ||
+        trimmedLine.startsWith('#') ||
+        trimmedLine.startsWith('//') ||
+        trimmedLine.startsWith("'") 
+      ) {
         continue;
       }
 
@@ -337,6 +343,18 @@ export default class App {
     this.spreadsheet.update();
     this.grapher.updateChart();
     this.uiUpdater.updateCalculationUI();
+
+    // Si un RW3 a été chargé juste avant, on ajoute les courbes demandées
+    if (this._pendingRW3 && Array.isArray(this._pendingRW3.y)) {
+      const existing = this.data.curves.map(c => c.title);
+      const want = this._pendingRW3.y.filter(t => existing.includes(t));
+      if (want.length) {
+        const currentList = this.grapher.chart?.series?.map(s => s.name) || [];
+        const merged = Array.from(new Set([...currentList, ...want]));
+        this.grapher.updateChart(merged);
+      }
+      this._pendingRW3 = null;
+    }
   }
 
   /**
@@ -407,7 +425,9 @@ export default class App {
         if (state.grapher) {
             this.grapher.setGridVisibility(state.grapher.grid);
         }
-        $("#calculation-input").value = state.calculations || "";
+
+        this.editor.setValue(text);
+
         this.spreadsheet.update();
         if (state.grapher && state.grapher.xCurve) {
             this.grapher.setXCurve(state.grapher.xCurve, false);
@@ -537,11 +557,18 @@ loadCSVFile(file) {
 
   // Charge et parse un fichier Regressi (.rw3), puis injecte les données en TSV dans this.loadData.
   async loadRW3File(file) {
-    // Lecture + fallback d'encodage (UTF-8 puis Windows-1252 si heuristique déclenchée)
     const buf = await file.arrayBuffer();
-    let data = new TextDecoder('utf-8', { fatal: false }).decode(buf);
-    const looksBroken = !/NOM VAR|GENRE VAR|VALEUR VAR/i.test(data) && /Â£\s*\d+\s+NOM VAR/i.test(data);
-    if (looksBroken) data = new TextDecoder('windows-1252', { fatal: false }).decode(buf);
+
+    // 1) Essai UTF-8
+    const utf8Text = new TextDecoder('utf-8', { fatal: false }).decode(buf);
+
+    // 2) Si “�” (U+FFFD) est présent, ou si on voit “Â£” issu d'un mauvais décodage, on bascule en Windows-1252 immédiatement.
+    const needsCp1252 =
+      utf8Text.includes('\uFFFD') || /Â£/.test(utf8Text);
+
+    const data = needsCp1252
+      ? new TextDecoder('windows-1252', { fatal: false }).decode(buf)
+      : utf8Text;
 
     // Tokenisation en lignes
     const lines = data.split(/\r?\n/);
@@ -551,8 +578,18 @@ loadCSVFile(file) {
     const genres = []; // 0 = mesurée, 1 = calculée
     const rows = [];   // lignes mesurées uniquement
 
+    const constNames = [];
+    const constUnits = [];
+    const constRawValues = [];
+
+    const memoLines = [];
+
+    const graphX = [];
+    const graphY = [];
+
     let i = 0;
-    let expectedRows = 0;
+
+    let loadedVarValues = false
 
     // Lecture d'un bloc "£<n> <KEY>" -> n lignes
     const readBlock = (key, target, parser = s => s.trim()) => {
@@ -573,32 +610,72 @@ loadCSVFile(file) {
       if (/GENRE VAR/i.test(line)) { readBlock('GENRE VAR', genres, s => parseInt(String(s).trim(), 10) || 0); continue; }
       if (/UNITE VAR/i.test(line)) { readBlock('UNITE VAR', units, s => String(s).trim()); continue; }
 
+      if (/MEMO GRANDEURS/i.test(line)) { 
+        readBlock('MEMO GRANDEURS', memoLines, s => String(s).replace(/\r$/, '')); 
+        continue; 
+      }
+
+      if (/NOM CONST/i.test(line)) { readBlock('NOM CONST', constNames, s => String(s).trim()); continue; }
+      if (/UNITE CONST/i.test(line)) { readBlock('UNITE CONST', constUnits, s => String(s).trim()); continue; }
+
+
+      // Trouve les courbes à tracer
+      if (/^£\s*0\s+GRAPHE\s+VAR\b/i.test(line)) { i++; continue; }
+      let mX = line.match(/&\s*(\d+)\s+X\b/i);
+      if (mX) { const n = parseInt(mX[1], 10) || 0; i++; 
+        for (let j = 0; j < n && i < lines.length; j++, i++) 
+          graphX.push(String(lines[i]).trim()); 
+        continue; 
+      }
+      let mY = line.match(/&\s*(\d+)\s+Y\b/i);
+      if (mY) { const n = parseInt(mY[1], 10) || 0; i++; 
+        for (let j = 0; j < n && i < lines.length; j++, i++) 
+          graphY.push(String(lines[i]).trim()); 
+        continue; 
+      }
+
+      // Bloc paramètres
+      const mConst = line.match(/&\s*(\d+)\s+VALEUR CONST/i);
+      if (mConst) {
+        const n = parseInt(mConst[1], 10) || 0;
+        i++;
+        for (let j = 0; j < n && i < lines.length; j++, i++) {
+          const raw = String(lines[i]).trim();
+          constRawValues.push(String(raw));
+        }
+        continue;
+      }
+
       // Bloc valeurs: on ne gère que le cas “colonnes mesurées”
       const mVal = line.match(/&\s*(\d+)\s+VALEUR VAR/i);
       if (mVal) {
-        expectedRows = parseInt(mVal[1], 10) || 0;
-        i++;
+        const n = parseInt(mVal[1], 10) || 0;
+        i++; // se placer sur la première ligne de valeurs
 
-        // Indices des variables mesurées (fallback: toutes si GENRE absent)
-        const measuredIdx = genres.length === names.length
-          ? genres.map((g, idx) => (g === 0 ? idx : -1)).filter(idx => idx !== -1)
-          : names.map((_, idx) => idx);
-        const mCount = measuredIdx.length;
+        if (!loadedVarValues) {
+          const measuredIdx = genres.length === names.length
+            ? genres.map((g, idx) => (g === 0 ? idx : -1)).filter(idx => idx !== -1)
+            : names.map((_, idx) => idx);
+          const mCount = measuredIdx.length;
 
-        let count = 0;
-        while (i < lines.length && count < expectedRows) {
-          const val = lines[i].trim();
-          if (val) {
-            const cols = val.split(/\s+/).map(s => Number.parseFloat(String(s).replace(',', '.')));
-            if (cols.length === mCount && cols.every(Number.isFinite)) {
-              rows.push(cols);
-              count++;
+          let count = 0;
+          while (i < lines.length && count < n) {
+            const val = lines[i].trim();
+            if (val) {
+              const cols = val.split(/\s+/).map(s => Number.parseFloat(String(s).replace(',', '.')));
+              if (cols.length === mCount && cols.every(Number.isFinite)) {
+                rows.push(cols);
+                count++;
+              }
             }
-            // Sinon: on ignore (pas de support du cas “toutes les colonnes”)
+            i++;
           }
-          i++;
+
+          loadedVarValues = true;
+        } else {
+          i += n;
         }
-        break; // on sort après VALEUR VAR
+        continue;
       }
 
       i++;
@@ -620,8 +697,72 @@ loadCSVFile(file) {
     output += headerUnits.join('\t') + '\n';
     for (const r of rows) output += r.join('\t') + '\n';
 
+    // lecture des paramètres
+    const paramLines = [];
+    if (constNames.length) {
+      const n = Math.max(constNames.length, constUnits.length, constRawValues.length);
+      for (let k = 0; k < n; k++) {
+        const name = (constNames[k] || '').trim();
+        const unit = (constUnits[k] || '').trim();
+        const rawVal = String(constRawValues[k] ?? '').trim();
+        if (!name || !rawVal) continue; // on n’écrit que s’il y a une valeur
+        const lhs = unit ? `${name}_${unit}` : name;
+        paramLines.push(`${lhs} = ${rawVal}`);
+      }
+    }
+
+    // éplace un suffixe d'unité commun (ex: _J) du membre de droite vers la gauche
+    function moveUnitSuffixToLHS(line) {
+      const t = String(line);
+      const s = t.trim();
+      if (!s || s.startsWith('#') || s.startsWith('//') || s.startsWith("'")) return t;
+
+      const eq = s.indexOf('=');
+      if (eq === -1) return t;
+
+      const lhs = s.slice(0, eq).trim();
+      const rhs = s.slice(eq + 1).trim();
+
+      // Cherche des tokens du type nom_unite dans le RHS
+      const unitMatches = [...rhs.matchAll(/\b[A-Za-z]\w*_([A-Za-zµ°]+)\b/g)];
+      if (unitMatches.length === 0) return t;
+
+      // On n’agit que si un unique suffixe est détecté dans le RHS et que le LHS n’en a pas déjà
+      const suffixes = new Set(unitMatches.map(m => m[1]));
+      if (suffixes.size !== 1) return t;
+      const unit = [...suffixes][0];
+      if (/_([A-Za-zµ°]+)$/.test(lhs)) return t;
+
+      const lhsNew = `${lhs}_${unit}`;
+      const rhsNew = rhs.replace(new RegExp(`\\b([A-Za-z]\\w*)_${unit}\\b`, 'g'), '$1');
+      return `${lhsNew} = ${rhsNew}`;
+    }
+
+    const normalizedMemoLines = memoLines.map(moveUnitSuffixToLHS);
+
+    // remplir l’éditeur avec le MEMO + paramètres
+    const memoText = normalizedMemoLines.length ? normalizedMemoLines.join('\n') : '';
+    const paramsText = paramLines.length ? paramLines.join('\n') : '';
+    const finalText = memoText && paramsText ? `${paramsText}\n\n${memoText}` : (memoText || paramsText);
+    if (finalText) this.editor.setValue(finalText);
+
     // Injection des données
     this.loadData(output.trim());
+
+    // Configurer le graphe
+    const existingTitles = this.data.curves.map(c => c.title);
+    const chosenX = graphX.find(t => existingTitles.includes(t)) || existingTitles[0];
+    if (chosenX) this.grapher.setXCurve(chosenX, false);
+
+    const yNow = graphY.filter(t => existingTitles.includes(t));
+    if (yNow.length) this.grapher.updateChart(yNow); else this.grapher.updateChart();
+
+    // Y à activer plus tard (courbes calculées absentes pour l’instant)
+    this._pendingRW3 = {
+      x: chosenX || null, 
+      y: graphY.filter(t => !existingTitles.includes(t))
+    };
+
   }
 
   loadData(data) {
@@ -720,9 +861,12 @@ loadCSVFile(file) {
       }
 
       console.log("data loaded", this.data);
+      this.applyCalculation(this.editor.getValue()); // Re-applique les calculs
       this.spreadsheet.update();
       this.grapher.updateChart();
       this.uiUpdater.updateCalculationUI();
+
+
     } finally {
       this._isLoading = false; // Assure que le drapeau est réinitialisé même en cas d'erreur
     }

@@ -18,7 +18,12 @@ const common = new Common("Grapher");
 const data = new Data();
 const grapher = new Grapher(data);
 const calculation = new Calculation(data);
-let editor;
+const editor = CodeMirror.fromTextArea($("#calculation-input"), {
+  lineNumbers: true,
+  mode: 'text/x-javascript',
+  theme: 'material',
+  autofocus: true
+});
 let isNavigationConfirmed = false; // Pour eviter la double demande de confirmation quand on change de page
 
 // Spreadsheet
@@ -30,10 +35,10 @@ let spreadsheet = new Spreadsheet(data, spreadsheetModifiedData);
 spreadsheet.build();
 
 // App
-const app = new App(data, spreadsheet, grapher, calculation, {
-  updateCalculationUI: updateCalculationUI,
-  updateRecalculateButtonVisibility: updateRecalculateButtonVisibility,
-  updateModelPanel: updateModelPanel
+const app = new App(data, spreadsheet, grapher, calculation, editor,{
+  updateCalculationUI,
+  updateRecalculateButtonVisibility,
+  updateModelPanel,
 });
 
 // convertit <i> en SVG manuellement
@@ -1670,14 +1675,6 @@ const functionTooltips = {
 
 // Initialisation de l'éditeur de code
 function initializeEditor() {
-  const editorTextarea = document.getElementById('calculation-input');
-  editor = CodeMirror.fromTextArea(editorTextarea, {
-    lineNumbers: true,
-    mode: 'text/x-javascript',
-    theme: 'material',
-    autofocus: true
-  });
-
   editor.getWrapperElement().classList.add('textarea');
   editor.getWrapperElement().classList.add('p-0');
 
@@ -1686,6 +1683,7 @@ function initializeEditor() {
     setTimeout(() => editor.refresh(), 1);
   });
 }
+
   
 function updateCalculationUI() {
   populateList('calculation-sidebar-curves', data.curves);
