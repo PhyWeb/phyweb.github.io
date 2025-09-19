@@ -51,6 +51,22 @@ export default class App {
   }
 
   deleteCurve(curveTitle){
+    // First, find and delete any models dependent on this curve
+    const modelsToDelete = this.data.models.filter(model => model.x.title === curveTitle || model.y.title === curveTitle);
+
+    if (modelsToDelete.length > 0) {
+      console.log(`Deleting ${modelsToDelete.length} model(s) dependent on curve "${curveTitle}".`);
+      modelsToDelete.forEach(model => {
+        this.deleteModel(model.id);
+
+        // remove the model's UI panel
+        const modelPanel = document.querySelector(`article[data-model-id="${model.id}"]`);
+        if (modelPanel) {
+          modelPanel.remove();
+        }
+      });
+    }
+
     // Delete the curve
     this.data.deleteCurve(curveTitle);
 
@@ -279,6 +295,36 @@ export default class App {
       definedInBlock.add(variableName);
 
       formulasToEvaluate.push({ variableName, expression, unit });
+    }
+
+    // --- Phase de nettoyage des dépendances ---
+    // 1. Identifier les grandeurs calculées qui vont être supprimées
+    const newCalculatedTitles = new Set(formulasToEvaluate.map(f => f.variableName));
+    const calculatedCurvesToDelete = this.data.curves.filter(
+      curve => curve.type === 'calculation' && !newCalculatedTitles.has(curve.title)
+    );
+
+    // 2. Si des grandeurs calculées sont supprimées, supprimer les modèles dépendants
+    if (calculatedCurvesToDelete.length > 0) {
+      calculatedCurvesToDelete.forEach(curve => {
+        this.grapher.deleteCurve(curve.title); // Supprime la courbe du graphique
+        console.log(`Deleting calculated curve "${curve.title}" as it is no longer defined.`);
+        const modelsToDelete = this.data.models.filter(
+          model => model.x.title === curve.title || model.y.title === curve.title
+        );
+
+        modelsToDelete.forEach(model => {
+          console.log(`Deleting model ${model.id} because it depends on the deleted calculated curve "${curve.title}".`);
+          // Supprimer le modèle (données et graphique)
+          this.deleteModel(model.id);
+
+          // Supprimer le panneau UI du modèle
+          const modelPanel = document.querySelector(`article[data-model-id="${model.id}"]`);
+          if (modelPanel) {
+            modelPanel.remove();
+          }
+        });
+      });
     }
 
     // --- Phase 2: Exécution (uniquement si toutes les validations sont passées) ---

@@ -615,6 +615,7 @@ $("#delete-curve-button").addEventListener("click", () => {
 
   // Peuple le menu déroulant avec les grandeurs disponibles
   data.curves.forEach(curve => {
+    if(curve.type === "calculation") return; // On ne peut pas supprimer les modèles
     const option = document.createElement("option");
     option.value = curve.title;
     option.textContent = `${curve.title} (${curve.unit || 'sans unité'})`;
