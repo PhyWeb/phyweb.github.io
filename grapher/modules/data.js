@@ -1,6 +1,6 @@
 import {Serie} from "../../common/common.js"
 
-import {Alglib} from '../lib/Alglib-v1.1.0.js';
+import {Alglib} from '../../common/alglib/Alglib-v1.1.0.js';
 
 const $ = document.querySelector.bind(document);
 
