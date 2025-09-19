@@ -1,4 +1,4 @@
-import { Curve } from './data.js';
+import IOManager from './ioManager.js';
 import { alertModal } from '../../common/common.js';
 
 const $ = document.querySelector.bind(document);
@@ -24,12 +24,15 @@ function isTabularData(text) {
 -------------------------------------------------APP--------------------------------------------
 ----------------------------------------------------------------------------------------------*/
 export default class App {
-  constructor(data, spreadsheet, grapher, calculation, uiUpdater) {
+  constructor(data, spreadsheet, grapher, calculation, editor, uiUpdater) {
     this.data = data;
     this.spreadsheet = spreadsheet;
     this.grapher = grapher;
     this.calculation = calculation;
+    this.editor = editor;
     this.uiUpdater = uiUpdater;
+
+    this.ioManager = new IOManager(this);
   }  
 
   addCurve(title, unit) {
@@ -50,6 +53,22 @@ export default class App {
   }
 
   deleteCurve(curveTitle){
+    // First, find and delete any models dependent on this curve
+    const modelsToDelete = this.data.models.filter(model => model.x.title === curveTitle || model.y.title === curveTitle);
+
+    if (modelsToDelete.length > 0) {
+      console.log(`Deleting ${modelsToDelete.length} model(s) dependent on curve "${curveTitle}".`);
+      modelsToDelete.forEach(model => {
+        this.deleteModel(model.id);
+
+        // remove the model's UI panel
+        const modelPanel = document.querySelector(`article[data-model-id="${model.id}"]`);
+        if (modelPanel) {
+          modelPanel.remove();
+        }
+      });
+    }
+
     // Delete the curve
     this.data.deleteCurve(curveTitle);
 
@@ -218,7 +237,12 @@ export default class App {
 
     for (const line of lines) {
       const trimmedLine = line.trim();
-      if (trimmedLine === '' || trimmedLine.startsWith('#') || trimmedLine.startsWith('//')) {
+      if (
+        trimmedLine === '' ||
+        trimmedLine.startsWith('#') ||
+        trimmedLine.startsWith('//') ||
+        trimmedLine.startsWith("'") 
+      ) {
         continue;
       }
 
@@ -273,6 +297,36 @@ export default class App {
       definedInBlock.add(variableName);
 
       formulasToEvaluate.push({ variableName, expression, unit });
+    }
+
+    // --- Phase de nettoyage des dépendances ---
+    // 1. Identifier les grandeurs calculées qui vont être supprimées
+    const newCalculatedTitles = new Set(formulasToEvaluate.map(f => f.variableName));
+    const calculatedCurvesToDelete = this.data.curves.filter(
+      curve => curve.type === 'calculation' && !newCalculatedTitles.has(curve.title)
+    );
+
+    // 2. Si des grandeurs calculées sont supprimées, supprimer les modèles dépendants
+    if (calculatedCurvesToDelete.length > 0) {
+      calculatedCurvesToDelete.forEach(curve => {
+        this.grapher.deleteCurve(curve.title); // Supprime la courbe du graphique
+        console.log(`Deleting calculated curve "${curve.title}" as it is no longer defined.`);
+        const modelsToDelete = this.data.models.filter(
+          model => model.x.title === curve.title || model.y.title === curve.title
+        );
+
+        modelsToDelete.forEach(model => {
+          console.log(`Deleting model ${model.id} because it depends on the deleted calculated curve "${curve.title}".`);
+          // Supprimer le modèle (données et graphique)
+          this.deleteModel(model.id);
+
+          // Supprimer le panneau UI du modèle
+          const modelPanel = document.querySelector(`article[data-model-id="${model.id}"]`);
+          if (modelPanel) {
+            modelPanel.remove();
+          }
+        });
+      });
     }
 
     // --- Phase 2: Exécution (uniquement si toutes les validations sont passées) ---
@@ -337,546 +391,19 @@ export default class App {
     this.spreadsheet.update();
     this.grapher.updateChart();
     this.uiUpdater.updateCalculationUI();
-  }
 
-  /**
-   * Méthode principale de chargement, modifiée pour gérer .pw
-   */
-  loadFile(file) {
-    // TODO ... avertissement sur les données non sauvegardées ...
-    console.log("loadFile", file, "type", file.type);
-
-    this.deleteAllCurves();
-
-    if (file.name.endsWith(".pw")) { // Gère le nouveau format
-      this.loadPWFile(file);
-      return;
-    }
-    if (file.type === "text/csv") {
-      this.loadCSVFile(file);
-      return;
-    }
-    if (file.name.endsWith(".rw3")) {
-      this.loadRW3File(file);
-      return;
-    }
-
-    console.error("Type de fichier non supporté");
-  }
-
-  loadClipboard(data) {
-    // Check if the data is tabular
-    if (!isTabularData(data)) {
-      alertModal({
-        type: "warning",
-        title: "Données non tabulaires",
-        body: "Les données du presse-papiers ne sont pas au format tabulaire. Veuillez copier des données au format CSV ou similaire.",
-        confirm: "OK"
-      });
-      return;
-    }
-
-    // EMPTY DATA
-    this.deleteAllCurves();
-
-    this.loadData(data);
-  }
-
-  /**
-   * Charge et restaure une session depuis un fichier .pw. (Version améliorée)
-   * @param {File} file - Le fichier .pw à charger.
-   */
-  loadPWFile(file) {
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const state = JSON.parse(event.target.result);
-        if (state.data && state.data.curves) {
-          this.data.curves = state.data.curves.map(c => {
-            const newCurve = new Curve(c.title, c.unit);
-            Object.assign(newCurve, c);
-            if (c.values) {
-              c.values.forEach(val => newCurve.push(val));
-            }
-            return newCurve;
-          });
-          this.data.parameters = state.data.parameters || {};
-        } else {
-            throw new Error("Le fichier de session est invalide ou corrompu (données manquantes).");
-        }
-        if (state.grapher) {
-            this.grapher.setGridVisibility(state.grapher.grid);
-        }
-        $("#calculation-input").value = state.calculations || "";
-        this.spreadsheet.update();
-        if (state.grapher && state.grapher.xCurve) {
-            this.grapher.setXCurve(state.grapher.xCurve, false);
-            this.grapher.updateChart(state.grapher.yCurves);
-        } else {
-            this.grapher.deleteAllCurves();
-            this.grapher.updateChart();
-        }
-        // Update the calculation tab
-        this.uiUpdater.updateCalculationUI();
-        console.log("Session .pw restaurée avec succès (les paramètres locaux sont conservés).");
-      } catch (e) {
-        console.error("ERREUR lors du chargement de la session .pw :", e);
-        alertModal({ title: "Erreur de chargement", body: "Le fichier de session est corrompu ou invalide. Vérifiez la console (F12) pour les détails." });
+    // Si un RW3 a été chargé juste avant, on ajoute les courbes demandées
+    if (this.pendingRW3 && Array.isArray(this.pendingRW3.y)) {
+      const existing = this.data.curves.map(c => c.title);
+      const want = this.pendingRW3.y.filter(t => existing.includes(t));
+      if (want.length) {
+        const currentList = this.grapher.chart?.series?.map(s => s.name) || [];
+        const merged = Array.from(new Set([...currentList, ...want]));
+        this.grapher.updateChart(merged);
       }
-    };
-    reader.readAsText(file);
-  }
-
-loadCSVFile(file) {
-  const reader = new FileReader();
-  reader.onload = (event) => {
-    const raw = (event.target.result || "").replace(/^\uFEFF/, ""); // retire BOM
-
-    // 1) Détection du séparateur le plus probable parmi ; , \t
-    const detectDelimiter = (text) => {
-      const candidates = [";", ",", "\t"];  // ordre volontaire pour FR puis US puis TSV
-      const sample = text.split(/\r?\n/).slice(0, 20); // échantillon
-      const score = {};
-      for (const d of candidates) {
-        let counts = [];
-        for (const line of sample) {
-          let inQuotes = false, count = 0;
-          for (let i = 0; i < line.length; i++) {
-            const ch = line[i];
-            if (ch === '"') {
-              // gérer "" à l'intérieur des champs
-              if (inQuotes && line[i + 1] === '"') { i++; continue; }
-              inQuotes = !inQuotes;
-            } else if (!inQuotes && ch === d) {
-              count++;
-            }
-          }
-          counts.push(count);
-        }
-        // Consistance: on privilégie le séparateur avec un nombre de séparateurs non nul
-        // et un écart‑type faible sur les lignes de l’échantillon
-        const nonZero = counts.filter(c => c > 0);
-        if (nonZero.length === 0) { score[d] = {mean: 0, stdev: 1e9, used: 0}; continue; }
-        const mean = nonZero.reduce((a,b)=>a+b,0)/nonZero.length;
-        const variance = nonZero.reduce((a,b)=>a+(b-mean)*(b-mean),0)/nonZero.length;
-        score[d] = {mean, stdev: Math.sqrt(variance), used: nonZero.length};
-      }
-      // Choix: le plus utilisé avec la meilleure régularité (stdev minimal), puis mean maximal
-      const ranked = Object.entries(score).sort((a,b)=>{
-        if (b[1].used !== a[1].used) return b[1].used - a[1].used;
-        if (a[1].stdev !== b[1].stdev) return a[1].stdev - b[1].stdev;
-        return b[1].mean - a[1].mean;
-      });
-      const best = ranked[0]?.[0] || ";";
-      return best;
-    };
-
-    // Parser CSV en respectant les guillemets
-    const parseCSV = (text, delimiter) => {
-      const rows = [];
-      let row = [];
-      let field = "";
-      let inQuotes = false;
-
-      const pushField = () => {
-        row.push(field);
-        field = "";
-      };
-      const pushRow = () => {
-        rows.push(row);
-        row = [];
-      };
-
-      for (let i = 0; i < text.length; i++) {
-        const ch = text[i];
-
-        if (ch === '"') {
-          if (inQuotes && text[i + 1] === '"') {
-            field += '"'; // séquence "" -> "
-            i++;
-          } else {
-            inQuotes = !inQuotes;
-          }
-          continue;
-        }
-
-        if (!inQuotes && (ch === "\n" || ch === "\r")) {
-          // fin de ligne (gérer CRLF)
-          pushField();
-          pushRow();
-          if (ch === "\r" && text[i + 1] === "\n") i++;
-          continue;
-        }
-
-        if (!inQuotes && ch === delimiter) {
-          pushField();
-          continue;
-        }
-
-        field += ch;
-      }
-      // Dernier champ / dernière ligne
-      pushField();
-      if (row.length > 1 || (row.length === 1 && row[0] !== "")) pushRow();
-
-      return rows;
-    };
-
-    const delimiter = detectDelimiter(raw);
-    const rows = parseCSV(raw, delimiter);
-
-    // Conversion en TSV attendu par loadData (escape des tabs éventuels)
-    const toTSV = rows
-      .map(r => r.map(cell => String(cell).replace(/\t/g, " ")).join("\t"))
-      .join("\n");
-
-    this.loadData(toTSV);
-  };
-  reader.readAsText(file);
-}
-
-  loadRW3File(file) {
-    const reader = new FileReader();
-
-    reader.onload = (event) => {
-      const data = event.target.result;
-      const lines = data.split(/\r?\n/);
-
-      let names = [];
-      let units = [];
-      let values = [];
-
-      let i = 0;
-      let expectedRows = 0;
-
-      while (i < lines.length) {
-        const line = lines[i].trim();
-
-        // Lire les noms de variables
-        if (line.startsWith("£") && line.includes("NOM VAR")) {
-          const count = parseInt(line.match(/£(\d+)/)?.[1]);
-          i++;
-          for (let j = 0; j < count && i < lines.length; j++, i++) {
-            names.push(lines[i].trim());
-          }
-          continue;
-        }
-
-        // Lire les unités
-        if (line.startsWith("£") && line.includes("UNITE VAR")) {
-          const count = parseInt(line.match(/£(\d+)/)?.[1]);
-          i++;
-          for (let j = 0; j < count && i < lines.length; j++, i++) {
-            units.push(lines[i].trim());
-          }
-          continue;
-        }
-
-        // Lire les valeurs
-        if (line.startsWith("&") && line.includes("VALEUR VAR")) {
-          expectedRows = parseInt(line.match(/&(\d+)/)?.[1]) || 0;
-          i++;
-          let rowCount = 0;
-          while (i < lines.length && rowCount < expectedRows) {
-            const valLine = lines[i].trim();
-            if (valLine !== "") {
-              const nums = valLine.split(/\s+/).map(s => parseFloat(String(s).replace(',', '.')));
-              if (nums.length === names.length) {
-                values.push(nums);
-                rowCount++;
-              } else {
-                console.warn(`Ligne ignorée (attendues: ${names.length}, trouvées: ${nums.length}) :`, valLine);
-              }
-            }
-            i++;
-          }
-          break;
-        }
-
-        i++;
-      }
-
-      // Construction du texte tabulé
-      let output = '';
-      output += names.join('\t') + '\n';
-      output += units.join('\t') + '\n';
-      values.forEach(row => {
-        output += row.join('\t') + '\n';
-      });
-
-      this.loadData(output.trim());
-    };
-
-    reader.readAsText(file);
-  }
-
-  loadData(data) {
-    if (this._isLoading) {
-      console.warn("Tentative de chargement récursif des données, opération annulée.");
-      return;
-    }
-    this._isLoading = true;
-
-    try {
-      const lines = data.trim().split('\n').filter(l => l.trim().length > 0);
-      if (lines.length === 0) {
-        this._isLoading = false; // S'assurer de réinitialiser le drapeau
-        return; // Rien à charger
-      }
-
-      // Déterminer le nombre maximum de colonnes dans l'ensemble des données
-      const numColumns = lines.reduce((max, line) => Math.max(max, splitFlexible(line).length), 0);
-      if (numColumns === 0) {
-        this._isLoading = false;
-        return;
-      }
-
-      let headers;
-      let units = undefined;
-      let dataLines;
-
-      // Vérifie si la première ligne ressemble à des données (c-à-d, est numérique).
-      const firstLineCells = splitFlexible(lines[0]);
-      const isFirstLineNumeric = firstLineCells.length > 0 && !isNaN(parseFloat(String(firstLineCells[0]).replace(',', '.').trim()));
-
-      if (isFirstLineNumeric) {
-        // Pas de ligne d'en-tête. On génère des en-têtes génériques pour toutes les colonnes.
-        headers = Array.from({
-          length: numColumns
-        }, (_, i) => `Colonne${i + 1}`);
-        units = Array(numColumns).fill(""); // Pas d'unités
-        dataLines = lines; // Toutes les lignes sont des données
-      } else {
-        // La ligne d'en-tête existe.
-        // On s'assure d'avoir un en-tête pour chaque colonne détectée.
-        const rawHeaders = splitFlexible(lines[0]);
-        headers = [];
-        for (let i = 0; i < numColumns; i++) {
-          const h = rawHeaders[i] || ""; // Utilise l'en-tête s'il existe, sinon une chaîne vide
-          const trimmedHeader = h.trim();
-          headers.push(trimmedHeader === "" ? `Colonne${i + 1}` : trimmedHeader);
-        }
-
-        // Vérifie si la deuxième ligne correspond aux unités ou aux données
-        if (lines.length > 1) {
-          const secondLineCells = splitFlexible(lines[1]);
-          const isSecondLineNumeric = secondLineCells.length > 0 && !isNaN(parseFloat(String(secondLineCells[0]).replace(',', '.').trim()));
-
-          if (isSecondLineNumeric) {
-            // La deuxième ligne contient des données, donc pas de ligne d'unités
-            units = Array(numColumns).fill("");
-            dataLines = lines.slice(1);
-          } else {
-            // La deuxième ligne contient les unités. On s'assure d'en avoir pour chaque colonne.
-            const rawUnits = splitFlexible(lines[1]);
-            units = Array.from({
-              length: numColumns
-            }, (_, i) => (rawUnits[i] || "").trim());
-            dataLines = lines.slice(2);
-          }
-        } else {
-          // Il n'y a qu'une ligne d'en-tête, pas de données
-          dataLines = [];
-        }
-      }
-
-      // Crée les courbes et les remplit
-      const curvesData = headers.map(() => []);
-
-      for (const line of dataLines) {
-        const cells = splitFlexible(line);
-        for (let i = 0; i < headers.length; i++) {
-          const rawValue = cells[i];
-          const value = rawValue !== undefined ? parseFloat(String(rawValue).replace(',', '.').trim()) : null;
-          curvesData[i].push(isNaN(value) ? null : value);
-        }
-      }
-
-      // Ajoute les courbes à l'état de l'application
-      for (let i = 0; i < headers.length; i++) {
-        const curve = this.addCurve(headers[i], units ? units[i] : "");
-
-        // Remplacer le contenu de la courbe sans utiliser l'opérateur de décomposition
-        // pour éviter les erreurs de "call stack" avec de grands jeux de données.
-        curve.length = 0; // Vider le tableau existant
-        const dataToAdd = curvesData[i];
-        for (let j = 0; j < dataToAdd.length; j++) {
-          curve.push(dataToAdd[j]);
-        }
-      }
-
-      console.log("data loaded", this.data);
-      this.spreadsheet.update();
-      this.grapher.updateChart();
-      this.uiUpdater.updateCalculationUI();
-    } finally {
-      this._isLoading = false; // Assure que le drapeau est réinitialisé même en cas d'erreur
+      this.pendingRW3 = null;
     }
   }
 
-  /**
-   * Méthode principale de sauvegarde
-   */
-  saveFile(fileName, format) {
-    let content = '';
-    const separator = '\t';
-
-    if (format === 'csv') {
-      content = this._generateCSV(separator);
-    } else if (format === 'rw3') {
-      content = this._generateRW3();
-    } else if (format === 'pw') {
-      content = this._generatePW(); // Nouvelle méthode
-    } else {
-      console.error("Format de fichier non supporté:", format);
-      return;
-    }
-
-    this._triggerDownload(content, fileName);
-  }
-
-  /**
-   * Génère le contenu JSON pour un fichier de session .pw. (Version améliorée)
-   * @returns {string} Le contenu du fichier .pw (chaîne JSON).
-   * @private
-   */
-  _generatePW() {
-    const yCurves = this.grapher.chart.series.map(s => s.name);
-
-    const dataToSave = {
-      curves: this.data.curves.map(curve => ({
-        title: curve.title,
-        unit: curve.unit,
-        color: curve.color,
-        line: curve.line,
-        markers: curve.markers,
-        lineWidth: curve.lineWidth,
-        lineStyle: curve.lineStyle,
-        markerSymbol: curve.markerSymbol,
-        markerRadius: curve.markerRadius,
-        type: curve.type,
-        values: Array.from(curve)
-      })),
-      parameters: this.data.parameters
-    };
-
-    const state = {
-      version: "1.3",
-      data: dataToSave,
-      calculations: $("#calculation-input").value,
-      grapher: {
-        xCurve: this.grapher.currentXCurve,
-        yCurves: yCurves,
-        grid: this.grapher.grid
-      }
-    };
-    
-    return JSON.stringify(state, null, 2);
-  }
-
-  /**
-   * Génère le contenu pour un fichier CSV.
-   * @param {string} separator - Le séparateur de colonnes.
-   * @returns {string} Le contenu du fichier CSV.
-   * @private
-   */
-  _generateCSV(separator) {
-    const headers = this.data.curves.map(c => c.title).join(separator);
-    const units = this.data.curves.map(c => c.unit).join(separator);
-    const tableData = this.data.getTable();
-
-    const dataRows = tableData.map(row => {
-      // Remplace les null/undefined par des chaînes vides et les points par des virgules pour le format FR
-      return row.map(cell => (cell === null || cell === undefined) ? '' : String(cell).replace('.', ',')).join(separator);
-    }).join('\n');
-
-    return `${headers}\n${units}\n${dataRows}`;
-  }
-
-  /**
-   * Génère le contenu pour un fichier au format Regressi (.rw3). (Version finale corrigée)
-   * @returns {string} Le contenu du fichier .rw3.
-   * @private
-   */
-  _generateRW3() {
-    // 1. On ne sélectionne QUE les courbes qui ne sont PAS issues d'un calcul.
-    const rawCurves = this.data.curves.filter(c => c.type !== 'calculation');
-    
-    // 2. Les noms et unités ne proviennent QUE de ces courbes brutes.
-    const rawNames = rawCurves.map(c => c.title);
-    const rawUnits = rawCurves.map(c => c.unit);
-
-    // 3. On construit le fichier en utilisant uniquement les données brutes.
-    let output = "EVARISTE REGRESSI WINDOWS 1.0\n";
-    
-    output += `£${rawNames.length} NOM VAR\n`;
-    output += rawNames.join('\n') + '\n';
-    
-    output += `£${rawUnits.length} UNITE VAR\n`;
-    output += rawUnits.join('\n') + '\n';
-    
-    output += "£1 PAGE COMMENT\n\n";
-    
-    // Le tableau de valeurs est aussi construit UNIQUEMENT à partir des courbes brutes.
-    const numRows = rawCurves.reduce((max, curve) => Math.max(max, curve.length), 0);
-    const dataRows = [];
-
-    for (let i = 0; i < numRows; i++) {
-        const row = rawCurves.map(curve => {
-            const cell = curve[i];
-            return (cell === null || cell === undefined) ? '' : String(cell).replace('.', ',');
-        });
-        dataRows.push(row.join('\t'));
-    }
-
-    output += `&${numRows} VALEUR VAR\n`;
-    output += dataRows.join('\n');
-
-    // 4. On ajoute les formules pour que Regressi puisse créer les grandeurs calculées.
-    const calculationsText = $("#calculation-input").value;
-    if (calculationsText) {
-      const memoLines = calculationsText.split('\n').map(line => {
-        const trimmedLine = line.trim();
-        if (trimmedLine === '') { return ''; }
-        if (trimmedLine.startsWith('//')) { return "'" + trimmedLine.substring(2).trim(); }
-        if (trimmedLine.startsWith('#')) { return "'" + trimmedLine.substring(1).trim(); }
-        if (trimmedLine.includes('=')) {
-          const parts = trimmedLine.split('=');
-          const leftPart = parts[0].trim();
-          const expression = parts.slice(1).join('=').trim();
-          const variableName = leftPart.split('_')[0];
-          return `${variableName}=${expression}`;
-        }
-        return "'" + trimmedLine;
-      });
-
-      if (memoLines.length > 0) {
-        output += `\n£${memoLines.length} MEMO GRANDEURS\n`;
-        output += memoLines.join('\n');
-      }
-    }
-    
-    return output;
-  }
-
-  /**
-   * Crée un lien de téléchargement et le clique pour télécharger le contenu.
-   * @param {string} content - Le contenu du fichier.
-   * @param {string} fileName - Le nom du fichier.
-   * @private
-   */
-  _triggerDownload(content, fileName) {
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    
-    link.setAttribute("href", url);
-    link.setAttribute("download", fileName);
-    link.style.visibility = 'hidden';
-    
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }
 }
 export {App};

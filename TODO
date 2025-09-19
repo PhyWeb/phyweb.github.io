@@ -27,6 +27,8 @@ TRACKER:
 GRAPHER:
   - utiliser des puissances de 10 dans les axes du graph (déjà OK ? A verifier)
 
+  - possibilité de choisir quelle grandeur sert à classer les valeurs
+
   - creer un moteur qui gere les raccourvis clavier (ctrl s et n notamment)
 
   - BUG, on peut renommer un parametre de modèle avec le meme nom qu'une grandeur (et peut etre aussi qu'un autre paramertre de modèle)
@@ -55,6 +57,8 @@ GRAPHER:
   - utiliser local storage pour eviter de tout perdre si on quitte la page
 
   - possibilité d'avoir 2 axes y
+
+  - Revoir la sauvegarde !
 
   - Validation des symboles : La validation des symboles (noms de variables) est effectuée à plusieurs endroits. Cette logique pourrait être centralisée dans une fonction utilitaire pour éviter la duplication de code et garantir une validation cohérente partout dans l'application.
 

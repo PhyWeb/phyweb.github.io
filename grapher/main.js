@@ -18,7 +18,12 @@ const common = new Common("Grapher");
 const data = new Data();
 const grapher = new Grapher(data);
 const calculation = new Calculation(data);
-let editor;
+const editor = CodeMirror.fromTextArea($("#calculation-input"), {
+  lineNumbers: true,
+  mode: 'text/x-javascript',
+  theme: 'material',
+  autofocus: true
+});
 let isNavigationConfirmed = false; // Pour eviter la double demande de confirmation quand on change de page
 
 // Spreadsheet
@@ -30,10 +35,10 @@ let spreadsheet = new Spreadsheet(data, spreadsheetModifiedData);
 spreadsheet.build();
 
 // App
-const app = new App(data, spreadsheet, grapher, calculation, {
-  updateCalculationUI: updateCalculationUI,
-  updateRecalculateButtonVisibility: updateRecalculateButtonVisibility,
-  updateModelPanel: updateModelPanel
+const app = new App(data, spreadsheet, grapher, calculation, editor,{
+  updateCalculationUI,
+  updateRecalculateButtonVisibility,
+  updateModelPanel,
 });
 
 // convertit <i> en SVG manuellement
@@ -126,7 +131,7 @@ $("#file-input").addEventListener("change", () => {
   newDataConfirmation(() => {
   // Check if a file is selected
     if($("#file-input").files[0] != undefined){
-      app.loadFile($("#file-input").files[0]);
+      app.ioManager.loadFile($("#file-input").files[0]);
       common.modalManager.closeAllModals();
     }
   });
@@ -147,10 +152,14 @@ $("#paste-button").addEventListener('click', async () => {
     try {
       let text = await navigator.clipboard.readText();
       common.modalManager.closeAllModals();
-      console.log('Contenu du presse-papier :', text);
-      app.loadClipboard(text); // Load the data from the clipboard
-    } catch (err) {
-      console.error('Erreur lors de la lecture du presse-papier :', err);
+      app.ioManager.loadClipboard(text); // Load the data from the clipboard
+    } catch (error) {
+      alertModal({
+        type: "warning",
+        title: "Erreur de collage",
+        body: error.message,
+        confirm: "OK"
+      });
     }
   });
 });
@@ -321,7 +330,7 @@ downloadFileButton.addEventListener("click", () => {
     return;
   }
   
-  app.saveFile(fileName, selectedFormat);
+  app.ioManager.saveFile(fileName, selectedFormat);
   common.modalManager.closeAllModals();
 });
 
@@ -610,6 +619,7 @@ $("#delete-curve-button").addEventListener("click", () => {
 
   // Peuple le menu déroulant avec les grandeurs disponibles
   data.curves.forEach(curve => {
+    if(curve.type === "calculation") return; // On ne peut pas supprimer les modèles
     const option = document.createElement("option");
     option.value = curve.title;
     option.textContent = `${curve.title} (${curve.unit || 'sans unité'})`;
@@ -1670,14 +1680,6 @@ const functionTooltips = {
 
 // Initialisation de l'éditeur de code
 function initializeEditor() {
-  const editorTextarea = document.getElementById('calculation-input');
-  editor = CodeMirror.fromTextArea(editorTextarea, {
-    lineNumbers: true,
-    mode: 'text/x-javascript',
-    theme: 'material',
-    autofocus: true
-  });
-
   editor.getWrapperElement().classList.add('textarea');
   editor.getWrapperElement().classList.add('p-0');
 
@@ -1686,6 +1688,7 @@ function initializeEditor() {
     setTimeout(() => editor.refresh(), 1);
   });
 }
+
   
 function updateCalculationUI() {
   populateList('calculation-sidebar-curves', data.curves);
