@@ -228,14 +228,26 @@ export default class Calculation {
   }
 
   /**
+   * Remplace les caractères spéciaux comme '²' par leur équivalent pour math.js.
+   * @param {string} expression - L'expression à traiter.
+   * @returns {string} - L'expression avec les caractères remplacés.
+   */
+  preprocessSpecialCharacters(expression) {
+      // Remplace le caractère '²' par '^2'
+      return expression.replace(/²/g, '^2');
+  }
+
+  /**
    * Évalue une seule expression mathématique.
    * @param {string} expression - La chaîne de caractères de la formule à évaluer.
    * @param {object} scope - Le scope contenant les variables disponibles pour le calcul.
    * @returns Le résultat du calcul.
    */
   evaluate(expression, scope) {
+    // Applique le prétraitement pour les caractères spéciaux
+    const preprocessedExpression = this.preprocessSpecialCharacters(expression);
     // Normalise la casse des fonctions (ex: SQRT -> sqrt)
-    const normalizedExpr = this._normalizeFunctionCases(expression);
+    const normalizedExpr = this._normalizeFunctionCases(preprocessedExpression);
     // Retire les unités des variables (ex: t_s -> t)
     const cleanExpression = this._preprocessExpression(normalizedExpr);
     // Évalue l'expression nettoyée
@@ -290,7 +302,10 @@ evaluateBlock(formulas, initialScope) {
     for (const calc of pendingCalculations) {
       try {
         // On remplace les virgules décimales par des points
-        const cleanExpression = calc.expression.replace(/(\d),(\d)/g, '$1.$2');
+        let cleanExpression = calc.expression.replace(/(\d),(\d)/g, '$1.$2');
+
+        // Remplace le caractère '²' AVANT l'analyse (parse)
+        cleanExpression = this.preprocessSpecialCharacters(cleanExpression);
 
         const expressionNode = this.mathInstance.parse(cleanExpression);
         expressionNode.traverse((node, path, parent) => {
