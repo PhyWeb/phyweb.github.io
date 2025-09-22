@@ -27,6 +27,8 @@ TRACKER:
   - add a button to stop the decode and still exploit the already decoded frames
   - passer a ffmpeg.wasm
 
+  - réutiliser le menu de grapher et donc séparer la modale en une pour videos integrées et une autrre pour celle importées
+
 GRAPHER:
   - empecher de fermer la modale nouveau tant qu'on a pas choisi au lancement de l'app 
 
