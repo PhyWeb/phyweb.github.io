@@ -5,7 +5,7 @@ COMMON:
   - add a link to the github repo in the modal about
   - centraliser la gestion des confirmations de quitter (et l'étendre à quand on ferme onglet, charge d'autres données...)
 
-  - possibiliter de passer les données de audio et tracker directement à grapher
+  - possibiliter de passer les données de audio et tracker directement à grapher via sessionStorage
 
   - Glisser-déposer : Permettre de charger un fichier par glisser-déposer (drag and drop)
 
@@ -31,6 +31,8 @@ GRAPHER:
   - empecher de fermer la modale nouveau tant qu'on a pas choisi au lancement de l'app 
 
   - possibilité de choisir quelle grandeur sert à classer les valeurs
+
+  - sauvegarder les derniers fichiers dans localStorage
 
   - creer un moteur qui gere les raccourvis clavier (ctrl s et n notamment)
 
