@@ -547,32 +547,33 @@ export default class IOManager {
       }
     }
 
-    // éplace un suffixe d'unité commun (ex: _J) du membre de droite vers la gauche
-    function moveUnitSuffixToLHS(line) {
-      const t = String(line);
-      const s = t.trim();
-      if (!s || s.startsWith('#') || s.startsWith('//') || s.startsWith("'")) return t;
+    // déplace un suffixe d'unité commun (ex: _J) du membre de droite vers la gauche
+function moveUnitSuffixToLHS(line) {
+  const t = String(line);
+  const s = t.trim();
+  if (!s || s.startsWith('#') || s.startsWith('//') || s.startsWith("'")) return t;
 
-      const eq = s.indexOf('=');
-      if (eq === -1) return t;
+  const eq = s.indexOf('=');
+  if (eq === -1) return t;
 
-      const lhs = s.slice(0, eq).trim();
-      const rhs = s.slice(eq + 1).trim();
+  const lhs = s.slice(0, eq).trim();
+  const rhs = s.slice(eq + 1).trim();
 
-      // Cherche des tokens du type nom_unite dans le RHS
-      const unitMatches = [...rhs.matchAll(/\b[A-Za-z]\w*_([A-Za-zµ°]+)\b/g)];
-      if (unitMatches.length === 0) return t;
+  const unitMatches = [...rhs.matchAll(/\b[A-Za-z][\w²]*_([A-Za-zµ°]+)\b/g)];
+  if (unitMatches.length === 0) return t;
 
-      // On n’agit que si un unique suffixe est détecté dans le RHS et que le LHS n’en a pas déjà
-      const suffixes = new Set(unitMatches.map(m => m[1]));
-      if (suffixes.size !== 1) return t;
-      const unit = [...suffixes][0];
-      if (/_([A-Za-zµ°]+)$/.test(lhs)) return t;
+  // Cette partie de la logique reste INCHANGÉE car m[1] est toujours l'unité
+  const suffixes = new Set(unitMatches.map(m => m[1]));
+  if (suffixes.size !== 1) return t;
+  const unit = [...suffixes][0];
+  if (/_([A-Za-zµ°]+)$/.test(lhs)) return t;
 
-      const lhsNew = `${lhs}_${unit}`;
-      const rhsNew = rhs.replace(new RegExp(`\\b([A-Za-z]\\w*)_${unit}\\b`, 'g'), '$1');
-      return `${lhsNew} = ${rhsNew}`;
-    }
+  const lhsNew = `${lhs}_${unit}`;
+
+  const rhsNew = rhs.replace(new RegExp(`\\b([A-Za-z][\\w²]*)_${unit}\\b`, 'g'), '$1');
+  
+  return `${lhsNew} = ${rhsNew}`;
+}
 
     const normalizedMemoLines = memoLines.map(moveUnitSuffixToLHS);
 
