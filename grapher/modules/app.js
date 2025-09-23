@@ -49,6 +49,9 @@ export default class App {
     // Update the calculation tab
     this.uiUpdater.updateCalculationUI();
 
+    // Update the sorting options
+    this.uiUpdater.updateSortUI();
+
     return curve;
   }
 
@@ -80,6 +83,9 @@ export default class App {
 
     // Update the calculation tab
     this.uiUpdater.updateCalculationUI();
+
+    // Update the sorting options
+    this.uiUpdater.updateSortUI();
   }
 
   deleteAllCurves() {
@@ -110,6 +116,9 @@ export default class App {
 
     // Update the calculation tab
     this.uiUpdater.updateCalculationUI();
+
+    // Update the sorting options
+    this.uiUpdater.updateSortUI();
   }
 
   deleteRow(startRow, amount) {
@@ -388,9 +397,20 @@ export default class App {
       });
     }
 
+    // Si un tri était actif avant le recalcul, on le réapplique
+    if (this.data.lastSortVariable) {
+      if (this.data.getCurveByTitle(this.data.lastSortVariable)) {
+        this.data.sortDataBy(this.data.lastSortVariable);
+      } else {
+        this.data.clearSort();
+      }
+    }
+
+    // Met à jour le tableur, le graphique et l'UI
     this.spreadsheet.update();
     this.grapher.updateChart();
     this.uiUpdater.updateCalculationUI();
+    this.uiUpdater.updateSortUI();
 
     // Si un RW3 a été chargé juste avant, on ajoute les courbes demandées
     if (this.pendingRW3 && Array.isArray(this.pendingRW3.y)) {

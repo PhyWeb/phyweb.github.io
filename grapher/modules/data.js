@@ -452,6 +452,8 @@ export default class Data {
     this.settings = {
       significantDigits: 4
     };
+
+    this.lastSortVariable = null; // Dernière variable utilisée pour le tri
   }   
 
   addCurve(title, unit, size, fill){
@@ -483,6 +485,11 @@ export default class Data {
   }
 
   deleteCurve(title){
+    // If the deleted curve was the last sort variable, clear the sort
+    if (this.lastSortVariable === title) {
+      this.clearSort();
+    }
+
     const index = this.curves.findIndex(objet => objet.title === title);
     if (index !== -1) {
       this.curves.splice(index, 1);
@@ -491,6 +498,7 @@ export default class Data {
 
   deleteAllCurves() {
     this.curves = [];
+    this.clearSort();
   }
 
   deleteAllParameters() {
@@ -566,6 +574,71 @@ export default class Data {
   getCurveByTitle(title){
     return this.curves.find(curve => curve.title === title);
   }
+
+  /**
+   * Trie toutes les données de courbe en fonction des valeurs d'une variable spécifiée.
+   * @param {string} variableTitle - Le titre de la courbe à utiliser pour le tri.
+   */
+  sortDataBy(variableTitle) {
+    const sortCurveIndex = this.curves.findIndex(c => c.title === variableTitle);
+
+    this.lastSortVariable = variableTitle;
+
+    // Si la colonne de tri n'est pas déjà la première, on la déplace au début.
+    if (sortCurveIndex > 0) {
+      // On retire la grandeur de sa position actuelle pour la remettre en premier.
+      const [sortedCurve] = this.curves.splice(sortCurveIndex, 1);
+      this.curves.unshift(sortedCurve);
+    }
+
+    const sortColumn = this.curves[sortCurveIndex];
+
+    // Trouver le nombre maximum de lignes parmi toutes les courbes
+    const rowCount = this.curves.reduce((max, curve) => Math.max(max, curve.length), 0);
+
+    // Créer un tableau d'indices [0, 1, 2, ..., rowCount-1]
+    const indices = Array.from({ length: rowCount }, (_, i) => i);
+
+    indices.sort((indexA, indexB) => {
+      const valA = sortColumn[indexA];
+      const valB = sortColumn[indexB];
+
+      const aIsNull = valA === null || valA === undefined;
+      const bIsNull = valB === null || valB === undefined;
+
+      if (aIsNull && bIsNull) return 0;
+      if (aIsNull) return 1; // Mettre les nuls à la fin
+      if (bIsNull) return -1;
+
+      if (typeof valA === 'number' && typeof valB === 'number') {
+        return valA - valB; // Tri numérique
+      }
+
+      console.warn(`Comparaison non numérique entre "${valA}" et "${valB}". Utilisation du tri lexicographique.`);
+      return String(valA).localeCompare(String(valB));
+    });
+
+    // Réorganiser les données dans chaque courbe en fonction des indices triés
+    this.curves.forEach(curve => {
+      // S'assurer que la courbe a la bonne longueur
+      while (curve.length < rowCount) {
+        curve.push(null);
+      }
+      const originalValues = [...curve];
+      for (let i = 0; i < rowCount; i++) {
+        curve[i] = originalValues[indices[i]];
+      }
+    });
+  }
+
+  /**
+   * Réinitialise la variable de tri pour permettre un nouveau tri.
+   */
+  clearSort() {
+    this.lastSortVariable = null;
+  }
+
+  
 }
 
 export {Data, Curve};

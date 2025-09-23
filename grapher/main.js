@@ -39,6 +39,7 @@ const app = new App(data, spreadsheet, grapher, calculation, editor,{
   updateCalculationUI,
   updateRecalculateButtonVisibility,
   updateModelPanel,
+  updateSortUI
 });
 
 // convertit <i> en SVG manuellement
@@ -83,6 +84,8 @@ $("#tableur-tab").addEventListener("click", () => {
   // Redimensionne le tableau pour qu'il s'affiche correctement
   let newHeight = $("#table-container").offsetHeight;
   spreadsheet.hot.updateSettings({ height: newHeight })
+
+  updateSortUI();
 });
 $("#grapheur-tab").addEventListener("click", () => {
   $("#tableur-tab").classList.remove("is-active");
@@ -337,6 +340,48 @@ downloadFileButton.addEventListener("click", () => {
 /*----------------------------------------------------------------------------------------------
 --------------------------------------------SPREADSHEET-----------------------------------------
 ----------------------------------------------------------------------------------------------*/
+
+/* Sorting -----------------------------------------------------------------------------------*/
+// Fonction pour peupler le menu déroulant de tri
+function updateSortUI() {
+  const select = document.getElementById('sort-variable-select');
+
+  const selectedValue = select.value;
+  select.innerHTML = ''; // Vide les options
+
+  const defaultOption = document.createElement('option');
+  defaultOption.textContent = "Trier par...";
+  defaultOption.value = "";
+  defaultOption.disabled = true;
+  select.appendChild(defaultOption);
+
+  data.curves.forEach(curve => {
+    const option = document.createElement('option');
+    option.value = curve.title;
+    option.textContent = curve.title;
+    select.appendChild(option);
+  });
+
+  // Restaure la sélection si elle est toujours valide
+  if (data.curves.some(c => c.title === selectedValue)) {
+    select.value = selectedValue;
+  } else {
+    select.value = ""; // Sinon, sélectionne le placeholder
+  }
+}
+
+updateSortUI();
+
+// Ajouter l'écouteur pour le bouton de tri
+$('#sort-button').addEventListener('click', () => {
+  console.log("Trier les données...");
+  const selectedVariable = $('#sort-variable-select').value;
+  if (selectedVariable) {
+    data.sortDataBy(selectedVariable);
+    spreadsheet.update(); // Met à jour le tableau
+    grapher.updateChart();  // Met à jour le graphique
+  }
+});
 
 /* Add curve modal ---------------------------------------------------------------------------*/
   // Références aux éléments de la modale
