@@ -10,7 +10,7 @@ const DEFAULT_MARKER = true;
 const DEFAULT_LINE = false;
 const DEFAULT_LINE_WIDTH = 2;
 
-const DEFAULT_MODEL_RESOLUTION = 200; // Number of points to generate for the model curve
+const DEFAULT_MODEL_RESOLUTION = 400; // Number of points to generate for the model curve
 
 /*----------------------------------------------------------------------------------------------
 -----------------------------------------------Curve--------------------------------------------

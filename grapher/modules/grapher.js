@@ -65,7 +65,7 @@ export default class Grapher {
     this.crosshairMode = 'data'; // Mode par défaut
     this.freeCrosshair = null;   // Pour stocker les éléments du réticule
 
-    this._suppressModelAutoUpdate = false; // used to avoid double updates
+    this.suppressModelAutoUpdate = false; // used to avoid double updates
   }
 
   formatData(xCurve, yCurve){
@@ -402,23 +402,27 @@ export default class Grapher {
     this.chart.options.customGrapherInstance = this;
 
     this.chart.container.addEventListener('mousemove', (e) => {
-      if (this.crosshairMode !== 'free') return;
+      if (this.crosshairMode !== 'free' && this.crosshairMode !== 'model') return;
 
-      const chartPosition = this.chart.pointer.getChartPosition();
-      const chartX = e.pageX - chartPosition.left;
-      const chartY = e.pageY - chartPosition.top;
+      const pos = this.chart.pointer.getChartPosition();
 
-      this._drawFreeCrosshair({ chartX, chartY });
+      const payload = { chartX: e.pageX - pos.left, chartY: e.pageY - pos.top };
+
+      if (this.crosshairMode === 'free'){
+        this.drawFreeCrosshair(payload);
+      } else{
+        this.drawModelCrosshair(payload);
+      }                               
     });
 
     Highcharts.addEvent(this.chart.container, 'mouseleave', () => {
-      this._hideFreeCrosshair(); // On cache toujours quand la souris sort
+      this.hideFreeCrosshair(); // On cache toujours quand la souris sort
     });
 
     // Ajoute un écouteur pour l'événement redraw pour les modèles
     Highcharts.addEvent(this.chart, 'redraw', () => {
       // If we're in a programmatic update sequence, skip the automatic update
-      if (this._suppressModelAutoUpdate) return;
+      if (this.suppressModelAutoUpdate) return;
 
       // Read real extremes and only update if they actually changed
       const ex = this.chart.xAxis[0].getExtremes();
@@ -526,10 +530,10 @@ export default class Grapher {
 
     const isDataMode = (mode === 'data');
 
-    this._hideFreeCrosshair();
+    this.hideFreeCrosshair();
 
     // Application de la classe CSS pour forcer le curseur
-    if (mode === 'free') {
+    if (mode === 'free' || mode === 'model') {
       this.chart.container.classList.add('chart-free-crosshair');
     } else {
       this.chart.container.classList.remove('chart-free-crosshair');
@@ -537,30 +541,20 @@ export default class Grapher {
 
     // Mise à jour groupée de toutes les options nécessaires
     this.chart.update({
-      chart: {
-        zooming: {
-          type: null
-        }
-      },
-      tooltip: {
-        enabled: isDataMode
-      },
+      chart: { zooming: { type: null}},
+      tooltip: { enabled: isDataMode},
       plotOptions: {
         series: {
           stickyTracking: false,
           enableMouseTracking: isDataMode,
-          states: {
-            hover: {
-              enabled: isDataMode,
-            }
-          }
+          states: { hover: { enabled: isDataMode } }
         }
       }
     });
   }
 
   // MÉTHODE PRIVÉE pour dessiner le réticule manuellement
-  _drawFreeCrosshair(event) {
+  drawFreeCrosshair(event) {
     const chart = this.chart;
     if (!chart.pointer) return;
 
@@ -579,7 +573,7 @@ export default class Grapher {
       event.chartY < plotTop ||
       event.chartY > plotTop + plotHeight
     ) {
-      this._hideFreeCrosshair();
+      this.hideFreeCrosshair();
       return;
     }
 
@@ -646,11 +640,85 @@ export default class Grapher {
   }
 
   // MÉTHODE PRIVÉE pour cacher le réticule
-  _hideFreeCrosshair() {
+  hideFreeCrosshair() {
     if (this.freeCrosshair) {
       Object.values(this.freeCrosshair).forEach(el => el.destroy());
       this.freeCrosshair = null;
     }
+  }
+
+  // S’aimante au point de modèle visible le plus proche
+  drawModelCrosshair(event) {
+    const chart = this.chart;
+    if (!chart?.pointer) return;
+
+    const { plotLeft, plotTop, plotWidth, plotHeight } = chart;
+    const inside = (
+      event.chartX >= plotLeft && event.chartX <= plotLeft + plotWidth &&
+      event.chartY >= plotTop  && event.chartY <= plotTop  + plotHeight
+    );
+    if (!inside) { this.hideFreeCrosshair(); return; }
+
+    const xAxis = chart.xAxis[0];
+    const yAxis = chart.yAxis[0];
+    const xVal = xAxis.toValue(event.chartX);
+
+    // Parcourir toutes les séries de modèles visibles et compatibles avec l’axe X courant
+    let best = null; // {x, y, px, py, dist2, name}
+    this.data.models.forEach(model => {
+      if (model.x.title !== this.currentXCurve || !model.visible) return;
+      const s = chart.get(`model-${model.id}`);
+      if (!s || !s.visible) return;
+
+      // Les points sont déjà denses (résolution par défaut ≈ 200)
+      const pts = s.points ?? s.data; // Selon la version Highcharts
+      if (!pts?.length) return;
+
+      // Chercher l’indice du point x le plus proche (recherche linéaire suffisante ici)
+      let closest = null, minDx = Infinity;
+      for (let i = 0; i < pts.length; i++) {
+        const px = pts[i].x, py = pts[i].y;
+        if (px == null || py == null || !isFinite(px) || !isFinite(py)) continue;
+        const dx = Math.abs(px - xVal);
+        if (dx < minDx) { minDx = dx; closest = { x: px, y: py }; }
+      }
+      if (!closest) return;
+
+      const px = xAxis.toPixels(closest.x);
+      const py = yAxis.toPixels(closest.y);
+      const d2 = (px - event.chartX) * (px - event.chartX) + (py - event.chartY) * (py - event.chartY);
+      if (!best || d2 < best.dist2) {
+        best = { ...closest, px, py, dist2: d2, name: model.name ?? `Modèle ${model.id}` };
+      }
+    });
+
+    if (!best) { this.hideFreeCrosshair(); return; }
+
+    // Créer si nécessaire les éléments (on réutilise this.freeCrosshair)
+    if (!this.freeCrosshair) {
+      this.freeCrosshair = {
+        xLine: chart.renderer.path('M 0 0').attr({ 'stroke-width': 1, stroke: 'dimgray', dashstyle: 'shortdot', zIndex: 5 }).add(),
+        yLine: chart.renderer.path('M 0 0').attr({ 'stroke-width': 1, stroke: 'dimgray', dashstyle: 'shortdot', zIndex: 5 }).add(),
+        xLabel: chart.renderer.label('', 0, 0, 'callout').attr({ fill: 'white', stroke: '#dbdbdb', 'stroke-width': 1, r: 6, padding: 8, zIndex: 6 }).css({ color: 'black', fontSize: '14px' }).add(),
+        yLabel: chart.renderer.label('', 0, 0, 'callout').attr({ fill: 'white', stroke: '#dbdbdb', 'stroke-width': 1, r: 6, padding: 8, zIndex: 6 }).css({ color: 'black', fontSize: '14px' }).add(),
+      };
+    }
+
+    // Lignes croisées
+    this.freeCrosshair.xLine.attr({ d: `M ${best.px} ${plotTop} L ${best.px} ${plotTop + plotHeight}` });
+    this.freeCrosshair.yLine.attr({ d: `M ${plotLeft} ${best.py} L ${plotLeft + plotWidth} ${best.py}` });
+
+    // Étiquettes (mêmes règles que drawFreeCrosshair)
+    const significantDigits = this.data.settings.significantDigits ?? 4;
+    const xv = Highcharts.numberFormat(best.x, significantDigits, ',', ' ');
+    const yv = Highcharts.numberFormat(best.y, significantDigits, ',', ' ');
+    this.freeCrosshair.xLabel.attr({ text: xv });
+    const bboxX = this.freeCrosshair.xLabel.getBBox();
+    this.freeCrosshair.xLabel.translate(best.px - bboxX.width / 2, plotTop + plotHeight - bboxX.height - 5);
+
+    this.freeCrosshair.yLabel.attr({ text: yv });
+    const bboxY = this.freeCrosshair.yLabel.getBBox();
+    this.freeCrosshair.yLabel.translate(plotLeft + 5, best.py - bboxY.height / 2);
   }
 
   /**
@@ -678,7 +746,7 @@ export default class Grapher {
     const newMaxY = centerY + newRangeY / 2;
 
     // suppress automatic redraw-driven model updates while we do the manual update
-    this._suppressModelAutoUpdate = true;
+    this.suppressModelAutoUpdate = true;
     try {
       // apply extremes without immediate redraw
       this.chart.xAxis[0].setExtremes(newMinX, newMaxX, false);
@@ -694,7 +762,7 @@ export default class Grapher {
       $("#auto-zoom-button").classList.remove("is-hidden");
     } finally {
       // always re-enable auto-updates
-      this._suppressModelAutoUpdate = false;
+      this.suppressModelAutoUpdate = false;
     }
   }
 

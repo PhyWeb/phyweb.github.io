@@ -779,13 +779,9 @@ toolItems.forEach(item => {
     $("#zoom-button").classList.remove("is-active");
     isZoomEnabled = false;
 
-    if (activeToolElement) {
-      if (item.id === 'tool-crosshair-data') {
-        grapher.setCrosshairMode('data');
-      } else if (item.id === 'tool-crosshair-free') {
-        grapher.setCrosshairMode('free');
-      }
-    }
+    if (item.id === 'tool-crosshair-data') grapher.setCrosshairMode('data');
+    else if (item.id === 'tool-crosshair-free') grapher.setCrosshairMode('free');
+    else if (item.id === 'tool-crosshair-model') grapher.setCrosshairMode('model');
   });
 });
 
