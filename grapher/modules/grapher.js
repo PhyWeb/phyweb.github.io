@@ -525,7 +525,6 @@ export default class Grapher {
   }
 
   setCrosshairMode(mode) {
-    if (!this.chart) return;
     this.crosshairMode = mode;
 
     const isDataMode = (mode === 'data');

@@ -741,7 +741,6 @@ function setActiveTool(clickedItem) {
 
   if (isDeselecting) {
     activeToolElement = null;
-    console.log("Outil désactivé.");
 
     grapher.setCrosshairMode(null); // On passe 'null' pour tout désactiver
     
@@ -756,6 +755,7 @@ function setActiveTool(clickedItem) {
     setTimeout(() => {
       window.FontAwesome.dom.i2svg({ node: toolsDropdown });
     }, 0);
+    return true;
   }
 }
 
@@ -773,17 +773,59 @@ document.addEventListener("click", () => {
 // Ajoute un écouteur d'événement unique pour tous les outils
 toolItems.forEach(item => {
   item.addEventListener('click', () => {
-    setActiveTool(item);
 
     // On s'assure que le bouton zoom est bien désactivé
     $("#zoom-button").classList.remove("is-active");
     isZoomEnabled = false;
+
+    const activated = setActiveTool(item);
+    if (!activated) return; // on vient de désélectionner -> ne rien réactiver
+
+    console.log(`Outil sélectionné : ${item.id}`);
 
     if (item.id === 'tool-crosshair-data') grapher.setCrosshairMode('data');
     else if (item.id === 'tool-crosshair-free') grapher.setCrosshairMode('free');
     else if (item.id === 'tool-crosshair-model') grapher.setCrosshairMode('model');
   });
 });
+
+function updateModelToolVisibilityByChart() {
+  const btn = document.getElementById('tool-crosshair-model');
+
+  // Vérifie s'il y a au moins une série de modèle visible avec des points
+  const hasRenderedModel = grapher.chart.series.some(s =>
+    s?.options?.id?.startsWith('model-') && s.visible !== false && (s.points?.length ?? 0) > 0
+  );
+
+  btn.classList.toggle('is-hidden', !hasRenderedModel);
+
+  // Si l’outil était actif mais qu’il n’y a plus de modèle tracé, on le désactive proprement
+  if (!hasRenderedModel && typeof activeToolElement !== 'undefined' && activeToolElement?.id === 'tool-crosshair-model') {
+    const check = activeToolElement.querySelector('.tool-checkmark-container');
+    if (check) check.innerHTML = '';
+    activeToolElement = null;
+    grapher.setCrosshairMode(null);
+  }
+}
+
+// Met à jour la visibilité de l'outil modèle à chaque redessin du graphique
+if (grapher.chart) {
+  Highcharts.addEvent(grapher.chart, 'redraw', updateModelToolVisibilityByChart);
+  updateModelToolVisibilityByChart(); // première évaluation
+}
+
+function clearActiveTool() {
+  // Enlève toutes les coches
+  document.querySelectorAll('.tool-item .tool-checkmark-container')
+    .forEach(c => c.innerHTML = '');
+
+  // Réinitialise l’état
+  if (typeof activeToolElement !== 'undefined') activeToolElement = null;
+
+  // Coupe tout réticule (tooltip + croix)
+  grapher.setCrosshairMode(null);
+  grapher.chart.container.classList.remove('chart-free-crosshair');
+}
 
 // Choose graphs -------------------------------------------------------------------------------
 $("#choose-curves-button").addEventListener("click", () => { 
@@ -1071,6 +1113,9 @@ function populateMarkersRadiusSelect(){
 let isZoomEnabled = false;
 $("#zoom-button").addEventListener("click", () => {
   if(!isZoomEnabled){
+    // Désélectionne les outils avant d’activer le zoom
+    clearActiveTool();
+
     $("#zoom-button").classList.add("is-active");
     grapher.chart.update({
       chart: {
@@ -1091,11 +1136,7 @@ $("#zoom-button").addEventListener("click", () => {
   } else {
     $("#zoom-button").classList.remove("is-active");
     grapher.chart.update({
-      chart: {
-        zooming: {
-          type : null // Disable zooming
-        },
-      }
+      chart: { zooming: { type : null} }
     });
     grapher.chart.container.classList.remove('chart-free-crosshair');
     isZoomEnabled = false;
@@ -1103,6 +1144,9 @@ $("#zoom-button").addEventListener("click", () => {
 });
 
 $("#auto-zoom-button").addEventListener("click", () => {
+  // On désélectionne les outils avant de réinitialiser le zoom
+  clearActiveTool();
+
   // 1. On réinitialise manuellement les axes à leur étendue maximale.
   //    Passer 'null' à setExtremes a pour effet de réinitialiser l'axe.
   grapher.chart.xAxis[0].setExtremes(null, null, false);
@@ -1120,10 +1164,16 @@ $("#auto-zoom-button").addEventListener("click", () => {
 });
 
 $("#zoom-in-button").addEventListener("click", () => {
+  // On désélectionne les outils avant de zoomer
+  clearActiveTool();
+
   grapher.zoom('in');
 });
 
 $("#zoom-out-button").addEventListener("click", () => {
+  // On désélectionne les outils avant de dézoomer
+  clearActiveTool();
+  
   grapher.zoom('out');
 });
 
