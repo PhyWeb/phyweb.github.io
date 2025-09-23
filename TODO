@@ -5,6 +5,8 @@ COMMON:
   - add a link to the github repo in the modal about
   - centraliser la gestion des confirmations de quitter (et l'étendre à quand on ferme onglet, charge d'autres données...)
 
+  - possibiliter de passer les données de audio et tracker directement à grapher via sessionStorage
+
   - Glisser-déposer : Permettre de charger un fichier par glisser-déposer (drag and drop)
 
 HOME:
@@ -22,10 +24,15 @@ TRACKER:
   - Add vidéos
   - pan and zoom
   - fixed size preview images
-  - add a buton to stop the decode and still exploit the already decoded frames
+  - add a button to stop the decode and still exploit the already decoded frames
+  - passer a ffmpeg.wasm
+
+  - réutiliser le menu de grapher et donc séparer la modale en une pour videos integrées et une autrre pour celle importées
 
 GRAPHER:
-  - utiliser des puissances de 10 dans les axes du graph (déjà OK ? A verifier)
+  - empecher de fermer la modale nouveau tant qu'on a pas choisi au lancement de l'app 
+
+  - sauvegarder les derniers fichiers dans localStorage
 
   - creer un moteur qui gere les raccourvis clavier (ctrl s et n notamment)
 
@@ -37,9 +44,7 @@ GRAPHER:
 
   - ajouter un mode qui utilise un modele pour calculer une valeur
 
-  - supprimer les modèles quand les courbes sont supprimées (adapter la modale pour le préciser)
-
-  - gerer quand la modélisation donne des ecart type ou r2 "infinity"
+  - gerer quand la modélisation donne des ecart type ou r2 "infinity" Deja fait je crois, à vérifier
 
   - permettre voir autoriser les notations 3e-15 (deja partiellemnt possible, à vérifier partout)
 
@@ -59,6 +64,13 @@ GRAPHER:
   - Revoir la sauvegarde !
 
   - Validation des symboles : La validation des symboles (noms de variables) est effectuée à plusieurs endroits. Cette logique pourrait être centralisée dans une fonction utilitaire pour éviter la duplication de code et garantir une validation cohérente partout dans l'application.
+
+
+IDEES
+  - animation titrage
+  - animation RVB
+  - exao spectrophotometre COM
+  - appli calculs sur téléphone
 
 
 NOTES:
