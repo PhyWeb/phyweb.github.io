@@ -49,7 +49,10 @@ GRAPHER:
   - permettre voir autoriser les notations 3e-15 (deja partiellemnt possible, à vérifier partout)
 
   - réticule persistant quand on clique
-  - autres outils (réticule modèle, tangente, méthode des tangentes...)
+  - OUTILS
+      - réticule libre : permettre de garder une croix ou drag une distance
+      - reticule donnée : garder une croix
+      - réticule modèle : pareil
 
   - icones personnalisées
 
