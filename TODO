@@ -53,6 +53,9 @@ GRAPHER:
       - réticule libre : permettre de garder une croix ou drag une distance
       - reticule donnée : garder une croix
       - réticule modèle : pareil
+      - tangente
+      - calcul modèle
+      - méthode des tangentes
 
   - icones personnalisées
 
