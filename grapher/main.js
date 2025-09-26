@@ -1,7 +1,6 @@
 // grapher/main.js (Version corrigée)
 
 import {Common, alertModal, quitConfirmationModal} from "../common/common.js"
-import { formatNumber } from '../common/formatter.js';
 
 import App from "./modules/app.js"
 import UIManager from "./modules/ui.js"
