@@ -146,6 +146,7 @@ class ModalManager {
       const $target = $close.closest('.modal');
       
       $close.addEventListener('click', () => {
+        if($target.dataset.isStatic === 'true') return; // If the modal is static, do nothing
         this.closeModal($target);
       });
     });
@@ -163,6 +164,7 @@ class ModalManager {
   }
 
   closeModal($el) {
+    if($el.dataset.isStatic === 'true') return; // If the modal is static, do nothing
     $el.classList.remove('is-active');
   }
 

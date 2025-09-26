@@ -40,6 +40,25 @@ export default class UIManager {
 
     // Convertit les icônes FontAwesome
     window.FontAwesome.dom.i2svg();
+
+    // Au démarrage, si la modale de fichier est active, on la verrouille.
+    if ($("#new-file-modal").classList.contains('is-active')) {
+      this.setFileModalStatic(true);
+    }
+  }
+
+  /**
+   * Active ou désactive le mode "statique" (non-fermable) pour la modale de fichier.
+   * @param {boolean} isStatic 
+   */
+  setFileModalStatic(isStatic) {
+    const newFileModal = $('#new-file-modal');
+
+    if (isStatic) {
+      newFileModal.dataset.isStatic = 'true';
+    } else {
+      delete newFileModal.dataset.isStatic;
+    }
   }
 
   /**
@@ -408,15 +427,31 @@ export default class UIManager {
       }
     }
 
-    $("#file-input").addEventListener("change", () => {
-      newDataConfirmation(() => {
-      // Check if a file is selected
-        if($("#file-input").files[0] != undefined){
-          this.app.ioManager.loadFile($("#file-input").files[0]);
+    $("#file-input").addEventListener('change', async (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      // La confirmation de suppression des données existantes
+      newDataConfirmation(async () => {
+        try {
+          // On attend que le chargement soit terminé (succès ou échec)
+          await this.app.ioManager.loadFile(file);
+          // Si aucune erreur n'est levée, ON FERME LA MODALE
+          this.setFileModalStatic(false); // D'abord déverrouiller
           this.common.modalManager.closeAllModals();
+        } catch (error) {
+          // Si une erreur est levée par ioManager, on affiche une alerte
+          // et la modale reste ouverte.
+          alertModal({
+            type: 'warning',
+            title: 'Erreur de chargement',
+            body: error.message,
+            confirm: 'OK'
+          });
         }
       });
     });
+
     $("#file-input").addEventListener("click", () => {
       $("#file-input").value = null; // allow the onchange trigger even if the same file is selected twice
     });
@@ -425,30 +460,36 @@ export default class UIManager {
       newDataConfirmation(() => {
         this.app.deleteAllCurves();
         this.editor.setValue('');
+        this.setFileModalStatic(false); // D'abord déverrouiller
         this.common.modalManager.closeAllModals();
       });
     });
 
-    $("#paste-button").addEventListener('click', async () => {
+    $("#paste-button").addEventListener('click', () => {
       newDataConfirmation(async () => {
         try {
-          let text = await navigator.clipboard.readText();
+          const text = await navigator.clipboard.readText();
+          // On attend que les données soient chargées et validées
+          await this.app.ioManager.loadClipboard(text);
+          // Si c'est un succès, ON FERME LA MODALE
+          this.setFileModalStatic(false); // D'abord déverrouiller
           this.common.modalManager.closeAllModals();
-          this.app.ioManager.loadClipboard(text); // Load the data from the clipboard
         } catch (error) {
+          // Si le clipboard est vide, non autorisé, ou si les données sont invalides
           alertModal({
-            type: "warning",
-            title: "Erreur de collage",
+            type: 'warning',
+            title: 'Erreur de collage',
             body: error.message,
-            confirm: "OK"
+            confirm: 'OK'
           });
         }
       });
     });
 
-    // Show the new file modal TODO
+    // Show the new file modal
     $("#new-file-open-modal-button").addEventListener("click", () => {
-      $("#new-file-modal").classList.add("is-active");
+        this.setFileModalStatic(false); // On s'assure qu'elle n'est PAS statique
+        $("#new-file-modal").classList.add('is-active');
     });
 
   }

@@ -194,23 +194,24 @@ export default class IOManager {
   /**
    * Méthode principale de chargement
    */
-  loadFile(file) {
+  async loadFile(file) {
     this.app.deleteAllCurves();
 
     if (file.name.endsWith(".pw")) { // Gère le nouveau format
-      this.loadPWFile(file);
+      await this.loadPWFile(file);
       return;
     }
     if (file.type === "text/csv") {
-      this.loadCSVFile(file);
+      await this.loadCSVFile(file);
       return;
     }
     if (file.name.endsWith(".rw3")) {
-      this.loadRW3File(file);
+      await this.loadRW3File(file);
       return;
     }
 
-    console.error("Type de fichier non supporté");
+    // Si aucun format ne correspond, on lève une erreur qui sera attrapée par ui.js
+    throw new Error(`Le type de fichier "${file.name}" n'est pas supporté.`);
   }
 
   /**
@@ -234,46 +235,49 @@ export default class IOManager {
    * @param {File} file - Le fichier .pw à charger.
    */
   loadPWFile(file) {
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const state = JSON.parse(event.target.result);
-        if (state.data && state.data.curves) {
-          this.app.data.curves = state.data.curves.map(c => {
-            const newCurve = new Curve(c.title, c.unit);
-            Object.assign(newCurve, c);
-            if (c.values) {
-              c.values.forEach(val => newCurve.push(val));
-            }
-            return newCurve;
-          });
-          this.app.data.parameters = state.data.parameters || {};
-        } else {
-            throw new Error("Le fichier de session est invalide ou corrompu (données manquantes).");
-        }
-        if (state.grapher) {
-            this.app.grapher.setGridVisibility(state.grapher.grid);
-        }
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const state = JSON.parse(event.target.result);
+          if (state.data && state.data.curves) {
+            this.app.data.curves = state.data.curves.map(c => {
+              const newCurve = new Curve(c.title, c.unit);
+              Object.assign(newCurve, c);
+              if (c.values) {
+                c.values.forEach(val => newCurve.push(val));
+              }
+              return newCurve;
+            });
+            this.app.data.parameters = state.data.parameters || {};
+          } else {
+              throw new Error("Le fichier de session est invalide ou corrompu (données manquantes).");
+          }
+          if (state.grapher) {
+              this.app.grapher.setGridVisibility(state.grapher.grid);
+          }
 
-        this.app.editor.setValue(text);
+          this.app.editor.setValue(text);
 
-        this.app.spreadsheet.update();
-        if (state.grapher && state.grapher.xCurve) {
-            this.app.grapher.setXCurve(state.grapher.xCurve, false);
-            this.app.grapher.updateChart(state.grapher.yCurves);
-        } else {
-            this.app.grapher.deleteAllCurves();
-            this.app.grapher.updateChart();
+          this.app.spreadsheet.update();
+          if (state.grapher && state.grapher.xCurve) {
+              this.app.grapher.setXCurve(state.grapher.xCurve, false);
+              this.app.grapher.updateChart(state.grapher.yCurves);
+          } else {
+              this.app.grapher.deleteAllCurves();
+              this.app.grapher.updateChart();
+          }
+          // Update the calculation tab
+          this.app.uiUpdater.updateCalculationUI();
+          console.log("Session .pw restaurée avec succès");
+          resolve();
+        } catch (e) {
+          // On rejette la promesse avec une erreur claire pour l'utilisateur
+          reject(new Error('Le fichier de session est corrompu ou invalide.'));
         }
-        // Update the calculation tab
-        this.app.uiUpdater.updateCalculationUI();
-        console.log("Session .pw restaurée avec succès (les paramètres locaux sont conservés).");
-      } catch (e) {
-        console.error("ERREUR lors du chargement de la session .pw :", e);
-        alertModal({ title: "Erreur de chargement", body: "Le fichier de session est corrompu ou invalide. Vérifiez la console (F12) pour les détails." });
-      }
-    };
-    reader.readAsText(file);
+      };
+      reader.readAsText(file);
+    });
   }
 
   /**
@@ -281,111 +285,117 @@ export default class IOManager {
    * @param {File} file - Le fichier CSV à charger.
    */
   loadCSVFile(file) {
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const raw = (event.target.result || "").replace(/^\uFEFF/, ""); // retire BOM
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const raw = (event.target.result || "").replace(/^\uFEFF/, ""); // retire BOM
 
-      // 1) Détection du séparateur le plus probable parmi ; , \t
-      const detectDelimiter = (text) => {
-        const candidates = [";", ",", "\t"];  // ordre volontaire pour FR puis US puis TSV
-        const sample = text.split(/\r?\n/).slice(0, 20); // échantillon
-        const score = {};
-        for (const d of candidates) {
-          let counts = [];
-          for (const line of sample) {
-            let inQuotes = false, count = 0;
-            for (let i = 0; i < line.length; i++) {
-              const ch = line[i];
-              if (ch === '"') {
-                // gérer "" à l'intérieur des champs
-                if (inQuotes && line[i + 1] === '"') { i++; continue; }
-                inQuotes = !inQuotes;
-              } else if (!inQuotes && ch === d) {
-                count++;
+          // 1) Détection du séparateur le plus probable parmi ; , \t
+          const detectDelimiter = (text) => {
+            const candidates = [";", ",", "\t"];  // ordre volontaire pour FR puis US puis TSV
+            const sample = text.split(/\r?\n/).slice(0, 20); // échantillon
+            const score = {};
+            for (const d of candidates) {
+              let counts = [];
+              for (const line of sample) {
+                let inQuotes = false, count = 0;
+                for (let i = 0; i < line.length; i++) {
+                  const ch = line[i];
+                  if (ch === '"') {
+                    // gérer "" à l'intérieur des champs
+                    if (inQuotes && line[i + 1] === '"') { i++; continue; }
+                    inQuotes = !inQuotes;
+                  } else if (!inQuotes && ch === d) {
+                    count++;
+                  }
+                }
+                counts.push(count);
               }
+              // Consistance: on privilégie le séparateur avec un nombre de séparateurs non nul
+              // et un écart‑type faible sur les lignes de l’échantillon
+              const nonZero = counts.filter(c => c > 0);
+              if (nonZero.length === 0) { score[d] = {mean: 0, stdev: 1e9, used: 0}; continue; }
+              const mean = nonZero.reduce((a,b)=>a+b,0)/nonZero.length;
+              const variance = nonZero.reduce((a,b)=>a+(b-mean)*(b-mean),0)/nonZero.length;
+              score[d] = {mean, stdev: Math.sqrt(variance), used: nonZero.length};
             }
-            counts.push(count);
-          }
-          // Consistance: on privilégie le séparateur avec un nombre de séparateurs non nul
-          // et un écart‑type faible sur les lignes de l’échantillon
-          const nonZero = counts.filter(c => c > 0);
-          if (nonZero.length === 0) { score[d] = {mean: 0, stdev: 1e9, used: 0}; continue; }
-          const mean = nonZero.reduce((a,b)=>a+b,0)/nonZero.length;
-          const variance = nonZero.reduce((a,b)=>a+(b-mean)*(b-mean),0)/nonZero.length;
-          score[d] = {mean, stdev: Math.sqrt(variance), used: nonZero.length};
-        }
-        // Choix: le plus utilisé avec la meilleure régularité (stdev minimal), puis mean maximal
-        const ranked = Object.entries(score).sort((a,b)=>{
-          if (b[1].used !== a[1].used) return b[1].used - a[1].used;
-          if (a[1].stdev !== b[1].stdev) return a[1].stdev - b[1].stdev;
-          return b[1].mean - a[1].mean;
-        });
-        const best = ranked[0]?.[0] || ";";
-        return best;
-      };
+            // Choix: le plus utilisé avec la meilleure régularité (stdev minimal), puis mean maximal
+            const ranked = Object.entries(score).sort((a,b)=>{
+              if (b[1].used !== a[1].used) return b[1].used - a[1].used;
+              if (a[1].stdev !== b[1].stdev) return a[1].stdev - b[1].stdev;
+              return b[1].mean - a[1].mean;
+            });
+            const best = ranked[0]?.[0] || ";";
+            return best;
+          };
 
-      // Parser CSV en respectant les guillemets
-      const parseCSV = (text, delimiter) => {
-        const rows = [];
-        let row = [];
-        let field = "";
-        let inQuotes = false;
+          // Parser CSV en respectant les guillemets
+          const parseCSV = (text, delimiter) => {
+            const rows = [];
+            let row = [];
+            let field = "";
+            let inQuotes = false;
 
-        const pushField = () => {
-          row.push(field);
-          field = "";
-        };
-        const pushRow = () => {
-          rows.push(row);
-          row = [];
-        };
+            const pushField = () => {
+              row.push(field);
+              field = "";
+            };
+            const pushRow = () => {
+              rows.push(row);
+              row = [];
+            };
 
-        for (let i = 0; i < text.length; i++) {
-          const ch = text[i];
+            for (let i = 0; i < text.length; i++) {
+              const ch = text[i];
 
-          if (ch === '"') {
-            if (inQuotes && text[i + 1] === '"') {
-              field += '"'; // séquence "" -> "
-              i++;
-            } else {
-              inQuotes = !inQuotes;
+              if (ch === '"') {
+                if (inQuotes && text[i + 1] === '"') {
+                  field += '"'; // séquence "" -> "
+                  i++;
+                } else {
+                  inQuotes = !inQuotes;
+                }
+                continue;
+              }
+
+              if (!inQuotes && (ch === "\n" || ch === "\r")) {
+                // fin de ligne (gérer CRLF)
+                pushField();
+                pushRow();
+                if (ch === "\r" && text[i + 1] === "\n") i++;
+                continue;
+              }
+
+              if (!inQuotes && ch === delimiter) {
+                pushField();
+                continue;
+              }
+
+              field += ch;
             }
-            continue;
-          }
-
-          if (!inQuotes && (ch === "\n" || ch === "\r")) {
-            // fin de ligne (gérer CRLF)
+            // Dernier champ / dernière ligne
             pushField();
-            pushRow();
-            if (ch === "\r" && text[i + 1] === "\n") i++;
-            continue;
-          }
+            if (row.length > 1 || (row.length === 1 && row[0] !== "")) pushRow();
 
-          if (!inQuotes && ch === delimiter) {
-            pushField();
-            continue;
-          }
+            return rows;
+          };
 
-          field += ch;
+          const delimiter = detectDelimiter(raw);
+          const rows = parseCSV(raw, delimiter);
+
+          // Conversion en TSV attendu par loadData (escape des tabs éventuels)
+          const toTSV = rows
+            .map(r => r.map(cell => String(cell).replace(/\t/g, " ")).join("\t"))
+            .join("\n");
+
+          this.loadData(toTSV);
+        } catch (e) {
+          reject(new Error('Erreur lors du traitement du fichier CSV.'));
         }
-        // Dernier champ / dernière ligne
-        pushField();
-        if (row.length > 1 || (row.length === 1 && row[0] !== "")) pushRow();
-
-        return rows;
       };
-
-      const delimiter = detectDelimiter(raw);
-      const rows = parseCSV(raw, delimiter);
-
-      // Conversion en TSV attendu par loadData (escape des tabs éventuels)
-      const toTSV = rows
-        .map(r => r.map(cell => String(cell).replace(/\t/g, " ")).join("\t"))
-        .join("\n");
-
-      this.loadData(toTSV);
-    };
-    reader.readAsText(file);
+      reader.readAsText(file);
+    });
   }
 
   /**
@@ -393,213 +403,216 @@ export default class IOManager {
    * @param {File} file - Le fichier .rw3 à charger.
    */
   async loadRW3File(file) {
-    const buf = await file.arrayBuffer();
+    try {
+      const buf = await file.arrayBuffer();
 
-    // 1) Essai UTF-8
-    const utf8Text = new TextDecoder('utf-8', { fatal: false }).decode(buf);
+      // 1) Essai UTF-8
+      const utf8Text = new TextDecoder('utf-8', { fatal: false }).decode(buf);
 
-    // 2) Si “�” (U+FFFD) est présent, ou si on voit “Â£” issu d'un mauvais décodage, on bascule en Windows-1252 immédiatement.
-    const needsCp1252 =
-      utf8Text.includes('\uFFFD') || /Â£/.test(utf8Text);
+      // 2) Si “�” (U+FFFD) est présent, ou si on voit “Â£” issu d'un mauvais décodage, on bascule en Windows-1252 immédiatement.
+      const needsCp1252 =
+        utf8Text.includes('\uFFFD') || /Â£/.test(utf8Text);
 
-    const data = needsCp1252
-      ? new TextDecoder('windows-1252', { fatal: false }).decode(buf)
-      : utf8Text;
+      const data = needsCp1252
+        ? new TextDecoder('windows-1252', { fatal: false }).decode(buf)
+        : utf8Text;
 
-    // Tokenisation en lignes
-    const lines = data.split(/\r?\n/);
+      // Tokenisation en lignes
+      const lines = data.split(/\r?\n/);
 
-    const names = [];
-    const units = [];
-    const genres = []; // 0 = mesurée, 1 = calculée
-    const rows = [];   // lignes mesurées uniquement
+      const names = [];
+      const units = [];
+      const genres = []; // 0 = mesurée, 1 = calculée
+      const rows = [];   // lignes mesurées uniquement
 
-    const constNames = [];
-    const constUnits = [];
-    const constRawValues = [];
+      const constNames = [];
+      const constUnits = [];
+      const constRawValues = [];
 
-    const memoLines = [];
+      const memoLines = [];
 
-    const graphX = [];
-    const graphY = [];
+      const graphX = [];
+      const graphY = [];
 
-    let i = 0;
+      let i = 0;
 
-    let loadedVarValues = false
+      let loadedVarValues = false
 
-    // Lecture d'un bloc "£<n> <KEY>" -> n lignes
-    const readBlock = (key, target, parser = s => s.trim()) => {
-      const line = lines[i]?.trim() ?? '';
-      const m = line.match(new RegExp(String.raw`(\d+)\s+${key}\b`, 'i'));
-      if (!m) return false;
-      const count = parseInt(m[1], 10) || 0;
-      i++;
-      for (let j = 0; j < count && i < lines.length; j++, i++) target.push(parser(lines[i]));
-      return true;
-    };
-
-    // Parcours des sections utiles
-    while (i < lines.length) {
-      const line = lines[i]?.trim() ?? '';
-
-      if (/NOM VAR/i.test(line)) { readBlock('NOM VAR', names); continue; }
-      if (/GENRE VAR/i.test(line)) { readBlock('GENRE VAR', genres, s => parseInt(String(s).trim(), 10) || 0); continue; }
-      if (/UNITE VAR/i.test(line)) { readBlock('UNITE VAR', units, s => String(s).trim()); continue; }
-
-      if (/MEMO GRANDEURS/i.test(line)) { 
-        readBlock('MEMO GRANDEURS', memoLines, s => String(s).replace(/\r$/, '')); 
-        continue; 
-      }
-
-      if (/NOM CONST/i.test(line)) { readBlock('NOM CONST', constNames, s => String(s).trim()); continue; }
-      if (/UNITE CONST/i.test(line)) { readBlock('UNITE CONST', constUnits, s => String(s).trim()); continue; }
-
-
-      // Trouve les courbes à tracer
-      if (/^£\s*0\s+GRAPHE\s+VAR\b/i.test(line)) { i++; continue; }
-      let mX = line.match(/&\s*(\d+)\s+X\b/i);
-      if (mX) { const n = parseInt(mX[1], 10) || 0; i++; 
-        for (let j = 0; j < n && i < lines.length; j++, i++) 
-          graphX.push(String(lines[i]).trim()); 
-        continue; 
-      }
-      let mY = line.match(/&\s*(\d+)\s+Y\b/i);
-      if (mY) { const n = parseInt(mY[1], 10) || 0; i++; 
-        for (let j = 0; j < n && i < lines.length; j++, i++) 
-          graphY.push(String(lines[i]).trim()); 
-        continue; 
-      }
-
-      // Bloc paramètres
-      const mConst = line.match(/&\s*(\d+)\s+VALEUR CONST/i);
-      if (mConst) {
-        const n = parseInt(mConst[1], 10) || 0;
+      // Lecture d'un bloc "£<n> <KEY>" -> n lignes
+      const readBlock = (key, target, parser = s => s.trim()) => {
+        const line = lines[i]?.trim() ?? '';
+        const m = line.match(new RegExp(String.raw`(\d+)\s+${key}\b`, 'i'));
+        if (!m) return false;
+        const count = parseInt(m[1], 10) || 0;
         i++;
-        for (let j = 0; j < n && i < lines.length; j++, i++) {
-          const raw = String(lines[i]).trim();
-          constRawValues.push(String(raw));
+        for (let j = 0; j < count && i < lines.length; j++, i++) target.push(parser(lines[i]));
+        return true;
+      };
+
+      // Parcours des sections utiles
+      while (i < lines.length) {
+        const line = lines[i]?.trim() ?? '';
+
+        if (/NOM VAR/i.test(line)) { readBlock('NOM VAR', names); continue; }
+        if (/GENRE VAR/i.test(line)) { readBlock('GENRE VAR', genres, s => parseInt(String(s).trim(), 10) || 0); continue; }
+        if (/UNITE VAR/i.test(line)) { readBlock('UNITE VAR', units, s => String(s).trim()); continue; }
+
+        if (/MEMO GRANDEURS/i.test(line)) { 
+          readBlock('MEMO GRANDEURS', memoLines, s => String(s).replace(/\r$/, '')); 
+          continue; 
         }
-        continue;
-      }
 
-      // Bloc valeurs: on ne gère que le cas “colonnes mesurées”
-      const mVal = line.match(/&\s*(\d+)\s+VALEUR VAR/i);
-      if (mVal) {
-        const n = parseInt(mVal[1], 10) || 0;
-        i++; // se placer sur la première ligne de valeurs
+        if (/NOM CONST/i.test(line)) { readBlock('NOM CONST', constNames, s => String(s).trim()); continue; }
+        if (/UNITE CONST/i.test(line)) { readBlock('UNITE CONST', constUnits, s => String(s).trim()); continue; }
 
-        if (!loadedVarValues) {
-          const measuredIdx = genres.length === names.length
-            ? genres.map((g, idx) => (g === 0 ? idx : -1)).filter(idx => idx !== -1)
-            : names.map((_, idx) => idx);
-          const mCount = measuredIdx.length;
 
-          let count = 0;
-          while (i < lines.length && count < n) {
-            const val = lines[i].trim();
-            if (val) {
-              const cols = val.split(/\s+/).map(s => Number.parseFloat(String(s).replace(',', '.')));
-              if (cols.length === mCount && cols.every(Number.isFinite)) {
-                rows.push(cols);
-                count++;
-              }
-            }
-            i++;
+        // Trouve les courbes à tracer
+        if (/^£\s*0\s+GRAPHE\s+VAR\b/i.test(line)) { i++; continue; }
+        let mX = line.match(/&\s*(\d+)\s+X\b/i);
+        if (mX) { const n = parseInt(mX[1], 10) || 0; i++; 
+          for (let j = 0; j < n && i < lines.length; j++, i++) 
+            graphX.push(String(lines[i]).trim()); 
+          continue; 
+        }
+        let mY = line.match(/&\s*(\d+)\s+Y\b/i);
+        if (mY) { const n = parseInt(mY[1], 10) || 0; i++; 
+          for (let j = 0; j < n && i < lines.length; j++, i++) 
+            graphY.push(String(lines[i]).trim()); 
+          continue; 
+        }
+
+        // Bloc paramètres
+        const mConst = line.match(/&\s*(\d+)\s+VALEUR CONST/i);
+        if (mConst) {
+          const n = parseInt(mConst[1], 10) || 0;
+          i++;
+          for (let j = 0; j < n && i < lines.length; j++, i++) {
+            const raw = String(lines[i]).trim();
+            constRawValues.push(String(raw));
           }
-
-          loadedVarValues = true;
-        } else {
-          i += n;
+          continue;
         }
-        continue;
+
+        // Bloc valeurs: on ne gère que le cas “colonnes mesurées”
+        const mVal = line.match(/&\s*(\d+)\s+VALEUR VAR/i);
+        if (mVal) {
+          const n = parseInt(mVal[1], 10) || 0;
+          i++; // se placer sur la première ligne de valeurs
+
+          if (!loadedVarValues) {
+            const measuredIdx = genres.length === names.length
+              ? genres.map((g, idx) => (g === 0 ? idx : -1)).filter(idx => idx !== -1)
+              : names.map((_, idx) => idx);
+            const mCount = measuredIdx.length;
+
+            let count = 0;
+            while (i < lines.length && count < n) {
+              const val = lines[i].trim();
+              if (val) {
+                const cols = val.split(/\s+/).map(s => Number.parseFloat(String(s).replace(',', '.')));
+                if (cols.length === mCount && cols.every(Number.isFinite)) {
+                  rows.push(cols);
+                  count++;
+                }
+              }
+              i++;
+            }
+
+            loadedVarValues = true;
+          } else {
+            i += n;
+          }
+          continue;
+        }
+
+        i++;
       }
 
-      i++;
-    }
+      if (names.length === 0) throw new Error('Aucun bloc NOM VAR trouvé dans le fichier. Fichier invalide.');
 
-    if (names.length === 0) throw new Error('No NOM VAR block found'); // garde-fou minimal [attached_file:84]
+      // Préparer les en-têtes mesurés uniquement
+      const measuredIdx = genres.length === names.length
+        ? genres.map((g, idx) => (g === 0 ? idx : -1)).filter(idx => idx !== -1)
+        : names.map((_, idx) => idx);
 
-    // Préparer les en-têtes mesurés uniquement
-    const measuredIdx = genres.length === names.length
-      ? genres.map((g, idx) => (g === 0 ? idx : -1)).filter(idx => idx !== -1)
-      : names.map((_, idx) => idx);
+      const headerNames = measuredIdx.map(i => names[i]);
+      const headerUnits = (units.length ? measuredIdx.map(i => units[i]) : measuredIdx.map(() => ''));
 
-    const headerNames = measuredIdx.map(i => names[i]);
-    const headerUnits = (units.length ? measuredIdx.map(i => units[i]) : measuredIdx.map(() => ''));
+      // Sérialisation TSV: 2 en-têtes + lignes “mesurées”
+      let output = '';
+      output += headerNames.join('\t') + '\n';
+      output += headerUnits.join('\t') + '\n';
+      for (const r of rows) output += r.join('\t') + '\n';
 
-    // Sérialisation TSV: 2 en-têtes + lignes “mesurées”
-    let output = '';
-    output += headerNames.join('\t') + '\n';
-    output += headerUnits.join('\t') + '\n';
-    for (const r of rows) output += r.join('\t') + '\n';
-
-    // lecture des paramètres
-    const paramLines = [];
-    if (constNames.length) {
-      const n = Math.max(constNames.length, constUnits.length, constRawValues.length);
-      for (let k = 0; k < n; k++) {
-        const name = (constNames[k] || '').trim();
-        const unit = (constUnits[k] || '').trim();
-        const rawVal = String(constRawValues[k] ?? '').trim();
-        if (!name || !rawVal) continue; // on n’écrit que s’il y a une valeur
-        const lhs = unit ? `${name}_${unit}` : name;
-        paramLines.push(`${lhs} = ${rawVal}`);
+      // lecture des paramètres
+      const paramLines = [];
+      if (constNames.length) {
+        const n = Math.max(constNames.length, constUnits.length, constRawValues.length);
+        for (let k = 0; k < n; k++) {
+          const name = (constNames[k] || '').trim();
+          const unit = (constUnits[k] || '').trim();
+          const rawVal = String(constRawValues[k] ?? '').trim();
+          if (!name || !rawVal) continue; // on n’écrit que s’il y a une valeur
+          const lhs = unit ? `${name}_${unit}` : name;
+          paramLines.push(`${lhs} = ${rawVal}`);
+        }
       }
+
+      // déplace un suffixe d'unité commun (ex: _J) du membre de droite vers la gauche
+      function moveUnitSuffixToLHS(line) {
+        const t = String(line);
+        const s = t.trim();
+        if (!s || s.startsWith('#') || s.startsWith('//') || s.startsWith("'")) return t;
+
+        const eq = s.indexOf('=');
+        if (eq === -1) return t;
+
+        const lhs = s.slice(0, eq).trim();
+        const rhs = s.slice(eq + 1).trim();
+
+        const unitMatches = [...rhs.matchAll(/\b[A-Za-z][\w²]*_([A-Za-zµ°]+)\b/g)];
+        if (unitMatches.length === 0) return t;
+
+        // Cette partie de la logique reste INCHANGÉE car m[1] est toujours l'unité
+        const suffixes = new Set(unitMatches.map(m => m[1]));
+        if (suffixes.size !== 1) return t;
+        const unit = [...suffixes][0];
+        if (/_([A-Za-zµ°]+)$/.test(lhs)) return t;
+
+        const lhsNew = `${lhs}_${unit}`;
+
+        const rhsNew = rhs.replace(new RegExp(`\\b([A-Za-z][\\w²]*)_${unit}\\b`, 'g'), '$1');
+        
+        return `${lhsNew} = ${rhsNew}`;
+      }
+
+      const normalizedMemoLines = memoLines.map(moveUnitSuffixToLHS);
+
+      // remplir l’éditeur avec le MEMO + paramètres
+      const memoText = normalizedMemoLines.length ? normalizedMemoLines.join('\n') : '';
+      const paramsText = paramLines.length ? paramLines.join('\n') : '';
+      const finalText = memoText && paramsText ? `${paramsText}\n\n${memoText}` : (memoText || paramsText);
+      if (finalText) this.app.editor.setValue(finalText);
+
+      // Injection des données
+      this.loadData(output.trim());
+
+      // Configurer le graphe
+      const existingTitles = this.app.data.curves.map(c => c.title);
+      const chosenX = graphX.find(t => existingTitles.includes(t)) || existingTitles[0];
+      if (chosenX) this.app.grapher.setXCurve(chosenX, false);
+
+      const yNow = graphY.filter(t => existingTitles.includes(t));
+      if (yNow.length) this.app.grapher.updateChart(yNow); else this.app.grapher.updateChart();
+
+      // Y à activer plus tard (courbes calculées absentes pour l’instant)
+      this.app.pendingRW3 = {
+        x: chosenX || null, 
+        y: graphY.filter(t => !existingTitles.includes(t))
+      };
+    } catch (e) {
+      throw new Error(`Le fichier RW3 ne peut pas être lu : ${error.message}`);
     }
-
-    // déplace un suffixe d'unité commun (ex: _J) du membre de droite vers la gauche
-function moveUnitSuffixToLHS(line) {
-  const t = String(line);
-  const s = t.trim();
-  if (!s || s.startsWith('#') || s.startsWith('//') || s.startsWith("'")) return t;
-
-  const eq = s.indexOf('=');
-  if (eq === -1) return t;
-
-  const lhs = s.slice(0, eq).trim();
-  const rhs = s.slice(eq + 1).trim();
-
-  const unitMatches = [...rhs.matchAll(/\b[A-Za-z][\w²]*_([A-Za-zµ°]+)\b/g)];
-  if (unitMatches.length === 0) return t;
-
-  // Cette partie de la logique reste INCHANGÉE car m[1] est toujours l'unité
-  const suffixes = new Set(unitMatches.map(m => m[1]));
-  if (suffixes.size !== 1) return t;
-  const unit = [...suffixes][0];
-  if (/_([A-Za-zµ°]+)$/.test(lhs)) return t;
-
-  const lhsNew = `${lhs}_${unit}`;
-
-  const rhsNew = rhs.replace(new RegExp(`\\b([A-Za-z][\\w²]*)_${unit}\\b`, 'g'), '$1');
-  
-  return `${lhsNew} = ${rhsNew}`;
-}
-
-    const normalizedMemoLines = memoLines.map(moveUnitSuffixToLHS);
-
-    // remplir l’éditeur avec le MEMO + paramètres
-    const memoText = normalizedMemoLines.length ? normalizedMemoLines.join('\n') : '';
-    const paramsText = paramLines.length ? paramLines.join('\n') : '';
-    const finalText = memoText && paramsText ? `${paramsText}\n\n${memoText}` : (memoText || paramsText);
-    if (finalText) this.app.editor.setValue(finalText);
-
-    // Injection des données
-    this.loadData(output.trim());
-
-    // Configurer le graphe
-    const existingTitles = this.app.data.curves.map(c => c.title);
-    const chosenX = graphX.find(t => existingTitles.includes(t)) || existingTitles[0];
-    if (chosenX) this.app.grapher.setXCurve(chosenX, false);
-
-    const yNow = graphY.filter(t => existingTitles.includes(t));
-    if (yNow.length) this.app.grapher.updateChart(yNow); else this.app.grapher.updateChart();
-
-    // Y à activer plus tard (courbes calculées absentes pour l’instant)
-    this.app.pendingRW3 = {
-      x: chosenX || null, 
-      y: graphY.filter(t => !existingTitles.includes(t))
-    };
-
   }
 
   /**
