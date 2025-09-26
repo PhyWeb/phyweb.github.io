@@ -1,5 +1,5 @@
 import { formatNumber } from '../../common/formatter.js';
-import { alertModal } from '../../common/common.js';
+import { alertModal, quitConfirmationModal } from '../../common/common.js';
 
 const $ = document.querySelector.bind(document);
 
@@ -18,6 +18,8 @@ export default class UIManager {
     this.activeToolElement = null;
     this.isZoomEnabled = false;
 
+    this.isNavigationConfirmed = false; // Pour gérer la confirmation de navigation
+
     this.initialSettings = {}; // Pour stocker les paramètres initiaux lors de l'ouverture de la modale des paramètres
   }
 
@@ -34,6 +36,7 @@ export default class UIManager {
     this.initGrapherControls();
     this.initModelisationControls();
     this.initCalculationControls();
+    this.initBeforeUnload();
 
     // Convertit les icônes FontAwesome
     window.FontAwesome.dom.i2svg();
@@ -284,18 +287,33 @@ export default class UIManager {
   }
 
   /**
+   * Met à jour les icônes de visibilité de tous les panneaux de modèle en fonction de l'état actuel des modèles.
+   */
+  updateAllModelPanelVisibilityIcons() {
+    this.data.models.forEach(model => {
+      const panel = $(`#model-list article[data-model-id="${model.id}"]`);
+      if (panel) {
+        const visibleButton = panel.querySelector('.fa-eye, .fa-eye-slash').closest('button');
+        const isVisible = model.x.title === this.grapher.currentXCurve && model.visible;
+        visibleButton.innerHTML = `<span class="icon"><i class="fas fa-${isVisible ? 'eye' : 'eye-slash'}"></i></span>`;
+        window.FontAwesome.dom.i2svg({ node: visibleButton });
+      }
+    });
+  }
+
+  /**
    * Initialise la navbar avec les boutons et leurs événements.
    */
   initNavbar() {
-    let quitConfirm = (path)=>{
+    const quitConfirm = (path)=>{
       // Check if data exists
-      if(data.curves.length === 0 && editor.getValue().trim() === ''){
+      if(this.data.curves.length === 0 && editor.getValue().trim() === ''){
         window.location.replace(path);
         return;
       }
 
       quitConfirmationModal(()=>{
-        isNavigationConfirmed = true; //On lève le drapeau pour que 'beforeunload' ignore.
+        this.isNavigationConfirmed = true; //On lève le drapeau pour que 'beforeunload' ignore.
         window.location.replace(path);
       })    
     }
@@ -1117,7 +1135,7 @@ export default class UIManager {
     $("#choose-x-curve-select").addEventListener("change", () => {
       // Update the X curve in the grapher
       this.grapher.setXCurve($("#choose-x-curve-select").value, true);
-      updateAllModelPanelVisibilityIcons();
+      this.updateAllModelPanelVisibilityIcons();
     });
 
     /**
@@ -1554,21 +1572,6 @@ export default class UIManager {
     });
 
     /**
-     * Met à jour les icônes de visibilité de tous les panneaux de modèle en fonction de l'état actuel des modèles.
-     */
-    const updateAllModelPanelVisibilityIcons = () =>{
-      this.data.models.forEach(model => {
-        const panel = $(`#model-list article[data-model-id="${model.id}"]`);
-        if (panel) {
-          const visibleButton = panel.querySelector('.fa-eye, .fa-eye-slash').closest('button');
-          const isVisible = model.x.title === this.grapher.currentXCurve && model.visible;
-          visibleButton.innerHTML = `<span class="icon"><i class="fas fa-${isVisible ? 'eye' : 'eye-slash'}"></i></span>`;
-          window.FontAwesome.dom.i2svg({ node: visibleButton });
-        }
-      });
-    }
-
-    /**
      * Ferme tous les panneaux de modèle.
      */
     const closeAllModelPanels = () => {
@@ -1683,7 +1686,7 @@ export default class UIManager {
 
         model.visible = !model.visible;
         // L'icône est mise à jour par la fonction updateAllModelPanelVisibilityIcons()
-        updateAllModelPanelVisibilityIcons();
+        this.updateAllModelPanelVisibilityIcons();
         // La visibilité de la série est gérée par grapher.updateModelVisibility()
         this.grapher.updateModelVisibility();
       });
@@ -2038,5 +2041,27 @@ export default class UIManager {
     });
 
 
+  }
+
+  initBeforeUnload(){
+    // --- Gestion de la fermeture de l'application ---
+    this.isNavigationConfirmed = false; // Pour eviter la double demande de confirmation quand on change de page
+    const localHosts = ['localhost', '127.0.0.1'];
+    if (!localHosts.includes(window.location.hostname)) {
+      window.addEventListener('beforeunload', (event) => {
+        // Si la navigation a déjà été confirmée par notre code, on ne fait rien.
+        if (this.isNavigationConfirmed) {
+          return;
+        }
+        
+        const hasUnsavedData = this.data.curves.length > 0 || this.editor.getValue().trim() !== '';
+
+        if (hasUnsavedData) {
+          event.preventDefault();
+          event.returnValue = 'Êtes-vous sûr de vouloir quitter ? Vos données non sauvegardées seront perdues.';
+          return 'Êtes-vous sûr de vouloir quitter ? Vos données non sauvegardées seront perdues.';
+        }
+      });
+    }
   }
 }

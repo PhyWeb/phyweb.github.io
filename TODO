@@ -32,6 +32,8 @@ TRACKER:
 GRAPHER:
   - empecher de fermer la modale nouveau tant qu'on a pas choisi au lancement de l'app 
 
+  - avoir une option "zero inclus" dans les courbes
+
   - sauvegarder les derniers fichiers dans localStorage
 
   - creer un moteur qui gere les raccourvis clavier (ctrl s et n notamment)

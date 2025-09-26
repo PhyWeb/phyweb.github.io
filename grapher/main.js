@@ -61,26 +61,6 @@ document.addEventListener('DOMContentLoaded', () => {
     resize();
   });
 
-  // --- Gestion de la fermeture de l'application ---
-  let isNavigationConfirmed = false; // Pour eviter la double demande de confirmation quand on change de page
-  const localHosts = ['localhost', '127.0.0.1'];
-  if (!localHosts.includes(window.location.hostname)) {
-    window.addEventListener('beforeunload', (event) => {
-      // Si la navigation a déjà été confirmée par notre code, on ne fait rien.
-      if (isNavigationConfirmed) {
-        return;
-      }
-      
-      const hasUnsavedData = data.curves.length > 0 || (editor && editor.getValue().trim() !== '');
-
-      if (hasUnsavedData) {
-        event.preventDefault();
-        event.returnValue = 'Êtes-vous sûr de vouloir quitter ? Vos données non sauvegardées seront perdues.';
-        return 'Êtes-vous sûr de vouloir quitter ? Vos données non sauvegardées seront perdues.';
-      }
-    });
-  }
-
 
   // Ouvre la modale "Nouveau" au démarrage de l'application
   $("#new-file-modal").classList.add("is-active");
