@@ -1158,5 +1158,39 @@
       </footer>
     </div>
   </div>
+
+  <!------------------------------------------------------------------------------------------------------------>
+  <!------------------------------------------------TEMPLATE MODEL PANEL------------------------------------------>
+  <!------------------------------------------------------------------------------------------------------------>
+  <template id="template-model-panel">
+    <article class="message is-light mb-2">
+      <div class="message-header model-toggle is-active">
+        <p class="model-title"></p>
+        <span class="icon toggle-icon toggle-up"><i class="fa-solid fa-angle-up"></i></span>
+        <span class="icon toggle-icon toggle-down is-hidden"><i class="fa-solid fa-angle-down"></i></span>
+      </div>
+      <div class="message-body model-content pt-2">
+        <p class="has-text-centered model-equation"></p>
+        <div class="is-flex is-justify-content-space-around mt-2">
+          <button class="button is-light toggle-visibility-button" title="Afficher/Masquer">
+            <span class="icon"><i class="fas fa-eye"></i></span>
+          </button>
+          <button class="button is-light edit-model-button" title="Modifier le modèle">
+            <span class="icon"><i class="fas fa-pencil-alt"></i></span>
+          </button>
+          <button class="button is-light delete-model-button" title="Supprimer le modèle">
+            <span class="icon"><i class="fas fa-trash"></i></span>
+          </button>
+          <button class="button is-light compute-model-button" title="Calculer une valeur à l'aide du modèle">
+            <span class="icon"><i class="fas fa-calculator"></i></span>
+          </button>
+        </div>
+        <p class="mt-2"><strong>Paramètres :</strong></p>
+        <ul class="parameters-list"></ul>
+        <p class="mt-2"><strong>Qualité de l'ajustement</strong></p>
+        <ul class="quality-list"></ul>
+      </div>
+    </article>
+  </template>
   </body>
 </html>

@@ -1978,101 +1978,51 @@ export default class UIManager {
      * @param {string} modelID - L'ID du modèle pour lequel créer le panneau.
      */
     const createModelPanel = (modelID) =>{
-      const modelList = $('#model-list');
       const model = this.data.models.find(m => m.id === modelID);
       if(!model){
         return;
       }
 
-      const article = document.createElement('article');
-      article.classList.add('message', 'is-light', 'mb-2');
-      article.setAttribute('data-model-id', model.id);
-      const header = document.createElement('div');
-      header.classList.add('message-header', 'model-toggle', 'is-active');
-      header.innerHTML = `
-        <p>${model.y.title} = f(${model.x.title})</p>
-        <span class="icon toggle-icon toggle-up"><i class="fa-solid fa-angle-up"></i></span>
-        <span class="icon toggle-icon toggle-down is-hidden"><i class="fa-solid fa-angle-down"></i></span>
-      `;
-      const body = document.createElement('div');
-      body.classList.add('message-body', 'model-content', 'pt-2');
-      const p = document.createElement('p');
-      p.classList.add('has-text-centered');
-      p.innerHTML = `<strong>${model.getModelName()}</strong>`;
-      body.appendChild(p);
-      const p2 = document.createElement('p');
-      p2.classList.add('has-text-centered');
-      p2.innerHTML = model.getEquationString();
-      body.appendChild(p2);
-      const div = document.createElement('div');
-      div.classList.add('is-flex', 'is-justify-content-space-around', 'mt-2');
-      const visibleButton = document.createElement('button');
-      visibleButton.classList.add('button', 'is-light', 'toggle-visibility-button');
-      visibleButton.innerHTML = `<span class="icon"><i class="fas fa-eye"></i></span>`;
-      visibleButton.title = "Afficher/Masquer le modèle";
-      div.appendChild(visibleButton);
-      const editButton = document.createElement('button');
-      editButton.classList.add('button', 'is-light', 'edit-model-button');
-      editButton.innerHTML = `<span class="icon"><i class="fas fa-pencil-alt"></i></span>`
-      editButton.title = "Modifier le modèle";
-      div.appendChild(editButton);
-      const deleteButton = document.createElement('button');
-      deleteButton.classList.add('button', 'is-light', 'delete-model-button');
-      deleteButton.innerHTML = `<span class="icon"><i class="fas fa-trash"></i></span>`;
-      deleteButton.title = "Supprimer le modèle";
-      div.appendChild(deleteButton);
-      body.appendChild(div);
-      const p3 = document.createElement('p');
-      p3.classList.add('mt-2');
-      p3.innerHTML = `<strong>Paramètres :</strong>`;
-      body.appendChild(p3);
-      const ul = document.createElement('ul');
+      // Récupérer le conteneur et le template
+      const modelListContainer = document.getElementById('model-list');
+      const template = document.getElementById('template-model-panel');
+      
+      // Cloner le contenu du template. C'est un "DocumentFragment" léger.
+      const panelClone = template.content.cloneNode(true);
+      
+      // Sélectionner les éléments DANS LE CLONE et les remplir avec les données du modèle
+      const article = panelClone.querySelector('article');
+      article.dataset.modelId = model.id;
+      
+      panelClone.querySelector('.model-title').textContent = `${model.y.title} = f(${model.x.title})`;
+      panelClone.querySelector('.model-name').innerHTML = `<strong>${model.getModelName()}</strong>`;
+      panelClone.querySelector('.model-equation').innerHTML = model.getEquationString();
+      
+      // Remplir la liste des paramètres
+      const parametersList = panelClone.querySelector('.parameters-list');
+      parametersList.innerHTML = ''; // Vider au cas où
       const significantDigits = this.data.settings.significantDigits;
       model.parameters.forEach(param => {
         const li = document.createElement('li');
-        const displayValue = formatNumber(param.value, significantDigits);
-        li.innerHTML = `${param.name} = ${displayValue}`;
-        ul.appendChild(li);
+        li.innerHTML = `${param.name} = ${formatNumber(param.value, significantDigits)}`;
+        parametersList.appendChild(li);
       });
-      body.appendChild(ul);
-      const p4 = document.createElement('p');
-      p4.classList.add('mt-2');
-      p4.innerHTML = `<strong>Qualité de l'ajustement :</strong>`;
-      body.appendChild(p4);
-      const ul2 = document.createElement('ul');
-      // Ajout de la valeur de l'écart-type
+      
+      // Remplir la liste de qualité
+      const qualityList = panelClone.querySelector('.quality-list');
+      qualityList.innerHTML = ''; // Vider au cas où
       const liRmse = document.createElement('li');
-      liRmse.innerHTML = `Écart-type : ${model.rmse !== null ? formatNumber(model.rmse, significantDigits) : 'Indéfini'}`;
-      ul2.appendChild(liRmse);
-      // Ajout du R²
+      liRmse.innerHTML = `Écart-type = ${model.rmse != null ? formatNumber(model.rmse, significantDigits) : 'Indéfini'}`;
+      qualityList.appendChild(liRmse);
+      
       const liRSquared = document.createElement('li');
-      liRSquared.innerHTML = `Coeff de corrélation : ${model.rSquared !== null ? formatNumber(model.rSquared, 5) : 'Indéfini'}`;
-      ul2.appendChild(liRSquared);
-      body.appendChild(ul2);
+      liRSquared.innerHTML = `Coeff. de corrélation = ${model.rSquared != null ? formatNumber(model.rSquared, 5) : 'Indéfini'}`;
+      qualityList.appendChild(liRSquared);
 
-      // ----- Buttons functionality -----
-      // Visible button
-      visibleButton.addEventListener('click', () => {
-
-      });
-
-      // Edit button
-      editButton.addEventListener('click', () => {
-
-      });
-
-      // Delete button
-      deleteButton.addEventListener('click', () => {
-
-      });
-
-      header.addEventListener('click', () => {
-
-      });
-
-      article.appendChild(header);
-      article.appendChild(body);
-      modelList.appendChild(article);
+      // Ajouter le panneau entièrement construit au DOM
+      modelListContainer.appendChild(panelClone);
+      
+      // Mettre à jour les icônes FontAwesome (si vous l'utilisez)
       window.FontAwesome.dom.i2svg({ node: article });
     }
 
