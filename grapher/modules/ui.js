@@ -1521,7 +1521,346 @@ export default class UIManager {
       $("#compress-modelisation-button").classList.add("is-hidden");
     });
 
+    // Gère les évènements des boutons dans les panel des modèles
+    $('#model-list').addEventListener('click', (event) => {
+      const modelArticle = event.target.closest('article.message');
+      if (!modelArticle) return; // Clic en dehors d'un panneau
+
+      const modelId = modelArticle.dataset.modelId;
+      const model = this.data.models.find(m => m.id === modelId);
+
+      // Clic sur le bouton "afficher/cacher"
+      if (event.target.closest('.toggle-visibility-button')) {
+        this.toggleModelVisibility(model);
+        return;
+      }
+
+      // Clic sur le bouton "supprimer"
+      if (event.target.closest('.delete-model-button')) {
+        this.app.deleteModel(model.id);
+        modelArticle.remove();
+        return;
+      }
+
+      // Clic sur le bouton "éditer"
+      if (event.target.closest('.edit-model-button')) {
+        // Ouvrir la modale d'édition pour ce modèle
+        this.openEditModelModal(model);
+        return;
+      }
+
+      // Clic sur l'en-tête pour déplier/replier
+      if (event.target.closest('.message-header')) {
+        this.toggleModelPanel(modelArticle);
+        return;
+      }
+    });
+
     this.initAddModelModal();
+  }
+
+  /**
+   * Ouvre la modale d'édition pour un modèle donné.
+   * @param {Object} model - Le modèle à éditer.
+   */
+  openEditModelModal(model){
+    const editModelModal = $('#edit-model-modal');
+    const colorPicker = $('#model-edit-color-picker');
+    const lineWidthSelect = $('#model-edit-linewidth-select');
+    const borneDebutInput = $('#model-edit-borne-debut-input');
+    const borneFinInput = $('#model-edit-borne-fin-input');
+    const borneToutCheckbox = $('#model-edit-borne-tout-checkbox');
+
+    const xData = model.x;
+    let minX = Infinity;
+    let maxX = -Infinity;
+
+    // On parcourt les données une seule fois pour trouver le min et le max
+    for (let i = 0; i < xData.length; i++) {
+      const val = xData[i];
+      if (val !== null && isFinite(val)) {
+        if (val < minX) {
+          minX = val;
+        }
+        if (val > maxX) {
+          maxX = val;
+        }
+      }
+    }
+    // Si aucune donnée valide n'a été trouvée, on met des valeurs par défaut
+    if (minX === Infinity) minX = 0;
+    if (maxX === -Infinity) maxX = 0;
+    
+    // Réinitialisation des menus déroulants et attribution des valeurs actuelles
+    populateModelColors(colorPicker);
+    colorPicker.value = model.color;
+    colorPicker.style.color = model.color; // Met à jour la couleur du sélecteur
+    populateModelLineWidthSelect(lineWidthSelect);
+    lineWidthSelect.value = model.lineWidth;
+    $('#model-edit-linestyle-select').value = model.lineStyle;
+
+    const inputsDisabled = model.borne_debut === null && model.borne_fin === null;
+    borneToutCheckbox.checked = inputsDisabled;
+    borneDebutInput.disabled = inputsDisabled;
+    borneFinInput.disabled = inputsDisabled;
+
+    // On charge les valeurs actuelles des bornes dans les champs
+    borneDebutInput.value = model.borne_debut !== null ? model.borne_debut : '';
+    borneFinInput.value = model.borne_fin !== null ? model.borne_fin : '';
+
+    // On met à jour les "placeholders" pour guider l'utilisateur
+    borneDebutInput.placeholder = `Min: ${formatNumber(minX, 4)}`;
+    borneFinInput.placeholder = `Max: ${formatNumber(maxX, 4)}`;
+
+    // Déclaration de la variable parametersContainer ici pour qu'elle soit accessible
+    const parametersContainer = $('#model-edit-parameters-container');
+    parametersContainer.innerHTML = '';
+    model.parameters.forEach(param => {
+      const field = document.createElement('div');
+      field.className = 'field is-horizontal';
+      field.innerHTML = `
+        <div class="field-label is-normal">
+          <label class="label">Nom</label>
+        </div>
+        <div class="field-body">
+          <div class="field">
+            <div class="control">
+              <input class="input" type="text" value="${param.name}" data-old-name="${param.name}" />
+            </div>
+          </div>
+          <div class="field-label is-normal has-text-right">
+            <label class="label">Valeur</label>
+          </div>
+          <div class="field">
+            <div class="control">
+              <input class="input" type="text" value="${formatNumber(param.value, this.data.settings.significantDigits)}" disabled />
+            </div>
+          </div>
+        </div>
+      `;
+      parametersContainer.appendChild(field);
+    });
+
+    // GESTIONNAIRE D'ÉVÉNEMENT POUR LA CASE À COCHER
+    borneToutCheckbox.onchange = () => {
+      const disabled = borneToutCheckbox.checked;
+      borneDebutInput.disabled = disabled;
+      borneFinInput.disabled = disabled;
+      // Si on coche "Tout", on vide les champs pour plus de clarté
+      if (disabled) {
+        borneDebutInput.value = '';
+        borneFinInput.value = '';
+      }
+    };
+
+    // Fonction générique pour corriger une borne
+    const clampBorne = (inputElement, min, max) => {
+      const valueStr = inputElement.value.trim().replace(',', '.');
+      if (valueStr === '') return; // Ne rien faire si le champ est vide
+
+      let value = parseFloat(valueStr);
+      if (isNaN(value)) { // Si la saisie n'est pas un nombre
+          inputElement.value = '';
+          return;
+      }
+
+      // On s'assure que la valeur est dans l'intervalle [min, max]
+      const clampedValue = Math.max(min, Math.min(value, max));
+      if (clampedValue !== value) {
+          inputElement.value = clampedValue;
+      }
+    };
+
+    // Écouteur pour la borne de début
+    borneDebutInput.onblur = () => {
+      clampBorne(borneDebutInput, minX, maxX);
+      // On s'assure que début <= fin
+      const debut = parseFloat(borneDebutInput.value);
+      const fin = parseFloat(borneFinInput.value);
+      if (!isNaN(debut) && !isNaN(fin) && debut > fin) {
+        borneFinInput.value = debut;
+      }
+    };
+
+    // Écouteur pour la borne de fin
+    borneFinInput.onblur = () => {
+      clampBorne(borneFinInput, minX, maxX);
+      // On s'assure que début <= fin
+      const debut = parseFloat(borneDebutInput.value);
+      const fin = parseFloat(borneFinInput.value);
+      if (!isNaN(debut) && !isNaN(fin) && debut > fin) {
+        borneDebutInput.value = fin;
+      }
+    };
+    
+    $('#model-edit-save-button').onclick = async () => {      
+      model.color = colorPicker.value;
+      model.lineWidth = lineWidthSelect.value;
+      model.lineStyle = $('#model-edit-linestyle-select').value;
+      
+      let newBorneDebut = null;
+      let newBorneFin = null;
+
+      // Si la case "Tout" n'est PAS cochée, on lit les valeurs des champs
+      if (!borneToutCheckbox.checked) {
+        const newBorneDebutStr = borneDebutInput.value.trim();
+        const newBorneFinStr = borneFinInput.value.trim();
+        newBorneDebut = newBorneDebutStr === '' ? null : parseFloat(newBorneDebutStr.replace(',', '.'));
+        newBorneFin = newBorneFinStr === '' ? null : parseFloat(newBorneFinStr.replace(',', '.'));
+      }
+
+      // Validation : s'il y a des bornes, on vérifie qu'il y a au moins 2 points dans l'intervalle
+      const pointsDansIntervalle = model.x.filter(val => {
+        if (val === null || !isFinite(val)) return false;
+        const estApresDebut = (newBorneDebut === null) || (val >= newBorneDebut);
+        const estAvantFin = (newBorneFin === null) || (val <= newBorneFin);
+        return estApresDebut && estAvantFin;
+      }).length;
+
+      if (pointsDansIntervalle < 2) {
+        alertModal({
+          title: "Données insuffisantes",
+          body: `L'intervalle de calcul sélectionné ne contient pas assez de points pour réaliser une modélisation.`,
+          confirm: "OK"
+        });
+        return; // On arrête la sauvegarde
+      }
+      
+      const boundsChanged = model.borne_debut !== newBorneDebut || model.borne_fin !== newBorneFin;
+
+      model.borne_debut = newBorneDebut;
+      model.borne_fin = newBorneFin;
+      
+      let namesHaveChanged = false;
+      const allNewNames = new Set();
+      let hasConflict = false;
+      const newParamNames = {};
+      
+      parametersContainer.querySelectorAll('input[data-old-name]').forEach(input => {
+        const oldName = input.dataset.oldName;
+        const newName = input.value.trim();
+        if(oldName !== newName) namesHaveChanged = true;
+        if (!newName.match(/^[a-zA-Z][a-zA-Z0-9]*$/)) {
+          alertModal({ title: "Nom de paramètre invalide", body: `Le nom "${newName}" doit commencer par une lettre et ne contenir que des lettres et des chiffres.`, confirm: "OK" });
+          hasConflict = true;
+          return;
+        }
+        if (allNewNames.has(newName)) {
+          alertModal({ title: "Nom de paramètre en double", body: `Le nom "${newName}" est utilisé plusieurs fois.`, confirm: "OK" });
+          hasConflict = true;
+          return;
+        }
+        allNewNames.add(newName);
+        newParamNames[oldName] = newName;
+      });
+      
+      if(hasConflict) return;
+      
+      if (boundsChanged) {
+          await model.fit();
+      }
+
+      if(namesHaveChanged){
+        const updatedParams = {};
+        model.parameters.forEach(param => {
+          const oldName = param.name;
+          const newName = newParamNames[oldName] || oldName;
+          updatedParams[newName] = { value: param.value, unit: '', type: 'model' };
+          if(oldName !== newName){
+            delete this.data.parameters[oldName];
+          }
+        });
+        
+        model.parameters = Object.entries(updatedParams).map(([name, obj]) => ({ name, value: obj.value }));
+        Object.assign(this.data.parameters, updatedParams);
+      }
+      
+      const series = this.grapher.chart.get(`model-${model.id}`);
+      if(series) {
+        series.update({
+          color: model.color,
+          lineWidth: model.lineWidth,
+          dashStyle: model.lineStyle,
+        });
+      }
+      
+      this.updateModelPanel(model);
+      this.updateCalculationUI();
+      this.grapher.updateModelVisibility();
+      this.grapher.chart.redraw();
+      
+      editModelModal.classList.remove('is-active');
+    };
+    
+    editModelModal.classList.add('is-active');
+
+    // Remplit le sélecteur de couleurs avec les couleurs disponibles dans Highcharts
+    function populateModelColors(selectElement){
+      const colors = Highcharts.getOptions().colors;
+      selectElement.innerHTML = "";
+      colors.forEach((color) => {
+        const option = document.createElement('option');
+        option.value = color;
+        option.style.color = color;
+        option.textContent = "■■■■■■■■■";
+        selectElement.appendChild(option);
+      });
+      selectElement.addEventListener('change', function () {
+        this.style.color = this.value;
+      });
+    }
+
+    // Remplit le sélecteur d'épaisseurs de ligne avec des valeurs de 1 à 10
+    function populateModelLineWidthSelect(selectElement){
+      selectElement.innerHTML = "";
+      for(let i = 1; i <= 10; i++){
+        const option = document.createElement('option');
+        option.value = i;
+        option.textContent = i;
+        selectElement.appendChild(option);
+      }
+    }
+  }
+
+  /**
+   * Bascule l'affichage d'un panneau de modèle.
+   * @param {HTMLElement} modelArticle - L'élément article du modèle à basculer.
+   */
+  toggleModelPanel(article){        
+    const body = article.querySelector('.message-body');
+    const toggleUpIcon = header.querySelector('.toggle-up');
+    const toggleDownIcon = header.querySelector('.toggle-down');
+    const isActive = header.classList.toggle('is-active');
+    body.classList.toggle('is-hidden', !isActive);
+
+    header.style.borderRadius = isActive ? '6px 6px 0 0' : '6px';
+
+    toggleUpIcon.classList.toggle('is-hidden', !isActive);
+    toggleDownIcon.classList.toggle('is-hidden', isActive);
+    
+    window.FontAwesome.dom.i2svg({ node: header });
+  }
+  /**
+   * Bascule la visibilité d'un modèle donné.
+   * @param {Object} model - Le modèle dont la visibilité doit être basculée.
+   */
+  toggleModelVisibility(model){
+    // Verification que l'abscisse est la bonne
+    if (model.visible === false && model.x.title !== this.grapher.currentXCurve) {
+      alertModal({
+        type: "",
+        title: "Affichage impossible",
+        body: `Pour afficher ce modèle, vous devez sélectionner <strong>${model.x.title}</strong> comme grandeur en abscisse.`,
+        confirm: "OK"
+      });
+      return; // Empêche le reste du code de s'exécuter
+    }
+
+    model.visible = !model.visible;
+    // L'icône est mise à jour par la fonction updateAllModelPanelVisibilityIcons()
+    this.updateAllModelPanelVisibilityIcons();
+    // La visibilité de la série est gérée par grapher.updateModelVisibility()
+    this.grapher.updateModelVisibility();
   }
 
   /**
@@ -1668,17 +2007,17 @@ export default class UIManager {
       const div = document.createElement('div');
       div.classList.add('is-flex', 'is-justify-content-space-around', 'mt-2');
       const visibleButton = document.createElement('button');
-      visibleButton.classList.add('button', 'is-light');
+      visibleButton.classList.add('button', 'is-light', 'toggle-visibility-button');
       visibleButton.innerHTML = `<span class="icon"><i class="fas fa-eye"></i></span>`;
       visibleButton.title = "Afficher/Masquer le modèle";
       div.appendChild(visibleButton);
       const editButton = document.createElement('button');
-      editButton.classList.add('button', 'is-light');
+      editButton.classList.add('button', 'is-light', 'edit-model-button');
       editButton.innerHTML = `<span class="icon"><i class="fas fa-pencil-alt"></i></span>`
       editButton.title = "Modifier le modèle";
       div.appendChild(editButton);
       const deleteButton = document.createElement('button');
-      deleteButton.classList.add('button', 'is-light');
+      deleteButton.classList.add('button', 'is-light', 'delete-model-button');
       deleteButton.innerHTML = `<span class="icon"><i class="fas fa-trash"></i></span>`;
       deleteButton.title = "Supprimer le modèle";
       div.appendChild(deleteButton);
@@ -1714,309 +2053,27 @@ export default class UIManager {
       // ----- Buttons functionality -----
       // Visible button
       visibleButton.addEventListener('click', () => {
-        // Verification que l'abscisse est la bonne
-        if (model.visible === false && model.x.title !== this.grapher.currentXCurve) {
-          alertModal({
-            type: "",
-            title: "Affichage impossible",
-            body: `Pour afficher ce modèle, vous devez sélectionner <strong>${model.x.title}</strong> comme grandeur en abscisse.`,
-            confirm: "OK"
-          });
-          return; // Empêche le reste du code de s'exécuter
-        }
 
-        model.visible = !model.visible;
-        // L'icône est mise à jour par la fonction updateAllModelPanelVisibilityIcons()
-        this.updateAllModelPanelVisibilityIcons();
-        // La visibilité de la série est gérée par grapher.updateModelVisibility()
-        this.grapher.updateModelVisibility();
       });
 
       // Edit button
       editButton.addEventListener('click', () => {
-        const editModelModal = $('#edit-model-modal');
-        const colorPicker = $('#model-edit-color-picker');
-        const lineWidthSelect = $('#model-edit-linewidth-select');
-        const borneDebutInput = $('#model-edit-borne-debut-input');
-        const borneFinInput = $('#model-edit-borne-fin-input');
-        const borneToutCheckbox = $('#model-edit-borne-tout-checkbox');
 
-        const xData = model.x;
-        let minX = Infinity;
-        let maxX = -Infinity;
-
-        // On parcourt les données une seule fois pour trouver le min et le max
-        for (let i = 0; i < xData.length; i++) {
-          const val = xData[i];
-          if (val !== null && isFinite(val)) {
-            if (val < minX) {
-              minX = val;
-            }
-            if (val > maxX) {
-              maxX = val;
-            }
-          }
-        }
-        // Si aucune donnée valide n'a été trouvée, on met des valeurs par défaut
-        if (minX === Infinity) minX = 0;
-        if (maxX === -Infinity) maxX = 0;
-        
-        // Réinitialisation des menus déroulants et attribution des valeurs actuelles
-        populateModelColors(colorPicker);
-        colorPicker.value = model.color;
-        colorPicker.style.color = model.color; // Met à jour la couleur du sélecteur
-        populateModelLineWidthSelect(lineWidthSelect);
-        lineWidthSelect.value = model.lineWidth;
-        $('#model-edit-linestyle-select').value = model.lineStyle;
-
-        const inputsDisabled = model.borne_debut === null && model.borne_fin === null;
-        borneToutCheckbox.checked = inputsDisabled;
-        borneDebutInput.disabled = inputsDisabled;
-        borneFinInput.disabled = inputsDisabled;
-
-        // On charge les valeurs actuelles des bornes dans les champs
-        borneDebutInput.value = model.borne_debut !== null ? model.borne_debut : '';
-        borneFinInput.value = model.borne_fin !== null ? model.borne_fin : '';
-
-        // On met à jour les "placeholders" pour guider l'utilisateur
-        borneDebutInput.placeholder = `Min: ${formatNumber(minX, 4)}`;
-        borneFinInput.placeholder = `Max: ${formatNumber(maxX, 4)}`;
-
-        // Déclaration de la variable parametersContainer ici pour qu'elle soit accessible
-        const parametersContainer = $('#model-edit-parameters-container');
-        parametersContainer.innerHTML = '';
-        model.parameters.forEach(param => {
-          const field = document.createElement('div');
-          field.className = 'field is-horizontal';
-          field.innerHTML = `
-            <div class="field-label is-normal">
-              <label class="label">Nom</label>
-            </div>
-            <div class="field-body">
-              <div class="field">
-                <div class="control">
-                  <input class="input" type="text" value="${param.name}" data-old-name="${param.name}" />
-                </div>
-              </div>
-              <div class="field-label is-normal has-text-right">
-                <label class="label">Valeur</label>
-              </div>
-              <div class="field">
-                <div class="control">
-                  <input class="input" type="text" value="${formatNumber(param.value, significantDigits)}" disabled />
-                </div>
-              </div>
-            </div>
-          `;
-          parametersContainer.appendChild(field);
-        });
-
-        // GESTIONNAIRE D'ÉVÉNEMENT POUR LA CASE À COCHER
-        borneToutCheckbox.onchange = () => {
-          const disabled = borneToutCheckbox.checked;
-          borneDebutInput.disabled = disabled;
-          borneFinInput.disabled = disabled;
-          // Si on coche "Tout", on vide les champs pour plus de clarté
-          if (disabled) {
-            borneDebutInput.value = '';
-            borneFinInput.value = '';
-          }
-        };
-
-        // Fonction générique pour corriger une borne
-        const clampBorne = (inputElement, min, max) => {
-          const valueStr = inputElement.value.trim().replace(',', '.');
-          if (valueStr === '') return; // Ne rien faire si le champ est vide
-
-          let value = parseFloat(valueStr);
-          if (isNaN(value)) { // Si la saisie n'est pas un nombre
-              inputElement.value = '';
-              return;
-          }
-
-          // On s'assure que la valeur est dans l'intervalle [min, max]
-          const clampedValue = Math.max(min, Math.min(value, max));
-          if (clampedValue !== value) {
-              inputElement.value = clampedValue;
-          }
-        };
-
-        // Écouteur pour la borne de début
-        borneDebutInput.onblur = () => {
-          clampBorne(borneDebutInput, minX, maxX);
-          // On s'assure que début <= fin
-          const debut = parseFloat(borneDebutInput.value);
-          const fin = parseFloat(borneFinInput.value);
-          if (!isNaN(debut) && !isNaN(fin) && debut > fin) {
-            borneFinInput.value = debut;
-          }
-        };
-
-        // Écouteur pour la borne de fin
-        borneFinInput.onblur = () => {
-          clampBorne(borneFinInput, minX, maxX);
-          // On s'assure que début <= fin
-          const debut = parseFloat(borneDebutInput.value);
-          const fin = parseFloat(borneFinInput.value);
-          if (!isNaN(debut) && !isNaN(fin) && debut > fin) {
-            borneDebutInput.value = fin;
-          }
-        };
-        
-        $('#model-edit-save-button').onclick = async () => {      
-          model.color = colorPicker.value;
-          model.lineWidth = lineWidthSelect.value;
-          model.lineStyle = $('#model-edit-linestyle-select').value;
-          
-          let newBorneDebut = null;
-          let newBorneFin = null;
-
-          // Si la case "Tout" n'est PAS cochée, on lit les valeurs des champs
-          if (!borneToutCheckbox.checked) {
-            const newBorneDebutStr = borneDebutInput.value.trim();
-            const newBorneFinStr = borneFinInput.value.trim();
-            newBorneDebut = newBorneDebutStr === '' ? null : parseFloat(newBorneDebutStr.replace(',', '.'));
-            newBorneFin = newBorneFinStr === '' ? null : parseFloat(newBorneFinStr.replace(',', '.'));
-          }
-
-          // Validation : s'il y a des bornes, on vérifie qu'il y a au moins 2 points dans l'intervalle
-          const pointsDansIntervalle = model.x.filter(val => {
-            if (val === null || !isFinite(val)) return false;
-            const estApresDebut = (newBorneDebut === null) || (val >= newBorneDebut);
-            const estAvantFin = (newBorneFin === null) || (val <= newBorneFin);
-            return estApresDebut && estAvantFin;
-          }).length;
-
-          if (pointsDansIntervalle < 2) {
-            alertModal({
-              title: "Données insuffisantes",
-              body: `L'intervalle de calcul sélectionné ne contient pas assez de points pour réaliser une modélisation.`,
-              confirm: "OK"
-            });
-            return; // On arrête la sauvegarde
-          }
-          
-          const boundsChanged = model.borne_debut !== newBorneDebut || model.borne_fin !== newBorneFin;
-
-          model.borne_debut = newBorneDebut;
-          model.borne_fin = newBorneFin;
-          
-          let namesHaveChanged = false;
-          const allNewNames = new Set();
-          let hasConflict = false;
-          const newParamNames = {};
-          
-          parametersContainer.querySelectorAll('input[data-old-name]').forEach(input => {
-            const oldName = input.dataset.oldName;
-            const newName = input.value.trim();
-            if(oldName !== newName) namesHaveChanged = true;
-            if (!newName.match(/^[a-zA-Z][a-zA-Z0-9]*$/)) {
-              alertModal({ title: "Nom de paramètre invalide", body: `Le nom "${newName}" doit commencer par une lettre et ne contenir que des lettres et des chiffres.`, confirm: "OK" });
-              hasConflict = true;
-              return;
-            }
-            if (allNewNames.has(newName)) {
-              alertModal({ title: "Nom de paramètre en double", body: `Le nom "${newName}" est utilisé plusieurs fois.`, confirm: "OK" });
-              hasConflict = true;
-              return;
-            }
-            allNewNames.add(newName);
-            newParamNames[oldName] = newName;
-          });
-          
-          if(hasConflict) return;
-          
-          if (boundsChanged) {
-              await model.fit();
-          }
-
-          if(namesHaveChanged){
-            const updatedParams = {};
-            model.parameters.forEach(param => {
-              const oldName = param.name;
-              const newName = newParamNames[oldName] || oldName;
-              updatedParams[newName] = { value: param.value, unit: '', type: 'model' };
-              if(oldName !== newName){
-                delete data.parameters[oldName];
-              }
-            });
-            
-            model.parameters = Object.entries(updatedParams).map(([name, obj]) => ({ name, value: obj.value }));
-            Object.assign(data.parameters, updatedParams);
-          }
-          
-          const series = this.grapher.chart.get(`model-${model.id}`);
-          if(series) {
-            series.update({
-              color: model.color,
-              lineWidth: model.lineWidth,
-              dashStyle: model.lineStyle,
-            });
-          }
-          
-          this.updateModelPanel(model);
-          this.updateCalculationUI();
-          this.grapher.updateModelVisibility();
-          this.grapher.chart.redraw();
-          
-          editModelModal.classList.remove('is-active');
-        };
-        
-        editModelModal.classList.add('is-active');
       });
 
       // Delete button
       deleteButton.addEventListener('click', () => {
-        this.app.deleteModel(model.id);
-        article.remove();
+
       });
 
       header.addEventListener('click', () => {
-        const body = article.querySelector('.message-body');
-        const toggleUpIcon = header.querySelector('.toggle-up');
-        const toggleDownIcon = header.querySelector('.toggle-down');
-        const isActive = header.classList.toggle('is-active');
-        body.classList.toggle('is-hidden', !isActive);
 
-        header.style.borderRadius = isActive ? '6px 6px 0 0' : '6px';
-
-        toggleUpIcon.classList.toggle('is-hidden', !isActive);
-        toggleDownIcon.classList.toggle('is-hidden', isActive);
-        
-        window.FontAwesome.dom.i2svg({ node: header });
       });
 
       article.appendChild(header);
       article.appendChild(body);
       modelList.appendChild(article);
       window.FontAwesome.dom.i2svg({ node: article });
-    }
-
-    // Remplit le sélecteur de couleurs avec les couleurs disponibles dans Highcharts
-    function populateModelColors(selectElement){
-      const colors = Highcharts.getOptions().colors;
-      selectElement.innerHTML = "";
-      colors.forEach((color) => {
-        const option = document.createElement('option');
-        option.value = color;
-        option.style.color = color;
-        option.textContent = "■■■■■■■■■";
-        selectElement.appendChild(option);
-      });
-      selectElement.addEventListener('change', function () {
-        this.style.color = this.value;
-      });
-    }
-
-    // Remplit le sélecteur d'épaisseurs de ligne avec des valeurs de 1 à 10
-    function populateModelLineWidthSelect(selectElement){
-      selectElement.innerHTML = "";
-      for(let i = 1; i <= 10; i++){
-        const option = document.createElement('option');
-        option.value = i;
-        option.textContent = i;
-        selectElement.appendChild(option);
-      }
     }
 
     // Le bouton "Recalculer tous les modèles"

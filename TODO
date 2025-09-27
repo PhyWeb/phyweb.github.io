@@ -34,6 +34,8 @@ GRAPHER:
 
   - sauvegarder les derniers fichiers dans localStorage
 
+  - BUG on ne change pas tout ce qui faut quand on change le nombre de chiffres significatifs dans les options (parametres des modèles au moins)
+
   - creer un moteur qui gere les raccourvis clavier (ctrl s et n notamment)
 
   - BUG, on peut renommer un parametre de modèle avec le meme nom qu'une grandeur (et peut etre aussi qu'un autre paramertre de modèle)
