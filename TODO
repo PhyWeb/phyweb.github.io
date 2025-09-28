@@ -9,6 +9,8 @@ COMMON:
 
   - Glisser-déposer : Permettre de charger un fichier par glisser-déposer (drag and drop)
 
+  - remplacer les checkbox par celles de bulma
+
 HOME:
   - macos and linux package
 
