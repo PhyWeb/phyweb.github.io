@@ -32,6 +32,7 @@ TRACKER:
   - réutiliser le menu de grapher et donc séparer la modale en une pour videos integrées et une autrre pour celle importées
 
 GRAPHER:
+- les icones du menu nouveau apparraissent en retard sur le tpb
   - avoir une option "zero inclus" dans les courbes
 
   - sauvegarder les derniers fichiers dans localStorage
