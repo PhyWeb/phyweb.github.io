@@ -1,5 +1,6 @@
 import { formatNumber } from '../../common/formatter.js';
 import { alertModal, quitConfirmationModal } from '../../common/common.js';
+import { DEFAULT_SETTINGS, saveSettings, loadSettings, clearSavedSettings } from './settingsManager.js';
 
 const $ = document.querySelector.bind(document);
 
@@ -497,71 +498,64 @@ export default class UIManager {
   /**
    * Initialise la modale des paramètres et gère les événements associés.
    */
+
   initSettingsModal() {
-    // Function to capture the initial settings
-    let captureInitialSettings = () => {
-      this.initialSettings = {
-        significantDigits: this.data.settings.significantDigits,
-        grapherGrid: this.grapher.grid,
-        derivatePoints: this.calculation.derivatePoints,
-        derivateEdges: this.calculation.derivateEdges
-      };
-    }
-    // Open the settings modal
-    $("#settings-button").addEventListener("click", () => {
-      captureInitialSettings(); // Capture the initial settings before opening the modal
-      // Load the previous settings
-      $("#significant-digits-select").value = this.initialSettings.significantDigits;
-      $("#derivative-points-select").value = this.initialSettings.derivatePoints;
-      $("#derivate-edges-switch").checked = this.calculation.derivateEdges;
-      $("#graph-grid-switch").checked = this.grapher.grid;
+    const settingsModal = document.getElementById('settings-modal');
+    const saveButton = document.getElementById('settings-save-button');
+    const resetButton = document.getElementById('settings-reset-button');
+    const savePermanentlySwitch = document.getElementById('save-settings-permanently-switch');
 
-      // Show the settings modal
-      $("#settings-modal").classList.add("is-active");
+    // Ouvrir la modale
+    document.getElementById('settings-button').addEventListener('click', () => {
+      // Charger les paramètres ACTUELS de l'application dans la modale
+      this.loadSettingsIntoModalUI(this.readCurrentAppSettings());
+      settingsModal.classList.add('is-active');
     });
 
-    // Save the settings
-    $("#settings-save-button").addEventListener("click", () => {
-      const newSettings = {
-        significantDigits: parseInt($("#significant-digits-select").value),
-        grapherGrid: $("#graph-grid-switch").checked,
-        derivatePoints: parseInt($("#derivative-points-select").value),
-        derivateEdges: $("#derivate-edges-switch").checked
-      };
+    // Bouton "APPLIQUER"
+    saveButton.addEventListener('click', () => {
+      // Lire les valeurs depuis la modale
+      const newSettings = this.readSettingsFromModal();
       
-      // Liste des paramètres modifiés
-      const changedSettings = {};
-      for (const key in newSettings) {
-        if (newSettings[key] !== this.initialSettings[key]) {
-          changedSettings[key] = newSettings[key];
-        }
+      // Appliquer ces nouveaux paramètres à l'application (pour la session en cours)
+      this.applySettingsToApp(newSettings);
+      
+      // Si l'interrupteur est coché, sauvegarder dans le localStorage
+      if (savePermanentlySwitch.checked) {
+        saveSettings(newSettings);
       }
-
-      // Save the max digits
-      if(changedSettings.significantDigits !== undefined) {
-        this.data.settings.significantDigits = changedSettings.significantDigits;
-        this.spreadsheet.update(); 
-      }
-
-      // Save the grid visibility
-      if(changedSettings.grapherGrid !== undefined) {
-        this.grapher.setGridVisibility(changedSettings.grapherGrid);
-      }
-
-      // Save the derivate points
-      if(changedSettings.derivatePoints !== undefined) {
-        this.calculation.derivatePoints = changedSettings.derivatePoints;
-      }
-
-      // Save the derivate edges
-      if(changedSettings.derivateEdges !== undefined) {
-        this.calculation.derivateEdges = changedSettings.derivateEdges;
-      }
-
-      // Close the modal
-      this.common.modalManager.closeAllModals();
+      
+      // Fermer la modale
+      settingsModal.classList.remove('is-active');
     });
 
+    // Bouton "RESTAURER LES DÉFAUTS"
+    resetButton.addEventListener('click', () => {
+      alertModal({
+        type: 'warning',
+        title: 'Restaurer les paramètres par défaut',
+        body: 'Êtes-vous sûr de vouloir continuer ? Vos réglages personnalisés seront supprimés.',
+        confirm: {
+          label: 'Oui, restaurer',
+          type: 'warning',
+          cb: () => {
+            // Supprimer les réglages du localStorage
+            clearSavedSettings();
+            
+            // Obtenir une copie fraîche des valeurs par défaut
+            const defaults = { ...DEFAULT_SETTINGS };
+            
+            // Mettre à jour l'UI de la modale pour montrer ces nouvelles valeurs
+            this.loadSettingsIntoModalUI(defaults);
+            
+            // Appliquer immédiatement ces défauts à l'application
+            this.applySettingsToApp(defaults);
+          }
+        },
+        cancel: 'Annuler'
+      });
+    });
+    
     // Gestion des onglets de la modale des paramètres
     const settingsTabs = document.querySelectorAll('#settings-tabs li');
     const settingsTabContents = document.querySelectorAll('.settings-panel-content');
@@ -580,6 +574,67 @@ export default class UIManager {
         }
       });
     });
+  }
+
+  /**
+   * FONCTION UTILITAIRE : Lit l'état actuel des paramètres de l'app.
+   * @returns {object} Un objet représentant l'état actuel.
+   */
+  readCurrentAppSettings() {
+    return {
+      significantDigits: this.data.settings.significantDigits,
+      grapherGrid: this.grapher.gridVisible,
+      derivatePoints: this.calculation.derivatePoints,
+      derivateEdges: this.calculation.derivateEdges,
+    };
+  }
+
+
+  /**
+   * Charge un objet de paramètres dans l'UI de la modale.
+   * @param {object} settings - L'objet de paramètres à charger.
+   */
+  loadSettingsIntoModalUI(settings) {
+    $('#significant-digits-select').value = settings.significantDigits;
+    $('#graph-grid-switch').checked = settings.grid;
+    $('#derivative-points-select').value = settings.derivatePoints;
+    $('#derivate-edges-switch').checked = settings.derivateEdges;
+    // Par défaut, la case de sauvegarde n'est pas cochée
+    $('#save-settings-permanently-switch').checked = false; 
+  }
+
+  /**
+   * Lit les valeurs des champs de la modale et retourne un objet.
+   * @returns {object} Un objet contenant les nouvelles valeurs des paramètres.
+   */
+  readSettingsFromModal() {
+    return {
+      significantDigits: parseInt(document.getElementById('significant-digits-select').value),
+      grapherGrid: document.getElementById('graph-grid-switch').checked,
+      derivatePoints: parseInt(document.getElementById('derivative-points-select').value),
+      derivateEdges: document.getElementById('derivate-edges-switch').checked,
+    };
+  }
+
+  /**
+   * Applique un objet de paramètres aux différents modules de l'app.
+   * @param {object} settings - L'objet de paramètres à appliquer.
+   */
+  applySettingsToApp(settings) {
+    // Appliquer aux données et au tableur
+    if (this.data.settings.significantDigits !== settings.significantDigits) {
+      this.data.settings.significantDigits = settings.significantDigits;
+      this.spreadsheet.update();
+    }
+    
+    // Appliquer au grapheur
+    if (this.grapher.grid !== settings.grapherGrid) {
+      this.grapher.setGridVisibility(settings.grapherGrid);
+    }
+    
+    // Appliquer aux calculs
+    this.calculation.derivatePoints = settings.derivatePoints;
+    this.calculation.derivateEdges = settings.derivateEdges;
   }
 
   /**

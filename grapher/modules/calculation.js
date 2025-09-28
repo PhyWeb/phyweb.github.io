@@ -7,8 +7,7 @@ export default class Calculation {
   /**
    * @param {object} data - L'objet de données contenant les courbes. Ex: { curves: [{ title: 'x', values: [1,2,3] }] }
    */
-  constructor(data) {
-    this.data = data;
+  constructor(initialSettings) {
     
     this.scalarFunctions = [
       'sqrt', 'cbrt', 'abs', 'exp', 'log', 'ln', 
@@ -17,8 +16,8 @@ export default class Calculation {
       'sinh', 'cosh', 'tanh', 'asinh', 'acosh', 'atanh'
     ];
 
-    this.derivatePoints = 5; // Nombre de points pour la dérivation
-    this.derivateEdges = true; // Calculer les bords ou non
+    this.derivatePoints = initialSettings.derivatePoints; // Nombre de points pour la dérivation
+    this.derivateEdges = this.derivateEdges; // Calculer les bords ou non
     
     // Créer une instance de math.js pré-configurée pour gérer les opérations sur les tableaux.
     this.mathInstance = this.createConfiguredMathInstance();

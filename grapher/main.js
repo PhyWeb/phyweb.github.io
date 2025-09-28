@@ -8,15 +8,19 @@ import {Data} from "./modules/data.js"
 import {Spreadsheet} from "./modules/spreadsheet.js"
 import {Grapher} from "./modules/grapher.js"
 import {Calculation} from "./modules/calculation.js"
+import {loadSettings} from "./modules/settingsManager.js"
 
 const $ = document.querySelector.bind(document);
 
 document.addEventListener('DOMContentLoaded', () => {
-// Initialise les modules de base
+  // On charge les paramètres sauvegardés (ou les défauts) dès le début.
+  const initialSettings = loadSettings();
+
+  // Initialise les modules de base
   const common = new Common("Grapher");
-  const data = new Data();
-  const grapher = new Grapher(data);
-  const calculation = new Calculation(data);
+  const data = new Data(initialSettings);
+  const grapher = new Grapher(data, initialSettings);
+  const calculation = new Calculation(initialSettings);
   const editor = CodeMirror.fromTextArea($("#calculation-input"), {
     lineNumbers: true,
     mode: 'text/x-javascript',

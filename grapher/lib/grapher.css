@@ -6,6 +6,39 @@
   display: none !important;
 }
 
+#settings-modal-card {
+  height: 45rem;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Empêche les onglets de rétrécir verticalement */
+#settings-modal .tabs {
+  flex-shrink: 0;
+}
+
+#settings-modal-card .modal-card-head,
+#settings-modal-card .modal-card-foot {
+  flex-shrink: 0;
+}
+
+#settings-modal-card .modal-card-body {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Empêche le corps lui-même de déborder */
+}
+
+.settings-scroll-container {
+  flex-grow: 1;
+  overflow-y: auto;
+  min-height: 0; /* Indispensable pour que le scroll fonctionne dans un conteneur Flex */
+}
+
+/* Pousse le conteneur du bouton vers le bas */
+.reset-button-container {
+  margin-top: auto; /* La propriété magique qui fait tout le travail */
+}
+
 #add-curve-modal-card{
   height: 30rem;
   width: 45rem;

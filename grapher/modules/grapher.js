@@ -53,11 +53,11 @@ function legendClickCB(e){
 ----------------------------------------------Grapher-------------------------------------------
 ----------------------------------------------------------------------------------------------*/
 export default class Grapher {
-  constructor(data) {
+  constructor(data, initialSettings) {
     this.data = data;
     this.chart;
 
-    this.grid = true; // Default value for grid visibility
+    this.grid = initialSettings.grapherGrid; // Default value for grid visibility
 
     this.currentXCurve = null;
 

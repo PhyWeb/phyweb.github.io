@@ -443,14 +443,14 @@ class Model {
 ------------------------------------------------Data--------------------------------------------
 ----------------------------------------------------------------------------------------------*/
 export default class Data {
-  constructor() {
+  constructor(initialSettings) {
     this.curves = [];
     this.parameters = {}; // For storing parameters (e.g. constants)
 
     this.models = []; // For storing models
 
     this.settings = {
-      significantDigits: 4
+      significantDigits: initialSettings.significantDigits,
     };
 
     this.lastSortVariable = null; // Dernière variable utilisée pour le tri

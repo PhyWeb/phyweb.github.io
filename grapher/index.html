@@ -13,6 +13,7 @@
 
     <link rel="stylesheet" href="../common/bulma/bulma.min.css">
     <link rel="stylesheet" href="../common/bulma/bulma-switch.min.css">
+    <link rel="stylesheet" href="../common/bulma/bulma-checkbox.min.css">
 
     <link rel="stylesheet" href="../common/common.css">
 
@@ -776,12 +777,13 @@
   <!------------------------------------------------------------------------------------------------------------>
   <div id="settings-modal" class="modal">
     <div class="modal-background"></div>
-    <div class="modal-card">
+    <div class="modal-card" id="settings-modal-card">
       <header class="modal-card-head">
         <p class="modal-card-title">Paramètres</p>
         <button class="delete" aria-label="close"></button>
       </header>
-      <section class="modal-card-body pt-2">
+      <section class="modal-card-body pt-2 pb-4">
+                
         <div class="tabs" id="settings-tabs">
           <ul>
             <li class="is-active" data-tab="settings-panel-general"><a>Général</a></li>
@@ -789,67 +791,79 @@
             <li data-tab="settings-panel-derivatives"><a>Dérivées</a></li>
           </ul>
         </div>
-        <div id="settings-panel-general" class="settings-panel-content">
-          <div class="field">
-            <label class="label">Nombre de chiffres significatifs</label>
-            <div class="control">
-              <div class="select">  
-                <select id="significant-digits-select">
-                  <option value="0">0</option> <!-- TODO: Gérer 0 cs -->
-                  <option value="1">1</option>
-                  <option value="2">2</option>
-                  <option value="3">3</option>
-                  <option value="4" selected>4</option>
-                  <option value="5">5</option>
-                  <option value="6">6</option>
-                  <option value="7">7</option>
-                  <option value="8">8</option>
-                  <option value="9">9</option>
-                </select>
+        <div class="settings-scroll-container">
+          <div id="settings-panel-general" class="settings-panel-content">
+            <div class="field">
+              <label class="label">Nombre de chiffres significatifs</label>
+              <div class="control">
+                <div class="select">  
+                  <select id="significant-digits-select">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4" selected>4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                    <option value="7">7</option>
+                    <option value="8">8</option>
+                    <option value="9">9</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div id="settings-panel-graph" class="settings-panel-content is-hidden">
+            <div class="field">
+              <label class="label">Grilles</label>
+              <div class="control">
+                <label class="switch is-rounded">
+                  <input type="checkbox" id="graph-grid-switch" checked>
+                  <span class="check"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+          <div id="settings-panel-derivatives" class="settings-panel-content is-hidden">
+            <div class="field">
+              <label class="label">Nombre de points utilisés pour le calcul</label>
+              <div class="control">
+                <div class="select">
+                  <select id="derivative-points-select">
+                    <option value="3">3</option>
+                    <option value="5">5</option>
+                    <option value="7">7</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div class="field">
+              <label class="label">Calcul des dérivées aux extrémités</label>
+              <div class="control">
+                <label class="switch is-rounded">
+                  <input type="checkbox" id="derivate-edges-switch" checked>
+                  <span class="check"></span>
+                </label>
               </div>
             </div>
           </div>
         </div>
-        <div id="settings-panel-graph" class="settings-panel-content is-hidden">
-          <div class="field">
-            <label class="label">Grilles</label>
-            <div class="control">
-              <label class="switch is-rounded">
-                <input type="checkbox" id="graph-grid-switch" checked>
-                <span class="check"></span>
-              </label>
-            </div>
-          </div>
-        </div>
-        <div id="settings-panel-derivatives" class="settings-panel-content is-hidden">
-          <div class="field">
-            <label class="label">Nombre de points utilisés pour le calcul</label>
-            <div class="control">
-              <div class="select">
-                <select id="derivative-points-select">
-                  <option value="3">3</option>
-                  <option value="5">5</option>
-                  <option value="7">7</option>
-                </select>
-              </div>
-            </div>
-          </div>
-          <div class="field">
-            <label class="label">Calcul des dérivées aux extrémités</label>
-            <div class="control">
-              <label class="switch is-rounded">
-                <input type="checkbox" id="derivate-edges-switch" checked>
-                <span class="check"></span>
-              </label>
-            </div>
-          </div>
+        <div class="field mt-5 reset-button-container">
+          <button id="settings-reset-button" class="button is-warning is-light is-fullwidth">Restaurer les réglages par défaut</button>
         </div>
       </section>
-      <footer class="modal-card-foot">
-        <div class="buttons">
-          <button class="button is-success" id="settings-save-button">Sauvegarder</button>
-          <button class="button modal-close-button">Annuler</button>
+      <footer class="modal-card-foot is-justify-content-flex-end">
+        
+        <label class="b-checkbox checkbox">
+          <input type="checkbox" id="save-settings-permanently-switch">
+          <span class="check"></span>
+          <span class="control-label">Enregistrer comme défaut</span>
+        </label>
+
+        <div class="buttons ml-4">
+          <button id="settings-save-button" class="button is-success">Appliquer</button>
+          <button class="button modal-cancel-button">Annuler</button>
         </div>
+        
       </footer>
     </div>
   </div>
