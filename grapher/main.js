@@ -44,8 +44,10 @@ document.addEventListener('DOMContentLoaded', () => {
   uiManager.setApp(app);
   uiManager.initialize();
 
-  // convertit <i> en SVG manuellement
-  window.FontAwesome.dom.i2svg(); 
+  // Desactive le scan auto de fontAwesome
+  window.FontAwesomeConfig = {
+    autoReplaceSvg: false // empêche le scan automatique
+  };
 
   // Creer le graphique au demarrage
   grapher.newChart();
