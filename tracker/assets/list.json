@@ -65,15 +65,15 @@
           "videos": [
             {
               "type": "video",
-              "title": "Balle lachée par un cycliste 1",
-              "description": "Chute d'une balle lachée par un cycliste en mouvement",
+              "title": "Balle lâchée par un cycliste 1",
+              "description": "Chute d'une balle lâchée par un cycliste en mouvement",
               "path": "relativite/velo.mp4",
               "thumb": "chutes/chute-balle-golf.jpg"
             },
             {
               "type": "video",
-              "title": "Balle lachée par un cycliste 2",
-              "description": "Chute d'une balle lachée par un cycliste en mouvement",
+              "title": "Balle lâchée par un cycliste 2",
+              "description": "Chute d'une balle lâchée par un cycliste en mouvement",
               "path": "relativite/velo2.mp4",
               "thumb": "chutes/chute-medecine-balle.jpg"
             }
