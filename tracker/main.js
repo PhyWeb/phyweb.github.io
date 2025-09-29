@@ -312,7 +312,7 @@ $("#clear-table-button").addEventListener("click", ()=> {
     title: "Vider le tableau",
     body: "Etes-vous sûr de vouloir vider le tableau de toutes ses données ?",
     confirm:{
-      label: "Vider de tableau",
+      label: "Vider le tableau",
       cb: ()=>{measurement.clearTable();}},
     cancel: "Annuler"
   })
