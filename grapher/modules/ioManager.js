@@ -257,7 +257,7 @@ export default class IOManager {
               this.app.grapher.setGridVisibility(state.grapher.grid);
           }
 
-          this.app.editor.setValue(text);
+          this.app.editor.setValue(state.calculations);
 
           this.app.spreadsheet.update();
           if (state.grapher && state.grapher.xCurve) {
