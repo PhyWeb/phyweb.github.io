@@ -2074,8 +2074,6 @@ export default class UIManager {
       const liRSquared = document.createElement('li');
       liRSquared.innerHTML = `Coeff. de corrélation = ${model.rSquared != null ? formatNumber(model.rSquared, 5) : 'Indéfini'}`;
       qualityList.appendChild(liRSquared);
-
-      console.log(panelClone);
       
       // Ajouter le panneau entièrement construit au DOM
       modelListContainer.appendChild(panelClone);
