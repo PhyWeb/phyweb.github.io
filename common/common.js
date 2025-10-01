@@ -144,9 +144,7 @@ class ModalManager {
     // Add a click event on various child elements to close the parent modal
     (document.querySelectorAll(".modal-background, .modal-close, .delete, .modal-close-button") || []).forEach(($close) => {
       const $target = $close.closest('.modal');
-      
       $close.addEventListener('click', () => {
-        if($target.dataset.isStatic === 'true') return; // If the modal is static, do nothing
         this.closeModal($target);
       });
     });
@@ -164,7 +162,6 @@ class ModalManager {
   }
 
   closeModal($el) {
-    if($el.dataset.isStatic === 'true') return; // If the modal is static, do nothing
     $el.classList.remove('is-active');
   }
 

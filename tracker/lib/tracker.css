@@ -8,6 +8,22 @@
   width: 60rem;
 }
 
+#new-modal-card{
+  width: 45rem;
+}
+
+.new-file-button{
+  display: flex; 
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+#menu-dropdown-container .navbar-dropdown {
+  right: 0;
+  left: auto;
+}
+
 #videoContainer {
   flex: 1 0 10rem;
   box-shadow: none;

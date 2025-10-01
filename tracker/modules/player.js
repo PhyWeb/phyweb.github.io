@@ -73,7 +73,6 @@ export default class PLAYER {
       $("#magnifier-button").classList.remove("is-hidden");
       $("#settings-button").classList.remove("is-hidden");
       $("#handler-wrapper").classList.remove("is-hidden");
-      $("#background-arrow").classList.add("is-hidden");
       $(".handler").style.display= "block";
       this.videoCanvas.style.display= "block";
 

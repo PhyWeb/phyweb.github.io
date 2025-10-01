@@ -42,24 +42,6 @@ export default class UIManager {
     // Convertit les icônes FontAwesome
     window.FontAwesome.dom.i2svg();
 
-    // Au démarrage, si la modale de fichier est active, on la verrouille.
-    if ($("#new-file-modal").classList.contains('is-active')) {
-      this.setFileModalStatic(true);
-    }
-  }
-
-  /**
-   * Active ou désactive le mode "statique" (non-fermable) pour la modale de fichier.
-   * @param {boolean} isStatic 
-   */
-  setFileModalStatic(isStatic) {
-    const newFileModal = $('#new-file-modal');
-
-    if (isStatic) {
-      newFileModal.dataset.isStatic = 'true';
-    } else {
-      delete newFileModal.dataset.isStatic;
-    }
   }
 
   /**
@@ -327,7 +309,7 @@ export default class UIManager {
   initNavbar() {
     const quitConfirm = (path)=>{
       // Check if data exists
-      if(this.data.curves.length === 0 && editor.getValue().trim() === ''){
+      if(this.data.curves.length === 0 && this.editor.getValue().trim() === ''){
         window.location.replace(path);
         return;
       }
@@ -435,12 +417,14 @@ export default class UIManager {
       // La confirmation de suppression des données existantes
       newDataConfirmation(async () => {
         try {
+          console.log("try")
           // On attend que le chargement soit terminé (succès ou échec)
           await this.app.ioManager.loadFile(file);
           // Si aucune erreur n'est levée, ON FERME LA MODALE
-          this.setFileModalStatic(false); // D'abord déverrouiller
+          console.log("try2")
           this.common.modalManager.closeAllModals();
         } catch (error) {
+          console.log("catch")
           // Si une erreur est levée par ioManager, on affiche une alerte
           // et la modale reste ouverte.
           alertModal({
@@ -461,7 +445,6 @@ export default class UIManager {
       newDataConfirmation(() => {
         this.app.deleteAllCurves();
         this.editor.setValue('');
-        this.setFileModalStatic(false); // D'abord déverrouiller
         this.common.modalManager.closeAllModals();
       });
     });
@@ -473,7 +456,6 @@ export default class UIManager {
           // On attend que les données soient chargées et validées
           await this.app.ioManager.loadClipboard(text);
           // Si c'est un succès, ON FERME LA MODALE
-          this.setFileModalStatic(false); // D'abord déverrouiller
           this.common.modalManager.closeAllModals();
         } catch (error) {
           // Si le clipboard est vide, non autorisé, ou si les données sont invalides
@@ -489,7 +471,6 @@ export default class UIManager {
 
     // Show the new file modal
     $("#new-file-open-modal-button").addEventListener("click", () => {
-        this.setFileModalStatic(false); // On s'assure qu'elle n'est PAS statique
         $("#new-file-modal").classList.add('is-active');
     });
 

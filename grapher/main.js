@@ -13,6 +13,9 @@ import {loadSettings} from "./modules/settingsManager.js"
 const $ = document.querySelector.bind(document);
 
 document.addEventListener('DOMContentLoaded', () => {
+  
+  window.FontAwesome.dom.i2svg();
+
   // On charge les paramètres sauvegardés (ou les défauts) dès le début.
   const initialSettings = loadSettings();
 
@@ -43,11 +46,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // UIManager a besoin de 'app' pour certaines actions (ex: app.deleteCurve)
   uiManager.setApp(app);
   uiManager.initialize();
-
-  // Desactive le scan auto de fontAwesome
-  window.FontAwesomeConfig = {
-    autoReplaceSvg: false // empêche le scan automatique
-  };
 
   // Creer le graphique au demarrage
   grapher.newChart();

@@ -28,6 +28,12 @@
     <script defer src="../common/fontawesome/brands.min.js"></script>
     <script defer src="../common/fontawesome/fontawesome.min.js"></script>
 
+    <script>
+      window.FontAwesomeConfig = {
+        autoReplaceSvg: false 
+      };
+    </script>
+
     <script type="text/javascript" src="../common/handsontable/handsontable.full.min.js"></script>
 
 
@@ -114,7 +120,7 @@
           <a class="navbar-link" id="menu-dropdown-toggle">
             Menu
           </a>
-          <div class="navbar-dropdown" id="menu-dropdown-content">
+          <div class="navbar-dropdown is-size-6" id="menu-dropdown-content">
             <a class="navbar-item" id="new-file-open-modal-button">
               <span class="icon"><i class="fa-solid fa-file-circle-plus"></i></span>
               <span>Nouveau fichier</span>
@@ -359,6 +365,7 @@
     <div class="modal-card" id="new-file-modal-card">
       <header class="modal-card-head has-background-primary">
         <p class="modal-card-title">Nouveau</p>
+        <button class="delete" id="new-file-close-button" aria-label="close"></button>
       </header>
       <input type="file" accept=".pw, .csv, .rw3" id="file-input" style="width:0px; display: none"/>
       <section class="modal-card-body has-bottom-round-corner">

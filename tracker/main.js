@@ -83,6 +83,8 @@ $("#navbar-grapher-button").addEventListener("click", () => {
   quitConfirm("../grapher/index.html");
 });
 
+
+
 // NAV
 $("#etalonnage-button").addEventListener("click", ()=>{
   $("#etalonnage-button").classList.add("is-active");
@@ -115,9 +117,32 @@ $("#mesures-button").addEventListener("click", ()=>{
 });
 
 // OPEN VIDEO
-$("#open-video-button").addEventListener("click", () => {
+/*$("#open-video-button").addEventListener("click", () => {
   $("#force-filesize-modal-input").checked = false; // reset the force filesize input
+});*/
+
+$("#open-video-button").addEventListener("click", () => {
+  $("#new-modal").classList.add("is-active");
 });
+
+$("#open-phyweb-video-button").addEventListener("click", () => {
+  $("#open-modal").classList.add("is-active");
+});
+
+
+$("#menu-dropdown-toggle").addEventListener("click", function (event) {
+  event.stopPropagation();
+  $("#menu-dropdown-container").classList.toggle("is-active");
+});
+
+// Close the dropdown when clicking outside
+document.addEventListener("click", function () {
+  $("#menu-dropdown-container").classList.remove("is-active");
+});
+
+
+
+
 
 // VIDEOLIST
 videolist.init("assets/list.json");

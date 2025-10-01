@@ -74,11 +74,6 @@
             <span class="icon is-medium"><i class="fas fa-magnifying-glass"></i></span>
           </button>
         </div>
-        <div class="navbar-item is-hidden pr-0" id="settings-button" title="Paramètres">
-          <a class="button is-white js-modal-trigger" data-target="settings-modal">
-            <span class="icon is-medium"><i class="fas fa-cog"></i></span>
-          </a>
-        </div>
         <div class="navbar-item" id="expand-button" title="Passer en mode plein écran">
           <button class="button is-white">
             <span class="icon is-medium"><i class="fas fa-expand"></i></span>
@@ -89,21 +84,29 @@
             <span class="icon is-medium"><i class="fas fa-compress"></i></span>
           </button>
         </div>
-        <div class="navbar-item">
-          <a class="button is-primary js-modal-trigger" data-target="open-modal" id="open-video-button" title="Ouvrir une vidéo">
-            <span class="icon">
-              <i class="fas fa-film"></i>
-            </span>
-            <span>Ouvrir une vidéo</span>
+        <div class="navbar-item has-dropdown" id="menu-dropdown-container">
+          <a class="navbar-link" id="menu-dropdown-toggle">
+            Menu
           </a>
+          <div class="navbar-dropdown is-size-6" id="menu-dropdown-content">
+            <a class="navbar-item" id="open-video-button">
+              <span class="icon"><i class="fa-solid fa-file-circle-plus"></i></span>
+              <span>Ouvrir une vidéo</span>
+            </a>
+            <a class="navbar-item js-modal-trigger" id="save-button" data-target="download-modal">
+              <span class="icon"><i class="fa-solid fa-save"></i></span>
+              <span>Sauvegarder</span>
+            </a>
+            <a class="navbar-item js-modal-trigger" id="settings-button" data-target="settings-modal">
+              <span class="icon"><i class="fa-solid fa-cog"></i></span>
+              <span>Paramètres</span>
+            </a>
+          </div>
         </div>
         <div class="window-controls"></div>
       </div>
     </div>
   </nav>
-  <div class="has-text-right" id="background-arrow" style="padding:0.75rem">
-    <i class="fa-solid fa-reply fa-10x" id="big-arrow" data-fa-transform="rotate-90" style="margin-right:1.25rem"></i>
-  </div>
   <div class="is-hidden container" id="loading-panel">
     <p>Analyse du fichier...</p>
   </div>
@@ -270,18 +273,44 @@
               </button>
             </div>
           </div>
-          <div class="block is-clipped is-flex-shrink-0 pl-4 pr-4 pb-4">
-            <button class="button is-fullwidth is-primary is-medium js-modal-trigger" id="download-button" data-target="download-modal"> 
-              <span class="icon">
-                <i class="fa-solid fa-download"></i>
-              </span>
-              <span>Télécharger</span>
-            </button>
-          </div>
         </div>
       </div>
     </div>
   </div>  
+  </div>
+  <!------------------------------------------------------------------------------------------------------------>
+  <!-------------------------------------------------NEW MODAL------------------------------------------------->
+  <!------------------------------------------------------------------------------------------------------------>
+  <div id="new-modal" class="modal is-active">
+    <div class="modal-background"></div>
+    <div class="modal-card" id="new-modal-card">
+      <header class="modal-card-head has-background-primary">
+        <p class="modal-card-title">Ouvrir une vidéo</p>
+      </header>
+      <input class="file-input" type="file" accept=".mp4, .m4v" id="file-input" />
+      <section class="modal-card-body">
+        <div class="columns has-text-centered">
+          <div class="column">
+            <button class="button is-fullwidth is-medium has-text-centered py-4 new-file-button" id="open-phyweb-video-button">
+              <i class="fas fa-film fa-2x mb-2" style="line-height: 1;"></i>
+              <span>Ouvrir une vidéo PhyWeb</span>
+          </button>
+          </div>
+          <div class="column">
+            <label for="file-input" class="button is-fullwidth is-medium has-text-centered py-4 new-file-button" >
+              <i class="fas fa-upload fa-2x mb-2" style="line-height: 1;"></i>
+              <span>Télécharger un fichier vidéo</span>
+          </label>
+          </div>
+        </div>
+      </section>
+      <footer class="modal-card-foot">
+        <label class="checkbox">
+          <input type="checkbox" id="force-filesize-modal-input"/>
+          <span>Options avancées</span><span id="force-filesize-modal-label"></span>
+        </label>
+      </footer>
+    </div>
   </div>
   <!------------------------------------------------------------------------------------------------------------>
   <!-------------------------------------------------OPEN MODAL------------------------------------------------->
@@ -311,34 +340,7 @@
         </div>
       </section>
       <footer class="modal-card-foot">
-        <div class="columns is-flex-grow-1 is-vcentered">
-          <div class="column">
-            <button class="button is-primary is-fullwidth" id="open-video" disabled>Ouvrir la vidéo sélectionnée</button>
-          </div>
-          <div class="column is-narrow">
-            ou
-          </div>
-          <div class="column is-narrow">
-            <div class="file is-primary ">
-              <label class="file-label">
-                <input class="file-input" type="file" accept=".mp4, .m4v" id="file-input" />
-                <span class="file-cta">
-                  <span class="file-icon">
-                    <i class="fas fa-upload"></i>
-                  </span>
-                  <span class="file-label"> Ouvrir un fichier vidéo téléchargé </span>
-                </span>
-              </label>
-            </div>
-          </div>
-          <div class="column is-narrow vertical-divider"> </div>
-          <div class="column is-narrow">
-            <label class="checkbox">
-              <input type="checkbox" id="force-filesize-modal-input"/>
-              <span>Options avancées</span><span id="force-filesize-modal-label"></span>
-            </label>
-          </div>
-        </div>
+        <button class="button is-primary" id="open-video" disabled>Ouvrir la vidéo sélectionnée</button>
       </footer>
     </div>
   </div>
