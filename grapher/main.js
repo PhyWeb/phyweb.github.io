@@ -1,5 +1,3 @@
-// grapher/main.js (Version corrigée)
-
 import {Common, alertModal, quitConfirmationModal} from "../common/common.js"
 
 import App from "./modules/app.js"
