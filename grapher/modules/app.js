@@ -215,7 +215,7 @@ export default class App {
   }
 
   applyCalculation(text) {
-    // --- NOUVEAU : Fonction pour capturer l'état des données calculées ---
+    // Fonction pour capturer l'état des données calculées
     const getCalculatedState = () => {
       const calculatedCurves = this.data.curves.filter(curve => curve.type === "calculation");
       const calculatedParams = {};
@@ -415,7 +415,7 @@ export default class App {
       console.error("Erreurs de calcul:", allErrors);
       alertModal({
         title: "Erreurs de calcul",
-        body: "Certains calculs ont échoué. Voir la console (F12) pour les détails.",
+        body: allErrors.join('\n'),
         confirm: "OK"
       });
     }
@@ -429,14 +429,11 @@ export default class App {
       }
     }
 
-    // --- MODIFICATION : Mise à jour conditionnelle de l'interface ---
-    // 2. On capture le nouvel état
+    // On capture le nouvel état
     const finalStateJSON = getCalculatedState();
 
-    // 3. On compare et on met à jour l'UI uniquement si nécessaire
+    // On compare et on met à jour l'UI uniquement si nécessaire
     if (initialStateJSON !== finalStateJSON) {
-      console.log("Les calculs ont entraîné des changements, mise à jour de l'interface.");
-
       // Si un tri était actif avant le recalcul, on le réapplique
       if (this.data.lastSortVariable) {
         if (this.data.getCurveByTitle(this.data.lastSortVariable)) {
@@ -451,8 +448,6 @@ export default class App {
       this.grapher.updateChart();
       this.uiUpdater.updateCalculationUI();
       this.uiUpdater.updateSortUI();
-    } else {
-      console.log("Aucun changement détecté après calcul, le rafraîchissement de l'interface est ignoré.");
     }
 
     // Si un RW3 a été chargé juste avant, on ajoute les courbes demandées
@@ -466,6 +461,9 @@ export default class App {
       }
       this.pendingRW3 = null;
     }
+
+    // retourne si il y a eu des erreurs ou non
+    return allErrors.length === 0;
   }
 
 }

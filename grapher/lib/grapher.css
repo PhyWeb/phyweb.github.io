@@ -7,7 +7,7 @@
 }
 
 #settings-modal-card {
-  height: 45rem;
+  height: 32rem;
   display: flex;
   flex-direction: column;
 }
@@ -194,4 +194,29 @@
 #model-list {
   flex-grow: 1;
   overflow-y: auto;
+}
+
+/* Style pour la coche de succès du calcul */
+#calculation-success-checkmark {
+  font-size: 1.5rem; /* Ajustez la taille si besoin */
+  color: var(--bulma-success);
+  opacity: 0;
+  transition: opacity 0.5s ease-in-out;
+}
+
+#calculation-success-checkmark.show {
+  opacity: 1;
+  animation: fadeOut 2s forwards; /* Durée totale de 2s avant disparition */
+}
+
+@keyframes fadeOut {
+  0% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1; /* Reste visible pendant 80% du temps */
+  }
+  100% {
+    opacity: 0;
+  }
 }

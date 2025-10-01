@@ -2104,7 +2104,24 @@ export default class UIManager {
     this.updateCalculationUI(); // Met à jour l'UI une première fois
 
     $("#apply-calculation-button").addEventListener("click", () => {
-      this.app.applyCalculation(this.editor.getValue());
+      const success = this.app.applyCalculation(this.editor.getValue());
+      
+      if (success) {
+        const checkmark = $('#calculation-success-checkmark');
+        // Ajoute l'icône FontAwesome
+        checkmark.innerHTML = '<i class="fas fa-check-circle"></i>';
+        // Convertit l'icône en SVG
+        window.FontAwesome.dom.i2svg({ node: checkmark });
+
+        // Lance l'animation
+        checkmark.classList.add('show');
+
+        // Retire la classe après l'animation pour pouvoir la relancer
+        setTimeout(() => {
+          checkmark.classList.remove('show');
+          checkmark.innerHTML = ''; // Nettoie l'icône
+        }, 2000); // 2000ms correspond à la durée de l'animation CSS
+      }
     });
 
     // Écoute les clics sur la barre latérale (event delegation)
