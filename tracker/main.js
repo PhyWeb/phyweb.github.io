@@ -116,10 +116,9 @@ $("#mesures-button").addEventListener("click", ()=>{
   $("#etalonnage-panel").classList.add("is-hidden");
 });
 
-// OPEN VIDEO
-/*$("#open-video-button").addEventListener("click", () => {
-  $("#force-filesize-modal-input").checked = false; // reset the force filesize input
-});*/
+$("send-to-grapher-button").addEventListener("click", ()=>{
+  //TODO
+});
 
 $("#open-video-button").addEventListener("click", () => {
   $("#new-modal").classList.add("is-active");
@@ -128,7 +127,6 @@ $("#open-video-button").addEventListener("click", () => {
 $("#open-phyweb-video-button").addEventListener("click", () => {
   $("#open-modal").classList.add("is-active");
 });
-
 
 $("#menu-dropdown-toggle").addEventListener("click", function (event) {
   event.stopPropagation();
