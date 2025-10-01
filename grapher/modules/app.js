@@ -466,6 +466,9 @@ export default class App {
       }
       this.pendingRW3 = null;
     }
+
+    // retourne si il y a eu des erreurs ou non
+    return allErrors.length === 0;
   }
 
 }

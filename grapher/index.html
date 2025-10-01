@@ -330,16 +330,16 @@
     <div class="columns" style="flex-grow: 1; min-height: 0;">
         <!-- Colonne de gauche : Barre latérale avec largeur fixe -->
         <div class="column is-narrow" style="width: 280px; overflow-y: auto;">
-            <aside id="calculation-sidebar" class="menu">
-                <p class="menu-label">Grandeurs</p>
-                <ul class="menu-list" id="calculation-sidebar-curves"></ul>
-                
-                <p class="menu-label">Paramètres</p>
-                <ul class="menu-list" id="calculation-sidebar-params"></ul>
-                
-                <p class="menu-label">Fonctions</p>
-                <div id="calculation-sidebar-functions"></div>
-            </aside>
+          <aside id="calculation-sidebar" class="menu">
+            <p class="menu-label">Grandeurs</p>
+            <ul class="menu-list" id="calculation-sidebar-curves"></ul>
+            
+            <p class="menu-label">Paramètres</p>
+            <ul class="menu-list" id="calculation-sidebar-params"></ul>
+            
+            <p class="menu-label">Fonctions</p>
+            <div id="calculation-sidebar-functions"></div>
+          </aside>
         </div>
 
         <!-- Colonne de droite : Textarea et bouton -->
@@ -348,10 +348,11 @@
           <textarea id="calculation-input"></textarea>
 
           <div class="control mt-4">
-                <button class="button is-primary" id="apply-calculation-button">
-                    Appliquer
-                </button>
-            </div>
+            <button class="button is-primary" id="apply-calculation-button">
+                Appliquer
+            </button>
+            <span id="calculation-success-checkmark" class="ml-2"></span>
+          </div>
         </div>
     </div>
   </div>
