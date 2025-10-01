@@ -215,6 +215,25 @@ export default class App {
   }
 
   applyCalculation(text) {
+    // --- NOUVEAU : Fonction pour capturer l'état des données calculées ---
+    const getCalculatedState = () => {
+      const calculatedCurves = this.data.curves.filter(curve => curve.type === "calculation");
+      const calculatedParams = {};
+      for (const key in this.data.parameters) {
+        if (Object.prototype.hasOwnProperty.call(this.data.parameters, key)) {
+          const param = this.data.parameters[key];
+          if (param && param.type !== 'model') {
+            calculatedParams[key] = param;
+          }
+        }
+      }
+      // On utilise JSON.stringify pour une comparaison simple et efficace
+      return JSON.stringify({ curves: calculatedCurves, params: calculatedParams });
+    };
+
+    // On capture l'état initial AVANT toute modification
+    const initialStateJSON = getCalculatedState();
+
     // --- Phase 1: Analyse et Validation ---
     const formulasToEvaluate = [];
     const parsingWarnings = [];
@@ -232,9 +251,13 @@ export default class App {
         }
       }
       this.data.parameters = parametersToKeep;
-      this.spreadsheet.update();
-      this.grapher.updateChart();
-      this.uiUpdater.updateCalculationUI();
+
+      const finalStateJSON = getCalculatedState();
+      if (initialStateJSON !== finalStateJSON) {
+        this.spreadsheet.update();
+        this.grapher.updateChart();
+        this.uiUpdater.updateCalculationUI();
+      }
       return;
     }
 
@@ -406,11 +429,31 @@ export default class App {
       }
     }
 
-    // Met à jour le tableur, le graphique et l'UI
-    this.spreadsheet.update();
-    this.grapher.updateChart();
-    this.uiUpdater.updateCalculationUI();
-    this.uiUpdater.updateSortUI();
+    // --- MODIFICATION : Mise à jour conditionnelle de l'interface ---
+    // 2. On capture le nouvel état
+    const finalStateJSON = getCalculatedState();
+
+    // 3. On compare et on met à jour l'UI uniquement si nécessaire
+    if (initialStateJSON !== finalStateJSON) {
+      console.log("Les calculs ont entraîné des changements, mise à jour de l'interface.");
+
+      // Si un tri était actif avant le recalcul, on le réapplique
+      if (this.data.lastSortVariable) {
+        if (this.data.getCurveByTitle(this.data.lastSortVariable)) {
+          this.data.sortDataBy(this.data.lastSortVariable);
+        } else {
+          this.data.clearSort();
+        }
+      }
+
+      // Met à jour le tableur, le graphique et l'UI
+      this.spreadsheet.update();
+      this.grapher.updateChart();
+      this.uiUpdater.updateCalculationUI();
+      this.uiUpdater.updateSortUI();
+    } else {
+      console.log("Aucun changement détecté après calcul, le rafraîchissement de l'interface est ignoré.");
+    }
 
     // Si un RW3 a été chargé juste avant, on ajoute les courbes demandées
     if (this.pendingRW3 && Array.isArray(this.pendingRW3.y)) {

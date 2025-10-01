@@ -707,8 +707,6 @@ export default class IOManager {
       for (let i = 0; i < headers.length; i++) {
         const curve = this.app.addCurve(headers[i], units ? units[i] : "");
 
-        // Remplacer le contenu de la courbe sans utiliser l'opérateur de décomposition
-        // pour éviter les erreurs de "call stack" avec de grands jeux de données.
         curve.length = 0; // Vider le tableau existant
         const dataToAdd = curvesData[i];
         for (let j = 0; j < dataToAdd.length; j++) {

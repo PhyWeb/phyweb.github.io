@@ -417,14 +417,11 @@ export default class UIManager {
       // La confirmation de suppression des données existantes
       newDataConfirmation(async () => {
         try {
-          console.log("try")
           // On attend que le chargement soit terminé (succès ou échec)
           await this.app.ioManager.loadFile(file);
           // Si aucune erreur n'est levée, ON FERME LA MODALE
-          console.log("try2")
           this.common.modalManager.closeAllModals();
         } catch (error) {
-          console.log("catch")
           // Si une erreur est levée par ioManager, on affiche une alerte
           // et la modale reste ouverte.
           alertModal({
@@ -1864,7 +1861,6 @@ export default class UIManager {
    */
   toggleModelPanel(article){        
     const body = article.querySelector('.message-body');
-    const header = article.querySelector('.message-header');
     const toggleUpIcon = header.querySelector('.toggle-up');
     const toggleDownIcon = header.querySelector('.toggle-down');
     const isActive = header.classList.toggle('is-active');
@@ -2055,7 +2051,7 @@ export default class UIManager {
       const liRSquared = document.createElement('li');
       liRSquared.innerHTML = `Coeff. de corrélation = ${model.rSquared != null ? formatNumber(model.rSquared, 5) : 'Indéfini'}`;
       qualityList.appendChild(liRSquared);
-      
+
       // Ajouter le panneau entièrement construit au DOM
       modelListContainer.appendChild(panelClone);
       
