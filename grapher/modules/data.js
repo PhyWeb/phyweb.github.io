@@ -448,6 +448,7 @@ export default class Data {
     this.parameters = {}; // For storing parameters (e.g. constants)
 
     this.models = []; // For storing models
+    this.annotations = [];
 
     this.settings = {
       significantDigits: initialSettings.significantDigits,

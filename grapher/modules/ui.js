@@ -1050,6 +1050,11 @@ export default class UIManager {
     this.initTools();
     this.initChooseCurvesModal();
     this.initZoomControls();
+
+    // Ajout de l'écouteur pour le bouton de suppression des annotations
+    $("#clear-annotations-button").addEventListener("click", () => {
+        this.grapher.clearAllAnnotations();
+    });
   }
 
   /**
@@ -1337,15 +1342,14 @@ export default class UIManager {
   initTools(){
     const toolsDropdown = $("#tools-dropdown");
     const toolItems = document.querySelectorAll(".tool-item");
-    let activeToolElement = null;
 
     /**
      * Gère la sélection et la désélection des outils.
      * @param {HTMLElement} clickedItem - L'élément de l'outil cliqué.
      * @returns {boolean|undefined} - Retourne true si un outil est activé, undefined si désactivé.
      */
-    function setActiveTool(clickedItem) {
-      const isDeselecting = activeToolElement === clickedItem;
+    const setActiveTool = (clickedItem) => {
+      const isDeselecting = this.activeToolElement === clickedItem;
 
       // On efface toutes les coches
       toolItems.forEach(item => {
@@ -1354,7 +1358,7 @@ export default class UIManager {
       });
 
       if (isDeselecting) {
-        activeToolElement = null;
+        this.activeToolElement = null;
 
         this.grapher.setCrosshairMode(null); // On passe 'null' pour tout désactiver
         
@@ -1362,7 +1366,7 @@ export default class UIManager {
       }
 
       // Sinon, on active le nouvel outil
-      activeToolElement = clickedItem;
+      this.activeToolElement = clickedItem;
       const checkmarkContainer = clickedItem.querySelector('.tool-checkmark-container');
       if (checkmarkContainer) {
         checkmarkContainer.innerHTML = '<i class="fa-solid fa-check"></i>';
@@ -1406,7 +1410,7 @@ export default class UIManager {
     /**
      * Met à jour la visibilité de l'outil modèle en fonction de la présence de modèles tracés.
      */
-    function updateModelToolVisibility() {
+    const updateModelToolVisibility = () =>{
       const btn = document.getElementById('tool-crosshair-model');
 
       // Vérifie s'il y a au moins une série de modèle visible avec des points
@@ -1417,10 +1421,10 @@ export default class UIManager {
       btn.classList.toggle('is-hidden', !hasRenderedModel);
 
       // Si l’outil était actif mais qu’il n’y a plus de modèle tracé, on le désactive proprement
-      if (!hasRenderedModel && typeof activeToolElement !== 'undefined' && activeToolElement?.id === 'tool-crosshair-model') {
+      if (!hasRenderedModel && typeof this.activeToolElement !== 'undefined' && this.activeToolElement?.id === 'tool-crosshair-model') {
         const check = activeToolElement.querySelector('.tool-checkmark-container');
         if (check) check.innerHTML = '';
-        activeToolElement = null;
+        this.activeToolElement = null;
         this.grapher.setCrosshairMode(null);
       }
     }
@@ -1442,6 +1446,9 @@ export default class UIManager {
      * Efface l’outil actif et désactive tout réticule.
      */
     let clearActiveTool = () =>{
+      if (!this.activeToolElement) {
+        return;
+      }
       // Enlève toutes les coches
       document.querySelectorAll('.tool-item .tool-checkmark-container')
         .forEach(c => c.innerHTML = '');

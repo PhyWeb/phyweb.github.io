@@ -66,6 +66,11 @@ export default class Grapher {
     this.freeCrosshair = null;   // Pour stocker les éléments du réticule
 
     this.suppressModelAutoUpdate = false; // used to avoid double updates
+
+    this.renderedAnnotations = []; 
+
+    // Propriété pour gérer le clic intelligent
+    this.mouseDownInfo = null;
   }
 
   formatData(xCurve, yCurve){
@@ -89,6 +94,8 @@ export default class Grapher {
         events: {
           load : function () {
             const chart = this;
+            const drawAnnotationsBound = self.drawAnnotations.bind(self); // Lier `this`
+
 
             // Fonction pour dessiner les flèches
             function drawArrows() {
@@ -171,9 +178,12 @@ export default class Grapher {
 
             // Dessin initial
             drawArrows();
+            drawAnnotationsBound();
 
             // Re-dessiner à chaque redraw (resize, zoom, etc.)
             Highcharts.addEvent(chart, 'redraw', drawArrows);
+            Highcharts.addEvent(chart, 'redraw', drawAnnotationsBound); // Redessiner les annotations
+
           },
           selection: (e) => {
             // 1. On empêche le zoom par défaut.
@@ -401,6 +411,32 @@ export default class Grapher {
     // Set the custom grapher instance for tooltip formatting
     this.chart.options.customGrapherInstance = this;
 
+    // Gestion du clic pour ajouter une annotation avec le réticule libre
+    this.chart.container.addEventListener('click', (e) => {
+      if (this.crosshairMode !== 'free') return;
+
+      const pos = this.chart.pointer.getChartPosition();
+      const chartX = e.pageX - pos.left;
+      const chartY = e.pageY - pos.top;
+
+      // Convertir les coordonnées pixels en valeurs de données
+      const xValue = this.chart.xAxis[0].toValue(chartX);
+      const yValue = this.chart.yAxis[0].toValue(chartY);
+
+      // Créer et ajouter la nouvelle annotation
+      this.data.annotations.push({
+        id: Highcharts.uniqueKey(),
+        type: 'point',
+        x: xValue,
+        y: yValue
+      });
+
+      console.log(this.renderedAnnotations)
+
+      // Redessiner le graphique pour afficher la nouvelle annotation
+      this.chart.redraw();
+    });
+
     this.chart.container.addEventListener('mousemove', (e) => {
       if (this.crosshairMode !== 'free' && this.crosshairMode !== 'model') return;
 
@@ -552,90 +588,27 @@ export default class Grapher {
     });
   }
 
-  // MÉTHODE PRIVÉE pour dessiner le réticule manuellement
   drawFreeCrosshair(event) {
     const chart = this.chart;
     if (!chart.pointer) return;
 
-    if (typeof event.chartX === 'undefined' || typeof event.chartY === 'undefined') {
-      return; 
-    }
+    // Cacher l'ancien réticule avant d'en dessiner un nouveau
+    this.hideFreeCrosshair();
 
-    const plotLeft = chart.plotLeft;
-    const plotTop = chart.plotTop;
-    const plotWidth = chart.plotWidth;
-    const plotHeight = chart.plotHeight;
-
-    if (
-      event.chartX < plotLeft ||
-      event.chartX > plotLeft + plotWidth ||
-      event.chartY < plotTop ||
-      event.chartY > plotTop + plotHeight
-    ) {
-      this.hideFreeCrosshair();
+    const { chartX, chartY } = event;
+    const { plotLeft, plotTop, plotWidth, plotHeight } = chart;
+    
+    // Ne rien dessiner si la souris est hors de la zone de tracé
+    if (chartX < plotLeft || chartX > plotLeft + plotWidth || chartY < plotTop || chartY > plotTop + plotHeight) {
       return;
     }
 
-    if (!this.freeCrosshair) {
-      this.freeCrosshair = {
-        xLine: chart.renderer.path(['M', 0, 0])
-          .attr({ 'stroke-width': 1, stroke: 'dimgray', dashstyle: 'shortdot', zIndex: 5 }).add(),
-        yLine: chart.renderer.path(['M', 0, 0])
-          .attr({ 'stroke-width': 1, stroke: 'dimgray', dashstyle: 'shortdot', zIndex: 5 }).add(),
-          xLabel: chart.renderer.label('', 0, 0, 'callout')
-            .attr({
-              fill: 'white',
-              stroke: '#dbdbdb',
-              'stroke-width': 1,
-              r: 6, // Coins arrondis
-              padding: 8,
-              zIndex: 6
-            })
-            .css({ color: 'black', fontSize: '14px' })
-            .add(),
-          yLabel: chart.renderer.label('', 0, 0, 'callout')
-            .attr({
-              fill: 'white',
-              stroke: '#dbdbdb',
-              'stroke-width': 1,
-              r: 6,
-              padding: 8,
-              zIndex: 6
-            })
-            .css({ color: 'black', fontSize: '14px' })
-            .add()
-      };
-    }
+    const xValue = chart.xAxis[0].toValue(chartX);
+    const yValue = chart.yAxis[0].toValue(chartY);
 
-    // Mouvements des lignes
-    this.freeCrosshair.xLine.attr({
-      d: ['M', event.chartX, plotTop, 'L', event.chartX, plotTop + plotHeight]
-    });
+    // Utiliser la fonction factorisée et stocker les éléments créés
+    this.freeCrosshair = this._drawStyledCrosshair(chartX, chartY, xValue, yValue);
 
-    this.freeCrosshair.yLine.attr({
-      d: ['M', plotLeft, event.chartY, 'L', plotLeft + plotWidth, event.chartY]
-    });
-
-    // Valeurs numériques
-    const xValue = chart.xAxis[0].toValue(event.chartX);
-    const yValue = chart.yAxis[0].toValue(event.chartY);
-    const significantDigits = this.data.settings.significantDigits;
-
-    // --- Label X ---
-    this.freeCrosshair.xLabel.attr({ text: formatNumber(xValue, significantDigits) });
-    const xLabelBBox = this.freeCrosshair.xLabel.getBBox();
-    this.freeCrosshair.xLabel.translate(
-      event.chartX - xLabelBBox.width / 2,
-      plotTop + plotHeight - xLabelBBox.height - 5
-    );
-
-    // --- Label Y ---
-    this.freeCrosshair.yLabel.attr({ text: formatNumber(yValue, significantDigits) });
-    const yLabelBBox = this.freeCrosshair.yLabel.getBBox();
-    this.freeCrosshair.yLabel.translate(
-      plotLeft + 5,
-      event.chartY - yLabelBBox.height / 2
-    );
   }
 
   // MÉTHODE PRIVÉE pour cacher le réticule
@@ -744,25 +717,15 @@ export default class Grapher {
     const newMinY = centerY - newRangeY / 2;
     const newMaxY = centerY + newRangeY / 2;
 
-    // suppress automatic redraw-driven model updates while we do the manual update
-    this.suppressModelAutoUpdate = true;
-    try {
-      // apply extremes without immediate redraw
-      this.chart.xAxis[0].setExtremes(newMinX, newMaxX, false);
-      this.chart.yAxis[0].setExtremes(newMinY, newMaxY, false);
+    // Appliquer les nouvelles limites sans redessiner immédiatement
+    this.chart.xAxis[0].setExtremes(newMinX, newMaxX, false);
+    this.chart.yAxis[0].setExtremes(newMinY, newMaxY, false);
+    
+    // Déclencher un unique redraw qui mettra à jour à la fois les modèles et les annotations
+    this.chart.redraw();
 
-      // update models using the exact range we computed
-      this.redrawAllModels(newMinX, newMaxX);
-
-      // single redraw at the end
-      this.chart.redraw(false);
-
-      // show the "reset zoom" button
-      $("#auto-zoom-button").classList.remove("is-hidden");
-    } finally {
-      // always re-enable auto-updates
-      this.suppressModelAutoUpdate = false;
-    }
+    // Afficher le bouton de "reset zoom"
+    $("#auto-zoom-button").classList.remove("is-hidden");
   }
 
   /**
@@ -856,6 +819,79 @@ export default class Grapher {
         }
       }
     });
+  }
+
+  /**
+   * FACTORISÉ : Dessine une croix et ses labels en respectant le style original.
+   */
+  _drawStyledCrosshair(pixelX, pixelY, valueX, valueY) {
+    const chart = this.chart;
+    const renderer = chart.renderer;
+    const significantDigits = this.data.settings.significantDigits;
+    const { plotLeft, plotTop, plotWidth, plotHeight } = chart;
+
+    const elements = {};
+
+    // Lignes
+    elements.xLine = renderer.path(['M', pixelX, plotTop, 'L', pixelX, plotTop + plotHeight])
+        .attr({ 'stroke-width': 1, stroke: 'dimgray', dashstyle: 'shortdot', zIndex: 5 }).add();
+    elements.yLine = renderer.path(['M', plotLeft, pixelY, 'L', plotLeft + plotWidth, pixelY])
+        .attr({ 'stroke-width': 1, stroke: 'dimgray', dashstyle: 'shortdot', zIndex: 5 }).add();
+
+    // Labels avec le style d'origine
+    const labelAttr = { fill: 'white', stroke: '#dbdbdb', 'stroke-width': 1, r: 6, padding: 8, zIndex: 6 };
+    const labelCss = { color: 'black', fontSize: '14px' };
+
+    elements.xLabel = renderer.label(formatNumber(valueX, significantDigits), 0, 0, 'callout').attr(labelAttr).css(labelCss).add();
+    const xLabelBBox = elements.xLabel.getBBox();
+    elements.xLabel.translate(pixelX - xLabelBBox.width / 2, plotTop + plotHeight - xLabelBBox.height - 5);
+
+    elements.yLabel = renderer.label(formatNumber(valueY, significantDigits), 0, 0, 'callout').attr(labelAttr).css(labelCss).add();
+    const yLabelBBox = elements.yLabel.getBBox();
+    elements.yLabel.translate(plotLeft + 5, pixelY - yLabelBBox.height / 2);
+    
+    return elements;
+  }
+
+  /**
+   * Dessine toutes les annotations stockées dans this.data.annotations
+   */
+  drawAnnotations() {
+    if (!this.chart || !this.chart.renderer) {
+      return;
+    }
+    const chart = this.chart;
+    const xAxis = chart.xAxis[0];
+    const yAxis = chart.yAxis[0];
+
+    // Nettoyer les anciennes annotations
+    this.renderedAnnotations.forEach(a => Object.values(a).forEach(el => el.destroy()));
+    this.renderedAnnotations = [];
+
+    // Parcourir les données et dessiner chaque annotation en utilisant la fonction factorisée
+    this.data.annotations.forEach(annotation => {
+      if (annotation.type === 'point') {
+        const pixelX = xAxis.toPixels(annotation.x);
+        const pixelY = yAxis.toPixels(annotation.y);
+
+        if (pixelX >= chart.plotLeft && pixelX <= chart.plotLeft + chart.plotWidth &&
+          pixelY >= chart.plotTop && pixelY <= chart.plotTop + chart.plotHeight) {
+          
+          const renderedElements = this._drawStyledCrosshair(pixelX, pixelY, annotation.x, annotation.y);
+          this.renderedAnnotations.push(renderedElements);
+        }
+      }
+    });
+  }
+
+  /**
+   * Supprime toutes les annotations (données et affichage)
+   */
+  clearAllAnnotations() {
+
+    this.data.annotations = [];
+
+    this.chart.redraw();
   }
 }
 
