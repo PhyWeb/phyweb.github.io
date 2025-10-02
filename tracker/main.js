@@ -116,7 +116,7 @@ $("#mesures-button").addEventListener("click", ()=>{
   $("#etalonnage-panel").classList.add("is-hidden");
 });
 
-$("send-to-grapher-button").addEventListener("click", ()=>{
+$("#send-to-grapher-button").addEventListener("click", ()=>{
   //TODO
 });
 
