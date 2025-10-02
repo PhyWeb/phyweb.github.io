@@ -49,12 +49,12 @@ document.addEventListener('DOMContentLoaded', () => {
   grapher.newChart();
 
   // Vérifier les données d'une autre application après l'initialisation complète
-  const interAppDataJSON = localStorage.getItem('phyweb-import-data');
+  const interAppDataJSON = sessionStorage.getItem('phyweb-import-data');
   if (interAppDataJSON) {
     try {
       // Délégué le chargement à l'IOManager
       app.ioManager.loadInterAppJSON(interAppDataJSON);
-      localStorage.removeItem('phyweb-import-data'); // Nettoyer immédiatement
+      sessionStorage.removeItem('phyweb-import-data'); // Nettoyer immédiatement
     } catch (e) {
       console.error("Échec du chargement des données inter-applications:", e);
       // En cas d'erreur, on affiche la modale pour ne pas bloquer l'utilisateur

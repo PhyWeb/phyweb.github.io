@@ -5,7 +5,7 @@ COMMON:
   - add a link to the github repo in the modal about
   - centraliser la gestion des confirmations de quitter (et l'étendre à quand on ferme onglet, charge d'autres données...)
 
-  - possibiliter de passer les données de audio et tracker directement à grapher via sessionStorage
+  - possibiliter de passer les données de audio directement à grapher via sessionStorage
 
   - Glisser-déposer : Permettre de charger un fichier par glisser-déposer (drag and drop)
 

@@ -184,7 +184,7 @@ $("#send-to-grapher-button").addEventListener("click", () => {
     }
   };
 
-  localStorage.setItem('phyweb-import-data', JSON.stringify(dataForGrapher));
+  sessionStorage.setItem('phyweb-import-data', JSON.stringify(dataForGrapher));
   window.open('../grapher/index.html', '_blank');
 });
 
