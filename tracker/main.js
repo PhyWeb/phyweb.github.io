@@ -116,8 +116,76 @@ $("#mesures-button").addEventListener("click", ()=>{
   $("#etalonnage-panel").classList.add("is-hidden");
 });
 
-$("#send-to-grapher-button").addEventListener("click", ()=>{
-  //TODO
+$("#send-to-grapher-button").addEventListener("click", () => {
+  if (measurement.series.length === 0 || measurement.series[0].length === 0) {
+    alertModal({
+      title: "Aucune donnée",
+      body: "Il n'y a aucune donnée à envoyer vers le grapheur.",
+      confirm: "OK"
+    });
+    return;
+  }
+
+  const scaleX = measurement.scale.getOrientedScaleX();
+  const scaleY = measurement.scale.getOrientedScaleY();
+  const originFrame = measurement.originFrame;
+
+  // 1. Déterminer les lignes à conserver (celles avec au moins une donnée x ou y)
+  const rowsToKeep = new Set();
+  for (let i = originFrame; i < measurement.series[0].length; i++) {
+    let rowHasData = false;
+    // Parcourir les séries x et y (commence à l'index 1)
+    for (let j = 1; j < measurement.series.length; j++) {
+      if (measurement.series[j][i] !== "" && measurement.series[j][i] !== null) {
+        rowHasData = true;
+        break;
+      }
+    }
+    if (rowHasData) {
+      rowsToKeep.add(i);
+    }
+  }
+
+  const dataForGrapher = {
+    source: "tracker",
+    payload: {
+      curves: measurement.series.map((serie, index) => {
+        const filteredValues = [];
+
+        // 2. Itérer sur les lignes à conserver pour construire les valeurs filtrées et traitées
+        for (const i of Array.from(rowsToKeep).sort((a, b) => a - b)) {
+          let processedVal;
+
+          // Traiter la série temporelle
+          if (index === 0) {
+            processedVal = (serie[i] === null) ? null : serie[i] - serie[originFrame];
+          }
+          // Traiter les séries x/y
+          else {
+            const isX = (index % 2) !== 0;
+            const origin = isX ? measurement.scale.origin.x : measurement.scale.origin.y;
+            const scale = isX ? scaleX : scaleY;
+
+            if (serie[i] === "" || serie[i] === null) {
+              processedVal = null;
+            } else {
+              processedVal = (serie[i] - origin) * scale;
+            }
+          }
+          filteredValues.push(processedVal);
+        }
+
+        return {
+          title: serie.title,
+          unit: serie.unit,
+          values: filteredValues
+        };
+      })
+    }
+  };
+
+  localStorage.setItem('phyweb-import-data', JSON.stringify(dataForGrapher));
+  window.open('../grapher/index.html', '_blank');
 });
 
 $("#open-video-button").addEventListener("click", () => {

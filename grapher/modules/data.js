@@ -454,7 +454,7 @@ export default class Data {
     };
 
     this.lastSortVariable = null; // Dernière variable utilisée pour le tri
-  }   
+  }
 
   addCurve(title, unit, size, fill){
     // Check if the title is already used TODO: modal

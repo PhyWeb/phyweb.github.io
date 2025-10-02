@@ -33,7 +33,7 @@ export default class App {
     this.uiUpdater = uiUpdater;
 
     this.ioManager = new IOManager(this);
-  }  
+  }
 
   addCurve(title, unit) {
     let curve = this.spreadsheet.addCurve(title, unit);

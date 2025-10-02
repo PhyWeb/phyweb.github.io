@@ -724,4 +724,68 @@ export default class IOManager {
       this.isLoading = false; // Assure que le drapeau est réinitialisé même en cas d'erreur
     }
   }
+
+  /**
+   * Point d'entrée pour les données venant d'autres applications PhyWeb.
+   * @param {string} jsonData - Les données JSON brutes depuis le localStorage.
+   */
+  loadInterAppJSON(jsonData) {
+    try {
+      const data = JSON.parse(jsonData);
+      if (!data.source || !data.payload) {
+        throw new Error("Le format des données inter-applications est invalide.");
+      }
+
+      let tsvData = '';
+      
+      // Aiguillage en fonction de la source des données
+      switch (data.source) {
+        case 'tracker':
+          tsvData = this._parseTrackerDataToTSV(data.payload);
+          break;
+        // case 'audio':
+        //   tsvData = this._parseAudioDataToTSV(data.payload);
+        //   break;
+        default:
+          throw new Error(`La source de données "${data.source}" n'est pas supportée.`);
+      }
+
+      // Si la conversion a réussi, on charge les données
+      if (tsvData) {
+        this.loadData(tsvData);
+      }
+
+    } catch (e) {
+      console.error("Échec du traitement des données inter-applications:", e);
+      throw new Error("Les données reçues sont corrompues ou dans un format inattendu.");
+    }
+  }
+
+  /**
+   * "Traduit" les données JSON de Tracker en une chaîne de caractères TSV.
+   * @param {object} payload - L'objet de données de Tracker.
+   * @returns {string} Une chaîne de caractères au format TSV.
+   * @private
+   */
+  _parseTrackerDataToTSV(payload) {
+    if (!payload.curves || payload.curves.length === 0) {
+      return ''; // Pas de données à traiter
+    }
+
+    const headers = payload.curves.map(c => c.title).join('\t');
+    const units = payload.curves.map(c => c.unit).join('\t');
+    
+    const rowCount = Math.max(...payload.curves.map(c => c.values.length));
+    const dataRows = [];
+    for (let i = 0; i < rowCount; i++) {
+      const row = payload.curves.map(c => {
+        const value = c.values[i];
+        return (value === null || value === undefined) ? '' : String(value);
+      }).join('\t');
+      dataRows.push(row);
+    }
+
+    return `${headers}\n${units}\n${dataRows.join('\n')}`;
+  }
+
 }
