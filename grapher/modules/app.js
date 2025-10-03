@@ -137,19 +137,14 @@ export default class App {
     let model = await this.data.addModel(x, y, type);
 
     if (model) {
-      // 1. Crée la série du modèle sans redessiner le graphique
       this.grapher.addModelSeries(model);
-
       this.grapher.updateModelVisibility();
-      
-      // 2. Déclenche manuellement UN SEUL redraw.
-      // Cet appel va mettre à jour le graphique et l'événement 'redraw'
-      // s'assurera que tous les modèles sont correctement tracés.
       this.grapher.chart.redraw();
 
-      // 3. Met à jour l'UI'
       this.uiUpdater.updateCalculationUI();
       this.uiUpdater.updateRecalculateButtonVisibility();
+
+      this.uiUpdater.updateModelToolVisibility();
 
       return model;
     } else {

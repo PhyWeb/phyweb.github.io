@@ -1420,32 +1420,32 @@ export default class UIManager {
       });
     });
 
-    /**
-     * Met à jour la visibilité de l'outil modèle en fonction de la présence de modèles tracés.
-     */
-    const updateModelToolVisibility = () =>{
-      const btn = document.getElementById('tool-crosshair-model');
-
-      // Vérifie s'il y a au moins une série de modèle visible avec des points
-      const hasRenderedModel = this.grapher.chart.series.some(s =>
-        s?.options?.id?.startsWith('model-') && s.visible !== false && (s.points?.length ?? 0) > 0
-      );
-
-      btn.classList.toggle('is-hidden', !hasRenderedModel);
-
-      // Si l’outil était actif mais qu’il n’y a plus de modèle tracé, on le désactive proprement
-      if (!hasRenderedModel && typeof this.activeToolElement !== 'undefined' && this.activeToolElement?.id === 'tool-crosshair-model') {
-        const check = activeToolElement.querySelector('.tool-checkmark-container');
-        if (check) check.innerHTML = '';
-        this.activeToolElement = null;
-        this.grapher.setCrosshairMode(null);
-      }
-    }
-
     // Met à jour la visibilité de l'outil modèle à chaque redessin du graphique
     if (this.grapher.chart) {
-      Highcharts.addEvent(grapher.chart, 'redraw', updateModelToolVisibility);
-      updateModelToolVisibility(); // première évaluation
+      Highcharts.addEvent(this.grapher.chart, 'redraw', this.updateModelToolVisibility);
+      this.updateModelToolVisibility(); // première évaluation
+    }
+  }
+
+  /**
+   * Met à jour la visibilité de l'outil modèle en fonction de la présence de modèles tracés.
+   */
+  updateModelToolVisibility() {
+    const btn = document.getElementById('tool-crosshair-model');
+
+    // Vérifie s'il y a au moins une série de modèle visible avec des points
+    const hasRenderedModel = this.grapher.chart.series.some(s =>
+      s?.options?.id?.startsWith('model-') && s.visible !== false && ((s.points?.length || s.data?.length) > 0)
+    );
+
+    btn.classList.toggle('is-hidden', !hasRenderedModel);
+
+    // Si l’outil était actif mais qu’il n’y a plus de modèle tracé, on le désactive proprement
+    if (!hasRenderedModel && typeof this.activeToolElement !== 'undefined' && this.activeToolElement?.id === 'tool-crosshair-model') {
+      const check = activeToolElement.querySelector('.tool-checkmark-container');
+      if (check) check.innerHTML = '';
+      this.activeToolElement = null;
+      this.grapher.setCrosshairMode(null);
     }
   }
 
@@ -1881,6 +1881,7 @@ export default class UIManager {
    */
   toggleModelPanel(article){        
     const body = article.querySelector('.message-body');
+    const header = article.querySelector('.message-header');
     const toggleUpIcon = header.querySelector('.toggle-up');
     const toggleDownIcon = header.querySelector('.toggle-down');
     const isActive = header.classList.toggle('is-active');

@@ -75,6 +75,8 @@ export default class Grapher {
     this.mouseDownInfo = null;
     this.isDragging = false;      // Pour savoir si un glisser est en cours
     this.tempAnnotation = null; // Pour stocker les éléments temporaires
+    this.snappedModelPoint = null;
+    this.snappedDataPoint = null;
   }
 
   setUIUpdater(uiUpdater) {
@@ -425,7 +427,7 @@ export default class Grapher {
 
     // Gestion du clic pour ajouter une annotation avec le réticule libre
     this.chart.container.addEventListener('mousedown', (e) => {
-      if (this.crosshairMode !== 'free') return;
+      if (this.crosshairMode !== 'free' && this.crosshairMode !== 'model' && this.crosshairMode !== 'data') return;
 
       e.preventDefault(); // Empêche la sélection de texte pendant le glisser
 
@@ -436,6 +438,19 @@ export default class Grapher {
         time: Date.now()
       };
 
+      if (this.crosshairMode === 'data') {
+        const dataSeries = this.chart.series.filter(s => !s.options.id?.startsWith('model-'));
+        const point = this.chart.pointer.findNearestKDPoint(dataSeries, true, this.mouseDownInfo);
+        if (point) {
+          this.mouseDownInfo.snappedPoint = { x: point.x, y: point.y };
+        }
+      } else if (this.crosshairMode === 'model') { // <-- AJOUTEZ CE BLOC
+        const point = this._findNearestModelPoint(this.mouseDownInfo);
+        if (point) {
+            this.mouseDownInfo.snappedPoint = { x: point.x, y: point.y };
+        }
+      }
+
       this.isDragging = true;
 
       // Attacher les écouteurs au document pour capturer tous les mouvements
@@ -444,17 +459,18 @@ export default class Grapher {
     });
 
     this.chart.container.addEventListener('mousemove', (e) => {
-      if (this.crosshairMode !== 'free' && this.crosshairMode !== 'model') return;
+      if (this.crosshairMode === null) return;
 
       const pos = this.chart.pointer.getChartPosition();
-
       const payload = { chartX: e.pageX - pos.left, chartY: e.pageY - pos.top };
 
-      if (this.crosshairMode === 'free'){
+      if (this.crosshairMode === 'free') {
         this.drawFreeCrosshair(payload);
-      } else{
+      } else if (this.crosshairMode === 'model') {
         this.drawModelCrosshair(payload);
-      }                               
+      } else if (this.crosshairMode === 'data') {
+        this.drawDataCrosshair(payload);
+      }                            
     });
 
     Highcharts.addEvent(this.chart.container, 'mouseleave', () => {
@@ -569,12 +585,12 @@ export default class Grapher {
   setCrosshairMode(mode) {
     this.crosshairMode = mode;
 
-    const isDataMode = (mode === 'data');
+    const isDefaultTooltip = false; // Le tooltip natif n'est plus jamais utilisé
 
     this.hideFreeCrosshair();
 
     // Application de la classe CSS pour forcer le curseur
-    if (mode === 'free' || mode === 'model') {
+    if (mode === 'free' || mode === 'model' || mode === 'data') {
       this.chart.container.classList.add('chart-free-crosshair');
     } else {
       this.chart.container.classList.remove('chart-free-crosshair');
@@ -583,12 +599,12 @@ export default class Grapher {
     // Mise à jour groupée de toutes les options nécessaires
     this.chart.update({
       chart: { zooming: { type: null}},
-      tooltip: { enabled: isDataMode},
+      tooltip: { enabled: isDefaultTooltip},
       plotOptions: {
         series: {
           stickyTracking: false,
-          enableMouseTracking: isDataMode,
-          states: { hover: { enabled: isDataMode } }
+          enableMouseTracking: isDefaultTooltip,
+          states: { hover: { enabled: isDefaultTooltip } }
         }
       }
     });
@@ -628,75 +644,24 @@ export default class Grapher {
   // S’aimante au point de modèle visible le plus proche
   drawModelCrosshair(event) {
     const chart = this.chart;
-    if (!chart?.pointer) return;
+    const best = this._findNearestModelPoint(event); // Trouve le point le plus proche
 
-    const { plotLeft, plotTop, plotWidth, plotHeight } = chart;
-    const inside = (
-      event.chartX >= plotLeft && event.chartX <= plotLeft + plotWidth &&
-      event.chartY >= plotTop  && event.chartY <= plotTop  + plotHeight
-    );
-    if (!inside) { this.hideFreeCrosshair(); return; }
-
-    const xAxis = chart.xAxis[0];
-    const yAxis = chart.yAxis[0];
-    const xVal = xAxis.toValue(event.chartX);
-
-    // Parcourir toutes les séries de modèles visibles et compatibles avec l’axe X courant
-    let best = null; // {x, y, px, py, dist2, name}
-    this.data.models.forEach(model => {
-      if (model.x.title !== this.currentXCurve || !model.visible) return;
-      const s = chart.get(`model-${model.id}`);
-      if (!s || !s.visible) return;
-
-      // Les points sont déjà denses (résolution par défaut ≈ 200)
-      const pts = s.points ?? s.data; // Selon la version Highcharts
-      if (!pts?.length) return;
-
-      // Chercher l’indice du point x le plus proche (recherche linéaire suffisante ici)
-      let closest = null, minDx = Infinity;
-      for (let i = 0; i < pts.length; i++) {
-        const px = pts[i].x, py = pts[i].y;
-        if (px == null || py == null || !isFinite(px) || !isFinite(py)) continue;
-        const dx = Math.abs(px - xVal);
-        if (dx < minDx) { minDx = dx; closest = { x: px, y: py }; }
-      }
-      if (!closest) return;
-
-      const px = xAxis.toPixels(closest.x);
-      const py = yAxis.toPixels(closest.y);
-      const d2 = (px - event.chartX) * (px - event.chartX) + (py - event.chartY) * (py - event.chartY);
-      if (!best || d2 < best.dist2) {
-        best = { ...closest, px, py, dist2: d2, name: model.name ?? `Modèle ${model.id}` };
-      }
-    });
-
-    if (!best) { this.hideFreeCrosshair(); return; }
-
-    // Créer si nécessaire les éléments (on réutilise this.freeCrosshair)
-    if (!this.freeCrosshair) {
-      this.freeCrosshair = {
-        xLine: chart.renderer.path('M 0 0').attr({ 'stroke-width': 1, stroke: 'dimgray', dashstyle: 'shortdot', zIndex: 5 }).add(),
-        yLine: chart.renderer.path('M 0 0').attr({ 'stroke-width': 1, stroke: 'dimgray', dashstyle: 'shortdot', zIndex: 5 }).add(),
-        xLabel: chart.renderer.label('', 0, 0, 'callout').attr({ fill: 'white', stroke: '#dbdbdb', 'stroke-width': 1, r: 6, padding: 8, zIndex: 6 }).css({ color: 'black', fontSize: '14px' }).add(),
-        yLabel: chart.renderer.label('', 0, 0, 'callout').attr({ fill: 'white', stroke: '#dbdbdb', 'stroke-width': 1, r: 6, padding: 8, zIndex: 6 }).css({ color: 'black', fontSize: '14px' }).add(),
-      };
+    if (!best) {
+      this.hideFreeCrosshair();
+      this.snappedModelPoint = null;
+      return;
     }
 
-    // Lignes croisées
-    this.freeCrosshair.xLine.attr({ d: `M ${best.px} ${plotTop} L ${best.px} ${plotTop + plotHeight}` });
-    this.freeCrosshair.yLine.attr({ d: `M ${plotLeft} ${best.py} L ${plotLeft + plotWidth} ${best.py}` });
+    // Mémorise les coordonnées pour un éventuel clic
+    this.snappedModelPoint = { x: best.x, y: best.y };
 
-    // Étiquettes (mêmes règles que drawFreeCrosshair)
-    const significantDigits = this.data.settings.significantDigits ?? 4;
-    const xv = Highcharts.numberFormat(best.x, significantDigits, ',', ' ');
-    const yv = Highcharts.numberFormat(best.y, significantDigits, ',', ' ');
-    this.freeCrosshair.xLabel.attr({ text: xv });
-    const bboxX = this.freeCrosshair.xLabel.getBBox();
-    this.freeCrosshair.xLabel.translate(best.px - bboxX.width / 2, plotTop + plotHeight - bboxX.height - 5);
+    // Calcule les coordonnées en pixels sur le graphique
+    const pixelX = best.plotX + chart.plotLeft;
+    const pixelY = best.plotY + chart.plotTop;
 
-    this.freeCrosshair.yLabel.attr({ text: yv });
-    const bboxY = this.freeCrosshair.yLabel.getBBox();
-    this.freeCrosshair.yLabel.translate(plotLeft + 5, best.py - bboxY.height / 2);
+    // Cacher l'ancien réticule et dessiner le nouveau
+    this.hideFreeCrosshair();
+    this.freeCrosshair = this._drawStyledCrosshair(pixelX, pixelY, best.x, best.y);
   }
 
   /**
@@ -828,6 +793,55 @@ export default class Grapher {
   }
 
   /**
+   * Trouve le point le plus proche sur toutes les courbes de modèle visibles.
+   * @private
+   */
+  _findNearestModelPoint(event) {
+    const chart = this.chart;
+    if (!chart?.pointer) return null;
+
+    const xAxis = chart.xAxis[0];
+    const yAxis = chart.yAxis[0];
+    const xVal = xAxis.toValue(event.chartX);
+
+    let best = null;
+    this.data.models.forEach(model => {
+      if (model.x.title !== this.currentXCurve || !model.visible) return;
+      const s = chart.get(`model-${model.id}`);
+      if (!s || !s.visible || (!s.points && !s.data)) return;
+
+      const pts = s.points ?? s.data;
+      if (!pts.length) return;
+
+      let closest = null, minDx = Infinity;
+      for (let i = 0; i < pts.length; i++) {
+        const point = pts[i];
+        const dx = Math.abs(point.x - xVal);
+        if (dx < minDx) {
+          minDx = dx;
+          closest = { x: point.x, y: point.y };
+        }
+      }
+      if (!closest) return;
+
+      const pixelX = xAxis.toPixels(closest.x);
+      const pixelY = yAxis.toPixels(closest.y);
+      const dist2 = Math.pow(pixelX - event.chartX, 2) + Math.pow(pixelY - event.chartY, 2);
+
+      if (!best || dist2 < best.dist2) {
+        best = {
+          x: closest.x,
+          y: closest.y,
+          plotX: pixelX - chart.plotLeft,
+          plotY: pixelY - chart.plotTop,
+          dist2: dist2
+        };
+      }
+    });
+    return best;
+  }
+
+  /**
    * Dessine une croix et ses labels en respectant le style original.
    */
   _drawStyledCrosshair(pixelX, pixelY, valueX, valueY) {
@@ -877,6 +891,28 @@ export default class Grapher {
 
     // Retourne un tableau pour un nettoyage uniforme avec les autres annotations
     return [circle];
+  }
+
+  /**
+   * Dessine un réticule personnalisé en s'aimantant au point de donnée le plus proche.
+   */
+  drawDataCrosshair(event) {
+    const chart = this.chart;
+    
+    // Utilise l'événement natif de Highcharts pour trouver le point le plus proche
+    const dataSeries = chart.series.filter(s => !s.options.id?.startsWith('model-'));
+    const point = chart.pointer.findNearestKDPoint(dataSeries, true, event);
+
+    if (point && point.plotX !== undefined && point.plotY !== undefined) {
+      this.snappedDataPoint = { x: point.x, y: point.y };
+      this.hideFreeCrosshair(); // Cacher l'ancien
+      
+      // Dessiner le nouveau réticule à la position du point trouvé
+      this.freeCrosshair = this._drawStyledCrosshair(point.plotX + chart.plotLeft, point.plotY + chart.plotTop, point.x, point.y);
+    } else {
+      this.snappedDataPoint = null;
+      this.hideFreeCrosshair();
+    }
   }
 
   /**
@@ -970,40 +1006,57 @@ export default class Grapher {
     this.chart.redraw();
   }
 
- handleMouseMove(e) {
+  handleMouseMove(e) {
     if (!this.isDragging) return;
 
     const chart = this.chart;
     const pos = chart.pointer.getChartPosition();
-    const startX = this.mouseDownInfo.chartX;
-    const startY = this.mouseDownInfo.chartY;
+    const startInfo = this.mouseDownInfo;
     const currentX = e.pageX - pos.left;
     const currentY = e.pageY - pos.top;
 
-    // Effacer l'ancienne annotation temporaire
     if (this.tempAnnotation) {
       this.tempAnnotation.forEach(el => el.destroy());
     }
 
-    const distance = Math.sqrt(Math.pow(currentX - startX, 2) + Math.pow(currentY - startY, 2));
+    const distance = Math.sqrt(Math.pow(currentX - startInfo.chartX, 2) + Math.pow(currentY - startInfo.chartY, 2));
     if (distance < 5) {
       this.tempAnnotation = null;
       return;
     }
     
-    const tempElements = [];
+    let p1_pix, p2_pix;
 
-    // 1. Ligne principale (en pointillés)
-    tempElements.push(chart.renderer.path(['M', startX, startY, 'L', currentX, currentY])
-      .attr({ 'stroke-width': 2, stroke: 'rgba(220, 53, 69, 0.7)', 'stroke-dasharray': '5,5', zIndex: 10 }).add());
+    if (this.crosshairMode === 'data') {
+      if (!startInfo.snappedPoint) return; // Pas de point de départ, on ne dessine rien
+      const startPoint = startInfo.snappedPoint;
+      p1_pix = { x: chart.xAxis[0].toPixels(startPoint.x), y: chart.yAxis[0].toPixels(startPoint.y) };
 
-    // 2. Points aux extrémités
-    tempElements.push(...this._drawEndpoint(startX, startY), ...this._drawEndpoint(currentX, currentY));
+      const dataSeries = chart.series.filter(s => !s.options.id?.startsWith('model-'));
+      const currentPoint = chart.pointer.findNearestKDPoint(dataSeries, true, { chartX: currentX, chartY: currentY });
+      if (!currentPoint) return; // Pas de point d'arrivée, on ne dessine rien
+      p2_pix = { x: currentPoint.plotX + chart.plotLeft, y: currentPoint.plotY + chart.plotTop };
+
+    } else if (this.crosshairMode === 'model') { // Comportement pour mode data
+      if (!startInfo.snappedPoint) return;
+      p1_pix = { x: chart.xAxis[0].toPixels(startInfo.snappedPoint.x), y: chart.yAxis[0].toPixels(startInfo.snappedPoint.y) };
+
+      const currentPoint = this._findNearestModelPoint({ chartX: currentX, chartY: currentY });
+      if (!currentPoint) return;
+      p2_pix = { x: currentPoint.plotX + chart.plotLeft, y: currentPoint.plotY + chart.plotTop };
+
+    } else { // Comportement du mode libre
+      p1_pix = { x: startInfo.chartX, y: startInfo.chartY };
+      p2_pix = { x: currentX, y: currentY };
+    }
     
-    // 3. Lignes Delta (en pointillés)
+    const tempElements = [];
+    tempElements.push(chart.renderer.path(['M', p1_pix.x, p1_pix.y, 'L', p2_pix.x, p2_pix.y])
+      .attr({ 'stroke-width': 2, stroke: 'rgba(220, 53, 69, 0.7)', 'stroke-dasharray': '5,5', zIndex: 10 }).add());
+    tempElements.push(...this._drawEndpoint(p1_pix.x, p1_pix.y), ...this._drawEndpoint(p2_pix.x, p2_pix.y));
     const deltaLineAttr = { 'stroke-width': 1, stroke: 'rgba(0, 123, 255, 0.7)', 'stroke-dasharray': '4,4', zIndex: 9 };
-    tempElements.push(chart.renderer.path(['M', startX, startY, 'L', currentX, startY]).attr(deltaLineAttr).add());
-    tempElements.push(chart.renderer.path(['M', currentX, startY, 'L', currentX, currentY]).attr(deltaLineAttr).add());
+    tempElements.push(chart.renderer.path(['M', p1_pix.x, p1_pix.y, 'L', p2_pix.x, p1_pix.y]).attr(deltaLineAttr).add());
+    tempElements.push(chart.renderer.path(['M', p2_pix.x, p1_pix.y, 'L', p2_pix.x, p2_pix.y]).attr(deltaLineAttr).add());
 
     this.tempAnnotation = tempElements;
   }
@@ -1018,11 +1071,8 @@ export default class Grapher {
 
     // Effacer la dernière annotation temporaire
     if (this.tempAnnotation) {
-        this.tempAnnotation.forEach(item => {
-            if (item && item.destroy) item.destroy();
-            else if (typeof item === 'object') Object.values(item).forEach(el => el.destroy());
-        });
-        this.tempAnnotation = null;
+      this.tempAnnotation.forEach(item => { item.destroy() });
+      this.tempAnnotation = null;
     }
 
     // Utiliser la logique existante pour créer l'annotation permanente
@@ -1030,24 +1080,60 @@ export default class Grapher {
     const pos = chart.pointer.getChartPosition();
     const endX = e.pageX - pos.left;
     const endY = e.pageY - pos.top;
-    const { chartX: startX, chartY: startY, time: startTime } = this.mouseDownInfo;
+    const { chartX: startX, chartY: startY, time: startTime, snappedPoint: startSnappedPoint } = this.mouseDownInfo;
     const distance = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
     const duration = Date.now() - startTime;
 
     if (distance < 5 && duration < 300) { // Clic
-      const xValue = chart.xAxis[0].toValue(endX);
-      const yValue = chart.yAxis[0].toValue(endY);
+      let xValue, yValue;
+
+      if (this.crosshairMode === 'model' && this.snappedModelPoint) {
+        // Utiliser les coordonnées du point aimanté sur le modèle
+        xValue = this.snappedModelPoint.x;
+        yValue = this.snappedModelPoint.y;
+      } else if (this.crosshairMode === 'data' && this.snappedDataPoint) {
+        // Utiliser les coordonnées du point de donnée aimanté
+        xValue = this.snappedDataPoint.x;
+        yValue = this.snappedDataPoint.y;
+      } else {
+        // Comportement par défaut (réticule libre)
+        xValue = chart.xAxis[0].toValue(endX);
+        yValue = chart.yAxis[0].toValue(endY);
+      }
+      
       this.data.annotations.push({
         id: Highcharts.uniqueKey(), type: 'point', x: xValue, y: yValue
       });
-    } else { // Glisser
-      const x1 = chart.xAxis[0].toValue(startX);
-      const y1 = chart.yAxis[0].toValue(startY);
-      const x2 = chart.xAxis[0].toValue(endX);
-      const y2 = chart.yAxis[0].toValue(endY);
-      this.data.annotations.push({
-        id: Highcharts.uniqueKey(), type: 'segment', points: [{ x: x1, y: y1 }, { x: x2, y: y2 }]
-      });
+
+    } else { // Glisser-déposer
+      let p1, p2;
+      
+      if (this.crosshairMode === 'data') {
+        if (!startSnappedPoint) return; // Glisser a commencé hors d'un point
+        p1 = startSnappedPoint;
+        const dataSeries = chart.series.filter(s => !s.options.id?.startsWith('model-'));
+        const endPoint = chart.pointer.findNearestKDPoint(dataSeries, true, { chartX: endX, chartY: endY });
+        if (!endPoint) return; // Glisser s'est terminé hors d'un point
+        p2 = { x: endPoint.x, y: endPoint.y };
+
+      } else if (this.crosshairMode === 'model') { // <-- AJOUTEZ CE BLOC
+        if (!startSnappedPoint) return;
+        p1 = startSnappedPoint;
+        const endPoint = this._findNearestModelPoint({ chartX: endX, chartY: endY });
+        if (!endPoint) return;
+        p2 = { x: endPoint.x, y: endPoint.y };
+
+      } else if (this.crosshairMode === 'free') {
+        p1 = { x: chart.xAxis[0].toValue(startX), y: chart.yAxis[0].toValue(startY) };
+        p2 = { x: chart.xAxis[0].toValue(endX), y: chart.yAxis[0].toValue(endY) };
+      }
+
+      // Créer l'annotation si les deux points sont valides
+      if (p1 && p2) {
+        this.data.annotations.push({
+          id: Highcharts.uniqueKey(), type: 'segment', points: [p1, p2]
+        });
+      }
     }
 
     // Met à jour la visibilité du bouton après avoir ajouté une annotation
