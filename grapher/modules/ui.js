@@ -1417,6 +1417,7 @@ export default class UIManager {
         if (item.id === 'tool-crosshair-data') this.grapher.setCrosshairMode('data');
         else if (item.id === 'tool-crosshair-free') this.grapher.setCrosshairMode('free');
         else if (item.id === 'tool-crosshair-model') this.grapher.setCrosshairMode('model');
+        else if (item.id === 'tool-tangent') this.grapher.setCrosshairMode('tangent');
       });
     });
 
@@ -1467,7 +1468,7 @@ export default class UIManager {
         .forEach(c => c.innerHTML = '');
 
       // Réinitialise l’état
-      if (typeof activeToolElement !== 'undefined') activeToolElement = null;
+      this.activeToolElement = null; 
 
       // Coupe tout réticule (tooltip + croix)
       this.grapher.setCrosshairMode(null);
