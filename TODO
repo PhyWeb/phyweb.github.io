@@ -54,9 +54,6 @@ GRAPHER:
 
   - réticule persistant quand on clique
   - OUTILS
-      - réticule libre : permettre de garder une croix ou drag une distance
-      - reticule donnée : garder une croix
-      - réticule modèle : pareil
       - tangente
       - calcul modèle
       - méthode des tangentes
