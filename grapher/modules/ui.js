@@ -574,7 +574,8 @@ export default class UIManager {
   readCurrentAppSettings() {
     return {
       significantDigits: this.data.settings.significantDigits,
-      grapherGrid: this.grapher.gridVisible,
+      grapherGrid: this.grapher.grid,
+      includeOriginOnAutoZoom: this.grapher.includeOriginOnAutoZoom,
       derivatePoints: this.calculation.derivatePoints,
       derivateEdges: this.calculation.derivateEdges,
     };
@@ -587,7 +588,8 @@ export default class UIManager {
    */
   loadSettingsIntoModalUI(settings) {
     $('#significant-digits-select').value = settings.significantDigits;
-    $('#graph-grid-switch').checked = settings.grid;
+    $('#graph-grid-switch').checked = settings.grapherGrid;
+    $('#include-origin-switch').checked = settings.includeOriginOnAutoZoom;
     $('#derivative-points-select').value = settings.derivatePoints;
     $('#derivate-edges-switch').checked = settings.derivateEdges;
     // Par défaut, la case de sauvegarde n'est pas cochée
@@ -602,6 +604,7 @@ export default class UIManager {
     return {
       significantDigits: parseInt(document.getElementById('significant-digits-select').value),
       grapherGrid: document.getElementById('graph-grid-switch').checked,
+      includeOriginOnAutoZoom: document.getElementById('include-origin-switch').checked,
       derivatePoints: parseInt(document.getElementById('derivative-points-select').value),
       derivateEdges: document.getElementById('derivate-edges-switch').checked,
     };
@@ -621,6 +624,13 @@ export default class UIManager {
     // Appliquer au grapheur
     if (this.grapher.grid !== settings.grapherGrid) {
       this.grapher.setGridVisibility(settings.grapherGrid);
+    }
+
+    if (this.grapher.includeOriginOnAutoZoom !== settings.includeOriginOnAutoZoom) {
+      this.grapher.includeOriginOnAutoZoom = settings.includeOriginOnAutoZoom;
+      // On déclenche un zoom auto pour que le changement soit visible immédiatement
+      this.grapher.chart.xAxis[0].setExtremes(null, null);
+      this.grapher.chart.yAxis[0].setExtremes(null, null);
     }
     
     // Appliquer aux calculs
@@ -1517,19 +1527,16 @@ export default class UIManager {
       // On désélectionne les outils avant de réinitialiser le zoom
       clearActiveTool();
 
-      // 1. On réinitialise manuellement les axes à leur étendue maximale.
-      //    Passer 'null' à setExtremes a pour effet de réinitialiser l'axe.
-      this.grapher.chart.xAxis[0].setExtremes(null, null, false);
-      this.grapher.chart.yAxis[0].setExtremes(null, null, false);
-      this.grapher.chart.redraw(); // Un seul redessin pour la performance.
+      this.grapher.chart.xAxis[0].setExtremes(null, null);
+      this.grapher.chart.yAxis[0].setExtremes(null, null);
 
-      // 2. On désactive le mode zoom s'il était actif.
+      // On désactive le mode zoom s'il était actif.
       $("#zoom-button").classList.remove("is-active");
       this.grapher.chart.container.classList.remove('chart-free-crosshair');
       this.isZoomEnabled = false;
       this.grapher.chart.update({ chart: { zooming: { type: null } } });
       
-      // 3. On cache le bouton de zoom auto, car on n'est plus en mode zoomé.
+      // On cache le bouton de zoom auto, car on n'est plus en mode zoomé.
       $("#auto-zoom-button").classList.add("is-hidden");
     });
 

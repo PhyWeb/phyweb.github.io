@@ -118,8 +118,6 @@ export default class App {
     // Update the graph
     this.grapher.deleteAllCurves(); 
 
-    $("#auto-zoom-button").click(); // Reset the zoom
-
     // Update the calculation
     this.calculation.clear();
 

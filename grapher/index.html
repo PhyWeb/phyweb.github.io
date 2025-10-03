@@ -257,7 +257,7 @@
               </span>
             </span>
           </button>
-          <button class="button is-white" id="auto-zoom-button">
+          <button class="button is-white is-hidden" id="auto-zoom-button">
             <span class="icon">
               <span class="fa-layers fa-fw">
                 <i class="fa-solid  fa-magnifying-glass" data-fa-transform=""></i>
@@ -830,6 +830,15 @@
               <div class="control">
                 <label class="switch is-rounded">
                   <input type="checkbox" id="graph-grid-switch" checked>
+                  <span class="check"></span>
+                </label>
+              </div>
+            </div>
+            <div class="field">
+              <label class="label">Inclure l'origine sur le zoom auto</label>
+              <div class="control">
+                <label class="switch is-rounded">
+                  <input type="checkbox" id="include-origin-switch" checked>
                   <span class="check"></span>
                 </label>
               </div>

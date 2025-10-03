@@ -267,6 +267,9 @@ export default class IOManager {
               this.app.grapher.deleteAllCurves();
               this.app.grapher.updateChart();
           }
+
+          this.app.grapher.resetZoom();
+
           // Update the calculation tab
           this.app.uiUpdater.updateCalculationUI();
           console.log("Session .pw restaurée avec succès");
@@ -718,6 +721,10 @@ export default class IOManager {
       this.app.applyCalculation(this.app.editor.getValue()); // Re-applique les calculs
       this.app.spreadsheet.update();
       this.app.grapher.updateChart();
+
+      this.app.grapher.chart.xAxis[0].setExtremes(null, null);
+      this.app.grapher.chart.yAxis[0].setExtremes(null, null);
+
       this.app.uiUpdater.updateCalculationUI();
 
     } finally {

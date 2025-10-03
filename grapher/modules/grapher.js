@@ -2,6 +2,38 @@ import { formatNumber } from '../../common/formatter.js';
 
 const $ = document.querySelector.bind(document);
 
+// --- Début de la surcharge Highcharts ---
+// On exécute ce code une seule fois pour "patcher" la fonction setExtremes
+(function (H) {
+  H.wrap(H.Axis.prototype, 'setExtremes', function (proceed, newMin, newMax, redraw, animation, eventArgs) {
+    // 'proceed' est la fonction originale de Highcharts, on l'appellera plus tard
+
+    const chart = this.chart;
+    // On vérifie si on est en train de faire un "reset zoom" (newMin et newMax sont null)
+    // et si le graphique a notre option activée.
+    if (newMin === null && newMax === null && chart.options?.customGrapherInstance?.includeOriginOnAutoZoom) {
+      
+      const extremes = this.getExtremes();
+      const hasData = extremes.dataMin !== null && extremes.dataMax !== null;
+
+      if (hasData) {
+        // On calcule les nouvelles bornes en incluant zéro
+        const finalMin = Math.min(extremes.dataMin, 0);
+        const finalMax = Math.max(extremes.dataMax, 0);
+        // On appelle la fonction originale avec nos nouvelles bornes calculées
+        proceed.call(this, finalMin, finalMax, redraw, animation, eventArgs);
+      } else {
+        // S'il n'y a pas de données, on laisse Highcharts faire son reset par défaut
+        proceed.call(this, null, null, redraw, animation, eventArgs);
+      }
+    } else {
+      // Pour tous les autres cas (zoom normal, etc.), on appelle la fonction originale sans rien changer
+      proceed.call(this, newMin, newMax, redraw, animation, eventArgs);
+    }
+  });
+}(Highcharts));
+// --- Fin de la surcharge Highcharts ---
+
 function lengthOfTheLongestTable(tables){
   // Find the biggest curve
   let size = 0;
@@ -60,6 +92,7 @@ export default class Grapher {
     this.uiUpdater = null;
 
     this.grid = initialSettings.grapherGrid; // Default value for grid visibility
+    this.includeOriginOnAutoZoom = initialSettings.includeOriginOnAutoZoom;
 
     this.currentXCurve = null;
 

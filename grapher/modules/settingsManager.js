@@ -1,6 +1,7 @@
 export const DEFAULT_SETTINGS = {
   significantDigits: 3,
   grapherGrid: true,
+  includeOriginOnAutoZoom: true,
   derivatePoints: 5,
   derivateEdges: false,
 };
