@@ -88,7 +88,19 @@ export default class App {
     this.uiUpdater.updateSortUI();
   }
 
-  deleteAllCurves() {
+  resetSession() {
+    // Vider toutes les annotations (données + affichage)
+    this.grapher.clearAllAnnotations();
+
+    // Supprimer tous les modèles existants
+    const allModelIds = this.data.models.map(m => m.id);
+    allModelIds.forEach(modelId => this.deleteModel(modelId));
+
+    // Vider le panneau des modèles dans l'interface et mettre à jour les boutons
+    $('#model-list').innerHTML = '';
+    this.uiUpdater.updateRecalculateButtonVisibility();
+    this.uiUpdater.updateModelToolVisibility();
+
     // Delete all curves
     this.data.deleteAllCurves();
     // Conserver uniquement les paramètres de type 'model'

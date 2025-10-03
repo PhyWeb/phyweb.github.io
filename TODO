@@ -31,8 +31,9 @@ TRACKER:
 
 GRAPHER:
   - Ajouter une modale pour modifier les parametres d'une grandeur (nom et unité notamment)
-  - BUG, nouveau fichier ne supprime pas tout. Notamment les panneaux des modèles
+
   - les icones du menu nouveau apparraissent en retard sur le tpb (again)
+
   - avoir une option "zero inclus" dans les courbes
 
   - sauvegarder les derniers fichiers dans localStorage

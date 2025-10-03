@@ -195,7 +195,7 @@ export default class IOManager {
    * Méthode principale de chargement
    */
   async loadFile(file) {
-    this.app.deleteAllCurves();
+    this.app.resetSession();
 
     if (file.name.endsWith(".pw")) { // Gère le nouveau format
       await this.loadPWFile(file);

@@ -453,7 +453,7 @@ export default class UIManager {
 
     $("#new-file-button").addEventListener("click", () => {
       newDataConfirmation(() => {
-        this.app.deleteAllCurves();
+        this.app.resetSession();
         this.editor.setValue('');
         this.common.modalManager.closeAllModals();
       });
