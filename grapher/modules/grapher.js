@@ -57,6 +57,8 @@ export default class Grapher {
     this.data = data;
     this.chart;
 
+    this.uiUpdater = null;
+
     this.grid = initialSettings.grapherGrid; // Default value for grid visibility
 
     this.currentXCurve = null;
@@ -71,6 +73,12 @@ export default class Grapher {
 
     // Propriété pour gérer le clic intelligent
     this.mouseDownInfo = null;
+    this.isDragging = false;      // Pour savoir si un glisser est en cours
+    this.tempAnnotation = null; // Pour stocker les éléments temporaires
+  }
+
+  setUIUpdater(uiUpdater) {
+    this.uiUpdater = uiUpdater;
   }
 
   formatData(xCurve, yCurve){
@@ -86,6 +94,10 @@ export default class Grapher {
 
   newChart(){
     const self = this
+
+    // Lier les gestionnaires d'événements à l'instance de Grapher
+    this.handleMouseMove = this.handleMouseMove.bind(this);
+    this.handleMouseUp = this.handleMouseUp.bind(this);
 
     this.chart = Highcharts.chart("chart", {
       chart: {
@@ -412,29 +424,23 @@ export default class Grapher {
     this.chart.options.customGrapherInstance = this;
 
     // Gestion du clic pour ajouter une annotation avec le réticule libre
-    this.chart.container.addEventListener('click', (e) => {
+    this.chart.container.addEventListener('mousedown', (e) => {
       if (this.crosshairMode !== 'free') return;
 
+      e.preventDefault(); // Empêche la sélection de texte pendant le glisser
+
       const pos = this.chart.pointer.getChartPosition();
-      const chartX = e.pageX - pos.left;
-      const chartY = e.pageY - pos.top;
+      this.mouseDownInfo = {
+        chartX: e.pageX - pos.left,
+        chartY: e.pageY - pos.top,
+        time: Date.now()
+      };
 
-      // Convertir les coordonnées pixels en valeurs de données
-      const xValue = this.chart.xAxis[0].toValue(chartX);
-      const yValue = this.chart.yAxis[0].toValue(chartY);
+      this.isDragging = true;
 
-      // Créer et ajouter la nouvelle annotation
-      this.data.annotations.push({
-        id: Highcharts.uniqueKey(),
-        type: 'point',
-        x: xValue,
-        y: yValue
-      });
-
-      console.log(this.renderedAnnotations)
-
-      // Redessiner le graphique pour afficher la nouvelle annotation
-      this.chart.redraw();
+      // Attacher les écouteurs au document pour capturer tous les mouvements
+      document.addEventListener('mousemove', this.handleMouseMove);
+      document.addEventListener('mouseup', this.handleMouseUp);
     });
 
     this.chart.container.addEventListener('mousemove', (e) => {
@@ -822,7 +828,7 @@ export default class Grapher {
   }
 
   /**
-   * FACTORISÉ : Dessine une croix et ses labels en respectant le style original.
+   * Dessine une croix et ses labels en respectant le style original.
    */
   _drawStyledCrosshair(pixelX, pixelY, valueX, valueY) {
     const chart = this.chart;
@@ -854,6 +860,26 @@ export default class Grapher {
   }
 
   /**
+   * Dessine un simple point stylisé pour les extrémités des segments.
+   * @private
+   */
+  _drawEndpoint(pixelX, pixelY) {
+    const chart = this.chart;
+    const renderer = chart.renderer;
+    
+    const circle = renderer.circle(pixelX, pixelY, 4)
+      .attr({
+        fill: 'rgba(220, 53, 69, 0.9)',
+        stroke: 'white',
+        'stroke-width': 1,
+        zIndex: 5
+      }).add();
+
+    // Retourne un tableau pour un nettoyage uniforme avec les autres annotations
+    return [circle];
+  }
+
+  /**
    * Dessine toutes les annotations stockées dans this.data.annotations
    */
   drawAnnotations() {
@@ -863,12 +889,19 @@ export default class Grapher {
     const chart = this.chart;
     const xAxis = chart.xAxis[0];
     const yAxis = chart.yAxis[0];
+    const significantDigits = this.data.settings.significantDigits;
 
     // Nettoyer les anciennes annotations
-    this.renderedAnnotations.forEach(a => Object.values(a).forEach(el => el.destroy()));
+    this.renderedAnnotations.forEach(rendered => {
+      if (Array.isArray(rendered)) {
+        rendered.forEach(el => el.destroy());
+      } else if (typeof rendered === 'object' && rendered !== null) {
+        Object.values(rendered).forEach(el => el.destroy());
+      }
+    });
     this.renderedAnnotations = [];
 
-    // Parcourir les données et dessiner chaque annotation en utilisant la fonction factorisée
+    // Dessiner chaque annotation
     this.data.annotations.forEach(annotation => {
       if (annotation.type === 'point') {
         const pixelX = xAxis.toPixels(annotation.x);
@@ -876,10 +909,49 @@ export default class Grapher {
 
         if (pixelX >= chart.plotLeft && pixelX <= chart.plotLeft + chart.plotWidth &&
           pixelY >= chart.plotTop && pixelY <= chart.plotTop + chart.plotHeight) {
-          
-          const renderedElements = this._drawStyledCrosshair(pixelX, pixelY, annotation.x, annotation.y);
-          this.renderedAnnotations.push(renderedElements);
+          this.renderedAnnotations.push(this._drawStyledCrosshair(pixelX, pixelY, annotation.x, annotation.y));
         }
+      } else if (annotation.type === 'segment') {
+        const [p1, p2] = annotation.points;
+        const [pixelX1, pixelY1] = [xAxis.toPixels(p1.x), yAxis.toPixels(p1.y)];
+        const [pixelX2, pixelY2] = [xAxis.toPixels(p2.x), yAxis.toPixels(p2.y)];
+        
+        const segmentElements = [];
+
+        // 1. Ligne principale du segment
+        segmentElements.push(chart.renderer.path(['M', pixelX1, pixelY1, 'L', pixelX2, pixelY2])
+          .attr({ 'stroke-width': 2, stroke: 'rgba(220, 53, 69, 0.9)', zIndex: 4 }).add());
+
+        // 2. Points aux extrémités
+        segmentElements.push(...this._drawEndpoint(pixelX1, pixelY1), ...this._drawEndpoint(pixelX2, pixelY2));
+
+        // 3. Lignes Delta
+        const deltaLineAttr = { 'stroke-width': 1, stroke: 'rgba(0, 123, 255, 0.8)', 'stroke-dasharray': '4,4', zIndex: 3 };
+        segmentElements.push(chart.renderer.path(['M', pixelX1, pixelY1, 'L', pixelX2, pixelY1]).attr(deltaLineAttr).add());
+        segmentElements.push(chart.renderer.path(['M', pixelX2, pixelY1, 'L', pixelX2, pixelY2]).attr(deltaLineAttr).add());
+
+        // 4. Labels Delta
+        const xCurveObj = this.data.getCurveByTitle(this.currentXCurve);
+        const firstYSeries = chart.series.find(s => s.visible && s.yAxis.index === 0);
+        const xUnit = xCurveObj?.unit ? ` ${xCurveObj.unit}` : '';
+        const yUnit = firstYSeries?.userOptions.unit ? ` ${firstYSeries.userOptions.unit}` : '';
+
+        const dxText = `Δx = ${formatNumber(p2.x - p1.x, significantDigits)}${xUnit}`;
+        const dyText = `Δy = ${formatNumber(p2.y - p1.y, significantDigits)}${yUnit}`;
+        
+        const labelAttr = { fill: 'rgba(255, 255, 255, 0.85)', stroke: '#dbdbdb', 'stroke-width': 1, r: 4, padding: 5, zIndex: 6 };
+        const labelCss = { color: 'black', fontSize: '12px' };
+
+        const dxLabel = chart.renderer.label(dxText, 0, 0).attr(labelAttr).css(labelCss).add();
+        const dxBBox = dxLabel.getBBox();
+        dxLabel.translate((pixelX1 + pixelX2) / 2 - dxBBox.width / 2, pixelY1 - (pixelY1 > pixelY2 ? 5 : dxBBox.height + 5));
+        
+        const dyLabel = chart.renderer.label(dyText, 0, 0).attr(labelAttr).css(labelCss).add();
+        const dyBBox = dyLabel.getBBox();
+        dyLabel.translate(pixelX2 + (pixelX2 > pixelX1 ? 5 : -dyBBox.width - 5), (pixelY1 + pixelY2) / 2 - dyBBox.height / 2);
+
+        segmentElements.push(dxLabel, dyLabel);
+        this.renderedAnnotations.push(segmentElements);
       }
     });
   }
@@ -888,10 +960,103 @@ export default class Grapher {
    * Supprime toutes les annotations (données et affichage)
    */
   clearAllAnnotations() {
-
     this.data.annotations = [];
 
+    // Met à jour la visibilité du bouton après avoir supprimé les annotations
+    if (this.uiUpdater) {
+      this.uiUpdater.updateClearAnnotationsButtonVisibility();
+    }
+
     this.chart.redraw();
+  }
+
+ handleMouseMove(e) {
+    if (!this.isDragging) return;
+
+    const chart = this.chart;
+    const pos = chart.pointer.getChartPosition();
+    const startX = this.mouseDownInfo.chartX;
+    const startY = this.mouseDownInfo.chartY;
+    const currentX = e.pageX - pos.left;
+    const currentY = e.pageY - pos.top;
+
+    // Effacer l'ancienne annotation temporaire
+    if (this.tempAnnotation) {
+      this.tempAnnotation.forEach(el => el.destroy());
+    }
+
+    const distance = Math.sqrt(Math.pow(currentX - startX, 2) + Math.pow(currentY - startY, 2));
+    if (distance < 5) {
+      this.tempAnnotation = null;
+      return;
+    }
+    
+    const tempElements = [];
+
+    // 1. Ligne principale (en pointillés)
+    tempElements.push(chart.renderer.path(['M', startX, startY, 'L', currentX, currentY])
+      .attr({ 'stroke-width': 2, stroke: 'rgba(220, 53, 69, 0.7)', 'stroke-dasharray': '5,5', zIndex: 10 }).add());
+
+    // 2. Points aux extrémités
+    tempElements.push(...this._drawEndpoint(startX, startY), ...this._drawEndpoint(currentX, currentY));
+    
+    // 3. Lignes Delta (en pointillés)
+    const deltaLineAttr = { 'stroke-width': 1, stroke: 'rgba(0, 123, 255, 0.7)', 'stroke-dasharray': '4,4', zIndex: 9 };
+    tempElements.push(chart.renderer.path(['M', startX, startY, 'L', currentX, startY]).attr(deltaLineAttr).add());
+    tempElements.push(chart.renderer.path(['M', currentX, startY, 'L', currentX, currentY]).attr(deltaLineAttr).add());
+
+    this.tempAnnotation = tempElements;
+  }
+
+  handleMouseUp(e) {
+    // Nettoyer les écouteurs globaux
+    document.removeEventListener('mousemove', this.handleMouseMove);
+    document.removeEventListener('mouseup', this.handleMouseUp);
+
+    if (!this.isDragging) return;
+    this.isDragging = false;
+
+    // Effacer la dernière annotation temporaire
+    if (this.tempAnnotation) {
+        this.tempAnnotation.forEach(item => {
+            if (item && item.destroy) item.destroy();
+            else if (typeof item === 'object') Object.values(item).forEach(el => el.destroy());
+        });
+        this.tempAnnotation = null;
+    }
+
+    // Utiliser la logique existante pour créer l'annotation permanente
+    const chart = this.chart;
+    const pos = chart.pointer.getChartPosition();
+    const endX = e.pageX - pos.left;
+    const endY = e.pageY - pos.top;
+    const { chartX: startX, chartY: startY, time: startTime } = this.mouseDownInfo;
+    const distance = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
+    const duration = Date.now() - startTime;
+
+    if (distance < 5 && duration < 300) { // Clic
+      const xValue = chart.xAxis[0].toValue(endX);
+      const yValue = chart.yAxis[0].toValue(endY);
+      this.data.annotations.push({
+        id: Highcharts.uniqueKey(), type: 'point', x: xValue, y: yValue
+      });
+    } else { // Glisser
+      const x1 = chart.xAxis[0].toValue(startX);
+      const y1 = chart.yAxis[0].toValue(startY);
+      const x2 = chart.xAxis[0].toValue(endX);
+      const y2 = chart.yAxis[0].toValue(endY);
+      this.data.annotations.push({
+        id: Highcharts.uniqueKey(), type: 'segment', points: [{ x: x1, y: y1 }, { x: x2, y: y2 }]
+      });
+    }
+
+    // Met à jour la visibilité du bouton après avoir ajouté une annotation
+    if (this.uiUpdater) {
+      this.uiUpdater.updateClearAnnotationsButtonVisibility();
+    }
+
+    this.mouseDownInfo = null;
+    chart.redraw(); // Redessiner pour afficher la nouvelle annotation permanente
   }
 }
 

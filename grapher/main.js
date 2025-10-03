@@ -43,6 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // UIManager a besoin de 'app' pour certaines actions (ex: app.deleteCurve)
   uiManager.setApp(app);
+  grapher.setUIUpdater(uiManager);
   uiManager.initialize();
 
   // Creer le graphique au demarrage

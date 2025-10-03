@@ -304,6 +304,19 @@ export default class UIManager {
   }
 
   /**
+   * Met à jour la visibilité du bouton de suppression des annotations 
+   * en fonction de leur présence.
+   */
+  updateClearAnnotationsButtonVisibility() {
+    const button = $("#clear-annotations-button");
+    if (this.data.annotations.length > 0) {
+      button.classList.remove('is-hidden');
+    } else {
+      button.classList.add('is-hidden');
+    }
+  }
+
+  /**
    * Initialise la navbar avec les boutons et leurs événements.
    */
   initNavbar() {
