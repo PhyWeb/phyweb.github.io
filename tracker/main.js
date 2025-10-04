@@ -117,7 +117,11 @@ $("#mesures-button").addEventListener("click", ()=>{
 });
 
 $("#send-to-grapher-button").addEventListener("click", () => {
-  if (measurement.series.length === 0 || measurement.series[0].length === 0) {
+  function isNonEmptyString(v) {
+    return typeof v === 'string' && v.trim().length > 0;
+  }
+
+  if (measurement.series.length === 0 || measurement.series[0].filter(isNonEmptyString)) {
     alertModal({
       title: "Aucune donnée",
       body: "Il n'y a aucune donnée à envoyer vers le grapheur.",
