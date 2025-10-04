@@ -38,8 +38,6 @@ GRAPHER:
 
   - creer un moteur qui gere les raccourvis clavier (ctrl s et n notamment)
 
-  - BUG, on peut renommer un parametre de modèle avec le meme nom qu'une grandeur (et peut etre aussi qu'un autre paramertre de modèle)
-
   - permettre de visualiser les bornes des modèles
 
   - bonnes icones pour les modèles
