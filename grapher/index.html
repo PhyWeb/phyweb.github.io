@@ -1195,7 +1195,7 @@
   </div>
 
   <!------------------------------------------------------------------------------------------------------------>
-  <!------------------------------------------------TEMPLATE MODEL PANEL------------------------------------------>
+  <!----------------------------------------------TEMPLATE MODEL PANEL------------------------------------------>
   <!------------------------------------------------------------------------------------------------------------>
   <template id="template-model-panel">
     <article class="message is-light mb-2">
@@ -1228,5 +1228,51 @@
       </div>
     </article>
   </template>
+
+  <!------------------------------------------------------------------------------------------------------------>
+  <!---------------------------------------------COMPUTE MODEL MODAL-------------------------------------------->
+  <!------------------------------------------------------------------------------------------------------------>
+  <div id="compute-model-modal" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title">Calculer une valeur modélisée</p>
+        <button class="delete" aria-label="close"></button>
+      </header>
+      <section class="modal-card-body">
+        <p class="subtitle is-6" id="compute-model-equation"></p>
+        <div class="field is-horizontal">
+          <div class="field-label is-normal">
+            <label class="label" id="compute-model-x-label"></label>
+          </div>
+          <div class="field-body">
+            <div class="field">
+              <div class="control">
+                <input class="input" type="number" id="compute-model-x-input">
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="field is-horizontal">
+          <div class="field-label is-normal">
+            <label class="label" id="compute-model-y-label"></label>
+          </div>
+          <div class="field-body">
+            <div class="field">
+              <p class="control">
+                <input class="input" type="text" id="compute-model-y-output" readonly>
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+      <footer class="modal-card-foot">
+        <div class="buttons">
+          <button class="button is-success" id="compute-model-confirm-button">Calculer</button>
+          <button class="button modal-close-button">Fermer</button>
+        </div>
+      </footer>
+    </div>
+  </div>
   </body>
 </html>

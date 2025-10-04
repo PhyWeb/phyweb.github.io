@@ -1616,6 +1616,12 @@ export default class UIManager {
         return;
       }
 
+      // Clic sur le bouton "calculer"
+      if (event.target.closest('.compute-model-button')) {
+        this.openComputeModelModal(model);
+        return;
+      }
+
       // Clic sur l'en-tête pour déplier/replier
       if (event.target.closest('.message-header')) {
         this.toggleModelPanel(modelArticle);
@@ -1624,6 +1630,37 @@ export default class UIManager {
     });
 
     this.initAddModelModal();
+  }
+
+  /**
+   * Ouvre la modale de calcul pour un modèle donné.
+   * @param {Object} model - Le modèle à utiliser pour le calcul.
+   */
+  openComputeModelModal(model) {
+    const xInput = $('#compute-model-x-input');
+    const yOutput = $('#compute-model-y-output');
+
+    // Peuple la modale avec les infos du modèle
+    $('#compute-model-equation').innerHTML = model.getEquationString();
+    $('#compute-model-x-label').textContent = `${model.x.title} (${model.x.unit || ' '})`;
+    $('#compute-model-y-label').textContent = `${model.y.title} (${model.y.unit || ' '})`;
+
+    // Réinitialise les champs
+    xInput.value = '';
+    yOutput.value = '';
+
+    // Gère le calcul
+    $('#compute-model-confirm-button').onclick = () => {
+      const xValue = parseFloat(xInput.value);
+      if (!isNaN(xValue)) {
+        const yValue = model.calculate(xValue);
+        yOutput.value = formatNumber(yValue, this.data.settings.significantDigits);
+      } else {
+        yOutput.value = 'Entrée invalide';
+      }
+    };
+    
+    $('#compute-model-modal').classList.add('is-active');
   }
 
   /**
@@ -2110,7 +2147,7 @@ export default class UIManager {
       qualityList.appendChild(liRmse);
       
       const liRSquared = document.createElement('li');
-      liRSquared.innerHTML = `Coeff. de corrélation = ${model.rSquared != null ? formatNumber(model.rSquared, 5) : 'Indéfini'}`;
+      liRSquared.innerHTML = `Coeff de corrélation = ${model.rSquared != null ? formatNumber(model.rSquared, 5) : 'Indéfini'}`;
       qualityList.appendChild(liRSquared);
 
       // Ajouter le panneau entièrement construit au DOM

@@ -60,6 +60,8 @@ GRAPHER:
 
   - possibilité d'avoir 2 axes y
 
+  - electron cassé
+
   - Revoir la sauvegarde ! (les settings sont peut etre stockés dans le fichier : on veut pas)
 
   - Validation des symboles : La validation des symboles (noms de variables) est effectuée à plusieurs endroits. Cette logique pourrait être centralisée dans une fonction utilitaire pour éviter la duplication de code et garantir une validation cohérente partout dans l'application.

@@ -197,6 +197,12 @@ class Model {
     return data;
   }
 
+  calculate(x){
+    const f = this._getFunction();
+    const params = this.parameters.map(p => p.value);
+    return f(params, x);
+  }
+
   async fit(){
     const data = this._buildData();
     if (data.length < 2) { // Il faut au moins 2 points pour une régression
