@@ -115,6 +115,8 @@ export default class App {
     }
     this.data.parameters = parametersToKeep;
 
+    this.uiUpdater.clearActiveTool();
+
     // Update the graph
     this.grapher.deleteAllCurves(); 
 

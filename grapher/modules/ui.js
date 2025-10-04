@@ -1467,31 +1467,12 @@ export default class UIManager {
     this.isZoomEnabled = false;
 
     /**
-     * Efface l’outil actif et désactive tout réticule.
-     */
-    let clearActiveTool = () =>{
-      if (!this.activeToolElement) {
-        return;
-      }
-      // Enlève toutes les coches
-      document.querySelectorAll('.tool-item .tool-checkmark-container')
-        .forEach(c => c.innerHTML = '');
-
-      // Réinitialise l’état
-      this.activeToolElement = null; 
-
-      // Coupe tout réticule (tooltip + croix)
-      this.grapher.setCrosshairMode(null);
-      this.grapher.chart.container.classList.remove('chart-free-crosshair');
-    }
-
-    /**
      * Gère l'activation et la désactivation du zoom.
      */
     $("#zoom-button").addEventListener("click", () => {
       if(!this.isZoomEnabled){
         // Désélectionne les outils avant d’activer le zoom
-        clearActiveTool();
+        this.clearActiveTool();
 
         $("#zoom-button").classList.add("is-active");
         this.grapher.chart.update({
@@ -1525,7 +1506,7 @@ export default class UIManager {
      */
     $("#auto-zoom-button").addEventListener("click", () => {
       // On désélectionne les outils avant de réinitialiser le zoom
-      clearActiveTool();
+      this.clearActiveTool();
 
       this.grapher.chart.xAxis[0].setExtremes(null, null);
       this.grapher.chart.yAxis[0].setExtremes(null, null);
@@ -1545,7 +1526,7 @@ export default class UIManager {
      */
     $("#zoom-in-button").addEventListener("click", () => {
       // On désélectionne les outils avant de zoomer
-      clearActiveTool();
+      this.clearActiveTool();
 
       this.grapher.zoom('in');
     });
@@ -1555,11 +1536,30 @@ export default class UIManager {
      */
     $("#zoom-out-button").addEventListener("click", () => {
       // On désélectionne les outils avant de dézoomer
-      clearActiveTool();
+      this.clearActiveTool();
 
       this.grapher.zoom('out');
     });
 
+  }
+
+  /**
+   * Efface l’outil actif et désactive tout réticule.
+   */
+  clearActiveTool() {
+    if (!this.activeToolElement) {
+      return;
+    }
+    // Enlève toutes les coches
+    document.querySelectorAll('.tool-item .tool-checkmark-container')
+      .forEach(c => c.innerHTML = '');
+
+    // Réinitialise l’état
+    this.activeToolElement = null; 
+
+    // Coupe tout réticule (tooltip + croix)
+    this.grapher.setCrosshairMode(null);
+    this.grapher.chart.container.classList.remove('chart-free-crosshair');
   }
 
   /**
