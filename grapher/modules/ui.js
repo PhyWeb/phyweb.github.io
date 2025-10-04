@@ -1371,6 +1371,7 @@ export default class UIManager {
   initTools(){
     const toolsDropdown = $("#tools-dropdown");
     const toolItems = document.querySelectorAll(".tool-item");
+    const toolsButtonText = $("#tools-button-text");
 
     /**
      * Gère la sélection et la désélection des outils.
@@ -1388,7 +1389,7 @@ export default class UIManager {
 
       if (isDeselecting) {
         this.activeToolElement = null;
-
+        toolsButtonText.textContent = 'Outils'; // On remet le texte par défaut
         this.grapher.setCrosshairMode(null); // On passe 'null' pour tout désactiver
         
         return;
@@ -1396,6 +1397,7 @@ export default class UIManager {
 
       // Sinon, on active le nouvel outil
       this.activeToolElement = clickedItem;
+      toolsButtonText.textContent = clickedItem.textContent.trim(); // On met à jour le texte du bouton
       const checkmarkContainer = clickedItem.querySelector('.tool-checkmark-container');
       if (checkmarkContainer) {
         checkmarkContainer.innerHTML = '<i class="fa-solid fa-check"></i>';
@@ -1559,6 +1561,9 @@ export default class UIManager {
     // Enlève toutes les coches
     document.querySelectorAll('.tool-item .tool-checkmark-container')
       .forEach(c => c.innerHTML = '');
+
+    // Réinitialise le texte du bouton
+    $("#tools-button-text").textContent = 'Outils';
 
     // Réinitialise l’état
     this.activeToolElement = null; 
