@@ -1799,27 +1799,53 @@ export default class UIManager {
       model.borne_fin = newBorneFin;
       
       let namesHaveChanged = false;
-      const allNewNames = new Set();
       let hasConflict = false;
-      const newParamNames = {};
-      
-      parametersContainer.querySelectorAll('input[data-old-name]').forEach(input => {
-        const oldName = input.dataset.oldName;
-        const newName = input.value.trim();
-        if(oldName !== newName) namesHaveChanged = true;
-        if (!newName.match(/^[a-zA-Z][a-zA-Z0-9]*$/)) {
-          alertModal({ title: "Nom de paramètre invalide", body: `Le nom "${newName}" doit commencer par une lettre et ne contenir que des lettres et des chiffres.`, confirm: "OK" });
-          hasConflict = true;
-          return;
-        }
-        if (allNewNames.has(newName)) {
-          alertModal({ title: "Nom de paramètre en double", body: `Le nom "${newName}" est utilisé plusieurs fois.`, confirm: "OK" });
-          hasConflict = true;
-          return;
-        }
-        allNewNames.add(newName);
-        newParamNames[oldName] = newName;
-      });
+      const newParamNames = {}; // Fait correspondre les anciens noms aux nouveaux
+
+      // 1. Récupère tous les noms déjà pris dans l'application, SAUF les paramètres de ce modèle
+      const oldParamNamesBeingEdited = model.parameters.map(p => p.name);
+      const otherParameterNames = Object.keys(this.data.parameters)
+          .filter(pName => !oldParamNamesBeingEdited.includes(pName));
+      const curveNames = this.data.curves.map(c => c.title);
+      const takenNames = new Set([...otherParameterNames, ...curveNames]);
+
+      const inputs = parametersContainer.querySelectorAll('input[data-old-name]');
+      const allNewNamesInThisModel = new Set();
+
+      // 2. Première passe : vérifie les doublons à l'intérieur du modèle et le format
+      for (const input of inputs) {
+          const newName = input.value.trim();
+          if (!newName.match(/^[a-zA-Z][a-zA-Z0-9]*$/)) {
+              alertModal({ title: "Nom de paramètre invalide", body: `Le nom "${newName}" doit commencer par une lettre et ne contenir que des lettres et des chiffres.`, confirm: "OK" });
+              hasConflict = true;
+              break;
+          }
+          if (allNewNamesInThisModel.has(newName)) {
+              alertModal({ title: "Nom de paramètre en double", body: `Le nom "${newName}" est utilisé plusieurs fois dans ce modèle.`, confirm: "OK" });
+              hasConflict = true;
+              break;
+          }
+          allNewNamesInThisModel.add(newName);
+      }
+      if (hasConflict) return;
+
+
+      // 3. Seconde passe : vérifie les conflits avec les autres symboles de l'application
+      for (const input of inputs) {
+          const oldName = input.dataset.oldName;
+          const newName = input.value.trim();
+
+          if (oldName !== newName) {
+              namesHaveChanged = true;
+          }
+
+          if (takenNames.has(newName)) {
+              alertModal({ title: "Conflit de nom", body: `Le nom "${newName}" est déjà utilisé par une autre grandeur ou un autre paramètre.`, confirm: "OK" });
+              hasConflict = true;
+              break;
+          }
+          newParamNames[oldName] = newName;
+      }
       
       if(hasConflict) return;
       
