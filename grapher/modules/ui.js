@@ -619,6 +619,12 @@ export default class UIManager {
     if (this.data.settings.significantDigits !== settings.significantDigits) {
       this.data.settings.significantDigits = settings.significantDigits;
       this.spreadsheet.update();
+
+      // Met à jour les panneaux des modèles et la barre latérale des calculs
+      this.data.models.forEach(model => this.updateModelPanel(model));
+      this.updateCalculationUI();
+      // Redessine le graphique pour mettre à jour les annotations
+      this.grapher.chart.redraw();
     }
     
     // Appliquer au grapheur

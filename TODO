@@ -34,11 +34,7 @@ GRAPHER:
 
   - les icones du menu nouveau apparraissent en retard sur le tpb (again)
 
-  - avoir une option "zero inclus" dans les courbes
-
   - sauvegarder les derniers fichiers dans localStorage
-
-  - BUG on ne change pas tout ce qui faut quand on change le nombre de chiffres significatifs dans les options (parametres des modèles au moins)
 
   - creer un moteur qui gere les raccourvis clavier (ctrl s et n notamment)
 
