@@ -1017,7 +1017,7 @@ export default class UIManager {
         if(curve.type === "calculation") return; // On ne peut pas supprimer les modèles
         const option = document.createElement("option");
         option.value = curve.title;
-        option.textContent = `${curve.title} (${curve.unit || 'sans unité'})`;
+        option.textContent = curve.unit ? `${curve.title} (${curve.unit})` : curve.title;
         selectElement.appendChild(option);
       });
 
@@ -1138,7 +1138,7 @@ export default class UIManager {
 
         const span = document.createElement("span");
         span.classList.add("ml-2");
-        span.innerHTML = curve.title + (curve.unit ? ` (${curve.unit})` : '');
+        span.innerHTML = curve.unit ? `${curve.title} (${curve.unit})` : curve.title;
 
         const colorSwatch = document.createElement("span");
         colorSwatch.style.backgroundColor = curve.color;
@@ -1642,8 +1642,8 @@ export default class UIManager {
 
     // Peuple la modale avec les infos du modèle
     $('#compute-model-equation').innerHTML = model.getEquationString();
-    $('#compute-model-x-label').textContent = `${model.x.title} (${model.x.unit || ' '})`;
-    $('#compute-model-y-label').textContent = `${model.y.title} (${model.y.unit || ' '})`;
+    $('#compute-model-x-label').textContent = model.x.unit ? `${model.x.title} (${model.x.unit})` : model.x.title;
+    $('#compute-model-y-label').textContent = model.y.unit ? `${model.y.title} (${model.y.unit})` : model.y.title;
 
     // Réinitialise les champs
     xInput.value = '';

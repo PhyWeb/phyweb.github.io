@@ -569,7 +569,7 @@ export default class Data {
     let headers = [];
 
     this.curves.forEach((curve, i) => {
-      headers.push(curve.title + " (" + curve.unit + ")");
+      headers.push(curve.unit ? `${curve.title} (${curve.unit})` : curve.title);
     });
     return headers;
   }
