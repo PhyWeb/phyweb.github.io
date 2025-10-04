@@ -620,7 +620,9 @@ export default class Grapher {
   setCrosshairMode(mode) {
     this.crosshairMode = mode;
 
-    const isDefaultTooltip = false; // Le tooltip natif n'est plus jamais utilisé
+    const needsMouseTracking = (mode === 'data' || mode === 'model' || mode === 'tangent');
+    // On active le "sticky tracking" pour les outils qui doivent s'accrocher aux points
+    const needsStickyTracking = (mode === 'data' || mode === 'tangent');
 
     this.hideFreeCrosshair();
 
@@ -634,12 +636,12 @@ export default class Grapher {
     // Mise à jour groupée de toutes les options nécessaires
     this.chart.update({
       chart: { zooming: { type: null}},
-      tooltip: { enabled: isDefaultTooltip},
+      tooltip: { enabled: false},
       plotOptions: {
         series: {
-          stickyTracking: false,
-          enableMouseTracking: isDefaultTooltip,
-          states: { hover: { enabled: isDefaultTooltip } }
+          stickyTracking: needsStickyTracking,
+          enableMouseTracking: needsMouseTracking,
+          states: { hover: { enabled: false } }
         }
       }
     });
@@ -936,7 +938,7 @@ export default class Grapher {
     
     // Utilise l'événement natif de Highcharts pour trouver le point le plus proche
     const dataSeries = chart.series.filter(s => !s.options.id?.startsWith('model-'));
-    const point = chart.pointer.findNearestKDPoint(dataSeries, true, event);
+    const point = chart.pointer.findNearestKDPoint(dataSeries, false, event);
 
     if (point && point.plotX !== undefined && point.plotY !== undefined) {
       this.snappedDataPoint = { x: point.x, y: point.y };
@@ -1241,9 +1243,10 @@ export default class Grapher {
     // On cherche dans toutes les séries visibles qui ne sont pas des annotations
     const searchableSeries = chart.series.filter(s => s.visible && s.type !== 'spline');
     
-    // Utilise la méthode Highcharts correcte pour trouver le point le plus proche
-    const point = chart.pointer.findNearestKDPoint(searchableSeries, true, event);
+    // Utilise la méthode Highcharts pour trouver le point le plus proche
+    const point = chart.pointer.findNearestKDPoint(searchableSeries, false, event);
     
+    console.log(point);
     return point;
   }
 
@@ -1253,14 +1256,39 @@ export default class Grapher {
    */
   _calculateSlope(point) {
     const series = point.series;
-    const index = point.index;
-    const points = series.points;
-    const n = points.length;
+    // On utilise series.options.data qui contient TOUJOURS les données originales
+    const data = series.options.data; 
+    const n = data.length;
 
     if (n < 2) return null;
 
-    const p_minus_1 = points[index - 1];
-    const p_plus_1 = points[index + 1];
+    // On vérifie si les données sont au format [x,y] ou {x,y}
+    const isArrayData = Array.isArray(data[0]);
+
+    // On cherche l'index du point manuellement, car point.index n'est pas fiable
+    const index = data.findIndex(p => {
+        if (isArrayData) {
+            return p[0] === point.x && p[1] === point.y;
+        } else {
+            return p.x === point.x && p.y === point.y;
+        }
+    });
+
+    // Si on ne trouve pas le point, on ne peut rien faire
+    if (index === -1) {
+      return null;
+    }
+
+    // Fonction pour s'assurer qu'on a un objet {x, y}
+    const getPointObject = (p) => {
+        if (!p) return null;
+        if (isArrayData) return { x: p[0], y: p[1] };
+        return p;
+    };
+
+    const p_minus_1 = getPointObject(index > 0 ? data[index - 1] : null);
+    const p_plus_1 = getPointObject(index < n - 1 ? data[index + 1] : null);
+    const current_point = getPointObject(data[index]);
 
     // Différence centrale (plus précis)
     if (p_minus_1 && p_plus_1) {
@@ -1269,14 +1297,15 @@ export default class Grapher {
     }
     // Différence avant (pour le premier point)
     else if (p_plus_1) {
-      const dx = p_plus_1.x - point.x;
-      return dx === 0 ? null : (p_plus_1.y - point.y) / dx;
+      const dx = p_plus_1.x - current_point.x;
+      return dx === 0 ? null : (p_plus_1.y - current_point.y) / dx;
     }
     // Différence arrière (pour le dernier point)
     else if (p_minus_1) {
-      const dx = point.x - p_minus_1.x;
-      return dx === 0 ? null : (point.y - p_minus_1.y) / dx;
+      const dx = current_point.x - p_minus_1.x;
+      return dx === 0 ? null : (current_point.y - p_minus_1.y) / dx;
     }
+    
     return null;
   }
 
