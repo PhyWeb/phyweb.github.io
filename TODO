@@ -40,10 +40,7 @@ GRAPHER:
 
   - permettre de visualiser les bornes des modèles
 
-  - bonnes icones pour les modèles
-
   - utiliser la legende de highcharts pour gerer les courbes actives
-
   - dropdown pour choisir l'abscisse en bout d'axe
 
   - gerer quand la modélisation donne des ecart type ou r2 "infinity" Deja fait je crois, à vérifier
@@ -51,8 +48,7 @@ GRAPHER:
   - permettre voir autoriser les notations 3e-15 (deja partiellemnt possible, à vérifier partout)
 
   - OUTILS
-      - calcul modèle
-      - méthode des tangentes
+    - méthode des tangentes
 
   - icones personnalisées
 
@@ -65,6 +61,8 @@ GRAPHER:
   - possibilité d'avoir 2 axes y
 
   - electron cassé
+
+  - tester sur petit ecran
 
   - Revoir la sauvegarde ! (les settings sont peut etre stockés dans le fichier : on veut pas)
 
