@@ -7,6 +7,8 @@
     <link rel="icon" href="./lib/favicons/favicon.ico" />
     <link rel="stylesheet" href="../common/bulma/bulma.min.css">
     <link rel="stylesheet" href="../common/bulma/bulma-switch.min.css">
+    <link rel="stylesheet" href="../common/bulma/bulma-checkbox.min.css">
+
     <link rel="stylesheet" href="../common/common.css">
     <link rel="stylesheet" href="lib/tracker.css">
     
@@ -310,9 +312,10 @@
         </div>
       </section>
       <footer class="modal-card-foot">
-        <label class="checkbox">
-          <input type="checkbox" id="force-filesize-modal-input"/>
-          <span>Options avancées</span><span id="force-filesize-modal-label"></span>
+        <label class="b-checkbox checkbox">
+          <input type="checkbox" id="force-filesize-modal-input">
+          <span class="check"></span>
+          <span class="ml-2">Options avancées</span>
         </label>
       </footer>
     </div>
@@ -407,25 +410,29 @@
         </p>
         <article class="message">
           <div class="message-body">
-            <label class="checkbox">
-              <input type="checkbox" id="def-size-input"/>
-              <span>Réduire la définition de l'image</span><span id="def-size-label"></span>
+            <label class="b-checkbox checkbox">
+              <input type="checkbox" id="def-size-input">
+              <span class="check"></span>
+              <span class="ml-2">Réduire la définition de l'image</span><span id="def-size-label"></span>
             </label>
+
           </div>
         </article>
         <article class="message">
           <div class="message-body">
-            <label class="checkbox">
+            <label class="b-checkbox checkbox">
               <input type="checkbox" id="fps-size-input"/>
-              <span>Réduire le nombre d'images par seconde</span><span id="fps-size-label"></span>
+              <span class="check"></span>
+              <span class="ml-2">Réduire le nombre d'images par seconde</span><span id="fps-size-label"></span>
             </label>
           </div>
         </article>
         <article class="message">
           <div class="message-body">
-            <label class="checkbox">
+            <label class="b-checkbox checkbox">
               <input type="checkbox" id="duration-size-input"/>
-              Réduire la durée de la vidéo (Durée totale : <span id="duration-size-label"></span> s)
+              <span class="check"></span>
+              <span class="ml-2">Réduire la durée de la vidéo (Durée totale : </span><span id="duration-size-label"></span> s)
             </label>
             <div id="duration-size-inputs">
               <div class="mb-6 mt-2" id="file-slider"></div>
