@@ -282,12 +282,6 @@
             </span>
             <span>Panneau modélisation</span>
           </button>
-          <button class="button is-hidden" id="compress-modelisation-button">
-            <span class="icon">
-              <i class="fa-solid fa-arrow-right-from-bracket"></i>
-            </span>
-            <span>Panneau modélisation</span>
-          </button>
         </div>
       </nav>
       <div class="block" style="overflow:auto;" id="chart-wrapper">
@@ -295,25 +289,32 @@
       </div>
     </div>
     <div id="modelisation-panel" class="box p-3 mt-3 mb-3 mr-3 ml-0 is-hidden">
-        <h2 class="title is-5 has-text-centered mt-2 mb-2">Modélisations</h2>
-        <button class="button is-fullwidth is-info is-light mt-2 mb-4 is-hidden" id="recalculate-models-button">
-            <span class="icon">
-              <i class="fas fa-redo-alt"></i>
-            </span>
-            <span>Recalculer les modèles</span>
+      <div class="modelisation-header">
+        <button class="button is-white" id="compress-modelisation-button">
+          <span class="icon">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+          </span>
         </button>
-        <div style="flex-grow: 1; overflow-y: auto;">
-            <div id="model-list">
-            </div>
-            <button class="button is-fullwidth is-text mt-1" id="add-model-button">
-                <span class="icon">
-                  <i class="fas fa-plus"></i>
-                </span>
-                <span>
-                  Nouvelle modélisation
-                </span>
-            </button>
-        </div>
+        <h2 class="title is-5">Modélisations</h2>
+      </div>
+      <button class="button is-fullwidth is-info is-light mt-2 mb-4 is-hidden" id="recalculate-models-button">
+          <span class="icon">
+            <i class="fas fa-redo-alt"></i>
+          </span>
+          <span>Recalculer les modèles</span>
+      </button>
+      <div style="flex-grow: 1; overflow-y: auto;">
+          <div id="model-list">
+          </div>
+          <button class="button is-fullwidth is-text mt-1" id="add-model-button">
+              <span class="icon">
+                <i class="fas fa-plus"></i>
+              </span>
+              <span>
+                Nouvelle modélisation
+              </span>
+          </button>
+      </div>
     </div>
   </div>
 

@@ -42,6 +42,10 @@ GRAPHER:
 
   - bonnes icones pour les modèles
 
+  - utiliser la legende de highcharts pour gerer les courbes actives
+
+  - dropdown pour choisir l'abscisse en bout d'axe
+
   - gerer quand la modélisation donne des ecart type ou r2 "infinity" Deja fait je crois, à vérifier
 
   - permettre voir autoriser les notations 3e-15 (deja partiellemnt possible, à vérifier partout)

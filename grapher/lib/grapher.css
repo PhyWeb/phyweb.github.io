@@ -191,6 +191,27 @@
   flex-direction: column;
 }
 
+#modelisation-panel .modelisation-header {
+  display: flex;
+  align-items: center;
+  justify-content: center; /* Centre le contenu horizontalement */
+  position: relative; /* Crée un contexte de positionnement */
+  border-bottom: 1px solid #dbdbdb;
+  padding-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+#modelisation-panel .modelisation-header .title {
+  margin: 0;
+  flex-grow: 1; /* S'assure que le titre peut occuper tout l'espace */
+  text-align: center; /* Centre le texte du titre */
+}
+
+#modelisation-panel #compress-modelisation-button {
+  position: absolute; /* Sort le bouton du flux normal */
+  left: 0; /* Le place tout à gauche du conteneur */
+}
+
 #model-list {
   flex-grow: 1;
   overflow-y: auto;
