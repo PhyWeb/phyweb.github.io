@@ -1138,7 +1138,11 @@ export default class UIManager {
 
         const span = document.createElement("span");
         span.classList.add("ml-2");
-        span.innerHTML = curve.unit ? `${curve.title} (${curve.unit})` : curve.title;
+        if (curve.unit) {
+          span.innerHTML = `${curve.title} <span class="has-text-grey is-size-7">(${curve.unit})</span>`;
+        } else {
+          span.innerHTML = curve.title;
+        }
 
         const colorSwatch = document.createElement("span");
         colorSwatch.style.backgroundColor = curve.color;
