@@ -117,11 +117,21 @@ $("#mesures-button").addEventListener("click", ()=>{
 });
 
 $("#send-to-grapher-button").addEventListener("click", () => {
-  function isNonEmptyString(v) {
-    return typeof v === 'string' && v.trim().length > 0;
+  let hasData = false;
+  // Vérifie s'il y a au moins une donnée de mesure (on ignore la première série qui est le temps)
+  for (let i = 1; i < measurement.series.length; i++) {
+    for (let j = measurement.originFrame; j < measurement.series[i].length; j++) {
+      if (measurement.series[i][j] !== "" && measurement.series[i][j] !== null) {
+        hasData = true;
+        break;
+      }
+    }
+    if (hasData) {
+      break;
+    }
   }
 
-  if (measurement.series.length === 0 || measurement.series[0].filter(isNonEmptyString)) {
+  if (!hasData) {
     alertModal({
       title: "Aucune donnée",
       body: "Il n'y a aucune donnée à envoyer vers le grapheur.",
