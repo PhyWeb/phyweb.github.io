@@ -1,6 +1,6 @@
 import {alertModal} from "../../common/common.js"
 
-import * as MP4Box from "../lib/mp4box.all.1.4.4.js";
+import * as MP4Box from "../../common/mp4box/mp4box.all.2.1.2.js";
 
 const $ = document.querySelector.bind(document);
 
