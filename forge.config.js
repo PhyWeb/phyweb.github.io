@@ -6,17 +6,17 @@ module.exports = {
     prune: true,
     asar: true,
     ignore: "/portable",
-    icon: '/common/assets/phyweb'
+    icon: '/assets/icons/phyweb'
   },
   rebuildConfig: {},
   makers: [
     {
       name: '@rabbitholesyndrome/electron-forge-maker-portable',
       config: {
-        icon: '/common/assets/phyweb.png',
+        icon: '/assets/icons/phyweb.png',
         nsis: {
-          installerIcon: '/common/assets/phyweb.png',
-          installerHeaderIcon: '/common/assets/phyweb.png'
+          installerIcon: '/assets/icons/phyweb.png',
+          installerHeaderIcon: '/assets/icons/phyweb.png'
         }
       },
     },

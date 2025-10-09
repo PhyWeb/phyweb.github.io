@@ -7,7 +7,7 @@ const createWindow = () => {
     width: 1280,
     height: 720,
     frame: false,
-    icon: __dirname + '/common/assets/phyweb.png',
+    icon: __dirname + '/assets/icons/phyweb.png',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js')
     }
