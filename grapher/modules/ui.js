@@ -395,6 +395,30 @@ export default class UIManager {
   }
 
   /**
+   * Affiche la navigation par onglets et le panneau par défaut (Tableur).
+   * Cette méthode est appelée lors de la création ou du chargement d'une session.
+   */
+  showTabsAndPanels() {
+      const tabsContainer = document.querySelector('#nav-tabs').parentElement;
+      const tableurPanel = document.getElementById('tableur-panel');
+      const grapheurPanel = document.getElementById('grapheur-panel');
+      const calculsPanel = document.getElementById('calculs-panel');
+
+      // Afficher le conteneur des onglets
+      tabsContainer.classList.remove('is-hidden');
+
+      // Afficher le panneau "Tableur" et s'assurer que les autres sont cachés
+      tableurPanel.classList.remove('is-hidden');
+      grapheurPanel.classList.add('is-hidden');
+      calculsPanel.classList.add('is-hidden');
+
+      // S'assurer que l'onglet "Tableur" est bien celui qui est actif
+      document.getElementById('tableur-tab').classList.add('is-active');
+      document.getElementById('grapheur-tab').classList.remove('is-active');
+      document.getElementById('calculs-tab').classList.remove('is-active');
+  }
+
+  /**
    * Initialise les modales liées aux fichiers (nouveau, ouvrir, coller, etc.)
    * et gère les événements associés.
    */
@@ -432,7 +456,8 @@ export default class UIManager {
         try {
           // On attend que le chargement soit terminé (succès ou échec)
           await this.app.ioManager.loadFile(file);
-          // Si aucune erreur n'est levée, ON FERME LA MODALE
+          // Si aucune erreur n'est levée, on ferme la modale et affiche l'ui
+          this.showTabsAndPanels();
           this.common.modalManager.closeAllModals();
         } catch (error) {
           // Si une erreur est levée par ioManager, on affiche une alerte
@@ -455,6 +480,7 @@ export default class UIManager {
       newDataConfirmation(() => {
         this.app.resetSession();
         this.editor.setValue('');
+        this.showTabsAndPanels();
         this.common.modalManager.closeAllModals();
       });
     });
@@ -465,7 +491,8 @@ export default class UIManager {
           const text = await navigator.clipboard.readText();
           // On attend que les données soient chargées et validées
           await this.app.ioManager.loadClipboard(text);
-          // Si c'est un succès, ON FERME LA MODALE
+          // Si c'est un succès, on ferme la modale et on affiche l'ui
+          this.showTabsAndPanels();
           this.common.modalManager.closeAllModals();
         } catch (error) {
           // Si le clipboard est vide, non autorisé, ou si les données sont invalides
