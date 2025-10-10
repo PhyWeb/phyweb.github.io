@@ -306,8 +306,6 @@ export default class PLAYER {
 
         // Update the table
         this.measurement.selectRow(this.currentFrame);
-
-        //this.drawFrame(this.currentFrame); not usefull since we called setFrame ?
       }
       requestAnimationFrame(this.playing); 
     } else {
