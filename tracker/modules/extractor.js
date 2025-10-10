@@ -287,7 +287,7 @@ export default class EXTRACTOR {
         if(canceled){
           if(!isOver){
             isOver = true;
-            this.onFinish();
+            this.onFinish(true);
           }
 
           frame.close();
@@ -298,7 +298,7 @@ export default class EXTRACTOR {
         if(progress >= 100){
           if(!isOver){
             isOver = true;
-            this.onFinish();
+            this.onFinish(false);
           }
 
           frame.close();
@@ -393,9 +393,19 @@ export default class EXTRACTOR {
     this.decoder.decode(chunk);
   }
 
-  onFinish(){
-    if($("#extract-loading-modal")){
-      $("#extract-loading-modal").remove();
+  onFinish = (wasCanceled) => {
+    if ($('#extract-loading-modal')) {
+      $('#extract-loading-modal').remove();
+    }
+
+    // Si le processus a été annulé, on nettoie les images stockées pour libérer la mémoire
+    if (wasCanceled) {
+      console.log("Décodage annulé. Libération des images allouées.");
+      for (const frameBitmap of this.decodedVideo.frames) {
+        frameBitmap.close();
+      }
+      this.decodedVideo.frames = []; // Vide le tableau
+      return; // On ne continue pas vers le callback
     }
 
     let flushVideoDecoder = async () => {
@@ -403,9 +413,6 @@ export default class EXTRACTOR {
       await this.mp4boxfile.flush();
       this.decodedVideoCB(this.decodedVideo);
     }
-
     flushVideoDecoder();
   }
 }
-
-/*! mp4box 02-11-2024 */
