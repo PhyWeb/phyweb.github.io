@@ -426,7 +426,7 @@ $("#clear-row").addEventListener("click", ()=> {
   measurement.clearRow(player.currentFrame);
 });
 $("#copy-table-button").addEventListener("click", ()=> {
-  navigator.clipboard.writeText($("#table").innerText);
+  measurement.exportToClipboard()
 });
 
 // DOWNLOAD

@@ -311,4 +311,84 @@ export default class MEASUREMENT {
     }
     downloadFile(file, _type, _name)
   }
+
+  /**
+   * Prépare et copie les données de mesure au format TSV dans le presse-papiers.
+   * Seules les lignes complètes (contenant une valeur pour chaque série de données x, y) sont exportées.
+   */
+  exportToClipboard() {
+    this.scale.update();
+
+    // Clonage profond pour éviter de modifier les données originales
+    const series = structuredClone(this.series);
+    const scaleX = this.scale.getOrientedScaleX();
+    const scaleY = this.scale.getOrientedScaleY();
+    const originFrame = this.originFrame;
+    const numPoints = Math.floor((this.series.length - 1) / 2);
+
+    // 1. Déterminer les lignes complètes à conserver
+    // Une ligne est complète si TOUTES les séries de données (x, y) ne sont ni null, ni undefined, ni une chaîne vide.
+    const rowsToKeep = new Set();
+    for (let i = originFrame; i < this.series[0].length; i++) {
+      let isRowComplete = true;
+      // On vérifie toutes les séries de données (x1, y1, x2, y2, ...), en ignorant la série 'temps' (j=0)
+      for (let j = 1; j < this.series.length; j++) {
+        const value = this.series[j][i];
+        if (value === undefined || value === null || value === '') {
+          isRowComplete = false;
+          break; // La ligne n'est pas complète, on passe à la suivante
+        }
+      }
+      if (isRowComplete) {
+        rowsToKeep.add(i);
+      }
+    }
+
+    if (rowsToKeep.size === 0) {
+      console.warn("Aucune ligne complète à copier.");
+      return;
+    }
+
+    // 2. Préparation des données formatées (application de l'échelle et de l'origine)
+    for (let i = 0; i < this.series[0].length; i++) {
+      // Traitement de la colonne temps
+      if (i < originFrame) {
+        series[0][i] = null;
+      } else {
+        series[0][i] = this.series[0][i] - this.series[0][originFrame];
+      }
+
+      // Traitement des colonnes de coordonnées (x, y)
+      for (let j = 1; j < Math.floor(this.series.length / 2) * 2; j += 2) {
+        series[j][i] = this.series[j].get(i, this.scale.origin.x, scaleX);
+        series[j + 1][i] = this.series[j + 1].get(i, this.scale.origin.y, scaleY);
+      }
+    }
+
+    // 3. Construction de la chaîne de caractères TSV
+    let tsvContent = '';
+
+    // En-têtes
+    const headers = series.map(s => `${s.title} (${s.unit})`).join('\t');
+    tsvContent += headers + '\n';
+
+    // Lignes de données (uniquement les lignes complètes)
+    for (const i of Array.from(rowsToKeep).sort((a, b) => a - b)) {
+      const row = series.map(serie => {
+        const value = serie[i];
+        if (value === null || value === undefined) {
+          return '';
+        }
+        return typeof value === 'number' ? value.round(this.maxDigits) : value;
+      }).join('\t');
+      tsvContent += row + '\n';
+    }
+
+    // 4. Copie dans le presse-papiers
+    navigator.clipboard.writeText(tsvContent).then(() => {
+      console.log("Données des lignes complètes copiées dans le presse-papiers !");
+    }).catch(err => {
+      console.error("Erreur lors de la copie dans le presse-papiers : ", err);
+    });
+  }
 }
