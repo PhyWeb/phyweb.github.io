@@ -197,8 +197,14 @@ $("#send-to-grapher-button").addEventListener("click", () => {
     }
   };
 
-  sessionStorage.setItem('phyweb-import-data', JSON.stringify(dataForGrapher));
-  window.open('../grapher/index.html', '_blank');
+  // ELECTRON
+  if (window.electronAPI){
+    window.electronAPI.openGrapherWindow(dataForGrapher);
+  } else {
+    // WEB
+    sessionStorage.setItem('phyweb-import-data', JSON.stringify(dataForGrapher));
+    window.open('../grapher/index.html', '_blank');
+  }
 });
 
 $("#open-video-button").addEventListener("click", () => {

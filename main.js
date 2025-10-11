@@ -2,25 +2,69 @@ const { app, BrowserWindow, globalShortcut } = require('electron/main')
 const { ipcMain } = require('electron')
 const path = require('node:path')
 
-const createWindow = () => {
+const createWindow = (winPath) => {
   const win = new BrowserWindow({
     width: 1280,
     height: 720,
     frame: false,
     icon: __dirname + '/assets/icons/phyweb.png',
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js')
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,  // recommandé et nécessaire pour contextBridge
+      nodeIntegration: false,  // désactivé pour sécurité
     }
   })
 
-  win.loadFile('index.html')
+  win.loadFile(winPath)
 
   // Open the DevTools.
-  win.webContents.openDevTools()
   win.webContents.on('before-input-event', (_, input) => {
     if (input.type === 'keyDown' && input.key === 'F12') {
       win.webContents.toggleDevTools();
     }
+  });
+
+  return win;
+}
+
+app.whenReady().then(() => {
+  // create the main window
+  createWindow("index.html")
+
+  ipcMain.on('openGrapherWindow', (event, data) => {
+    // Create the grapher window
+    const grapherWin = createWindow("grapher/index.html")
+
+    grapherWin.webContents.once('did-finish-load', () => {
+      grapherWin.webContents.send('import-data', data);
+    });
+  });
+
+  // window controls
+  ipcMain.on('close', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win) win.close();
+  });
+
+  ipcMain.on('minimize', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win) win.minimize();
+  })
+
+  ipcMain.on('restore', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win) win.restore();
+  })
+
+  ipcMain.on('maximize', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win) win.maximize();
+  })
+
+  ipcMain.handle('isMaximized', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win) return win.isMaximized();
+    return false;
   });
 
   app.on('activate', () => {
@@ -28,31 +72,6 @@ const createWindow = () => {
       createWindow()
     }
   })
-
-  // window controls
-  ipcMain.on('close', (event) => {
-    win.close();
-  })
-  ipcMain.on('minimize', (event) => {
-    win.minimize();
-  })
-  ipcMain.on('restore', (event) => {
-    win.restore();
-  })
-  ipcMain.on('maximize', (event) => {
-    win.maximize();
-  })
-
-  ipcMain.handle('isMaximized', async ()=> {
-    return win.isMaximized();
-  })
-}
-
-app.whenReady().then(() => {
-  // Open the DevTools.
-  // Raccourci global F12 pour basculer DevTools de la fenêtre focalisée
-
-  createWindow()
 })
 
 app.on('window-all-closed', () => {

@@ -5,5 +5,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   minimize: () => ipcRenderer.send('minimize'),
   restore: () => ipcRenderer.send('restore'),
   maximize: () => ipcRenderer.send('maximize'),
-  isMaximized: () => ipcRenderer.invoke('isMaximized')
+  isMaximized: () => ipcRenderer.invoke('isMaximized'),
+  openGrapherWindow: (data) => ipcRenderer.send('openGrapherWindow', data)
 })
