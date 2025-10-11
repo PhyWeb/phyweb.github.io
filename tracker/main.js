@@ -96,8 +96,7 @@ $("#etalonnage-button").addEventListener("click", ()=>{
 
 // ELECTRON
 if (window.electronAPI){
-  // move the open file big arrow
-  $("#big-arrow").style.marginRight = "10.5rem";
+  // TODO encore utile ?
 }
 
 // TABS

@@ -1,4 +1,4 @@
-const { app, BrowserWindow } = require('electron/main')
+const { app, BrowserWindow, globalShortcut } = require('electron/main')
 const { ipcMain } = require('electron')
 const path = require('node:path')
 
@@ -16,7 +16,12 @@ const createWindow = () => {
   win.loadFile('index.html')
 
   // Open the DevTools.
-  //win.webContents.openDevTools()
+  win.webContents.openDevTools()
+  win.webContents.on('before-input-event', (_, input) => {
+    if (input.type === 'keyDown' && input.key === 'F12') {
+      win.webContents.toggleDevTools();
+    }
+  });
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
@@ -44,6 +49,9 @@ const createWindow = () => {
 }
 
 app.whenReady().then(() => {
+  // Open the DevTools.
+  // Raccourci global F12 pour basculer DevTools de la fenêtre focalisée
+
   createWindow()
 })
 
