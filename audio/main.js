@@ -1,7 +1,7 @@
 import FOURIER from "./modules/fourier.js"
 import {PhyAudio, convertFloat32ToInt16} from "./modules/audio.js"
 
-import {Common, alertModal, quitConfirmationModal, TabManager, downloadFile, exportToCSV, exportToRW3, Serie} from "../common/common.js"
+import {Common, alertModal, quitConfirmationModal, TabManager, NavigationManager, downloadFile, exportToCSV, exportToRW3, Serie} from "../common/common.js"
 
 const $ = document.querySelector.bind(document);
 
@@ -49,8 +49,6 @@ let onAudioDecodeEndedBuffer;
 
 // Save vars
 let saves = [];
-
-let isNavigationConfirmed = false; // Pour eviter la double demande de confirmation quand on change de page
 
 /*----------------------------------------------------------------------------------------------
 ----------------------------------------------TABS----------------------------------------------
@@ -100,45 +98,14 @@ $("#temporal-fourier-button").addEventListener("click",()=>{
 })
 
 /*----------------------------------------------------------------------------------------------
----------------------------------------------NAVBAR---------------------------------------------
+-------------------------------------------NAVIGATION-------------------------------------------
 ----------------------------------------------------------------------------------------------*/
-let quitConfirm = (_path)=>{
-	// Check if there's at least 1 saved tab
-  if(tabManager.tabs.length === 2){
-    window.location.replace(_path);
-    return;
-  }
-	
-	/*alertModal({
-	  type: "danger",
-	  title: "Quitter l'application",
-	  body: `<p>Etes-vous sûr de vouloir quitter l'application. Les données seront perdues.</p>`,
-	  confirm:{
-		label: "Quitter",
-		type:"danger",
-		cb: ()=>{window.location.replace(_path);}
-	  },
-	  cancel: "Annuler",
-	  width: "42rem"
-	})*/
+const hasAudioData = () => tabManager.tabs.length > 2;
+const navManager = new NavigationManager(hasAudioData, alertModal);
 
-  quitConfirmationModal(
-    ()=>{
-      isNavigationConfirmed = true; //On lève le drapeau pour que 'beforeunload' ignore.
-      window.location.replace(_path);
-    }
-  )
-}
-  
-$("#navbar-home-button").addEventListener("click", () => {
-  quitConfirm("../index.html");
-});
-$("#navbar-tracker-button").addEventListener("click", () => {
-  quitConfirm("../tracker/index.html");
-});
-$("#navbar-grapher-button").addEventListener("click", () => {
-  quitConfirm("../grapher/index.html");
-});
+navManager.addLink(document.querySelector('#navbar-home-button'), '../index.html');
+navManager.addLink(document.querySelector('#navbar-tracker-button'), '../tracker/index.html');
+navManager.addLink(document.querySelector('#navbar-grapher-button'), '../grapher/index.html');
 
 /*----------------------------------------------------------------------------------------------
 ------------------------------------------CONFIG MODAL------------------------------------------
@@ -1283,25 +1250,6 @@ function onFourierReplotButtonClick() {
 		// Log fourier type displayed
 		saves[tabManager.activeTab-2].fourierType = 1;
 	}
-}
-
-// --- Gestion de la fermeture de l'application ---
-const localHosts = ['localhost', '127.0.0.1'];
-if (!localHosts.includes(window.location.hostname)) {
-  window.addEventListener('beforeunload', (event) => {
-    // Si la navigation a déjà été confirmée par notre code, on ne fait rien.
-    if (isNavigationConfirmed) {
-      return;
-    }
-    
-    const hasUnsavedData = tabManager.tabs.length > 2;
-
-    if (hasUnsavedData) {
-      event.preventDefault();
-      event.returnValue = 'Êtes-vous sûr de vouloir quitter ? Vos données non sauvegardées seront perdues.';
-      return 'Êtes-vous sûr de vouloir quitter ? Vos données non sauvegardées seront perdues.';
-    }
-  });
 }
 
 });

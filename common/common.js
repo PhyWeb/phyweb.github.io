@@ -593,6 +593,91 @@ class FullscreenManager {
 	}
 }
 
+/**
+ * Gère la confirmation de l'utilisateur avant de quitter une page avec des données non sauvegardées.
+ */
+export class NavigationManager {
+  /**
+   * @param {function(): boolean} hasDataCallback Une fonction qui retourne true s'il y a des données non sauvegardées.
+   * @param {function} alertModalFunction La fonction qui affiche votre modale de confirmation.
+   */
+  constructor(hasDataCallback, alertModalFunction) {
+    this.hasDataCallback = hasDataCallback;
+    this.alertModal = alertModalFunction;
+    this.isNavigationConfirmed = false;
+
+    this._setupBeforeUnloadListener();
+  }
+
+  /**
+   * Met en place l'écouteur d'événement `beforeunload` pour les navigateurs.
+   * N'est pas actif sur localhost pour faciliter le développement.
+   * @private
+   */
+  _setupBeforeUnloadListener() {
+    const localHosts = ['localhost', '127.0.0.1'];
+    if (localHosts.includes(window.location.hostname)) {
+      return;
+    }
+
+    window.addEventListener('beforeunload', (event) => {
+      // Si la navigation a déjà été confirmée par notre modale, on ne fait rien.
+      if (this.isNavigationConfirmed) {
+        return;
+      }
+
+      if (this.hasDataCallback()) {
+        // Standard pour la plupart des navigateurs
+        event.preventDefault();
+        // Pour la compatibilité avec d'anciens navigateurs
+        event.returnValue = 'Êtes-vous sûr de vouloir quitter ? Vos données non sauvegardées seront perdues.';
+        return event.returnValue;
+      }
+    });
+  }
+
+  /**
+   * Lie la logique de confirmation à un élément cliquable (lien de navigation).
+   * @param {HTMLElement} element L'élément du DOM sur lequel cliquer.
+   * @param {string} path Le chemin de destination.
+   */
+  addLink(element, path) {
+    if (!element) return;
+    element.addEventListener('click', (event) => {
+      event.preventDefault(); // On empêche la navigation immédiate
+      this.confirmAndNavigate(path);
+    });
+  }
+
+  /**
+   * Affiche une modale de confirmation si des données existent, puis navigue.
+   * Si aucune donnée n'existe, la navigation est immédiate.
+   * @param {string} path Le chemin de destination.
+   */
+  confirmAndNavigate(path) {
+    if (!this.hasDataCallback()) {
+      window.location.href = path;
+      return;
+    }
+
+    this.alertModal({
+      type: 'danger',
+      title: "Quitter l'application",
+      body: '<p>Êtes-vous sûr de vouloir quitter ? Toutes les données non sauvegardées seront perdues.</p>',
+      confirm: {
+        label: 'Quitter',
+        type: 'danger',
+        cb: () => {
+          this.isNavigationConfirmed = true; // Empêche beforeunload de se déclencher
+          window.location.href = path;
+        }
+      },
+      cancel: 'Annuler',
+      width: '42rem'
+    });
+  }
+}
+
 /*----------------------------------------------------------------------------------------------
 --------------------------------------------SVG LOGOS-------------------------------------------
 ----------------------------------------------------------------------------------------------*/
