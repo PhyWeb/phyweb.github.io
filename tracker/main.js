@@ -4,7 +4,7 @@ import EXTRACTOR from "./modules/extractor.js"
 import MEASUREMENT from "./modules/measurement.js"
 import PLAYER from "./modules/player.js"
 
-import {Common, alertModal, quitConfirmationModal} from "../common/common.js"
+import {Common, alertModal, NavigationManager} from "../common/common.js"
 
 const $ = document.querySelector.bind(document);
 
@@ -43,15 +43,13 @@ if ("VideoDecoder" in window) {
   })
 }
 
-// Navbar
-let quitConfirm = (_path)=>{
-  // Check if data exists
+// NAVIGATION MANAGER
+// Fonction qui vérifie s'il y a des données non sauvegardées
+function hasUnsavedData() {
   if(!measurement.series[0]){
-    window.location.replace(_path);
-    return;
+    return false;
   }
 
-  // Check if data is empty
   let empty = true;
   for(let i = measurement.originFrame; i < measurement.series[0].length; i++){
     for(let j = 0; j < (measurement.series.length - 1) / 2; j++){
@@ -60,28 +58,15 @@ let quitConfirm = (_path)=>{
       }
     }
   }
-  if(empty){
-    window.location.replace(_path);
-    return;
-  }
-
-  quitConfirmationModal(
-    ()=>{
-      isNavigationConfirmed = true; //On lève le drapeau pour que 'beforeunload' ignore.
-      window.location.replace(_path);
-    }
-  )
+  return !empty;
 }
 
-$("#navbar-home-button").addEventListener("click", () => {
-  quitConfirm("../index.html");
-});
-$("#navbar-audio-button").addEventListener("click", () => {
-  quitConfirm("../audio/index.html");
-});
-$("#navbar-grapher-button").addEventListener("click", () => {
-  quitConfirm("../grapher/index.html");
-});
+const navManager = new NavigationManager(hasUnsavedData, alertModal);
+
+// Lier les boutons de la barre de navigation
+navManager.addLink($('#navbar-home-button'), '../index.html');
+navManager.addLink($('#navbar-audio-button'), '../audio/index.html');
+navManager.addLink($('#navbar-grapher-button'), '../grapher/index.html');
 
 
 
@@ -492,35 +477,6 @@ document.addEventListener('mouseup', function(e) {
   // Turn off dragging flag when user mouse is up
   isHandlerDragging = false;
 });
-
-
-// --- Gestion de la fermeture de l'application ---
-const localHosts = ['localhost', '127.0.0.1'];
-if (!localHosts.includes(window.location.hostname)) {
-  window.addEventListener('beforeunload', (event) => {
-    // Si la navigation a déjà été confirmée par notre code, on ne fait rien.
-    if (isNavigationConfirmed) {
-      return;
-    }
-
-    // Check if data is empty
-    let empty = true;
-    for(let i = measurement.originFrame; i < measurement.series[0].length; i++){
-      for(let j = 0; j < (measurement.series.length - 1) / 2; j++){
-        if(measurement.series[(j * 2) + 1][i] !== ""){
-          empty = false
-        }
-      }
-    }
-
-    if (!empty) {
-      event.preventDefault();
-      event.returnValue = 'Êtes-vous sûr de vouloir quitter ? Vos données non sauvegardées seront perdues.';
-      return 'Êtes-vous sûr de vouloir quitter ? Vos données non sauvegardées seront perdues.';
-    }
-  });
-}
-
 
 resize();
 
