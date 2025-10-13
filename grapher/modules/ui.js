@@ -384,23 +384,25 @@ export default class UIManager {
    * Cette méthode est appelée lors de la création ou du chargement d'une session.
    */
   showTabsAndPanels() {
-      const tabsContainer = document.querySelector('#nav-tabs').parentElement;
-      const tableurPanel = document.getElementById('tableur-panel');
-      const grapheurPanel = document.getElementById('grapheur-panel');
-      const calculsPanel = document.getElementById('calculs-panel');
+    const tabsContainer = document.querySelector('#nav-tabs').parentElement;
+    const tableurPanel = document.getElementById('tableur-panel');
+    const grapheurPanel = document.getElementById('grapheur-panel');
+    const calculsPanel = document.getElementById('calculs-panel');
 
-      // Afficher le conteneur des onglets
-      tabsContainer.classList.remove('is-hidden');
+    // Afficher le conteneur des onglets
+    tabsContainer.classList.remove('is-hidden');
 
-      // Afficher le panneau "Tableur" et s'assurer que les autres sont cachés
-      tableurPanel.classList.remove('is-hidden');
-      grapheurPanel.classList.add('is-hidden');
-      calculsPanel.classList.add('is-hidden');
+    // Afficher le panneau "Tableur" et s'assurer que les autres sont cachés
+    tableurPanel.classList.remove('is-hidden');
+    grapheurPanel.classList.add('is-hidden');
+    calculsPanel.classList.add('is-hidden');
 
-      // S'assurer que l'onglet "Tableur" est bien celui qui est actif
-      document.getElementById('tableur-tab').classList.add('is-active');
-      document.getElementById('grapheur-tab').classList.remove('is-active');
-      document.getElementById('calculs-tab').classList.remove('is-active');
+    // S'assurer que l'onglet "Tableur" est bien celui qui est actif
+    document.getElementById('tableur-tab').classList.add('is-active');
+    document.getElementById('grapheur-tab').classList.remove('is-active');
+    document.getElementById('calculs-tab').classList.remove('is-active');
+
+    document.getElementById('tableur-tab').click();
   }
 
   /**
