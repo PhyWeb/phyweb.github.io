@@ -1,7 +1,7 @@
 import FOURIER from "./modules/fourier.js"
 import {PhyAudio, convertFloat32ToInt16} from "./modules/audio.js"
 
-import {Common, alertModal, quitConfirmationModal, TabManager, NavigationManager, downloadFile, exportToCSV, exportToRW3, Serie} from "../common/common.js"
+import {Common, alertModal, TabManager, NavigationManager, downloadFile, exportToCSV, exportToRW3, Serie} from "../common/common.js"
 
 const $ = document.querySelector.bind(document);
 
@@ -101,7 +101,7 @@ $("#temporal-fourier-button").addEventListener("click",()=>{
 -------------------------------------------NAVIGATION-------------------------------------------
 ----------------------------------------------------------------------------------------------*/
 const hasAudioData = () => tabManager.tabs.length > 2;
-const navManager = new NavigationManager(hasAudioData, alertModal);
+const navManager = new NavigationManager(hasAudioData);
 
 navManager.addLink(document.querySelector('#navbar-home-button'), '../index.html');
 navManager.addLink(document.querySelector('#navbar-tracker-button'), '../tracker/index.html');

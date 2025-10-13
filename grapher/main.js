@@ -1,4 +1,4 @@
-import {Common, alertModal, quitConfirmationModal} from "../common/common.js"
+import {Common} from "../common/common.js"
 
 import App from "./modules/app.js"
 import UIManager from "./modules/ui.js"

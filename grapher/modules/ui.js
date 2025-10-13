@@ -1,5 +1,5 @@
 import { formatNumber } from '../../common/formatter.js';
-import { alertModal, quitConfirmationModal } from '../../common/common.js';
+import { alertModal, NavigationManager } from '../../common/common.js';
 import { DEFAULT_SETTINGS, saveSettings, loadSettings, clearSavedSettings } from './settingsManager.js';
 
 const $ = document.querySelector.bind(document);
@@ -19,8 +19,6 @@ export default class UIManager {
     this.activeToolElement = null;
     this.isZoomEnabled = false;
 
-    this.isNavigationConfirmed = false; // Pour gérer la confirmation de navigation
-
     this.initialSettings = {}; // Pour stocker les paramètres initiaux lors de l'ouverture de la modale des paramètres
   }
 
@@ -37,7 +35,6 @@ export default class UIManager {
     this.initGrapherControls();
     this.initModelisationControls();
     this.initCalculationControls();
-    this.initBeforeUnload();
 
     // Convertit les icônes FontAwesome
     window.FontAwesome.dom.i2svg();
@@ -320,28 +317,16 @@ export default class UIManager {
    * Initialise la navbar avec les boutons et leurs événements.
    */
   initNavbar() {
-    const quitConfirm = (path)=>{
-      // Check if data exists
-      if(this.data.curves.length === 0 && this.editor.getValue().trim() === ''){
-        window.location.replace(path);
-        return;
-      }
+    // Définit la condition pour vérifier la présence de données
+    const hasUnsavedData = () => {
+        // Vrai s'il y a au moins une courbe ou une annotation
+        return this.data.curves.length > 0 || this.data.annotations.length > 0 || this.editor.getValue().trim() !== '';
+    };
+    const navManager = new NavigationManager(hasUnsavedData);
 
-      quitConfirmationModal(()=>{
-        this.isNavigationConfirmed = true; //On lève le drapeau pour que 'beforeunload' ignore.
-        window.location.replace(path);
-      })    
-    }
-
-    $("#navbar-home-button").addEventListener("click", () => {
-      quitConfirm("../index.html");
-    });
-    $("#navbar-audio-button").addEventListener("click", () => {
-      quitConfirm("../audio/index.html");
-    });
-    $("#navbar-tracker-button").addEventListener("click", () => {
-      quitConfirm("../tracker/index.html");
-    });
+    navManager.addLink($('#navbar-home-button'), '../index.html');
+    navManager.addLink($('#navbar-audio-button'), '../audio/index.html');
+    navManager.addLink($('#navbar-tracker-button'), '../tracker/index.html');
 
     $("#tableur-tab").addEventListener("click", () => {
       $("#tableur-tab").classList.add("is-active");
@@ -2273,27 +2258,5 @@ export default class UIManager {
     });
 
 
-  }
-
-  initBeforeUnload(){
-    // --- Gestion de la fermeture de l'application ---
-    this.isNavigationConfirmed = false; // Pour eviter la double demande de confirmation quand on change de page
-    const localHosts = ['localhost', '127.0.0.1'];
-    if (!localHosts.includes(window.location.hostname)) {
-      window.addEventListener('beforeunload', (event) => {
-        // Si la navigation a déjà été confirmée par notre code, on ne fait rien.
-        if (this.isNavigationConfirmed) {
-          return;
-        }
-        
-        const hasUnsavedData = this.data.curves.length > 0 || this.editor.getValue().trim() !== '';
-
-        if (hasUnsavedData) {
-          event.preventDefault();
-          event.returnValue = 'Êtes-vous sûr de vouloir quitter ? Vos données non sauvegardées seront perdues.';
-          return 'Êtes-vous sûr de vouloir quitter ? Vos données non sauvegardées seront perdues.';
-        }
-      });
-    }
   }
 }

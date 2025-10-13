@@ -599,11 +599,10 @@ class FullscreenManager {
 export class NavigationManager {
   /**
    * @param {function(): boolean} hasDataCallback Une fonction qui retourne true s'il y a des données non sauvegardées.
-   * @param {function} alertModalFunction La fonction qui affiche votre modale de confirmation.
    */
-  constructor(hasDataCallback, alertModalFunction) {
+  constructor(hasDataCallback) {
     this.hasDataCallback = hasDataCallback;
-    this.alertModal = alertModalFunction;
+    this.alertModal = alertModal;
     this.isNavigationConfirmed = false;
 
     this._setupBeforeUnloadListener();

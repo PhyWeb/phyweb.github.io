@@ -16,8 +16,6 @@ let player = new PLAYER($("#videoContainer"), $("#videoCanvas"), measurement, ex
 // handler to resize the columns
 let isHandlerDragging = false;
 
-let isNavigationConfirmed = false; // Pour eviter la double demande de confirmation quand on change de page
-
 document.addEventListener('DOMContentLoaded', () => {
 // Common
 let common = new Common("Tracker");
@@ -61,7 +59,7 @@ function hasUnsavedData() {
   return !empty;
 }
 
-const navManager = new NavigationManager(hasUnsavedData, alertModal);
+const navManager = new NavigationManager(hasUnsavedData);
 
 // Lier les boutons de la barre de navigation
 navManager.addLink($('#navbar-home-button'), '../index.html');
