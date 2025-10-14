@@ -5,6 +5,7 @@
     - Glisser-déposer : Permettre de charger un fichier par glisser-déposer (drag and drop)
     - creer un moteur qui gere les raccourvis clavier (ctrl s et n notamment)
     - Electron cassé
+    -Auto-focus intelligents dans les modales: quand tu ouvres une modale, place le focus sur le premier champ utile (ex: symbole dans “Ajouter grandeur”, fichier dans “Ouvrir”, textarea dans “Calculs”). Ajoute aussi Enter=confirmer, Escape=fermer.
 
 # Home
     - package linux et macos
@@ -48,6 +49,9 @@
     -  - Validation des symboles : La validation des symboles (noms de variables) est effectuée à plusieurs endroits. Cette logique pourrait être centralisée dans une fonction utilitaire pour éviter la duplication de code et garantir une validation cohérente partout dans l'application.
 
     - permettre voir autoriser les notations 3e-15 (deja partiellemnt possible, à vérifier partout)
+
+    - petite animation pour l'ouverture du panel modèles
+    - enlever ou fortement reduire le background des modales de départ
 
 
 # MISC
