@@ -13,7 +13,6 @@
 # Audio
     - creer un menu comme dans les autres app
     - Ajouter la possibilité de passer les données de audio directement à grapher via sessionStorage
-    - BUG : dans le fichier téléchargé, les données n'ont pas de nom au lieu d'"amplitude"
     - preview wave when loading a file
     - fft add 0s to have a power of two and use faster fft ??
     - play the selected part of the audio when downloading

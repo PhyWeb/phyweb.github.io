@@ -615,17 +615,16 @@ $("#download-file-button").addEventListener("click", ()=>{
 
   let series = [];
   series.push(new Serie("Temps","s"));
-  series.push(new Serie("Amplitude",""));
-
-  series[1] = saves[tabManager.activeTab-2].linearData.getData(saves[tabManager.activeTab-2].displaySampleRateLvl);
-
+  const amplitudeSerie = new Serie("Amplitude", "");
+  amplitudeSerie.setData(saves[tabManager.activeTab-2].linearData.getData(saves[tabManager.activeTab-2].displaySampleRateLvl));
+  series.push(amplitudeSerie);
   // Download only the part selected by the user
   if($("#part-button").classList.contains("is-link")){
     let start = parseFloat($("#start-size-input").value);
     let end = parseFloat($("#end-size-input").value);
     let startSample = Math.round(start * sr);
     let endSample = Math.round(end * sr);
-    series[1] = series[1].slice(startSample, endSample);
+    series[1].setData(series[1].slice(startSample, endSample));
   }
 
   // Download only the on screen part
@@ -634,7 +633,7 @@ $("#download-file-button").addEventListener("click", ()=>{
     let end = savWaveChart.xAxis[0].max;
     let startSample = Math.round(start * sr);
     let endSample = Math.round(end * sr);
-    series[1] = series[1].slice(startSample, endSample);
+    series[1].setData(series[1].slice(startSample, endSample));
   }
 
   if($("#wav-button").classList.contains("is-link")){
@@ -1253,4 +1252,3 @@ function onFourierReplotButtonClick() {
 }
 
 });
-

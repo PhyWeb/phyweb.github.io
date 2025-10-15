@@ -787,6 +787,15 @@ class Serie extends Array {
     }
   }
 
+  /**
+   * Remplace le contenu de la série par les données d'un tableau.
+   * @param {Array|TypedArray} dataArray - Le tableau de données à insérer.
+   */
+  setData(dataArray) {
+    this.length = 0; // Vide la série actuelle
+    Array.prototype.push.apply(this, dataArray); // Ajoute les nouvelles données
+  }
+
   get(_index, _origin, _scale){
     if(this[_index] === ""){
       return "";
