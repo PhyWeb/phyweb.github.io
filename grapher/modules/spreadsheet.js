@@ -1,5 +1,6 @@
 const $ = document.querySelector.bind(document);
 import { formatNumber } from '../../common/formatter.js';
+import { alertModal } from '../../common/common.js';
 
 /*----------------------------------------------------------------------------------------------
 --------------------------------------------Spreadsheet-----------------------------------------
@@ -44,7 +45,7 @@ class Spreadsheet {
       if (curve) {
         // Empêche de renommer une grandeur calculée
         if (curve.type === 'calculation') {
-          uiManager.common.alertModal({
+          alertModal({
             title: "Action impossible",
             body: "Vous ne pouvez pas renommer une grandeur qui est le résultat d'un calcul.",
             confirm: "OK"
@@ -79,6 +80,17 @@ class Spreadsheet {
         onSpreadsheetHeaderDblClick(coords.col);
       }
     };
+
+    const afterGetColHeader = (col, TH) => {
+      // S'applique uniquement aux en-têtes de colonnes (col >= 0)
+    if (col >= 0) {
+        const curve = this.data.getCurveByIndex(col);
+        if (curve.type !== 'calculation') {
+          TH.style.cursor = 'pointer';
+          TH.setAttribute('title', 'Double-cliquer pour éditer');
+        } 
+      }
+    };
     
     this.hot = new Handsontable(container, {
       data: this.data.getTable(),
@@ -87,6 +99,7 @@ class Spreadsheet {
       rowHeaders: true,
       colHeaders: this.data.getHeaders(),
       afterOnCellMouseDown: afterOnCellMouseDown,
+      afterGetColHeader: afterGetColHeader,
       autoColumnSize: false,
       autoRowSize: false,
       rowHeaderWidth: 80,

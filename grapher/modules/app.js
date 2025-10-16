@@ -156,7 +156,7 @@ export default class App {
     
     // Avertir si le nom est utilisé dans les calculs
     if (this.editor.getValue().includes(oldTitle)) {
-      this.ui.common.alertModal({
+      alertModal({
         title: "Attention",
         body: `Le nom "${oldTitle}" est utilisé dans l'éditeur de calculs. Vous devrez peut-être mettre à jour les formules manuellement.`,
         confirm: "OK"

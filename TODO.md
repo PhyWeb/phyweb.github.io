@@ -28,7 +28,6 @@
     - passer a ffmpeg.wasm
 
 # Grapher
-    - Ajouter une modale pour modifier les parametres d'une grandeur (nom et unité notamment)
     - permettre de visualiser les bornes des modèles
     - méthode des tangentes
     - possibilité d'avoir 2 axes y
