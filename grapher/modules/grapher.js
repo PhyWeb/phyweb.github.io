@@ -89,7 +89,7 @@ export default class Grapher {
     this.data = data;
     this.chart;
 
-    this.uiUpdater = null;
+    this.uiManager = null;
 
     this.grid = initialSettings.grapherGrid; // Default value for grid visibility
     this.includeOriginOnAutoZoom = initialSettings.includeOriginOnAutoZoom;
@@ -112,8 +112,8 @@ export default class Grapher {
     this.snappedDataPoint = null;
   }
 
-  setUIUpdater(uiUpdater) {
-    this.uiUpdater = uiUpdater;
+  setUIManager(uiManager) {
+    this.uiManager = uiManager;
   }
 
   formatData(xCurve, yCurve){
@@ -1079,8 +1079,8 @@ export default class Grapher {
     this.data.annotations = [];
 
     // Met à jour la visibilité du bouton après avoir supprimé les annotations
-    if (this.uiUpdater) {
-      this.uiUpdater.updateClearAnnotationsButtonVisibility();
+    if (this.uiManager) {
+      this.uiManager.updateClearAnnotationsButtonVisibility();
     }
 
     this.chart.redraw();
@@ -1226,8 +1226,8 @@ export default class Grapher {
       }
     }
 
-    if (this.uiUpdater) {
-      this.uiUpdater.updateClearAnnotationsButtonVisibility();
+    if (this.uiManager) {
+      this.uiManager.updateClearAnnotationsButtonVisibility();
     }
 
     this.mouseDownInfo = null;

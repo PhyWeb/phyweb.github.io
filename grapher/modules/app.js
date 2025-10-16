@@ -24,13 +24,14 @@ function isTabularData(text) {
 -------------------------------------------------APP--------------------------------------------
 ----------------------------------------------------------------------------------------------*/
 export default class App {
-  constructor(data, spreadsheet, grapher, calculation, editor, uiUpdater) {
+  constructor(data, spreadsheet, grapher, calculation, editor, uiManager) {
     this.data = data;
     this.spreadsheet = spreadsheet;
+    spreadsheet.build(uiManager);
     this.grapher = grapher;
     this.calculation = calculation;
     this.editor = editor;
-    this.uiUpdater = uiUpdater;
+    this.uiManager = uiManager;
 
     this.ioManager = new IOManager(this);
   }
@@ -47,10 +48,10 @@ export default class App {
     }
 
     // Update the calculation tab
-    this.uiUpdater.updateCalculationUI();
+    this.uiManager.updateCalculationUI();
 
     // Update the sorting options
-    this.uiUpdater.updateSortUI();
+    this.uiManager.updateSortUI();
 
     return curve;
   }
@@ -82,10 +83,85 @@ export default class App {
     this.spreadsheet.update();
 
     // Update the calculation tab
-    this.uiUpdater.updateCalculationUI();
+    this.uiManager.updateCalculationUI();
 
     // Update the sorting options
-    this.uiUpdater.updateSortUI();
+    this.uiManager.updateSortUI();
+  }
+
+
+  renameCurve(oldTitle, newTitle, newUnit) {
+    // Validation du nouveau nom
+    const validSymbolRegex = /^[a-zA-Z][a-zA-Z0-9]*$/;
+    if (!validSymbolRegex.test(newTitle)) {
+      this.ui.common.alertModal({
+        title: 'Symbole invalide',
+        body: 'Le symbole doit commencer par une lettre et ne peut contenir que des lettres et des chiffres.',
+        confirm: 'OK'
+      });
+      return;
+    }
+
+    if (oldTitle !== newTitle && (this.data.getCurveByTitle(newTitle) || this.data.parameters[newTitle])) {
+      this.ui.common.alertModal({
+        title: 'Symbole déjà utilisé',
+        body: `Le symbole "${newTitle}" existe déjà. Veuillez en choisir un autre.`,
+        confirm: 'OK'
+      });
+      return;
+    }
+
+    const isXCurve = this.grapher.currentXCurve === oldTitle;
+
+    // Mise à jour des données
+    const curve = this.data.getCurveByTitle(oldTitle);
+    if (curve) {
+        curve.title = newTitle;
+        curve.unit = newUnit;
+    } else {
+        console.error(`renameCurve: La courbe "${oldTitle}" n'a pas été trouvée.`);
+        return;
+    }
+
+    // Mettre à jour les modèles qui utilisent cette courbe
+    this.data.models.forEach(model => {
+        if (model.x.title === oldTitle) model.x.title = newTitle;
+        if (model.y.title === oldTitle) model.y.title = newTitle;
+    });
+
+    // Mettre à jour le nom de la série pour la légende
+    const seriesToUpdate = this.grapher.chart.series.find(s => s.name === oldTitle);
+    if (seriesToUpdate) {
+        seriesToUpdate.update({
+            name: newTitle,
+            unit: newUnit // Assure que l'unité est aussi à jour pour les tooltips/légendes
+        }, false); // 'false' pour ne pas redessiner tout de suite
+    }
+
+    // Mettre à jour l'abscisse si la courbe renommée était l'abscisse
+    if (isXCurve) {
+        // Cette méthode mettra à jour la propriété et appellera updateChart(), qui redessinera le graphique, y compris le label de l'axe.
+        this.grapher.setXCurve(newTitle);
+    } else {
+        // Si ce n'était pas l'axe X, on force quand même un redessin pour la légende.
+        this.grapher.chart.redraw();
+    }
+
+    // Rafraîchir l'interface utilisateur
+    this.spreadsheet.update();
+    this.grapher.updateChart();
+    this.uiManager.updateSortUI();
+    this.uiManager.updateCalculationUI();
+    this.data.models.forEach(model => this.uiManager.updateModelPanel(model));
+    
+    // Avertir si le nom est utilisé dans les calculs
+    if (this.editor.getValue().includes(oldTitle)) {
+      this.ui.common.alertModal({
+        title: "Attention",
+        body: `Le nom "${oldTitle}" est utilisé dans l'éditeur de calculs. Vous devrez peut-être mettre à jour les formules manuellement.`,
+        confirm: "OK"
+      });
+    }
   }
 
   resetSession() {
@@ -98,8 +174,8 @@ export default class App {
 
     // Vider le panneau des modèles dans l'interface et mettre à jour les boutons
     $('#model-list').innerHTML = '';
-    this.uiUpdater.updateRecalculateButtonVisibility();
-    this.uiUpdater.updateModelToolVisibility();
+    this.uiManager.updateRecalculateButtonVisibility();
+    this.uiManager.updateModelToolVisibility();
 
     // Delete all curves
     this.data.deleteAllCurves();
@@ -115,7 +191,7 @@ export default class App {
     }
     this.data.parameters = parametersToKeep;
 
-    this.uiUpdater.clearActiveTool();
+    this.uiManager.clearActiveTool();
 
     // Update the graph
     this.grapher.deleteAllCurves(); 
@@ -127,10 +203,10 @@ export default class App {
     this.spreadsheet.clear();
 
     // Update the calculation tab
-    this.uiUpdater.updateCalculationUI();
+    this.uiManager.updateCalculationUI();
 
     // Update the sorting options
-    this.uiUpdater.updateSortUI();
+    this.uiManager.updateSortUI();
   }
 
   deleteRow(startRow, amount) {
@@ -153,10 +229,10 @@ export default class App {
       this.grapher.updateModelVisibility();
       this.grapher.chart.redraw();
 
-      this.uiUpdater.updateCalculationUI();
-      this.uiUpdater.updateRecalculateButtonVisibility();
+      this.uiManager.updateCalculationUI();
+      this.uiManager.updateRecalculateButtonVisibility();
 
-      this.uiUpdater.updateModelToolVisibility();
+      this.uiManager.updateModelToolVisibility();
 
       return model;
     } else {
@@ -181,7 +257,7 @@ export default class App {
         // Recalcule les paramètres du modèle
         await model.fit();
          // Met à jour le panneau du modèle avec les nouveaux résultats
-        this.uiUpdater.updateModelPanel(model);
+        this.uiManager.updateModelPanel(model);
       }
       
       // Met à jour la visibilité et redessine le graphique
@@ -189,8 +265,8 @@ export default class App {
       this.grapher.chart.redraw();
       
       // Met à jour l'interface utilisateur de calcul (pour les paramètres) et ferme la modale
-      this.uiUpdater.updateCalculationUI();
-      this.uiUpdater.updateRecalculateButtonVisibility();
+      this.uiManager.updateCalculationUI();
+      this.uiManager.updateRecalculateButtonVisibility();
 
     } catch (e) {
       console.error("Erreur lors du recalcul des modèles:", e);
@@ -217,8 +293,8 @@ export default class App {
     this.data.deleteModel(modelID);
 
     // Met à jour l'UI
-      this.uiUpdater.updateCalculationUI();
-      this.uiUpdater.updateRecalculateButtonVisibility();
+      this.uiManager.updateCalculationUI();
+      this.uiManager.updateRecalculateButtonVisibility();
   }
 
   applyCalculation(text) {
@@ -263,7 +339,7 @@ export default class App {
       if (initialStateJSON !== finalStateJSON) {
         this.spreadsheet.update();
         this.grapher.updateChart();
-        this.uiUpdater.updateCalculationUI();
+        this.uiManager.updateCalculationUI();
       }
       return;
     }
@@ -453,8 +529,8 @@ export default class App {
       // Met à jour le tableur, le graphique et l'UI
       this.spreadsheet.update();
       this.grapher.updateChart();
-      this.uiUpdater.updateCalculationUI();
-      this.uiUpdater.updateSortUI();
+      this.uiManager.updateCalculationUI();
+      this.uiManager.updateSortUI();
     }
 
     // Si un RW3 a été chargé juste avant, on ajoute les courbes demandées

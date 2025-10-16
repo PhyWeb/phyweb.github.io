@@ -449,6 +449,7 @@ export default class UIManager {
         } catch (error) {
           // Si une erreur est levée par ioManager, on affiche une alerte
           // et la modale reste ouverte.
+          console.error("Échec du chargement du fichier:", error);
           alertModal({
             type: 'warning',
             title: 'Erreur de chargement',
@@ -735,6 +736,7 @@ export default class UIManager {
     this.initAddCurveModal();
     this.initDeleteCurveModal();
     this.initDeleteLineButton();
+    this.initEditHeaderModal();
 
   }
 
@@ -1084,6 +1086,57 @@ export default class UIManager {
         cancel: "Annuler"
       });
     });
+  }
+
+  /**
+   * Initialise la modale d'édition de l'en-tête de courbe et gère les événements associés.
+   */
+  initEditHeaderModal() {
+    const modal = $('#edit-header-modal');
+
+    const symbolInput = document.getElementById('edit-header-symbol-input');
+    const unitInput = document.getElementById('edit-header-unit-input');
+    const saveButton = document.getElementById('edit-header-save-button');
+    
+    let currentCurveOriginalTitle = null;
+
+    // Méthode pour ouvrir la modale avec les bonnes données
+    this.openEditHeaderModal = (curve) => {
+      currentCurveOriginalTitle = curve.title;
+      symbolInput.value = curve.title;
+      unitInput.value = curve.unit || '';
+      modal.classList.add('is-active');
+    };
+
+    const closeModal = () => {
+      modal.classList.remove('is-active');
+      currentCurveOriginalTitle = null;
+    };
+
+    saveButton.addEventListener('click', () => {
+      const newSymbol = symbolInput.value.trim();
+      const newUnit = unitInput.value.trim();
+
+      if (!newSymbol) {
+        this.common.alertModal({
+          title: 'Symbole manquant',
+          body: 'Veuillez entrer un symbole.',
+          confirm: 'OK'
+        });
+        return;
+      }
+
+      if (currentCurveOriginalTitle) {
+        this.app.renameCurve(currentCurveOriginalTitle, newSymbol, newUnit);
+      }
+      
+      closeModal();
+    });
+
+    // Ajout des écouteurs pour fermer la modale
+    /*[cancelButton, closeButton, background].forEach(el => {
+        if (el) el.addEventListener('click', closeModal);
+    });*/
   }
 
   /**

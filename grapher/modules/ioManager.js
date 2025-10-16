@@ -271,7 +271,7 @@ export default class IOManager {
           this.app.grapher.resetZoom();
 
           // Update the calculation tab
-          this.app.uiUpdater.updateCalculationUI();
+          this.app.uiManager.updateCalculationUI();
           console.log("Session .pw restaurée avec succès");
           resolve();
         } catch (e) {
@@ -615,7 +615,7 @@ export default class IOManager {
         x: chosenX || null, 
         y: graphY.filter(t => !existingTitles.includes(t))
       };
-    } catch (e) {
+    } catch (error) {
       throw new Error(`Le fichier RW3 ne peut pas être lu : ${error.message}`);
     }
   }
@@ -725,7 +725,7 @@ export default class IOManager {
       this.app.grapher.chart.xAxis[0].setExtremes(null, null);
       this.app.grapher.chart.yAxis[0].setExtremes(null, null);
 
-      this.app.uiUpdater.updateCalculationUI();
+      this.app.uiManager.updateCalculationUI();
 
     } finally {
       this.isLoading = false; // Assure que le drapeau est réinitialisé même en cas d'erreur

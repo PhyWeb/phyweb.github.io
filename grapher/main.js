@@ -33,7 +33,6 @@ document.addEventListener('DOMContentLoaded', () => {
     grapher.updateChart();
   }
   let spreadsheet = new Spreadsheet(data, spreadsheetModifiedData);
-  spreadsheet.build();
 
   // Initialisation du gestionnaire d'interface utilisateur
   const uiManager = new UIManager(common, data, grapher, calculation, editor, spreadsheet);
@@ -43,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // UIManager a besoin de 'app' pour certaines actions (ex: app.deleteCurve)
   uiManager.setApp(app);
-  grapher.setUIUpdater(uiManager);
+  grapher.setUIManager(uiManager);
   uiManager.initialize();
 
   // Creer le graphique au demarrage

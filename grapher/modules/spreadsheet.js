@@ -15,16 +15,7 @@ class Spreadsheet {
 
     let curve = this.data.addCurve(title, unit, size, fill);
 
-    // Update the spreadsheet
     this.update();
-    // recalcul différé pour forcer l'adaptation
-    /*setTimeout(() => {
-      const plugin = this.hot.getPlugin('autoColumnSize');
-      if (plugin) {
-        plugin.recalculateAllColumnsWidth();
-        this.hot.render();
-      }
-    }, 200);*/
 
     return curve;
   }
@@ -47,7 +38,23 @@ class Spreadsheet {
     });
   }
 
-  build(){
+  build(uiManager){
+    const onSpreadsheetHeaderDblClick = (colIndex) => {
+      const curve = this.data.getCurveByIndex(colIndex);
+      if (curve) {
+        // Empêche de renommer une grandeur calculée
+        if (curve.type === 'calculation') {
+          uiManager.common.alertModal({
+            title: "Action impossible",
+            body: "Vous ne pouvez pas renommer une grandeur qui est le résultat d'un calcul.",
+            confirm: "OK"
+          });
+          return;
+        }
+        uiManager.openEditHeaderModal(curve);
+      }
+    }
+
     const container = document.querySelector('#table');
     const significantDigits = this.data.settings.significantDigits;
 
@@ -63,6 +70,15 @@ class Spreadsheet {
       //this.update();  // TODO only update cells that changed
       this.cb(change);
     };
+
+    // Gestion du double-clic sur un en-tête de colonne
+    const afterOnCellMouseDown = (event, coords, TD) => {
+      // coords.row === -1 correspond à un en-tête de colonne
+      if (event.detail === 2 && coords.row === -1) {
+        event.stopImmediatePropagation();
+        onSpreadsheetHeaderDblClick(coords.col);
+      }
+    };
     
     this.hot = new Handsontable(container, {
       data: this.data.getTable(),
@@ -70,6 +86,7 @@ class Spreadsheet {
       minSpareRows: 1,
       rowHeaders: true,
       colHeaders: this.data.getHeaders(),
+      afterOnCellMouseDown: afterOnCellMouseDown,
       autoColumnSize: false,
       autoRowSize: false,
       rowHeaderWidth: 80,

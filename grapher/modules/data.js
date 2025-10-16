@@ -582,6 +582,10 @@ export default class Data {
     return this.curves.find(curve => curve.title === title);
   }
 
+  getCurveByIndex(index) {
+    return this.curves[index];
+  }
+
   /**
    * Trie toutes les données de courbe en fonction des valeurs d'une variable spécifiée.
    * @param {string} variableTitle - Le titre de la courbe à utiliser pour le tri.

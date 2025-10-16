@@ -661,130 +661,162 @@
   <!------------------------------------------------------------------------------------------------------------>
   <!--------------------------------------------CHOOSE CURVES MODAL--------------------------------------------->
   <!------------------------------------------------------------------------------------------------------------>
-<div id="choose-curves-modal" class="modal">
+  <div id="choose-curves-modal" class="modal">
+      <div class="modal-background"></div>
+      <div class="modal-card" id="choose-curves-modal-card">
+        <header class="modal-card-head">
+          <p class="modal-card-title">Courbes</p>
+          <button class="delete" aria-label="close"></button>
+        </header>
+        <section class="modal-card-body is-flex">
+          <div class="columns is-flex-grow-1">
+            <div class="column is-narrow">
+              <p class="mb-2">
+                <strong>Axe des abscisses (X)</strong>
+              </p>
+              <div class="select is-fullwidth">
+                <select id="choose-x-curve-select"></select>
+              </div>
+              <p class="mt-4 mb-2">
+                <strong>Courbes des ordonnées (Y)</strong>
+              </p>
+              <aside class="menu">
+                <ul class="menu-list" id="choose-curves-menu">
+                </ul>
+              </aside>
+            </div>
+            <div class="column is-narrow vertical-divider">
+            </div>
+            <div id="curve-details-panel" class="column is-hidden">
+              <p class="mb-2">
+                <strong>Personnalisation</strong>
+              </p>
+              <div class="field is-horizontal">
+                <div class="field-label is-normal">
+                  <label class="label">Couleur</label>
+                </div>
+                <div class="field-body">
+                  <div class="field">
+                    <div class="control">
+                      <div class="select is-fullwidth">
+                        <select id="curveColorPicker"></select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="field is-horizontal">
+                <div class="field-label is-normal">
+                  <label class="label">Points</label>
+                </div>
+                <div class="field-body">
+                  <div class="field is-flex is-flex-grow-0 is-align-items-center" style="height: 40px">
+                    <div class="control">
+                      <label class="switch is-rounded">
+                        <input type="checkbox" value="false" id="curveMarkerToggle"/>
+                        <span class="check"></span>
+                      </label>
+                    </div>
+                  </div>
+                  <div class="field is-flex-grow-0 curveMarkerUI">
+                    <div class="control">
+                      <div class="select">
+                        <select id="curveMarkerRadiusSelect"></select>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="field curveMarkerUI">
+                    <div class="control">
+                      <div class="select is-fullwidth">
+                        <select id="curveMarkerSymbolSelect">
+                          <option value="circle">Cercle</option>
+                          <option value="cross">Croix +</option>
+                          <option value="crossX">Croix x</option>
+                          <option value="square">Carré</option>
+                          <option value="diamond">Losange</option>
+                          <option value="triangle">Triangle</option>
+                          <option value="triangle-down">Triangle inversé</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="field is-horizontal">
+                <div class="field-label is-normal">
+                  <label class="label">Ligne</label>
+                </div>
+                <div class="field-body">
+                  <div class="field is-flex is-flex-grow-0 is-align-items-center" style="height: 40px">
+                    <div class="control">
+                      <label class="switch is-rounded control">
+                        <input type="checkbox" value="false" id="curveLineToggle"/>
+                        <span class="check"></span>
+                      </label>
+                    </div>
+                  </div>
+                  <div class="field is-flex-grow-0 curveLineUI">
+                    <div class="control">
+                      <div class="select">
+                        <select id="curveLineWidthSelect"></select>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="field curveLineUI">
+                    <div class="control">
+                      <div class="select is-fullwidth">
+                        <select id="curveLineStyleSelect">
+                          <option value="Solid">Continue</option>
+                          <option value="Dash">Tirets</option>
+                          <option value="Dot">Points</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+        <footer class="modal-card-foot">
+          <div class="buttons">
+            <button class="button is-success" id="choose-curves-confirm-button">Confirmer</button>
+          </div>
+        </footer>
+      </div>
+  </div>
+  <!------------------------------------------------------------------------------------------------------------>
+  <!----------------------------------------------EDIT HEADER MODAL--------------------------------------------->
+  <!------------------------------------------------------------------------------------------------------------>
+  <div id="edit-header-modal" class="modal">
     <div class="modal-background"></div>
-    <div class="modal-card" id="choose-curves-modal-card">
+    <div class="modal-card">
       <header class="modal-card-head">
-        <p class="modal-card-title">Courbes</p>
+        <p class="modal-card-title">Modifier la grandeur</p>
         <button class="delete" aria-label="close"></button>
       </header>
-      <section class="modal-card-body is-flex">
-        <div class="columns is-flex-grow-1">
-          <div class="column is-narrow">
-            <p class="mb-2">
-              <strong>Axe des abscisses (X)</strong>
-            </p>
-            <div class="select is-fullwidth">
-              <select id="choose-x-curve-select"></select>
-            </div>
-            <p class="mt-4 mb-2">
-              <strong>Courbes des ordonnées (Y)</strong>
-            </p>
-            <aside class="menu">
-              <ul class="menu-list" id="choose-curves-menu">
-              </ul>
-            </aside>
+      <section class="modal-card-body">
+        <div class="field">
+          <label class="label">Nom (symbole)</label>
+          <div class="control">
+            <input id="edit-header-symbol-input" class="input" type="text" placeholder="Ex: x">
           </div>
-          <div class="column is-narrow vertical-divider">
-          </div>
-          <div id="curve-details-panel" class="column is-hidden">
-            <p class="mb-2">
-              <strong>Personnalisation</strong>
-            </p>
-            <div class="field is-horizontal">
-              <div class="field-label is-normal">
-                <label class="label">Couleur</label>
-              </div>
-              <div class="field-body">
-                <div class="field">
-                  <div class="control">
-                    <div class="select is-fullwidth">
-                      <select id="curveColorPicker"></select>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="field is-horizontal">
-              <div class="field-label is-normal">
-                <label class="label">Points</label>
-              </div>
-              <div class="field-body">
-                <div class="field is-flex is-flex-grow-0 is-align-items-center" style="height: 40px">
-                  <div class="control">
-                    <label class="switch is-rounded">
-                      <input type="checkbox" value="false" id="curveMarkerToggle"/>
-                      <span class="check"></span>
-                    </label>
-                  </div>
-                </div>
-                <div class="field is-flex-grow-0 curveMarkerUI">
-                  <div class="control">
-                    <div class="select">
-                      <select id="curveMarkerRadiusSelect"></select>
-                    </div>
-                  </div>
-                </div>
-                <div class="field curveMarkerUI">
-                  <div class="control">
-                    <div class="select is-fullwidth">
-                      <select id="curveMarkerSymbolSelect">
-                        <option value="circle">Cercle</option>
-                        <option value="cross">Croix +</option>
-                        <option value="crossX">Croix x</option>
-                        <option value="square">Carré</option>
-                        <option value="diamond">Losange</option>
-                        <option value="triangle">Triangle</option>
-                        <option value="triangle-down">Triangle inversé</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="field is-horizontal">
-              <div class="field-label is-normal">
-                <label class="label">Ligne</label>
-              </div>
-              <div class="field-body">
-                <div class="field is-flex is-flex-grow-0 is-align-items-center" style="height: 40px">
-                  <div class="control">
-                    <label class="switch is-rounded control">
-                      <input type="checkbox" value="false" id="curveLineToggle"/>
-                      <span class="check"></span>
-                    </label>
-                  </div>
-                </div>
-                <div class="field is-flex-grow-0 curveLineUI">
-                  <div class="control">
-                    <div class="select">
-                      <select id="curveLineWidthSelect"></select>
-                    </div>
-                  </div>
-                </div>
-                <div class="field curveLineUI">
-                  <div class="control">
-                    <div class="select is-fullwidth">
-                      <select id="curveLineStyleSelect">
-                        <option value="Solid">Continue</option>
-                        <option value="Dash">Tirets</option>
-                        <option value="Dot">Points</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+        </div>
+        <div class="field">
+          <label class="label">Unité</label>
+          <div class="control">
+            <input id="edit-header-unit-input" class="input" type="text" placeholder="Ex: m">
           </div>
         </div>
       </section>
       <footer class="modal-card-foot">
         <div class="buttons">
-          <button class="button is-success" id="choose-curves-confirm-button">Confirmer</button>
+          <button id="edit-header-save-button" class="button is-success">Sauvegarder</button>
+          <button class="button modal-cancel-button">Annuler</button>
         </div>
       </footer>
     </div>
-</div>
+  </div>
   <!------------------------------------------------------------------------------------------------------------>
   <!-----------------------------------------------SETTINGS MODAL----------------------------------------------->
   <!------------------------------------------------------------------------------------------------------------>
