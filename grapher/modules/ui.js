@@ -2076,7 +2076,8 @@ export default class UIManager {
   initAddModelModal(){
     const addModelModal = $('#add-model-modal');
     const modelCurveSelect = $('#model-curve-select');
-    const modelTypeContainer = $('#model-type-container');
+    const addModelConfirmButton = $('#add-model-confirm-button');
+
     let selectedModelType = null;
 
     let openAddModelModal = () => {
@@ -2100,6 +2101,9 @@ export default class UIManager {
       });
       selectedModelType = null;
 
+      // Désactive le bouton de confirmation
+      addModelConfirmButton.disabled = true;
+
       addModelModal.classList.add('is-active');
     }
 
@@ -2118,6 +2122,9 @@ export default class UIManager {
         // Ajoute la classe active à l'élément cliqué
         targetItem.classList.add('is-active', 'has-background-primary-light');
         selectedModelType = targetItem.dataset.modelType;
+
+        // Active le bouton de confirmation
+        addModelConfirmButton.disabled = false;
       }
     });
     
