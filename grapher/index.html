@@ -984,11 +984,14 @@
         <div class="field">
           <label class="label">Courbe à modéliser</label>
           <div class="control">
-            <div class="select is-fullwidth">
+            <div class="select is-fullwidth" id="model-curve-select-container">
               <select id="model-curve-select">
                 <!-- Les options seront ajoutées par JavaScript -->
               </select>
             </div>
+            <p id="no-curve-to-model-message" class="has-text-danger is-hidden">
+                Aucune courbe n'est disponible pour la modélisation.
+            </p>
           </div>
         </div>
         <div class="field">

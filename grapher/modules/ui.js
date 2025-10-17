@@ -2076,23 +2076,47 @@ export default class UIManager {
   initAddModelModal(){
     const addModelModal = $('#add-model-modal');
     const modelCurveSelect = $('#model-curve-select');
+    const modelCurveSelectContainer = $('#model-curve-select-container');
     const addModelConfirmButton = $('#add-model-confirm-button');
+    const noCurveMessage = $('#no-curve-to-model-message');
 
     let selectedModelType = null;
 
+    // Met à jour l'état du bouton de confirmation
+    const updateConfirmButtonState = () => {
+        const isCurveSelected = modelCurveSelect.value !== '';
+        const isModelTypeSelected = selectedModelType !== null;
+        addModelConfirmButton.disabled = !(isCurveSelected && isModelTypeSelected);
+    };
+
     let openAddModelModal = () => {
+      let availableCurvesCount = 0;
       // Peuple le sélecteur de courbes
       modelCurveSelect.innerHTML = '';
-      if (this.grapher.chart && this.grapher.currentXCurve) {
+      if (this.grapher.currentXCurve) {
         this.grapher.chart.series.forEach(series => {
-          // On ne modélise pas un modèle existant
-          if (series.type !== 'spline' && !series.name.startsWith('Modèle')) {
+          if (series.visible && series.type !== 'spline' && !series.name.startsWith('Modèle')) {
             const option = document.createElement('option');
             option.value = series.name;
             option.textContent = `${series.name} = f(${this.grapher.currentXCurve})`;
             modelCurveSelect.appendChild(option);
+            availableCurvesCount++;
           }
         });
+      }
+
+      // Vérifie s'il y a des courbes disponibles à modéliser
+      if (availableCurvesCount === 0) {
+        console.log("Aucune courbe disponible pour la modélisation.");
+        // S'il n'y a aucune courbe, on affiche le message et on masque le sélecteur
+        modelCurveSelect.classList.add('is-hidden');
+        modelCurveSelectContainer.classList.add('is-hidden');
+        noCurveMessage.classList.remove('is-hidden');
+      } else {
+        // S'il y a des courbes, on affiche le sélecteur et on masque le message
+        modelCurveSelect.classList.remove('is-hidden');
+        modelCurveSelectContainer.classList.remove('is-hidden');
+        noCurveMessage.classList.add('is-hidden');
       }
       
       // Réinitialise la sélection de tous les modèles
@@ -2101,8 +2125,8 @@ export default class UIManager {
       });
       selectedModelType = null;
 
-      // Désactive le bouton de confirmation
-      addModelConfirmButton.disabled = true;
+      // Met à jour l'état du bouton de confirmation
+      updateConfirmButtonState();
 
       addModelModal.classList.add('is-active');
     }
@@ -2123,9 +2147,16 @@ export default class UIManager {
         targetItem.classList.add('is-active', 'has-background-primary-light');
         selectedModelType = targetItem.dataset.modelType;
 
-        // Active le bouton de confirmation
-        addModelConfirmButton.disabled = false;
+        // Met à jour l'état du bouton de confirmation
+        updateConfirmButtonState();
       }
+    });
+
+    /**
+     * Gère la sélection d'une courbe dans la modale.
+     */
+    modelCurveSelect.addEventListener('change', () => {
+      updateConfirmButtonState();
     });
     
     /**
