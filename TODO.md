@@ -44,8 +44,6 @@
 
     - gerer quand la modélisation donne des ecart type ou r2 "infinity" Deja fait je crois, à vérifier
 
-    -  - Validation des symboles : La validation des symboles (noms de variables) est effectuée à plusieurs endroits. Cette logique pourrait être centralisée dans une fonction utilitaire pour éviter la duplication de code et garantir une validation cohérente partout dans l'application.
-
     - permettre voir autoriser les notations 3e-15 (deja partiellemnt possible, à vérifier partout)
 
     - petite animation pour l'ouverture du panel modèles

@@ -847,49 +847,18 @@ export default class UIManager {
     const getModalInputs = (selectedType) => {
       let symbol, unit, formulaLine;
 
-      const validSymbolRegex = /^[a-zA-Z][a-zA-Z0-9]*$/; 
-
-      // Fonction pour nettoyer et valider le symbole
-      const processAndValidateSymbol = (element) => {
-        let value = element.value.trim().replace(/\s+/g, ''); // Retire les espaces
-        element.value = value; // Met à jour l'affichage
-
-        if (value && !validSymbolRegex.test(value)) {
-          alertModal({
-            title: "Symbole invalide",
-            body: "Le symbole doit commencer par une lettre et ne peut contenir que des lettres et des chiffres.",
-            confirm: "OK"
-          });
-          return null;
-        }
-        return value;
-      };
-
       // Fonction pour nettoyer l'unité
       const processUnit = (element) => {
-          let value = element.value.trim().replace(/\s+/g, ''); // Retire les espaces
-          element.value = value; // Met à jour l'affichage
-          return value;
-      };
-
-      const symbolExists = (sym) => {
-        if (this.data.getCurveByTitle(sym) || this.data.parameters.hasOwnProperty(sym)) {
-          alertModal({
-            title: "Symbole déjà utilisé",
-            body: `Le symbole "${sym}" existe déjà. Veuillez en choisir un autre.`,
-            confirm: "OK"
-          });
-          return true;
-        }
-        return false;
+        let value = element.value.trim().replace(/\s+/g, ''); // Retire les espaces
+        element.value = value; // Met à jour l'affichage
+        return value;
       };
 
       const buildVarWithUnit = (sym, u) => u ? `${sym}_${u}` : sym;
 
       switch (selectedType) {
         case 'calc-curve': {
-          symbol = processAndValidateSymbol(calcCurveSymbolInput);
-          if (symbol === null) return null;
+          symbol = calcCurveSymbolInput.value.trim();
           unit = processUnit(calcCurveUnitInput);
           const formula = calcCurveFormulaInput.value.trim();
           if (!symbol || !formula) {
@@ -900,14 +869,19 @@ export default class UIManager {
             });
             return null;
           }
-          if (symbolExists(symbol)) return null;
+          // --- VALIDATION CENTRALISÉE ---
+          const validationResult = this.app.symbolValidator.validate(symbol);
+          if (!validationResult.isValid) {
+            alertModal({ title: 'Validation échouée', body: validationResult.message, confirm: 'OK' });
+            return null;
+          }
+
           formulaLine = `${buildVarWithUnit(symbol, unit)} = ${formula}`;
           return { type: 'formula', formulaLine };
         }
         
         case 'derivate-curve': {
-          symbol = processAndValidateSymbol(derivateCurveSymbolInput);
-          if (symbol === null) return null;
+          symbol = derivateCurveSymbolInput.value.trim();
           unit = processUnit(derivateCurveUnitInput);
           const numerator = derivateNumeratorSelect.value;
           const denominator = derivateDenominatorSelect.value;
@@ -920,7 +894,12 @@ export default class UIManager {
             });
             return null;
           }
-          if (symbolExists(symbol)) return null;
+          // --- VALIDATION CENTRALISÉE ---
+          const validationResult = this.app.symbolValidator.validate(symbol);
+          if (!validationResult.isValid) {
+            alertModal({ title: 'Validation échouée', body: validationResult.message, confirm: 'OK' });
+            return null;
+          }
           
           // Construit la formule `diff`
           const formula = `diff(${numerator}, ${denominator})`;
@@ -930,8 +909,7 @@ export default class UIManager {
         }
 
         case 'parameter': {
-          symbol = processAndValidateSymbol(parameterSymbolInput);
-          if (symbol === null) return null;
+          symbol = parameterSymbolInput.value.trim();
           unit = processUnit(parameterUnitInput);
           const value = parameterValueInput.value.trim();
           if (!symbol || !value) {
@@ -942,14 +920,18 @@ export default class UIManager {
             });
             return null;
           }
-          if (symbolExists(symbol)) return null;
+          // --- VALIDATION CENTRALISÉE ---
+          const validationResult = this.app.symbolValidator.validate(symbol);
+          if (!validationResult.isValid) {
+            alertModal({ title: 'Validation échouée', body: validationResult.message, confirm: 'OK' });
+            return null;
+          }
           formulaLine = `${buildVarWithUnit(symbol, unit)} = ${value}`;
           return { type: 'formula', formulaLine };
         }
         
         case 'empty-curve': {
-          symbol = processAndValidateSymbol(emptyCurveSymbolInput);
-          if (symbol === null) return null;
+          symbol = emptyCurveSymbolInput.value.trim();
           unit = processUnit(emptyCurveUnitInput);
           if (!symbol) {
             alertModal({
@@ -959,7 +941,12 @@ export default class UIManager {
             });
             return null;
           }
-          if (symbolExists(symbol)) return null;
+          // --- VALIDATION CENTRALISÉE ---
+          const validationResult = this.app.symbolValidator.validate(symbol);
+          if (!validationResult.isValid) {
+            alertModal({ title: 'Validation échouée', body: validationResult.message, confirm: 'OK' });
+            return null;
+          }
           return { type: 'empty-curve', symbol, unit };
         }
         default:
@@ -1821,7 +1808,7 @@ export default class UIManager {
       parametersContainer.appendChild(field);
     });
 
-    // GESTIONNAIRE D'ÉVÉNEMENT POUR LA CASE À COCHER
+    // Gère l'activation/désactivation des champs de bornes
     borneToutCheckbox.onchange = () => {
       const disabled = borneToutCheckbox.checked;
       borneDebutInput.disabled = disabled;
@@ -1914,56 +1901,49 @@ export default class UIManager {
       let namesHaveChanged = false;
       let hasConflict = false;
       const newParamNames = {}; // Fait correspondre les anciens noms aux nouveaux
-
-      // 1. Récupère tous les noms déjà pris dans l'application, SAUF les paramètres de ce modèle
-      const oldParamNamesBeingEdited = model.parameters.map(p => p.name);
-      const otherParameterNames = Object.keys(this.data.parameters)
-          .filter(pName => !oldParamNamesBeingEdited.includes(pName));
-      const curveNames = this.data.curves.map(c => c.title);
-      const takenNames = new Set([...otherParameterNames, ...curveNames]);
-
       const inputs = parametersContainer.querySelectorAll('input[data-old-name]');
-      const allNewNamesInThisModel = new Set();
 
-      // 2. Première passe : vérifie les doublons à l'intérieur du modèle et le format
+      // Collecte tous les nouveaux noms et vérifier les doublons internes
+      const newNamesSet = new Set();
       for (const input of inputs) {
-          const newName = input.value.trim();
-          if (!newName.match(/^[a-zA-Z][a-zA-Z0-9]*$/)) {
-              alertModal({ title: "Nom de paramètre invalide", body: `Le nom "${newName}" doit commencer par une lettre et ne contenir que des lettres et des chiffres.`, confirm: "OK" });
-              hasConflict = true;
-              break;
-          }
-          if (allNewNamesInThisModel.has(newName)) {
-              alertModal({ title: "Nom de paramètre en double", body: `Le nom "${newName}" est utilisé plusieurs fois dans ce modèle.`, confirm: "OK" });
-              hasConflict = true;
-              break;
-          }
-          allNewNamesInThisModel.add(newName);
+        const newName = input.value.trim();
+        if (newNamesSet.has(newName)) {
+          alertModal({
+            title: 'Nom de paramètre en double',
+            body: `Le nom "${newName}" est utilisé plusieurs fois dans ce modèle.`,
+            confirm: 'OK'
+          });
+          return; // Arrête tout
+        }
+        newNamesSet.add(newName);
       }
-      if (hasConflict) return;
 
+      // Valide chaque nouveau nom avec le SymbolValidator
+      // La liste d'ignorance contient les noms originaux des paramètres qu'on édite.
+      const ignoreList = model.parameters.map(p => p.name);
 
-      // 3. Seconde passe : vérifie les conflits avec les autres symboles de l'application
       for (const input of inputs) {
-          const oldName = input.dataset.oldName;
-          const newName = input.value.trim();
+        const oldName = input.dataset.oldName;
+        const newName = input.value.trim();
 
-          if (oldName !== newName) {
-              namesHaveChanged = true;
-          }
-
-          if (takenNames.has(newName)) {
-              alertModal({ title: "Conflit de nom", body: `Le nom "${newName}" est déjà utilisé par une autre grandeur ou un autre paramètre.`, confirm: "OK" });
-              hasConflict = true;
-              break;
-          }
-          newParamNames[oldName] = newName;
+        // On passe la liste des anciens noms pour permettre le renommage
+        const validationResult = this.app.symbolValidator.validate(newName, { ignoreList });
+        
+        if (!validationResult.isValid) {
+          alertModal({ title: 'Nom de paramètre invalide', body: validationResult.message, confirm: 'OK' });
+          return; // Arrête tout
+        }
+        
+        if (oldName !== newName) {
+          namesHaveChanged = true;
+        }
+        newParamNames[oldName] = newName;
       }
-      
-      if(hasConflict) return;
+
+
       
       if (boundsChanged) {
-          await model.fit();
+        await model.fit();
       }
 
       if(namesHaveChanged){

@@ -1,5 +1,6 @@
 import IOManager from './ioManager.js';
 import { alertModal } from '../../common/common.js';
+import SymbolValidator from './symbolValidator.js'; 
 
 const $ = document.querySelector.bind(document);
 
@@ -32,6 +33,8 @@ export default class App {
     this.calculation = calculation;
     this.editor = editor;
     this.uiManager = uiManager;
+
+    this.symbolValidator = new SymbolValidator(this.data);
 
     this.ioManager = new IOManager(this);
   }
@@ -91,23 +94,10 @@ export default class App {
 
 
   renameCurve(oldTitle, newTitle, newUnit) {
-    // Validation du nouveau nom
-    const validSymbolRegex = /^[a-zA-Z][a-zA-Z0-9]*$/;
-    if (!validSymbolRegex.test(newTitle)) {
-      this.ui.common.alertModal({
-        title: 'Symbole invalide',
-        body: 'Le symbole doit commencer par une lettre et ne peut contenir que des lettres et des chiffres.',
-        confirm: 'OK'
-      });
-      return;
-    }
-
-    if (oldTitle !== newTitle && (this.data.getCurveByTitle(newTitle) || this.data.parameters[newTitle])) {
-      this.ui.common.alertModal({
-        title: 'Symbole déjà utilisé',
-        body: `Le symbole "${newTitle}" existe déjà. Veuillez en choisir un autre.`,
-        confirm: 'OK'
-      });
+    // Validation du symbole via le SymbolValidator
+    const validationResult = this.symbolValidator.validate(newTitle, { ignoreList: [oldTitle] });
+    if (!validationResult.isValid) {
+      alertModal({ title: 'Symbole invalide', body: validationResult.message, confirm: 'OK' });
       return;
     }
 
@@ -374,42 +364,28 @@ export default class App {
       const variableName = leftParts[0].trim().replace(/\s+/g, '');
       const unit = leftParts.length > 1 ? leftParts.slice(1).join('_').trim().replace(/\s+/g, '') : '';
 
-      if (!validSymbolRegex.test(variableName)) {
-        alertModal({
-          title: "Symbole invalide",
-          body: `Le symbole "${variableName}" est invalide. Il doit commencer par une lettre et ne peut contenir que des lettres, des chiffres et des underscores.`,
-          confirm: "OK"
-        });
-        return;
-      }
-
+      // --- VALIDATION CENTRALISÉE ---
+      // 1. Conflit avec les paramètres de modèle (non redéfinissables)
       if (modelParameterNames.includes(variableName)) {
-        alertModal({
-          title: "Conflit de nom",
-          body: `Le symbole "${variableName}" est un paramètre de modèle et ne peut pas être redéfini.`,
-          confirm: "OK"
-        });
+        alertModal({ title: 'Conflit de nom', body: `Le symbole "${variableName}" est un paramètre de modèle et ne peut pas être redéfini.`, confirm: 'OK' });
         return;
       }
 
-      if (rawCurveTitles.includes(variableName)) {
-          alertModal({
-              title: "Conflit de nom",
-              body: `Le symbole "${variableName}" est déjà utilisé par une grandeur non-calculée et ne peut pas être redéfini ici.`,
-              confirm: "OK"
-          });
+      // 2. Format et unicité par rapport aux courbes/paramètres existants
+      const validationResult = this.symbolValidator.validate(variableName);
+      // On ignore l'erreur d'unicité car on va redéfinir la variable
+      if (!validationResult.isValid && !validationResult.message.includes('déjà utilisé')) {
+          alertModal({ title: 'Symbole invalide', body: validationResult.message, confirm: 'OK' });
           return;
       }
 
+      // 3. Duplication dans le bloc de calcul lui-même
       if (definedInBlock.has(variableName)) {
-          alertModal({
-              title: "Symbole dupliqué",
-              body: `Le symbole "${variableName}" est défini plusieurs fois dans ce bloc de calcul.`,
-              confirm: "OK"
-          });
-          return;
+        alertModal({ title: 'Symbole dupliqué', body: `Le symbole "${variableName}" est défini plusieurs fois dans ce bloc de calcul.`, confirm: 'OK' });
+        return;
       }
       definedInBlock.add(variableName);
+      // --- FIN VALIDATION ---
 
       formulasToEvaluate.push({ variableName, expression, unit });
     }
