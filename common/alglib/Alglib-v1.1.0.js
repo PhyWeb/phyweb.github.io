@@ -13,15 +13,8 @@ var Module=typeof ALGLIBModule!=="undefined"?ALGLIBModule:{};var readyPromiseRes
 }
 );
 })();
-if (typeof exports === 'object' && typeof module === 'object')
-  module.exports = ALGLIBModule;
-else if (typeof define === 'function' && define['amd'])
-  define([], function() { return ALGLIBModule; });
-else if (typeof exports === 'object')
-  exports["ALGLIBModule"] = ALGLIBModule;
-//Ceres Helper JS
 
-export class Alglib {
+class Alglib {
 	constructor() {
 		this.loaded = false
 		this.fxn = []
@@ -246,4 +239,8 @@ export class Alglib {
 		this.loaded == false;
 		this.instance.delete();
 	}
+}
+
+if (typeof Alglib !== 'undefined') {
+    self.Alglib = Alglib;
 }

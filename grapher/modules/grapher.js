@@ -334,6 +334,12 @@ export default class Grapher {
       title: {
         text: null
       },
+      loading: {
+        style: {
+          fontSize: '2.5rem',
+          opacity: 0.85
+        }
+      },
       xAxis: [{
         title: {
           text: null

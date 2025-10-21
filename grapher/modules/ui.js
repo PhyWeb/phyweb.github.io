@@ -1692,6 +1692,45 @@ export default class UIManager {
       }
     });
 
+    const recalculateButton = document.getElementById('recalculate-models-button');
+
+    recalculateButton.addEventListener('click', async () => {
+      // Désactive le bouton immédiatement et ajoute l'indicateur local
+      recalculateButton.disabled = true;
+      recalculateButton.classList.add('is-loading');
+
+      // Affiche l'indicateur de chargement sur le graphique
+      this.grapher.chart.showLoading('Recalcul des modèles en cours...');
+
+      try {
+        // Appelle la méthode principale pour lancer les calculs
+        await this.app.recalculateAllModels();
+
+        // Met à jour tous les panneaux de modèles après le succès
+        this.data.models.forEach(model => this.updateModelPanel(model));
+        
+        // Met également à jour la section "Calcul" car les paramètres ont changé
+        this.updateCalculationUI(); 
+        
+        // Redessine le graphique pour afficher les modèles mis à jour
+        this.grapher.chart.redraw();
+      } catch (error) {
+        console.error("Erreur lors du recalcul des modèles :", error);
+        alertModal({
+            title: 'Erreur de Calcul',
+            body: `Un ou plusieurs modèles n'ont pas pu être recalculés :<br><br><i>${error.message}</i>`,
+            confirm: 'OK'
+        });
+      } finally {
+        // Réactive le bouton et retire l'indicateur local
+        recalculateButton.disabled = false;
+        recalculateButton.classList.remove('is-loading');
+
+        // Masque l'indicateur de chargement dans tous les cas
+        this.grapher.chart.hideLoading();
+      }
+    });
+
     this.initAddModelModal();
   }
 
@@ -1859,123 +1898,145 @@ export default class UIManager {
         borneDebutInput.value = fin;
       }
     };
+
+    const saveButton = $('#model-edit-save-button');
+    const deleteButton = $('#model-edit-delete-button');
+
+    // On s'assure de cloner le bouton pour nettoyer les anciens écouteurs d'événements
+    const newSaveButton = saveButton.cloneNode(true);
+    saveButton.parentNode.replaceChild(newSaveButton, saveButton);
     
-    $('#model-edit-save-button').onclick = async () => {      
-      model.color = colorPicker.value;
-      model.lineWidth = lineWidthSelect.value;
-      model.lineStyle = $('#model-edit-linestyle-select').value;
-      
-      let newBorneDebut = null;
-      let newBorneFin = null;
+    newSaveButton.onclick = async () => {      
+      // 1. Ferme la modale immédiatement pour une sensation de réactivité
+      this.common.modalManager.closeAllModals();
 
-      // Si la case "Tout" n'est PAS cochée, on lit les valeurs des champs
-      if (!borneToutCheckbox.checked) {
-        const newBorneDebutStr = borneDebutInput.value.trim();
-        const newBorneFinStr = borneFinInput.value.trim();
-        newBorneDebut = newBorneDebutStr === '' ? null : parseFloat(newBorneDebutStr.replace(',', '.'));
-        newBorneFin = newBorneFinStr === '' ? null : parseFloat(newBorneFinStr.replace(',', '.'));
-      }
+      // 2. Affiche l'indicateur de chargement global sur le graphique
+      this.grapher.chart.showLoading('Mise à jour du modèle...');
 
-      // Validation : s'il y a des bornes, on vérifie qu'il y a au moins 2 points dans l'intervalle
-      const pointsDansIntervalle = model.x.filter(val => {
-        if (val === null || !isFinite(val)) return false;
-        const estApresDebut = (newBorneDebut === null) || (val >= newBorneDebut);
-        const estAvantFin = (newBorneFin === null) || (val <= newBorneFin);
-        return estApresDebut && estAvantFin;
-      }).length;
+      try {
+        model.color = colorPicker.value;
+        model.lineWidth = lineWidthSelect.value;
+        model.lineStyle = $('#model-edit-linestyle-select').value;
+        
+        let newBorneDebut = null;
+        let newBorneFin = null;
 
-      if (pointsDansIntervalle < 2) {
-        alertModal({
-          title: "Données insuffisantes",
-          body: `L'intervalle de calcul sélectionné ne contient pas assez de points pour réaliser une modélisation.`,
-          confirm: "OK"
-        });
-        return; // On arrête la sauvegarde
-      }
-      
-      const boundsChanged = model.borne_debut !== newBorneDebut || model.borne_fin !== newBorneFin;
+        // Si la case "Tout" n'est PAS cochée, on lit les valeurs des champs
+        if (!borneToutCheckbox.checked) {
+          const newBorneDebutStr = borneDebutInput.value.trim();
+          const newBorneFinStr = borneFinInput.value.trim();
+          newBorneDebut = newBorneDebutStr === '' ? null : parseFloat(newBorneDebutStr.replace(',', '.'));
+          newBorneFin = newBorneFinStr === '' ? null : parseFloat(newBorneFinStr.replace(',', '.'));
+        }
 
-      model.borne_debut = newBorneDebut;
-      model.borne_fin = newBorneFin;
-      
-      let namesHaveChanged = false;
-      let hasConflict = false;
-      const newParamNames = {}; // Fait correspondre les anciens noms aux nouveaux
-      const inputs = parametersContainer.querySelectorAll('input[data-old-name]');
+        // Validation : s'il y a des bornes, on vérifie qu'il y a au moins 2 points dans l'intervalle
+        const pointsDansIntervalle = model.x.filter(val => {
+          if (val === null || !isFinite(val)) return false;
+          const estApresDebut = (newBorneDebut === null) || (val >= newBorneDebut);
+          const estAvantFin = (newBorneFin === null) || (val <= newBorneFin);
+          return estApresDebut && estAvantFin;
+        }).length;
 
-      // Collecte tous les nouveaux noms et vérifier les doublons internes
-      const newNamesSet = new Set();
-      for (const input of inputs) {
-        const newName = input.value.trim();
-        if (newNamesSet.has(newName)) {
+        if (pointsDansIntervalle < 2) {
           alertModal({
-            title: 'Nom de paramètre en double',
-            body: `Le nom "${newName}" est utilisé plusieurs fois dans ce modèle.`,
-            confirm: 'OK'
+            title: "Données insuffisantes",
+            body: `L'intervalle de calcul sélectionné ne contient pas assez de points pour réaliser une modélisation.`,
+            confirm: "OK"
           });
-          return; // Arrête tout
-        }
-        newNamesSet.add(newName);
-      }
-
-      // Valide chaque nouveau nom avec le SymbolValidator
-      // La liste d'ignorance contient les noms originaux des paramètres qu'on édite.
-      const ignoreList = model.parameters.map(p => p.name);
-
-      for (const input of inputs) {
-        const oldName = input.dataset.oldName;
-        const newName = input.value.trim();
-
-        // On passe la liste des anciens noms pour permettre le renommage
-        const validationResult = this.app.symbolValidator.validate(newName, { ignoreList });
-        
-        if (!validationResult.isValid) {
-          alertModal({ title: 'Nom de paramètre invalide', body: validationResult.message, confirm: 'OK' });
-          return; // Arrête tout
+          return; // On arrête la sauvegarde
         }
         
-        if (oldName !== newName) {
-          namesHaveChanged = true;
-        }
-        newParamNames[oldName] = newName;
-      }
+        const boundsChanged = model.borne_debut !== newBorneDebut || model.borne_fin !== newBorneFin;
 
+        model.borne_debut = newBorneDebut;
+        model.borne_fin = newBorneFin;
+        
+        let namesHaveChanged = false;
+        let hasConflict = false;
+        const newParamNames = {}; // Fait correspondre les anciens noms aux nouveaux
+        const inputs = parametersContainer.querySelectorAll('input[data-old-name]');
 
-      
-      if (boundsChanged) {
-        await model.fit();
-      }
-
-      if(namesHaveChanged){
-        const updatedParams = {};
-        model.parameters.forEach(param => {
-          const oldName = param.name;
-          const newName = newParamNames[oldName] || oldName;
-          updatedParams[newName] = { value: param.value, unit: '', type: 'model' };
-          if(oldName !== newName){
-            delete this.data.parameters[oldName];
+        // Collecte tous les nouveaux noms et vérifier les doublons internes
+        const newNamesSet = new Set();
+        for (const input of inputs) {
+          const newName = input.value.trim();
+          if (newNamesSet.has(newName)) {
+            alertModal({
+              title: 'Nom de paramètre en double',
+              body: `Le nom "${newName}" est utilisé plusieurs fois dans ce modèle.`,
+              confirm: 'OK'
+            });
+            return; // Arrête tout
           }
-        });
+          newNamesSet.add(newName);
+        }
+
+        // Valide chaque nouveau nom avec le SymbolValidator
+        // La liste d'ignorance contient les noms originaux des paramètres qu'on édite.
+        const ignoreList = model.parameters.map(p => p.name);
+
+        for (const input of inputs) {
+          const oldName = input.dataset.oldName;
+          const newName = input.value.trim();
+
+          // On passe la liste des anciens noms pour permettre le renommage
+          const validationResult = this.app.symbolValidator.validate(newName, { ignoreList });
+          
+          if (!validationResult.isValid) {
+            alertModal({ title: 'Nom de paramètre invalide', body: validationResult.message, confirm: 'OK' });
+            return; // Arrête tout
+          }
+          
+          if (oldName !== newName) {
+            namesHaveChanged = true;
+          }
+          newParamNames[oldName] = newName;
+        }
         
-        model.parameters = Object.entries(updatedParams).map(([name, obj]) => ({ name, value: obj.value }));
-        Object.assign(this.data.parameters, updatedParams);
-      }
-      
-      const series = this.grapher.chart.get(`model-${model.id}`);
-      if(series) {
-        series.update({
-          color: model.color,
-          lineWidth: model.lineWidth,
-          dashStyle: model.lineStyle,
+        if (boundsChanged) {
+          await model.fit();
+        }
+
+        if(namesHaveChanged){
+          const updatedParams = {};
+          model.parameters.forEach(param => {
+            const oldName = param.name;
+            const newName = newParamNames[oldName] || oldName;
+            updatedParams[newName] = { value: param.value, unit: '', type: 'model' };
+            if(oldName !== newName){
+              delete this.data.parameters[oldName];
+            }
+          });
+          
+          model.parameters = Object.entries(updatedParams).map(([name, obj]) => ({ name, value: obj.value }));
+          Object.assign(this.data.parameters, updatedParams);
+        }
+        
+        const series = this.grapher.chart.get(`model-${model.id}`);
+        if(series) {
+          series.update({
+            color: model.color,
+            lineWidth: model.lineWidth,
+            dashStyle: model.lineStyle,
+          });
+        }
+        
+        this.updateModelPanel(model);
+        this.updateCalculationUI();
+        this.grapher.updateModelVisibility();
+        this.grapher.chart.redraw();
+
+      } catch (error) {
+        console.error("Erreur lors de la mise à jour du modèle :", error);
+        alertModal({
+          title: 'Erreur de Calcul',
+          body: `La mise à jour du modèle a échoué :<br><br><i>${error.message}</i>`,
+          confirm: 'OK'
         });
+      } finally {
+        // 5. Masque l'indicateur de chargement, que l'opération ait réussi ou non
+        this.grapher.chart.hideLoading();
       }
-      
-      this.updateModelPanel(model);
-      this.updateCalculationUI();
-      this.grapher.updateModelVisibility();
-      this.grapher.chart.redraw();
-      
-      editModelModal.classList.remove('is-active');
     };
     
     editModelModal.classList.add('is-active');
@@ -2160,19 +2221,36 @@ export default class UIManager {
     /**
      * Gère le bouton de confirmation dans la modale d'ajout de modèle.
      */
-    document.getElementById('add-model-confirm-button').addEventListener('click', async () => {
+    addModelConfirmButton.addEventListener('click', async () => {
       const curveToModel = $('#model-curve-select').value;
+
       if (curveToModel && selectedModelType) {
-        // Ferme tous les panneaux existants avant de créer le nouveau
-        closeAllModelPanels(); 
-
+        // On ferme la modale comme vous l'aviez prévu
         this.common.modalManager.closeAllModals();
+        
+        // On affiche l'indicateur de chargement SUR LE GRAPHIQUE
+        this.grapher.chart.showLoading('Calcul du modèle en cours...');
 
-        let model = await this.app.addModel(this.grapher.currentXCurve, curveToModel, selectedModelType);
+        try {
+          // On lance le calcul en arrière-plan
+          const model = await this.app.addModel(this.grapher.currentXCurve, curveToModel, selectedModelType);
+          
+          // Une fois le calcul terminé, on crée le panneau UI correspondant
+          createModelPanel(model.id);
 
-        createModelPanel(model.id);
+        } catch (error) {
+          console.error("Échec de la modélisation :", error);
+          alertModal({
+            title: 'Erreur de Modélisation',
+            body: `Le calcul n'a pas pu aboutir :<br><br><i>${error.message}</i>`,
+            confirm: 'OK'
+          });
+        } finally {
+          // Dans tous les cas, on masque l'indicateur de chargement du graphique
+          this.grapher.chart.hideLoading();
+        }
       } else {
-        alert("Veuillez sélectionner une courbe et un type de modèle.");
+        alertModal({ title: 'Sélection manquante', body: 'Veuillez sélectionner une courbe et un type de modèle.', confirm: 'OK' });
       }
     });
 
@@ -2250,11 +2328,6 @@ export default class UIManager {
       // Mettre à jour les icônes FontAwesome (si vous l'utilisez)
       window.FontAwesome.dom.i2svg({ node: article });
     }
-
-    // Le bouton "Recalculer tous les modèles"
-    $("#recalculate-models-button").addEventListener("click", () => {
-        this.app.recalculateAllModels();
-    });
   }
 
   /**

@@ -1,7 +1,5 @@
 import {Serie} from "../../common/common.js"
 
-import {Alglib} from '../../common/alglib/Alglib-v1.1.0.js';
-
 const $ = document.querySelector.bind(document);
 
 const COLOR_LIST = [ "#2caffe", "#544fc5", "#00e272", "#fe6a35", "#6b8abc", "#d568fb", "#2ee0ca", "#fa4b42", "#feb56a", "#91e8e1" ]
@@ -133,6 +131,12 @@ class Model {
     }
   }
 
+  /*
+  * Retourne la fonction mathématique correspondant au type de modèle.
+  * @returns {Function}
+  * @returns {Function} La fonction mathématique du modèle.
+  * ATTENTION : fonction dupliquée dans le worker fitter.worker.js
+  */
   _getFunction(){
     switch(this.type){
       case "linear":
@@ -203,72 +207,82 @@ class Model {
     return f(params, x);
   }
 
-  async fit(){
-    const data = this._buildData();
-    if (data.length < 2) { // Il faut au moins 2 points pour une régression
+  /**
+   * Lance l'ajustement du modèle dans un Web Worker pour ne pas bloquer le thread principal.
+   * @returns {Promise<Model>} Une promesse qui se résout avec l'instance du modèle mis à jour.
+   */
+  fit() {
+    return new Promise((resolve, reject) => {
+      const data = this._buildData();
+      if (data.length < 2) {
         console.error("Pas assez de données valides pour effectuer une modélisation.");
-        return this;
-    };
-
-    const f = this._getFunction();
-
-    const fn1 = function(a){
-      let sum = 0;
-      for (let i = 0; i < data.length; ++i) {
-            sum += Math.pow(data[i][1] - f(a, data[i][0]), 2);
-        }
-        return Math.sqrt(sum);
-	}
-
-    let solver = new Alglib();
-    solver.add_function(fn1);
-
-    await solver.promise;
-
-    let guess_size = 2;
-    if (this.type === 'linear') guess_size = 1;
-    if (this.type === 'quadratic') guess_size = 3;
-    if (this.type === 'cubic') guess_size = 4;
-    if (this.type === 'sin') guess_size = 4;
-    if (this.type === 'cos') guess_size = 4;
-    if (this.type === 'dampedsin') guess_size = 5;
-    if (this.type === 'dampedcos') guess_size = 5;
-    
-    solver.solve("min", Array(guess_size).fill(1));
-    let params = solver.get_results();
-
-    // Vider les anciens paramètres du modèle de l'objet global
-    this.parameters.forEach(param => {
-        delete this.dataParameters[param.name];
-    });
-
-    // Vide le tableau de paramètres du modèle lui-même
-    this.parameters = [];
-
-    const baseNames = ['a', 'b', 'c', 'd', 'e', 'f']; // Pour les 6 premiers paramètres
-
-    params.forEach((paramValue, i) => {
-      let baseName = baseNames[i] || `p${i}`; // Utilise a,b,c... ou p_i si plus de 6
-      let finalName = baseName;
-      let counter = 1;
-
-      // Cherche un nom unique si le nom de base est déjà pris
-      while (this.dataParameters.hasOwnProperty(finalName)) {
-        finalName = `${baseName}${counter}`;
-        counter++;
+        return reject(new Error("Pas assez de données valides pour effectuer une modélisation."));
       }
+      
+      // Créer un Web Worker pour l'ajustement
+      const worker = new Worker('./modules/fitter.worker.js');
 
-      this.parameters.push({ name: finalName, value: paramValue });
-      this.dataParameters[finalName] = {value:paramValue,unit:"",type:"model"};
+      worker.onmessage = (e) => {
+        if (e.data.success) {
+          const params = e.data.params;
+
+          // Vider les anciens paramètres du modèle de l'objet global
+          this.parameters.forEach(param => {
+            delete this.dataParameters[param.name];
+          });
+          
+          // Vide le tableau de paramètres du modèle lui-même
+          this.parameters.length = 0;
+
+          const baseNames = ['a', 'b', 'c', 'd', 'e', 'f'];
+          params.forEach((paramValue, i) => {
+            let baseName = baseNames[i] || `p${i}`;
+            let finalName = baseName;
+            let counter = 1;
+            while (this.dataParameters.hasOwnProperty(finalName)) {
+              finalName = `${baseName}${counter}`;
+              counter++;
+            }
+
+            this.parameters.push({ name: finalName, value: paramValue });
+            this.dataParameters[finalName] = { value: paramValue, unit: '', type: 'model' };
+          });
+
+          console.log("Fitted parameters with names", this.parameters);
+          
+          this.calculateRMSE();
+          this.calculateRSquared(data);
+          
+          worker.terminate(); // Libérer les ressources du worker
+          resolve(this);
+        } else {
+          console.error("Erreur du Web Worker:", e.data.error);
+          worker.terminate();
+          reject(new Error(e.data.error));
+        }
+      };
+
+      worker.onerror = (error) => {
+        console.error(`Erreur du Web Worker: ${error.message}`, error);
+        worker.terminate();
+        reject(error);
+      };
+
+      let guessSize = 2;
+      if (this.type === 'linear') guessSize = 1;
+      if (this.type === 'quadratic') guessSize = 3;
+      if (this.type === 'cubic') guessSize = 4;
+      if (this.type === 'sin' || this.type === 'cos') guessSize = 4;
+      if (this.type === 'dampedsin' || this.type === 'dampedcos') guessSize = 5;
+      
+      const initialGuess = Array(guessSize).fill(1);
+
+      worker.postMessage({
+        data: data,
+        modelType: this.type,
+        initialGuess: initialGuess
+      });
     });
-
-    console.log("Fitted parameters with names:", this.parameters);
-
-    this.calculateRMSE(); // Calcule l'écart quadratique moyen
-    this.calculateRSquared(data); // Calcule le coefficient de corrélation
-
-    solver.remove();
-    return this;
   }
 
   getHighResData(minX, maxX, points = DEFAULT_MODEL_RESOLUTION){

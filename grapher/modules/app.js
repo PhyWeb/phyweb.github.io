@@ -238,35 +238,12 @@ export default class App {
    * Recalcule tous les modèles existants.
    */
   async recalculateAllModels() {
-    if (this.data.models.length === 0) {
-      return;
-    }
-
-    try {
-      for (const model of this.data.models) {
-        // Recalcule les paramètres du modèle
-        await model.fit();
-         // Met à jour le panneau du modèle avec les nouveaux résultats
-        this.uiManager.updateModelPanel(model);
+      if (this.data.models.length === 0) {
+          return; 
       }
-      
-      // Met à jour la visibilité et redessine le graphique
-      this.grapher.updateModelVisibility();
-      this.grapher.chart.redraw();
-      
-      // Met à jour l'interface utilisateur de calcul (pour les paramètres) et ferme la modale
-      this.uiManager.updateCalculationUI();
-      this.uiManager.updateRecalculateButtonVisibility();
 
-    } catch (e) {
-      console.error("Erreur lors du recalcul des modèles:", e);
-      alertModal({
-        type: "danger",
-        title: "Erreur de recalcul",
-        body: "Une erreur est survenue lors du recalcul des modèles. Veuillez vérifier la console pour plus de détails.",
-        confirm: "OK"
-      });
-    }
+      const recalculationPromises = this.data.models.map(model => model.fit());
+      await Promise.all(recalculationPromises);
   }
 
   deleteModel(modelID) {
