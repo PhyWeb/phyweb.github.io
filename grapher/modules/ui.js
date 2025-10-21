@@ -2319,7 +2319,7 @@ export default class UIManager {
       qualityList.appendChild(liRmse);
       
       const liRSquared = document.createElement('li');
-      liRSquared.innerHTML = `Coeff de corrélation = ${model.rSquared != null ? formatNumber(model.rSquared, 5) : 'Indéfini'}`;
+      liRSquared.innerHTML = `Corrélation R² = ${model.rSquared != null ? formatNumber(model.rSquared, 5) : 'Indéfini'}`;
       qualityList.appendChild(liRSquared);
 
       // Ajouter le panneau entièrement construit au DOM
