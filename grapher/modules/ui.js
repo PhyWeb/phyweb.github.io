@@ -253,7 +253,7 @@ export default class UIManager {
       
       // Ajout du R²
       const liRSquared = document.createElement('li');
-      liRSquared.innerHTML = `Coeff de corrélation : ${model.rSquared !== null ? formatNumber(model.rSquared, 5) : 'Indéfini'}`;
+      liRSquared.innerHTML = `Corrélation R² = ${model.rSquared !== null ? formatNumber(model.rSquared, 5) : 'Indéfini'}`;
       ul2.appendChild(liRSquared);
     }
   }
@@ -1571,20 +1571,7 @@ export default class UIManager {
      * Gère la réinitialisation du zoom du graphique.
      */
     $("#auto-zoom-button").addEventListener("click", () => {
-      // On désélectionne les outils avant de réinitialiser le zoom
-      this.clearActiveTool();
-
-      this.grapher.chart.xAxis[0].setExtremes(null, null);
-      this.grapher.chart.yAxis[0].setExtremes(null, null);
-
-      // On désactive le mode zoom s'il était actif.
-      $("#zoom-button").classList.remove("is-active");
-      this.grapher.chart.container.classList.remove('chart-free-crosshair');
-      this.isZoomEnabled = false;
-      this.grapher.chart.update({ chart: { zooming: { type: null } } });
-      
-      // On cache le bouton de zoom auto, car on n'est plus en mode zoomé.
-      $("#auto-zoom-button").classList.add("is-hidden");
+      this.grapher.resetZoom();
     });
 
     /**
@@ -1607,6 +1594,33 @@ export default class UIManager {
       this.grapher.zoom('out');
     });
 
+  }
+
+  /**
+   * Met à jour l'état de l'interface lié au zoom (boutons, classes CSS).
+   */
+  resetZoomUI() {
+    // Désélectionne tout outil actif (réticule, etc.)
+    this.clearActiveTool();
+
+    // Met à jour l'état du bouton de zoom et du curseur
+    const zoomButton = document.getElementById('zoom-button');
+    if (zoomButton) {
+      zoomButton.classList.remove('is-active');
+    }
+    
+    if (this.grapher.chart) {
+      this.grapher.chart.container.classList.remove('chart-free-crosshair');
+      this.grapher.chart.update({ chart: { zooming: { type: null } } });
+    }
+
+    this.isZoomEnabled = false;
+
+    // Cache le bouton "Reset Zoom", car on est déjà en zoom auto
+    const autoZoomButton = document.getElementById('auto-zoom-button');
+    if (autoZoomButton) {
+      autoZoomButton.classList.add('is-hidden');
+    }
   }
 
   /**
@@ -2236,7 +2250,7 @@ export default class UIManager {
           const model = await this.app.addModel(this.grapher.currentXCurve, curveToModel, selectedModelType);
           
           // Une fois le calcul terminé, on crée le panneau UI correspondant
-          createModelPanel(model.id);
+          this.createModelPanel(model.id);
 
         } catch (error) {
           console.error("Échec de la modélisation :", error);
@@ -2275,59 +2289,59 @@ export default class UIManager {
         window.FontAwesome.dom.i2svg({ node: header });
       });
     }
+  }
 
-    /**
-     * Crée et retourne un panneau de modèle pour un modèle donné.
-     * @param {string} modelID - L'ID du modèle pour lequel créer le panneau.
-     */
-    const createModelPanel = (modelID) =>{
-      const model = this.data.models.find(m => m.id === modelID);
-      if(!model){
-        return;
-      }
-
-      // Récupérer le conteneur et le template
-      const modelListContainer = document.getElementById('model-list');
-      const template = document.getElementById('template-model-panel');
-      
-      // Cloner le contenu du template. C'est un "DocumentFragment" léger.
-      const panelClone = template.content.cloneNode(true);
-      
-      // Sélectionner les éléments DANS LE CLONE et les remplir avec les données du modèle
-      const article = panelClone.querySelector('article');
-      article.dataset.modelId = model.id;
-      
-      panelClone.querySelector('.model-title').textContent = `${model.y.title} = f(${model.x.title})`;
-      panelClone.querySelector('.model-name').innerHTML = `<strong>${model.getModelName()}</strong>`;
-      panelClone.querySelector('.model-equation').innerHTML = model.getEquationString();
-      
-      // Remplir la liste des paramètres
-      const parametersList = panelClone.querySelector('.parameters-list');
-      parametersList.innerHTML = ''; // Vider au cas où
-      const significantDigits = this.data.settings.significantDigits;
-      model.parameters.forEach(param => {
-        const li = document.createElement('li');
-        li.innerHTML = `${param.name} = ${formatNumber(param.value, significantDigits)}`;
-        parametersList.appendChild(li);
-      });
-      
-      // Remplir la liste de qualité
-      const qualityList = panelClone.querySelector('.quality-list');
-      qualityList.innerHTML = ''; // Vider au cas où
-      const liRmse = document.createElement('li');
-      liRmse.innerHTML = `Écart-type = ${model.rmse != null ? formatNumber(model.rmse, significantDigits) : 'Indéfini'}`;
-      qualityList.appendChild(liRmse);
-      
-      const liRSquared = document.createElement('li');
-      liRSquared.innerHTML = `Corrélation R² = ${model.rSquared != null ? formatNumber(model.rSquared, 5) : 'Indéfini'}`;
-      qualityList.appendChild(liRSquared);
-
-      // Ajouter le panneau entièrement construit au DOM
-      modelListContainer.appendChild(panelClone);
-      
-      // Mettre à jour les icônes FontAwesome (si vous l'utilisez)
-      window.FontAwesome.dom.i2svg({ node: article });
+  /**
+   * Crée et retourne un panneau de modèle pour un modèle donné.
+   * @param {string} modelID - L'ID du modèle pour lequel créer le panneau.
+   */
+  createModelPanel(modelID){
+    const model = this.data.models.find(m => m.id === modelID);
+    if(!model){
+      return;
     }
+
+    // Récupérer le conteneur et le template
+    const modelListContainer = document.getElementById('model-list');
+    const template = document.getElementById('template-model-panel');
+    
+    // Cloner le contenu du template. C'est un "DocumentFragment" léger.
+    const panelClone = template.content.cloneNode(true);
+    
+    // Sélectionner les éléments DANS LE CLONE et les remplir avec les données du modèle
+    const article = panelClone.querySelector('article');
+    article.dataset.modelId = model.id;
+    
+    panelClone.querySelector('.model-title').textContent = `${model.y.title} = f(${model.x.title})`;
+    panelClone.querySelector('.model-name').innerHTML = `<strong>${model.getModelName()}</strong>`;
+    panelClone.querySelector('.model-equation').innerHTML = model.getEquationString();
+    
+    // Remplir la liste des paramètres
+    const parametersList = panelClone.querySelector('.parameters-list');
+    parametersList.innerHTML = ''; // Vider au cas où
+    const significantDigits = this.data.settings.significantDigits;
+    model.parameters.forEach(param => {
+      const li = document.createElement('li');
+      li.innerHTML = `${param.name} = ${formatNumber(param.value, significantDigits)}`;
+      parametersList.appendChild(li);
+    });
+    
+    // Remplir la liste de qualité
+    const qualityList = panelClone.querySelector('.quality-list');
+    qualityList.innerHTML = ''; // Vider au cas où
+    const liRmse = document.createElement('li');
+    liRmse.innerHTML = `Écart-type = ${model.rmse != null ? formatNumber(model.rmse, significantDigits) : 'Indéfini'}`;
+    qualityList.appendChild(liRmse);
+    
+    const liRSquared = document.createElement('li');
+    liRSquared.innerHTML = `Corrélation R² = ${model.rSquared != null ? formatNumber(model.rSquared, 5) : 'Indéfini'}`;
+    qualityList.appendChild(liRSquared);
+
+    // Ajouter le panneau entièrement construit au DOM
+    modelListContainer.appendChild(panelClone);
+    
+    // Mettre à jour les icônes FontAwesome (si vous l'utilisez)
+    window.FontAwesome.dom.i2svg({ node: article });
   }
 
   /**

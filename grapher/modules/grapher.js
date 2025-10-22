@@ -743,6 +743,24 @@ export default class Grapher {
   }
 
   /**
+   * Réinitialise le zoom du graphique pour afficher toutes les données
+   * et met à jour l'interface utilisateur correspondante.
+   */
+  resetZoom() {
+    // Réinitialise les extrêmes des axes de Highcharts
+    this.chart.xAxis[0].setExtremes(null, null, false);
+    this.chart.yAxis[0].setExtremes(null, null, false);
+
+    // Déclenche un seul redraw pour la performance
+    this.chart.redraw();
+    
+    // Demande à l'UIManager de mettre à jour les boutons
+    if (this.uiManager) {
+      this.uiManager.resetZoomUI();
+    }
+  }
+
+  /**
    * Met à jour les données de TOUS les modèles visibles sur le graphique.
    * Cette fonction est appelée par l'événement 'redraw' (zoom, déplacement).
    */

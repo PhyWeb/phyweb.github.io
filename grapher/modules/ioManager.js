@@ -1,4 +1,4 @@
-import Curve from './data.js';
+import { Curve } from './data.js';
 
 // Fonctions utilitaires
 function splitFlexible(line) {
@@ -49,43 +49,66 @@ export default class IOManager {
     this.triggerDownload(content, fileName);
   }
 
-  /**
-   * Génère le contenu JSON pour un fichier de session .pw.
-   * @returns {string} Le contenu du fichier .pw (chaîne JSON).
-   */
-  generatePW() {
-    const yCurves = this.app.grapher.chart.series.map(s => s.name);
+/**
+ * Génère le contenu JSON pour un fichier de session .pw (version 2.2).
+ * Sauvegarde les paramètres de session, mais pas les réglages globaux (localStorage).
+ * @returns {string} Le contenu du fichier .pw (chaîne JSON).
+ */
+generatePW() {
+  const yCurves = this.app.grapher.chart.series
+    .filter(s => !s.options?.id?.startsWith('model-') && s.visible !== false)
+    .map(s => s.name);
 
-    const dataToSave = {
-      curves: this.app.data.curves.map(curve => ({
-        title: curve.title,
-        unit: curve.unit,
-        color: curve.color,
-        line: curve.line,
-        markers: curve.markers,
-        lineWidth: curve.lineWidth,
-        lineStyle: curve.lineStyle,
-        markerSymbol: curve.markerSymbol,
-        markerRadius: curve.markerRadius,
-        type: curve.type,
-        values: Array.from(curve)
-      })),
-      parameters: this.app.data.parameters
-    };
+  // Sérialise les données, y compris les paramètres
+  const dataToSave = {
+    curves: this.app.data.curves.map(curve => ({
+      title: curve.title,
+      unit: curve.unit,
+      color: curve.color,
+      line: curve.line,
+      markers: curve.markers,
+      lineWidth: curve.lineWidth,
+      lineStyle: curve.lineStyle,
+      markerSymbol: curve.markerSymbol,
+      markerRadius: curve.markerRadius,
+      type: curve.type,
+      values: Array.from(curve),
+    })),
+    parameters: this.app.data.parameters, // Les paramètres sont bien sauvegardés
+  };
 
-    const state = {
-      version: "1.3",
-      data: dataToSave,
-      calculations: this.app.editor.getValue(),
-      grapher: {
-        xCurve: this.app.grapher.currentXCurve,
-        yCurves: yCurves,
-        grid: this.app.grapher.grid
-      }
-    };
-    
-    return JSON.stringify(state, null, 2);
-  }
+  const models = this.app.data.models.map(m => ({
+    xTitle: m.x?.title,
+    yTitle: m.y?.title,
+    type: m.type,
+    visible: m.visible,
+    color: m.color,
+    lineWidth: m.lineWidth,
+    lineStyle: m.lineStyle,
+    bornedebut: m.bornedebut,
+    bornefin: m.bornefin,
+  }));
+
+  const state = {
+    version: '2.2',
+    data: dataToSave,
+    calculations: this.app.editor.getValue(),
+    grapher: {
+      xCurve: this.app.grapher.currentXCurve,
+      yCurves: yCurves,
+      grid: this.app.grapher.grid,
+      includeOriginOnAutoZoom: this.app.grapher.includeOriginOnAutoZoom,
+    },
+    annotations: this.app.data.annotations ?? [],
+    sort: {
+      lastSortVariable: this.app.data.lastSortVariable ?? null,
+    },
+    models: models,
+    // PAS de clé "settings" ici
+  };
+
+  return JSON.stringify(state, null, 2);
+}
 
   /**
    * Génère le contenu pour un fichier CSV.
@@ -230,58 +253,129 @@ export default class IOManager {
     this.loadData(data);
   }
 
-  /**
-   * Charge et restaure une session depuis un fichier .pw.
-   * @param {File} file - Le fichier .pw à charger.
-   */
-  loadPWFile(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        try {
-          const state = JSON.parse(event.target.result);
-          if (state.data && state.data.curves) {
-            this.app.data.curves = state.data.curves.map(c => {
-              const newCurve = new Curve(c.title, c.unit);
-              Object.assign(newCurve, c);
-              if (c.values) {
-                c.values.forEach(val => newCurve.push(val));
-              }
-              return newCurve;
-            });
-            this.app.data.parameters = state.data.parameters || {};
-          } else {
-              throw new Error("Le fichier de session est invalide ou corrompu (données manquantes).");
-          }
-          if (state.grapher) {
-              this.app.grapher.setGridVisibility(state.grapher.grid);
-          }
+/**
+ * Charge et restaure une session depuis un fichier .pw (version 2.2).
+ * @param {File} file - Le fichier .pw à charger.
+ */
+loadPWFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const state = JSON.parse(event.target.result);
 
-          this.app.editor.setValue(state.calculations);
-
-          this.app.spreadsheet.update();
-          if (state.grapher && state.grapher.xCurve) {
-              this.app.grapher.setXCurve(state.grapher.xCurve, false);
-              this.app.grapher.updateChart(state.grapher.yCurves);
-          } else {
-              this.app.grapher.deleteAllCurves();
-              this.app.grapher.updateChart();
-          }
-
-          this.app.grapher.resetZoom();
-
-          // Update the calculation tab
-          this.app.uiManager.updateCalculationUI();
-          console.log("Session .pw restaurée avec succès");
-          resolve();
-        } catch (e) {
-          // On rejette la promesse avec une erreur claire pour l'utilisateur
-          reject(new Error('Le fichier de session est corrompu ou invalide.'));
+        if (!state.data || !state.data.curves) {
+          throw new Error('Fichier PW invalide : données de courbes manquantes.');
         }
-      };
-      reader.readAsText(file);
-    });
-  }
+
+        // 1. Restaurer les données des courbes
+        this.app.data.curves = state.data.curves.map(c => {
+          const newCurve = new Curve(c.title, c.unit);
+          Object.assign(newCurve, c);
+          if (c.values) {
+            c.values.forEach(val => newCurve.push(val));
+          }
+          return newCurve;
+        });
+
+        // Restaure les paramètres depuis le fichier
+        this.app.data.parameters = state.data.parameters || {};
+
+        // 2. Restaurer le script et l'état du grapheur
+        if (state.grapher) {
+          // Les settings du graphe (grid, zoom) sont restaurés
+          this.app.grapher.setGridVisibility(state.grapher.grid);
+          this.app.grapher.includeOriginOnAutoZoom = !!state.grapher.includeOriginOnAutoZoom;
+        }
+        this.app.editor.setValue(state.calculations || '');
+        this.app.spreadsheet.update();
+
+        if (state.grapher && state.grapher.xCurve) {
+          this.app.grapher.setXCurve(state.grapher.xCurve, false);
+          this.app.grapher.updateChart(state.grapher.yCurves);
+        } else {
+          this.app.grapher.deleteAllCurves();
+          this.app.grapher.updateChart();
+        }
+
+        // 3. Restaurer les annotations
+        if (Array.isArray(state.annotations)) {
+          this.app.data.annotations = state.annotations;
+        }
+
+        // 4. Restaurer les modèles (CORRECTION FINALE)
+        if (Array.isArray(state.models)) {
+          // Vide la liste des panneaux existants avant de recréer
+          const modelListContainer = document.getElementById('model-list');
+          if (modelListContainer) {
+            modelListContainer.innerHTML = '';
+          }
+
+          for (const def of state.models) {
+            if (!def.xTitle || !def.yTitle || !def.type) continue;
+            
+            // Étape 1: Crée l'objet modèle en mémoire
+            const model = await this.app.addModel(def.xTitle, def.yTitle, def.type);
+            if (!model) continue;
+            
+            // Restaure les propriétés du modèle
+            model.color = def.color ?? model.color;
+            model.lineWidth = def.lineWidth ?? model.lineWidth;
+            model.lineStyle = def.lineStyle ?? model.lineStyle;
+            model.visible = def.visible !== false;
+            model.bornedebut = def.bornedebut ?? null;
+            model.bornefin = def.bornefin ?? null;
+
+            if (model.bornedebut !== null || model.bornefin !== null) {
+              await model.fit();
+            }
+
+            // Étape 2: Crée le panneau HTML dans l'interface
+            this.app.uiManager.createModelPanel(model.id);
+
+            // Étape 3: Met à jour le panneau nouvellement créé avec les données
+            this.app.uiManager.updateModelPanel(model);
+
+            // Met à jour la série graphique correspondante
+            const series = this.app.grapher.chart.get('model-' + model.id);
+            if (series) {
+              series.update({
+                color: model.color,
+                lineWidth: model.lineWidth,
+                dashStyle: model.lineStyle,
+                visible: model.visible
+              }, false); // Redraw différé
+            }
+          }
+          
+          // Met à jour la visibilité du bouton global après avoir traité tous les modèles
+          this.app.uiManager.updateRecalculateButtonVisibility();
+        }
+        
+        // 5. Restaurer le tri du tableau
+        if (state.sort && state.sort.lastSortVariable) {
+          this.app.data.lastSortVariable = state.sort.lastSortVariable;
+          this.app.spreadsheet.applySort(state.sort.lastSortVariable);
+        }
+
+        // Finalisation
+        this.app.uiManager.updateCalculationUI();
+        this.app.grapher.chart.redraw();
+        this.app.grapher.resetZoom();
+
+        console.log("Session .pw (v2.2) restaurée avec succès.");
+        resolve();
+
+      } catch (e) {
+        console.error("Erreur lors du chargement du fichier .pw :", e);
+        reject(new Error('Le fichier de session est corrompu ou invalide.'));
+      }
+    };
+    reader.onerror = () => reject(new Error('Impossible de lire le fichier.'));
+    reader.readAsText(file);
+  });
+}
+
 
   /**
    * Charge des données tabulaires depuis un fichier CSV.
