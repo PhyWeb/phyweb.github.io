@@ -501,6 +501,8 @@ export default class UIManager {
 
     $("#paste-button").addEventListener('click', () => {
       newDataConfirmation(async () => {
+        // Affiche le spinner de chargement
+        this.setModalLoading(true);
         try {
           const text = await navigator.clipboard.readText();
           // On attend que les données soient chargées et validées
@@ -516,6 +518,9 @@ export default class UIManager {
             body: error.message,
             confirm: 'OK'
           });
+        } finally {
+          // Cache le spinner de chargement
+          this.setModalLoading(false);
         }
       });
     });
