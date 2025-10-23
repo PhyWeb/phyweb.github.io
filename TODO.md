@@ -49,6 +49,8 @@
     - petite animation pour l'ouverture du panel modèles
     - enlever ou fortement reduire le background des modales de départ
 
+    - mettre un spinner quand on transfert des données via sessionstorage comme quand on ouvre un fichier
+
 
 # MISC
     - tester sur petit ecran
