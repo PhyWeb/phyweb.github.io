@@ -220,21 +220,16 @@ generatePW() {
   async loadFile(file) {
     this.app.resetSession();
 
-    if (file.name.endsWith(".pw")) { // Gère le nouveau format
+    if (file.name.endsWith(".pw")) {
       await this.loadPWFile(file);
-      return;
-    }
-    if (file.type === "text/csv") {
+    } else if (file.type === "text/csv") {
       await this.loadCSVFile(file);
-      return;
-    }
-    if (file.name.endsWith(".rw3")) {
+    } else if (file.name.endsWith(".rw3")) {
       await this.loadRW3File(file);
-      return;
+    } else {
+      // Si aucun format ne correspond, on lève une erreur qui sera attrapée par ui.js
+      throw new Error(`Le type de fichier "${file.name}" n'est pas supporté.`);
     }
-
-    // Si aucun format ne correspond, on lève une erreur qui sera attrapée par ui.js
-    throw new Error(`Le type de fichier "${file.name}" n'est pas supporté.`);
   }
 
   /**
@@ -306,7 +301,7 @@ loadPWFile(file) {
           this.app.uiManager.updateClearAnnotationsButtonVisibility();
         }
 
-        // 4. Restaurer les modèles (CORRECTION FINALE)
+        // 4. Restaurer les modèles
         if (Array.isArray(state.models)) {
           // Vide la liste des panneaux existants avant de recréer
           const modelListContainer = document.getElementById('model-list');

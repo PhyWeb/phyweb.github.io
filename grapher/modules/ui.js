@@ -314,6 +314,27 @@ export default class UIManager {
   }
 
   /**
+   * Bascule l'affichage entre les boutons d'action et un spinner
+   * dans la modale "Nouveau fichier".
+   * @param {boolean} isLoading 
+   */
+  setModalLoading(isLoading) {
+    const buttons = document.getElementById('new-file-buttons');
+    const spinner = document.getElementById('new-file-spinner');
+    const modalTitle = document.querySelector('#new-file-modal .modal-card-title');
+
+    if(isLoading){
+      modalTitle.textContent = "Chargement en cours...";
+      buttons.classList.add('is-hidden');
+      spinner.classList.remove('is-hidden');
+    } else{
+      modalTitle.textContent = "Créer ou importer une session";
+      buttons.classList.remove('is-hidden');
+      spinner.classList.add('is-hidden');
+    }
+  }
+
+  /**
    * Initialise la navbar avec les boutons et leurs événements.
    */
   initNavbar() {
@@ -440,6 +461,8 @@ export default class UIManager {
 
       // La confirmation de suppression des données existantes
       newDataConfirmation(async () => {
+        // Affiche le spinner de chargement
+        this.setModalLoading(true);
         try {
           // On attend que le chargement soit terminé (succès ou échec)
           await this.app.ioManager.loadFile(file);
@@ -456,6 +479,9 @@ export default class UIManager {
             body: error.message,
             confirm: 'OK'
           });
+        } finally {
+          // Cache le spinner de chargement
+          this.setModalLoading(false);
         }
       });
     });

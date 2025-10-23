@@ -112,3 +112,26 @@ body, html {
 *::-webkit-scrollbar-button{
   background: transparent;
 }
+
+/*----------------------------------------------------------------------------------------------
+---------------------------------------------LOADING--------------------------------------------
+----------------------------------------------------------------------------------------------*/
+.modal-spinner-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 136px; /* Conserve la hauteur pour éviter un saut visuel */
+}
+
+.modal-spinner {
+  width: 48px;
+  height: 48px;
+  border: 5px solid #dbdbdb;
+  border-top-color: #3273dc;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

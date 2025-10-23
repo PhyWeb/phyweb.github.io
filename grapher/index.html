@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="../common/bulma/bulma.min.css">
     <link rel="stylesheet" href="../common/bulma/bulma-switch.min.css">
     <link rel="stylesheet" href="../common/bulma/bulma-checkbox.min.css">
+    <link rel="stylesheet" href="../common/bulma/bulma-pageloader.css">
 
     <link rel="stylesheet" href="../common/common.css">
 
@@ -376,12 +377,12 @@
     <div class="modal-background"></div>
     <div class="modal-card" id="new-file-modal-card">
       <header class="modal-card-head has-background-primary">
-        <p class="modal-card-title">Nouveau</p>
+        <p class="modal-card-title">Créer ou importer une session</p>
         <button class="delete" id="new-file-close-button" aria-label="close"></button>
       </header>
       <input type="file" accept=".pw, .csv, .rw3" id="file-input" style="width:0px; display: none"/>
-      <section class="modal-card-body has-bottom-round-corner">
-        <div class="columns has-text-centered">
+      <section class="modal-card-body has-bottom-round-corner pb-2">
+        <div id="new-file-buttons" class="columns has-text-centered">
           <div class="column">
             <button class="button is-fullwidth is-medium has-text-centered py-4 new-file-button" id="new-file-button">
               <i class="fas fa-file-alt fa-2x mb-2" style="line-height: 1;"></i>
@@ -400,6 +401,10 @@
               <span>Coller</span>
             </button>
           </div>
+        </div>
+        <!-- Conteneur pour le spinner (caché par défaut) -->
+        <div id="new-file-spinner" class="modal-spinner-container is-hidden">
+          <div class="modal-spinner"></div>
         </div>
       </section>
     </div>
