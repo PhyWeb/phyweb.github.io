@@ -301,6 +301,9 @@ loadPWFile(file) {
         // 3. Restaurer les annotations
         if (Array.isArray(state.annotations)) {
           this.app.data.annotations = state.annotations;
+
+          // Met à jour la visibilité du bouton "Effacer les annotations"
+          this.app.uiManager.updateClearAnnotationsButtonVisibility();
         }
 
         // 4. Restaurer les modèles (CORRECTION FINALE)
@@ -314,7 +317,7 @@ loadPWFile(file) {
           for (const def of state.models) {
             if (!def.xTitle || !def.yTitle || !def.type) continue;
             
-            // Étape 1: Crée l'objet modèle en mémoire
+            // Crée l'objet modèle en mémoire
             const model = await this.app.addModel(def.xTitle, def.yTitle, def.type);
             if (!model) continue;
             
@@ -330,10 +333,10 @@ loadPWFile(file) {
               await model.fit();
             }
 
-            // Étape 2: Crée le panneau HTML dans l'interface
+            // Étape Crée le panneau HTML dans l'interface
             this.app.uiManager.createModelPanel(model.id);
 
-            // Étape 3: Met à jour le panneau nouvellement créé avec les données
+            // Étape Met à jour le panneau nouvellement créé avec les données TODO : utile ?
             this.app.uiManager.updateModelPanel(model);
 
             // Met à jour la série graphique correspondante
