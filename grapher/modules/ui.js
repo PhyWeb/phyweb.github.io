@@ -2387,7 +2387,11 @@ export default class UIManager {
 
       // Met à jour l'affichage quand on change d'onglet
       $("#calculs-tab").addEventListener("click", () => {
-        setTimeout(() => this.editor.refresh(), 1);
+        setTimeout(() => {
+          this.editor.refresh()
+          this.editor.focus();
+          this.app.editor.setCursor(this.app.editor.lineCount(), 0); // Place le curseur à la fin
+        }, 1);
       });
     }
 

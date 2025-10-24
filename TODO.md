@@ -38,6 +38,8 @@
     - BUG : les icones du menu nouveau apparraissent en retard sur le ptb (again)
     - BUG : Revoir la sauvegarde ! (les settings sont peut etre stockés dans le fichier : on veut pas)
 
+    - BUG quand on charge un CSV, on ne vide pas les calcul...
+
     - sauvegarder les derniers fichiers dans localStorage
     - icones personnalisées
     - export image / print

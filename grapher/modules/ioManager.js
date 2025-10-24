@@ -59,7 +59,10 @@ generatePW() {
     .filter(s => !s.options?.id?.startsWith('model-') && s.visible !== false)
     .map(s => s.name);
 
-  // Sérialise les données, y compris les paramètres
+  // Sérialise les données
+  // Convertit l'objet des paramètres en un tableau de ses valeurs
+  const parametersArray = Object.values(this.app.data.parameters || {});
+
   const dataToSave = {
     curves: this.app.data.curves.map(curve => ({
       title: curve.title,
@@ -74,7 +77,7 @@ generatePW() {
       type: curve.type,
       values: Array.from(curve),
     })),
-    parameters: this.app.data.parameters, // Les paramètres sont bien sauvegardés
+    parameters: parametersArray.filter(p => p.type !== 'model') // Exclut les paramètres de modèle
   };
 
   const models = this.app.data.models.map(m => ({
@@ -306,7 +309,8 @@ loadPWFile(file) {
           this.app.grapher.setGridVisibility(state.grapher.grid);
           this.app.grapher.includeOriginOnAutoZoom = !!state.grapher.includeOriginOnAutoZoom;
         }
-        this.app.editor.setValue(state.calculations || '');
+        this.app.editor.setValue(state.calculations.endsWith('\n') ? state.calculations : state.calculations + '\n');
+        
         this.app.spreadsheet.update();
 
         if (state.grapher && state.grapher.xCurve) {
@@ -713,7 +717,10 @@ loadPWFile(file) {
       const memoText = normalizedMemoLines.length ? normalizedMemoLines.join('\n') : '';
       const paramsText = paramLines.length ? paramLines.join('\n') : '';
       const finalText = memoText && paramsText ? `${paramsText}\n\n${memoText}` : (memoText || paramsText);
-      if (finalText) this.app.editor.setValue(finalText);
+      if (finalText) {
+        this.app.editor.setValue(finalText.endsWith('\n') ? finalText : finalText + '\n');
+      }
+
 
       // Injection des données
       this.loadData(output.trim());
