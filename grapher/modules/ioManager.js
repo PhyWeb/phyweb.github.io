@@ -166,29 +166,53 @@ generatePW() {
     output += `&${numRows} VALEUR VAR\n`;
     output += dataRows.join('\n');
 
-    // 4. On ajoute les formules pour que Regressi puisse créer les grandeurs calculées.
-    const calculationsText = this.app.editor.getValue(); 
-    if (calculationsText) {
+  // 4. On ajoute les formules pour que Regressi puisse créer les grandeurs calculées.
+  const calculationsText = this.app.editor.getValue();
+  if (calculationsText) {
       const memoLines = calculationsText.split('\n').map(line => {
-        const trimmedLine = line.trim();
-        if (trimmedLine === '') { return ''; }
-        if (trimmedLine.startsWith('//')) { return "'" + trimmedLine.substring(2).trim(); }
-        if (trimmedLine.startsWith('#')) { return "'" + trimmedLine.substring(1).trim(); }
-        if (trimmedLine.includes('=')) {
-          const parts = trimmedLine.split('=');
-          const leftPart = parts[0].trim();
-          const expression = parts.slice(1).join('=').trim();
-          const variableName = leftPart.split('_')[0];
-          return `${variableName}=${expression}`;
-        }
-        return "'" + trimmedLine;
-      });
+          const trimmedLine = line.trim();
+
+          if (!trimmedLine) {
+            return null; // Filtre les lignes vides
+          }
+
+          // Convertit les commentaires au format Regressi (')
+          if (trimmedLine.startsWith('//') || trimmedLine.startsWith('#')) {
+              // Remplace // ou # par une apostrophe
+              return "'" + trimmedLine.substring(trimmedLine.startsWith('//') ? 2 : 1).trim();
+          }
+
+          // Traite les lignes de calcul au format "variable_unité=expression"
+          if (trimmedLine.includes('=')) {
+              const parts = trimmedLine.split('=');
+              const leftPart = parts[0].trim();
+              const expression = parts.slice(1).join('=').trim();
+
+              const lastUnderscoreIndex = leftPart.lastIndexOf('_');
+
+              if (lastUnderscoreIndex > 0 && lastUnderscoreIndex < leftPart.length - 1) {
+                  const variableName = leftPart.substring(0, lastUnderscoreIndex);
+                  const unit = leftPart.substring(lastUnderscoreIndex + 1);
+
+                  if (/^[a-zA-Z]/.test(variableName)) {
+                      // Transforme "Var_unit = expression" en "Var = expression"
+                      return `${variableName} = ${expression}`;
+                  }
+              }
+              
+              return trimmedLine;
+          }
+
+          // Conserve toute autre ligne de texte
+          return trimmedLine;
+
+      }).filter(Boolean);
 
       if (memoLines.length > 0) {
         output += `\n£${memoLines.length} MEMO GRANDEURS\n`;
         output += memoLines.join('\n');
       }
-    }
+  }
     
     return output;
   }

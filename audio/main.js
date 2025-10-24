@@ -663,7 +663,7 @@ function downloadData(_series, _type, _name){
     file = exportToCSV(_series, true);
   }
   if(_type === "rw3"){
-    file = exportToRW3(_series, true, "Enregistrement PhyWeb Audio");
+    file = exportToRW3(_series, true, "Enregistrement PhyWeb Audio\n");
   }
   downloadFile(file, _type, _name)
 }
