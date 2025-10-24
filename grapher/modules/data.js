@@ -666,4 +666,4 @@ export default class Data {
   
 }
 
-export {Data, Curve};
+export {Data, Curve, Model};

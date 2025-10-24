@@ -1,4 +1,4 @@
-import { Curve } from './data.js';
+import {Curve, Model} from './data.js';
 
 // Fonctions utilitaires
 function splitFlexible(line) {
@@ -50,67 +50,69 @@ export default class IOManager {
   }
 
 /**
- * Génère le contenu JSON pour un fichier de session .pw (version 2.2).
- * Sauvegarde les paramètres de session, mais pas les réglages globaux (localStorage).
- * @returns {string} Le contenu du fichier .pw (chaîne JSON).
+ * Génère le contenu JSON pour un fichier de session .pw (version 3.0).
+ * Sauvegarde l'état complet de l'application pour une restauration parfaite.
+ * @returns {string} Le contenu du fichier .pw en chaîne JSON.
  */
 generatePW() {
-  const yCurves = this.app.grapher.chart.series
-    .filter(s => !s.options?.id?.startsWith('model-') && s.visible !== false)
-    .map(s => s.name);
+    // 1. Sauvegarder les données, modèles et paramètres
+    const dataToSave = {
+        curves: this.app.data.curves.map(curve => ({
+            title: curve.title,
+            unit: curve.unit,
+            color: curve.color,
+            line: curve.line,
+            markers: curve.markers,
+            lineWidth: curve.lineWidth,
+            lineStyle: curve.lineStyle,
+            markerSymbol: curve.markerSymbol,
+            markerRadius: curve.markerRadius,
+            type: curve.type,
+            values: Array.from(curve) // La seule source pour les points de données
+        })),
+        
+        parameters: this.app.data.parameters,
 
-  // Sérialise les données
-  // Convertit l'objet des paramètres en un tableau de ses valeurs
-  const parametersArray = Object.values(this.app.data.parameters || {});
+        models: this.app.data.models.map(m => ({
+            id: m.id,
+            xTitle: m.x.title,
+            yTitle: m.y.title,
+            type: m.type,
+            visible: m.visible,
+            color: m.color,
+            lineWidth: m.lineWidth,
+            lineStyle: m.lineStyle,
+            bornedebut: m.bornedebut,
+            bornefin: m.bornefin,
+            parameters: m.parameters,
+            rmse: m.rmse,
+            rSquared: m.rSquared,
+        })),
 
-  const dataToSave = {
-    curves: this.app.data.curves.map(curve => ({
-      title: curve.title,
-      unit: curve.unit,
-      color: curve.color,
-      line: curve.line,
-      markers: curve.markers,
-      lineWidth: curve.lineWidth,
-      lineStyle: curve.lineStyle,
-      markerSymbol: curve.markerSymbol,
-      markerRadius: curve.markerRadius,
-      type: curve.type,
-      values: Array.from(curve),
-    })),
-    parameters: parametersArray.filter(p => p.type !== 'model') // Exclut les paramètres de modèle
-  };
+        annotations: this.app.data.annotations ?? [],
+    };
 
-  const models = this.app.data.models.map(m => ({
-    xTitle: m.x?.title,
-    yTitle: m.y?.title,
-    type: m.type,
-    visible: m.visible,
-    color: m.color,
-    lineWidth: m.lineWidth,
-    lineStyle: m.lineStyle,
-    bornedebut: m.bornedebut,
-    bornefin: m.bornefin,
-  }));
+    // 2. Sauvegarder l'état de l'interface
+    const yCurves = this.app.grapher.chart.series
+        .filter(s => !s.options?.id?.startsWith('model-') && s.visible !== false)
+        .map(s => s.name);
 
-  const state = {
-    version: '2.2',
-    data: dataToSave,
-    calculations: this.app.editor.getValue(),
-    grapher: {
-      xCurve: this.app.grapher.currentXCurve,
-      yCurves: yCurves,
-      grid: this.app.grapher.grid,
-      includeOriginOnAutoZoom: this.app.grapher.includeOriginOnAutoZoom,
-    },
-    annotations: this.app.data.annotations ?? [],
-    sort: {
-      lastSortVariable: this.app.data.lastSortVariable ?? null,
-    },
-    models: models,
-    // PAS de clé "settings" ici
-  };
+    const state = {
+        version: "3.0",
+        data: dataToSave,
+        calculations: this.app.editor.getValue(),
+        grapher: {
+            xCurve: this.app.grapher.currentXCurve,
+            yCurves: yCurves,
+            grid: this.app.grapher.grid,
+            includeOriginOnAutoZoom: this.app.grapher.includeOriginOnAutoZoom,
+        },
+        sort: {
+            lastSortVariable: this.app.data.lastSortVariable ?? null,
+        },
+    };
 
-  return JSON.stringify(state, null, 2);
+    return JSON.stringify(state, null, 2);
 }
 
   /**
@@ -275,131 +277,92 @@ generatePW() {
     this.loadData(data);
   }
 
-/**
- * Charge et restaure une session depuis un fichier .pw (version 2.2).
- * @param {File} file - Le fichier .pw à charger.
- */
 loadPWFile(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      try {
-        const state = JSON.parse(event.target.result);
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+            try {
+                const state = JSON.parse(event.target.result);
 
-        if (!state.data || !state.data.curves) {
-          throw new Error('Fichier PW invalide : données de courbes manquantes.');
-        }
+                if (!state.data || !state.data.curves) {
+                    throw new Error("Fichier PW invalide : données de courbes manquantes.");
+                }
 
-        // 1. Restaurer les données des courbes
-        this.app.data.curves = state.data.curves.map(c => {
-          const newCurve = new Curve(c.title, c.unit);
-          Object.assign(newCurve, c);
-          if (c.values) {
-            c.values.forEach(val => newCurve.push(val));
-          }
-          return newCurve;
-        });
+                // 1. Restaurer les courbes
+                this.app.data.curves = state.data.curves.map(savedCurve => {
+                    const newCurve = new Curve(savedCurve.title, savedCurve.unit);
+                    
+                    Object.assign(newCurve, savedCurve);
 
-        // Restaure les paramètres depuis le fichier
-        this.app.data.parameters = state.data.parameters || {};
+                    newCurve.length = 0;
 
-        // 2. Restaurer le script et l'état du grapheur
-        if (state.grapher) {
-          // Les settings du graphe (grid, zoom) sont restaurés
-          this.app.grapher.setGridVisibility(state.grapher.grid);
-          this.app.grapher.includeOriginOnAutoZoom = !!state.grapher.includeOriginOnAutoZoom;
-        }
-        this.app.editor.setValue(state.calculations.endsWith('\n') ? state.calculations : state.calculations + '\n');
-        
-        this.app.spreadsheet.update();
+                    // On remplit les données uniquement depuis la propriété `values`
+                    if (Array.isArray(savedCurve.values)) {
+                        savedCurve.values.forEach(val => newCurve.push(val));
+                    }
+                    
+                    return newCurve;
+                });
 
-        if (state.grapher && state.grapher.xCurve) {
-          this.app.grapher.setXCurve(state.grapher.xCurve, false);
-          this.app.grapher.updateChart(state.grapher.yCurves);
-        } else {
-          this.app.grapher.deleteAllCurves();
-          this.app.grapher.updateChart();
-        }
+                // 2. Restaurer TOUS les paramètres
+                this.app.data.parameters = state.data.parameters || {};
 
-        // 3. Restaurer les annotations
-        if (Array.isArray(state.annotations)) {
-          this.app.data.annotations = state.annotations;
+                // 3. Restaurer les modèles SANS RECALCUL
+                if (Array.isArray(state.data.models)) {
+                    for (const savedModel of state.data.models) {
+                        const xCurve = this.app.data.getCurveByTitle(savedModel.xTitle);
+                        const yCurve = this.app.data.getCurveByTitle(savedModel.yTitle);
 
-          // Met à jour la visibilité du bouton "Effacer les annotations"
-          this.app.uiManager.updateClearAnnotationsButtonVisibility();
-        }
+                        if (!xCurve || !yCurve) {
+                            console.warn(`Modèle pour "${savedModel.yTitle}" ignoré car les courbes sont introuvables.`);
+                            continue;
+                        }
 
-        // 4. Restaurer les modèles
-        if (Array.isArray(state.models)) {
-          // Vide la liste des panneaux existants avant de recréer
-          const modelListContainer = document.getElementById('model-list');
-          if (modelListContainer) {
-            modelListContainer.innerHTML = '';
-          }
+                        const model = new Model(xCurve, yCurve, savedModel.type, this.app.data.parameters);
+                        
+                        Object.assign(model, savedModel);
+                        
+                        this.app.data.models.push(model);
+                        this.app.grapher.addModelSeries(model);
+                        this.app.uiManager.createModelPanel(model.id);
+                    }
+                }
 
-          for (const def of state.models) {
-            if (!def.xTitle || !def.yTitle || !def.type) continue;
-            
-            // Crée l'objet modèle en mémoire
-            const model = await this.app.addModel(def.xTitle, def.yTitle, def.type);
-            if (!model) continue;
-            
-            // Restaure les propriétés du modèle
-            model.color = def.color ?? model.color;
-            model.lineWidth = def.lineWidth ?? model.lineWidth;
-            model.lineStyle = def.lineStyle ?? model.lineStyle;
-            model.visible = def.visible !== false;
-            model.bornedebut = def.bornedebut ?? null;
-            model.bornefin = def.bornefin ?? null;
+                // 4. Restaurer les autres éléments
+                this.app.editor.setValue(state.calculations ?? "");
+                this.app.data.annotations = state.data.annotations ?? [];
+                
+                if (state.grapher) {
+                    this.app.grapher.setGridVisibility(state.grapher.grid);
+                    this.app.grapher.includeOriginOnAutoZoom = !!state.grapher.includeOriginOnAutoZoom;
+                    this.app.grapher.setXCurve(state.grapher.xCurve, false);
+                    this.app.grapher.updateChart(state.grapher.yCurves);
+                }
 
-            if (model.bornedebut !== null || model.bornefin !== null) {
-              await model.fit();
+                if (state.sort && state.sort.lastSortVariable) {
+                    this.app.data.lastSortVariable = state.sort.lastSortVariable;
+                }
+
+                // 5. Finaliser la mise à jour de l'UI
+                this.app.spreadsheet.update();
+                this.app.uiManager.updateCalculationUI();
+                this.app.uiManager.updateAllModelPanelVisibilityIcons();
+                this.app.uiManager.updateRecalculateButtonVisibility();
+                this.app.grapher.updateModelVisibility();
+                this.app.grapher.chart.redraw();
+                this.app.grapher.resetZoom();
+
+                console.log("Session .pw (v3.0) restaurée avec succès.");
+                resolve();
+
+            } catch (e) {
+                console.error("Erreur lors du chargement du fichier .pw :", e);
+                reject(new Error("Le fichier de session est corrompu ou invalide."));
             }
-
-            // Étape Crée le panneau HTML dans l'interface
-            this.app.uiManager.createModelPanel(model.id);
-
-            // Étape Met à jour le panneau nouvellement créé avec les données TODO : utile ?
-            this.app.uiManager.updateModelPanel(model);
-
-            // Met à jour la série graphique correspondante
-            const series = this.app.grapher.chart.get('model-' + model.id);
-            if (series) {
-              series.update({
-                color: model.color,
-                lineWidth: model.lineWidth,
-                dashStyle: model.lineStyle,
-                visible: model.visible
-              }, false); // Redraw différé
-            }
-          }
-          
-          // Met à jour la visibilité du bouton global après avoir traité tous les modèles
-          this.app.uiManager.updateRecalculateButtonVisibility();
-        }
-        
-        // 5. Restaurer le tri du tableau
-        if (state.sort && state.sort.lastSortVariable) {
-          this.app.data.lastSortVariable = state.sort.lastSortVariable;
-          this.app.spreadsheet.applySort(state.sort.lastSortVariable);
-        }
-
-        // Finalisation
-        this.app.uiManager.updateCalculationUI();
-        this.app.grapher.chart.redraw();
-        this.app.grapher.resetZoom();
-
-        console.log("Session .pw (v2.2) restaurée avec succès.");
-        resolve();
-
-      } catch (e) {
-        console.error("Erreur lors du chargement du fichier .pw :", e);
-        reject(new Error('Le fichier de session est corrompu ou invalide.'));
-      }
-    };
-    reader.onerror = () => reject(new Error('Impossible de lire le fichier.'));
-    reader.readAsText(file);
-  });
+        };
+        reader.onerror = () => reject(new Error("Impossible de lire le fichier."));
+        reader.readAsText(file);
+    });
 }
 
 

@@ -38,7 +38,9 @@
     - BUG : les icones du menu nouveau apparraissent en retard sur le ptb (again)
     - BUG : Revoir la sauvegarde ! (les settings sont peut etre stockés dans le fichier : on veut pas)
 
-    - BUG quand on charge un CSV, on ne vide pas les calcul...
+    - BUG, un modèle peut assigner un nom a un parametre alors que c'est deja une courbe. genre si "a" existe deja en courbe il s'en fout
+
+    - BUG zoom lent avec series de 4096 valeurs... optimiser boost ?
 
     - sauvegarder les derniers fichiers dans localStorage
     - icones personnalisées

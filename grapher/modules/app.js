@@ -187,6 +187,7 @@ export default class App {
     this.grapher.deleteAllCurves(); 
 
     // Update the calculation
+    this.editor.setValue('');
     this.calculation.clear();
 
     // clear the spreadsheet
