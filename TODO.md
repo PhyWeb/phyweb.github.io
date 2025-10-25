@@ -40,7 +40,7 @@
 
     - BUG, un modèle peut assigner un nom a un parametre alors que c'est deja une courbe. genre si "a" existe deja en courbe il s'en fout
 
-    - BUG zoom lent avec series de 4096 valeurs... optimiser boost ?
+    - BUG zomm auto marche pas toujours
 
     - sauvegarder les derniers fichiers dans localStorage
     - icones personnalisées

@@ -12,9 +12,9 @@ class Spreadsheet {
     this.hot;
   }   
 
-  addCurve(title, unit, size, fill){
+  addCurve(title, unit, size, fill, line, markers){
 
-    let curve = this.data.addCurve(title, unit, size, fill);
+    let curve = this.data.addCurve(title, unit, size, fill, line, markers);
 
     this.update();
 

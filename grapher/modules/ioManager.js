@@ -702,7 +702,7 @@ loadPWFile(file) {
         y: graphY.filter(t => !existingTitles.includes(t))
       };
     } catch (error) {
-      throw new Error(`Le fichier RW3 ne peut pas être lu : ${error.message}`);
+      throw new Error(`Le fichier RW3 ne peut pas être lu : ${error}`);
     }
   }
 
@@ -792,12 +792,19 @@ loadPWFile(file) {
         }
       }
 
-      // Ajoute les courbes à l'état de l'application
+      const PERFORMANCE_THRESHOLD = 500;
       for (let i = 0; i < headers.length; i++) {
-        const curve = this.app.addCurve(headers[i], units ? units[i] : "");
 
-        curve.length = 0; // Vider le tableau existant
         const dataToAdd = curvesData[i];
+
+        let curve;
+        // Performance mode: if more than 500 points, show line but no markers
+        if (dataToAdd.length > PERFORMANCE_THRESHOLD) {
+          curve = this.app.addCurve(headers[i], units ? units[i] : undefined, true, false);
+        } else{
+          curve = this.app.addCurve(headers[i], units ? units[i] : undefined);
+        }
+
         for (let j = 0; j < dataToAdd.length; j++) {
           curve.push(dataToAdd[j]);
         }

@@ -39,8 +39,8 @@ export default class App {
     this.ioManager = new IOManager(this);
   }
 
-  addCurve(title, unit) {
-    let curve = this.spreadsheet.addCurve(title, unit);
+  addCurve(title, unit,line, markers){
+    let curve = this.spreadsheet.addCurve(title, unit, undefined, undefined, line, markers);
 
     if(this.data.curves.length === 1){
       this.grapher.setXCurve(title);

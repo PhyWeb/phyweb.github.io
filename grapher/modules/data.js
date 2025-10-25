@@ -477,7 +477,7 @@ export default class Data {
     this.lastSortVariable = null; // Dernière variable utilisée pour le tri
   }
 
-  addCurve(title, unit, size, fill){
+  addCurve(title, unit, size, fill, line, markers){
     // Check if the title is already used TODO: modal
     if(this.curves.find(curve => curve.title === title)){
       return null;
@@ -492,7 +492,7 @@ export default class Data {
     }*/
 
     // Create the curve
-    let curve = new Curve(title, unit, color);
+    let curve = new Curve(title, unit, color, line, markers);
 
     if(size !== undefined){
       curve.init(size, fill);
