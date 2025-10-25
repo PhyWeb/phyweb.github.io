@@ -42,6 +42,8 @@
 
     - BUG zomm auto marche pas toujours
 
+    - BUG, certains settings (zero) sont sauvegardés dans local ? dans pw ? les deux ?
+
     - sauvegarder les derniers fichiers dans localStorage
     - icones personnalisées
     - export image / print
