@@ -788,13 +788,13 @@ loadPWFile(file) {
         }
       }
 
-      const PERFORMANCE_THRESHOLD = 500;
+      const PERFORMANCE_THRESHOLD = Infinity; // Désactivé pour l'instant (plus utile depuis la désactivation des animations)
       for (let i = 0; i < headers.length; i++) {
 
         const dataToAdd = curvesData[i];
 
         let curve;
-        // Performance mode: if more than 500 points, show line but no markers
+        // Performance mode: if more than PERFORMANCE_THRESHOLD points, show line but no markers
         if (dataToAdd.length > PERFORMANCE_THRESHOLD) {
           curve = this.app.addCurve(headers[i], units ? units[i] : undefined, true, false);
         } else{
