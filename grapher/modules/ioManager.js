@@ -55,64 +55,62 @@ export default class IOManager {
  * @returns {string} Le contenu du fichier .pw en chaîne JSON.
  */
 generatePW() {
-    // 1. Sauvegarder les données, modèles et paramètres
-    const dataToSave = {
-        curves: this.app.data.curves.map(curve => ({
-            title: curve.title,
-            unit: curve.unit,
-            color: curve.color,
-            line: curve.line,
-            markers: curve.markers,
-            lineWidth: curve.lineWidth,
-            lineStyle: curve.lineStyle,
-            markerSymbol: curve.markerSymbol,
-            markerRadius: curve.markerRadius,
-            type: curve.type,
-            values: Array.from(curve) // La seule source pour les points de données
-        })),
-        
-        parameters: this.app.data.parameters,
+  // 1. Sauvegarder les données, modèles et paramètres
+  const dataToSave = {
+    curves: this.app.data.curves.map(curve => ({
+      title: curve.title,
+      unit: curve.unit,
+      color: curve.color,
+      line: curve.line,
+      markers: curve.markers,
+      lineWidth: curve.lineWidth,
+      lineStyle: curve.lineStyle,
+      markerSymbol: curve.markerSymbol,
+      markerRadius: curve.markerRadius,
+      type: curve.type,
+      values: Array.from(curve) // La seule source pour les points de données
+    })),
+    
+    parameters: this.app.data.parameters,
 
-        models: this.app.data.models.map(m => ({
-            id: m.id,
-            xTitle: m.x.title,
-            yTitle: m.y.title,
-            type: m.type,
-            visible: m.visible,
-            color: m.color,
-            lineWidth: m.lineWidth,
-            lineStyle: m.lineStyle,
-            bornedebut: m.bornedebut,
-            bornefin: m.bornefin,
-            parameters: m.parameters,
-            rmse: m.rmse,
-            rSquared: m.rSquared,
-        })),
+    models: this.app.data.models.map(m => ({
+      id: m.id,
+      xTitle: m.x.title,
+      yTitle: m.y.title,
+      type: m.type,
+      visible: m.visible,
+      color: m.color,
+      lineWidth: m.lineWidth,
+      lineStyle: m.lineStyle,
+      bornedebut: m.bornedebut,
+      bornefin: m.bornefin,
+      parameters: m.parameters,
+      rmse: m.rmse,
+      rSquared: m.rSquared,
+    })),
 
-        annotations: this.app.data.annotations ?? [],
-    };
+    annotations: this.app.data.annotations ?? [],
+  };
 
-    // 2. Sauvegarder l'état de l'interface
-    const yCurves = this.app.grapher.chart.series
-        .filter(s => !s.options?.id?.startsWith('model-') && s.visible !== false)
-        .map(s => s.name);
+  // 2. Sauvegarder l'état de l'interface
+  const yCurves = this.app.grapher.chart.series
+    .filter(s => !s.options?.id?.startsWith('model-') && s.visible !== false)
+    .map(s => s.name);
 
-    const state = {
-        version: "3.0",
-        data: dataToSave,
-        calculations: this.app.editor.getValue(),
-        grapher: {
-            xCurve: this.app.grapher.currentXCurve,
-            yCurves: yCurves,
-            grid: this.app.grapher.grid,
-            includeOriginOnAutoZoom: this.app.grapher.includeOriginOnAutoZoom,
-        },
-        sort: {
-            lastSortVariable: this.app.data.lastSortVariable ?? null,
-        },
-    };
+  const state = {
+    version: "3.0",
+    data: dataToSave,
+    calculations: this.app.editor.getValue(),
+    grapher: {
+      xCurve: this.app.grapher.currentXCurve,
+      yCurves: yCurves,
+    },
+    sort: {
+      lastSortVariable: this.app.data.lastSortVariable ?? null,
+    },
+  };
 
-    return JSON.stringify(state, null, 2);
+  return JSON.stringify(state, null, 2);
 }
 
   /**
@@ -161,11 +159,11 @@ generatePW() {
     const dataRows = [];
 
     for (let i = 0; i < numRows; i++) {
-        const row = rawCurves.map(curve => {
-            const cell = curve[i];
-            return (cell === null || cell === undefined) ? '' : String(cell).replace('.', ',');
-        });
-        dataRows.push(row.join('\t'));
+      const row = rawCurves.map(curve => {
+        const cell = curve[i];
+        return (cell === null || cell === undefined) ? '' : String(cell).replace('.', ',');
+      });
+      dataRows.push(row.join('\t'));
     }
 
     output += `&${numRows} VALEUR VAR\n`;
@@ -278,91 +276,89 @@ generatePW() {
   }
 
 loadPWFile(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = async (event) => {
-            try {
-                const state = JSON.parse(event.target.result);
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const state = JSON.parse(event.target.result);
 
-                if (!state.data || !state.data.curves) {
-                    throw new Error("Fichier PW invalide : données de courbes manquantes.");
-                }
+        if (!state.data || !state.data.curves) {
+          throw new Error("Fichier PW invalide : données de courbes manquantes.");
+        }
 
-                // 1. Restaurer les courbes
-                this.app.data.curves = state.data.curves.map(savedCurve => {
-                    const newCurve = new Curve(savedCurve.title, savedCurve.unit);
-                    
-                    Object.assign(newCurve, savedCurve);
+        // 1. Restaurer les courbes
+        this.app.data.curves = state.data.curves.map(savedCurve => {
+          const newCurve = new Curve(savedCurve.title, savedCurve.unit);
+          
+          Object.assign(newCurve, savedCurve);
 
-                    newCurve.length = 0;
+          newCurve.length = 0;
 
-                    // On remplit les données uniquement depuis la propriété `values`
-                    if (Array.isArray(savedCurve.values)) {
-                        savedCurve.values.forEach(val => newCurve.push(val));
-                    }
-                    
-                    return newCurve;
-                });
+          // On remplit les données uniquement depuis la propriété `values`
+          if (Array.isArray(savedCurve.values)) {
+            savedCurve.values.forEach(val => newCurve.push(val));
+          }
+          
+          return newCurve;
+        });
 
-                // 2. Restaurer TOUS les paramètres
-                this.app.data.parameters = state.data.parameters || {};
+        // 2. Restaurer TOUS les paramètres
+        this.app.data.parameters = state.data.parameters || {};
 
-                // 3. Restaurer les modèles SANS RECALCUL
-                if (Array.isArray(state.data.models)) {
-                    for (const savedModel of state.data.models) {
-                        const xCurve = this.app.data.getCurveByTitle(savedModel.xTitle);
-                        const yCurve = this.app.data.getCurveByTitle(savedModel.yTitle);
+        // 3. Restaurer les modèles SANS RECALCUL
+        if (Array.isArray(state.data.models)) {
+          for (const savedModel of state.data.models) {
+            const xCurve = this.app.data.getCurveByTitle(savedModel.xTitle);
+            const yCurve = this.app.data.getCurveByTitle(savedModel.yTitle);
 
-                        if (!xCurve || !yCurve) {
-                            console.warn(`Modèle pour "${savedModel.yTitle}" ignoré car les courbes sont introuvables.`);
-                            continue;
-                        }
-
-                        const model = new Model(xCurve, yCurve, savedModel.type, this.app.data.parameters);
-                        
-                        Object.assign(model, savedModel);
-                        
-                        this.app.data.models.push(model);
-                        this.app.grapher.addModelSeries(model);
-                        this.app.uiManager.createModelPanel(model.id);
-                    }
-                }
-
-                // 4. Restaurer les autres éléments
-                this.app.editor.setValue(state.calculations ?? "");
-                this.app.data.annotations = state.data.annotations ?? [];
-                
-                if (state.grapher) {
-                    this.app.grapher.setGridVisibility(state.grapher.grid);
-                    this.app.grapher.includeOriginOnAutoZoom = !!state.grapher.includeOriginOnAutoZoom;
-                    this.app.grapher.setXCurve(state.grapher.xCurve, false);
-                    this.app.grapher.updateChart(state.grapher.yCurves);
-                }
-
-                if (state.sort && state.sort.lastSortVariable) {
-                    this.app.data.lastSortVariable = state.sort.lastSortVariable;
-                }
-
-                // 5. Finaliser la mise à jour de l'UI
-                this.app.spreadsheet.update();
-                this.app.uiManager.updateCalculationUI();
-                this.app.uiManager.updateAllModelPanelVisibilityIcons();
-                this.app.uiManager.updateRecalculateButtonVisibility();
-                this.app.grapher.updateModelVisibility();
-                this.app.grapher.chart.redraw();
-                this.app.grapher.resetZoom();
-
-                console.log("Session .pw (v3.0) restaurée avec succès.");
-                resolve();
-
-            } catch (e) {
-                console.error("Erreur lors du chargement du fichier .pw :", e);
-                reject(new Error("Le fichier de session est corrompu ou invalide."));
+            if (!xCurve || !yCurve) {
+              console.warn(`Modèle pour "${savedModel.yTitle}" ignoré car les courbes sont introuvables.`);
+              continue;
             }
-        };
-        reader.onerror = () => reject(new Error("Impossible de lire le fichier."));
-        reader.readAsText(file);
-    });
+
+            const model = new Model(xCurve, yCurve, savedModel.type, this.app.data.parameters);
+            
+            Object.assign(model, savedModel);
+            
+            this.app.data.models.push(model);
+            this.app.grapher.addModelSeries(model);
+            this.app.uiManager.createModelPanel(model.id);
+          }
+        }
+
+        // 4. Restaurer les autres éléments
+        this.app.editor.setValue(state.calculations ?? "");
+        this.app.data.annotations = state.data.annotations ?? [];
+        
+        if (state.grapher) {
+          this.app.grapher.setXCurve(state.grapher.xCurve, false);
+          this.app.grapher.updateChart(state.grapher.yCurves);
+        }
+
+        if (state.sort && state.sort.lastSortVariable) {
+          this.app.data.lastSortVariable = state.sort.lastSortVariable;
+        }
+
+        // 5. Finaliser la mise à jour de l'UI
+        this.app.spreadsheet.update();
+        this.app.uiManager.updateCalculationUI();
+        this.app.uiManager.updateAllModelPanelVisibilityIcons();
+        this.app.uiManager.updateRecalculateButtonVisibility();
+        this.app.grapher.updateModelVisibility();
+        this.app.grapher.chart.redraw();
+        this.app.grapher.resetZoom();
+
+        console.log("Session .pw (v3.0) restaurée avec succès.");
+        resolve();
+
+      } catch (e) {
+        console.error("Erreur lors du chargement du fichier .pw :", e);
+        reject(new Error("Le fichier de session est corrompu ou invalide."));
+      }
+    };
+    reader.onerror = () => reject(new Error("Impossible de lire le fichier."));
+    reader.readAsText(file);
+  });
 }
 
 
