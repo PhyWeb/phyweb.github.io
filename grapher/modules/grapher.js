@@ -138,6 +138,9 @@ export default class Grapher {
 
     this.chart = Highcharts.chart("chart", {
       animation: ANIMATION_FLAG,
+      boost: {
+        seriesThreshold: 5000,
+      },
       chart: {
         type: "line",
         alignTicks: false,
@@ -165,10 +168,10 @@ export default class Grapher {
               const yPos = chart.plotHeight + chart.plotTop;
 
               const arrowX = chart.renderer.path([
-                  'M', xEnd, yPos,
-                  'L', xEnd - 10, yPos - 5,
-                  'L', xEnd - 10, yPos + 5,
-                  'Z'
+                'M', xEnd, yPos,
+                'L', xEnd - 10, yPos - 5,
+                'L', xEnd - 10, yPos + 5,
+                'Z'
               ]).attr({ fill: 'black' }).add();
 
               chart.customArrows.push(arrowX);
