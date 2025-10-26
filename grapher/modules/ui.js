@@ -29,6 +29,7 @@ export default class UIManager {
   initialize() {
     this.initNavbar();
     this.initFileModals();
+    this.initEmptyState();
     this.initSettingsModal();
     this.initSaveModal();
     this.initSpreadsheetControls();
@@ -409,6 +410,10 @@ export default class UIManager {
     const tableurPanel = document.getElementById('tableur-panel');
     const grapheurPanel = document.getElementById('grapheur-panel');
     const calculsPanel = document.getElementById('calculs-panel');
+    const emptyStateContainer = document.getElementById('empty-state-container');
+
+    // Masquer l'état vide
+    emptyStateContainer.classList.add('is-hidden');
 
     // Afficher le conteneur des onglets
     tabsContainer.classList.remove('is-hidden');
@@ -530,6 +535,18 @@ export default class UIManager {
         $("#new-file-modal").classList.add('is-active');
     });
 
+  }
+
+  /**
+   * Initialise le bouton de l'état vide au démarrage.
+   */
+  initEmptyState() {
+    const emptyStateButton = document.getElementById('empty-state-new-session-btn');
+    const newFileModalButton = document.getElementById('new-file-open-modal-button');
+
+    emptyStateButton.addEventListener('click', () => {
+      newFileModalButton.click();
+    });
   }
 
   /**

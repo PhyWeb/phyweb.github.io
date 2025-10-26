@@ -72,9 +72,6 @@ document.addEventListener('DOMContentLoaded', () => {
       // Enlever le loader
       uiManager.setModalLoading(false);
     }
-  } else {
-    // S'il n'y a pas de données externes, on affiche la modale "Nouveau fichier"
-    newFileModal.classList.add('is-active');
   }
 
   // Gestion du redimensionnement de la fenêtre
