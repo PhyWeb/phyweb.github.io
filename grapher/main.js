@@ -50,19 +50,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Vérifier les données d'une autre application après l'initialisation complète
   const interAppDataJSON = sessionStorage.getItem('phyweb-import-data');
+  const newFileModal = $('#new-file-modal');
   if (interAppDataJSON) {
+    // Afficher la modale "Nouveau fichier" pendant le chargement
+    newFileModal.classList.add('is-active');
+    // Afficher un loader dans la modale
+    uiManager.setModalLoading(true);
     try {
       // Délégué le chargement à l'IOManager
       app.ioManager.loadInterAppJSON(interAppDataJSON);
-      sessionStorage.removeItem('phyweb-import-data'); // Nettoyer immédiatement
+      // Si le chargement est un succès, on affiche l'interface principale et on ferme les modales.
+      uiManager.showTabsAndPanels();
+      uiManager.common.modalManager.closeAllModals();
     } catch (e) {
       console.error("Échec du chargement des données inter-applications:", e);
-      // En cas d'erreur, on affiche la modale pour ne pas bloquer l'utilisateur
-      $('#new-file-modal').classList.add('is-active');
+      // En cas d'erreur, on affiche une alerte. La modale reste ouverte, mais on cache le spinner.
+      alertModal({ type: 'warning', title: 'Erreur de chargement', body: e.message, confirm: 'OK' });
+    } finally {
+      // On enlève les données de sessionStorage pour éviter de recharger au prochain démarrage
+      sessionStorage.removeItem('phyweb-import-data');
+      // Enlever le loader
+      uiManager.setModalLoading(false);
     }
   } else {
     // S'il n'y a pas de données externes, on affiche la modale "Nouveau fichier"
-    $('#new-file-modal').classList.add('is-active');
+    newFileModal.classList.add('is-active');
   }
 
   // Gestion du redimensionnement de la fenêtre

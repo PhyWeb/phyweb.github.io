@@ -43,15 +43,8 @@
     - icones personnalisées
     - export image / print
 
-    - gerer quand la modélisation donne des ecart type ou r2 "infinity" Deja fait je crois, à vérifier
-
-    - permettre voir autoriser les notations 3e-15 (deja partiellemnt possible, à vérifier partout)
-
     - petite animation pour l'ouverture du panel modèles
     - enlever ou fortement reduire le background des modales de départ
-
-    - mettre un spinner quand on transfert des données via sessionstorage comme quand on ouvre un fichier
-
 
 # MISC
     - tester sur petit ecran
