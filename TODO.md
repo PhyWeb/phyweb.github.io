@@ -36,13 +36,8 @@
     - dropdown pour choisir l'abscisse en bout d'axe
 
     - BUG : les icones du menu nouveau apparraissent en retard sur le ptb (again)
-    - BUG : Revoir la sauvegarde ! (les settings sont peut etre stockés dans le fichier : on veut pas)
-
-    - BUG, un modèle peut assigner un nom a un parametre alors que c'est deja une courbe. genre si "a" existe deja en courbe il s'en fout
 
     - BUG zomm auto marche pas toujours
-
-    - BUG, certains settings (zero) sont sauvegardés dans local ? dans pw ? les deux ?
 
     - sauvegarder les derniers fichiers dans localStorage
     - icones personnalisées

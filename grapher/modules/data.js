@@ -33,13 +33,13 @@ class Curve extends Serie {
 ----------------------------------------------------------------------------------------------*/
 
 class Model {
-  constructor(x, y, type, dataParameters, color, line, lineWidth, lineStyle) {
+  constructor(x, y, type, data, color, line, lineWidth, lineStyle) {
     this.x = x; // Courbe pour les valeurs x
     this.y = y; // Courbe pour les valeurs y
 
     this.id = Highcharts.uniqueKey();
 
-    this.dataParameters = dataParameters; // Référence aux paramètres de données (pour ajouter les paramètres du modèle)
+    this.data = data; // On stocke l'instance complète de Data
 
     this.type = type; // Ex: "Linear", "Quadratic"
     this.visible = true; // Si le modèle est visible sur le graphe
@@ -228,7 +228,7 @@ class Model {
 
           // Vider les anciens paramètres du modèle de l'objet global
           this.parameters.forEach(param => {
-            delete this.dataParameters[param.name];
+            delete this.data.parameters[param.name];
           });
           
           // Vide le tableau de paramètres du modèle lui-même
@@ -239,13 +239,13 @@ class Model {
             let baseName = baseNames[i] || `p${i}`;
             let finalName = baseName;
             let counter = 1;
-            while (this.dataParameters.hasOwnProperty(finalName)) {
+            while (this.data.parameters.hasOwnProperty(finalName) || this.data.curves.some(c => c.title === finalName)) {
               finalName = `${baseName}${counter}`;
               counter++;
             }
 
             this.parameters.push({ name: finalName, value: paramValue });
-            this.dataParameters[finalName] = { value: paramValue, unit: '', type: 'model' };
+            this.data.parameters[finalName] = { value: paramValue, unit: '', type: 'model' };
           });
 
           console.log("Fitted parameters with names", this.parameters);
@@ -535,7 +535,7 @@ export default class Data {
   async addModel(xName, yName, type){
     let x = this.getCurveByTitle(xName);
     let y = this.getCurveByTitle(yName);
-    let model = new Model(x, y, type, this.parameters,y.color,true,2,"Dash");
+    let model = new Model(x, y, type, this,y.color,true,2,"Dash");
     model.visible = true;
     await model.fit();
     this.models.push(model);

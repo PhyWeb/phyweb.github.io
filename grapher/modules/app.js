@@ -169,17 +169,9 @@ export default class App {
 
     // Delete all curves
     this.data.deleteAllCurves();
-    // Conserver uniquement les paramètres de type 'model'
-    const parametersToKeep = {};
-    for (const key in this.data.parameters) {
-      if (Object.prototype.hasOwnProperty.call(this.data.parameters, key)) {
-        const param = this.data.parameters[key];
-        if (param && param.type === 'model') {
-            parametersToKeep[key] = param;
-        }
-      }
-    }
-    this.data.parameters = parametersToKeep;
+
+    // Delete all parameters
+    this.data.parameters = {};
 
     this.uiManager.clearActiveTool();
 
