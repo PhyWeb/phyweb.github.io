@@ -92,7 +92,7 @@
           </a>
           <div class="navbar-dropdown is-size-6" id="menu-dropdown-content">
             <a class="navbar-item" id="open-video-button">
-              <span class="icon"><i class="fa-solid fa-file-circle-plus"></i></span>
+              <span class="icon"><i class="fa-solid fa-film"></i></span>
               <span>Ouvrir une vidéo</span>
             </a>
             <a class="navbar-item js-modal-trigger" id="save-button" data-target="download-modal">
@@ -115,6 +115,23 @@
   </nav>
   <div class="is-hidden container" id="loading-panel">
     <p>Analyse du fichier...</p>
+  </div>
+  <!------------------------------------------------------------------------------------------------------------>
+  <!------------------------------------------------EMPTY STATE------------------------------------------------->
+  <!------------------------------------------------------------------------------------------------------------>
+  <div id="empty-state-container" class="section">
+    <div class="columns is-centered">
+      <div class="column is-narrow has-text-centered" >
+        <div class="box" style="padding: 2rem;" style="width: 600px;">
+          <p class="subtitle is-4">Bienvenue sur PhyWeb Tracker</p>
+          <p class="mb-5">Pour commencer, ouvrez une vidéo depuis votre ordinateur ou une vidéo PhyWeb.</p>
+          <button id="empty-state-new-session-btn" class="button is-primary is-large">
+            <span class="icon is-small"><i class="fas fa-film"></i></span>
+            <span>Ouvrir une vidéo</span>
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
   <div class="columns is-flex-grow-1 is-overflow-auto is-hidden main-container" id="handler-wrapper">
     <!------------------------------------------------------------------------------------------------------------>
@@ -287,7 +304,7 @@
   <!------------------------------------------------------------------------------------------------------------>
   <!-------------------------------------------------NEW MODAL------------------------------------------------->
   <!------------------------------------------------------------------------------------------------------------>
-  <div id="new-modal" class="modal is-active">
+  <div id="new-modal" class="modal">
     <div class="modal-background"></div>
     <div class="modal-card" id="new-modal-card">
       <header class="modal-card-head has-background-primary">

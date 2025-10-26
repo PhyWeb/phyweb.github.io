@@ -66,8 +66,6 @@ navManager.addLink($('#navbar-home-button'), '../index.html');
 navManager.addLink($('#navbar-audio-button'), '../audio/index.html');
 navManager.addLink($('#navbar-grapher-button'), '../grapher/index.html');
 
-
-
 // NAV
 $("#etalonnage-button").addEventListener("click", ()=>{
   $("#etalonnage-button").classList.add("is-active");
@@ -190,6 +188,11 @@ $("#send-to-grapher-button").addEventListener("click", () => {
   }
 });
 
+$("#empty-state-new-session-btn").addEventListener("click", ()=>{
+  common.modalManager.closeAllModals();
+  $("#open-video-button").click();
+});
+
 $("#open-video-button").addEventListener("click", () => {
   $("#new-modal").classList.add("is-active");
 });
@@ -207,10 +210,6 @@ $("#menu-dropdown-toggle").addEventListener("click", function (event) {
 document.addEventListener("click", function () {
   $("#menu-dropdown-container").classList.remove("is-active");
 });
-
-
-
-
 
 // VIDEOLIST
 videolist.init("assets/list.json");
