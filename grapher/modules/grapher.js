@@ -2,6 +2,8 @@ import { formatNumber } from '../../common/formatter.js';
 
 const $ = document.querySelector.bind(document);
 
+const ANIMATION_FLAG = false; // Désactiver les animations pour de meilleures performances
+
 // --- Début de la surcharge Highcharts ---
 // On exécute ce code une seule fois pour "patcher" la fonction setExtremes
 (function (H) {
@@ -135,9 +137,11 @@ export default class Grapher {
     this.handleMouseUp = this.handleMouseUp.bind(this);
 
     this.chart = Highcharts.chart("chart", {
+      animation: ANIMATION_FLAG,
       chart: {
         type: "line",
         alignTicks: false,
+        animation: ANIMATION_FLAG,
         events: {
           load : function () {
             const chart = this;
@@ -449,6 +453,7 @@ export default class Grapher {
       },
       plotOptions: {
         series: {
+          animation: ANIMATION_FLAG,
           stickyTracking: false,
           states: {
             hover: {
@@ -786,7 +791,7 @@ export default class Grapher {
           const modelData = model.getHighResData(min, max);
           // Met à jour les points de la série sans déclencher un nouveau redraw.
           // Le troisième argument (true) active l'animation.
-          existingSeries.setData(modelData, false, true);
+          existingSeries.setData(modelData, false, ANIMATION_FLAG);
         }
       }
     });
