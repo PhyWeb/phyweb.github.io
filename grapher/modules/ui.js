@@ -248,7 +248,7 @@ export default class UIManager {
       
       // Ajout de l'écart-type
       const liRmse = document.createElement('li');
-      liRmse.innerHTML = `Écart-type : ${model.rmse !== null ? formatNumber(model.rmse, significantDigits) : 'Indéfini'}`;
+      liRmse.innerHTML = `Écart-type = ${model.rmse !== null ? formatNumber(model.rmse, significantDigits) : 'Indéfini'}`;
       ul2.appendChild(liRmse);
       
       // Ajout du R²
