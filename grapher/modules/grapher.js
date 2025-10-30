@@ -3,37 +3,64 @@ import { formatNumber } from '../../common/formatter.js';
 const $ = document.querySelector.bind(document);
 
 const ANIMATION_FLAG = false; // Désactiver les animations pour de meilleures performances
+const PADDING = 0.02; // 2% de padding pour le zoom auto
 
 // --- Début de la surcharge Highcharts ---
 // On exécute ce code une seule fois pour "patcher" la fonction setExtremes
 (function (H) {
   H.wrap(H.Axis.prototype, 'setExtremes', function (proceed, newMin, newMax, redraw, animation, eventArgs) {
-    // 'proceed' est la fonction originale de Highcharts, on l'appellera plus tard
-
     const chart = this.chart;
-    // On vérifie si on est en train de faire un "reset zoom" (newMin et newMax sont null)
-    // et si le graphique a notre option activée.
-    if (newMin === null && newMax === null && chart.options?.customGrapherInstance?.includeOriginOnAutoZoom) {
+    
+    // Vérifie si c'est un reset zoom (newMin et newMax null) et option activée
+    if (newMin === null && newMax === null && chart.options?.customGrapherInstance?.includeOriginOnAutoZoom !== undefined) {
+      // Calcule manuellement les extrêmes globaux pour cet axe
+      let globalDataMin = Infinity;
+      let globalDataMax = -Infinity;
+      const isXAxis = this.isXAxis;
+      const axisIndex = this.index;
+      const relevantSeries = isXAxis 
+        ? chart.series.filter(s => s.visible)  // X partagé : toutes les séries visibles
+        : chart.series.filter(s => s.visible && (s.yAxis ? s.yAxis.index === axisIndex : true));  // Y : séries attachées à cet axe
       
-      const extremes = this.getExtremes();
-      const hasData = extremes.dataMin !== null && extremes.dataMax !== null;
-
+      relevantSeries.forEach(series => {
+        if (series.data && series.data.length > 0) {
+          let seriesMin = Infinity;
+          let seriesMax = -Infinity;
+          series.data.forEach(pointData => {
+            const value = isXAxis ? pointData.x : pointData.y;
+            if (value !== undefined && !isNaN(value) && isFinite(value)) {
+              seriesMin = Math.min(seriesMin, value);
+              seriesMax = Math.max(seriesMax, value);
+            }
+          });
+          globalDataMin = Math.min(globalDataMin, seriesMin);
+          globalDataMax = Math.max(globalDataMax, seriesMax);
+        }
+      });
+      
+      const hasData = globalDataMin !== Infinity && globalDataMax !== -Infinity;
       if (hasData) {
-        // On calcule les nouvelles bornes en incluant zéro
-        const finalMin = Math.min(extremes.dataMin, 0);
-        const finalMax = Math.max(extremes.dataMax, 0);
-        // On appelle la fonction originale avec nos nouvelles bornes calculées
+        let finalMin = Math.min(globalDataMin, 0);
+        let finalMax = Math.max(globalDataMax, 0);
+        
+        const range = finalMax - finalMin;
+        if (range > 0) {
+          finalMin -= range * PADDING;
+          finalMax += range * PADDING;
+        }
+        
+        // Appel original avec bornes calculées
         proceed.call(this, finalMin, finalMax, redraw, animation, eventArgs);
       } else {
-        // S'il n'y a pas de données, on laisse Highcharts faire son reset par défaut
+        // Pas de données : reset par défaut
         proceed.call(this, null, null, redraw, animation, eventArgs);
       }
     } else {
-      // Pour tous les autres cas (zoom normal, etc.), on appelle la fonction originale sans rien changer
+      // Autres cas : appel original
       proceed.call(this, newMin, newMax, redraw, animation, eventArgs);
     }
   });
-}(Highcharts));
+})(Highcharts);
 // --- Fin de la surcharge Highcharts ---
 
 function lengthOfTheLongestTable(tables){
@@ -759,13 +786,11 @@ export default class Grapher {
     this.chart.xAxis[0].setExtremes(null, null, false);
     this.chart.yAxis[0].setExtremes(null, null, false);
 
-    // Déclenche un seul redraw pour la performance
+    // Un seul redraw final pour les deux axes
     this.chart.redraw();
     
-    // Demande à l'UIManager de mettre à jour les boutons
-    if (this.uiManager) {
-      this.uiManager.resetZoomUI();
-    }
+    // Mise à jour UI
+    this.uiManager.resetZoomUI();
   }
 
   /**
