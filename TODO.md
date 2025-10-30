@@ -45,8 +45,9 @@
 
     - petite animations (pour l'ouverture du panel modèles)
 
+
 # MISC
-    - tester sur petit ecran
+    - tester sur petit ecran (et faire les adaptations nécessaires)
 
 # Idées
     - animation titrage
