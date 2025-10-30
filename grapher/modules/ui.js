@@ -1663,12 +1663,6 @@ export default class UIManager {
     }
 
     this.isZoomEnabled = false;
-
-    // Cache le bouton "Reset Zoom", car on est déjà en zoom auto
-    const autoZoomButton = document.getElementById('auto-zoom-button');
-    if (autoZoomButton) {
-      autoZoomButton.classList.add('is-hidden');
-    }
   }
 
   /**
