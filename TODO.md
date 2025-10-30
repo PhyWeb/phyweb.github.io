@@ -39,12 +39,11 @@
 
     - BUG zomm auto marche pas toujours
 
-    - sauvegarder les derniers fichiers dans localStorage
+    - sauvegarder les derniers fichiers dans localStorage ??
     - icones personnalisées
     - export image / print
 
-    - petite animation pour l'ouverture du panel modèles
-    - enlever ou fortement reduire le background des modales de départ
+    - petite animations (pour l'ouverture du panel modèles)
 
 # MISC
     - tester sur petit ecran
