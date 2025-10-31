@@ -69,6 +69,7 @@ export default class PLAYER {
       this.currentPoint = 0;
 
       // Display UI
+      $("#empty-state-container").classList.add("is-hidden");
       $("#video-controls").classList.remove("is-hidden");
       $("#magnifier-button").classList.remove("is-hidden");
       $("#settings-button").classList.remove("is-hidden");
