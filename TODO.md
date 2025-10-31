@@ -7,6 +7,9 @@
     - Electron cassé
     -Auto-focus intelligents dans les modales: quand tu ouvres une modale, place le focus sur le premier champ utile (ex: symbole dans “Ajouter grandeur”, fichier dans “Ouvrir”, textarea dans “Calculs”). Ajoute aussi Enter=confirmer, Escape=fermer.
 
+    - mettre une icone en grand (dans le background) de chaque app pour visuellement rapidement voir ou on est.
+      - du coup centrer verticalement le splashscreen ?
+
 # Home
     - package linux et macos
 
@@ -16,7 +19,11 @@
     - preview wave when loading a file
     - fft add 0s to have a power of two and use faster fft ??
     - play the selected part of the audio when downloading
+
     - function to download the dft too
+    - permettre de télécharger depuis les onglets RT et REC et virer le warning
+
+    - mettre en place la confirmation de quit (notament quand on veut creer une nouvelle session)
 
 # Tracker
     - bug or feature ? : frame is downloaded only if all points are set
@@ -42,6 +49,10 @@
     - export image / print
 
     - petite animations (pour l'ouverture du panel modèles)
+
+    - ne pas afficher la splashscreen quand on recot des donné via interapp (de audio ce se voit)
+
+    - BUG quand on ouvre un csv sans unité la premiere ligne est vide (seulement dans ce cas ?) 
 
 
 # MISC

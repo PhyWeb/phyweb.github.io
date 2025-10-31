@@ -839,9 +839,9 @@ loadPWFile(file) {
         case 'tracker':
           tsvData = this._parseTrackerDataToTSV(data.payload);
           break;
-        // case 'audio':
-        //   tsvData = this._parseAudioDataToTSV(data.payload);
-        //   break;
+        case 'audio':
+          tsvData = this._parseAudioDataToTSV(data.payload);
+          break;
         default:
           throw new Error(`La source de données "${data.source}" n'est pas supportée.`);
       }
@@ -882,6 +882,35 @@ loadPWFile(file) {
     }
 
     return `${headers}\n${units}\n${dataRows.join('\n')}`;
+  }
+
+  _parseAudioDataToTSV(payload) {
+    if (!payload || !payload.curves || payload.curves.length === 0) {
+      return ''; // Pas de données à traiter
+    }
+
+    // Construire la ligne d'en-têtes
+    const headers = payload.curves.map(c => c.title).join('\t');
+
+    // Construire la ligne d'unités
+    const units = payload.curves.map(c => c.unit).join('\t');
+
+    // Déterminer le nombre de lignes de données (longueur de la plus grande colonne)
+    const rowCount = Math.max(...payload.curves.map(c => c.values.length));
+
+    // Construire chaque ligne de données
+    const dataRows = [];
+    for (let i = 0; i < rowCount; i++) {
+      const row = payload.curves.map(c => {
+        const value = c.values[i];
+        // Renvoie une chaîne vide pour les valeurs undefined/null (fin des colonnes plus courtes)
+        return value !== null && value !== undefined ? String(value) : '';
+      }).join('\t');
+      dataRows.push(row);
+    }
+
+    // Assembler le tout en un seul bloc de texte
+    return [headers, units, ...dataRows].join('\n');
   }
 
 }

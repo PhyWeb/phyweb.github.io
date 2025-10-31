@@ -19,11 +19,6 @@
   justify-content: center;
 }
 
-#menu-dropdown-container .navbar-dropdown {
-  right: 0;
-  left: auto;
-}
-
 #videoContainer {
   flex: 1 0 10rem;
   box-shadow: none;

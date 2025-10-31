@@ -108,28 +108,49 @@ navManager.addLink(document.querySelector('#navbar-tracker-button'), '../tracker
 navManager.addLink(document.querySelector('#navbar-grapher-button'), '../grapher/index.html');
 
 /*----------------------------------------------------------------------------------------------
-------------------------------------------CONFIG MODAL------------------------------------------
+-----------------------------------------DROPDOWN MENU-----------------------------------------
 ----------------------------------------------------------------------------------------------*/
-$("#choose-config-modal").classList.add("is-active");
+$("#menu-dropdown-toggle").addEventListener("click", function (event) {
+  event.stopPropagation();
+  $("#menu-dropdown-container").classList.toggle("is-active");
+});
+
+// Close the dropdown when clicking outside
+document.addEventListener("click", function () {
+  $("#menu-dropdown-container").classList.remove("is-active");
+});
+
+$("#new-session-button").addEventListener("click", ()=>{
+  // TODO check for unsaved data
+  location.reload();
+});
+
+/*----------------------------------------------------------------------------------------------
+------------------------------------------MODE SWITCH-------------------------------------------
+----------------------------------------------------------------------------------------------*/
 $("#simple-mode-button").addEventListener("click", async ()=>{
   await audioInit()
-	common.modalManager.closeAllModals();
 
-	simpleMode = true;
+  simpleMode = true;
 
-	// Hide fourier graph cards
-	$("#rt-fourier-container").style.display = "none";
-	$("#rec-fourier-container").style.display = "none";
-	$("#sav-fourier-container").style.display = "none";
-	$("#sav-temporal-fourier-container").style.display = "none";
+  // show the RT panel
+  $("#rt-panel").classList.remove("is-hidden");
+  $("#empty-state-container").classList.add("is-hidden");
+  $("#tab-bar").classList.remove("is-hidden");
 
-	// Hide save furier settings
-	$("#fourier-settings-panel").style.display = "none";
+  // Hide fourier graph cards
+  $("#rt-fourier-container").style.display = "none";
+  $("#rec-fourier-container").style.display = "none";
+  $("#sav-fourier-container").style.display = "none";
+  $("#sav-temporal-fourier-container").style.display = "none";
 
-	// Resize wave charts to full height
-	$("#rt-graph-container").style.height = "calc(100vh - 130px)";
-	$("#rec-graph-container").style.height = "calc(100vh - 130px)";
-	$("#sav-graph-container").style.height = "calc(100vh - 130px)";
+  // Hide save fourier settings
+  $("#fourier-settings-panel").style.display = "none";
+
+  // Resize wave charts to full height
+  $("#rt-graph-container").style.height = "calc(100vh - 130px)";
+  $("#rec-graph-container").style.height = "calc(100vh - 130px)";
+  $("#sav-graph-container").style.height = "calc(100vh - 130px)";
 
   //remove unnecassary margin
   $("#rt-graph-container").style.marginBottom = "0px";
@@ -144,7 +165,11 @@ $("#simple-mode-button").addEventListener("click", async ()=>{
 
 $("#complete-mode-button").addEventListener("click", async ()=>{
 	await audioInit()
-	common.modalManager.closeAllModals();
+
+  // show the RT panel
+  $("#rt-panel").classList.remove("is-hidden");
+  $("#empty-state-container").classList.add("is-hidden");
+  $("#tab-bar").classList.remove("is-hidden");
 
   simpleMode = false;
 
@@ -547,7 +572,17 @@ $("#end-size-input").addEventListener('change', function () {
 });
 
 // Download button
-$("#download-button").addEventListener("click", ()=>{
+$("#save-button").addEventListener("click", ()=>{
+  // Check if we're on a save tab
+  if(tabManager.activeTab < 2){
+    alertModal({
+      type: "warning",
+      title: "Aucune donnée à sauvegarder",
+      body: "Seules les données enregistrées dans un onglet peuvent être téléchargées.",
+      confirm: "OK"
+    })
+    return;
+  }
 
   // Slider reset
   $("#data-slider").noUiSlider.updateOptions({
@@ -605,48 +640,82 @@ $("#rw3-button").addEventListener("click", ()=>{
 });
 
 // Actual download
-$("#download-file-button").addEventListener("click", ()=>{
-  let filename = "enregistrement";
-  if($("#file-name-input").value !== ""){
-    filename = $("#file-name-input").value;
-  }
+$("#download-file-button").addEventListener('click', () => {
+    let filename = $("#file-name-input.value") || 'enregistrement';
+    const saveData = saves[tabManager.activeTab - 2];
+    const originalWaveData = saveData.linearData;
+    const effectiveSampleRate = baseSampleRate / saveData.displaySampleRateLvl;
 
-  let sr = baseSampleRate / saves[tabManager.activeTab-2].displaySampleRateLvl;
+    // 1. Déterminer l'intervalle de temps sélectionné par l'utilisateur
+    let startTime = 0;
+    let endTime = originalWaveData.getDuration();
 
-  let series = [];
-  series.push(new Serie("Temps","s"));
-  const amplitudeSerie = new Serie("Amplitude", "");
-  amplitudeSerie.setData(saves[tabManager.activeTab-2].linearData.getData(saves[tabManager.activeTab-2].displaySampleRateLvl));
-  series.push(amplitudeSerie);
-  // Download only the part selected by the user
-  if($("#part-button").classList.contains("is-link")){
-    let start = parseFloat($("#start-size-input").value);
-    let end = parseFloat($("#end-size-input").value);
-    let startSample = Math.round(start * sr);
-    let endSample = Math.round(end * sr);
-    series[1].setData(series[1].slice(startSample, endSample));
-  }
+    if ($("#on-screen-button").classList.contains('is-link')) {
+      startTime = savWaveChart.xAxis[0].min;
+      endTime = savWaveChart.xAxis[0].max;
+    } else if ($("#part-button").classList.contains('is-link')) {
+      startTime = parseFloat($("#start-size-input").value);
+      endTime = parseFloat($("#end-size-input").value);
+    }
+    
+    startTime = Math.max(0, startTime);
+    endTime = Math.min(originalWaveData.getDuration(), endTime);
 
-  // Download only the on screen part
-  if($("#on-screen-button").classList.contains("is-link")){
-    let start = savWaveChart.xAxis[0].min;
-    let end = savWaveChart.xAxis[0].max;
-    let startSample = Math.round(start * sr);
-    let endSample = Math.round(end * sr);
-    series[1].setData(series[1].slice(startSample, endSample));
-  }
+    const startSample = Math.round(startTime * effectiveSampleRate);
+    const endSample = Math.round(endTime * effectiveSampleRate);
 
-  if($("#wav-button").classList.contains("is-link")){
-    let file = audio.generateWavFile(series[1], sr);
-    downloadFile(file,"wav",filename);
-  }
-  if($("#csv-button").classList.contains("is-link")){
-    downloadData(series, "csv", filename);
-  }
-  if($("#rw3-button").classList.contains("is-link")){
-    downloadData(series, "rw3", filename);
-  }
-  common.modalManager.closeAllModals();
+    // 2. Préparer les données temporelles
+    const series = [];
+    const slicedWaveArray = Array.from(originalWaveData.data.slice(startSample, endSample));
+
+    // Si on exporte en WAV, on ne traite que le signal audio
+    if ($("#wav-button").classList.contains('is-link')) {
+      const wavDataSerie = new Serie('Amplitude', 'u.a.');
+      wavDataSerie.setData(slicedWaveArray);
+      const file = audio.generateWavFile(wavDataSerie, effectiveSampleRate);
+      downloadFile(file, 'wav', filename);
+      common.modalManager.closeAllModals();
+      return; // Fin du processus pour WAV
+    }
+    
+    // 3. Si l'export est en CSV ou RW3, préparer toutes les colonnes
+    
+    // Colonne Temps
+    const timeSerie = new Serie('Temps', 's');
+    const timeValues = Array.from({ length: slicedWaveArray.length }, (_, i) => startTime + (i / effectiveSampleRate));
+    timeSerie.setData(timeValues);
+    series.push(timeSerie);
+
+    // Colonne Amplitude
+    const amplitudeSerie = new Serie('Amplitude', 'u.a.');
+    amplitudeSerie.setData(slicedWaveArray);
+    series.push(amplitudeSerie);
+    
+    // 4. Recalculer Fourier pour la portion sélectionnée et ajouter les séries
+    // Uniquement si on a une durée valide pour le calcul
+    if (saveData.fLinearData && (endTime - startTime) > 0.001) {
+      const waveForFourier = new LinearData(originalWaveData.data); // Utiliser les données complètes
+      const fourierData = computeFourier(waveForFourier, effectiveSampleRate, [startTime, endTime]);
+
+      if (fourierData && fourierData.data.length > 0) {
+        // Colonne Fréquence
+        const frequencySerie = new Serie('Fréquence', 'Hz');
+        const frequencyValues = Array.from({ length: fourierData.data.length }, (_, i) => i * fourierData.step);
+        frequencySerie.setData(frequencyValues);
+        series.push(frequencySerie);
+
+        // Colonne Amplitude Spectrale
+        const spectralAmplitudeSerie = new Serie('Amplitude spectrale', 'u.a.');
+        spectralAmplitudeSerie.setData(Array.from(fourierData.data));
+        series.push(spectralAmplitudeSerie);
+      }
+    }
+
+    // 5. Lancer le téléchargement pour CSV ou RW3
+    const format = $("#csv-button").classList.contains('is-link') ? 'csv' : 'rw3';
+    downloadData(series, format, filename);
+
+    common.modalManager.closeAllModals();
 });
 
 function downloadData(_series, _type, _name){
@@ -663,10 +732,166 @@ function downloadData(_series, _type, _name){
     file = exportToCSV(_series, true);
   }
   if(_type === "rw3"){
-    file = exportToRW3(_series, true, "Enregistrement PhyWeb Audio\n");
+    file = exportToRW3(_series, true, "Enregistrement PhyWeb Audio");
   }
   downloadFile(file, _type, _name)
 }
+
+/*----------------------------------------------------------------------------------------------
+-----------------------------------------SEND TO GRAPHER----------------------------------------
+----------------------------------------------------------------------------------------------*/
+const stgAllDataButton = $('#stg-all-data-button');
+const stgOnscreenDataButton = $('#stg-onscreen-data-button');
+const stgPartButton = $('#stg-part-button');
+const stgDataSizePanel = $('#stg-data-size-panel');
+const stgDataSlider = $('#stg-data-slider');
+const stgStartSizeInput = $('#stg-start-size-input');
+const stgEndSizeInput = $('#stg-end-size-input');
+
+// --- INITIALIZE SEND TO GRAPHER SLIDER ---
+noUiSlider.create(stgDataSlider, {
+  start: [0, 10],
+  connect: true,
+  range: { 'min': 0, 'max': 10 },
+  margin: 0.001,
+  behaviour: 'tap-drag',
+  tooltips: false,
+  format: {
+    to: function (value) { return value.toFixed(3); },
+    from: function (value) { return parseFloat(value); }
+  }
+});
+
+// Link slider to input fields
+stgDataSlider.noUiSlider.on('update', function (values, handle) {
+  let value = values[handle];
+  if (handle) {
+    stgEndSizeInput.value = value;
+  } else {
+    stgStartSizeInput.value = value;
+  }
+});
+stgStartSizeInput.addEventListener('change', function () {
+  stgDataSlider.noUiSlider.set([this.value, null]);
+});
+stgEndSizeInput.addEventListener('change', function () {
+  stgDataSlider.noUiSlider.set([null, this.value]);
+});
+
+// --- MODAL BUTTONS AND CLOSE LOGIC ---
+stgAllDataButton.addEventListener('click', () => {
+  stgAllDataButton.classList.add('is-link');
+  stgOnscreenDataButton.classList.remove('is-link');
+  stgPartButton.classList.remove('is-link');
+  stgDataSizePanel.classList.add('is-hidden');
+});
+stgOnscreenDataButton.addEventListener('click', () => {
+  stgOnscreenDataButton.classList.add('is-link');
+  stgAllDataButton.classList.remove('is-link');
+  stgPartButton.classList.remove('is-link');
+  stgDataSizePanel.classList.add('is-hidden');
+});
+stgPartButton.addEventListener('click', () => {
+  stgPartButton.classList.add('is-link');
+  stgAllDataButton.classList.remove('is-link');
+  stgOnscreenDataButton.classList.remove('is-link');
+  stgDataSizePanel.classList.remove('is-hidden');
+});
+
+// send-to-grapher-button listener
+$("#send-to-grapher-button").addEventListener('click', () => {
+  // Check if we are on a saved tab
+  if (tabManager.activeTab < 2) {
+    alertModal({
+      type: 'warning',
+      title: 'Aucune donnée à envoyer',
+      body: 'Seules les données enregistrées dans un onglet peuvent être envoyées à Grapher.',
+      confirm: 'OK'
+    });
+    return;
+  }
+
+  const saveData = saves[tabManager.activeTab - 2];
+  const duration = saveData.linearData.getDuration();
+
+  // Configure slider and show the modal
+  stgDataSlider.noUiSlider.updateOptions({
+    range: { 'min': 0, 'max': duration }
+  });
+  stgDataSlider.noUiSlider.reset();
+  $('#send-to-grapher-modal').classList.add('is-active');
+});
+
+// confirm-send-to-grapher-button listener
+$('#confirm-send-to-grapher-button').addEventListener('click', () => {
+  const saveData = saves[tabManager.activeTab - 2];
+  const originalWaveData = saveData.linearData;
+  const effectiveSampleRate = baseSampleRate / saveData.displaySampleRateLvl;
+
+  let startTime = 0;
+  let endTime = originalWaveData.getDuration();
+
+  // Determine the time range from user's choice
+  if (stgOnscreenDataButton.classList.contains('is-link')) {
+    startTime = savWaveChart.xAxis[0].min;
+    endTime = savWaveChart.xAxis[0].max;
+  } else if (stgPartButton.classList.contains('is-link')) {
+    startTime = parseFloat(stgStartSizeInput.value);
+    endTime = parseFloat(stgEndSizeInput.value);
+  }
+  
+  startTime = Math.max(0, startTime);
+  endTime = Math.min(originalWaveData.getDuration(), endTime);
+
+  const startSample = Math.round(startTime * effectiveSampleRate);
+  const endSample = Math.round(endTime * effectiveSampleRate);
+
+  // 1. Slice the temporal data
+  const slicedWaveArray = Array.from(originalWaveData.data.slice(startSample, endSample));
+  
+  // 2. Recalculate Fourier data for the selected range
+  let fourierData = null;
+  // Only compute if Fourier data exists and duration is valid
+  if (saveData.fLinearData && (endTime - startTime) > 0.001) { 
+    const waveForFourier = new LinearData(originalWaveData.data); // Use original full data
+    fourierData = computeFourier(waveForFourier, effectiveSampleRate, [startTime, endTime]);
+  }
+  
+  const curves = [];
+
+  // Create time curve
+  const timeValues = Array.from({ length: slicedWaveArray.length }, (_, i) => startTime + (i / effectiveSampleRate));
+  curves.push({ title: 'Temps', unit: 's', values: timeValues });
+
+  // Create amplitude curve
+  curves.push({ title: 'Amplitude', unit: 'u.a.', values: slicedWaveArray });
+  
+  // Create spectral curves if available
+  if (fourierData && fourierData.data.length > 0) {
+    const frequencyValues = Array.from({ length: fourierData.data.length }, (_, i) => i * fourierData.step);
+    curves.push({ title: 'Fréquence', unit: 'Hz', values: frequencyValues });
+    
+    const spectralAmplitudeValues = Array.from(fourierData.data);
+    curves.push({ title: 'Amplitude spectrale', unit: 'u.a.', values: spectralAmplitudeValues });
+  }
+
+  const dataForGrapher = {
+    source: 'audio',
+    payload: { curves: curves }
+  };
+
+  console.log('Data prepared for Grapher:', dataForGrapher);
+  
+  // Send data to Grapher
+  if (window.electronAPI) {
+    window.electronAPI.openGrapherWindow(dataForGrapher);
+  } else {
+    sessionStorage.setItem('phyweb-import-data', JSON.stringify(dataForGrapher));
+    window.open('../grapher/index.html', '_blank');
+  }
+
+  $('#send-to-grapher-modal').classList.remove('is-active');
+});
 
 /*----------------------------------------------------------------------------------------------
 ------------------------Format milliseconds to a displayable time layout------------------------

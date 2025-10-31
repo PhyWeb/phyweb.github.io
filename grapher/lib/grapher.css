@@ -70,11 +70,6 @@
   z-index: 180 !important;
 }
 
-#menu-dropdown-container .navbar-dropdown {
-  right: 0;
-  left: auto;
-}
-
 #grapheur-panel {
   flex-grow: 1;
   overflow: hidden;

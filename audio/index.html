@@ -84,11 +84,30 @@
               <span class="icon is-medium"><i class="fas fa-compress"></i></span>
             </button>
           </div>
+          <div class="navbar-item has-dropdown" id="menu-dropdown-container">
+            <a class="navbar-link" id="menu-dropdown-toggle">
+              Menu
+            </a>
+            <div class="navbar-dropdown is-size-6" id="menu-dropdown-content">
+              <a class="navbar-item" id="new-session-button">
+                <span class="icon"><i class="fa-solid fa-file-circle-plus"></i></span>
+                <span>Nouvelle session</span>
+              </a>
+              <a class="navbar-item" id="save-button">
+                <span class="icon"><i class="fa-solid fa-save"></i></span>
+                <span>Sauvegarder</span>
+              </a>
+              <a class="navbar-item" id="send-to-grapher-button">
+                <span class="icon"><i class="fa-solid fa-chart-line"></i></span>
+                <span>Envoyer vers Grapher</span>
+              </a>
+            </div>
+          </div>
           <div class="window-controls"></div>
         </div>
       </div>
     </nav>
-    <div class="columns pl-3 m-0">
+    <div class="columns pl-3 m-0 is-hidden" id="tab-bar">
       <div class="column is-narrow tabs m-0 p-0">
         <ul>
           <li class="is-active" id="rt-tab-button"><a>Temps Réel</a></li>
@@ -104,9 +123,30 @@
     </div>
   </div>
   <!------------------------------------------------------------------------------------------------------------>
+  <!------------------------------------------------EMPTY STATE------------------------------------------------->
+  <!------------------------------------------------------------------------------------------------------------>
+  <div id="empty-state-container" class="section">
+    <div class="columns is-centered">
+      <div class="column is-narrow has-text-centered" >
+        <div class="box" style="padding: 2rem;" style="width: 600px;">
+          <p class="subtitle is-4">Bienvenue sur PhyWeb Audio</p>
+          <p class="mb-5">Pour commencer, choisissez entre le mode simple ou le mode complet.</p>
+          <div class="buttons is-centered">
+            <button class="button is-primary is-medium wrap-button-text" id="simple-mode-button" style="width:20rem">
+              <p><strong>Mode simple</strong><br/>(Sans analyse fréquentielle)</p>
+            </button>
+            <button class="button is-primary is-medium wrap-button-text" id="complete-mode-button" style="width:20rem">
+              <p><strong>Mode complet</strong><br/>(Avec analyse fréquentielle)</p>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!------------------------------------------------------------------------------------------------------------>
   <!----------------------------------------------------RT------------------------------------------------------>
   <!------------------------------------------------------------------------------------------------------------>
-  <div class="columns is-flex-grow-1 main-container" id="rt-panel">
+  <div class="columns is-flex-grow-1 is-hidden main-container" id="rt-panel">
     <div class="column is-narrow pr-0 pb-0" style="width: calc(100vw - 300px)">
       <div class="block box mb-3" id="rt-graph-container" style="height: calc(55vh - 65px)">
       </div>
@@ -322,37 +362,10 @@
               </div>
             </div>
           </div>
-          <button class="button is-fullwidth is-primary" id="download-button">
-            <span class="icon">
-              <i class="fas fa-download"></i>
-            </span>
-            <span>Télécharger</span>
-          </button>
         </div>
       </div>
     </div>
   </div>
-  </div>
-  <!------------------------------------------------------------------------------------------------------------>
-  <!--------------------------------------------CHOOSE CONFIG MODAL--------------------------------------------->
-  <!------------------------------------------------------------------------------------------------------------>
-  <div id="choose-config-modal" class="modal">
-    <div class="modal-background"></div>
-    <div class="modal-card" id="choose-config-modal-card">
-      <header class="modal-card-head has-background-primary">
-        <p class="modal-card-title">Choisissez une configuration</p>
-      </header>
-      <section class="modal-card-body has-bottom-round-corner has-text-justified">
-        <div class="buttons is-centered">
-          <button class="button is-medium wrap-button-text" id="simple-mode-button" style="width:20rem">
-            <p><strong>Mode simple</strong><br/>(Sans analyse fréquentielle)</p>
-          </button>
-          <button class="button is-medium wrap-button-text" id="complete-mode-button" style="width:20rem">
-            <p><strong>Mode complet</strong><br/>(Avec analyse fréquentielle)</p>
-          </button>
-        </div>
-      </section>
-    </div>
   </div>
   <!------------------------------------------------------------------------------------------------------------>
   <!-------------------------------------------------SAVE MODAL------------------------------------------------->
@@ -463,6 +476,51 @@
             <i class="fas fa-download"></i>
           </span>
           <span>Télécharger le fichier</span>
+        </button>
+      </footer>
+    </div>
+  </div>
+  <!------------------------------------------------------------------------------------------------------------>
+  <!------------------------------------------- SEND TO GRAPHER MODAL ------------------------------------------>
+  <!------------------------------------------------------------------------------------------------------------>
+  <div id="send-to-grapher-modal" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title">Envoyer vers Grapher</p>
+        <button class="delete" aria-label="close"></button>
+      </header>
+      <section class="modal-card-body">
+        <p class="title is-5">Durée de l'enregistrement à envoyer</p>
+        <!-- Boutons de sélection du mode -->
+        <div class="buttons has-addons is-centered">
+          <button class="button is-link" id="stg-all-data-button"><span>Tout</span></button>
+          <button class="button" id="stg-onscreen-data-button"><span>La partie à l'écran</span></button>
+          <button class="button" id="stg-part-button"><span>Choisir une partie</span></button>
+        </div>
+
+        <!-- Panneau de sélection de la durée (slider) -->
+        <article class="message is-hidden" id="stg-data-size-panel">
+          <div class="message-body">
+            <div id="stg-duration-size-inputs">
+              <div class="mb-6 mt-2" id="stg-data-slider"></div>
+              <div class="columns block is-vcentered">
+                <div class="column is-narrow pr-0"><label class="label">Début</label></div>
+                <div class="column"><p class="control"><input class="input" type="number" min="0" value="0" id="stg-start-size-input"></p></div>
+                <div class="column is-narrow pl-0"><label class="label">s</label></div>
+                <div class="column is-narrow pr-0"><label class="label">Fin</label></div>
+                <div class="column"><p class="control"><input class="input" type="number" min="0" value="0" id="stg-end-size-input"></p></div>
+                <div class="column is-narrow pl-0"><label class="label">s</label></div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+      </section>
+      <footer class="modal-card-foot">
+        <button class="button is-fullwidth is-primary" id="confirm-send-to-grapher-button">
+          <span class="icon"><i class="fas fa-paper-plane"></i></span>
+          <span>Envoyer les données</span>
         </button>
       </footer>
     </div>
