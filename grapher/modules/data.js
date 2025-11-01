@@ -495,7 +495,7 @@ export default class Data {
     let curve = new Curve(title, unit, color, line, markers);
 
     if (size !== undefined) {
-        curve.init(size, fill);
+      curve.init(size, fill);
     }
 
     this.curves.push(curve);

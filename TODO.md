@@ -50,9 +50,7 @@
 
     - petite animations (pour l'ouverture du panel modèles)
 
-    - ne pas afficher la splashscreen quand on recot des donné via interapp (de audio ce se voit)
-
-    - BUG quand on ouvre un csv sans unité la premiere ligne est vide (seulement dans ce cas ?) 
+    - ne pas afficher la splashscreen quand on recoit des donné via interapp (de audio ce se voit)
 
 
 # MISC
