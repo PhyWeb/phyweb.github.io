@@ -52,10 +52,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const interAppDataJSON = sessionStorage.getItem('phyweb-import-data');
   const newFileModal = $('#new-file-modal');
   if (interAppDataJSON) {
+    // Masquer l'état vide
+    $('#empty-state-container').classList.add('is-hidden');
     // Afficher la modale "Nouveau fichier" pendant le chargement
     newFileModal.classList.add('is-active');
     // Afficher un loader dans la modale
     uiManager.setModalLoading(true);
+    setTimeout(() => {
     try {
       // Délégué le chargement à l'IOManager
       app.ioManager.loadInterAppJSON(interAppDataJSON);
@@ -72,6 +75,8 @@ document.addEventListener('DOMContentLoaded', () => {
       // Enlever le loader
       uiManager.setModalLoading(false);
     }
+        }, 50); // 50ms suffisent pour permettre au navigateur de rendre l'interface
+
   }
 
   // Gestion du redimensionnement de la fenêtre

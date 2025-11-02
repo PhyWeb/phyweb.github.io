@@ -853,7 +853,10 @@ loadPWFile(file) {
 
     } catch (e) {
       console.error("Échec du traitement des données inter-applications:", e);
-      throw new Error("Les données reçues sont corrompues ou dans un format inattendu.");
+      // Alerte d'erreur sans fermer la modale (permet fallback import)
+      alertModal(
+        { type: 'warning', title: 'Erreur de chargement', body: "Échec du traitement des données inter-applications", confirm: 'OK' }
+      );
     }
   }
 
