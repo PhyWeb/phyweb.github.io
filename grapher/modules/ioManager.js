@@ -593,13 +593,26 @@ loadPWFile(file) {
             while (i < lines.length && count < n) {
               const val = lines[i].trim();
               if (val) {
-                const cols = val.split(/\s+/).map(s => Number.parseFloat(String(s).replace(',', '.')));
-                if (cols.length === mCount && cols.every(Number.isFinite)) {
-                  rows.push(cols);
-                  count++;
-                }
+                  // Convertit chaque valeur en nombre, ou en 'null' si invalide
+                  const cols = val.split(/\s+/).map(s => {
+                      const num = Number.parseFloat(String(s).replace(',', '.'));
+                      return Number.isFinite(num) ? num : null;
+                  });
+
+                  // Remplit avec 'null' si la ligne est plus courte que prévu
+                  while (cols.length < mCount) {
+                      cols.push(null);
+                  }
+                  
+                  // Tronque la ligne si elle est plus longue et l'ajouter aux résultats
+                  rows.push(cols.slice(0, mCount));
+
+              } else {
+                  // Si une ligne de données est vide, la traiter comme une ligne de 'null'
+                  rows.push(Array(mCount).fill(null));
               }
               i++;
+              count++;
             }
 
             loadedVarValues = true;
