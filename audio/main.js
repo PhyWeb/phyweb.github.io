@@ -719,20 +719,20 @@ $("#download-file-button").addEventListener('click', () => {
 });
 
 function downloadData(_series, _type, _name){
-  let sr = baseSampleRate / saves[tabManager.activeTab-2].displaySampleRateLvl;
+  //let sr = baseSampleRate / saves[tabManager.activeTab-2].displaySampleRateLvl;
 
   // Format the time serie
-  for(let i = 0; i < _series[1].length; i++){
+  /*for(let i = 0; i < _series[1].length; i++){
     _series[0][i] = i / sr;
-  }
+  }*/
 
   // Download the file
   let file;
   if(_type === "csv"){
-    file = exportToCSV(_series, true);
+    file = exportToCSV(_series, false);
   }
   if(_type === "rw3"){
-    file = exportToRW3(_series, true, "Enregistrement PhyWeb Audio");
+    file = exportToRW3(_series, false, "Enregistrement PhyWeb Audio");
   }
   downloadFile(file, _type, _name)
 }
