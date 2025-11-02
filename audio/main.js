@@ -724,7 +724,7 @@ function downloadData(_series, _type, _name){
   // Format the time serie
   /*for(let i = 0; i < _series[1].length; i++){
     _series[0][i] = i / sr;
-  }
+  }*/
 
   // Download the file
   let file;
