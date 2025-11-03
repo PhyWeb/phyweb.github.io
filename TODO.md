@@ -23,7 +23,9 @@
     - play the selected part of the audio when downloading
 
     - function to download the dft too
+
     - permettre de télécharger depuis les onglets RT et REC et virer le warning
+    - creer un wizard pour le téléchargement en étape (comme ca on peut dl a partir de nimporte ou, le choix se fait dans le wizard)
 
     - mettre en place la confirmation de quit (notament quand on veut creer une nouvelle session)
 
