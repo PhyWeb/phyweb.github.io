@@ -14,6 +14,8 @@
 
     - ajouter les licences des libs qui n'en ont pas
 
+    - Deplacer le a propos dans le menu ?
+
     - REGRESSI ne lit que les lignes completes. Il faut un disclaimer quand on genere un rw3 incomplet
 
 # Home
