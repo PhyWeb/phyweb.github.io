@@ -10,6 +10,8 @@
     - mettre une icone en grand (dans le background) de chaque app pour visuellement rapidement voir ou on est.
       - du coup centrer verticalement le splashscreen ?
 
+    - mettre en place une fonction tsv vers pw pour générer des pw
+
 # Home
     - package linux et macos
 
@@ -51,6 +53,8 @@
     - petite animations (pour l'ouverture du panel modèles)
 
     - ne pas afficher la splashscreen quand on recoit des donné via interapp (de audio ce se voit)
+
+    - regler le zoom auto !
 
 
 # MISC
