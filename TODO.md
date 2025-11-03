@@ -50,7 +50,7 @@
 
     - petite animations (pour l'ouverture du panel modèles)
 
-    - ne pas afficher la splashscreen quand on recoit des donné via interapp (de audio ce se voit)
+    - ne pas afficher la splashscreen quand on recoit des donné via interapp (de audio ce se v
 
 
 # MISC
