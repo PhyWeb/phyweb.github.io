@@ -12,6 +12,10 @@
 
     - mettre en place une fonction tsv vers pw pour générer des pw
 
+    - ajouter les licences des libs qui n'en ont pas
+
+    - REGRESSI ne lit que les lignes completes. Il faut un disclaimer quand on genere un rw3 incomplet
+
 # Home
     - package linux et macos
 
@@ -57,6 +61,7 @@
     - ne pas afficher la splashscreen quand on recoit des donné via interapp (de audio ce se voit)
 
     - regler le zoom auto !
+    - repenser le inclure le zero
 
 
 # MISC

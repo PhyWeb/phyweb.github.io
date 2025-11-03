@@ -12,7 +12,7 @@ const PADDING = 0.02; // 2% de padding pour le zoom auto
     const chart = this.chart;
     
     // Vérifie si c'est un reset zoom (newMin et newMax null) et option activée
-    if (newMin === null && newMax === null && chart.options?.customGrapherInstance?.includeOriginOnAutoZoom !== undefined) {
+    if (newMin === null && newMax === null && chart.options.customGrapherInstance.includeOriginOnAutoZoom){
       // Calcule manuellement les extrêmes globaux pour cet axe
       let globalDataMin = Infinity;
       let globalDataMax = -Infinity;
