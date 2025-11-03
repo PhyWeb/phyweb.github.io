@@ -46,6 +46,8 @@
 
 # Grapher
     - permettre de visualiser les bornes des modèles
+    - permettre d'exclure un point d'une modélisation
+    
     - méthode des tangentes
     - possibilité d'avoir 2 axes y
 
