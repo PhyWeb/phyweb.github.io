@@ -10,6 +10,14 @@
     - mettre une icone en grand (dans le background) de chaque app pour visuellement rapidement voir ou on est.
       - du coup centrer verticalement le splashscreen ?
 
+    - mettre en place une fonction tsv vers pw pour générer des pw
+
+    - ajouter les licences des libs qui n'en ont pas
+
+    - Deplacer le a propos dans le menu ?
+
+    - REGRESSI ne lit que les lignes completes. Il faut un disclaimer quand on genere un rw3 incomplet
+
 # Home
     - package linux et macos
 
@@ -21,7 +29,9 @@
     - play the selected part of the audio when downloading
 
     - function to download the dft too
+
     - permettre de télécharger depuis les onglets RT et REC et virer le warning
+    - creer un wizard pour le téléchargement en étape (comme ca on peut dl a partir de nimporte ou, le choix se fait dans le wizard)
 
     - mettre en place la confirmation de quit (notament quand on veut creer une nouvelle session)
 
@@ -36,6 +46,8 @@
 
 # Grapher
     - permettre de visualiser les bornes des modèles
+    - permettre d'exclure un point d'une modélisation
+    
     - méthode des tangentes
     - possibilité d'avoir 2 axes y
 
@@ -49,8 +61,6 @@
     - export image / print
 
     - petite animations (pour l'ouverture du panel modèles)
-
-    - ne pas afficher la splashscreen quand on recoit des donné via interapp (de audio ce se v
 
 
 # MISC

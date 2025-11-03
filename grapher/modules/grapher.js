@@ -12,7 +12,7 @@ const PADDING = 0.02; // 2% de padding pour le zoom auto
     const chart = this.chart;
     
     // Vérifie si c'est un reset zoom (newMin et newMax null) et option activée
-    if (newMin === null && newMax === null && chart.options?.customGrapherInstance?.includeOriginOnAutoZoom !== undefined) {
+    if (newMin === null && newMax === null && chart.options.customGrapherInstance.includeOriginOnAutoZoom){
       // Calcule manuellement les extrêmes globaux pour cet axe
       let globalDataMin = Infinity;
       let globalDataMax = -Infinity;
@@ -23,21 +23,36 @@ const PADDING = 0.02; // 2% de padding pour le zoom auto
         : chart.series.filter(s => s.visible && (s.yAxis ? s.yAxis.index === axisIndex : true));  // Y : séries attachées à cet axe
       
       relevantSeries.forEach(series => {
-        if (series.data && series.data.length > 0) {
-          let seriesMin = Infinity;
-          let seriesMax = -Infinity;
-          series.data.forEach(pointData => {
-            const value = isXAxis ? pointData.x : pointData.y;
-            if (value !== undefined && !isNaN(value) && isFinite(value)) {
-              seriesMin = Math.min(seriesMin, value);
-              seriesMax = Math.max(seriesMax, value);
-            }
+          // **LA CORRECTION** : On utilise `series.options.data` qui contient TOUTES les données.
+          const allPoints = series.options.data;
+
+          if (!allPoints || allPoints.length === 0) {
+              return; // Passe à la série suivante si pas de données
+          }
+
+          // Détecte si les données sont au format [x,y] ou {x, y}
+          const isArrayData = Array.isArray(allPoints[0]);
+
+          // Itère sur la totalité des points de la série
+          allPoints.forEach(pointData => {
+              let value;
+
+              if (isArrayData) {
+                  // Format [x, y]
+                  value = isXAxis ? pointData[0] : pointData[1];
+              } else if (pointData && typeof pointData === 'object') {
+                  // Format {x: ..., y: ...}
+                  value = isXAxis ? pointData.x : pointData.y;
+              }
+
+              // Met à jour les extrêmes globaux si la valeur est valide
+              if (value !== undefined && !isNaN(value) && isFinite(value)) {
+                  globalDataMin = Math.min(globalDataMin, value);
+                  globalDataMax = Math.max(globalDataMax, value);
+              }
           });
-          globalDataMin = Math.min(globalDataMin, seriesMin);
-          globalDataMax = Math.max(globalDataMax, seriesMax);
-        }
       });
-      
+      console.log("Calculated global data range for auto-zoom:", globalDataMin, globalDataMax);
       const hasData = globalDataMin !== Infinity && globalDataMax !== -Infinity;
       if (hasData) {
         let finalMin = Math.min(globalDataMin, 0);
