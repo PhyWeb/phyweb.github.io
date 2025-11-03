@@ -60,10 +60,6 @@
 
     - ne pas afficher la splashscreen quand on recoit des donné via interapp (de audio ce se voit)
 
-    - regler le zoom auto !
-    - repenser le inclure le zero
-
-
 # MISC
     - tester sur petit ecran (et faire les adaptations nécessaires)
 
