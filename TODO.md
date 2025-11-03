@@ -58,8 +58,6 @@
 
     - petite animations (pour l'ouverture du panel modèles)
 
-    - ne pas afficher la splashscreen quand on recoit des donné via interapp (de audio ce se voit)
-
 # MISC
     - tester sur petit ecran (et faire les adaptations nécessaires)
 
