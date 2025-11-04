@@ -22,13 +22,9 @@
     - package linux et macos
 
 # Audio
-    - creer un menu comme dans les autres app
-    - Ajouter la possibilité de passer les données de audio directement à grapher via sessionStorage
     - preview wave when loading a file
     - fft add 0s to have a power of two and use faster fft ??
     - play the selected part of the audio when downloading
-
-    - function to download the dft too
 
     - permettre de télécharger depuis les onglets RT et REC et virer le warning
     - creer un wizard pour le téléchargement en étape (comme ca on peut dl a partir de nimporte ou, le choix se fait dans le wizard)
@@ -47,7 +43,7 @@
 # Grapher
     - permettre de visualiser les bornes des modèles
     - permettre d'exclure un point d'une modélisation
-    
+
     - méthode des tangentes
     - possibilité d'avoir 2 axes y
 
