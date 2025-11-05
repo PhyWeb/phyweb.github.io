@@ -50,7 +50,6 @@
     - possibilité d'avoir 2 axes y
 
     - utiliser la legende de highcharts pour gerer les courbes actives
-    - dropdown pour choisir l'abscisse en bout d'axe
 
     - BUG : les icones du menu nouveau apparraissent en retard sur le ptb (again)
 

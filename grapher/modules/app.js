@@ -56,6 +56,9 @@ export default class App {
     // Update the sorting options
     this.uiManager.updateSortUI();
 
+    // Update the X axis selector
+    this.uiManager.updateXAxisSelector();
+
     return curve;
   }
 
@@ -90,6 +93,9 @@ export default class App {
 
     // Update the sorting options
     this.uiManager.updateSortUI();
+
+    // Update the X axis selector
+    this.uiManager.updateXAxisSelector();
   }
 
 
@@ -141,6 +147,7 @@ export default class App {
     this.spreadsheet.update();
     this.grapher.updateChart();
     this.uiManager.updateSortUI();
+    this.uiManager.updateXAxisSelector();
     this.uiManager.updateCalculationUI();
     this.data.models.forEach(model => this.uiManager.updateModelPanel(model));
     
@@ -190,6 +197,9 @@ export default class App {
 
     // Update the sorting options
     this.uiManager.updateSortUI();
+
+    // Update the X axis selector
+    this.uiManager.updateXAxisSelector();
   }
 
   deleteRow(startRow, amount) {
@@ -477,6 +487,7 @@ export default class App {
       this.grapher.updateChart();
       this.uiManager.updateCalculationUI();
       this.uiManager.updateSortUI();
+      this.uiManager.updateXAxisSelector();
     }
 
     // Si un RW3 a été chargé juste avant, on ajoute les courbes demandées

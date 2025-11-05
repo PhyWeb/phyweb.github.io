@@ -344,6 +344,8 @@ loadPWFile(file) {
         this.app.uiManager.updateCalculationUI();
         this.app.uiManager.updateAllModelPanelVisibilityIcons();
         this.app.uiManager.updateRecalculateButtonVisibility();
+        this.app.uiManager.updateSortUI();
+        this.app.uiManager.updateXAxisSelector();
         this.app.grapher.updateModelVisibility();
         this.app.grapher.chart.redraw();
         this.app.grapher.resetZoom();
@@ -593,23 +595,23 @@ loadPWFile(file) {
             while (i < lines.length && count < n) {
               const val = lines[i].trim();
               if (val) {
-                  // Convertit chaque valeur en nombre, ou en 'null' si invalide
-                  const cols = val.split(/\s+/).map(s => {
-                      const num = Number.parseFloat(String(s).replace(',', '.'));
-                      return Number.isFinite(num) ? num : null;
-                  });
+                // Convertit chaque valeur en nombre, ou en 'null' si invalide
+                const cols = val.split(/\s+/).map(s => {
+                  const num = Number.parseFloat(String(s).replace(',', '.'));
+                  return Number.isFinite(num) ? num : null;
+                });
 
-                  // Remplit avec 'null' si la ligne est plus courte que prévu
-                  while (cols.length < mCount) {
-                      cols.push(null);
-                  }
-                  
-                  // Tronque la ligne si elle est plus longue et l'ajouter aux résultats
-                  rows.push(cols.slice(0, mCount));
+                // Remplit avec 'null' si la ligne est plus courte que prévu
+                while (cols.length < mCount) {
+                  cols.push(null);
+                }
+                
+                // Tronque la ligne si elle est plus longue et l'ajouter aux résultats
+                rows.push(cols.slice(0, mCount));
 
               } else {
-                  // Si une ligne de données est vide, la traiter comme une ligne de 'null'
-                  rows.push(Array(mCount).fill(null));
+                // Si une ligne de données est vide, la traiter comme une ligne de 'null'
+                rows.push(Array(mCount).fill(null));
               }
               i++;
               count++;
@@ -828,6 +830,9 @@ loadPWFile(file) {
       this.app.grapher.chart.yAxis[0].setExtremes(null, null);
 
       this.app.uiManager.updateCalculationUI();
+
+      this.app.uiManager.updateSortUI();
+      this.app.uiManager.updateXAxisSelector();
 
     } finally {
       this.isLoading = false; // Assure que le drapeau est réinitialisé même en cas d'erreur

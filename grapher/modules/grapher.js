@@ -23,36 +23,34 @@ const PADDING = 0.02; // 2% de padding pour le zoom auto
         : chart.series.filter(s => s.visible && (s.yAxis ? s.yAxis.index === axisIndex : true));  // Y : séries attachées à cet axe
       
       relevantSeries.forEach(series => {
-          // **LA CORRECTION** : On utilise `series.options.data` qui contient TOUTES les données.
-          const allPoints = series.options.data;
+        const allPoints = series.options.data;
 
-          if (!allPoints || allPoints.length === 0) {
-              return; // Passe à la série suivante si pas de données
+        if (!allPoints || allPoints.length === 0) {
+          return; // Passe à la série suivante si pas de données
+        }
+
+        // Détecte si les données sont au format [x,y] ou {x, y}
+        const isArrayData = Array.isArray(allPoints[0]);
+
+        // Itère sur la totalité des points de la série
+        allPoints.forEach(pointData => {
+          let value;
+
+          if (isArrayData) {
+            // Format [x, y]
+            value = isXAxis ? pointData[0] : pointData[1];
+          } else if (pointData && typeof pointData === 'object') {
+            // Format {x: ..., y: ...}
+            value = isXAxis ? pointData.x : pointData.y;
           }
 
-          // Détecte si les données sont au format [x,y] ou {x, y}
-          const isArrayData = Array.isArray(allPoints[0]);
-
-          // Itère sur la totalité des points de la série
-          allPoints.forEach(pointData => {
-              let value;
-
-              if (isArrayData) {
-                  // Format [x, y]
-                  value = isXAxis ? pointData[0] : pointData[1];
-              } else if (pointData && typeof pointData === 'object') {
-                  // Format {x: ..., y: ...}
-                  value = isXAxis ? pointData.x : pointData.y;
-              }
-
-              // Met à jour les extrêmes globaux si la valeur est valide
-              if (value !== undefined && !isNaN(value) && isFinite(value)) {
-                  globalDataMin = Math.min(globalDataMin, value);
-                  globalDataMax = Math.max(globalDataMax, value);
-              }
-          });
+          // Met à jour les extrêmes globaux si la valeur est valide
+          if (value !== undefined && !isNaN(value) && isFinite(value)) {
+            globalDataMin = Math.min(globalDataMin, value);
+            globalDataMax = Math.max(globalDataMax, value);
+          }
+        });
       });
-      console.log("Calculated global data range for auto-zoom:", globalDataMin, globalDataMax);
       const hasData = globalDataMin !== Infinity && globalDataMax !== -Infinity;
       if (hasData) {
         let finalMin = Math.min(globalDataMin, 0);
@@ -187,6 +185,7 @@ export default class Grapher {
         type: "line",
         alignTicks: false,
         animation: ANIMATION_FLAG,
+        marginBottom: 60,
         events: {
           load : function () {
             const chart = this;
@@ -197,7 +196,7 @@ export default class Grapher {
             function drawArrows() {
               // Supprimer les anciennes flèches s’il y en a
               if (chart.customArrows) {
-                  chart.customArrows.forEach(a => a.destroy());
+                chart.customArrows.forEach(a => a.destroy());
               }
 
               chart.customArrows = [];
@@ -237,7 +236,8 @@ export default class Grapher {
                 unitText = xUnit;
               }
 
-              let labelText = self.currentXCurve;
+              // Ancien label X (désactivé)
+              /*let labelText = self.currentXCurve;
               if (unitText) {
                 labelText += ` (${unitText})`;
               }
@@ -256,7 +256,7 @@ export default class Grapher {
                   fontSize: '16px'
                 })
                 .add();
-              chart.customArrows.push(labelX);
+              chart.customArrows.push(labelX);*/
 
               // Flèche Y (haut)
               const yEnd = yAxis.toPixels(yAxis.max);
@@ -583,9 +583,13 @@ export default class Grapher {
 
   setXCurve(title, redraw = true){
     this.currentXCurve = title;
-    this.updateModelVisibility(); // Appeler la méthode de mise à jour de la visibilité des modèles.
+    this.updateModelVisibility();
+
     if(redraw){
-      this.updateChart();
+      //Met à jour les données sans redessiner
+      this.updateChart(null, false);
+
+      this.resetZoom(true); // Redessine après le reset zoom
     }
   }
 
@@ -612,7 +616,7 @@ export default class Grapher {
     this.currentXCurve = null;
   }
 
-  updateChart(yCurveTitles){
+  updateChart(yCurveTitles, redraw = true){
     // Cas 1: Mise à jour depuis la modale "Courbes" (on sait quelles courbes afficher)
     if(this.currentXCurve && yCurveTitles){
       // Supprime les séries qui ne sont plus cochées, en ignorant les modèles
@@ -647,15 +651,22 @@ export default class Grapher {
           }
         }
       });
+      if (redraw) {
+        this.chart.redraw();
+      }
+
     // Cas 2: Mise à jour générale (après une modification du tableur)
     } else if (this.currentXCurve && this.chart.series.length > 0) {
-        this.chart.series.forEach((serie) => {
-            const curveData = this.data.getCurveByTitle(serie.name);
-            const xCurveData = this.data.getCurveByTitle(this.currentXCurve);
-            if (curveData && xCurveData) {
-                serie.setData(this.formatData(xCurveData, curveData), true); // true pour redessiner
-            }
-        });
+      this.chart.series.forEach((serie) => {
+        const curveData = this.data.getCurveByTitle(serie.name);
+        const xCurveData = this.data.getCurveByTitle(this.currentXCurve);
+        if (curveData && xCurveData) {
+          serie.setData(this.formatData(xCurveData, curveData), false); // false pour ne pas redessiner
+        }
+      });
+      if (redraw) {
+        this.chart.redraw();
+      }
     }
   }
 
@@ -796,13 +807,15 @@ export default class Grapher {
    * Réinitialise le zoom du graphique pour afficher toutes les données
    * et met à jour l'interface utilisateur correspondante.
    */
-  resetZoom() {
+  resetZoom(redraw = true) {
     // Réinitialise les extrêmes des axes de Highcharts
     this.chart.xAxis[0].setExtremes(null, null, false);
     this.chart.yAxis[0].setExtremes(null, null, false);
 
     // Un seul redraw final pour les deux axes
-    this.chart.redraw();
+    if (redraw) {
+      this.chart.redraw();
+    }
     
     // Mise à jour UI
     this.uiManager.resetZoomUI();

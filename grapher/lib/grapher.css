@@ -229,6 +229,18 @@
   min-height: 4em; /* Réserve une hauteur équivalente à ~2 lignes de texte */
 }
 
+#xaxis-selector-container {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  z-index: 10; /* Assure que le menu est au-dessus du graphique */
+}
+
+/* Optionnel : pour éviter que le menu ne soit trop large */
+#xaxis-select {
+  field-sizing: content;
+}
+
 @keyframes fadeOut {
   0% {
     opacity: 1;

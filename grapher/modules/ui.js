@@ -34,6 +34,7 @@ export default class UIManager {
     this.initSaveModal();
     this.initSpreadsheetControls();
     this.initGrapherControls();
+    this.initXAxisSelector();
     this.initModelisationControls();
     this.initCalculationControls();
 
@@ -311,6 +312,29 @@ export default class UIManager {
       button.classList.remove('is-hidden');
     } else {
       button.classList.add('is-hidden');
+    }
+  }
+
+  /**
+   * Met à jour le menu déroulant pour la sélection de l'abscisse.
+   */
+  updateXAxisSelector() {
+    const select = $('#xaxis-select');
+    if (!select) return;
+
+    const selectedValue = this.grapher.currentXCurve;
+    select.innerHTML = ''; // Vide les options actuelles
+
+    this.data.curves.forEach(curve => {
+      const option = document.createElement('option');
+      option.value = curve.title;
+      option.textContent = curve.title;
+      select.appendChild(option);
+    });
+
+    // Restaure la sélection précédente si elle existe
+    if (selectedValue) {
+      select.value = selectedValue;
     }
   }
 
@@ -780,6 +804,7 @@ export default class UIManager {
    */
   initSpreadsheetControls() {
     this.updateSortUI();
+    this.updateXAxisSelector();
 
     // Ajouter l'écouteur pour le bouton de tri
     $('#sort-button').addEventListener('click', () => {
@@ -1195,6 +1220,19 @@ export default class UIManager {
     // Ajout de l'écouteur pour le bouton de suppression des annotations
     $("#clear-annotations-button").addEventListener("click", () => {
         this.grapher.clearAllAnnotations();
+    });
+  }
+
+  /**
+   * Initialise le menu déroulant de sélection de l'abscisse.
+   */
+  initXAxisSelector() {
+    const select = $('#xaxis-select');
+
+    select.addEventListener('change', (e) => {
+      const newXAxis = e.target.value;
+      // Appelle la méthode de grapher.js pour changer l'axe des x
+      this.grapher.setXCurve(newXAxis);
     });
   }
 
