@@ -225,6 +225,10 @@
   animation: fadeOut 2s forwards; /* Durée totale de 2s avant disparition */
 }
 
+#save-format-warning {
+  min-height: 4em; /* Réserve une hauteur équivalente à ~2 lignes de texte */
+}
+
 @keyframes fadeOut {
   0% {
     opacity: 1;

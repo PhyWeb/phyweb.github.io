@@ -737,6 +737,16 @@ export default class UIManager {
       $("#csv-button").classList.toggle("is-link", newFormat === 'csv');
       $("#rw3-button").classList.toggle("is-link", newFormat === 'rw3');
 
+      // Affiche ou cache le message d'avertissement en fonction du format choisi.
+      const warningElement = $('#save-format-warning');
+      if (newFormat === 'csv') {
+        warningElement.innerHTML = "Le format CSV ne sauvegarde que les données du tableur. Les courbes calculées, modèles et annotations seront perdus.";
+      } else if (newFormat === 'rw3') {
+        warningElement.innerHTML = "Le format RW3 ne sauvegarde que les données du tableur et les courbes calculées. Les modèles et annotations seront perdus.";
+      } else{
+        warningElement.innerHTML = "";
+      }
+
       // Met à jour le placeholder et la valeur du nom de fichier
       const baseName = (fileNameInput.value.split('.')[0] || 'session');
       fileNameInput.placeholder = `${baseName}.${newFormat}`;
