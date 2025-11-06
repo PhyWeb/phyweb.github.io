@@ -50,6 +50,9 @@ export default class App {
       this.grapher.updateChart([title]);
     }
 
+    // Update the spreadsheet
+    this.spreadsheet.update();
+
     // Update the calculation tab
     this.uiManager.updateCalculationUI();
 

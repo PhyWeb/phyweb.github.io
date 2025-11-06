@@ -332,7 +332,8 @@ loadPWFile(file) {
         
         if (state.grapher) {
           this.app.grapher.setXCurve(state.grapher.xCurve, false);
-          this.app.grapher.updateChart(state.grapher.yCurves);
+          this.app.grapher.updateChart();
+          this.app.grapher.setVisibilityFromList(state.grapher.yCurves);
         }
 
         if (state.sort && state.sort.lastSortVariable) {
@@ -347,6 +348,7 @@ loadPWFile(file) {
         this.app.uiManager.updateSortUI();
         this.app.uiManager.updateXAxisSelector();
         this.app.grapher.updateModelVisibility();
+        this.app.grapher.reorderLegendByVisibility();
         this.app.grapher.chart.redraw();
         this.app.grapher.resetZoom();
 
@@ -705,7 +707,9 @@ loadPWFile(file) {
       if (chosenX) this.app.grapher.setXCurve(chosenX, false);
 
       const yNow = graphY.filter(t => existingTitles.includes(t));
-      if (yNow.length) this.app.grapher.updateChart(yNow); else this.app.grapher.updateChart();
+      this.app.grapher.updateChart();
+      this.app.grapher.reorderLegendByVisibility();
+      if (yNow.length) this.app.grapher.setVisibilityFromList(yNow);
 
       // Y à activer plus tard (courbes calculées absentes pour l’instant)
       this.app.pendingRW3 = {
@@ -825,6 +829,7 @@ loadPWFile(file) {
       this.app.applyCalculation(this.app.editor.getValue()); // Re-applique les calculs
       this.app.spreadsheet.update();
       this.app.grapher.updateChart();
+      this.app.grapher.reorderLegendByVisibility();
 
       this.app.grapher.chart.xAxis[0].setExtremes(null, null);
       this.app.grapher.chart.yAxis[0].setExtremes(null, null);

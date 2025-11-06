@@ -117,12 +117,6 @@ Highcharts.SVGRenderer.prototype.symbols.crossX = function (x, y, w, h) {
   ];
 };
 
-// Prevent legend click ------------------------------------------------------------------------
-function legendClickCB(e){
-  // TODO ouvrir le menu de la courbe
-  return false; // Prevent default action (hide/show series)
-}
-
 /*----------------------------------------------------------------------------------------------
 ----------------------------------------------Grapher-------------------------------------------
 ----------------------------------------------------------------------------------------------*/
@@ -336,9 +330,6 @@ export default class Grapher {
         verticalAlign: 'top',
         x: 0,
         y: -10,
-        events: {
-          itemClick: legendClickCB
-        }
       },
       tooltip: {
         enabled: false,
@@ -505,6 +496,13 @@ export default class Grapher {
               enabled: false,
               lineWidthPlus: 0 
             }
+          },
+          events: {
+            legendItemClick: function () {
+              const grapher = this.chart.options.customGrapherInstance;
+              setTimeout(() => grapher?.reorderLegendByVisibility(), 0);
+              return true;
+            }
           }
         }
       },
@@ -581,6 +579,28 @@ export default class Grapher {
     });
   }
 
+  reorderLegendByVisibility() {
+    const series = this.chart.series.filter(s => s.options.showInLegend !== false);
+    const visibleSeries = series.filter(s => s.visible);
+    const hiddenSeries  = series.filter(s => !s.visible);
+    const sorted = [...visibleSeries, ...hiddenSeries];
+    sorted.forEach((s, idx) => {
+      if (s.options.legendIndex !== idx) s.update({ legendIndex: idx }, false);
+    });
+    this.chart.redraw();
+  }
+
+setVisibilityFromList(titles) {
+  const wanted = new Set(titles);
+  this.chart.series
+    .filter(s => !s.options.id?.startsWith('model-'))
+    .forEach(s => {
+      const should = wanted.has(s.name);
+      if (s.visible !== should) s.setVisible(should, false);
+    });
+  this.reorderLegendByVisibility();
+}
+
   setXCurve(title, redraw = true){
     this.currentXCurve = title;
     this.updateModelVisibility();
@@ -616,59 +636,88 @@ export default class Grapher {
     this.currentXCurve = null;
   }
 
-  updateChart(yCurveTitles, redraw = true){
-    // Cas 1: Mise à jour depuis la modale "Courbes" (on sait quelles courbes afficher)
-    if(this.currentXCurve && yCurveTitles){
-      // Supprime les séries qui ne sont plus cochées, en ignorant les modèles
-      let i = this.chart.series.length;
-      while (i--) {
-        const serie = this.chart.series[i];
-        if (yCurveTitles.indexOf(serie.name) === -1 && !serie.options.id?.startsWith('model-')) {
-          serie.remove();
-        }
-      }
-      
-      // Ajoute les nouvelles séries cochées
-      yCurveTitles.forEach(title => {
-        if (!this.chart.series.some(s => s.name === title)) {
-          const curve = this.data.getCurveByTitle(title);
-          if (curve) {
-            this.chart.addSeries({
-              name: title,
-              data: this.formatData(this.data.getCurveByTitle(this.currentXCurve), curve),
-              color: curve.color,
-              lineWidth: curve.line ? curve.lineWidth : 0,
-              dashStyle: curve.lineStyle,
-              marker: {
-                enabled: curve.markers,
-                symbol: curve.markerSymbol,
-                radius: curve.markerRadius,
-                lineWidth: (curve.markerSymbol === "cross" || curve.markerSymbol === "crossX") ? 1 : 0,
-                lineColor: curve.color
-              },
-              unit: curve.unit
-            });
-          }
-        }
-      });
-      if (redraw) {
-        this.chart.redraw();
-      }
+updateChart(yCurveTitles, redraw = true) {
+    if (!this.currentXCurve) return;
 
-    // Cas 2: Mise à jour générale (après une modification du tableur)
-    } else if (this.currentXCurve && this.chart.series.length > 0) {
-      this.chart.series.forEach((serie) => {
-        const curveData = this.data.getCurveByTitle(serie.name);
-        const xCurveData = this.data.getCurveByTitle(this.currentXCurve);
-        if (curveData && xCurveData) {
-          serie.setData(this.formatData(xCurveData, curveData), false); // false pour ne pas redessiner
-        }
-      });
-      if (redraw) {
-        this.chart.redraw();
+    // Déterminer les courbes à afficher
+    let curvesToShow;
+    if (yCurveTitles) {
+      curvesToShow = new Set(yCurveTitles);
+    } else {
+      // Si aucun titre n'est fourni, on essaie de conserver l'état actuel
+      const currentlyVisible = this.chart.series
+        .filter(s => s.visible && !s.options.id?.startsWith('model-'))
+        .map(s => s.name);
+      
+      if (currentlyVisible.length > 0) {
+        curvesToShow = new Set(currentlyVisible);
+      } else {
+        // Cas initial : aucune courbe n'est visible, on affiche la première disponible
+        const firstYCurve = this.data.curves.find(c => c.title !== this.currentXCurve);
+        curvesToShow = firstYCurve ? new Set([firstYCurve.title]) : new Set();
       }
     }
-  }
+
+    // 1. Ajouter toutes les courbes si elles n'existent pas déjà
+    this.data.curves.forEach(curve => {
+      //if (curve.title === this.currentXCurve) return;
+
+      const seriesExists = this.chart.series.some(s => s.name === curve.title);
+      if (!seriesExists) {
+        const shouldBeVisible = curvesToShow.has(curve.title);
+        this.chart.addSeries({
+          name: curve.title,
+          data: this.formatData(this.data.getCurveByTitle(this.currentXCurve), curve),
+          color: curve.color,
+          lineWidth: curve.line ? curve.lineWidth : 0,
+          dashStyle: curve.lineStyle,
+          marker: {
+            enabled: curve.markers,
+            symbol: curve.markerSymbol,
+            radius: curve.markerRadius,
+            lineWidth: (curve.markerSymbol === "cross" || curve.markerSymbol === "crossX") ? 1 : 0,
+            lineColor: curve.color
+          },
+          unit: curve.unit,
+          visible: shouldBeVisible, // Visibilité déterminée ici
+          showInLegend: true
+        }, false);
+      }
+    });
+
+    // 2. Mettre à jour les données et la visibilité des séries existantes
+    this.chart.series.forEach(serie => {
+      if (serie.options.id?.startsWith('model-')) return;
+      
+      const curveData = this.data.getCurveByTitle(serie.name);
+      const xCurveData = this.data.getCurveByTitle(this.currentXCurve);
+
+      if (curveData && xCurveData) {
+        serie.setData(this.formatData(xCurveData, curveData), false);
+
+        const shouldBeVisible = curvesToShow.has(serie.name);
+        if (serie.visible !== shouldBeVisible) {
+          serie.setVisible(shouldBeVisible, false);
+        }
+      }
+    });
+
+    // 3. Supprimer les séries qui n'existent plus dans les données
+    let i = this.chart.series.length;
+    while (i--) {
+      const serie = this.chart.series[i];
+      if (!serie.options.id?.startsWith('model-')) {
+        const curveExists = this.data.curves.some(c => c.title === serie.name);
+        if (!curveExists) {
+          serie.remove(false);
+        }
+      }
+    }
+
+    if (redraw) {
+      this.chart.redraw();
+    }
+}
 
   setGridVisibility(visible) {
     this.grid = visible;

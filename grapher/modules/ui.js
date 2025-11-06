@@ -1284,7 +1284,8 @@ export default class UIManager {
         const input = document.createElement("input");
         input.type = "checkbox";
         input.classList.add("mr-2");
-        input.checked = this.grapher.chart.series.some(s => s.name === curve.title);
+        const s = this.grapher.chart.series.find(s => s.name === curve.title);
+        input.checked = !!s?.visible;
 
         const span = document.createElement("span");
         span.classList.add("ml-2");
@@ -1316,7 +1317,7 @@ export default class UIManager {
           const activeCurves = Array.from(menu.querySelectorAll("input:checked")).map(
             (cb) => cb.closest("a").dataset.title
           );
-          this.grapher.updateChart(activeCurves);
+          this.grapher.setVisibilityFromList(activeCurves);
         });
 
         // Event listener for the list item click
