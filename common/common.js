@@ -385,6 +385,22 @@ function aboutModal(_app){
           </div>
         </div>
         <div class="field is-horizontal">
+            <div class="field-label is-flex-grow-0">
+                <label class="label">
+                    <span class="icon is-large"><i class="fa-brands fa-github fa-2xl"></i></span>
+                </label>
+            </div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="content">
+                        <p class="pt-3">
+                            <a href="https://github.com/PhyWeb/phyweb.github.io" target="_blank">Dépôt GitHub</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="field is-horizontal">
           <div class="field-label is-flex-grow-0">
             <label class="label">
               <span class="icon is-large"><i class="fa fa-envelope fa-2xl"></i></span>

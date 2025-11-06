@@ -1,6 +1,5 @@
 # Common
     - modal à propos: improve descriptions
-    - add a link to the github repo in the modal about
     - Etendre la confirmation de qui à quand on ferme onglet, charge d'autres données...
     - Glisser-déposer : Permettre de charger un fichier par glisser-déposer (drag and drop)
     - creer un moteur qui gere les raccourvis clavier (ctrl s et n notamment)
