@@ -1,7 +1,7 @@
 import FOURIER from "./modules/fourier.js"
 import {PhyAudio, convertFloat32ToInt16} from "./modules/audio.js"
 
-import {Common, alertModal, TabManager, NavigationManager, downloadFile, exportToCSV, exportToRW3, Serie} from "../common/common.js"
+import {Common, alertModal, TabManager, NavigationManager, downloadFile, exportToPW, exportToCSV, exportToRW3, Serie} from "../common/common.js"
 
 const $ = document.querySelector.bind(document);
 
@@ -721,31 +721,26 @@ $("#download-file-button").addEventListener('click', () => {
       }
     }
 
-    // 5. Lancer le téléchargement pour CSV ou RW3
+    // 5. Lancer le téléchargement pour PW, CSV ou RW3
     const format = $("#csv-button").classList.contains('is-link') ? 'csv' : 'rw3';
-    downloadData(series, format, filename);
+    let file;
+    let type;
+    if($("#pw-button").classList.contains("is-link")){
+      file = exportToPW(series, false);
+      type="pw";
+    }
+    if($("#csv-button").classList.contains("is-link")){
+      file = exportToCSV(series, false);
+      type="csv";
+    }
+    if($("#rw3-button").classList.contains("is-link")){
+      file = exportToRW3(series, false, "Enregistrement PhyWeb Audio");
+      type="rw3";
+    }
+    downloadFile(file, type, filename)
 
     common.modalManager.closeAllModals();
 });
-
-function downloadData(_series, _type, _name){
-  //let sr = baseSampleRate / saves[tabManager.activeTab-2].displaySampleRateLvl;
-
-  // Format the time serie
-  /*for(let i = 0; i < _series[1].length; i++){
-    _series[0][i] = i / sr;
-  }*/
-
-  // Download the file
-  let file;
-  if(_type === "csv"){
-    file = exportToCSV(_series, false);
-  }
-  if(_type === "rw3"){
-    file = exportToRW3(_series, false, "Enregistrement PhyWeb Audio");
-  }
-  downloadFile(file, _type, _name)
-}
 
 /*----------------------------------------------------------------------------------------------
 -----------------------------------------SEND TO GRAPHER----------------------------------------
