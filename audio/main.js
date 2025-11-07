@@ -620,20 +620,30 @@ $("#on-screen-button").addEventListener("click", ()=>{
 });
 
 // Format selection
+$("#pw-button").addEventListener("click", ()=>{
+  $("#wav-button").classList.remove('is-link');
+  $("#pw-button").classList.add('is-link');
+  $("#csv-button").classList.remove('is-link');
+  $("#rw3-button").classList.remove('is-link');
+  $("#file-name-input").placeholder = "enregistrement.wav";
+});
 $("#wav-button").addEventListener("click", ()=>{
   $("#wav-button").classList.add('is-link');
+  $("#pw-button").classList.remove('is-link');
   $("#csv-button").classList.remove('is-link');
   $("#rw3-button").classList.remove('is-link');
   $("#file-name-input").placeholder = "enregistrement.wav";
 });
 $("#csv-button").addEventListener("click", ()=>{
   $("#csv-button").classList.add('is-link');
+  $("#pw-button").classList.remove('is-link');
   $("#rw3-button").classList.remove('is-link');
   $("#wav-button").classList.remove('is-link');
   $("#file-name-input").placeholder = "enregistrement.csv";
 });
 $("#rw3-button").addEventListener("click", ()=>{
   $("#rw3-button").classList.add('is-link');
+  $("#pw-button").classList.remove('is-link');
   $("#csv-button").classList.remove('is-link');
   $("#wav-button").classList.remove('is-link');
   $("#file-name-input").placeholder = "enregistrement.rw3";
