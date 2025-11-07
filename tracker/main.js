@@ -4,7 +4,8 @@ import EXTRACTOR from "./modules/extractor.js"
 import MEASUREMENT from "./modules/measurement.js"
 import PLAYER from "./modules/player.js"
 
-import {Common, alertModal, NavigationManager} from "../common/common.js"
+import {Common, alertModal, NavigationManager} from "../common/modules/common.js"
+import { exportToTSV } from "../common/modules/io.js";
 
 const $ = document.querySelector.bind(document);
 
@@ -424,12 +425,20 @@ $("#file-name-input").addEventListener("keyup", (event)=> {
 		$("#download-file-button").click();
 	}
 });
+$("#pw-button").addEventListener("click", ()=>{
+  $("#pw-button").classList.add('is-link');
+  $("#csv-button").classList.remove('is-link');
+  $("#rw3-button").classList.remove('is-link');
+  $("#file-name-input").placeholder = "pointage.pw";
+});
 $("#csv-button").addEventListener("click", ()=>{
+  $("#pw-button").classList.remove('is-link');
   $("#csv-button").classList.add('is-link');
   $("#rw3-button").classList.remove('is-link');
   $("#file-name-input").placeholder = "pointage.csv";
 });
 $("#rw3-button").addEventListener("click", ()=>{
+  $("#pw-button").classList.remove('is-link');
   $("#rw3-button").classList.add('is-link');
   $("#csv-button").classList.remove('is-link');
   $("#file-name-input").placeholder = "pointage.rw3";
@@ -440,11 +449,14 @@ $("#download-file-button").addEventListener("click", ()=>{
   if($("#file-name-input").value !== ""){
     filename = $("#file-name-input").value;
   }
-  if($("#csv-button").classList.contains("is-link")){
+  if($("#pw-button").classList.contains("is-link")){
+    measurement.downloadData("pw", filename);
+  } else if($("#csv-button").classList.contains("is-link")){
     measurement.downloadData("csv", filename);
   } else{
     measurement.downloadData("rw3", filename);
   }
+
   common.modalManager.closeAllModals();
 });
 

@@ -303,6 +303,9 @@ export default class MEASUREMENT {
     }
 
     let file;
+    if(_type === "pw"){
+      file = exportToPW(series);
+    }
     if(_type === "csv"){
       file = exportToCSV(series, true);
     }

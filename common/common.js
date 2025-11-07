@@ -825,6 +825,44 @@ class Serie extends Array {
 -------------------------------------EXPORT/IMPORT FUNCTIONS------------------------------------
 ----------------------------------------------------------------------------------------------*/
 
+/**
+ * Exporte des séries de données au format .pw, lisible par la fonction loadPW de Grapher.
+ * @param {Array<Serie>} series - Un tableau d'objets Serie à exporter.
+ * @returns {string} Le contenu du fichier .pw sous forme de chaîne de caractères JSON.
+ */
+function exportToPW(series) {
+  const sessionData = {
+    app: 'Grapher',
+    version: '3.0', // Ajout de la version pour la cohérence
+    data: {
+      curves: series.map(s => ({
+        // Propriétés attendues par la classe Curve et la fonction de chargement
+        title: s.title,
+        unit: s.unit,
+        values: Array.from(s), // Doit s'appeler 'values'
+        
+        // Propriétés optionnelles mais utiles pour un affichage correct
+        color: s.color || '#000000',
+        line: s.line !== undefined ? s.line : false,
+        markers: s.markers !== undefined ? s.markers : true,
+        lineWidth: s.lineWidth || 1,
+        lineStyle: s.lineStyle || 'Solid',
+        markerSymbol: s.markerSymbol || 'circle',
+        markerRadius: s.markerRadius || 4,
+        type: s.type || 'curve'
+      })),
+      models: [],       // Requis par loadPWFile, même si vide
+      parameters: {},   // Requis par loadPWFile, même si vide
+      annotations: []   // Requis par loadPWFile, même si vide
+    },
+    calculations: '', // Requis par loadPWFile, même si vide
+    grapher: {},      // Requis par loadPWFile, même si vide
+    sort: {}          // Requis par loadPWFile, même si vide
+  };
+
+  return JSON.stringify(sessionData, null, 2);
+}
+
 function exportToCSV(_series, _rowMustBeComplete = false){
   let csv = [];
   let row = [];
@@ -1011,4 +1049,4 @@ async function downloadFile(_file, _type,_name){
   return max;
 }*/
 
-export {Common, ModalManager, alertModal, quitConfirmationModal, TabManager, Serie, exportToCSV, exportToRW3, downloadFile};
+export {Common, ModalManager, alertModal, quitConfirmationModal, TabManager, Serie, exportToPW,exportToCSV, exportToRW3, downloadFile};
