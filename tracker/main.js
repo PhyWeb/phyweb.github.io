@@ -4,8 +4,7 @@ import EXTRACTOR from "./modules/extractor.js"
 import MEASUREMENT from "./modules/measurement.js"
 import PLAYER from "./modules/player.js"
 
-import {Common, alertModal, NavigationManager} from "../common/modules/common.js"
-import { exportToTSV } from "../common/modules/io.js";
+import {Common, alertModal, NavigationManager} from "../common/common.js"
 
 const $ = document.querySelector.bind(document);
 

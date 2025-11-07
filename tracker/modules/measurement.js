@@ -1,4 +1,4 @@
-import {Serie, downloadFile, exportToCSV, exportToRW3} from "../../common/common.js"
+import {Serie, downloadFile, exportToPW, exportToCSV, exportToRW3} from "../../common/common.js"
 
 const $ = document.querySelector.bind(document);
 
@@ -304,7 +304,7 @@ export default class MEASUREMENT {
 
     let file;
     if(_type === "pw"){
-      file = exportToPW(series);
+      file = exportToPW(series, {rowMustBeComplete : true}, "Tracker", "Pointage PhyWeb Tracker");
     }
     if(_type === "csv"){
       file = exportToCSV(series, true);

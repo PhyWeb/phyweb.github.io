@@ -1,4 +1,4 @@
-import {Curve, Model} from './data.js';
+import {Curve, Model, COLOR_LIST} from './data.js';
 
 // Fonctions utilitaires
 function splitFlexible(line) {
@@ -286,20 +286,34 @@ loadPWFile(file) {
           throw new Error("Fichier PW invalide : données de courbes manquantes.");
         }
 
-        // 1. Restaurer les courbes
-        this.app.data.curves = state.data.curves.map(savedCurve => {
-          const newCurve = new Curve(savedCurve.title, savedCurve.unit);
-          
+        this.app.data.curves = []; // Assurer vide avant
+        state.data.curves.forEach((savedCurve, index) => {
+          const newCurve = new Curve(savedCurve.title || `Courbe ${index + 1}`, savedCurve.unit || '');
           Object.assign(newCurve, savedCurve);
-
           newCurve.length = 0;
 
-          // On remplit les données uniquement depuis la propriété `values`
           if (Array.isArray(savedCurve.values)) {
-            savedCurve.values.forEach(val => newCurve.push(val));
+            savedCurve.values.forEach(val => {
+              if (typeof val === 'number' && isFinite(val)) { 
+                newCurve.push(val);
+              }
+            });
+          } else {
+            console.error('Invalid values array:', savedCurve.values);
           }
-          
-          return newCurve;
+
+          // Assignation de couleur si default ou absente (comme addCurve)
+          if (!newCurve.color || newCurve.color === '#000000') {
+            let color = COLOR_LIST.find(c => !this.app.data.curves.some(curve => curve.color === c));
+            if (!color) {
+              // Random si COLORLIST épuisé (rare)
+              color = '#' + Math.floor(Math.random() * 16777215).toString(16);
+              console.warn('No COLORLIST available, using random color for', newCurve.title);
+            }
+            newCurve.color = color;
+          }
+
+          this.app.data.curves.push(newCurve);
         });
 
         // 2. Restaurer TOUS les paramètres

@@ -664,4 +664,4 @@ export default class Data {
   
 }
 
-export {Data, Curve, Model};
+export {COLOR_LIST, Data, Curve, Model};

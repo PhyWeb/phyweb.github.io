@@ -825,39 +825,96 @@ class Serie extends Array {
 -------------------------------------EXPORT/IMPORT FUNCTIONS------------------------------------
 ----------------------------------------------------------------------------------------------*/
 
-/**
- * Exporte des séries de données au format .pw, lisible par la fonction loadPW de Grapher.
- * @param {Array<Serie>} series - Un tableau d'objets Serie à exporter.
- * @returns {string} Le contenu du fichier .pw sous forme de chaîne de caractères JSON.
- */
-function exportToPW(series) {
+function exportToPW(series, options = {}, app) {
+  const rowMustBeComplete = options.rowMustBeComplete || false;
+  console.log("Exporting to PW format with options:", options);
+  if (series.length === 0) {
+    return JSON.stringify({
+      "app": "Grapher",
+      "version": "3.0",
+      "data": {
+        "curves": [],
+        "models": [],
+        "parameters": [],
+        "annotations": []
+      },
+      "calculations": "",
+      "grapher": {}, // Vide pour état initial
+      "sort": {}
+    }, null, 2);
+  }
+
+  let indicesToKeep = null;
+
+  if (rowMustBeComplete) {
+    indicesToKeep = [];
+    let largestSerieLength = 0;
+    for (let i = 0; i < series.length; i++) {
+      if (series[i].length > largestSerieLength) {
+        largestSerieLength = series[i].length;
+      }
+    }
+
+    for (let i = 0; i < largestSerieLength; i++) {
+      let rowIsComplete = true;
+      for (let j = 0; j < series.length; j++) {
+        if (series[j][i] === undefined || series[j][i] === null || series[j][i] === "") {
+          rowIsComplete = false;
+          break;
+        }
+      }
+      if (rowIsComplete) {
+        indicesToKeep.push(i);
+      }
+    }
+  }
+
+  const curves = series.map(s => {
+    let values = Array.from(s);
+    if (indicesToKeep !== null) {
+      values = indicesToKeep.map(index => s[index]);
+    }
+
+    const curveObj = {
+      title: s.title,
+      unit: s.unit,
+      values: values,
+      type: s.type,
+    };
+
+    // Inclure les propriétés de style seulement si elles sont explicitement définies
+    if (s.hasOwnProperty('color')) curveObj.color = s.color;
+    if (s.hasOwnProperty('line')) curveObj.line = s.line;
+    if (s.hasOwnProperty('markers')) curveObj.markers = s.markers;
+    if (s.hasOwnProperty('lineWidth')) curveObj.lineWidth = s.lineWidth;
+    if (s.hasOwnProperty('lineStyle')) curveObj.lineStyle = s.lineStyle;
+    if (s.hasOwnProperty('markerSymbol')) curveObj.markerSymbol = s.markerSymbol;
+    if (s.hasOwnProperty('markerRadius')) curveObj.markerRadius = s.markerRadius;
+
+    return curveObj;
+  });
+
+  // État grapher : première série comme X, les autres comme Y visibles
+  const xCurve = curves[0]?.title || null;
+  const yCurves = curves.slice(1).map(c => c.title);
+
   const sessionData = {
-    app: 'Grapher',
-    version: '3.0', // Ajout de la version pour la cohérence
-    data: {
-      curves: series.map(s => ({
-        // Propriétés attendues par la classe Curve et la fonction de chargement
-        title: s.title,
-        unit: s.unit,
-        values: Array.from(s), // Doit s'appeler 'values'
-        
-        // Propriétés optionnelles mais utiles pour un affichage correct
-        color: s.color || '#000000',
-        line: s.line !== undefined ? s.line : false,
-        markers: s.markers !== undefined ? s.markers : true,
-        lineWidth: s.lineWidth || 1,
-        lineStyle: s.lineStyle || 'Solid',
-        markerSymbol: s.markerSymbol || 'circle',
-        markerRadius: s.markerRadius || 4,
-        type: s.type || 'curve'
-      })),
-      models: [],       // Requis par loadPWFile, même si vide
-      parameters: {},   // Requis par loadPWFile, même si vide
-      annotations: []   // Requis par loadPWFile, même si vide
+    "app": app || "Grapher",
+    "version": "3.0",
+    "data": {
+      "curves": curves,
+      "models": [],
+      "parameters": [],
+      "annotations": []
     },
-    calculations: '', // Requis par loadPWFile, même si vide
-    grapher: {},      // Requis par loadPWFile, même si vide
-    sort: {}          // Requis par loadPWFile, même si vide
+    "calculations": "",
+    "grapher": {
+      "xCurve": xCurve,
+      "yCurves": yCurves
+    },
+    "sort": {
+      "lastSortVariable": null
+    }
   };
 
   return JSON.stringify(sessionData, null, 2);
