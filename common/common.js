@@ -950,7 +950,7 @@ function exportToCSV(_series, _rowMustBeComplete = false){
     let row = [];
     let rowIsComplete = true;
     for(let j = 0; j < _series.length; j++){
-      if(_series[j][i] === "" || _series[j][i] === undefined){
+      if(_series[j][i] === "" || _series[j][i] === undefined || _series[j][i] === null){
         rowIsComplete = false;
       }
       row.push(_series[j][i]);
@@ -968,19 +968,41 @@ function exportToCSV(_series, _rowMustBeComplete = false){
 }
 
 function exportToRW3(_series, _rowMustBeComplete = false, _title){
-  let rw3 = []
+  let rw3 = [];
+
+  let dataRows = [];
+  let largestSerieLength = 0;
+
+  for (let i = 0; i < _series.length; i++) {
+      if (_series[i].length > largestSerieLength) {
+          largestSerieLength = _series[i].length;
+      }
+  }
+
+  for (let i = 0; i < largestSerieLength; i++) {
+      let row = [];
+      let rowIsComplete = true;
+      for (let j = 0; j < _series.length; j++) {
+          const value = _series[j][i];
+          if (value === undefined || value === null || value === "") {
+              row.push('');
+              rowIsComplete = false;
+          } else {
+              row.push(value);
+          }
+      }
+
+      if (!_rowMustBeComplete || rowIsComplete) {
+          dataRows.push(row.join('\t'));
+      }
+  }
 
   rw3.push("EVARISTE REGRESSI WINDOWS 1.0");
 
-  // Names + find largest serie
+  // Names
   rw3.push("£" + _series.length + " NOM VAR");
-  let largestSerieLength = 0;
-  for(let i = 0; i < _series.length; i++){
+  for (let i = 0; i < _series.length; i++) {
     rw3.push(_series[i].title);
-
-    if(_series[i].length > largestSerieLength){
-      largestSerieLength = _series[i].length;
-    }
   }
 
   // Genre ???
@@ -1047,24 +1069,9 @@ function exportToRW3(_series, _rowMustBeComplete = false, _title){
   rw3.push("");
 
   // Values
-  rw3.push("&" + largestSerieLength + " VALEUR VAR");
-
-  for(let i = 0; i < largestSerieLength; i++){
-    let row = [];
-    let rowIsComplete = true;
-    for(let j = 0; j < _series.length; j++){
-      if(_series[j][i] === "" || _series[j][i] === undefined){
-        rowIsComplete = false;
-      }
-      row.push(_series[j][i]);
-    }
-    if(_rowMustBeComplete){
-      if(rowIsComplete){
-        rw3.push(row.join(" "));
-      }
-    } else{
-      rw3.push(row.join(" "));
-    }
+  rw3.push("&" + dataRows.length + " VALEUR VAR");
+  for (const row of dataRows) {
+      rw3.push(row);
   }
 
   rw3.push("&2 OPTIONS");
