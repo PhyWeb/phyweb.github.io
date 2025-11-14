@@ -1086,7 +1086,7 @@ async function downloadFile(_file, _type,_name){
   if(_type === "wav"){
     mime = "audio/wav";
   }
-  if(_type === "csv" || _type === "rw3"){
+  if(_type === "csv" || _type === "rw3" || _type === "pw"){
     mime = "text/" + _type;
   }
   const blob = new Blob([_file], { type: mime });

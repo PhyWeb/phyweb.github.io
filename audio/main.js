@@ -650,58 +650,31 @@ $("#rw3-button").addEventListener("click", ()=>{
 });
 
 // Actual download
-$("#download-file-button").addEventListener('click', () => {
-    let filename = $("#file-name-input.value") || 'enregistrement';
-    const saveData = saves[tabManager.activeTab - 2];
+function prepareSeriesForDownload(saveData, startTime, endTime, effectiveSampleRate){
     const originalWaveData = saveData.linearData;
-    const effectiveSampleRate = baseSampleRate / saveData.displaySampleRateLvl;
 
-    // 1. Déterminer l'intervalle de temps sélectionné par l'utilisateur
-    let startTime = 0;
-    let endTime = originalWaveData.getDuration();
+	startTime = startTime || 0;
+	endTime = endTime || originalWaveData.getDuration();
 
-    if ($("#on-screen-button").classList.contains('is-link')) {
-      startTime = savWaveChart.xAxis[0].min;
-      endTime = savWaveChart.xAxis[0].max;
-    } else if ($("#part-button").classList.contains('is-link')) {
-      startTime = parseFloat($("#start-size-input").value);
-      endTime = parseFloat($("#end-size-input").value);
-    }
-    
-    startTime = Math.max(0, startTime);
-    endTime = Math.min(originalWaveData.getDuration(), endTime);
-
-    const startSample = Math.round(startTime * effectiveSampleRate);
+	const startSample = Math.round(startTime * effectiveSampleRate);
     const endSample = Math.round(endTime * effectiveSampleRate);
 
-    // 2. Préparer les données temporelles
     const series = [];
+	
     const slicedWaveArray = Array.from(originalWaveData.data.slice(startSample, endSample));
 
-    // Si on exporte en WAV, on ne traite que le signal audio
-    if ($("#wav-button").classList.contains('is-link')) {
-      const wavDataSerie = new Serie('Amplitude', 'u.a.');
-      wavDataSerie.setData(slicedWaveArray);
-      const file = audio.generateWavFile(wavDataSerie, effectiveSampleRate);
-      downloadFile(file, 'wav', filename);
-      common.modalManager.closeAllModals();
-      return; // Fin du processus pour WAV
-    }
-    
-    // 3. Si l'export est en CSV ou RW3, préparer toutes les colonnes
-    
-    // Colonne Temps
+	// Colonne Temps
     const timeSerie = new Serie('Temps', 's');
     const timeValues = Array.from({ length: slicedWaveArray.length }, (_, i) => startTime + (i / effectiveSampleRate));
     timeSerie.setData(timeValues);
     series.push(timeSerie);
 
-    // Colonne Amplitude
+	// Colonne Amplitude
     const amplitudeSerie = new Serie('Amplitude', 'u.a.');
     amplitudeSerie.setData(slicedWaveArray);
     series.push(amplitudeSerie);
-    
-    // 4. Recalculer Fourier pour la portion sélectionnée et ajouter les séries
+
+    // Recalcule Fourier pour la portion sélectionnée et ajouter les séries
     // Uniquement si on a une durée valide pour le calcul
     if (saveData.fLinearData && (endTime - startTime) > 0.001) {
       const waveForFourier = new LinearData(originalWaveData.data); // Utiliser les données complètes
@@ -720,9 +693,40 @@ $("#download-file-button").addEventListener('click', () => {
         series.push(spectralAmplitudeSerie);
       }
     }
+	return series;
+}
+
+$("#download-file-button").addEventListener('click', () => {
+    let filename = $("#file-name-input.value") || 'enregistrement';
+    const saveData = saves[tabManager.activeTab - 2];
+
+	const effectiveSampleRate = baseSampleRate / saveData.displaySampleRateLvl;
+
+
+    // 1. Déterminer l'intervalle de temps sélectionné par l'utilisateur
+    let startTime;
+    let endTime;
+
+    if ($("#on-screen-button").classList.contains('is-link')) {
+      startTime = savWaveChart.xAxis[0].min;
+      endTime = savWaveChart.xAxis[0].max;
+    } else if ($("#part-button").classList.contains('is-link')) {
+      startTime = parseFloat($("#start-size-input").value);
+      endTime = parseFloat($("#end-size-input").value);
+    }
+    const series = prepareSeriesForDownload(saveData, startTime, endTime, effectiveSampleRate);
+
+    // Si on exporte en WAV, on ne traite que le signal audio
+    if ($("#wav-button").classList.contains('is-link')) {
+      const wavDataSerie = new Serie('Amplitude', 'u.a.');
+      wavDataSerie.setData(series[1].data); // L'amplitude est la deuxième série
+      const file = audio.generateWavFile(wavDataSerie, effectiveSampleRate);
+      downloadFile(file, 'wav', filename);
+      common.modalManager.closeAllModals();
+      return; // Fin du processus pour WAV
+    }
 
     // 5. Lancer le téléchargement pour PW, CSV ou RW3
-    const format = $("#csv-button").classList.contains('is-link') ? 'csv' : 'rw3';
     let file;
     let type;
     if($("#pw-button").classList.contains("is-link")){
@@ -830,11 +834,12 @@ $("#send-to-grapher-button").addEventListener('click', () => {
 // confirm-send-to-grapher-button listener
 $('#confirm-send-to-grapher-button').addEventListener('click', () => {
   const saveData = saves[tabManager.activeTab - 2];
-  const originalWaveData = saveData.linearData;
+
   const effectiveSampleRate = baseSampleRate / saveData.displaySampleRateLvl;
 
-  let startTime = 0;
-  let endTime = originalWaveData.getDuration();
+  // 1. Déterminer l'intervalle de temps sélectionné par l'utilisateur
+  let startTime;
+  let endTime;
 
   // Determine the time range from user's choice
   if (stgOnscreenDataButton.classList.contains('is-link')) {
@@ -845,44 +850,13 @@ $('#confirm-send-to-grapher-button').addEventListener('click', () => {
     endTime = parseFloat(stgEndSizeInput.value);
   }
   
-  startTime = Math.max(0, startTime);
-  endTime = Math.min(originalWaveData.getDuration(), endTime);
+  const series = prepareSeriesForDownload(saveData, startTime, endTime, effectiveSampleRate);
 
-  const startSample = Math.round(startTime * effectiveSampleRate);
-  const endSample = Math.round(endTime * effectiveSampleRate);
-
-  // 1. Slice the temporal data
-  const slicedWaveArray = Array.from(originalWaveData.data.slice(startSample, endSample));
-  
-  // 2. Recalculate Fourier data for the selected range
-  let fourierData = null;
-  // Only compute if Fourier data exists and duration is valid
-  if (saveData.fLinearData && (endTime - startTime) > 0.001) { 
-    const waveForFourier = new LinearData(originalWaveData.data); // Use original full data
-    fourierData = computeFourier(waveForFourier, effectiveSampleRate, [startTime, endTime]);
-  }
-  
-  const curves = [];
-
-  // Create time curve
-  const timeValues = Array.from({ length: slicedWaveArray.length }, (_, i) => startTime + (i / effectiveSampleRate));
-  curves.push({ title: 'Temps', unit: 's', values: timeValues });
-
-  // Create amplitude curve
-  curves.push({ title: 'Amplitude', unit: 'u.a.', values: slicedWaveArray });
-  
-  // Create spectral curves if available
-  if (fourierData && fourierData.data.length > 0) {
-    const frequencyValues = Array.from({ length: fourierData.data.length }, (_, i) => i * fourierData.step);
-    curves.push({ title: 'Fréquence', unit: 'Hz', values: frequencyValues });
-    
-    const spectralAmplitudeValues = Array.from(fourierData.data);
-    curves.push({ title: 'Amplitude spectrale', unit: 'u.a.', values: spectralAmplitudeValues });
-  }
+  let pw = exportToPW(series, false);
 
   const dataForGrapher = {
     source: 'audio',
-    payload: { curves: curves }
+    payload: pw
   };
 
   console.log('Data prepared for Grapher:', dataForGrapher);
