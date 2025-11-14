@@ -834,11 +834,12 @@ $("#send-to-grapher-button").addEventListener('click', () => {
 // confirm-send-to-grapher-button listener
 $('#confirm-send-to-grapher-button').addEventListener('click', () => {
   const saveData = saves[tabManager.activeTab - 2];
-  const originalWaveData = saveData.linearData;
+
   const effectiveSampleRate = baseSampleRate / saveData.displaySampleRateLvl;
 
-  let startTime = 0;
-  let endTime = originalWaveData.getDuration();
+  // 1. Déterminer l'intervalle de temps sélectionné par l'utilisateur
+  let startTime;
+  let endTime;
 
   // Determine the time range from user's choice
   if (stgOnscreenDataButton.classList.contains('is-link')) {
@@ -849,44 +850,13 @@ $('#confirm-send-to-grapher-button').addEventListener('click', () => {
     endTime = parseFloat(stgEndSizeInput.value);
   }
   
-  startTime = Math.max(0, startTime);
-  endTime = Math.min(originalWaveData.getDuration(), endTime);
+  const series = prepareSeriesForDownload(saveData, startTime, endTime, effectiveSampleRate);
 
-  const startSample = Math.round(startTime * effectiveSampleRate);
-  const endSample = Math.round(endTime * effectiveSampleRate);
-
-  // 1. Slice the temporal data
-  const slicedWaveArray = Array.from(originalWaveData.data.slice(startSample, endSample));
-  
-  // 2. Recalculate Fourier data for the selected range
-  let fourierData = null;
-  // Only compute if Fourier data exists and duration is valid
-  if (saveData.fLinearData && (endTime - startTime) > 0.001) { 
-    const waveForFourier = new LinearData(originalWaveData.data); // Use original full data
-    fourierData = computeFourier(waveForFourier, effectiveSampleRate, [startTime, endTime]);
-  }
-  
-  const curves = [];
-
-  // Create time curve
-  const timeValues = Array.from({ length: slicedWaveArray.length }, (_, i) => startTime + (i / effectiveSampleRate));
-  curves.push({ title: 'Temps', unit: 's', values: timeValues });
-
-  // Create amplitude curve
-  curves.push({ title: 'Amplitude', unit: 'u.a.', values: slicedWaveArray });
-  
-  // Create spectral curves if available
-  if (fourierData && fourierData.data.length > 0) {
-    const frequencyValues = Array.from({ length: fourierData.data.length }, (_, i) => i * fourierData.step);
-    curves.push({ title: 'Fréquence', unit: 'Hz', values: frequencyValues });
-    
-    const spectralAmplitudeValues = Array.from(fourierData.data);
-    curves.push({ title: 'Amplitude spectrale', unit: 'u.a.', values: spectralAmplitudeValues });
-  }
+  let pw = exportToPW(series, false);
 
   const dataForGrapher = {
     source: 'audio',
-    payload: { curves: curves }
+    payload: pw
   };
 
   console.log('Data prepared for Grapher:', dataForGrapher);
