@@ -279,7 +279,7 @@ export default class MEASUREMENT {
     }
   }
 
-  downloadData(_type, _name){
+  prepareDownloadData(){
     this.scale.update()
 
     let series = structuredClone(this.series);
@@ -302,9 +302,15 @@ export default class MEASUREMENT {
       }
     }
 
+    return series;
+  }
+
+  downloadData(_type, _name){
+    let series = this.prepareDownloadData();
+
     let file;
     if(_type === "pw"){
-      file = exportToPW(series, {rowMustBeComplete : true}, "Tracker", "Pointage PhyWeb Tracker");
+      file = exportToPW(series, {rowMustBeComplete : true}, "Tracker", "// Pointage PhyWeb Tracker");
     }
     if(_type === "csv"){
       file = exportToCSV(series, true);

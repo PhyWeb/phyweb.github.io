@@ -275,109 +275,143 @@ generatePW() {
     this.loadData(data);
   }
 
-loadPWFile(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      try {
-        const state = JSON.parse(event.target.result);
 
-        if (!state.data || !state.data.curves) {
-          throw new Error("Fichier PW invalide : données de courbes manquantes.");
-        }
+  /**
+   * Processes the parsed state from a .pw file or session storage.
+   * @param {object} state - The parsed JSON object representing the application state.
+   * @private
+   */
+  async _processPWState(state) {
+    if (!state.data || !state.data.curves) {
+      throw new Error("Fichier PW invalide : données de courbes manquantes.");
+    }
 
-        this.app.data.curves = []; // Assurer vide avant
-        state.data.curves.forEach((savedCurve, index) => {
-          const newCurve = new Curve(savedCurve.title || `Courbe ${index + 1}`, savedCurve.unit || '');
-          Object.assign(newCurve, savedCurve);
-          newCurve.length = 0;
+    this.app.data.curves = []; // Assurer vide avant
+    state.data.curves.forEach((savedCurve, index) => {
+      const newCurve = new Curve(savedCurve.title || `Courbe ${index + 1}`, savedCurve.unit || '');
+      Object.assign(newCurve, savedCurve);
+      newCurve.length = 0;
 
-          if (Array.isArray(savedCurve.values)) {
-            savedCurve.values.forEach(val => {
-              if (typeof val === 'number' && isFinite(val)) { 
-                newCurve.push(val);
-              }
-            });
-          } else {
-            console.error('Invalid values array:', savedCurve.values);
+      if (Array.isArray(savedCurve.values)) {
+        savedCurve.values.forEach(val => {
+          if (typeof val === 'number' && isFinite(val)) { 
+            newCurve.push(val);
           }
-
-          // Assignation de couleur si default ou absente (comme addCurve)
-          if (!newCurve.color || newCurve.color === '#000000') {
-            let color = COLOR_LIST.find(c => !this.app.data.curves.some(curve => curve.color === c));
-            if (!color) {
-              // Random si COLORLIST épuisé (rare)
-              color = '#' + Math.floor(Math.random() * 16777215).toString(16);
-              console.warn('No COLORLIST available, using random color for', newCurve.title);
-            }
-            newCurve.color = color;
-          }
-
-          this.app.data.curves.push(newCurve);
         });
-
-        // 2. Restaurer TOUS les paramètres
-        this.app.data.parameters = state.data.parameters || {};
-
-        // 3. Restaurer les modèles SANS RECALCUL
-        if (Array.isArray(state.data.models)) {
-          for (const savedModel of state.data.models) {
-            const xCurve = this.app.data.getCurveByTitle(savedModel.xTitle);
-            const yCurve = this.app.data.getCurveByTitle(savedModel.yTitle);
-
-            if (!xCurve || !yCurve) {
-              console.warn(`Modèle pour "${savedModel.yTitle}" ignoré car les courbes sont introuvables.`);
-              continue;
-            }
-
-            const model = new Model(xCurve, yCurve, savedModel.type, this.app.data.parameters);
-            
-            Object.assign(model, savedModel);
-            
-            this.app.data.models.push(model);
-            this.app.grapher.addModelSeries(model);
-            this.app.uiManager.createModelPanel(model.id);
-          }
-        }
-
-        // 4. Restaurer les autres éléments
-        this.app.editor.setValue(state.calculations ?? "");
-        this.app.data.annotations = state.data.annotations ?? [];
-        
-        if (state.grapher) {
-          this.app.grapher.setXCurve(state.grapher.xCurve, false);
-          this.app.grapher.updateChart();
-          this.app.grapher.setVisibilityFromList(state.grapher.yCurves);
-        }
-
-        if (state.sort && state.sort.lastSortVariable) {
-          this.app.data.lastSortVariable = state.sort.lastSortVariable;
-        }
-
-        // 5. Finaliser la mise à jour de l'UI
-        this.app.spreadsheet.update();
-        this.app.uiManager.updateCalculationUI();
-        this.app.uiManager.updateAllModelPanelVisibilityIcons();
-        this.app.uiManager.updateRecalculateButtonVisibility();
-        this.app.uiManager.updateSortUI();
-        this.app.uiManager.updateXAxisSelector();
-        this.app.grapher.updateModelVisibility();
-        this.app.grapher.reorderLegendByVisibility();
-        this.app.grapher.chart.redraw();
-        this.app.grapher.resetZoom();
-
-        console.log("Session .pw (v3.0) restaurée avec succès.");
-        resolve();
-
-      } catch (e) {
-        console.error("Erreur lors du chargement du fichier .pw :", e);
-        reject(new Error("Le fichier de session est corrompu ou invalide."));
+      } else {
+        console.error('Invalid values array:', savedCurve.values);
       }
-    };
-    reader.onerror = () => reject(new Error("Impossible de lire le fichier."));
-    reader.readAsText(file);
-  });
-}
+
+      // Assignation de couleur si default ou absente (comme addCurve)
+      if (!newCurve.color || newCurve.color === '#000000') {
+        let color = COLOR_LIST.find(c => !this.app.data.curves.some(curve => curve.color === c));
+        if (!color) {
+          // Random si COLORLIST épuisé (rare)
+          color = '#' + Math.floor(Math.random() * 16777215).toString(16);
+          console.warn('No COLORLIST available, using random color for', newCurve.title);
+        }
+        newCurve.color = color;
+      }
+
+      this.app.data.curves.push(newCurve);
+    });
+
+    // 2. Restaurer TOUS les paramètres
+    this.app.data.parameters = state.data.parameters || {};
+
+    // 3. Restaurer les modèles SANS RECALCUL
+    if (Array.isArray(state.data.models)) {
+      for (const savedModel of state.data.models) {
+        const xCurve = this.app.data.getCurveByTitle(savedModel.xTitle);
+        const yCurve = this.app.data.getCurveByTitle(savedModel.yTitle);
+
+        if (!xCurve || !yCurve) {
+          console.warn(`Modèle pour "${savedModel.yTitle}" ignoré car les courbes sont introuvables.`);
+          continue;
+        }
+
+        const model = new Model(xCurve, yCurve, savedModel.type, this.app.data.parameters);
+        
+        Object.assign(model, savedModel);
+        
+        this.app.data.models.push(model);
+        this.app.grapher.addModelSeries(model);
+        this.app.uiManager.createModelPanel(model.id);
+      }
+    }
+
+    // 4. Restaurer les autres éléments
+    this.app.editor.setValue(state.calculations ?? "");
+    this.app.data.annotations = state.data.annotations ?? [];
+    
+    if (state.grapher) {
+      this.app.grapher.setXCurve(state.grapher.xCurve, false);
+      this.app.grapher.updateChart();
+      this.app.grapher.setVisibilityFromList(state.grapher.yCurves);
+    }
+
+    if (state.sort && state.sort.lastSortVariable) {
+      this.app.data.lastSortVariable = state.sort.lastSortVariable;
+    }
+
+    // 5. Finaliser la mise à jour de l'UI
+    this.app.spreadsheet.update();
+    this.app.uiManager.updateCalculationUI();
+    this.app.uiManager.updateAllModelPanelVisibilityIcons();
+    this.app.uiManager.updateRecalculateButtonVisibility();
+    this.app.uiManager.updateSortUI();
+    this.app.uiManager.updateXAxisSelector();
+    this.app.grapher.updateModelVisibility();
+    this.app.grapher.reorderLegendByVisibility();
+    this.app.grapher.chart.redraw();
+    this.app.grapher.resetZoom();
+
+    console.log("Session .pw (v3.0) restaurée avec succès.");
+
+
+  }
+
+  /**
+   * Loads a .pw file by reading it and processing its content.
+   * @param {File} file - The .pw file to load.
+   * @returns {Promise<void>}
+   */
+  async loadPWFile(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        try {
+          const state = JSON.parse(event.target.result);
+          await this._processPWState(state);
+          resolve();
+        } catch (e) {
+          console.error(`Erreur lors du chargement du fichier .pw :`, e);
+          reject(new Error("Le fichier de session est corrompu ou invalide."));
+        }
+      };
+      reader.onerror = () => {
+        reject(new Error("Impossible de lire le fichier."));
+      };
+      reader.readAsText(file);
+    });
+  }
+
+  /**
+   * Loads a session from a .pw content string (e.g., from sessionStorage).
+   * @param {string} pwDataString - The string content of a .pw file.
+   * @returns {Promise<void>}
+   */
+  async loadPWFromString(pwDataString) {
+    this.app.resetSession();
+    try {
+      const state = JSON.parse(pwDataString);
+      await this._processPWState(state);
+    } catch (e) {
+      console.error("Erreur lors du chargement des données PW depuis la chaîne de caractères :", e);
+      // We throw a new error to be caught by the caller
+      throw new Error("Les données de session sont corrompues ou invalides.");
+    }
+  }
 
 
   /**

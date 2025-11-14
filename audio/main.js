@@ -726,7 +726,7 @@ $("#download-file-button").addEventListener('click', () => {
     let file;
     let type;
     if($("#pw-button").classList.contains("is-link")){
-      file = exportToPW(series, false);
+      file = exportToPW(series, {rowMustBeComplete: false}, "Audio", "// Enregistrement PhyWeb Audio");
       type="pw";
     }
     if($("#csv-button").classList.contains("is-link")){

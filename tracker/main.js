@@ -4,7 +4,7 @@ import EXTRACTOR from "./modules/extractor.js"
 import MEASUREMENT from "./modules/measurement.js"
 import PLAYER from "./modules/player.js"
 
-import {Common, alertModal, NavigationManager} from "../common/common.js"
+import {Common, alertModal, NavigationManager, exportToPW} from "../common/common.js"
 
 const $ = document.querySelector.bind(document);
 
@@ -97,93 +97,16 @@ $("#mesures-button").addEventListener("click", ()=>{
 });
 
 $("#send-to-grapher-button").addEventListener("click", () => {
-  let hasData = false;
-  // Vérifie s'il y a au moins une donnée de mesure (on ignore la première série qui est le temps)
-  for (let i = 1; i < measurement.series.length; i++) {
-    for (let j = measurement.originFrame; j < measurement.series[i].length; j++) {
-      if (measurement.series[i][j] !== "" && measurement.series[i][j] !== null) {
-        hasData = true;
-        break;
-      }
-    }
-    if (hasData) {
-      break;
-    }
-  }
-
-  if (!hasData) {
-    alertModal({
-      title: "Aucune donnée",
-      body: "Il n'y a aucune donnée à envoyer vers le grapheur.",
-      confirm: "OK"
-    });
-    return;
-  }
-
-  const scaleX = measurement.scale.getOrientedScaleX();
-  const scaleY = measurement.scale.getOrientedScaleY();
-  const originFrame = measurement.originFrame;
-
-  // 1. Déterminer les lignes à conserver (celles avec au moins une donnée x ou y)
-  const rowsToKeep = new Set();
-  for (let i = originFrame; i < measurement.series[0].length; i++) {
-    let rowHasData = false;
-    // Parcourir les séries x et y (commence à l'index 1)
-    for (let j = 1; j < measurement.series.length; j++) {
-      if (measurement.series[j][i] !== "" && measurement.series[j][i] !== null) {
-        rowHasData = true;
-        break;
-      }
-    }
-    if (rowHasData) {
-      rowsToKeep.add(i);
-    }
-  }
-
-  const dataForGrapher = {
-    source: "tracker",
-    payload: {
-      curves: measurement.series.map((serie, index) => {
-        const filteredValues = [];
-
-        // 2. Itérer sur les lignes à conserver pour construire les valeurs filtrées et traitées
-        for (const i of Array.from(rowsToKeep).sort((a, b) => a - b)) {
-          let processedVal;
-
-          // Traiter la série temporelle
-          if (index === 0) {
-            processedVal = (serie[i] === null) ? null : serie[i] - serie[originFrame];
-          }
-          // Traiter les séries x/y
-          else {
-            const isX = (index % 2) !== 0;
-            const origin = isX ? measurement.scale.origin.x : measurement.scale.origin.y;
-            const scale = isX ? scaleX : scaleY;
-
-            if (serie[i] === "" || serie[i] === null) {
-              processedVal = null;
-            } else {
-              processedVal = (serie[i] - origin) * scale;
-            }
-          }
-          filteredValues.push(processedVal);
-        }
-
-        return {
-          title: serie.title,
-          unit: serie.unit,
-          values: filteredValues
-        };
-      })
-    }
-  };
+  const series = measurement.prepareDownloadData();
+  const pw = exportToPW(series, {rowMustBeComplete : true}, "Tracker", "Pointage PhyWeb Tracker");
+  console.log("Données exportées pour le grapheur :", pw);
 
   // ELECTRON
   if (window.electronAPI){
-    window.electronAPI.openGrapherWindow(dataForGrapher);
+    window.electronAPI.openGrapherWindowWithPW(pw);
   } else {
     // WEB
-    sessionStorage.setItem('phyweb-import-data', JSON.stringify(dataForGrapher));
+    sessionStorage.setItem('phyweb-import-data', pw);
     window.open('../grapher/index.html', '_blank');
   }
 });

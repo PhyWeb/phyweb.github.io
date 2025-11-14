@@ -1,4 +1,4 @@
-import {Common} from "../common/common.js"
+import {Common, alertModal} from "../common/common.js"
 
 import App from "./modules/app.js"
 import UIManager from "./modules/ui.js"
@@ -61,7 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
     try {
       // Délégué le chargement à l'IOManager
-      app.ioManager.loadInterAppJSON(interAppDataJSON);
+      app.ioManager.loadPWFromString(interAppDataJSON);
       // Si le chargement est un succès, on affiche l'interface principale et on ferme les modales.
       uiManager.showTabsAndPanels();
       uiManager.common.modalManager.closeAllModals();

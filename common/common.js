@@ -825,7 +825,7 @@ class Serie extends Array {
 -------------------------------------EXPORT/IMPORT FUNCTIONS------------------------------------
 ----------------------------------------------------------------------------------------------*/
 
-function exportToPW(series, options = {}, app) {
+function exportToPW(series, options = {}, app, calculations = "") {
   const rowMustBeComplete = options.rowMustBeComplete || false;
   console.log("Exporting to PW format with options:", options);
   if (series.length === 0) {
@@ -907,7 +907,7 @@ function exportToPW(series, options = {}, app) {
       "parameters": [],
       "annotations": []
     },
-    "calculations": "",
+    "calculations": calculations,
     "grapher": {
       "xCurve": xCurve,
       "yCurves": yCurves
