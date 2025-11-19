@@ -852,20 +852,14 @@ $('#confirm-send-to-grapher-button').addEventListener('click', () => {
   
   const series = prepareSeriesForDownload(saveData, startTime, endTime, effectiveSampleRate);
 
-  let pw = exportToPW(series, false);
-
-  const dataForGrapher = {
-    source: 'audio',
-    payload: pw
-  };
-
-  console.log('Data prepared for Grapher:', dataForGrapher);
+  const pw = exportToPW(series, {rowMustBeComplete : false}, "Audio", "Enregistrement PhyWeb Tracker");
+  console.log("Données exportées pour le grapheur :", pw);
   
   // Send data to Grapher
   if (window.electronAPI) {
-    window.electronAPI.openGrapherWindow(dataForGrapher);
+    window.electronAPI.openGrapherWindowWithPW(pw);
   } else {
-    sessionStorage.setItem('phyweb-import-data', JSON.stringify(dataForGrapher));
+    sessionStorage.setItem('phyweb-import-data', pw);
     window.open('../grapher/index.html', '_blank');
   }
 
