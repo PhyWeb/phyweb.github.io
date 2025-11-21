@@ -9,8 +9,6 @@
     - mettre une icone en grand (dans le background) de chaque app pour visuellement rapidement voir ou on est.
       - du coup centrer verticalement le splashscreen ?
 
-    - mettre en place une fonction tsv vers pw pour générer des pw
-
     - ajouter les licences des libs qui n'en ont pas
 
     - Deplacer le a propos dans le menu ?
@@ -60,13 +58,12 @@
 
     - le zoom auto marche pas toujours comme il faut. si une serie (x) a une grande valeur alors qu'il n'y a pas de y associé car ligne semi vide. il ne faudrait pas prendre en compte cette valeur
 
-    - virer la logique de interAPP pour juste passer un PW !!!
-
 
 # MISC
     - tester sur petit ecran (et faire les adaptations nécessaires)
 
 # Idées
+    - salsaJ ?
     - animation titrage
     - animation RVB
     - exao spectrophotometre COM
