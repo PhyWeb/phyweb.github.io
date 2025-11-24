@@ -651,48 +651,52 @@ $("#rw3-button").addEventListener("click", ()=>{
 
 // Actual download
 function prepareSeriesForDownload(saveData, startTime, endTime, effectiveSampleRate){
-    const originalWaveData = saveData.linearData;
+  const originalWaveData = saveData.linearData;
 
 	startTime = startTime || 0;
 	endTime = endTime || originalWaveData.getDuration();
 
 	const startSample = Math.round(startTime * effectiveSampleRate);
-    const endSample = Math.round(endTime * effectiveSampleRate);
+  const endSample = Math.round(endTime * effectiveSampleRate);
 
-    const series = [];
-	
-    const slicedWaveArray = Array.from(originalWaveData.data.slice(startSample, endSample));
+  const series = [];
+
+  const slicedWaveArray = Array.from(originalWaveData.data.slice(startSample, endSample));
 
 	// Colonne Temps
-    const timeSerie = new Serie('Temps', 's');
-    const timeValues = Array.from({ length: slicedWaveArray.length }, (_, i) => startTime + (i / effectiveSampleRate));
-    timeSerie.setData(timeValues);
-    series.push(timeSerie);
+  const timeSerie = new Serie('Temps', 's');
+  const timeValues = Array.from({ length: slicedWaveArray.length }, (_, i) => startTime + (i / effectiveSampleRate));
+  timeSerie.setData(timeValues);
+
+  timeSerie.type = 'x'; // Indiquer que cette série est pour l'axe X
+  series.push(timeSerie);
 
 	// Colonne Amplitude
-    const amplitudeSerie = new Serie('Amplitude', 'u.a.');
-    amplitudeSerie.setData(slicedWaveArray);
-    series.push(amplitudeSerie);
+  const amplitudeSerie = new Serie('Amplitude', 'u.a.');
+  amplitudeSerie.setData(slicedWaveArray);
 
-    // Recalcule Fourier pour la portion sélectionnée et ajouter les séries
-    // Uniquement si on a une durée valide pour le calcul
-    if (saveData.fLinearData && (endTime - startTime) > 0.001) {
-      const waveForFourier = new LinearData(originalWaveData.data); // Utiliser les données complètes
-      const fourierData = computeFourier(waveForFourier, effectiveSampleRate, [startTime, endTime]);
+  amplitudeSerie.type = 'y'; // Indiquer que cette série est pour l'axe Y
+  series.push(amplitudeSerie);
 
-      if (fourierData && fourierData.data.length > 0) {
-        // Colonne Fréquence
-        const frequencySerie = new Serie('Fréquence', 'Hz');
-        const frequencyValues = Array.from({ length: fourierData.data.length }, (_, i) => i * fourierData.step);
-        frequencySerie.setData(frequencyValues);
-        series.push(frequencySerie);
+  // Recalcule Fourier pour la portion sélectionnée et ajouter les séries
+  // Uniquement si on a une durée valide pour le calcul
+  if (saveData.fLinearData && (endTime - startTime) > 0.001) {
+    const waveForFourier = new LinearData(originalWaveData.data); // Utiliser les données complètes
+    const fourierData = computeFourier(waveForFourier, effectiveSampleRate, [startTime, endTime]);
 
-        // Colonne Amplitude Spectrale
-        const spectralAmplitudeSerie = new Serie('Amplitude spectrale', 'u.a.');
-        spectralAmplitudeSerie.setData(Array.from(fourierData.data));
-        series.push(spectralAmplitudeSerie);
-      }
+    if (fourierData && fourierData.data.length > 0) {
+      // Colonne Fréquence
+      const frequencySerie = new Serie('Fréquence', 'Hz');
+      const frequencyValues = Array.from({ length: fourierData.data.length }, (_, i) => i * fourierData.step);
+      frequencySerie.setData(frequencyValues);
+      series.push(frequencySerie);
+
+      // Colonne Amplitude Spectrale
+      const spectralAmplitudeSerie = new Serie('Amplitude spectrale', 'u.a.');
+      spectralAmplitudeSerie.setData(Array.from(fourierData.data));
+      series.push(spectralAmplitudeSerie);
     }
+  }
 	return series;
 }
 

@@ -826,6 +826,7 @@ class Serie extends Array {
 ----------------------------------------------------------------------------------------------*/
 
 function exportToPW(series, options = {}, app, calculations = "") {
+  console.log(series)
   const rowMustBeComplete = options.rowMustBeComplete || false;
   console.log("Exporting to PW format with options:", options);
   if (series.length === 0) {
@@ -894,9 +895,18 @@ function exportToPW(series, options = {}, app, calculations = "") {
     return curveObj;
   });
 
-  // État grapher : première série comme X, les autres comme Y visibles
-  const xCurve = curves[0]?.title || null;
-  const yCurves = curves.slice(1).map(c => c.title);
+
+  // Etat du grapher (xCurve et yCurves)
+  const xCurveIndex = series.findIndex(s => s.type === 'x');
+  let xCurve, yCurves;
+  if (xCurveIndex !== -1) {
+    xCurve = series[xCurveIndex].title;
+    yCurves = series.filter(s => s.type === 'y').map(s => s.title);
+  } else {
+    xCurve = null;
+    yCurves = series.map(s => s.title);
+  }
+
 
   const sessionData = {
     "app": app || "Grapher",
