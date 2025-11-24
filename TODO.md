@@ -39,8 +39,6 @@
     - add a button to stop the decode and still exploit the already decoded frames
     - passer a ffmpeg.wasm
 
-    - export to clipboard peut probablement reutiliser de la logique existante plutot que de preparer toutes les données à la main
-
 # Grapher
     - permettre de visualiser les bornes des modèles
     - permettre d'exclure un point d'une modélisation
