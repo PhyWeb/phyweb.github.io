@@ -308,8 +308,6 @@ export default class MEASUREMENT {
       }
     }
 
-    console.log("Prepared series for download:", series);
-
     return series;
   }
 
@@ -325,6 +323,7 @@ export default class MEASUREMENT {
     }
     if(_type === "rw3"){
       file = exportToRW3(series, true, "Pointage PhyWeb Tracker");
+      console.log(file);
     }
     downloadFile(file, _type, _name)
   }

@@ -1041,18 +1041,34 @@ function exportToRW3(_series, _rowMustBeComplete = false, _title){
   rw3.push("CLAVIER");
   rw3.push("");
   rw3.push("£0 GRAPHE VAR");
-  rw3.push("&5 X");
-  rw3.push(_series[0].title);
-  rw3.push("");
-  rw3.push("");
-  rw3.push("");
-  rw3.push("");
-  rw3.push("&5 Y");
-  rw3.push(_series[1].title);
-  rw3.push("");
-  rw3.push("");
-  rw3.push("");
-  rw3.push("");
+  let xSerie = _series.find(s => s.type === "x");
+  let ySeries = _series.filter(s => s.type === "y");
+
+  if(ySeries.length === 0){
+    rw3.push("&1 X")
+    if(xSerie){
+      rw3.push(xSerie.title);
+    } else{
+      rw3.push(_series[0].title);
+    }
+    rw3.push("&1 Y")
+    rw3.push(_series[1].title);
+  } else{
+    rw3.push("&" + ySeries.length + " X");
+    if(xSerie){
+      for(let i = 0; i < ySeries.length; i++){
+        rw3.push(xSerie.title);
+      }
+    } else{
+      for(let i = 0; i < ySeries.length; i++){
+        rw3.push(_series[0].title);
+      }
+    }
+    rw3.push("&" + ySeries.length + " Y");
+    for(let i = 0; i < ySeries.length; i++){
+      rw3.push(ySeries[i].title);
+    }
+  }
   rw3.push("&5 MONDE");
   rw3.push("1");
   rw3.push("1");
