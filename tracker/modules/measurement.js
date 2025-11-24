@@ -286,6 +286,12 @@ export default class MEASUREMENT {
 
     const scaleX = this.scale.getOrientedScaleX();
     const scaleY = this.scale.getOrientedScaleY();
+
+    // Définit les types pour afficher le bon graphique une fois les données importées dans Grapher
+    series[0].type = "x";
+    for(let j = 1; j < this.series.length; j++){
+      series[j].type = "y";
+    }
     
     for(let i = 0; i < this.series[0].length; i++){
       // t values
@@ -301,6 +307,8 @@ export default class MEASUREMENT {
         series[((j - 1) * 2) + 2][i] = this.series[((j - 1) * 2) + 2].get(i, this.scale.origin.y, scaleY);
       }
     }
+
+    console.log("Prepared series for download:", series);
 
     return series;
   }
