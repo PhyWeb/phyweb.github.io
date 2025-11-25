@@ -48,7 +48,6 @@
 
     - BUG : les icones du menu nouveau apparraissent en retard sur le ptb (again)
 
-    - sauvegarder les derniers fichiers dans localStorage ??
     - icones personnalisées
     - export image / print
 
