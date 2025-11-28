@@ -808,8 +808,13 @@ class Serie extends Array {
    * @param {Array|TypedArray} dataArray - Le tableau de données à insérer.
    */
   setData(dataArray) {
-    this.length = 0; // Vide la série actuelle
-    Array.prototype.push.apply(this, dataArray); // Ajoute les nouvelles données
+    // 1. Ajuster la longueur directement (très rapide)
+    this.length = dataArray.length;
+    
+    // 2. Copier les valeurs une par une pour éviter le stack overflow
+    for (let i = 0; i < dataArray.length; i++) {
+      this[i] = dataArray[i];
+    }
   }
 
   get(_index, _origin, _scale){

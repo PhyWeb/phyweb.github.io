@@ -858,6 +858,11 @@ $('#confirm-send-to-grapher-button').addEventListener('click', () => {
 
   const pw = exportToPW(series, {rowMustBeComplete : false}, "Audio", "Enregistrement PhyWeb Tracker");
   console.log("Données exportées pour le grapheur :", pw);
+
+  const sizeInBytes = new Blob([pw]).size;
+const sizeInMB = sizeInBytes / (1024 * 1024);
+
+console.log(`Taille du payload : ${sizeInBytes} octets (${sizeInMB.toFixed(2)} Mo)`);
   
   // Send data to Grapher
   if (window.electronAPI) {
