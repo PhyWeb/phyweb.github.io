@@ -52,8 +52,6 @@
     - icones personnalisées
     - export image / print
 
-    - petite animations (pour l'ouverture du panel modèles)
-
     - le zoom auto marche pas toujours comme il faut. si une serie (x) a une grande valeur alors qu'il n'y a pas de y associé car ligne semi vide. il ne faudrait pas prendre en compte cette valeur
 
 

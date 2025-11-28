@@ -206,7 +206,7 @@
   <!--------------------------------------------------Grapheur-------------------------------------------------->
   <!------------------------------------------------------------------------------------------------------------>
   <div id="grapheur-panel" class="is-flex is-hidden" style="height: calc(100vh - 86px);">
-    <div class="box p-3 m-3 block is-flex is-flex-direction-column" style="flex: 1; min-width: 0;">
+    <div class="box pl-3 pr-0 pt-3 pb-0 m-3 block is-flex is-flex-direction-column" style="flex: 1; min-width: 0;">
       <nav class="level mb-1">
         <!-- Left side -->
         <div class="level-left">
@@ -302,7 +302,12 @@
         </div>
       </nav>
       <div class="block" style="overflow:auto;" id="chart-wrapper">
-        <div id="chart"></div>
+        <div id="chart" class="pb-3 pr-3"></div>
+        <div id="xaxis-selector-container">
+          <div class="select is-small">
+            <select id="xaxis-select"></select>
+          </div>
+        </div>
       </div>
     </div>
     <div id="modelisation-panel" class="box p-3 mt-3 mb-3 mr-3 ml-0 is-hidden">
@@ -331,11 +336,6 @@
                 Nouvelle modélisation
               </span>
           </button>
-      </div>
-    </div>
-    <div id="xaxis-selector-container">
-      <div class="select is-small">
-        <select id="xaxis-select"></select>
       </div>
     </div>
   </div>

@@ -1739,21 +1739,39 @@ export default class UIManager {
   /**
    * Initialise les contrôles de modélisation et gère les événements associés.
    */
-  initModelisationControls(){
+  initModelisationControls() {
     /**
      * Gère l'expansion et la compression du panneau de modélisation.
      */
-    $("#expand-modelisation-button").addEventListener("click", () => {
-      $("#modelisation-panel").classList.remove("is-hidden");
+    const panel = $("#modelisation-panel");
+    const expandBtn = $("#expand-modelisation-button");
+    const compressBtn = $("#compress-modelisation-button");
+    
+    // S'assurer que le panneau est visible au sens CSS (mais fermé par notre logique)
+    panel.classList.remove("is-hidden");
 
-      $("#expand-modelisation-button").classList.add("is-hidden");
-      $("#compress-modelisation-button").classList.remove("is-hidden");
+    // --- OUVERTURE DU PANNEAU ---
+    expandBtn.addEventListener("click", () => {
+        panel.classList.add("is-open");
+        expandBtn.classList.add("is-transparent");
+
+        // 3. Après 300ms (durée du CSS), on le cache vraiment et on affiche l'autre
+        setTimeout(() => {
+          expandBtn.classList.add("is-hidden");
+        }, 300);
     });
-    $("#compress-modelisation-button").addEventListener("click", () => {
-      $("#modelisation-panel").classList.add("is-hidden");
 
-      $("#expand-modelisation-button").classList.remove("is-hidden");
-      $("#compress-modelisation-button").classList.add("is-hidden");
+    // --- FERMETURE DU PANNEAU ---
+    compressBtn.addEventListener("click", () => {
+      panel.classList.remove("is-open");
+      expandBtn.classList.remove("is-hidden");
+        
+      // Petite astuce : on force le navigateur à recalculer le style avant d'enlever la transparence
+      // Sinon, le fade-in ne se lance pas car il passe de hidden à visible instantanément
+      void expandBtn.offsetWidth; 
+        
+      // fade-in
+      expandBtn.classList.remove("is-transparent");
     });
 
     // Gère les évènements des boutons dans les panel des modèles

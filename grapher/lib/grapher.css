@@ -85,6 +85,8 @@
   display: flex;
   overflow: hidden;
   min-height: 0;
+  position: relative; /* Pour servir de référence au sélecteur */
+
 }
 
 #chart {
@@ -231,8 +233,8 @@
 
 #xaxis-selector-container {
   position: absolute;
-  bottom: 20px;
-  right: 20px;
+  bottom: 8px;
+  right: 8px;
   z-index: 10; /* Assure que le menu est au-dessus du graphique */
 }
 
@@ -251,4 +253,46 @@
   100% {
     opacity: 0;
   }
+}
+
+/* Animation du panneau : Slide solide depuis la droite */
+#modelisation-panel {
+  overflow: hidden;    /* Masque le contenu qui dépasse pendant l'animation */
+  white-space: nowrap; /* Empêche le texte de se "comprimer" ou revenir à la ligne pendant le mouvement */
+  
+  /* On anime uniquement la largeur et le déplacement */
+  transition: max-width 0.4s ease-in-out,
+              padding 0.4s ease,
+              margin 0.4s ease,
+              transform 0.4s ease-in-out;
+}
+
+/* ÉTAT FERMÉ */
+#modelisation-panel:not(.is-open) {
+  max-width: 0 !important;    /* Fermé horizontalement */
+  padding-left: 0 !important; 
+  padding-right: 0 !important;
+  margin: 0 !important;       
+  
+  /* On le décale de 100px vers la droite pour créer l'élan quand il s'ouvrira */
+  transform: translateX(100px); 
+}
+
+/* ÉTAT OUVERT */
+#modelisation-panel.is-open {
+  max-width: 300px; /* Largeur cible (ajustez selon vos besoins) */
+  transform: translateX(0); /* Il revient à sa position naturelle */
+}
+
+/* Transition d'opacité pour les boutons */
+#expand-modelisation-button, 
+#compress-modelisation-button {
+  transition: opacity 0.3s ease-in-out;
+  opacity: 1; /* Visible par défaut */
+}
+
+/* Classe utilitaire pour rendre transparent (mais l'élément est toujours là) */
+.is-transparent {
+  opacity: 0 !important;
+  pointer-events: none; /* Empêche de cliquer pendant le fondu */
 }
