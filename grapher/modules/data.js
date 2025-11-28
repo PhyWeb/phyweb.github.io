@@ -586,8 +586,8 @@ export default class Data {
     return headers;
   }
 
-  setValue(curveID, index, value){
-    this.curves[curveID][index] = value;
+  setValue(curveIndex, index, value){
+    this.curves[curveIndex][index] = value;
   }
 
   getCurveByTitle(title){

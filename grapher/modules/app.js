@@ -4,23 +4,6 @@ import SymbolValidator from './symbolValidator.js';
 
 const $ = document.querySelector.bind(document);
 
-// Utilitaire : split tabulations ou au moins 2 espaces
-function splitFlexible(line) {
-  return line.trim().split(/\t| {2,}/);
-}
-
-function isTabularData(text) {
-  const lines = text.trim().split('\n').map(l => l.trim()).filter(l => l.length > 0);
-  if (lines.length < 2) return false;
-
-  const colCounts = lines.map(line => splitFlexible(line).length);
-  const firstCount = colCounts[0];
-
-  const sameCount = colCounts.filter(c => c === firstCount).length;
-
-  return sameCount >= lines.length - 1 && firstCount >= 2;
-}
-
 /*----------------------------------------------------------------------------------------------
 -------------------------------------------------APP--------------------------------------------
 ----------------------------------------------------------------------------------------------*/

@@ -17,7 +17,7 @@ export default class Calculation {
     ];
 
     this.derivatePoints = initialSettings.derivatePoints; // Nombre de points pour la dérivation
-    this.derivateEdges = this.derivateEdges; // Calculer les bords ou non
+    this.derivateEdges = initialSettings.derivateEdges; // Calculer les bords ou non
     
     // Créer une instance de math.js pré-configurée pour gérer les opérations sur les tableaux.
     this.mathInstance = this.createConfiguredMathInstance();
