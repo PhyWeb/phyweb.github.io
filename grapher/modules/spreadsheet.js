@@ -90,6 +90,7 @@ class Spreadsheet {
       // S'applique uniquement aux en-têtes de colonnes (col >= 0)
     if (col >= 0) {
         const curve = this.data.getCurveByIndex(col);
+        if (!curve) return;
         if (curve.type !== 'calculation') {
           TH.style.cursor = 'pointer';
           TH.setAttribute('title', 'Double-cliquer pour éditer');
