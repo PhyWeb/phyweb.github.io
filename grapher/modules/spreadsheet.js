@@ -25,9 +25,14 @@ class Spreadsheet {
     console.log("Updating spreadsheet...");
     const significantDigits = this.data.settings.significantDigits;
 
+    // Récupération des en-têtes pour construire la config des colonnes
+    const headers = this.data.getHeaders();
+    const columnsConfig = headers.map(() => ({ type: 'numeric' }));
+
     this.hot.updateSettings({
       data: this.data.getTable(),
-      colHeaders: this.data.getHeaders(),
+      colHeaders: headers,
+      columns: columnsConfig,
       autoColumnSize: false,
       autoRowSize: false,
       cells: (row, col, prop) => ({
@@ -98,6 +103,7 @@ class Spreadsheet {
       minSpareRows: 1,
       rowHeaders: true,
       colHeaders: this.data.getHeaders(),
+      columns: this.data.getHeaders().map(() => ({ type: 'numeric' })), 
       afterOnCellMouseDown: afterOnCellMouseDown,
       afterGetColHeader: afterGetColHeader,
       autoColumnSize: false,
