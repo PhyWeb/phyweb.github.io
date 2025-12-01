@@ -16,6 +16,7 @@
     - REGRESSI ne lit que les lignes completes. Il faut un disclaimer quand on genere un rw3 incomplet
 
     - gerer les quota sessionstorage
+    - creer un module pour l'export import qui gere en interne si il utilise sessionstorage ou electron pour améliorer ca. (warning si pas assez de place)
 
 # Home
     - package linux et macos
