@@ -856,7 +856,7 @@ $('#confirm-send-to-grapher-button').addEventListener('click', () => {
   
   const series = prepareSeriesForDownload(saveData, startTime, endTime, effectiveSampleRate);
 
-  const pw = exportToPW(series, {rowMustBeComplete : false}, "Audio", "Enregistrement PhyWeb Tracker");
+  const pw = exportToPW(series, {rowMustBeComplete : false}, "Audio", "// Enregistrement PhyWeb Tracker");
   console.log("Données exportées pour le grapheur :", pw);
 
   const sizeInBytes = new Blob([pw]).size;
