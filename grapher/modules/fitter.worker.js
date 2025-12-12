@@ -8,7 +8,7 @@
 // On importe la librairie Alglib dans le scope du worker.
 try {
   // Charge le script Alglib dans le scope global du worker.
-  importScripts('../../common/alglib/alglib-v1.1.0.js'); 
+  importScripts('../common/alglib/alglib-v1.1.0.js'); 
 } catch (e) {
   console.error("Alglib n'a pas pu être chargé via importScripts.", e);
 }
