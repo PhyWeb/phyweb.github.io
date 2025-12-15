@@ -98,7 +98,7 @@ $("#mesures-button").addEventListener("click", ()=>{
 
 $("#send-to-grapher-button").addEventListener("click", () => {
   const series = measurement.prepareDownloadData();
-  const pw = exportToPW(series, {rowMustBeComplete : true}, "Tracker", "Pointage PhyWeb Tracker");
+  const pw = exportToPW(series, {rowMustBeComplete : true}, "Tracker", "// Pointage PhyWeb Tracker");
   console.log("Données exportées pour le grapheur :", pw);
 
   // ELECTRON

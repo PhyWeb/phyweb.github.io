@@ -58,6 +58,8 @@
 
     - le zoom auto marche pas toujours comme il faut. si une serie (x) a une grande valeur alors qu'il n'y a pas de y associé car ligne semi vide. il ne faudrait pas prendre en compte cette valeur
 
+    - améliorer les guess initiaux des paramètres des modélisations.
+
 
 # MISC
     - tester sur petit ecran (et faire les adaptations nécessaires)
