@@ -29,8 +29,6 @@
 
     - mettre en place la confirmation de quit (notament quand on veut creer une nouvelle session)
 
-    - try catch pour l'autorisation d'utiliser le micro
-
 # Tracker
     - bug or feature ? : frame is downloaded only if all points are set
     - RELATED : centraliser la logique de preparation des données pour CSV rw3, transfert à grapher et clipboard

@@ -52,6 +52,23 @@ let onAudioDecodeEndedBuffer;
 // Save vars
 let saves = [];
 
+async function safeStartAudio(mode) {
+  const isAllowed = await audio.startAudio(mode);
+  
+  if (!isAllowed) {
+    alertModal({
+      type: "danger",
+      title: "Accès au micro refusé",
+      body: `
+        <p>L'application n'a pas pu accéder à votre microphone.</p>
+        <p>Veuillez vérifier les <strong>autorisations de votre navigateur</strong> ou vérifier qu'un autre programme n'utilise pas déjà le micro. Puis rechargez la page.</p>
+      `,
+      confirm: "OK"
+    });
+  }
+  return isAllowed;
+}
+
 /*----------------------------------------------------------------------------------------------
 ----------------------------------------------TABS----------------------------------------------
 ----------------------------------------------------------------------------------------------*/
@@ -62,16 +79,19 @@ tabManager.newTab({
   tab: $("#rt-panel"),
   isActive : true,
   clickCB: ()=>{
-	  audio.startAudio("RT");
-    rtWaveChart.reflow();
-    rtFourierChart.reflow();
+    safeStartAudio("RT").then(ok => {
+      if(ok) {
+        rtWaveChart.reflow();
+        rtFourierChart.reflow();
+      }
+    });
   }
 });
 tabManager.newTab({
   tabButton: $("#rec-tab-button"),
   tab: $("#rec-panel"),
   clickCB: ()=>{
-	  audio.startAudio("REC");
+	  safeStartAudio("REC");
   }
 });
 
@@ -184,7 +204,9 @@ $("#complete-mode-button").addEventListener("click", async ()=>{
 });
 
 async function audioInit(){
-	await audio.startAudio("RT");
+  const ok = await safeStartAudio("RT");
+  if(!ok) return; // Arrête l'init si pas d'accès
+
   baseSampleRate = audio.getSampleRate();
   recSampleRate = baseSampleRate; // The sample will be recorded with this sampleRate
 

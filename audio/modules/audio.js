@@ -29,50 +29,67 @@ class PhyAudio{
     if (!this.isModuleLoaded) {
       await this.audioCtx.audioWorklet.addModule('modules/processor-node.js');
     }
-    // Create the rt or rec graph
+    
+    let success = false;
     if(_mode === "RT"){
-      await this.loadRT();
+      success = await this.loadRT();
     }
     if(_mode === "REC"){
-      await this.loadREC();
+      success = await this.loadREC();
     }
 
-    this.audioCtx.resume();
+    if(success){
+      this.audioCtx.resume();
+    }
+    return success;
   };
 
   loadRT = async () => {
-    this.mediaStream = await navigator.mediaDevices.getUserMedia({audio: true});
-    this.micNode = this.audioCtx.createMediaStreamSource(this.mediaStream);
-    this.gainNode = this.audioCtx.createGain();
-    this.analyserNode = this.audioCtx.createAnalyser();
-    this.analyserNode.fftSize = this.bufferSize * 2;
+    try {
+      this.mediaStream = await navigator.mediaDevices.getUserMedia({audio: true});
+      this.micNode = this.audioCtx.createMediaStreamSource(this.mediaStream);
+      this.gainNode = this.audioCtx.createGain();
+      this.analyserNode = this.audioCtx.createAnalyser();
+      this.analyserNode.fftSize = this.bufferSize * 2;
 
-    this.micNode.connect(this.gainNode).connect(this.analyserNode);
+      this.micNode.connect(this.gainNode).connect(this.analyserNode);
+
+      return true;  
+    } catch (error) {
+      console.error("Accès micro refusé (RT):", error);
+      return false;
+    }
   }
 
   loadREC = async () => {
-    this.mediaStream = await navigator.mediaDevices.getUserMedia({audio: true});
-    this.micNode = this.audioCtx.createMediaStreamSource(this.mediaStream);
-    this.processorNode = new AudioWorkletNode(this.audioCtx, 'processor-node');
+    try {
+      this.mediaStream = await navigator.mediaDevices.getUserMedia({audio: true});
+      this.micNode = this.audioCtx.createMediaStreamSource(this.mediaStream);
+      this.processorNode = new AudioWorkletNode(this.audioCtx, 'processor-node');
 
-    this.processorNode.port.onmessage = (e) => {
-      if (e.data.eventType === 'data') {
-        if(this.recording){
-          let bufferLength = e.data.audioBuffer.length;
+      this.processorNode.port.onmessage = (e) => {
+        if (e.data.eventType === 'data') {
+          if(this.recording){
+            let bufferLength = e.data.audioBuffer.length;
 
-          this.data.push(convertFloat32ToInt16(e.data.audioBuffer))
-          if(this.data.length * bufferLength > this.recordLength * this.audioCtx.sampleRate){
-            this.availableData = true;
-            this.recording = false;
+            this.data.push(convertFloat32ToInt16(e.data.audioBuffer))
+            if(this.data.length * bufferLength > this.recordLength * this.audioCtx.sampleRate){
+              this.availableData = true;
+              this.recording = false;
+            }
           }
         }
-      }
-      if (e.data.eventType === 'stop') {
-        // recording has stopped TODO probably not usefull
-      }
-    };
+        if (e.data.eventType === 'stop') {
+          // recording has stopped TODO probably not usefull
+        }
+      };
 
-    this.micNode.connect(this.processorNode);
+      this.micNode.connect(this.processorNode);
+      return true;
+    } catch (error) {
+      console.error("Accès micro refusé (REC):", error);
+      return false;
+    }
   };
 
   isDataAvailable = () =>{
