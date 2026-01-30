@@ -128,7 +128,12 @@ class Spreadsheet {
   }
 
   clear() {
-    this.hot.loadData([]);
+    // Vide les données et réinitialise les en-têtes/colonnes
+    this.hot.updateSettings({
+      data: [],
+      colHeaders: true,
+      columns: null
+    });
   }
 }
 

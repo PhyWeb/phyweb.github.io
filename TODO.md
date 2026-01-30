@@ -53,9 +53,6 @@
 
     - améliorer les guess initiaux des paramètres des modélisations.
 
-    - BUG : le bouton nouvelle session laisse des entetes dans le spreadsheet meme si data est vide je crois
-
-
 # MISC
     - tester sur petit ecran (et faire les adaptations nécessaires)
 
