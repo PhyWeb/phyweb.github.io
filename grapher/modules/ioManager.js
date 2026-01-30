@@ -892,13 +892,15 @@ generatePW() {
     }
   }
 
-  /**
+/**
    * Point d'entrée pour les données venant d'autres applications PhyWeb.
-   * @param {string} jsonData - Les données JSON brutes depuis le localStorage.
+   * @param {object|string} dataInput - L'objet de données ou la string JSON.
    */
-  loadInterAppJSON(jsonData) {
+  loadInterAppJSON(dataInput) {
+    console.log("Chargement des données inter-applications...", dataInput);
     try {
-      const data = JSON.parse(jsonData);
+      const data = (typeof dataInput === "string") ? JSON.parse(dataInput) : dataInput;
+      console.log("Données inter-applications analysées :", data);
       if (!data.source || !data.payload) {
         throw new Error("Le format des données inter-applications est invalide.");
       }

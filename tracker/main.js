@@ -6,6 +6,8 @@ import PLAYER from "./modules/player.js"
 
 import {Common, alertModal, NavigationManager, exportToPW} from "../common/common.js"
 
+import ExchangeManager from '../../common/modules/ExchangeManager.js';
+
 const $ = document.querySelector.bind(document);
 
 let videolist = new VIDEOLIST();
@@ -99,16 +101,9 @@ $("#mesures-button").addEventListener("click", ()=>{
 $("#send-to-grapher-button").addEventListener("click", () => {
   const series = measurement.prepareDownloadData();
   const pw = exportToPW(series, {rowMustBeComplete : true}, "Tracker", "// Pointage PhyWeb Tracker");
-  console.log("Données exportées pour le grapheur :", pw);
 
-  // ELECTRON
-  if (window.electronAPI){
-    window.electronAPI.openGrapherWindowWithPW(pw);
-  } else {
-    // WEB
-    sessionStorage.setItem('phyweb-import-data', pw);
-    window.open('../grapher/index.html', '_blank');
-  }
+  // Send data to Grapher
+  ExchangeManager.sendToGrapher(pw);
 });
 
 $("#empty-state-new-session-btn").addEventListener("click", ()=>{

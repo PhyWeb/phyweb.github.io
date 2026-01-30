@@ -3,6 +3,8 @@ import {PhyAudio, convertFloat32ToInt16} from "./modules/audio.js"
 
 import {Common, alertModal, TabManager, NavigationManager, downloadFile, exportToPW, exportToCSV, exportToRW3, Serie} from "../common/common.js"
 
+import ExchangeManager from '../../common/modules/ExchangeManager.js';
+
 const $ = document.querySelector.bind(document);
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -857,20 +859,9 @@ $('#confirm-send-to-grapher-button').addEventListener('click', () => {
   const series = prepareSeriesForDownload(saveData, startTime, endTime, effectiveSampleRate);
 
   const pw = exportToPW(series, {rowMustBeComplete : false}, "Audio", "// Enregistrement PhyWeb Tracker");
-  console.log("Données exportées pour le grapheur :", pw);
 
-  const sizeInBytes = new Blob([pw]).size;
-const sizeInMB = sizeInBytes / (1024 * 1024);
-
-console.log(`Taille du payload : ${sizeInBytes} octets (${sizeInMB.toFixed(2)} Mo)`);
-  
   // Send data to Grapher
-  if (window.electronAPI) {
-    window.electronAPI.openGrapherWindowWithPW(pw);
-  } else {
-    sessionStorage.setItem('phyweb-import-data', pw);
-    window.open('../grapher/index.html', '_blank');
-  }
+  ExchangeManager.sendToGrapher(pw);
 
   $('#send-to-grapher-modal').classList.remove('is-active');
 });

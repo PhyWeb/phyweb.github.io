@@ -8,6 +8,9 @@ import {Grapher} from "./modules/grapher.js"
 import {Calculation} from "./modules/calculation.js"
 import {loadSettings} from "./modules/settingsManager.js"
 
+import ExchangeManager from '../../common/modules/ExchangeManager.js';
+
+
 const $ = document.querySelector.bind(document);
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -49,35 +52,37 @@ document.addEventListener('DOMContentLoaded', () => {
   grapher.newChart();
 
   // Vérifier les données d'une autre application après l'initialisation complète
-  const interAppDataJSON = sessionStorage.getItem('phyweb-import-data');
-  const newFileModal = $('#new-file-modal');
-  if (interAppDataJSON) {
+  ExchangeManager.checkStartupData((importedPW) => {
+    const newFileModal = $('#new-file-modal');
+    
     // Masquer l'état vide
     $('#empty-state-container').classList.add('is-hidden');
     // Afficher la modale "Nouveau fichier" pendant le chargement
     newFileModal.classList.add('is-active');
     // Afficher un loader dans la modale
     uiManager.setModalLoading(true);
-    setTimeout(() => {
-    try {
-      // Délégué le chargement à l'IOManager
-      app.ioManager.loadPWFromString(interAppDataJSON);
-      // Si le chargement est un succès, on affiche l'interface principale et on ferme les modales.
-      uiManager.showTabsAndPanels();
-      uiManager.common.modalManager.closeAllModals();
-    } catch (e) {
-      console.error("Échec du chargement des données inter-applications:", e);
-      // En cas d'erreur, on affiche une alerte. La modale reste ouverte, mais on cache le spinner.
-      alertModal({ type: 'warning', title: 'Erreur de chargement', body: e.message, confirm: 'OK' });
-    } finally {
-      // On enlève les données de sessionStorage pour éviter de recharger au prochain démarrage
-      sessionStorage.removeItem('phyweb-import-data');
-      // Enlever le loader
-      uiManager.setModalLoading(false);
-    }
-        }, 50); // 50ms suffisent pour permettre au navigateur de rendre l'interface
 
-  }
+    console.log("Données importées depuis une autre application :", importedPW);
+
+    setTimeout(() => {
+      try {
+        app.ioManager.loadPWFromString(importedPW);
+
+        // Si le chargement est un succès, on affiche l'interface principale et on ferme les modales.
+        uiManager.showTabsAndPanels();
+        uiManager.common.modalManager.closeAllModals();
+      } catch (e) {
+        console.error("Échec du chargement des données inter-applications:", e);
+        // En cas d'erreur, on affiche une alerte.
+        alertModal({ type: 'warning', title: 'Erreur de chargement', body: e.message, confirm: 'OK' });
+      } finally {
+        // Note : sessionStorage.removeItem est déjà géré par ExchangeManager
+        
+        // Enlever le loader
+        uiManager.setModalLoading(false);
+      }
+    }, 50);
+  });
 
   // Gestion du redimensionnement de la fenêtre
   function resize(){
