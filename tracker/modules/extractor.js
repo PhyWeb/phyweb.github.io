@@ -10,34 +10,41 @@ const $ = document.querySelector.bind(document);
 export default class EXTRACTOR {
   constructor() {
     this.checkSizeInfoReady = false;
-
     this.mp4boxfile;
-
     this.height = null;
     this.width = null;
     this.nbSamples = null;
     this.duration = null;
-
     this.size = 0;
-
     this.sizeThreshold = 1024;
+    this._finishTriggered = false;
+    this._pendingBitmapsCount = 0;
   }
+
+  triggerFinish = (wasCanceled = false) => {
+    if (this._finishTriggered) return;
+    this._finishTriggered = true;
+    
+    const checkAndFinish = () => {
+      if (this._pendingBitmapsCount <= 0 || wasCanceled) {
+        this.onFinish(wasCanceled);
+      } else {
+        setTimeout(checkAndFinish, 50);
+      }
+    };
+    checkAndFinish();
+  };
 
   checkSize(_file, _checksizeCB, _decodedVideoCB, _forceFilesize = false) {
     this.checksizeCB = _checksizeCB;
     this.decodedVideoCB = _decodedVideoCB;
-
-    console.log("File: ", _file);
-
     this.forceFileSize = _forceFilesize;
 
     let chunksize = 1024 * 1024;
-
     let fileSize = _file.size;
     let offset = 0;
 
     this.keyFrameFound = false;
-
     this.abortFlag = false;
 
     this.decodedVideo = {
@@ -47,7 +54,6 @@ export default class EXTRACTOR {
       frames: []
     }
 
-    // Display progress bar
     $("#open-modal").classList.remove("is-active");
     alertModal({
       title: "Analyse de la vidéo",
@@ -62,7 +68,6 @@ export default class EXTRACTOR {
       id:"checksize-loading-modal"
     });
 
-    // MP4Box callbacks
     if(this.mp4boxfile){
       this.mp4boxfile.flush();
     }
@@ -73,29 +78,22 @@ export default class EXTRACTOR {
     }
     this.mp4boxfile.onSamples = (track_id, ref, samples) => this.onSamples(samples);
 
-
     var onBlockRead = (evt) => {
-      if(this.abortFlag){
-        return;
-      }
-
+      if(this.abortFlag) return;
       if (offset >= fileSize) {
+        this.mp4boxfile.flush(); 
         return;
       }
-
       if (evt.target.error == null) {
-        if($("#checksize-progress")){
-          $("#checksize-progress").value = Math.ceil(100*offset/fileSize);
-        }
+        let progressEl = $("#checksize-progress");
+        if(progressEl) progressEl.value = Math.ceil(100*offset/fileSize);
         let buffer = evt.target.result;
         buffer.fileStart = offset;
         this.mp4boxfile.appendBuffer(buffer);
         offset += evt.target.result.byteLength;
       } else {
-        console.log("Read error: " + evt.target.error);
         return;
       }
-
       readBlock(offset, chunksize, _file);
     }
 
@@ -105,16 +103,12 @@ export default class EXTRACTOR {
       r.onload = onBlockRead;
       r.readAsArrayBuffer(blob);
     }
-
     readBlock(offset, chunksize, _file);
   }
 
   onReady(_info){
-    console.log("info", _info);
-
     this.info = _info;
-
-    $("#checksize-loading-modal").remove();
+    if($("#checksize-loading-modal")) $("#checksize-loading-modal").remove();
 
     this.track = _info.videoTracks[0];
     this.height = this.track.video.height;
@@ -123,30 +117,19 @@ export default class EXTRACTOR {
     this.duration = this.track.movie_duration / this.track.movie_timescale;
     this.fps = this.nbSamples / this.duration;
 
-    // Get the appropriate `description` for a specific track. Assumes that the
     let getDescription = (track) => {
       for (const entry of track.mdia.minf.stbl.stsd.entries) {
         if (entry.avcC || entry.hvcC || entry.av1C || entry.vpcC) {
           const stream = new MP4Box.DataStream(undefined, 0, true);
-          if (entry.avcC) {
-            entry.avcC.write(stream);
-          }
-          if (entry.hvcC) {
-            entry.hvcC.write(stream);
-          }
-          if (entry.av1C) {
-            entry.av1C.write(stream);
-          }
-          if (entry.vpcC) {
-            entry.vpcC.write(stream);
-          }
-          return new Uint8Array(stream.buffer, 8);  // Remove the box header.
+          if (entry.avcC) entry.avcC.write(stream);
+          if (entry.hvcC) entry.hvcC.write(stream);
+          if (entry.av1C) entry.av1C.write(stream);
+          if (entry.vpcC) entry.vpcC.write(stream);
+          return new Uint8Array(stream.buffer, 8);
         }
       }
-      console.log("avcC, hvcC, vpcC or av1C not found");
     }
 
-    // Decoder configuration
     this.config = {
       codec: this.track.codec,
       codedHeight: this.track.video.height,
@@ -161,51 +144,26 @@ export default class EXTRACTOR {
 
     this.updateSize();
 
-    console.log(`video size ${this.size}  MiB`)
-
-    // Check if the video is too big
     if(this.size < this.sizeThreshold && !this.forceFileSize) {
       this.extract();
     } else{
       $("#file-size-modal").classList.add('is-active');
-
       $("#def-size-label").innerHTML = ` ( ${this.width} / ${this.height} => ${this.width / 2} / ${this.height / 2} )`;
       $("#fps-size-label").innerHTML = `( ${this.fps.toFixed(2)/1} => ${this.fps.toFixed(2)/2} img/s )`;
-
       $("#duration-size-label").innerHTML = this.duration.toFixed(2);
-
       $("#file-slider").noUiSlider.reset();
-      $("#file-slider").noUiSlider.updateOptions({
-        range:{
-          'min': 0,
-          'max': this.duration
-        }
-      });
+      $("#file-slider").noUiSlider.updateOptions({ range:{ 'min': 0, 'max': this.duration } });
 
       this.updateSize();
-
-      $("#def-size-input").addEventListener("click", ()=>{
-        this.updateSize();
-      });
-
-      $("#fps-size-input").addEventListener("click", ()=>{
-        this.updateSize();
-      });
-
+      $("#def-size-input").addEventListener("click", () => this.updateSize());
+      $("#fps-size-input").addEventListener("click", () => this.updateSize());
       $("#duration-size-input").addEventListener("click", ()=>{
-        if($("#duration-size-input").checked){
-          $("#duration-size-inputs").classList.remove("is-hidden");
-        } else{
-          $("#duration-size-inputs").classList.add("is-hidden");
-        }
+        if($("#duration-size-input").checked) $("#duration-size-inputs").classList.remove("is-hidden");
+        else $("#duration-size-inputs").classList.add("is-hidden");
         this.updateSize();
       });
-      $("#start-size-input").addEventListener("change", ()=>{
-        this.updateSize();
-      });
-      $("#end-size-input").addEventListener("change", ()=>{
-        this.updateSize();
-      });
+      $("#start-size-input").addEventListener("change", () => this.updateSize());
+      $("#end-size-input").addEventListener("change", () => this.updateSize());
     }
   }
 
@@ -213,206 +171,146 @@ export default class EXTRACTOR {
     let h = $("#def-size-input").checked ? this.height / 2 : this.height;
     let w = $("#def-size-input").checked ? this.width / 2 : this.width;
     let fps = $("#fps-size-input").checked ? this.fps / 2 : this.fps;
-
-    let duration;
-    if($("#duration-size-input").checked){
-      duration = $("#end-size-input").value - $("#start-size-input").value;
-    } else{
-      duration = this.duration;
-    }
-
+    let duration = $("#duration-size-input").checked ? ($("#end-size-input").value - $("#start-size-input").value) : this.duration;
     let nb = duration * fps;
-
     this.size = Math.ceil(h * w * 4 * nb / (1024*1024));
-
     if(this.size < this.sizeThreshold) {
-      $("#size-label").classList.remove("has-text-danger");
-      $("#size-label").classList.add("has-text-success");
-
-      $("#open-resized-video").classList.remove("is-danger");
-      $("#open-resized-video").classList.add("is-success");
+      $("#size-label").className = "has-text-success";
+      $("#open-resized-video").className = "button is-success";
       $("#open-resized-video").innerHTML = "Ouvrir la vidéo";
     } else {
-      $("#size-label").classList.add("has-text-danger");
-      $("#size-label").classList.remove("has-text-success");
-
-      $("#open-resized-video").classList.add("is-danger");
-      $("#open-resized-video").classList.remove("is-success");
+      $("#size-label").className = "has-text-danger";
+      $("#open-resized-video").className = "button is-danger";
       $("#open-resized-video").innerHTML = "Ouvrir la vidéo malgré sa taille";
     }
-    
     $("#size-label").innerHTML = this.size + " Mio"
   }
 
   extract(){
     this.checksizeCB()
-
     this.decodedVideo.duration = $("#duration-size-input").checked ? ($("#end-size-input").value - $("#start-size-input").value) * 1000 : this.track.movie_duration * 1000 / this.track.movie_timescale; 
     this.decodedVideo.width = $("#def-size-input").checked ? this.width / 2 : this.width;
     this.decodedVideo.height = $("#def-size-input").checked ? this.height / 2 : this.height;
 
     let frameCount = 0;
     let canceled = false;
+    this._finishTriggered = false;
+    this._pendingBitmapsCount = 0;
 
     alertModal({
       title: "Ouverture de la vidéo",
-      body: `<p>Décodage de la vidéo:</p>
-      <progress class="progress is-primary" id="extract-decode-progress" value="0" max="100"></progress>`,
+      body: `<p>Décodage de la vidéo:</p><progress class="progress is-primary" id="extract-decode-progress" value="0" max="100"></progress>`,
       width: "42rem",
-      cancel: {
-        type: "danger",
-        label: "Arrêter",
-        cb: ()=>{canceled = true}
-      },
+      cancel: { type: "danger", label: "Arrêter", cb: ()=>{canceled = true} },
       id:"extract-loading-modal"
     });
-
 
     let firstFrameTimestamp = 0;
     let isOver = false;
 
     this.decoder = new VideoDecoder({
       output: (frame) => {
-
-        // compute the progress
-        if(frameCount == 0){
-          if($("#duration-size-input").checked){
-            firstFrameTimestamp = frame.timestamp - (frame.duration);
-          } else {
-            firstFrameTimestamp = 0;
-          }         
-        }
+        if(frameCount == 0) firstFrameTimestamp = $("#duration-size-input").checked ? (frame.timestamp - frame.duration) : 0;
         let progress = ((frame.timestamp + frame.duration ) / 1e3 - firstFrameTimestamp / 1e3) / this.decodedVideo.duration * 100;
-        // check if the user canceled
-        if(canceled){
-          if(!isOver){
-            isOver = true;
-            this.onFinish(true);
-          }
 
-          frame.close();
-          return;
+        // On vérifie si on a atteint le nombre total de samples
+        if (this.nbSamples && !$("#duration-size-input").checked && !$("#fps-size-input").checked) {
+          if (frameCount + 1 >= this.nbSamples) {
+            if(!isOver){ isOver = true; this.triggerFinish(false); }
+          }
+        }
+
+        if(canceled){
+          if(!isOver) { isOver = true; this.triggerFinish(true); }
+          frame.close(); return;
         }
         
-        // check if the frame is after the last frame
-        if(progress >= 100){
-          if(!isOver){
-            isOver = true;
-            this.onFinish(false);
-          }
-
-          frame.close();
-          return;
+        if(progress >= 99.9 && !isOver){
+          isOver = true; this.triggerFinish(false);
+          frame.close(); return;
         }
 
-        // Update the progressbar
-        $("#extract-decode-progress").value = Math.ceil(progress);
+        // Sécurité : Vérifier si l'élément existe avant d'assigner .value
+        let progressEl = $("#extract-decode-progress");
+        if(progressEl) progressEl.value = Math.ceil(progress);
 
-        // check if the frame is before the start
         if($("#duration-size-input").checked && frame.timestamp / 1000000 < $("#start-size-input").value){
-          frame.close();
-          return;
+          frame.close(); return;
         }
 
-        // check if the frame is odd
         if($("#fps-size-input").checked && frameCount % 2 == 1){
+          frame.close(); frameCount++; return;
+        }
+
+        this._pendingBitmapsCount++;
+        let promise = $("#def-size-input").checked 
+          ? createImageBitmap(frame,{resizeWidth : this.decodedVideo.width, resizeHeight : this.decodedVideo.height, resizeQuality : "medium"})
+          : createImageBitmap(frame);
+
+        promise.then((result)=>{
+          this.decodedVideo.frames.push(result);
           frame.close();
-          frameCount++;
-          return;
-        }
-
-        if($("#def-size-input").checked){
-          createImageBitmap(frame,{resizeWidth : this.decodedVideo.width / 2, resizeHeight : this.decodedVideo.height / 2, resizeQuality : "medium"}).then((result)=>{
-            this.decodedVideo.frames.push(result);
-            frame.close();
-          })
-        } else {
-          createImageBitmap(frame).then((result)=>{
-            this.decodedVideo.frames.push(result);
-            frame.close();
-          })
-        }
-
+          this._pendingBitmapsCount--;
+        }).catch(() => {
+          frame.close();
+          this._pendingBitmapsCount--;
+        });
         frameCount++;
       },
-      error: function(e) {
-        console.error(e);
-        alertModal({
-          type: "danger",
-          title: "Erreur",
-          body: `<p>Une erreur est survenue lors du décodage de la vidéo.</p>
-            <p class="has-text-justified">Le format de la vidéo n'est pas pris en charge ou la mémoire vidéo est insuffisante pour ouvrir une vidéo de cette taille.</p>`,
-          width: "42rem",
-          confirm: "OK",
-        });
-      },
+      error: (e) => { console.error(e); },
     });
 
     this.decoder.configure(this.config);
-
     this.mp4boxfile.setExtractionOptions(this.info.videoTracks[0].id);
     if($("#duration-size-input").checked){
-      if(parseInt($("#start-size-input").value) - 5 > 0){
-        this.mp4boxfile.seek(parseInt($("#start-size-input").value) - 5);
-      }
+      let seekTime = parseInt($("#start-size-input").value) - 5;
+      if(seekTime > 0) this.mp4boxfile.seek(seekTime);
     }
     this.mp4boxfile.start();
   }
 
   onSamples(samples){
-    // Generate and emit an EncodedVideoChunk for each demuxed sample.
-    for (const sample of samples) {
+    for (let i = 0; i < samples.length; i++) {
+      const sample = samples[i];
       this.onChunk(new EncodedVideoChunk({
         type: sample.is_sync ? "key" : "delta",
         timestamp: 1e6 * sample.cts / sample.timescale,
         duration: 1e6 * sample.duration / sample.timescale,
         data: sample.data
-      }))
+      }));
+      if (sample.number + 1 >= this.nbSamples) this.decoder.flush();
     }
   }
 
   onChunk(chunk){
-    if($("#duration-size-input").checked && (chunk.timestamp - chunk.duration) / 1000000 > (parseInt($("#end-size-input").value) + 1)){
-      return;
+    if ($("#duration-size-input").checked && (chunk.timestamp - chunk.duration) / 1000000 > (parseInt($("#end-size-input").value) + 1)) {
+      this.triggerFinish(false); return;
     }
-
-    if($("#duration-size-input").checked && chunk.timestamp / 1000000 < $("#start-size-input").value - 5){
-      return; //return if the frame is at least 5s before the start
-    }
-
+    if($("#duration-size-input").checked && chunk.timestamp / 1000000 < $("#start-size-input").value - 5) return;
     if($("#duration-size-input").checked && chunk.timestamp / 1000000 <= $("#start-size-input").value){
       if(!this.keyFrameFound){
-        if(chunk.type !== "key"){
-          return;
-        } else{
-          this.keyFrameFound = true; // Find the first keyframe within 5s of the start
-        }
+        if(chunk.type !== "key") return;
+        else this.keyFrameFound = true;
       }
     }
-
     this.decoder.decode(chunk);
   }
 
   onFinish = (wasCanceled) => {
-    if ($('#extract-loading-modal')) {
-      $('#extract-loading-modal').remove();
-    }
-
-    // Si le processus a été annulé, on nettoie les images stockées pour libérer la mémoire
-    if (wasCanceled) {
-      console.log("Décodage annulé. Libération des images allouées.");
-      for (const frameBitmap of this.decodedVideo.frames) {
-        frameBitmap.close();
-      }
-      this.decodedVideo.frames = []; // Vide le tableau
-      return; // On ne continue pas vers le callback
-    }
-
-    let flushVideoDecoder = async () => {
+    // On ne retire la modale que si on est sûr d'avoir tout fini
+    let finalize = async () => {
       await this.decoder.flush();
       await this.mp4boxfile.flush();
+      
+      if ($('#extract-loading-modal')) $('#extract-loading-modal').remove();
+
+      if (wasCanceled) {
+        for (const frameBitmap of this.decodedVideo.frames) frameBitmap.close();
+        this.decodedVideo.frames = [];
+        return;
+      }
       this.decodedVideoCB(this.decodedVideo);
     }
-    flushVideoDecoder();
+    finalize();
   }
 }
