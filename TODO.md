@@ -1,6 +1,5 @@
 # Common
     - modal à propos: improve descriptions
-    - Etendre la confirmation de qui à quand on ferme onglet, charge d'autres données...
     - Glisser-déposer : Permettre de charger un fichier par glisser-déposer (drag and drop)
     - creer un moteur qui gere les raccourvis clavier (ctrl s et n notamment)
     - Auto-focus intelligents dans les modales: quand tu ouvres une modale, place le focus sur le premier champ utile (ex: symbole dans “Ajouter grandeur”, fichier dans “Ouvrir”, textarea dans “Calculs”). Ajoute aussi Enter=confirmer, Escape=fermer.
@@ -26,8 +25,6 @@
 
     - permettre de télécharger depuis les onglets RT et REC et virer le warning
     - creer un wizard pour le téléchargement en étape (comme ca on peut dl a partir de nimporte ou, le choix se fait dans le wizard)
-
-    - mettre en place la confirmation de quit (notament quand on veut creer une nouvelle session)
 
 # Tracker
     - bug or feature ? : frame is downloaded only if all points are set
@@ -55,6 +52,8 @@
     - le zoom auto marche pas toujours comme il faut. si une serie (x) a une grande valeur alors qu'il n'y a pas de y associé car ligne semi vide. il ne faudrait pas prendre en compte cette valeur
 
     - améliorer les guess initiaux des paramètres des modélisations.
+
+    - BUG : le bouton nouvelle session laisse des entetes dans le spreadsheet meme si data est vide je crois
 
 
 # MISC

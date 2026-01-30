@@ -730,6 +730,43 @@ export class NavigationManager {
       width: '42rem'
     });
   }
+
+  /**
+   * Exécute une action destructrice après confirmation si des données sont présentes.
+   * @param {function} action - La fonction à exécuter si l'utilisateur confirme ou s'il n'y a pas de données.
+   * @param {object} options - Options pour personnaliser le message de la modale.
+   */
+  confirmAction(action, options = {}) {
+    // Valeurs par défaut
+    const {
+      title = "Attention",
+      body = "Cette action entraînera la perte des données non sauvegardées. Voulez-vous continuer ?",
+      confirmLabel = "Continuer",
+      confirmType = "danger"
+    } = options;
+
+    // Si aucune donnée n'est présente, on exécute directement l'action
+    if (!this.hasDataCallback()) {
+      action();
+      return;
+    }
+
+    // Sinon, on demande confirmation
+    this.alertModal({
+      type: 'danger',
+      title: title,
+      body: `<p>${body}</p>`,
+      confirm: {
+        label: confirmLabel,
+        type: confirmType,
+        cb: () => {
+          action();
+        }
+      },
+      cancel: 'Annuler',
+      width: '42rem'
+    });
+  }
 }
 
 /*----------------------------------------------------------------------------------------------

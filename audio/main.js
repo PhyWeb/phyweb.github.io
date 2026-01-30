@@ -143,8 +143,11 @@ document.addEventListener("click", function () {
 });
 
 $("#new-session-button").addEventListener("click", ()=>{
-  // TODO check for unsaved data
-  location.reload();
+  navManager.confirmAction(
+    () => {
+      location.reload();
+    }
+  );
 });
 
 /*----------------------------------------------------------------------------------------------

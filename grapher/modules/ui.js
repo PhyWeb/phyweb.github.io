@@ -365,14 +365,14 @@ export default class UIManager {
   initNavbar() {
     // Définit la condition pour vérifier la présence de données
     const hasUnsavedData = () => {
-        // Vrai s'il y a au moins une courbe ou une annotation
-        return this.data.curves.length > 0 || this.data.annotations.length > 0 || this.editor.getValue().trim() !== '';
+      // Vrai s'il y a au moins une courbe ou une annotation
+      return this.data.curves.length > 0 || this.data.annotations.length > 0 || this.editor.getValue().trim() !== '';
     };
-    const navManager = new NavigationManager(hasUnsavedData);
+    this.navManager = new NavigationManager(hasUnsavedData);
 
-    navManager.addLink($('#navbar-home-button'), '../index.html');
-    navManager.addLink($('#navbar-audio-button'), '../audio/index.html');
-    navManager.addLink($('#navbar-tracker-button'), '../tracker/index.html');
+    this.navManager.addLink($('#navbar-home-button'), '../index.html');
+    this.navManager.addLink($('#navbar-audio-button'), '../audio/index.html');
+    this.navManager.addLink($('#navbar-tracker-button'), '../tracker/index.html');
 
     $("#tableur-tab").addEventListener("click", () => {
       $("#tableur-tab").classList.add("is-active");
@@ -460,36 +460,13 @@ export default class UIManager {
    * et gère les événements associés.
    */
   initFileModals() {
-    // Utility function to confirm new data
-    let newDataConfirmation = (cb) =>{
-      // Check if data exists
-      if(this.data.curves.length === 0 && this.editor.getValue().trim() === ''){
-        cb();
-        return;
-      } else{
-        alertModal({
-          type: "danger",
-          title: "Attention",
-          body: "Cette action supprimera toutes les données actuelles. Êtes-vous sûr de vouloir continuer ?",
-          confirm: {
-            label: "Oui, supprimer",
-            type: "danger", // Pour un bouton rouge
-            cb: () => { // TODO ya plus simple la non ?
-              cb();
-            }
-          },
-          cancel: "Annuler"
-        });
-        return;
-      }
-    }
-
+    // Gestion de l'ouverture de fichier
     $("#file-input").addEventListener('change', async (event) => {
       const file = event.target.files[0];
       if (!file) return;
 
       // La confirmation de suppression des données existantes
-      newDataConfirmation(async () => {
+      this.navManager.confirmAction(async () => {
         // Affiche le spinner de chargement
         this.setModalLoading(true);
         try {
@@ -519,8 +496,9 @@ export default class UIManager {
       $("#file-input").value = null; // allow the onchange trigger even if the same file is selected twice
     });
 
+    // Gestion du bouton "Nouveau fichier"
     $("#new-file-button").addEventListener("click", () => {
-      newDataConfirmation(() => {
+      this.navManager.confirmAction(() => {
         this.app.resetSession();
         this.editor.setValue('');
         this.showTabsAndPanels();
@@ -528,8 +506,9 @@ export default class UIManager {
       });
     });
 
+    // Gestion du bouton "Coller depuis le presse-papier"
     $("#paste-button").addEventListener('click', () => {
-      newDataConfirmation(async () => {
+      this.navManager.confirmAction(async () => {
         // Affiche le spinner de chargement
         this.setModalLoading(true);
         try {
@@ -822,7 +801,6 @@ export default class UIManager {
     this.initEditHeaderModal();
 
   }
-
 
   /**
    * Initialise la modale d'ajout de courbe et gère les événements associés.

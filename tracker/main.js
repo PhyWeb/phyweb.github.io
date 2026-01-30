@@ -132,8 +132,14 @@ document.addEventListener("click", function () {
 // VIDEOLIST
 videolist.init("assets/list.json");
 $("#open-video").addEventListener("click", ()=>{
-  common.modalManager.closeAllModals();
-  player.load("assets/" + $(".video-item.is-active").dataset.path, $("#force-filesize-modal-input").checked);
+  navManager.confirmAction(() => {
+    common.modalManager.closeAllModals();
+    player.load("assets/" + $(".video-item.is-active").dataset.path, $("#force-filesize-modal-input").checked);
+  }, {
+    title: "Charger la vidéo",
+    body: "Le chargement d'une nouvelle vidéo remplacera la vidéo actuelle. Les données non sauvegardées seront perdues.",
+    confirmLabel: "Charger"
+  });
 });
 
 // FILEINPUT
@@ -156,7 +162,13 @@ $("#file-input").addEventListener("change", () => {
     return;
   }
   if($("#file-input").files[0] != undefined){
-    player.load($("#file-input").files[0], $("#force-filesize-modal-input").checked);
+    navManager.confirmAction(() => {
+      player.load($("#file-input").files[0], $("#force-filesize-modal-input").checked);
+    }, {
+      title: "Ouvrir un fichier",
+      body: "Le chargement d'une nouvelle vidéo remplacera la vidéo actuelle. Les données non sauvegardées seront perdues.",
+      confirmLabel: "Ouvrir"
+    });
   }
 });
 $("#file-input").addEventListener("click", () => {
