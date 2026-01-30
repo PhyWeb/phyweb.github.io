@@ -2,6 +2,9 @@ const { app, BrowserWindow, globalShortcut } = require('electron/main')
 const { ipcMain } = require('electron')
 const path = require('node:path')
 
+// Création d'un Set global pour stocker les références des fenêtres
+const windows = new Set();
+
 const createWindow = (winPath) => {
   const win = new BrowserWindow({
     width: 1280,
@@ -15,6 +18,8 @@ const createWindow = (winPath) => {
     }
   })
 
+  windows.add(win);
+
   win.loadFile(winPath)
 
   // Open the DevTools.
@@ -22,6 +27,11 @@ const createWindow = (winPath) => {
     if (input.type === 'keyDown' && input.key === 'F12') {
       win.webContents.toggleDevTools();
     }
+  });
+
+  // Permet à la mémoire d'être libérée proprement.
+  win.on('closed', () => {
+    windows.delete(win);
   });
 
   return win;

@@ -90,7 +90,6 @@ async function electronSetup(){
         $("#window-restore-button").parentNode.classList.remove("is-hidden");
       }
     }
-    $("#window-close-button").addEventListener('click', () => window.electronAPI.close())
     $("#window-minimize-button").addEventListener('click', () => window.electronAPI.minimize())
     $("#window-maximize-button").addEventListener('click', () => {
       window.electronAPI.maximize()
@@ -296,7 +295,7 @@ function aboutModal(_app){
   // electron
   let version = ""
   if(window.electronAPI){
-    version = "v2503"
+    version = "v2601"
   }
   // Description
   let description;
@@ -621,7 +620,8 @@ export class NavigationManager {
     this.alertModal = alertModal;
     this.isNavigationConfirmed = false;
 
-    this._setupBeforeUnloadListener();
+    this.setupBeforeUnloadListener();
+    this.setupElectronControls();
   }
 
   /**
@@ -629,7 +629,7 @@ export class NavigationManager {
    * N'est pas actif sur localhost pour faciliter le développement.
    * @private
    */
-  _setupBeforeUnloadListener() {
+  setupBeforeUnloadListener() {
     const localHosts = ['localhost', '127.0.0.1'];
     if (localHosts.includes(window.location.hostname)) {
       return;
@@ -685,6 +685,45 @@ export class NavigationManager {
         cb: () => {
           this.isNavigationConfirmed = true; // Empêche beforeunload de se déclencher
           window.location.href = path;
+        }
+      },
+      cancel: 'Annuler',
+      width: '42rem'
+    });
+  }
+
+  /**
+   * Intègre la logique de confirmation aux contrôles de fenêtre Electron
+   */
+  setupElectronControls() {
+    if (!window.electronAPI) return;
+
+    const closeButton = $("#window-close-button");
+    closeButton.addEventListener('click', () => {
+      console.log("Electron close button clicked");
+      this.confirmAndQuit();
+    });
+  }
+
+  /**
+   * Demande confirmation avant de fermer l'application Electron
+   */
+  confirmAndQuit() {
+    if (!this.hasDataCallback()) {
+      window.electronAPI.close();
+      return;
+    }
+
+    this.alertModal({
+      type: 'danger',
+      title: "Quitter l'application",
+      body: '<p>Êtes-vous sûr de vouloir quitter ? Toutes les données non sauvegardées seront perdues.</p>',
+      confirm: {
+        label: 'Quitter',
+        type: 'danger',
+        cb: () => {
+          this.isNavigationConfirmed = true;
+          window.electronAPI.close();
         }
       },
       cancel: 'Annuler',
