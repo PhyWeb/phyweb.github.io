@@ -3,7 +3,7 @@ import {PhyAudio, convertFloat32ToInt16} from "./modules/audio.js"
 
 import {Common, alertModal, TabManager, NavigationManager, downloadFile, exportToPW, exportToCSV, exportToRW3, Serie} from "../common/common.js"
 
-import ExchangeManager from '../../common/modules/ExchangeManager.js';
+import ExchangeManager from '../common/modules/ExchangeManager.js';
 
 const $ = document.querySelector.bind(document);
 

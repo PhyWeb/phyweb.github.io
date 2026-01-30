@@ -1,15 +1,13 @@
-import {Common, alertModal} from "../common/common.js"
+import {Common, alertModal} from "../common/common.js";
+import ExchangeManager from "../common/modules/ExchangeManager.js";
 
-import App from "./modules/app.js"
-import UIManager from "./modules/ui.js"
-import {Data} from "./modules/data.js"
-import {Spreadsheet} from "./modules/spreadsheet.js"
-import {Grapher} from "./modules/grapher.js"
-import {Calculation} from "./modules/calculation.js"
-import {loadSettings} from "./modules/settingsManager.js"
-
-import ExchangeManager from '../../common/modules/ExchangeManager.js';
-
+import App from "./modules/app.js";
+import UIManager from "./modules/ui.js";
+import {Data} from "./modules/data.js";
+import {Spreadsheet} from "./modules/spreadsheet.js";
+import {Grapher} from "./modules/grapher.js";
+import {Calculation} from "./modules/calculation.js";
+import {loadSettings} from "./modules/settingsManager.js";
 
 const $ = document.querySelector.bind(document);
 

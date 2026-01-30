@@ -6,7 +6,7 @@ import PLAYER from "./modules/player.js"
 
 import {Common, alertModal, NavigationManager, exportToPW} from "../common/common.js"
 
-import ExchangeManager from '../../common/modules/ExchangeManager.js';
+import ExchangeManager from '../common/modules/ExchangeManager.js';
 
 const $ = document.querySelector.bind(document);
 

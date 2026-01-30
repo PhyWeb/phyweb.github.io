@@ -32,34 +32,34 @@ export default class ExchangeManager {
     }
   }
 
-/**
-     * Vérifie la présence de données au démarrage et exécute le callback si trouvé.
-     * @param {function} callback - Fonction recevant les données importées.
-     */
-    static checkStartupData(callback) {
-        // Cas 1 : Electron (via l'API exposée dans preload.js)
-        if (window.electronAPI && window.electronAPI.onImportData) {
-            window.electronAPI.onImportData((data) => {
-                // Electron envoie déjà un objet JS, pas besoin de parser
-                callback(data);
-            });
-        } 
-        // Cas 2 : Web (SessionStorage)
-        else {
-            const storedString = sessionStorage.getItem(this.STORAGE_KEY);
-            if (storedString) {
-                try {
-                    // On parse ici pour uniformiser le format (Objet) avec Electron
-                    const data = storedString;
-                    
-                    // On nettoie tout de suite le storage (plus besoin de le faire dans le finally)
-                    sessionStorage.removeItem(this.STORAGE_KEY);
-                    
-                    callback(data);
-                } catch (e) {
-                    console.error("ExchangeManager: Erreur de lecture JSON", e);
-                }
-            }
+  /**
+   * Vérifie la présence de données au démarrage et exécute le callback si trouvé.
+   * @param {function} callback - Fonction recevant les données importées.
+   */
+  static checkStartupData(callback) {
+    // Cas 1 : Electron (via l'API exposée dans preload.js)
+    if (window.electronAPI && window.electronAPI.onImportData) {
+      window.electronAPI.onImportData((data) => {
+        // Electron envoie déjà un objet JS, pas besoin de parser
+        callback(data);
+      });
+    } 
+    // Cas 2 : Web (SessionStorage)
+    else {
+      const storedString = sessionStorage.getItem(this.STORAGE_KEY);
+      if (storedString) {
+        try {
+            // On parse ici pour uniformiser le format (Objet) avec Electron
+            const data = storedString;
+            
+            // On nettoie tout de suite le storage (plus besoin de le faire dans le finally)
+            sessionStorage.removeItem(this.STORAGE_KEY);
+            
+            callback(data);
+        } catch (e) {
+          console.error("ExchangeManager: Erreur de lecture JSON", e);
         }
+      }
     }
+  }
 }
