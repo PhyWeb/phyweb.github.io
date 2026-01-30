@@ -3,8 +3,7 @@
     - Etendre la confirmation de qui à quand on ferme onglet, charge d'autres données...
     - Glisser-déposer : Permettre de charger un fichier par glisser-déposer (drag and drop)
     - creer un moteur qui gere les raccourvis clavier (ctrl s et n notamment)
-    - Electron cassé
-    -Auto-focus intelligents dans les modales: quand tu ouvres une modale, place le focus sur le premier champ utile (ex: symbole dans “Ajouter grandeur”, fichier dans “Ouvrir”, textarea dans “Calculs”). Ajoute aussi Enter=confirmer, Escape=fermer.
+    - Auto-focus intelligents dans les modales: quand tu ouvres une modale, place le focus sur le premier champ utile (ex: symbole dans “Ajouter grandeur”, fichier dans “Ouvrir”, textarea dans “Calculs”). Ajoute aussi Enter=confirmer, Escape=fermer.
 
     - mettre une icone en grand (dans le background) de chaque app pour visuellement rapidement voir ou on est.
       - du coup centrer verticalement le splashscreen ?
