@@ -343,6 +343,7 @@ generatePW() {
     // 4. Restaurer les autres éléments
     this.app.editor.setValue(state.calculations ?? "");
     this.app.data.annotations = state.data.annotations ?? [];
+    this.app.uiManager.updateClearAnnotationsButtonVisibility();
     
     if (state.grapher) {
       this.app.grapher.setXCurve(state.grapher.xCurve, false);
