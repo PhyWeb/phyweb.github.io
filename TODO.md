@@ -38,8 +38,9 @@
 # Grapher
     - création d'un modal pour le cas d'un nouveau fichier comme dans regressi
     - permettre de visualiser les bornes des modèles
-    - les bornes des modèles sont elles reellement sauvegardées dans les PW ???
     - permettre d'exclure un point d'une modélisation
+
+    - sauvegarder le niveau de zoom et la position de la caméra dans les pw
 
     - méthode des tangentes
     - possibilité d'avoir 2 axes y

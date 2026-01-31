@@ -1906,14 +1906,14 @@ export default class UIManager {
     lineWidthSelect.value = model.lineWidth;
     $('#model-edit-linestyle-select').value = model.lineStyle;
 
-    const inputsDisabled = model.borne_debut === null && model.borne_fin === null;
+    const inputsDisabled = model.minX === null && model.maxX === null;
     borneToutCheckbox.checked = inputsDisabled;
     borneDebutInput.disabled = inputsDisabled;
     borneFinInput.disabled = inputsDisabled;
 
     // On charge les valeurs actuelles des bornes dans les champs
-    borneDebutInput.value = model.borne_debut !== null ? model.borne_debut : '';
-    borneFinInput.value = model.borne_fin !== null ? model.borne_fin : '';
+    borneDebutInput.value = model.minX !== null ? model.minX : '';
+    borneFinInput.value = model.maxX !== null ? model.maxX : '';
 
     // On met à jour les "placeholders" pour guider l'utilisateur
     borneDebutInput.placeholder = `Min: ${formatNumber(minX, 4)}`;
@@ -2049,8 +2049,8 @@ export default class UIManager {
         
         const boundsChanged = model.borne_debut !== newBorneDebut || model.borne_fin !== newBorneFin;
 
-        model.borne_debut = newBorneDebut;
-        model.borne_fin = newBorneFin;
+        model.minX = newBorneDebut;
+        model.maxX = newBorneFin;
         
         let namesHaveChanged = false;
         let hasConflict = false;

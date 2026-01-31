@@ -53,8 +53,8 @@ class Model {
     this.lineWidth = lineWidth;
     this.lineStyle = lineStyle;
 
-    this.borne_debut = null;
-    this.borne_fin = null;
+    this.minX = null; // Bornes pour le tracé du modèle
+    this.maxX = null; // Bornes pour le tracé du modèle
   }
 
   getEquationString() {
@@ -187,10 +187,10 @@ class Model {
       const yVal = this.y[i];
 
       // On ne prend en compte que les points dans les bornes définies
-      if (this.borne_debut !== null && xVal < this.borne_debut) {
+      if (this.minX !== null && xVal < this.minX) {
         continue;
       }
-      if (this.borne_fin !== null && xVal > this.borne_fin) {
+      if (this.maxX !== null && xVal > this.maxX) {
         continue;
       }
 
