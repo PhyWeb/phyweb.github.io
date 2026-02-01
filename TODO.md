@@ -50,8 +50,7 @@
     - icones personnalisées
     - export image / print
 
-    - le zoom auto marche pas toujours comme il faut. si une serie (x) a une grande valeur alors qu'il n'y a pas de y associé car ligne semi vide. il ne faudrait pas prendre en compte cette valeur
-    - 2eme probleme. ca dezoom a chaque clique auto quand il y a un modèle...
+    - le zoom auto marche pas toujours comme il faut. si une serie (x) a une grande valeur alors qu'il n'y a pas de y associé car ligne semi vide. il ne faudrait pas prendre en compte cette valeur (Pas réussi à le reproduire ... fixé ?)
 
     - améliorer les guess initiaux des paramètres des modélisations.
 

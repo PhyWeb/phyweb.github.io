@@ -19,8 +19,8 @@ const PADDING = 0.02; // 2% de padding pour le zoom auto
       const isXAxis = this.isXAxis;
       const axisIndex = this.index;
       const relevantSeries = isXAxis 
-        ? chart.series.filter(s => s.visible)  // X partagé : toutes les séries visibles
-        : chart.series.filter(s => s.visible && (s.yAxis ? s.yAxis.index === axisIndex : true));  // Y : séries attachées à cet axe
+        ? chart.series.filter(s => s.visible && !s.options.id?.startsWith('model-'))  
+        : chart.series.filter(s => s.visible && (s.yAxis ? s.yAxis.index === axisIndex : true) && !s.options.id?.startsWith('model-'));
       
       relevantSeries.forEach(series => {
         const allPoints = series.options.data;
