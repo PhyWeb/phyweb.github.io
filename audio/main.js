@@ -859,7 +859,7 @@ $("#send-to-grapher-button").addEventListener('click', () => {
     range: { 'min': 0, 'max': duration }
   });
   stgDataSlider.noUiSlider.reset();
-  $('#send-to-grapher-modal').classList.add('is-active');
+  common.modalManager.openModal($('#send-to-grapher-modal'));
 });
 
 // confirm-send-to-grapher-button listener

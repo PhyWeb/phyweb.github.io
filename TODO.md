@@ -2,7 +2,9 @@
     - modal à propos: improve descriptions
     - Glisser-déposer : Permettre de charger un fichier par glisser-déposer (drag and drop)
     - creer un moteur qui gere les raccourvis clavier (ctrl s et n notamment)
-    - Auto-focus intelligents dans les modales: quand tu ouvres une modale, place le focus sur le premier champ utile (ex: symbole dans “Ajouter grandeur”, fichier dans “Ouvrir”, textarea dans “Calculs”). Ajoute aussi Enter=confirmer, Escape=fermer.
+    - tester sur petit ecran (et faire les adaptations nécessaires)
+    - vérifier que tous les focus automatiques sont ok
+    - continuer d'ajouter des raccourcis clavier
 
     - mettre une icone en grand (dans le background) de chaque app pour visuellement rapidement voir ou on est.
       - du coup centrer verticalement le splashscreen ?
@@ -59,8 +61,7 @@
     - permettre d'annuler une modélisation trop longue (en gardant la solution intermediaire ?)
 
 # MISC
-    - tester sur petit ecran (et faire les adaptations nécessaires)
-    - vérifier que tous les focus automatiques sont ok
+
 
 # Idées
     - salsaJ ?
