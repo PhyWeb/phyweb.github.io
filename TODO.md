@@ -30,7 +30,6 @@
 
 # Tracker
     - bug or feature ? : frame is downloaded only if all points are set
-    - RELATED : centraliser la logique de preparation des données pour CSV rw3, transfert à grapher et clipboard
     - Add vidéos
     - pan and zoom
     - fixed size preview images
