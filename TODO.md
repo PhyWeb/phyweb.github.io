@@ -59,6 +59,7 @@
     - le .pw ou .csv ne devrait pas etre modifiable dans la modale de download
 
     - permettre d'annuler une modélisation trop longue (en gardant la solution intermediaire ?)
+    - Vérifier que les guess initiaux sont plus performants que des 1 1 1 1 1
 
 # MISC
 
