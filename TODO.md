@@ -54,8 +54,13 @@
 
     - améliorer les guess initiaux des paramètres des modélisations.
 
+    - le .pw ou .csv ne devrait pas etre modifiable dans la modale de download
+
+    - permettre d'annuler une modélisation trop longue (en gardant la solution intermediaire ?)
+
 # MISC
     - tester sur petit ecran (et faire les adaptations nécessaires)
+    - vérifier que tous les focus automatiques sont ok
 
 # Idées
     - salsaJ ?

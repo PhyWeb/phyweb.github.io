@@ -158,6 +158,14 @@ class ModalManager {
 
   openModal($el) {
     $el.classList.add('is-active');
+
+    // Recherche un élément avec l'attribut autofocus dans la modale
+    const toFocus = $el.querySelector('[autofocus]');
+    if (toFocus) {
+      // Un court délai est nécessaire pour s'assurer que l'élément est visible et focusable
+      // avant de tenter de lui donner le focus.
+      setTimeout(() => toFocus.focus(), 50);
+    }
   }
 
   closeModal($el) {

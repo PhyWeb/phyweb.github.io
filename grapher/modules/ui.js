@@ -729,7 +729,7 @@ export default class UIManager {
       }
       // Réinitialise le nom du fichier à chaque ouverture
       fileNameInput.value = `session.${selectedFormat}`;
-      $("#download-modal").classList.add("is-active");
+      this.common.modalManager.openModal($("#download-modal"));
     });
 
     function updateFormatSelection(newFormat) {
@@ -896,8 +896,6 @@ export default class UIManager {
 
       const curveNames = this.data.curves.map(c => c.title);
       populateDerivativeSelects(curveNames);
-
-      addCurveModal.classList.add("is-active");
     }
 
     /**
@@ -1029,10 +1027,13 @@ export default class UIManager {
     $('#add-curve-button').addEventListener("click", () => {
       resetAddCurveModal();
       addCurveModal.querySelector('input[value="empty-curve"]').click();
+      this.common.modalManager.openModal(addCurveModal);
     });
     $('#add-curve-calculation-button').addEventListener("click", () => {
       resetAddCurveModal();
       addCurveModal.querySelector('input[value="calc-curve"]').click();
+      this.common.modalManager.openModal(addCurveModal);
+      $('#calc-curve-symbol-input').focus();
     });
 
     /**
@@ -1085,7 +1086,7 @@ export default class UIManager {
         selectElement.appendChild(option);
       });
 
-      $("#delete-curve-modal").classList.add("is-active");
+      this.common.modalManager.openModal($("#delete-curve-modal"));
     });
 
     $("#delete-curve-confirm-button").addEventListener("click", () => {
