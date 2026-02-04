@@ -982,8 +982,13 @@
         <p id="save-format-warning" class="help is-danger"></p>
         <div class="field">
           <label class="label">Nom du fichier</label>
-          <div class="control">
-            <input class="input rounded" type="text" placeholder="session.pw" id="file-name-input"/>
+          <div class="field has-addons">
+            <div class="control is-expanded">
+              <input class="input" type="text" placeholder="session" id="file-name-input" autofocus/>
+            </div>
+            <div class="control">
+              <a class="button is-static" id="file-extension-label">.pw</a>
+            </div>
           </div>
         </div>
       </section>

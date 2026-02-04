@@ -652,28 +652,32 @@ $("#pw-button").addEventListener("click", ()=>{
   $("#pw-button").classList.add('is-link');
   $("#csv-button").classList.remove('is-link');
   $("#rw3-button").classList.remove('is-link');
-  $("#file-name-input").placeholder = "enregistrement.wav";
+  $("#file-name-input").placeholder = "enregistrement";
+  $("#file-extension-label").textContent = ".pw";
 });
 $("#wav-button").addEventListener("click", ()=>{
   $("#wav-button").classList.add('is-link');
   $("#pw-button").classList.remove('is-link');
   $("#csv-button").classList.remove('is-link');
   $("#rw3-button").classList.remove('is-link');
-  $("#file-name-input").placeholder = "enregistrement.wav";
+  $("#file-name-input").placeholder = "enregistrement";
+  $("#file-extension-label").textContent = ".wav";
 });
 $("#csv-button").addEventListener("click", ()=>{
   $("#csv-button").classList.add('is-link');
   $("#pw-button").classList.remove('is-link');
   $("#rw3-button").classList.remove('is-link');
   $("#wav-button").classList.remove('is-link');
-  $("#file-name-input").placeholder = "enregistrement.csv";
+  $("#file-name-input").placeholder = "enregistrement";
+  $("#file-extension-label").textContent = ".csv";
 });
 $("#rw3-button").addEventListener("click", ()=>{
   $("#rw3-button").classList.add('is-link');
   $("#pw-button").classList.remove('is-link');
   $("#csv-button").classList.remove('is-link');
   $("#wav-button").classList.remove('is-link');
-  $("#file-name-input").placeholder = "enregistrement.rw3";
+  $("#file-name-input").placeholder = "enregistrement";
+  $("#file-extension-label").textContent = ".rw3";
 });
 
 // Actual download
@@ -728,7 +732,7 @@ function prepareSeriesForDownload(saveData, startTime, endTime, effectiveSampleR
 }
 
 $("#download-file-button").addEventListener('click', () => {
-    let filename = $("#file-name-input.value") || 'enregistrement';
+    let filename = $("#file-name-input").value || 'enregistrement';
     const saveData = saves[tabManager.activeTab - 2];
 
 	const effectiveSampleRate = baseSampleRate / saveData.displaySampleRateLvl;

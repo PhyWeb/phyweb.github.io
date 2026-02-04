@@ -519,7 +519,14 @@
           </button>
         </div>
         <p class="title is-5">Nom du fichier</p>
-        <input class="input rounded" type="text" placeholder="pointage.csv" id="file-name-input" autofocus />
+        <div class="field has-addons">
+          <div class="control is-expanded">
+            <input class="input" type="text" placeholder="pointage" id="file-name-input" autofocus />
+          </div>
+          <div class="control">
+            <a class="button is-static" id="file-extension-label">.pw</a>
+          </div>
+        </div>
       </section>
       <footer class="modal-card-foot">
         <button class="button is-fullwidth is-primary" id="download-file-button">

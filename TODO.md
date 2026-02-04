@@ -53,10 +53,6 @@
 
     - le zoom auto marche pas toujours comme il faut. si une serie (x) a une grande valeur alors qu'il n'y a pas de y associé car ligne semi vide. il ne faudrait pas prendre en compte cette valeur (Pas réussi à le reproduire ... fixé ?)
 
-    - améliorer les guess initiaux des paramètres des modélisations.
-
-    - le .pw ou .csv ne devrait pas etre modifiable dans la modale de download
-
     - permettre d'annuler une modélisation trop longue (en gardant la solution intermediaire ?)
     - Vérifier que les guess initiaux sont plus performants que des 1 1 1 1 1
 

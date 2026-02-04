@@ -358,19 +358,22 @@ $("#pw-button").addEventListener("click", ()=>{
   $("#pw-button").classList.add('is-link');
   $("#csv-button").classList.remove('is-link');
   $("#rw3-button").classList.remove('is-link');
-  $("#file-name-input").placeholder = "pointage.pw";
+  $("#file-name-input").placeholder = "pointage";
+  $("#file-extension-label").textContent = ".pw";
 });
 $("#csv-button").addEventListener("click", ()=>{
   $("#pw-button").classList.remove('is-link');
   $("#csv-button").classList.add('is-link');
   $("#rw3-button").classList.remove('is-link');
-  $("#file-name-input").placeholder = "pointage.csv";
+  $("#file-name-input").placeholder = "pointage";
+  $("#file-extension-label").textContent = ".csv";
 });
 $("#rw3-button").addEventListener("click", ()=>{
   $("#pw-button").classList.remove('is-link');
   $("#rw3-button").classList.add('is-link');
   $("#csv-button").classList.remove('is-link');
-  $("#file-name-input").placeholder = "pointage.rw3";
+  $("#file-name-input").placeholder = "pointage";
+  $("#file-extension-label").textContent = ".rw3";
 });
 
 $("#download-file-button").addEventListener("click", ()=>{

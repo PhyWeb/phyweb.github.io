@@ -296,3 +296,7 @@
   opacity: 0 !important;
   pointer-events: none; /* Empêche de cliquer pendant le fondu */
 }
+
+#file-extension-label {
+  width: 4rem;
+}

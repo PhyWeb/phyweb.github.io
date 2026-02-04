@@ -715,6 +715,7 @@ export default class UIManager {
    */
   initSaveModal() {
     const fileNameInput = $("#file-name-input");
+    const fileExtensionLabel = $("#file-extension-label");
     let selectedFormat = 'pw'; // Le format par défaut
 
     // Ouvre la modale de sauvegarde
@@ -728,7 +729,8 @@ export default class UIManager {
         return;
       }
       // Réinitialise le nom du fichier à chaque ouverture
-      fileNameInput.value = `session.${selectedFormat}`;
+      fileNameInput.value = "session";
+      if (fileExtensionLabel) fileExtensionLabel.textContent = `.${selectedFormat}`;
       this.common.modalManager.openModal($("#download-modal"));
     });
 
@@ -750,10 +752,8 @@ export default class UIManager {
         warningElement.innerHTML = "";
       }
 
-      // Met à jour le placeholder et la valeur du nom de fichier
-      const baseName = (fileNameInput.value.split('.')[0] || 'session');
-      fileNameInput.placeholder = `${baseName}.${newFormat}`;
-      fileNameInput.value = `${baseName}.${newFormat}`;
+      // Met à jour l'extension
+      if (fileExtensionLabel) fileExtensionLabel.textContent = `.${newFormat}`;
     }
 
     // Gère les clics sur les boutons de format
@@ -763,16 +763,9 @@ export default class UIManager {
 
     // Gère le téléchargement final
     $("#download-file-button").addEventListener("click", () => {
-      const fileName = fileNameInput.value || fileNameInput.placeholder;
-      if (!fileName) {
-        alertModal({
-          title: "Nom de fichier manquant",
-          body: "Veuillez entrer un nom de fichier.",
-          confirm: "OK"
-        });
-        return;
-      }
-      
+      const baseName = fileNameInput.value || "session";
+      const fileName = `${baseName}.${selectedFormat}`;
+
       this.app.ioManager.saveFile(fileName, selectedFormat);
       this.common.modalManager.closeAllModals();
     });
