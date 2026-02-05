@@ -77,7 +77,6 @@ let tabManager = new TabManager($("#save-tabs"));
 tabManager.newTab({
   tabButton: $("#rt-tab-button"),
   tab: $("#rt-panel"),
-  isActive : true,
   clickCB: ()=>{
     safeStartAudio("RT").then(ok => {
       if(ok) {
@@ -154,7 +153,8 @@ $("#new-session-button").addEventListener("click", ()=>{
 ------------------------------------------MODE SWITCH-------------------------------------------
 ----------------------------------------------------------------------------------------------*/
 $("#simple-mode-button").addEventListener("click", async ()=>{
-  await audioInit()
+  if(!await audioInit()) return;
+  tabManager.activeTab = 0;
 
   simpleMode = true;
 
@@ -189,7 +189,8 @@ $("#simple-mode-button").addEventListener("click", async ()=>{
 });
 
 $("#complete-mode-button").addEventListener("click", async ()=>{
-	await audioInit()
+	if(!await audioInit()) return;
+  tabManager.activeTab = 0;
 
   // show the RT panel
   $("#rt-panel").classList.remove("is-hidden");
@@ -208,12 +209,13 @@ $("#complete-mode-button").addEventListener("click", async ()=>{
 
 async function audioInit(){
   const ok = await safeStartAudio("RT");
-  if(!ok) return; // Arrête l'init si pas d'accès
+  if(!ok) return false; // Arrête l'init si pas d'accès
 
   baseSampleRate = audio.getSampleRate();
   recSampleRate = baseSampleRate; // The sample will be recorded with this sampleRate
 
   populateSampleRateSelect($("#rec-samplerate-select"), 1, 16);
+  return true;
 }
 
 /*----------------------------------------------------------------------------------------------
@@ -317,6 +319,7 @@ $("#confirm-save-button").addEventListener("click", ()=>{
 	tabManager.newTab({
     tab: $("#save-panel"),
     name: text,
+    isActive: true,
     clickCB: saveDraw,
     deleteCB: onCloseTabButton
   })

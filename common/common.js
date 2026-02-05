@@ -490,7 +490,7 @@ class TabManager {
     });
 
     if(_tab.isActive){
-      this.activeTab = this.tabs.length - 1;
+      this.onTabClicked(this.tabs.length - 1);
     }
   }
 
