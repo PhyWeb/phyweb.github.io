@@ -56,6 +56,8 @@
     - permettre d'annuler une modélisation trop longue (en gardant la solution intermediaire ?)
     - Vérifier que les guess initiaux sont plus performants que des 1 1 1 1 1
 
+    - erreur silencieuse highcharts quand on met des lettres dans le table
+
 # MISC
 
 

@@ -1342,5 +1342,66 @@
       </footer>
     </div>
   </div>
+  <!------------------------------------------------------------------------------------------------------------>
+  <!-------------------------------------------- INIT SESSION MODAL -------------------------------------------->
+  <!------------------------------------------------------------------------------------------------------------>
+  <div id="init-session-modal" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card" style="width: 800px; max-width: 90vw;">
+      <header class="modal-card-head has-background-primary">
+        <p class="modal-card-title has-text-white">Initialiser la session</p>
+        <button class="delete" id="init-session-close-button" aria-label="close"></button>
+      </header>
+      <section class="modal-card-body">
+        <p class="mb-4">Définissez rapidement vos premières grandeurs et paramètres pour commencer :</p>
+        
+        <div class="columns">
+          <div class="column">
+            <h3 class="title is-5 mb-2">Grandeurs (Variables)</h3>
+            <table class="table is-fullwidth is-bordered" id="init-grandeurs-table">
+              <thead>
+                <tr class="has-background-light">
+                  <th>Grandeur</th>
+                  <th>Unité</th>
+                  <th style="width: 50px;"></th>
+                </tr>
+              </thead>
+              <tbody>
+              </tbody>
+            </table>
+            <button class="button is-small is-outlined is-primary" id="add-init-grandeur-btn">
+              <span class="icon"><i class="fas fa-plus"></i></span>
+              <span>Ajouter une grandeur</span>
+            </button>
+          </div>
+          
+          <div class="column is-7"> <h3 class="title is-5 mb-2">Paramètres (Constantes)</h3>
+            <table class="table is-fullwidth is-bordered" id="init-parametres-table">
+              <thead>
+                <tr class="has-background-light">
+                  <th>Paramètre</th>
+                  <th>Valeur</th>
+                  <th>Unité</th>
+                  <th style="width: 50px;"></th>
+                </tr>
+              </thead>
+              <tbody>
+              </tbody>
+            </table>
+            <button class="button is-small is-outlined is-info" id="add-init-parametre-btn">
+              <span class="icon"><i class="fas fa-plus"></i></span>
+              <span>Ajouter un paramètre</span>
+            </button>
+          </div>
+        </div>
+      </section>
+      <footer class="modal-card-foot is-justify-content-flex-end">
+        <div class="buttons">
+          <button class="button" id="init-session-skip-btn">Passer (Fichier vide)</button>
+          <button class="button is-primary" id="init-session-confirm-btn">Valider et commencer</button>
+        </div>
+      </footer>
+    </div>
+  </div>
   </body>
 </html>

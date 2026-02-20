@@ -37,6 +37,7 @@ export default class UIManager {
     this.initXAxisSelector();
     this.initModelisationControls();
     this.initCalculationControls();
+    this.initNewSessionModal();
 
     // Convertit les icônes FontAwesome
     window.FontAwesome.dom.i2svg();
@@ -494,16 +495,6 @@ export default class UIManager {
 
     $("#file-input").addEventListener("click", () => {
       $("#file-input").value = null; // allow the onchange trigger even if the same file is selected twice
-    });
-
-    // Gestion du bouton "Nouveau fichier"
-    $("#new-file-button").addEventListener("click", () => {
-      this.navManager.confirmAction(() => {
-        this.app.resetSession();
-        this.editor.setValue('');
-        this.showTabsAndPanels();
-        this.common.modalManager.closeAllModals();
-      });
     });
 
     // Gestion du bouton "Coller depuis le presse-papier"
@@ -1160,7 +1151,7 @@ export default class UIManager {
       const newUnit = unitInput.value.trim();
 
       if (!newSymbol) {
-        this.common.alertModal({
+        alertModal({
           title: 'Symbole manquant',
           body: 'Veuillez entrer un symbole.',
           confirm: 'OK'
@@ -2501,7 +2492,147 @@ export default class UIManager {
         }
       }
     });
+  }
 
+/**
+   * Initialise la modale de création rapide de grandeurs et paramètres
+   */
+  initNewSessionModal() {
+    const newFileBtn = document.getElementById('new-file-button');
+    const initSessionModal = document.getElementById('init-session-modal');
+    const closeBtn = document.getElementById('init-session-close-button');
+    const skipBtn = document.getElementById('init-session-skip-btn');
+    const confirmBtn = document.getElementById('init-session-confirm-btn');
+    
+    const grandeursTbody = document.querySelector('#init-grandeurs-table tbody');
+    const paramsTbody = document.querySelector('#init-parametres-table tbody');
+    
+    // Fonction utilitaire pour créer une ligne de tableau
+    const createRow = (isParam) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><input class="input is-small name-input" type="text" placeholder="${isParam ? 'Ex: g' : 'Ex: t'}"></td>
+        <td><input class="input is-small unit-input" type="text" placeholder="${isParam ? 'Ex: m/s²' : 'Ex: s'}"></td>
+        <td class="has-text-centered">
+          <button class="button is-small is-danger is-light delete-row-btn" title="Supprimer">
+            <span class="icon"><i class="fas fa-trash"></i></span>
+          </button>
+        </td>
+      `;
+      tr.querySelector('.delete-row-btn').addEventListener('click', () => tr.remove());
+      // Convertit les icônes FontAwesome
+      window.FontAwesome.dom.i2svg();
+      return tr;
+    };
 
+    document.getElementById('add-init-grandeur-btn').addEventListener('click', () => {
+      grandeursTbody.appendChild(createRow(false));
+    });
+
+    document.getElementById('add-init-parametre-btn').addEventListener('click', () => {
+      paramsTbody.appendChild(createRow(true));
+    });
+
+    // Événement d'ouverture de la nouvelle session
+    newFileBtn.addEventListener("click", () => {
+      this.navManager.confirmAction(() => {
+        this.app.resetSession();
+        this.editor.setValue('');
+        
+        // Vider les tableaux et mettre une ligne par défaut
+        grandeursTbody.innerHTML = '';
+        paramsTbody.innerHTML = '';
+        grandeursTbody.appendChild(createRow(false));
+        paramsTbody.appendChild(createRow(true));
+        
+        // Fermer la modale actuelle (Nouveau fichier) et ouvrir celle-ci
+        this.common.modalManager.closeAllModals();
+        initSessionModal.classList.add('is-active');
+      });
+    });
+
+    // Fonction pour fermer la modale et afficher l'interface (Tableur)
+    const closeAndStart = () => {
+      initSessionModal.classList.remove('is-active');
+      this.showTabsAndPanels();
+    };
+
+    closeBtn.addEventListener('click', closeAndStart);
+    skipBtn.addEventListener('click', closeAndStart);
+
+    // Validation du formulaire de la modale
+    confirmBtn.addEventListener('click', () => {
+      let hasError = false;
+      let errorMessage = "";
+      
+      const itemsToCreate = [];
+
+      // 1. Collecter et nettoyer les grandeurs
+      grandeursTbody.querySelectorAll('tr').forEach(tr => {
+        const name = tr.querySelector('.name-input').value.trim();
+        const unit = tr.querySelector('.unit-input').value.trim().replace(/\s+/g, '');
+        if (name) itemsToCreate.push({ name, unit, isParam: false });
+      });
+
+      // 2. Collecter et nettoyer les paramètres
+      paramsTbody.querySelectorAll('tr').forEach(tr => {
+        const name = tr.querySelector('.name-input').value.trim();
+        const unit = tr.querySelector('.unit-input').value.trim().replace(/\s+/g, '');
+        if (name) itemsToCreate.push({ name, unit, isParam: true });
+      });
+
+      // 3. Valider chaque symbole
+      const seenSymbols = new Set();
+      for (const item of itemsToCreate) {
+        const validationResult = this.app.symbolValidator.validate(item.name);
+        
+        if (seenSymbols.has(item.name)) {
+          hasError = true;
+          errorMessage = `Le symbole "${item.name}" est saisi plusieurs fois. Chaque grandeur et paramètre doit avoir un nom unique.`;
+          break;
+        }
+
+        if (!validationResult.isValid) {
+          hasError = true;
+          errorMessage = validationResult.message;
+          break;
+        }
+        seenSymbols.add(item.name);
+      }
+
+      if (hasError) {
+        alertModal({
+          title: 'Validation échouée',
+          body: errorMessage,
+          confirm: 'OK'
+        });
+        return; 
+      }
+
+      // 4. Injecter les données
+      let editorContent = "";
+
+      itemsToCreate.forEach(item => {
+        if (item.isParam) {
+          // Les paramètres s'ajoutent sous forme de texte dans l'éditeur (Onglet Calculs)
+          const varWithUnit = item.unit ? `${item.name}_${item.unit}` : item.name;
+          editorContent += `${varWithUnit} = 1\n`; // Valeur par défaut de 1
+        } else {
+          // Les grandeurs s'ajoutent comme de vraies courbes/colonnes dans le tableur
+          this.app.addCurve(item.name, item.unit, false, true); 
+        }
+      });
+
+      // S'il y a des paramètres à créer, on met à jour l'éditeur et on lance l'analyse
+      if (editorContent !== "") {
+        this.editor.setValue(editorContent.trim());
+        this.app.applyCalculation(this.editor.getValue());
+      } else {
+        // Sinon, on met juste à jour l'UI pour les nouvelles grandeurs
+        this.updateCalculationUI();
+      }
+
+      closeAndStart();
+    });
   }
 }
