@@ -2510,18 +2510,42 @@ export default class UIManager {
     // Fonction utilitaire pour créer une ligne de tableau
     const createRow = (isParam) => {
       const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td><input class="input is-small name-input" type="text" placeholder="${isParam ? 'Ex: g' : 'Ex: t'}"></td>
-        <td><input class="input is-small unit-input" type="text" placeholder="${isParam ? 'Ex: m/s²' : 'Ex: s'}"></td>
-        <td class="has-text-centered">
-          <button class="button is-small is-danger is-light delete-row-btn" title="Supprimer">
-            <span class="icon"><i class="fas fa-trash"></i></span>
-          </button>
-        </td>
-      `;
-      tr.querySelector('.delete-row-btn').addEventListener('click', () => tr.remove());
-      // Convertit les icônes FontAwesome
-      window.FontAwesome.dom.i2svg();
+      if (isParam) {
+        tr.innerHTML = `
+          <td><input class="input is-small name-input" type="text" placeholder="Ex: g"></td>
+          <td><input class="input is-small value-input no-spin" type="number" step="any" placeholder="Ex: 9.81"></td>
+          <td><input class="input is-small unit-input" type="text" placeholder="Ex: m/s²"></td>
+          <td class="has-text-centered">
+            <button class="button is-small is-danger is-light delete-row-btn" title="Supprimer">
+              <span class="icon"><i class="fas fa-trash"></i></span>
+            </button>
+          </td>
+        `;
+      } else {
+        tr.innerHTML = `
+          <td><input class="input is-small name-input" type="text" placeholder="Ex: t"></td>
+          <td><input class="input is-small unit-input" type="text" placeholder="Ex: s"></td>
+          <td class="has-text-centered">
+            <button class="button is-small is-danger is-light delete-row-btn" title="Supprimer">
+              <span class="icon"><i class="fas fa-trash"></i></span>
+            </button>
+          </td>
+        `;
+      }
+
+      // Gestion de la suppression de la ligne
+      tr.querySelector('.delete-row-btn').addEventListener('click', () => {
+        const tbody = tr.closest('tbody');
+        // S'il y a plus d'une ligne, on supprime le <tr>
+        if (tbody.querySelectorAll('tr').length > 1) {
+          tr.remove();
+        } else {
+          // Si c'est la dernière ligne, on vide simplement les champs
+          tr.querySelectorAll('input').forEach(input => input.value = '');
+        }
+      });
+
+      window.FontAwesome.dom.i2svg({ node: tr }); // Convertit les icônes FontAwesome en SVG
       return tr;
     };
 
@@ -2539,9 +2563,10 @@ export default class UIManager {
         this.app.resetSession();
         this.editor.setValue('');
         
-        // Vider les tableaux et mettre une ligne par défaut
+        // Vider les tableaux et mettre deux et une ligne par défaut
         grandeursTbody.innerHTML = '';
         paramsTbody.innerHTML = '';
+        grandeursTbody.appendChild(createRow(false));
         grandeursTbody.appendChild(createRow(false));
         paramsTbody.appendChild(createRow(true));
         
@@ -2577,8 +2602,12 @@ export default class UIManager {
       // 2. Collecter et nettoyer les paramètres
       paramsTbody.querySelectorAll('tr').forEach(tr => {
         const name = tr.querySelector('.name-input').value.trim();
+        const valueStr = tr.querySelector('.value-input').value.trim();
+        // S'il n'y a pas de valeur saisie, on met 1 par défaut
+        const value = valueStr !== "" ? parseFloat(valueStr) : 1;
         const unit = tr.querySelector('.unit-input').value.trim().replace(/\s+/g, '');
-        if (name) itemsToCreate.push({ name, unit, isParam: true });
+        
+        if (name) itemsToCreate.push({ name, value, unit, isParam: true });
       });
 
       // 3. Valider chaque symbole
@@ -2601,7 +2630,7 @@ export default class UIManager {
       }
 
       if (hasError) {
-        alertModal({
+        this.common.alertModal({
           title: 'Validation échouée',
           body: errorMessage,
           confirm: 'OK'
@@ -2614,21 +2643,22 @@ export default class UIManager {
 
       itemsToCreate.forEach(item => {
         if (item.isParam) {
-          // Les paramètres s'ajoutent sous forme de texte dans l'éditeur (Onglet Calculs)
+          // Sécuriser au cas où parseFloat aurait renvoyé NaN à cause d'une entrée bizarre
+          const finalValue = isNaN(item.value) ? 1 : item.value;
           const varWithUnit = item.unit ? `${item.name}_${item.unit}` : item.name;
-          editorContent += `${varWithUnit} = 1\n`; // Valeur par défaut de 1
+          
+          editorContent += `${varWithUnit} = ${finalValue}\n`;
         } else {
-          // Les grandeurs s'ajoutent comme de vraies courbes/colonnes dans le tableur
+          // addCurve(title, unit, line, markers)
           this.app.addCurve(item.name, item.unit, false, true); 
         }
       });
 
-      // S'il y a des paramètres à créer, on met à jour l'éditeur et on lance l'analyse
+      // Mettre à jour l'éditeur si on a créé des paramètres
       if (editorContent !== "") {
         this.editor.setValue(editorContent.trim());
         this.app.applyCalculation(this.editor.getValue());
       } else {
-        // Sinon, on met juste à jour l'UI pour les nouvelles grandeurs
         this.updateCalculationUI();
       }
 
