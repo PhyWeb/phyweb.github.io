@@ -2573,6 +2573,12 @@ export default class UIManager {
         // Fermer la modale actuelle (Nouveau fichier) et ouvrir celle-ci
         this.common.modalManager.closeAllModals();
         initSessionModal.classList.add('is-active');
+
+        // On place le focus sur le premier champ de la première grandeur
+        setTimeout(() => {
+          const firstInput = grandeursTbody.querySelector('.name-input');
+          if (firstInput) firstInput.focus();
+        }, 100);
       });
     });
 
