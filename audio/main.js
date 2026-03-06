@@ -630,6 +630,15 @@ $("#end-size-input").addEventListener('change', function () {
 
 // Download button
 $("#save-button").addEventListener("click", ()=>{
+  if(!rtWaveData){
+    alertModal({
+      type: "warning",
+      title: "Aucune donnée à sauvegarder",
+      body: "Aucune donnée n'a encore été enregistrée. Veuillez d'abord enregistrer ou importer un signal audio.",
+      confirm: "OK"
+    })
+    return;
+  }
   // Check if we're on a save tab
   if(tabManager.activeTab < 2){
     alertModal({
