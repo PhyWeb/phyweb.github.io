@@ -1,7 +1,6 @@
 # Common
     - modal à propos: improve descriptions
     - Glisser-déposer : Permettre de charger un fichier par glisser-déposer (drag and drop)
-    - creer un moteur qui gere les raccourvis clavier (ctrl s et n notamment)
     - tester sur petit ecran (et faire les adaptations nécessaires)
     - vérifier que tous les focus automatiques sont ok
     - continuer d'ajouter des raccourcis clavier
@@ -28,6 +27,8 @@
     - permettre de télécharger depuis les onglets RT et REC et virer le warning
     - creer un wizard pour le téléchargement en étape (comme ca on peut dl a partir de nimporte ou, le choix se fait dans le wizard)
 
+    - integration du moteur de raccourci clavier
+
 # Tracker
     - bug or feature ? : frame is downloaded only if all points are set
     - Add vidéos
@@ -35,6 +36,8 @@
     - fixed size preview images
     - add a button to stop the decode and still exploit the already decoded frames
     - passer a ffmpeg.wasm
+
+    - integration du moteur de raccourci clavier
 
 # Grapher
     - permettre de visualiser les bornes des modèles
