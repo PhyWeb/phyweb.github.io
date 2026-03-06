@@ -166,6 +166,12 @@ function setupGlobalShortcuts(actions = {}) {
             actions.onOpen();
           }
           break;
+        case 'n':
+          if (typeof actions.onNew === 'function') {
+            event.preventDefault();
+            actions.onNew();
+          }
+          break;
       }
     }
 
