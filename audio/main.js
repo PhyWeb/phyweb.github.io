@@ -665,6 +665,13 @@ $("#save-button").addEventListener("click", ()=>{
 	$("#file-name-input").focus();
 })
 
+$("#file-name-input").addEventListener("keyup", (event)=> {
+	if (event.key === "Enter") {
+		event.preventDefault();
+		$("#download-file-button").click();
+	}
+});
+
 // Data part selection
 $("#all-data-button").addEventListener("click", ()=>{
 	$("#all-data-button").classList.add('is-link');
