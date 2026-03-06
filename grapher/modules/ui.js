@@ -2628,6 +2628,14 @@ export default class UIManager {
     closeBtn.addEventListener('click', closeAndStart);
     skipBtn.addEventListener('click', closeAndStart);
 
+    // Gère l'appui sur la touche Entrée dans la modale
+    initSessionModal.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' && !event.shiftKey && !event.ctrlKey && !event.altKey) {
+        event.preventDefault();
+        confirmBtn.click();
+      }
+    });
+
     // Validation du formulaire de la modale
     confirmBtn.addEventListener('click', () => {
       let hasError = false;
