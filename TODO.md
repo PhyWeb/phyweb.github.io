@@ -27,8 +27,6 @@
     - permettre de télécharger depuis les onglets RT et REC et virer le warning
     - creer un wizard pour le téléchargement en étape (comme ca on peut dl a partir de nimporte ou, le choix se fait dans le wizard)
 
-    - integration du moteur de raccourci clavier
-
 # Tracker
     - bug or feature ? : frame is downloaded only if all points are set
     - Add vidéos
@@ -36,8 +34,6 @@
     - fixed size preview images
     - add a button to stop the decode and still exploit the already decoded frames
     - passer a ffmpeg.wasm
-
-    - integration du moteur de raccourci clavier
 
 # Grapher
     - permettre de visualiser les bornes des modèles
@@ -57,6 +53,8 @@
     - Vérifier que les guess initiaux sont plus performants que des 1 1 1 1 1
 
     - erreur silencieuse highcharts quand on met des lettres dans le table
+
+    - bug graphique : le bouton de modélisation est décalé dans electron
 
 # MISC
 
