@@ -1,7 +1,7 @@
 import FOURIER from "./modules/fourier.js"
 import {PhyAudio, convertFloat32ToInt16} from "./modules/audio.js"
 
-import {Common, alertModal, TabManager, NavigationManager, downloadFile, exportToPW, exportToCSV, exportToRW3, Serie} from "../common/common.js"
+import {Common,setupGlobalShortcuts ,alertModal, TabManager, NavigationManager, downloadFile, exportToPW, exportToCSV, exportToRW3, Serie} from "../common/common.js"
 
 import ExchangeManager from '../common/modules/ExchangeManager.js';
 
@@ -11,6 +11,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Common
 let common = new Common("Audio");
+// Initialisation des raccourcis clavier globaux
+setupGlobalShortcuts({
+  onSave: () => {
+    if(tabManager.activeTab > 1){
+      $("#save-button").click();
+    }
+    if(tabManager.activeTab == 0){
+      if(paused == true){
+        $("#rt-save-to-tab-button").click();
+      }
+    }
+    if(tabManager.activeTab == 1){
+      if(recWaveData){
+        $("#rec-save-to-tab-button").click();
+      }
+    }
+  },
+  onNew: () => {
+    $("#new-session-button").click();
+  },
+  onEscape: () => {
+    // Ferme toutes les modales
+    common.modalManager.closeAllModals();
+  },
+  onDebug: () => {
+  }
+});
 
 // SimpleMode enabled?
 let simpleMode = false;
