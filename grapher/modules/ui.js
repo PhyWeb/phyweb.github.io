@@ -1,5 +1,5 @@
 import { formatNumber } from '../../common/formatter.js';
-import { alertModal, NavigationManager } from '../../common/common.js';
+import { alertModal, NavigationManager, setupGlobalShortcuts} from '../../common/common.js';
 import { DEFAULT_SETTINGS, saveSettings, loadSettings, clearSavedSettings } from './settingsManager.js';
 
 const $ = document.querySelector.bind(document);
@@ -38,6 +38,45 @@ export default class UIManager {
     this.initModelisationControls();
     this.initCalculationControls();
     this.initNewSessionModal();
+
+    // Initialisation des raccourcis clavier globaux
+    setupGlobalShortcuts({
+      onSave: () => {
+        const saveButton = document.querySelector('#save-button');
+        if (saveButton) saveButton.click();
+      },
+      onNew: () => {
+        const newFileButton = document.querySelector('#new-file-open-modal-button');
+        if (newFileButton) newFileButton.click();
+      },
+      onOpen: () => {
+        const fileInput = document.querySelector('#file-input');
+        if (fileInput) fileInput.click();
+      },
+      onEscape: () => {
+        // Ferme toutes les modales
+        this.common.modalManager.closeAllModals();
+        // Désactive les outils du grapheur (réticule, etc.)
+        this.clearActiveTool(); 
+      },
+      onTab1: () => {
+        const tab = document.querySelector('#tableur-tab');
+        if (tab) tab.click();
+      },
+      onTab2: () => {
+        const tab = document.querySelector('#grapheur-tab');
+        if (tab) tab.click();
+      },
+      onTab3: () => {
+        const tab = document.querySelector('#calculs-tab');
+        if (tab) tab.click();
+      },
+      onDebug: () => {
+        console.log("=== DEBUG INFO ===");
+        console.log("data", this.data);
+        console.log("chart", this.grapher.chart);
+      }
+    });
 
     // Convertit les icônes FontAwesome
     window.FontAwesome.dom.i2svg();
@@ -407,12 +446,6 @@ export default class UIManager {
       $("#tableur-panel").classList.add("is-hidden");
       $("#grapheur-panel").classList.add("is-hidden");
       $("#calculs-panel").classList.remove("is-hidden");
-    });
-
-    // DEBUG
-    $("#debug-button").addEventListener("click", () => {
-      console.log("data",this.data);
-      console.log("chart",this.grapher.chart);
     });
 
     $("#menu-dropdown-toggle").addEventListener("click", function (event) {
@@ -2585,11 +2618,11 @@ export default class UIManager {
     // Fonction pour fermer la modale et afficher l'interface (Tableur)
     const closeAndStart = () => {
       initSessionModal.classList.remove('is-active');
-      this.showTabsAndPanels();
 
-      setTimeout(() => {
-        this.app.spreadsheet.focusFirstCell();
-      }, 50);
+      // On prépare le focus en mode édition pour le prochain rendu
+      this.app.spreadsheet.focusFirstCell(true);
+
+      this.showTabsAndPanels();
     };
 
     closeBtn.addEventListener('click', closeAndStart);

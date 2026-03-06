@@ -135,16 +135,33 @@ class Spreadsheet {
     });
   }
 
-  focusFirstCell() {
-    // On s'assure qu'il y a au moins une ligne et une colonne
-    if (this.hot.countRows() > 0 && this.hot.countCols() > 0) {
-      this.hot.selectCell(0, 0);
-    }
+focusFirstCell(editMode = false) {
+    if (!this.hot) return;
 
-    const activeEditor = this.hot.getActiveEditor();
-    if (activeEditor) {
-      activeEditor.beginEditing();
-    }
+    // On s'abonne au prochain rendu naturel du tableau
+    this.hot.addHookOnce('afterRender', () => {
+      
+      // Le délai de 0 milliseconde libère la pile d'exécution (call stack)
+      // Cela évite la boucle infinie tout en garantissant un focus immédiat.
+      setTimeout(() => {
+        // On vérifie que le tableau n'a pas été détruit entre temps
+        if (this.hot && this.hot.countRows() > 0 && this.hot.countCols() > 0) {
+          
+          this.hot.selectCell(0, 0);
+
+          if (editMode) {
+            const activeEditor = this.hot.getActiveEditor();
+            if (activeEditor) {
+              if (typeof activeEditor.enableFullEditMode === 'function') {
+                activeEditor.enableFullEditMode();
+              }
+              activeEditor.beginEditing();
+            }
+          }
+        }
+      }, 0);
+      
+    });
   }
 }
 

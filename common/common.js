@@ -126,6 +126,85 @@ function enforceIntegerInputs(){
 }
 
 /*----------------------------------------------------------------------------------------------
+----------------------------------------GLOBAL SHORTCUTS----------------------------------------
+----------------------------------------------------------------------------------------------*/
+/**
+ * Initialise les raccourcis clavier globaux (Ctrl+S, Ctrl+N, etc.)
+ * @param {Object} actions - Objet contenant les fonctions à exécuter pour chaque raccourci.
+ * @param {Function} [actions.onSave] - Fonction appelée lors de Ctrl+S / Cmd+S
+ * @param {Function} [actions.onNew] - Fonction appelée lors de Ctrl+N / Cmd+N
+ * @param {Function} [actions.onOpen] - Fonction appelée lors de Ctrl+O / Cmd+O
+ * @param {Function} [actions.onEscape] - Fonction appelée lors de la touche Échap
+ * @param {Function} [actions.onTab1] - Fonction appelée lors de Alt+1
+ * @param {Function} [actions.onTab2] - Fonction appelée lors de Alt+2
+ * @param {Function} [actions.onTab3] - Fonction appelée lors de Alt+3
+ */
+function setupGlobalShortcuts(actions = {}) {
+  document.addEventListener('keydown', (event) => {
+    const isCtrlOrCmd = event.ctrlKey || event.metaKey;
+    const isAlt = event.altKey;
+    const key = event.key.toLowerCase();
+
+    // 1. Touche Échap (Escape)
+    if (key === 'escape') {
+      if (typeof actions.onEscape === 'function') actions.onEscape();
+      return; // On s'arrête là
+    }
+
+    // 2. Raccourcis avec Ctrl / Cmd (sans Alt)
+    if (isCtrlOrCmd && !isAlt) {
+      switch (key) {
+        case 's':
+          if (typeof actions.onSave === 'function') {
+            event.preventDefault();
+            actions.onSave();
+          }
+          break;
+        case 'o':
+          if (typeof actions.onOpen === 'function') {
+            event.preventDefault();
+            actions.onOpen();
+          }
+          break;
+      }
+    }
+
+    // 3. Raccourcis avec Alt (sans Ctrl)
+    if (isAlt && !isCtrlOrCmd) {
+      switch (key) {
+        case '1':
+          if (typeof actions.onTab1 === 'function') { event.preventDefault(); actions.onTab1(); }
+          break;
+        case '2':
+          if (typeof actions.onTab2 === 'function') { event.preventDefault(); actions.onTab2(); }
+          break;
+        case '3':
+          if (typeof actions.onTab3 === 'function') { event.preventDefault(); actions.onTab3(); }
+          break;
+      }
+    }
+
+    // 4. Raccourcis avec Ctrl + Alt
+    if (isCtrlOrCmd && isAlt) {
+      switch (key) {
+        case 'n':
+          if (typeof actions.onNew === 'function') {
+            event.preventDefault();
+            actions.onNew();
+          }
+          break;
+        case 'd':
+          if (typeof actions.onDebug === 'function') {
+            event.preventDefault();
+            actions.onDebug();
+          }
+          break;
+      }
+    }
+  });
+}
+
+/*----------------------------------------------------------------------------------------------
 -----------------------------------------MODALS / ALERTS----------------------------------------
 ----------------------------------------------------------------------------------------------*/
 class ModalManager {
@@ -1228,4 +1307,4 @@ async function downloadFile(_file, _type,_name){
   return max;
 }*/
 
-export {Common, ModalManager, alertModal, quitConfirmationModal, TabManager, Serie, exportToPW,exportToCSV, exportToRW3, downloadFile};
+export {Common, setupGlobalShortcuts, ModalManager, alertModal, quitConfirmationModal, TabManager, Serie, exportToPW,exportToCSV, exportToRW3, downloadFile};

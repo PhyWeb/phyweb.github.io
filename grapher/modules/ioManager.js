@@ -356,6 +356,7 @@ generatePW() {
     }
 
     // 5. Finaliser la mise à jour de l'UI
+    this.app.spreadsheet.focusFirstCell(false);
     this.app.spreadsheet.update();
     this.app.uiManager.updateCalculationUI();
     this.app.uiManager.updateAllModelPanelVisibilityIcons();
@@ -366,7 +367,6 @@ generatePW() {
     this.app.grapher.reorderLegendByVisibility();
     this.app.grapher.chart.redraw();
     this.app.grapher.resetZoom();
-    this.app.spreadsheet.focusFirstCell();
 
     console.log("Session .pw (v3.0) restaurée avec succès.");
 
@@ -530,6 +530,7 @@ generatePW() {
           resolve(); 
         } catch (e) {
           reject(new Error('Erreur lors du traitement du fichier CSV.'));
+          console.error(e);
         }
       };
       reader.readAsText(file);
@@ -877,6 +878,7 @@ generatePW() {
 
       console.log("data loaded", this.app.data);
       this.app.applyCalculation(this.app.editor.getValue()); // Re-applique les calculs
+      this.app.spreadsheet.focusFirstCell(false);
       this.app.spreadsheet.update();
       this.app.grapher.updateChart();
       this.app.grapher.reorderLegendByVisibility();
@@ -889,7 +891,6 @@ generatePW() {
       this.app.uiManager.updateSortUI();
       this.app.uiManager.updateXAxisSelector();
 
-      this.app.spreadsheet.focusFirstCell();
 
     } finally {
       this.isLoading = false; // Assure que le drapeau est réinitialisé même en cas d'erreur
