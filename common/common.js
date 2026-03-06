@@ -145,13 +145,13 @@ function setupGlobalShortcuts(actions = {}) {
     const isAlt = event.altKey;
     const key = event.key.toLowerCase();
 
-    // 1. Touche Échap (Escape)
+    // Touche Échap (Escape)
     if (key === 'escape') {
       if (typeof actions.onEscape === 'function') actions.onEscape();
       return; // On s'arrête là
     }
 
-    // 2. Raccourcis avec Ctrl / Cmd (sans Alt)
+    // Raccourcis avec Ctrl / Cmd (sans Alt)
     if (isCtrlOrCmd && !isAlt) {
       switch (key) {
         case 's':
@@ -175,7 +175,7 @@ function setupGlobalShortcuts(actions = {}) {
       }
     }
 
-    // 3. Raccourcis avec Alt (sans Ctrl)
+    // Raccourcis avec Alt (sans Ctrl)
     if (isAlt && !isCtrlOrCmd) {
       switch (key) {
         case '1':
@@ -190,7 +190,7 @@ function setupGlobalShortcuts(actions = {}) {
       }
     }
 
-    // 4. Raccourcis avec Ctrl + Alt
+    // Raccourcis avec Ctrl + Alt
     if (isCtrlOrCmd && isAlt) {
       switch (key) {
         case 'n':
@@ -388,7 +388,7 @@ function aboutModal(_app){
   // electron
   let version = ""
   if(window.electronAPI){
-    version = "v2601"
+    version = "v2603"
   }
   // Description
   let description;
