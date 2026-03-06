@@ -22,7 +22,6 @@ class Spreadsheet {
   }
 
   update(){
-    console.log("Updating spreadsheet...");
     const significantDigits = this.data.settings.significantDigits;
 
     // Récupération des en-têtes pour construire la config des colonnes
@@ -134,6 +133,18 @@ class Spreadsheet {
       colHeaders: true,
       columns: null
     });
+  }
+
+  focusFirstCell() {
+    // On s'assure qu'il y a au moins une ligne et une colonne
+    if (this.hot.countRows() > 0 && this.hot.countCols() > 0) {
+      this.hot.selectCell(0, 0);
+    }
+
+    const activeEditor = this.hot.getActiveEditor();
+    if (activeEditor) {
+      activeEditor.beginEditing();
+    }
   }
 }
 

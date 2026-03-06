@@ -2586,6 +2586,10 @@ export default class UIManager {
     const closeAndStart = () => {
       initSessionModal.classList.remove('is-active');
       this.showTabsAndPanels();
+
+      setTimeout(() => {
+        this.app.spreadsheet.focusFirstCell();
+      }, 50);
     };
 
     closeBtn.addEventListener('click', closeAndStart);
@@ -2636,7 +2640,7 @@ export default class UIManager {
       }
 
       if (hasError) {
-        this.common.alertModal({
+        alertModal({
           title: 'Validation échouée',
           body: errorMessage,
           confirm: 'OK'

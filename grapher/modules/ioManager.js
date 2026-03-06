@@ -366,6 +366,7 @@ generatePW() {
     this.app.grapher.reorderLegendByVisibility();
     this.app.grapher.chart.redraw();
     this.app.grapher.resetZoom();
+    this.app.spreadsheet.focusFirstCell();
 
     console.log("Session .pw (v3.0) restaurée avec succès.");
 
@@ -887,6 +888,8 @@ generatePW() {
 
       this.app.uiManager.updateSortUI();
       this.app.uiManager.updateXAxisSelector();
+
+      this.app.spreadsheet.focusFirstCell();
 
     } finally {
       this.isLoading = false; // Assure que le drapeau est réinitialisé même en cas d'erreur

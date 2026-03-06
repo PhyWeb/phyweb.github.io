@@ -37,7 +37,6 @@
     - passer a ffmpeg.wasm
 
 # Grapher
-    - création d'un modal pour le cas d'un nouveau fichier comme dans regressi
     - permettre de visualiser les bornes des modèles
     - permettre d'exclure un point d'une modélisation
 
