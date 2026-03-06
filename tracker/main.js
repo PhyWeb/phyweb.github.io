@@ -4,7 +4,7 @@ import EXTRACTOR from "./modules/extractor.js"
 import MEASUREMENT from "./modules/measurement.js"
 import PLAYER from "./modules/player.js"
 
-import {Common, alertModal, NavigationManager, exportToPW} from "../common/common.js"
+import {Common, setupGlobalShortcuts, alertModal, NavigationManager, exportToPW} from "../common/common.js"
 
 import ExchangeManager from '../common/modules/ExchangeManager.js';
 
@@ -21,6 +21,28 @@ let isHandlerDragging = false;
 document.addEventListener('DOMContentLoaded', () => {
 // Common
 let common = new Common("Tracker");
+
+// Initialisation des raccourcis clavier globaux
+setupGlobalShortcuts({
+  onSave: () => {
+    $("#save-button").click();
+    },
+  onNew: () => {
+    $("#open-video-button").click();
+  },
+  onOpen: () => {
+    $("#open-video-button").click();
+  },
+  onEscape: () => {
+    // Ferme toutes les modales
+    common.modalManager.closeAllModals();
+  },
+  onDebug: () => {
+  }
+});
+
+
+
 
 if ("VideoDecoder" in window) {
   console.log("VideoDecoder supported")
