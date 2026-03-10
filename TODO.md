@@ -57,6 +57,7 @@
     - pas recalculer tout quand on modifie juste le style 
 
 # MISC
+ - Publier sur le microsoft store
 
 
 # Idées
