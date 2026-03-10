@@ -54,7 +54,7 @@
 
     - erreur silencieuse highcharts quand on met des lettres dans le table
 
-    - bug graphique : le bouton de modélisation est décalé dans electron
+    - pas recalculer tout quand on modifie juste le style 
 
 # MISC
 
