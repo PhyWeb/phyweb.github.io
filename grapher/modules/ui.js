@@ -2065,8 +2065,8 @@ export default class UIManager {
           return; // On arrête la sauvegarde
         }
         
-        const boundsChanged = model.borne_debut !== newBorneDebut || model.borne_fin !== newBorneFin;
-
+        const boundsChanged = model.minX !== newBorneDebut || model.maxX !== newBorneFin;
+        
         model.minX = newBorneDebut;
         model.maxX = newBorneFin;
         
