@@ -20,6 +20,14 @@ module.exports = {
         }
       },
     },
+      {
+      name: '@electron-forge/maker-appx',
+      config: {
+        identityName: 'PhyWeb.PhyWeb', // Le "Package/Identity/Name" du Partner Center
+        publisher: 'CN=2A272021-41C4-4363-BC75-191E2B3B681C', // Le "Package/Identity/Publisher" du Partner Center
+        publisherDisplayName: 'PhyWeb' // Le "PublisherDisplayName"
+      }
+    },
     /*{
       name: '@electron-forge/maker-squirrel',
       config: {},
