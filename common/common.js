@@ -1297,6 +1297,92 @@ async function downloadFile(_file, _type,_name){
   a.click();
 }
 
+/*----------------------------------------------------------------------------------------------
+----------------------------------------FILE DROP MANAGER---------------------------------------
+----------------------------------------------------------------------------------------------*/
+export class FileDropManager {
+  /**
+   * @param {HTMLElement} container - L'élément cible pour le glisser-déposer (ex: document.body)
+   * @param {function(File): void} onDropCallback - Fonction appelée avec le fichier déposé
+   */
+  constructor(container, onDropCallback) {
+    this.container = container;
+    this.onDropCallback = onDropCallback;
+    
+    // Le compteur évite que le calque clignote lorsque l'on survole des éléments enfants
+    this.dragCounter = 0; 
+
+    this.createOverlay();
+    this.setupEvents();
+  }
+
+  createOverlay() {
+    this.overlay = document.createElement('div');
+    // Utilisation des classes Bulma pour le style et le centrage
+    this.overlay.className = 'has-background-white-ter is-flex is-flex-direction-column is-justify-content-center is-align-items-center is-hidden';
+    
+    // Application de styles pour superposer l'overlay sur tout le conteneur
+    Object.assign(this.overlay.style, {
+      position: 'absolute',
+      top: '0',
+      left: '0',
+      width: '100%',
+      height: '100%',
+      zIndex: '9999',
+      opacity: '0.95',
+      border: '4px dashed hsl(171, 100%, 41%)', // Couleur primaire (identique à Common.colors.primary)
+      pointerEvents: 'none' // Très important : empêche l'overlay de bloquer les événements de drag
+    });
+
+    this.overlay.innerHTML = `
+      <span class="icon is-large has-text-primary"><i class="fas fa-file-import fa-3x"></i></span>
+      <p class="title is-3 mt-4 has-text-primary">Déposez votre fichier ici</p>
+    `;
+
+    this.container.appendChild(this.overlay);
+    
+    // S'assurer que le container parent a un positionnement relatif (sauf si c'est le body)
+    if (this.container !== document.body && getComputedStyle(this.container).position === 'static') {
+      this.container.style.position = 'relative';
+    }
+  }
+
+  setupEvents() {
+    this.container.addEventListener('dragenter', (e) => {
+      e.preventDefault();
+      this.dragCounter++;
+      if (this.dragCounter === 1) {
+        this.overlay.classList.remove('is-hidden');
+      }
+    });
+
+    this.container.addEventListener('dragleave', (e) => {
+      e.preventDefault();
+      this.dragCounter--;
+      if (this.dragCounter === 0) {
+        this.overlay.classList.add('is-hidden');
+      }
+    });
+
+    this.container.addEventListener('dragover', (e) => {
+      e.preventDefault(); // Indispensable pour autoriser l'action de "drop"
+    });
+
+    this.container.addEventListener('drop', (e) => {
+      e.preventDefault();
+      this.dragCounter = 0;
+      this.overlay.classList.add('is-hidden');
+
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        const file = e.dataTransfer.files[0];
+        if (this.onDropCallback) {
+          this.onDropCallback(file);
+        }
+      }
+    });
+  }
+}
+
 
 
 /*----------------------------------------------------------------------------------------------

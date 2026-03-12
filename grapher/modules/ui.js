@@ -1,5 +1,5 @@
 import { formatNumber } from '../../common/formatter.js';
-import { alertModal, NavigationManager, setupGlobalShortcuts} from '../../common/common.js';
+import { alertModal, NavigationManager, setupGlobalShortcuts, FileDropManager} from '../../common/common.js';
 import { DEFAULT_SETTINGS, saveSettings, loadSettings, clearSavedSettings } from './settingsManager.js';
 
 const $ = document.querySelector.bind(document);
@@ -562,6 +562,37 @@ export default class UIManager {
         $("#new-file-modal").classList.add('is-active');
     });
 
+    // Gestion du Drag & Drop
+    this.fileDropManager = new FileDropManager(document.body, async (file) => {
+      if (!file) return;
+
+      // On utilise navManager pour demander confirmation si des données sont déjà présentes (sécurité)
+      this.navManager.confirmAction(async () => {
+        // Affiche le spinner de chargement global de la modale "Nouveau fichier"
+        this.setModalLoading(true);
+        // Si la modale n'est pas ouverte, on l'affiche avec le spinner
+        $("#new-file-modal").classList.add('is-active'); 
+
+        try {
+          // On passe le fichier au gestionnaire IO
+          await this.app.ioManager.loadFile(file);
+          // Si aucune erreur, on affiche l'interface et ferme la modale
+          this.showTabsAndPanels();
+          this.common.modalManager.closeAllModals();
+        } catch (error) {
+          console.error("Échec du chargement du fichier par Drag&Drop:", error);
+          alertModal({
+            type: 'warning',
+            title: 'Erreur de chargement',
+            body: error.message,
+            confirm: 'OK'
+          });
+        } finally {
+          // Cache le spinner
+          this.setModalLoading(false);
+        }
+      });
+    });
   }
 
   /**
