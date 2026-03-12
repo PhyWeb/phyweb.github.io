@@ -1,7 +1,7 @@
 import FOURIER from "./modules/fourier.js"
 import {PhyAudio, convertFloat32ToInt16} from "./modules/audio.js"
 
-import {Common, setupGlobalShortcuts ,alertModal, TabManager, NavigationManager, downloadFile, exportToPW, exportToCSV, exportToRW3, Serie} from "../common/common.js"
+import {Common, setupGlobalShortcuts ,alertModal, TabManager, NavigationManager, downloadFile, exportToPW, exportToCSV, exportToRW3, Serie, FileDropManager} from "../common/common.js"
 
 import ExchangeManager from '../common/modules/ExchangeManager.js';
 
@@ -174,6 +174,49 @@ $("#new-session-button").addEventListener("click", ()=>{
       location.reload();
     }
   );
+});
+
+/*----------------------------------------------------------------------------------------------
+-----------------------------------------DRAG AND DROP------------------------------------------
+----------------------------------------------------------------------------------------------*/
+const audioDropManager = new FileDropManager(document.body, async (file) => {
+  if (!file) return;
+
+  // Vérification basique du type de fichier (optionnel mais recommandé)
+  if (!file.type.startsWith('audio/') && !file.name.match(/\.(wav|mp3|ogg|flac|m4a)$/i)) {
+    alertModal({
+      type: "warning",
+      title: "Fichier non supporté",
+      body: "Veuillez déposer un fichier audio valide.",
+      confirm: "OK"
+    });
+    return;
+  }
+
+  // 1. Initialiser le contexte audio si nécessaire (similaire au clic sur l'onglet Acquisition)
+  await safeStartAudio("REC");
+
+  // 2. Basculer l'interface visuellement sur "Acquisition" -> "Fichier"
+  // On passe sur l'onglet principal "Acquisition"
+  tabManager.activeTab = 1; 
+  $("#rt-tab-button").classList.remove("is-active");
+  $("#rec-tab-button").classList.add("is-active");
+  $("#rt-panel").classList.add("is-hidden");
+  $("#rec-panel").classList.remove("is-hidden");
+  
+  // On passe sur le sous-onglet "Fichier"
+  $("#file-tab-button").classList.add("is-active");
+  $("#mic-tab-button").classList.remove("is-active");
+  $("#mic-panel").classList.add("is-hidden");
+  $("#file-panel").classList.remove("is-hidden");
+
+  // 3. Lire le fichier avec le fileReader existant
+  fileReader.readAsArrayBuffer(file);
+
+  // 4. Mettre à jour l'UI (masquer le bouton, afficher la barre de progression)
+  $("#sample-panel").classList.add("is-hidden");
+  $("#file-label").classList.add("is-hidden");
+  $("#file-progress-bar").classList.remove("is-hidden");
 });
 
 /*----------------------------------------------------------------------------------------------

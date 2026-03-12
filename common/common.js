@@ -1318,20 +1318,20 @@ export class FileDropManager {
 
   createOverlay() {
     this.overlay = document.createElement('div');
-    // Utilisation des classes Bulma pour le style et le centrage
-    this.overlay.className = 'has-background-white-ter is-flex is-flex-direction-column is-justify-content-center is-align-items-center is-hidden';
+    // On retire 'is-flex' et 'is-hidden' d'ici pour éviter les conflits CSS
+    this.overlay.className = 'has-background-white-ter is-flex-direction-column is-justify-content-center is-align-items-center';
     
-    // Application de styles pour superposer l'overlay sur tout le conteneur
     Object.assign(this.overlay.style, {
-      position: 'absolute',
+      position: 'fixed', // Fixed est beaucoup plus sûr que absolute pour couvrir tout l'écran
       top: '0',
       left: '0',
-      width: '100%',
-      height: '100%',
+      width: '100vw',
+      height: '100vh',
       zIndex: '9999',
       opacity: '0.95',
-      border: '4px dashed hsl(171, 100%, 41%)', // Couleur primaire (identique à Common.colors.primary)
-      pointerEvents: 'none' // Très important : empêche l'overlay de bloquer les événements de drag
+      border: '4px dashed hsl(171, 100%, 41%)',
+      pointerEvents: 'none',
+      display: 'none' // L'overlay est caché par défaut ici
     });
 
     this.overlay.innerHTML = `
@@ -1340,11 +1340,6 @@ export class FileDropManager {
     `;
 
     this.container.appendChild(this.overlay);
-    
-    // S'assurer que le container parent a un positionnement relatif (sauf si c'est le body)
-    if (this.container !== document.body && getComputedStyle(this.container).position === 'static') {
-      this.container.style.position = 'relative';
-    }
   }
 
   setupEvents() {
@@ -1352,15 +1347,16 @@ export class FileDropManager {
       e.preventDefault();
       this.dragCounter++;
       if (this.dragCounter === 1) {
-        this.overlay.classList.remove('is-hidden');
+        this.overlay.style.display = 'flex'; // On l'affiche au premier survol
       }
     });
 
     this.container.addEventListener('dragleave', (e) => {
       e.preventDefault();
       this.dragCounter--;
-      if (this.dragCounter === 0) {
-        this.overlay.classList.add('is-hidden');
+      if (this.dragCounter <= 0) {
+        this.dragCounter = 0; // Sécurité pour éviter les valeurs négatives
+        this.overlay.style.display = 'none'; // On le cache
       }
     });
 
@@ -1371,7 +1367,7 @@ export class FileDropManager {
     this.container.addEventListener('drop', (e) => {
       e.preventDefault();
       this.dragCounter = 0;
-      this.overlay.classList.add('is-hidden');
+      this.overlay.style.display = 'none'; // On le cache au dépôt
 
       if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
         const file = e.dataTransfer.files[0];

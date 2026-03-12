@@ -1,6 +1,5 @@
 # Common
     - modal à propos: improve descriptions
-    - Glisser-déposer : Permettre de charger un fichier par glisser-déposer (drag and drop)
     - tester sur petit ecran (et faire les adaptations nécessaires)
     - vérifier que tous les focus automatiques sont ok
     - continuer d'ajouter des raccourcis clavier

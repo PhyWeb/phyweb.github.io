@@ -149,7 +149,7 @@ export default class EXTRACTOR {
     } else{
       $("#file-size-modal").classList.add('is-active');
       $("#def-size-label").innerHTML = ` ( ${this.width} / ${this.height} => ${this.width / 2} / ${this.height / 2} )`;
-      $("#fps-size-label").innerHTML = `( ${this.fps.toFixed(2)/1} => ${this.fps.toFixed(2)/2} img/s )`;
+      $("#fps-size-label").innerHTML = ` ( ${this.fps.toFixed(2)/1} => ${this.fps.toFixed(2)/2} img/s )`;
       $("#duration-size-label").innerHTML = this.duration.toFixed(2);
       $("#file-slider").noUiSlider.reset();
       $("#file-slider").noUiSlider.updateOptions({ range:{ 'min': 0, 'max': this.duration } });

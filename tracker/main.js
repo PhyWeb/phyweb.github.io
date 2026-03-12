@@ -4,7 +4,7 @@ import EXTRACTOR from "./modules/extractor.js"
 import MEASUREMENT from "./modules/measurement.js"
 import PLAYER from "./modules/player.js"
 
-import {Common, setupGlobalShortcuts, alertModal, NavigationManager, exportToPW} from "../common/common.js"
+import {Common, setupGlobalShortcuts, alertModal, NavigationManager, exportToPW, FileDropManager} from "../common/common.js"
 
 import ExchangeManager from '../common/modules/ExchangeManager.js';
 
@@ -195,6 +195,43 @@ $("#file-input").addEventListener("change", () => {
 });
 $("#file-input").addEventListener("click", () => {
   $("#file-input").value = null; // allow the onchange trigger even if the same file is selected twice
+});
+
+// DRAG AND DROP
+const videoDropManager = new FileDropManager(document.body, async (file) => {
+  if (!file) return;
+
+  // 1. Vérification du format (exactement comme pour l'input #file-input)
+  if (file.type !== "video/mp4") {
+    alertModal({
+      type: "danger",
+      title: "Codec video non supporté",
+      body: `<div class="content">
+          <p>La vidéo doit être au format mp4 et encodé dans un des formats listé ci-dessous :</p>
+          <ul>
+            <li>H.264</li>
+            <li>H.265</li>
+            <li>AV1</li>
+          </ul>
+        </div>`,
+      confirm: "OK",
+      width: "45rem"
+    });
+    return;
+  }
+
+  // 2. Fermer les éventuelles modales ouvertes (comme la modale "Nouveau")
+  common.modalManager.closeAllModals();
+
+  // 3. Demander confirmation avant d'écraser la session courante
+  navManager.confirmAction(() => {
+    // 4. Charger la vidéo dans le player
+    player.load(file, $("#force-filesize-modal-input").checked);
+  }, {
+    title: "Ouvrir un fichier",
+    body: "Le chargement d'une nouvelle vidéo remplacera la vidéo actuelle. Les données non sauvegardées seront perdues.",
+    confirmLabel: "Ouvrir"
+  });
 });
 
 // RESIZEVIDEO
