@@ -22,6 +22,7 @@ export default class MEASUREMENT {
     this.series = [];
 
     this.originFrame = 0;
+    this.aspectRatio = 1; // Stockage du ratio de la vidéo
 
     this.maxDigits = 4;
 
@@ -42,12 +43,17 @@ export default class MEASUREMENT {
       },
 
       getOrientedScaleX(){
-        let scale = this.origin.type === "topright" || this.origin.type === "downright" ? this.value : 0 - this.value;
+        // "right" signifie que l'axe X est positif vers la droite
+        let scale = this.origin.type.includes("right") ? this.value : 0 - this.value;
         return scale;
       },
 
-      getOrientedScaleY(){
-        return this.origin.type === "topright" || this.origin.type === "topleft" ? 0- this.value : this.value;
+      getOrientedScaleY(ratio){
+        // "top" signifie que l'axe Y est positif vers le haut.
+        // Comme le canvas augmente vers le bas, on inverse le signe.
+        // On divise par le ratio pour compenser la normalisation (0 à 1) sur la hauteur.
+        let baseScale = this.origin.type.includes("top") ? 0 - this.value : this.value;
+        return baseScale / ratio;
       },
 
       init(){
@@ -65,11 +71,16 @@ export default class MEASUREMENT {
         }
       },
 
-      update(){
+      update(ratio){
         this.value = 1;
         if(this.scaleSegment.x1 != null && this.scaleSegment.x2 != null && this.scaleSegment.y1 != null && this.scaleSegment.y2 != null){
           if(isNumber($("#scale-input").value) == true){
-            this.value = $("#scale-input").value / Math.sqrt(Math.pow(this.scaleSegment.x2 - this.scaleSegment.x1 , 2) + Math.pow(this.scaleSegment.y2 - this.scaleSegment.y1 , 2));
+            // Calcul de la distance réelle en tenant compte du ratio d'aspect
+            // On divise la composante Y par le ratio pour ramener les unités à l'échelle de la largeur
+            const dx = this.scaleSegment.x2 - this.scaleSegment.x1;
+            const dy = (this.scaleSegment.y2 - this.scaleSegment.y1) / ratio;
+            
+            this.value = $("#scale-input").value / Math.sqrt(dx * dx + dy * dy);
           }
         }
       }
@@ -79,6 +90,9 @@ export default class MEASUREMENT {
   init(_decodedVideo, player){
     // Inits
     this.series = [];
+    
+    // Calcul et stockage du ratio d'aspect (Largeur / Hauteur)
+    this.aspectRatio = _decodedVideo.width / _decodedVideo.height;
 
     this.scale.init();
     
@@ -100,7 +114,6 @@ export default class MEASUREMENT {
     $("#origin-frame-input").value = 1;
 
     this.buildTable(player);
-
   }
 
   buildTable(player){
@@ -213,7 +226,7 @@ export default class MEASUREMENT {
         this.series.push(ySerie);
       }
     }
-    // schrink the data if ppf decreases
+    // shrink the data if ppf decreases
     if(ppf < currentPpf){
       this.series.splice(ppf * 2 + 1);
     }
@@ -251,7 +264,7 @@ export default class MEASUREMENT {
 
   updateTable(){
     let ppf = (this.series.length - 1) / 2;
-    this.scale.update()
+    this.scale.update(this.aspectRatio); // Mise à jour avec le ratio
 
     for(let i = 0; i < this.tableBody.children.length; i++){
       // update t values
@@ -263,7 +276,7 @@ export default class MEASUREMENT {
 
       // update x and y values
       const scaleX = this.scale.getOrientedScaleX();
-      const scaleY = this.scale.getOrientedScaleY();
+      const scaleY = this.scale.getOrientedScaleY(this.aspectRatio); // Utilisation du ratio
 
       if(i < this.originFrame){
         for(let j = 1; j < ppf + 1; j++){
@@ -280,12 +293,12 @@ export default class MEASUREMENT {
   }
 
   prepareDownloadData(){
-    this.scale.update()
+    this.scale.update(this.aspectRatio);
 
     let series = structuredClone(this.series);
 
     const scaleX = this.scale.getOrientedScaleX();
-    const scaleY = this.scale.getOrientedScaleY();
+    const scaleY = this.scale.getOrientedScaleY(this.aspectRatio);
 
     // Définit les types pour afficher le bon graphique une fois les données importées dans Grapher
     series[0].type = "x";
@@ -323,24 +336,18 @@ export default class MEASUREMENT {
     }
     if(_type === "rw3"){
       file = exportToRW3(series, true, "Pointage PhyWeb Tracker");
-      console.log(file);
     }
     downloadFile(file, _type, _name)
   }
 
-  /**
-   * Prépare et copie les données de mesure au format TSV dans le presse-papiers.
-   * Seules les lignes complètes (contenant une valeur pour chaque série de données x, y) sont exportées.
-   */
   exportToClipboard() {
     const csv = exportToCSV(this.prepareDownloadData(), true);
-    const tsvContent = csv.replace(/,/g, '\t'); // Conversion simple de CSV à TSV
+    const tsvContent = csv.replace(/,/g, '\t');
 
-    // Copie dans le presse-papiers
     navigator.clipboard.writeText(tsvContent).then(() => {
-      console.log("Données des lignes complètes copiées dans le presse-papiers !");
+      console.log("Données copiées dans le presse-papiers !");
     }).catch(err => {
-      console.error("Erreur lors de la copie dans le presse-papiers : ", err);
+      console.error("Erreur lors de la copie : ", err);
     });
   }
 }
