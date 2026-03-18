@@ -123,18 +123,32 @@ export default class PLAYER {
     }
   }
 
-  drawCrosses(){
-    for(let i = 0; i < (this.measurement.series.length - 1) / 2; i++){
-      for(let j = this.measurement.originFrame; j < this.measurement.series[0].length; j++){
-        this.drawCross(this.measurement.series[(i * 2) + 1][j], this.measurement.series[(i * 2) + 2][j]);
+  drawCrosses() {
+    for (let i = 0; i < (this.measurement.series.length - 1) / 2; i++) {
+      for (let j = this.measurement.originFrame; j < this.measurement.series[0].length; j++) {
+        const xCoord = this.measurement.series[(i * 2) + 1][j];
+        const yCoord = this.measurement.series[(i * 2) + 2][j];
+
+        // On ne dessine que si les coordonnées ne sont pas des chaînes vides
+        if (xCoord !== "" && yCoord !== "") {
+          this.drawCross(xCoord, yCoord);
+        }
       }
     }
   }
 
-  drawCross(_x, _y){
+  drawCross(_x, _y) {
     const x = this.videoCanvas.width * _x;
     const y = this.videoCanvas.height * _y;
 
+    this.ctx.save();
+    
+    // Configuration du "dégradé" d'ombre noire
+    this.ctx.shadowColor = "black";
+    this.ctx.shadowBlur = 3;      // Intensité du dégradé (halo)
+    this.ctx.shadowOffsetX = 0;
+    this.ctx.shadowOffsetY = 0;
+    
     this.ctx.beginPath();
     this.ctx.lineWidth = 2;
     this.ctx.moveTo(x - 5, y);
@@ -144,24 +158,35 @@ export default class PLAYER {
     this.ctx.strokeStyle = "white";
     this.ctx.stroke();
     this.ctx.closePath();
+    
+    this.ctx.restore();
   }
 
-  drawMagnifier(_frameID){
-    //let a = this.ctx.getImageData(0,0,this.videoCanvas.width,this.videoCanvas.height)
-    let img = new VideoFrame(this.videoCanvas, {timestamp : 0})
-
+  drawMagnifier(_frameID) {
+    let img = new VideoFrame(this.videoCanvas, { timestamp: 0 });
     let magnifierPower = 2;
+
     this.ctx.save();
+
     this.ctx.beginPath();
     this.ctx.arc(this.point.x, this.point.y, this.videoCanvas.height * 0.15, 0, Math.PI * 2, true);
-    this.ctx.strokeStyle = "white";
-    this.ctx.lineWidth = 6;
+
+    this.ctx.shadowColor = "black";
+    this.ctx.shadowBlur = 5; 
+    this.ctx.shadowOffsetX = 0;
+    this.ctx.shadowOffsetY = 0;
+
+    this.ctx.strokeStyle = "black";
+    this.ctx.lineWidth = 0;
     this.ctx.stroke();
     this.ctx.closePath();
+
+    this.ctx.shadowBlur = 0;
+
     this.ctx.clip();
-		
-		this.ctx.drawImage(
-      /*this.decodedVideo.frames[_frameID]*/ img,
+
+    this.ctx.drawImage(
+      img,
       -this.videoCanvas.width * (magnifierPower - 1) / 2 +
         (this.videoCanvas.width - this.videoCanvas.width * magnifierPower) * (this.distPoint.x * 1),
       -this.videoCanvas.height * (magnifierPower - 1) / 2 +
@@ -174,7 +199,7 @@ export default class PLAYER {
     this.ctx.restore();
   }
 
-  drawOrigin(){
+  drawOrigin() {
     function canvasArrow(context, fromx, fromy, tox, toy) {
       const headlen = 10; // length of head in pixels
       const dx = tox - fromx;
@@ -188,18 +213,27 @@ export default class PLAYER {
       context.lineTo(tox - headlen * Math.cos(angle + Math.PI / 6), toy - headlen * Math.sin(angle + Math.PI / 6));
     }
 
+    this.ctx.save();
+
+    // Configuration de l'ombre (le halo noir)
+    this.ctx.shadowColor = "black";
+    this.ctx.shadowBlur = 2;
+    this.ctx.shadowOffsetX = 0;
+    this.ctx.shadowOffsetY = 0;
+
     this.ctx.beginPath();
     const x = this.videoCanvas.width * this.measurement.scale.origin.x;
     const y = this.videoCanvas.height * this.measurement.scale.origin.y;
 
-    //horizontal arrow
-    if(this.measurement.scale.origin.type == "topright" || this.measurement.scale.origin.type == "downright"){
+    // Flèche horizontale
+    if (this.measurement.scale.origin.type == "topright" || this.measurement.scale.origin.type == "downright") {
       canvasArrow(this.ctx, 0, y, this.videoCanvas.width, y);
     } else {
       canvasArrow(this.ctx, this.videoCanvas.width, y, 0, y);
     }
-    //vertical arrow
-    if(this.measurement.scale.origin.type == "topright" || this.measurement.scale.origin.type == "topleft"){-
+
+    // Flèche verticale
+    if (this.measurement.scale.origin.type == "topright" || this.measurement.scale.origin.type == "topleft") {
       canvasArrow(this.ctx, x, this.videoCanvas.height, x, 0);
     } else {
       canvasArrow(this.ctx, x, 0, x, this.videoCanvas.height);
@@ -208,30 +242,42 @@ export default class PLAYER {
     this.ctx.strokeStyle = "white";
     this.ctx.stroke();
     this.ctx.closePath();
+
+    this.ctx.restore();
   }
 
-  drawSegment(){
+  drawSegment() {
     let x1 = this.videoCanvas.width * this.measurement.scale.scaleSegment.x1;
     let y1 = this.videoCanvas.height * this.measurement.scale.scaleSegment.y1;
     let x2 = this.videoCanvas.width * this.measurement.scale.scaleSegment.x2;
     let y2 = this.videoCanvas.height * this.measurement.scale.scaleSegment.y2;
 
-    if(this.segment.x1 != null){
-      // draw to mouse instead
+    if (this.segment.x1 != null) {
+      // Dessiner vers la souris à la place
       x1 = this.segment.x1 * this.videoCanvas.width;
       y1 = this.segment.y1 * this.videoCanvas.height;
       x2 = this.videoCanvas.width * (this.distPoint.x + 0.5);
       y2 = this.videoCanvas.height * (this.distPoint.y + 0.5);
     }
 
+    this.ctx.save();
+
+    // Configuration du halo noir (ombre portée)
+    this.ctx.shadowColor = "black";
+    this.ctx.shadowBlur = 2; // Intensité du halo
+    this.ctx.shadowOffsetX = 0;
+    this.ctx.shadowOffsetY = 0;
+
     this.ctx.beginPath();
     this.ctx.moveTo(x1, y1);
-
     this.ctx.lineTo(x2, y2);
 
     this.ctx.strokeStyle = "white";
+    this.ctx.lineWidth = 2;
     this.ctx.stroke();
     this.ctx.closePath();
+
+    this.ctx.restore();
   }
 
   toggleMagnifier(){
