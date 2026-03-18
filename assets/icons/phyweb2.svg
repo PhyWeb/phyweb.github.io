@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="65mm"
+   height="65mm"
+   viewBox="0 0 65 65"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.4.2 (f4327f4, 2025-05-13)"
+   sodipodi:docname="phyweb2.svg"
+   inkscape:export-filename="phyweb2.png"
+   inkscape:export-xdpi="58.615383"
+   inkscape:export-ydpi="58.615383"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#eeeeee"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     inkscape:zoom="2.955623"
+     inkscape:cx="83.90786"
+     inkscape:cy="118.24918"
+     inkscape:window-width="2560"
+     inkscape:window-height="1369"
+     inkscape:window-x="-8"
+     inkscape:window-y="564"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs1" />
+  <g
+     inkscape:label="Calque 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <path
+       id="path1"
+       style="fill:#00d1b2;fill-opacity:1;stroke:#00d1b1;stroke-width:0"
+       d="m 17.5,7.5 v 4.05845 10.091296 l 3.634404,-5.011806 h 10.570414 c 3.314029,-9.7e-5 6.000531,2.727825 6.00015,6.09266 -4.75e-4,3.364219 -2.686727,6.091182 -6.00015,6.091086 H 17.5 V 57.5 L 31.970951,37.96015 c 8.284355,6.6e-5 15.52935,-6.818718 15.529285,-15.230075 C 47.500301,14.318718 40.784473,7.4999338 32.500118,7.5 Z"
+       sodipodi:nodetypes="ccccccccccccc" />
+  </g>
+</svg>
