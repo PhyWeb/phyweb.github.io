@@ -41,6 +41,21 @@ app.whenReady().then(() => {
   // create the main window
   createWindow("index.html")
 
+  const args = process.argv;
+  if (args.length >= 2) {
+    const filePath = args[args.length - 1];
+    
+    // On vérifie que c'est bien un fichier .pw
+    if (filePath.endsWith('.pw')) {
+    dialog.showMessageBox({
+        type: 'info',
+        title: 'Test Ouverture Fichier',
+        message: `Fichier détecté : ${filePath}`
+      });
+      // on charge le fichier dans grapher/index.html
+    }
+  }
+
   ipcMain.on('openGrapherWindow', (event, data) => {
     // Create the grapher window
     const grapherWin = createWindow("grapher/index.html")

@@ -27,7 +27,8 @@ module.exports = {
         publisher: 'CN=2A272021-41C4-4363-BC75-191E2B3B681C', // Le "Package/Identity/Publisher" du Partner Center
         publisherDisplayName: 'PhyWeb', // Le "PublisherDisplayName"
         languages: ['fr-FR'], // Les langues supportées par l'application (BUG ne semble pas être pris en compte )
-        assets: './assets/appx'
+        assets: './assets/appx',
+        manifest: './appxmanifest.xml'
       }
     },
     /*{
