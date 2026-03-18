@@ -56,7 +56,7 @@
     - erreur silencieuse highcharts quand on met des lettres dans le table
 
 # MISC
- - Publier sur le microsoft store
+ - Mettre a jour longlet telechargement pour mettre le lien vers le store
 
 
 # Idées

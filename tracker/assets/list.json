@@ -78,6 +78,19 @@
               "thumb": "relativite/velo2.webp"
             }
           ]
+        },
+        {
+          "type": "folder",
+          "title": "Orbites",
+          "videos": [
+            {
+              "type": "video",
+              "title": "Simulation Terre-Lune",
+              "description": "Simulation de l'orbite de la Lune autour de la Terre. Chaque image représente 2 jours.",
+              "path": "orbites/simulation_terre_lune_1080p_30fps.mp4",
+              "thumb": "orbites/simulation_terre_lune_1080p_30fps.png"
+            }
+          ]
         }
       ]
     },
