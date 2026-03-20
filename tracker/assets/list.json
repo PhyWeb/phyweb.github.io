@@ -91,6 +91,19 @@
               "thumb": "orbites/simulation_terre_lune_1080p_30fps.png"
             }
           ]
+        },
+        {
+          "type": "folder",
+          "title": "Frottements",
+          "videos": [
+            {
+              "type": "video",
+              "title": "Palet sur une table horizontale",
+              "description": "Palet métalliaque (m = xxx g) glissant sur une table horizontale.",
+              "path": "frottements/palet-table.mp4",
+              "thumb": "frottements/palet-table.png"
+            }
+          ]
         }
       ]
     },

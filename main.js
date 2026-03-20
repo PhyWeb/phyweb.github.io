@@ -1,6 +1,7 @@
 const { app, BrowserWindow, globalShortcut } = require('electron/main')
 const { ipcMain } = require('electron')
 const path = require('node:path')
+const fs = require('node:fs') // <-- Ajout du module fs pour lire le fichier
 
 // Création d'un Set global pour stocker les références des fenêtres
 const windows = new Set();
@@ -38,22 +39,38 @@ const createWindow = (winPath) => {
 }
 
 app.whenReady().then(() => {
-  // create the main window
-  createWindow("index.html")
-
   const args = process.argv;
+  let fileToLoad = null;
+
+  // Vérification des arguments passés à l'application
   if (args.length >= 2) {
     const filePath = args[args.length - 1];
     
     // On vérifie que c'est bien un fichier .pw
     if (filePath.endsWith('.pw')) {
-    dialog.showMessageBox({
-        type: 'info',
-        title: 'Test Ouverture Fichier',
-        message: `Fichier détecté : ${filePath}`
-      });
-      // on charge le fichier dans grapher/index.html
+      fileToLoad = filePath;
     }
+  }
+
+  // Si on a cliqué sur un fichier .pw depuis l'explorateur
+  if (fileToLoad) {
+    // Créer directement la fenêtre grapher
+    const grapherWin = createWindow("grapher/index.html");
+
+    grapherWin.webContents.once('did-finish-load', () => {
+      try {
+        // Lire le contenu du fichier
+        const fileContent = fs.readFileSync(fileToLoad, 'utf-8');
+        // Envoyer les données au grapher
+        // Remarque : Si "import-data" attend du JSON parsé, utilisez JSON.parse(fileContent)
+        grapherWin.webContents.send('import-data', fileContent);
+      } catch (error) {
+        console.error("Erreur lors de la lecture du fichier .pw :", error);
+      }
+    });
+  } else {
+    // Comportement classique : create the main window
+    createWindow("index.html");
   }
 
   ipcMain.on('openGrapherWindow', (event, data) => {
@@ -94,7 +111,7 @@ app.whenReady().then(() => {
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow()
+      createWindow("index.html");
     }
   })
 })
