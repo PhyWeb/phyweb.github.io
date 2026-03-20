@@ -399,7 +399,7 @@ function aboutModal(_app){
       `
       break;
     case "Tracker":
-      description = "Application de pointage permettant d'étudier le mouvement d'objets dans une vidéo. Une <a href='notice/index.html'>notice d'utilisation</a> à imprimer est disponible."
+      description = "Application de pointage permettant d'étudier le mouvement d'objets dans une vidéo. Une <a href='../assets/notices/tracker/index.html'>notice d'utilisation</a> à imprimer est disponible."
       break;
     case "Audio":
       description = `<div class="content">
