@@ -388,7 +388,7 @@ function aboutModal(_app){
   // electron
   let version = ""
   if(window.electronAPI){
-    version = "v0.1.1"
+    version = "v0.1.2"
   }
   // Description
   let description;
