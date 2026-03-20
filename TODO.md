@@ -57,6 +57,7 @@
 
 # MISC
  - Mettre a jour longlet telechargement pour mettre le lien vers le store
+ - se noter le processus général pour mettre a jour tout
 
 
 # Idées
