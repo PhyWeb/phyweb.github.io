@@ -56,6 +56,13 @@
               "description": "Chute parabolique d'un volant de badminton. (m = 5,7 g). Distance entre les deux extrémités de la règle: 1 m.",
               "path": "chutes/chute-volant.mp4",
               "thumb": "chutes/chute-volant.jpg"
+            },
+            {
+              "type": "video",
+              "title": "Chute d'une boule de pétanque avec vitesse initiale",
+              "description": "aaa",
+              "path": "chutes/chute-volant.mp4",
+              "thumb": "chutes/chute-volant.jpg"
             }
           ]
         },
@@ -98,7 +105,7 @@
           "videos": [
             {
               "type": "video",
-              "title": "Palet sur une table horizontale",
+              "title": "Palet lancé sur une table",
               "description": "Palet métalliaque (m = xxx g) glissant sur une table horizontale.",
               "path": "frottements/palet-table.mp4",
               "thumb": "frottements/palet-table.png"
