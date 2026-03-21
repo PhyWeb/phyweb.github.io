@@ -36,11 +36,11 @@ module.exports = {
       config: {
         options: {
           categories: ['Utility'], // La catégorie de ton app
-          id: 'com.tondomaine.phyweb' // L'identifiant unique (format domaine inversé obligatoire)
+          id: 'io.github.phyweb' // L'identifiant unique (format domaine inversé obligatoire)
         }
       } 
     },
-    {
+    /*{
       name: '@electron-forge/maker-zip',
       platforms: ['darwin'],
     },
@@ -51,7 +51,7 @@ module.exports = {
     {
       name: '@electron-forge/maker-rpm',
       config: {},
-    },
+    },*/
   ],
   plugins: [
     {
