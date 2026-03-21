@@ -47,12 +47,23 @@ module.exports = {
                 options: {
                   id: 'io.github.phyweb',
                   productName: 'PhyWeb',
-                  runtimeVersion: '22.08',
+                  runtimeVersion: '23.08',
                   base: 'org.electronjs.Electron2.BaseApp',
-                  baseVersion: '22.08'
+                  baseVersion: '23.08',
+                  sdkExtensions: ['org.freedesktop.Sdk.Extension.llvm16'],
+                  buildOptions: {
+                    prependPath: '/usr/lib/sdk/llvm16/bin',  // camelCase → le bundler le convertit
+                    env: {
+                      CC:  '/usr/lib/sdk/llvm16/bin/clang',
+                      CXX: '/usr/lib/sdk/llvm16/bin/clang++',
+                      // PATH explicite en fallback si prependPath ne prend pas effet
+                      PATH: '/usr/lib/sdk/llvm16/bin:/app/bin:/usr/bin:/bin'
+                    }
+                  }
                 }
               }
             }
+
           ]
         : []
     )

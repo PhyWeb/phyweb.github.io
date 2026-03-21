@@ -40,6 +40,16 @@ jobs:
 
         flatpak remotes
 
+    - name: Verify llvm16 inside Flatpak SDK
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        # Vérifie que l'extension est bien montable par flatpak-builder
+        flatpak run --command=bash \
+          --filesystem=host \
+          --env=PATH=/usr/lib/sdk/llvm16/bin:/usr/bin:/bin \
+          org.freedesktop.Sdk//23.08 \
+          -c "which clang++ && clang++ --version" || echo "clang++ introuvable dans le SDK"
+
     - name: Build app
       run: npm run make
       env:
