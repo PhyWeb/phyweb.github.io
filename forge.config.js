@@ -48,6 +48,8 @@ module.exports = {
                   id: 'io.github.phyweb',
                   productName: 'PhyWeb',
                   runtimeVersion: '23.08',
+                  base: 'org.electronjs.Electron2.BaseApp', // Le nom exact du BaseApp
+                  baseVersion: '23.08'
                 }
               }
             }
