@@ -48,8 +48,15 @@ module.exports = {
                   id: 'io.github.phyweb',
                   productName: 'PhyWeb',
                   runtimeVersion: '23.08',
-                  base: 'org.electronjs.Electron2.BaseApp', // Le nom exact du BaseApp
-                  baseVersion: '23.08'
+                  base: 'org.electronjs.Electron2.BaseApp',
+                  baseVersion: '23.08',
+                  // 1. Demande au bac à sable d'inclure l'extension contenant clang++
+                  sdkExtensions: ['org.freedesktop.Sdk.Extension.llvm16'],
+                  // 2. Modifie le PATH de compilation pour que le système trouve la commande clang++
+                  buildOptions: {
+                    'prepend-path': '/usr/lib/sdk/llvm16/bin',
+                    'prepend-ld-library-path': '/usr/lib/sdk/llvm16/lib'
+                  }
                 }
               }
             }
