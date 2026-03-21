@@ -1,12 +1,14 @@
 const { FusesPlugin } = require('@electron-forge/plugin-fuses');
 const { FuseV1Options, FuseVersion } = require('@electron/fuses');
 
+const isCI = process.env.CI === 'true';
+
 module.exports = {
   packagerConfig: {
     prune: true,
     asar: true,
     ignore: "/portable",
-    icon: './assets/icons/phyweb' // corrigé (chemin relatif)
+    icon: './assets/icons/phyweb'
   },
 
   rebuildConfig: {},
@@ -15,7 +17,7 @@ module.exports = {
     {
       name: '@rabbitholesyndrome/electron-forge-maker-portable',
       config: {
-        icon: './assets/icons/phyweb.png', // corrigé
+        icon: './assets/icons/phyweb.png',
         nsis: {
           installerIcon: './assets/icons/phyweb.png',
           installerHeaderIcon: './assets/icons/phyweb.png'
@@ -35,16 +37,27 @@ module.exports = {
       }
     },
 
-    {
-      name: '@electron-forge/maker-flatpak',
-      config: {
-        options: {
-          id: 'io.github.phyweb',
-          productName: 'PhyWeb',
-          runtimeVersion: '23.08'
-        }
-      }
-    }
+    // Flatpak sécurisé (runtime corrigé)
+    ...(
+      isCI
+        ? [
+            {
+              name: '@electron-forge/maker-flatpak',
+              config: {
+                options: {
+                  id: 'io.github.phyweb',
+                  productName: 'PhyWeb',
+                  runtimeVersion: '23.08',
+
+                  // 🔥 FIX PRINCIPAL
+                  base: 'org.electronjs.Electron.BaseApp',
+                  baseVersion: '23.08'
+                }
+              }
+            }
+          ]
+        : []
+    )
   ],
 
   plugins: [

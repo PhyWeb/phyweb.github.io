@@ -25,14 +25,18 @@ jobs:
     - name: Install dependencies
       run: npm ci
 
-    # Flatpak uniquement sur Linux
-    - name: Install Flatpak dependencies (Linux only)
+    - name: Install Flatpak (Linux only)
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
         sudo apt-get install -y flatpak flatpak-builder
         sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-        sudo flatpak install -y flathub org.freedesktop.Platform//23.08 org.freedesktop.Sdk//23.08
+
+        # Runtime moderne
+        sudo flatpak install -y flathub \
+          org.freedesktop.Platform//23.08 \
+          org.freedesktop.Sdk//23.08 \
+          org.electronjs.Electron.BaseApp//23.08
 
         flatpak --version
 
@@ -40,6 +44,7 @@ jobs:
       run: npm run make
       env:
         DEBUG: '*'
+        CI: true
 
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
