@@ -6,65 +6,53 @@ module.exports = {
     prune: true,
     asar: true,
     ignore: "/portable",
-    icon: '/assets/icons/phyweb'
+    icon: './assets/icons/phyweb' // corrigé (chemin relatif)
   },
+
   rebuildConfig: {},
+
   makers: [
     {
       name: '@rabbitholesyndrome/electron-forge-maker-portable',
       config: {
-        icon: '/assets/icons/phyweb.png',
+        icon: './assets/icons/phyweb.png', // corrigé
         nsis: {
           installerIcon: './assets/icons/phyweb.png',
           installerHeaderIcon: './assets/icons/phyweb.png'
         }
       },
     },
+
     {
       name: '@electron-forge/maker-appx',
       config: {
-        identityName: 'PhyWeb.PhyWeb', // Le "Package/Identity/Name" du Partner Center
-        publisher: 'CN=2A272021-41C4-4363-BC75-191E2B3B681C', // Le "Package/Identity/Publisher" du Partner Center
-        publisherDisplayName: 'PhyWeb', // Le "PublisherDisplayName"
-        languages: ['fr-FR'], // Les langues supportées par l'application (BUG ne semble pas être pris en compte )
+        identityName: 'PhyWeb.PhyWeb',
+        publisher: 'CN=2A272021-41C4-4363-BC75-191E2B3B681C',
+        publisherDisplayName: 'PhyWeb',
+        languages: ['fr-FR'],
         assets: './assets/appx',
         manifest: './appxmanifest.xml'
       }
     },
+
     {
       name: '@electron-forge/maker-flatpak',
       config: {
         options: {
           id: 'io.github.phyweb',
           productName: 'PhyWeb',
-          runtimeVersion: '23.08',
-          sdkExtensions: ['org.freedesktop.Sdk.Extension.llvm16'],
-          'build-options': {
-            'append-path': '/usr/lib/sdk/llvm16/bin'
-          }
+          runtimeVersion: '23.08'
         }
       }
-    },
-    /*{
-      name: '@electron-forge/maker-zip',
-      platforms: ['darwin'],
-    },
-    {
-      name: '@electron-forge/maker-deb',
-      config: {},
-    },
-    {
-      name: '@electron-forge/maker-rpm',
-      config: {},
-    },*/
+    }
   ],
+
   plugins: [
     {
       name: '@electron-forge/plugin-auto-unpack-natives',
       config: {},
     },
-    // Fuses are used to enable/disable various Electron functionality
-    // at package time, before code signing the application
+
     new FusesPlugin({
       version: FuseVersion.V1,
       [FuseV1Options.RunAsNode]: false,

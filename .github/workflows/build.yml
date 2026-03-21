@@ -2,11 +2,10 @@ name: Build PhyWeb
 
 on:
   push:
-    branches: [ main ] # Se lance quand tu pousses sur la branche main
+    branches: [ main ]
 
 jobs:
   build:
-    # On dit à GitHub de faire le boulot sur 2 OS en parallèle !
     strategy:
       matrix:
         os: [windows-latest, ubuntu-latest]
@@ -14,32 +13,35 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-    - name: Récupérer le code
+    - name: Checkout
       uses: actions/checkout@v4
 
-    - name: Installer Node.js
+    - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: 20
+        cache: 'npm'
 
-    - name: Installer les prérequis Flatpak (Uniquement sur Linux)
+    - name: Install dependencies
+      run: npm ci
+
+    # Flatpak uniquement sur Linux
+    - name: Install Flatpak dependencies (Linux only)
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
         sudo apt-get install -y flatpak flatpak-builder
         sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-        flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-        sudo flatpak install flathub org.freedesktop.Platform//23.08 org.freedesktop.Sdk//23.08 org.freedesktop.Sdk.Extension.llvm16//23.08 -y
+        sudo flatpak install -y flathub org.freedesktop.Platform//23.08 org.freedesktop.Sdk//23.08
 
-    - name: Installer les dépendances (npm install)
-      run: npm install
+        flatpak --version
 
-    - name: Compiler l'application (npm run make)
+    - name: Build app
       run: npm run make
       env:
         DEBUG: '*'
 
-    - name: Sauvegarder les fichiers générés
+    - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
         name: PhyWeb-Builds-${{ matrix.os }}
