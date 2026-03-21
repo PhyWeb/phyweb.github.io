@@ -32,12 +32,11 @@ jobs:
         sudo apt-get install -y flatpak flatpak-builder
         sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 
-        # Ajout de l'extension llvm16 pour compiler Zypak
+        # On installe la version 22.08 qui contient clang++ nativement
         sudo flatpak install -y flathub \
-          org.freedesktop.Platform//23.08 \
-          org.freedesktop.Sdk//23.08 \
-          org.electronjs.Electron2.BaseApp//23.08 \
-          org.freedesktop.Sdk.Extension.llvm16//23.08
+          org.freedesktop.Platform//22.08 \
+          org.freedesktop.Sdk//22.08 \
+          org.electronjs.Electron2.BaseApp//22.08
 
         flatpak remotes
 
