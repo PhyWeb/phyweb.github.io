@@ -32,10 +32,11 @@ jobs:
         sudo apt-get install -y flatpak flatpak-builder
         sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 
-        # UNIQUEMENT le runtime freedesktop
+        # Ajoutez l'application de base Electron ici :
         sudo flatpak install -y flathub \
           org.freedesktop.Platform//23.08 \
-          org.freedesktop.Sdk//23.08
+          org.freedesktop.Sdk//23.08 \
+          org.electronjs.Electron2.BaseApp//23.08
 
         flatpak remotes
 
