@@ -47,7 +47,7 @@ jobs:
         flatpak run --command=bash \
           --filesystem=host \
           --env=PATH=/usr/lib/sdk/llvm16/bin:/usr/bin:/bin \
-          org.freedesktop.Sdk//23.08 \
+          org.freedesktop.Sdk//22.08 \
           -c "which clang++ && clang++ --version" || echo "clang++ introuvable dans le SDK"
 
     - name: Build app
