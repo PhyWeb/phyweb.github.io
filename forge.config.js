@@ -48,10 +48,6 @@ module.exports = {
                   id: 'io.github.phyweb',
                   productName: 'PhyWeb',
                   runtimeVersion: '23.08',
-
-                  // 🔥 FIX PRINCIPAL
-                  base: 'org.electronjs.Electron.BaseApp',
-                  baseVersion: '23.08'
                 }
               }
             }
