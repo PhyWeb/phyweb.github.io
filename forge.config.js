@@ -31,14 +31,15 @@ module.exports = {
         manifest: './appxmanifest.xml'
       }
     },
-    { 
-      name: '@electron-forge/maker-flatpak', 
+    {
+      name: '@electron-forge/maker-flatpak',
       config: {
         options: {
-          categories: ['Utility'], // La catégorie de ton app
-          id: 'io.github.phyweb' // L'identifiant unique (format domaine inversé obligatoire)
+          id: 'io.github.phyweb',
+          productName: 'PhyWeb',
+          baseVersion: '22.08' // <-- On force l'utilisation de la fondation 22.08
         }
-      } 
+      }
     },
     /*{
       name: '@electron-forge/maker-zip',
