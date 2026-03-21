@@ -49,7 +49,19 @@ module.exports = {
                   productName: 'PhyWeb',
                   runtimeVersion: '22.08',
                   base: 'org.electronjs.Electron2.BaseApp',
-                  baseVersion: '22.08'
+                  baseVersion: '22.08',
+                  modules: [
+                    {
+                      name: 'zypak',
+                      sources: [
+                        {
+                          type: 'git',
+                          url: 'https://github.com/refi64/zypak',
+                          tag: 'v2022.04'
+                        }
+                      ]
+                    }
+                  ]
                 }
               }
             }
