@@ -15,8 +15,8 @@ module.exports = {
       config: {
         icon: '/assets/icons/phyweb.png',
         nsis: {
-          installerIcon: '/assets/icons/phyweb.png',
-          installerHeaderIcon: '/assets/icons/phyweb.png'
+          installerIcon: './assets/icons/phyweb.png',
+          installerHeaderIcon: './assets/icons/phyweb.png'
         }
       },
     },
@@ -37,7 +37,11 @@ module.exports = {
         options: {
           id: 'io.github.phyweb',
           productName: 'PhyWeb',
-          runtimeVersion: '23.08'
+          runtimeVersion: '23.08',
+          sdkExtensions: ['org.freedesktop.Sdk.Extension.llvm16'],
+          'build-options': {
+            'append-path': '/usr/lib/sdk/llvm16/bin'
+          }
         }
       }
     },
