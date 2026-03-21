@@ -20,7 +20,7 @@ module.exports = {
         }
       },
     },
-      {
+    {
       name: '@electron-forge/maker-appx',
       config: {
         identityName: 'PhyWeb.PhyWeb', // Le "Package/Identity/Name" du Partner Center
@@ -31,10 +31,15 @@ module.exports = {
         manifest: './appxmanifest.xml'
       }
     },
-    /*{
-      name: '@electron-forge/maker-squirrel',
-      config: {},
-    },*/
+    { 
+      name: '@electron-forge/maker-flatpak', 
+      config: {
+        options: {
+          categories: ['Utility'], // La catégorie de ton app
+          id: 'com.tondomaine.phyweb' // L'identifiant unique (format domaine inversé obligatoire)
+        }
+      } 
+    },
     {
       name: '@electron-forge/maker-zip',
       platforms: ['darwin'],

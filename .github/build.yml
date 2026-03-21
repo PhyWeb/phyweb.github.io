@@ -1,0 +1,43 @@
+name: Build PhyWeb
+
+on:
+  push:
+    branches: [ main ] # Se lance quand tu pousses sur la branche main
+
+jobs:
+  build:
+    # On dit à GitHub de faire le boulot sur 2 OS en parallèle !
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - name: Récupérer le code
+      uses: actions/checkout@v4
+
+    - name: Installer Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+
+    - name: Installer les prérequis Flatpak (Uniquement sur Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y flatpak flatpak-builder
+        sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+        sudo flatpak install flathub org.freedesktop.Platform//22.08 org.freedesktop.Sdk//22.08 -y
+
+    - name: Installer les dépendances (npm install)
+      run: npm install
+
+    - name: Compiler l'application (npm run make)
+      run: npm run make
+
+    - name: Sauvegarder les fichiers générés
+      uses: actions/upload-artifact@v4
+      with:
+        name: PhyWeb-Builds-${{ matrix.os }}
+        path: out/make/**/*
