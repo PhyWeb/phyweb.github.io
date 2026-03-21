@@ -40,6 +40,11 @@ jobs:
 
         flatpak remotes
 
+    - name: Disable Windows Defender for workspace (Speed up build)
+      if: matrix.os == 'windows-latest'
+      run: Add-MpPreference -ExclusionPath ${{ github.workspace }}
+      shell: powershell
+
     - name: Build app
       run: npm run make
       env:
