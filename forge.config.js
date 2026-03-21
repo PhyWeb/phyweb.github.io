@@ -48,6 +48,8 @@ module.exports = {
                   id: 'io.github.phyweb',
                   productName: 'PhyWeb',
                   runtimeVersion: '23.08',
+                  base: null,
+                  baseVersion: null
                 }
               }
             }
