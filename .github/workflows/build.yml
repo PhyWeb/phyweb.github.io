@@ -45,6 +45,19 @@ jobs:
 
         flatpak remotes
 
+    - name: Setup AppX requirements (Windows only)
+      if: matrix.os == 'windows-latest'
+      run: |
+        # 1. On génère un certificat de test silencieusement
+        $cert = New-SelfSignedCertificate -Type Custom -Subject "CN=2A272021-41C4-4363-BC75-191E2B3B681C" -KeyUsage DigitalSignature -FriendlyName "PhyWeb CI" -CertStoreLocation "Cert:\CurrentUser\My" -TextExtension @("2.5.29.37={text}1.3.6.1.5.5.7.3.3", "2.5.29.19={text}")
+        $pwd = ConvertTo-SecureString -String "password123" -Force -AsPlainText
+        Export-PfxCertificate -Cert $cert -FilePath "devCert.pfx" -Password $pwd
+        
+        # 2. On trouve le chemin du SDK Windows dynamiquement
+        $kitPath = (Resolve-Path "C:\Program Files (x86)\Windows Kits\10\bin\10.0.*\x64" | Select-Object -Last 1).Path
+        echo "WINDOWS_KITS_PATH=$kitPath" >> $env:GITHUB_ENV
+      shell: powershell
+
     - name: Build app
       run: npm run make
       env:

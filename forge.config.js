@@ -33,7 +33,11 @@ module.exports = {
         publisherDisplayName: 'PhyWeb',
         languages: ['fr-FR'],
         assets: './assets/appx',
-        manifest: './appxmanifest.xml'
+        manifest: './appxmanifest.xml',
+        // Ajout des paramètres silencieux pour le serveur CI :
+        devCert: 'devCert.pfx',
+        certPass: 'password123',
+        windowsKit: process.env.WINDOWS_KITS_PATH
       }
     },
 
