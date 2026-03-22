@@ -79,8 +79,6 @@
 
 
 # CHECKLIST RELEASE
-changer les dls dans index.html
-TODO le numero de version devrait provenir de celui de common.js
 changer la version dans common.js
 package.json
 appxmanifest.xml

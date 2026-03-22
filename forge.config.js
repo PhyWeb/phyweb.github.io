@@ -17,10 +17,12 @@ module.exports = {
     {
       name: '@rabbitholesyndrome/electron-forge-maker-portable',
       config: {
+        artifactName: 'phyweb.exe',
         icon: './assets/icons/phyweb.png',
         nsis: {
           installerIcon: './assets/icons/phyweb.png',
-          installerHeaderIcon: './assets/icons/phyweb.png'
+          installerHeaderIcon: './assets/icons/phyweb.png',
+          compression: 'zlib'
         }
       },
     },
