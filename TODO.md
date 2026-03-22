@@ -56,8 +56,7 @@
     - erreur silencieuse highcharts quand on met des lettres dans le table
 
 # MISC
- - Mettre a jour longlet telechargement pour mettre le lien vers le store
- - se noter le processus général pour mettre a jour tout
+ - Mettre a jour longlet telechargement pour mettre le lien vers le store (détecter auto l'os)
 
 
 # Idées
@@ -82,6 +81,6 @@
 changer la version dans common.js
 package.json
 appxmanifest.xml
-commit
+commit & sync
 git tag vx.x.x
 git push origin vx.x.x
