@@ -19,10 +19,11 @@ module.exports = {
       config: {
         artifactName: 'phyweb.exe',
         icon: './assets/icons/phyweb.png',
+        compression: 'normal',
         nsis: {
           installerIcon: './assets/icons/phyweb.png',
           installerHeaderIcon: './assets/icons/phyweb.png',
-          compression: 'zlib'
+          useZip: true
         }
       },
     },
