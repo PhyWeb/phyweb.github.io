@@ -57,6 +57,7 @@
 
 # MISC
  - Mettre a jour longlet telechargement pour mettre le lien vers le store (détecter auto l'os)
+ - tester le flatpak puis flathub
 
 
 # Idées
