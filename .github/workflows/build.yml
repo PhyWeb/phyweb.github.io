@@ -82,7 +82,7 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         files: |
-          out/make/portable/win32/x64/*.exe
+          out/make/phyweb.exe
           out/make/**/*.flatpak
           out/make/**/*.appx
         fail_on_unmatched_files: false # Empêche de planter si le flatpak est absent sur Windows
