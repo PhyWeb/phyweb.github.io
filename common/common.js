@@ -386,9 +386,9 @@ function quitConfirmationModal(_cb){
 
 function aboutModal(_app){
   // electron
-  let version = ""
+  let version = "";
   if(window.electronAPI){
-    version = "v0.1.4"
+    version = "v0.1.5";
   }
   // Description
   let description;

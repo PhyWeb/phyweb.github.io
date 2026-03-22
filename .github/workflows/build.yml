@@ -15,6 +15,10 @@ jobs:
 
     runs-on: ${{ matrix.os }}
 
+    permissions:
+      contents: write
+      packages: write
+
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -81,6 +85,7 @@ jobs:
           out/make/**/*.exe
           out/make/**/*.flatpak
           out/make/**/*.appx
+        fail_on_unmatched_files: false # Empêche de planter si le flatpak est absent sur Windows
         name: Release ${{ github.ref_name }}
         draft: false
         prerelease: false
