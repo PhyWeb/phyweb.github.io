@@ -16,6 +16,11 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
+    - name: Disable Windows Defender for workspace (Speed up build)
+      if: matrix.os == 'windows-latest'
+      run: Add-MpPreference -ExclusionPath ${{ github.workspace }}
+      shell: powershell
+
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
@@ -39,11 +44,6 @@ jobs:
           org.electronjs.Electron2.BaseApp//22.08
 
         flatpak remotes
-
-    - name: Disable Windows Defender for workspace (Speed up build)
-      if: matrix.os == 'windows-latest'
-      run: Add-MpPreference -ExclusionPath ${{ github.workspace }}
-      shell: powershell
 
     - name: Build app
       run: npm run make
