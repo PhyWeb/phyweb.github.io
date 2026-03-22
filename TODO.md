@@ -78,3 +78,10 @@
 
 
 
+# CHECKLIST RELEASE
+changer les dls dans common.js
+package.json
+appxmanifest.xml
+commit
+git tag vx.x.x
+git push origin vx.x.x
