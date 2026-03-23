@@ -565,14 +565,19 @@ class TabManager {
 
     this.tabs.push(tab);
 
+  _tab.tabButton.addEventListener("click", (e) => {
+    // On cherche si le clic vient du bouton delete ou d'un de ses enfants (i, svg, path)
+    const deleteBtn = e.target.closest(".tab-delete");
 
-    _tab.tabButton.addEventListener("click", (e)=>{
-      if(e.target.classList.contains("tab-delete") || e.target.classList.contains("fa-xmark") || e.target.localName === "path"){
-        this.deleteTab(this.tabs.indexOf(tab));
-      } else{
-        this.onTabClicked(this.tabs.indexOf(tab));
-      }
-    });
+    if (deleteBtn) {
+      // Empêche le clic de déclencher la sélection de l'onglet
+      e.stopPropagation(); 
+      this.deleteTab(this.tabs.indexOf(tab));
+    } else {
+      // C'est un clic normal sur l'onglet
+      this.onTabClicked(this.tabs.indexOf(tab));
+    }
+  });
 
     if(_tab.isActive){
       this.onTabClicked(this.tabs.length - 1);
@@ -599,6 +604,7 @@ class TabManager {
     icon.appendChild(i);
     let i2 = document.createElement("i");
     i2.className ="fas fa-xmark";
+    i2.style.pointerEvents = "none";
     close.appendChild(i2);
 
 
