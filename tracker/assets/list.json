@@ -38,31 +38,31 @@
           "videos": [
             {
               "type": "video",
-              "title": "Chute d'une balle de golf",
+              "title": "Balle de golf",
               "description": "Chute d'une balle de golf sans vitesse initiale. (m = 47 g). Distance entre les deux scotchs : 0,5 m.",
               "path": "chutes/chute-balle-golf.mp4",
               "thumb": "chutes/chute-balle-golf.jpg"
             },
             {
               "type": "video",
-              "title": "Chute d'une médecine balle",
+              "title": "Médecine balle avec vitesse initiale",
               "description": "Chute parabolique d'une médecine balle. (m = 3 kg). Distance entre les deux arbres au premier plan : 2,05 m.",
               "path": "chutes/chute-medecine-balle.mp4",
               "thumb": "chutes/chute-medecine-balle.jpg"
             },
             {
               "type": "video",
-              "title": "Chute d'un volant de badminton",
+              "title": "Volant de badminton avec vitesse initiale",
               "description": "Chute parabolique d'un volant de badminton. (m = 5,7 g). Distance entre les deux extrémités de la règle: 1 m.",
               "path": "chutes/chute-volant.mp4",
               "thumb": "chutes/chute-volant.jpg"
             },
             {
               "type": "video",
-              "title": "Chute d'une boule de pétanque avec vitesse initiale",
-              "description": "aaa",
-              "path": "chutes/chute-volant.mp4",
-              "thumb": "chutes/chute-volant.jpg"
+              "title": "Boule de pétanque avec vitesse initiale",
+              "description": "Chute parabolique d'une boule de pétanque. (m = 700 g). Distance entre les deux extrémités du mètre: 1 m.",
+              "path": "chutes/petanquev.mp4",
+              "thumb": "chutes/petanquev.png"
             }
           ]
         },
