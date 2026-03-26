@@ -70,10 +70,14 @@ export default class VIDEOLIST {
       a.classList.add("has-text-weight-bold");
 
       a.addEventListener("click", ()=>{
-        if(a.nextSibling.classList.contains("is-hidden")){
+        const isHidden = a.nextSibling.classList.contains("is-hidden");
+        
+        document.querySelectorAll("#video-list .menu-list > li > ul").forEach((ul) => {
+          ul.classList.add("is-hidden");
+        });
+        
+        if (isHidden) {
           a.nextSibling.classList.remove("is-hidden");
-        } else{
-          a.nextSibling.classList.add("is-hidden");
         }
       });
     } else {
