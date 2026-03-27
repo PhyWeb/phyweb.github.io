@@ -440,6 +440,7 @@ export default class Grapher {
         },
         lineWidth: 1,
         gridLineWidth: 1,
+        tickWidth: 1,
         startOnTick: false,
         endOnTick: false,
         minPadding: 0,

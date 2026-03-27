@@ -58,8 +58,6 @@
     - ajout de lignes inutiles quand on ajoute des variables par l'outil d'ajout.
     - le nom de la variable disparait quand on switch de page dans l'outil de creation de variables.
 
-    -ajouter des ticks sur l'axe des y comme sur l'axe des y (meme quand pas de grille)
-
 # MISC
  - Mettre a jour longlet telechargement pour mettre le lien vers le store (détecter auto l'os)
  - tester le flatpak puis flathub
