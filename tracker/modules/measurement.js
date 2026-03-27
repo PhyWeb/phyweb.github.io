@@ -204,9 +204,15 @@ export default class MEASUREMENT {
   }
 
   clearTable(){
+    // 1. On efface les données en mémoire (boucle très rapide)
     for(let i = 0; i < this.series[0].length; i++){
-      this.clearRow(i);
+      for(let j = 1; j < this.series.length; j++){
+        this.series[j][i] = "";
+      }
     }
+    
+    // 2. On met à jour le tableau HTML une seule fois
+    this.updateTable();
   }
 
   setPointPerFrame(ppf, player){

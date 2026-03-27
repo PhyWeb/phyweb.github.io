@@ -34,9 +34,7 @@
     - add a button to stop the decode and still exploit the already decoded frames
     - passer a ffmpeg.wasm
 
-    - typos dans les options de réduction de poids et centrage des checkboxes
-
-    - effacage de tableau tres lent sur des grosses vidéos ???
+    - typos dans les options de réduction de poids et centrage des checkboxes (seulement sur petit ecran ?)
 
 # Grapher
     - permettre de visualiser les bornes des modèles
