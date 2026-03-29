@@ -42,7 +42,6 @@
 
     - sauvegarder le niveau de zoom et la position de la caméra dans les pw
 
-    - méthode des tangentes
     - possibilité d'avoir 2 axes y
 
     - BUG : les icones du menu nouveau apparraissent en retard sur le ptb (again)

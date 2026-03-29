@@ -1610,6 +1610,7 @@ export default class UIManager {
         this.isZoomEnabled = false;
 
         const activated = setActiveTool(item);
+        toolsDropdown.classList.remove("is-active");
         if (!activated) return; // on vient de désélectionner -> ne rien réactiver
 
         console.log(`Outil sélectionné : ${item.id}`);
@@ -1618,6 +1619,7 @@ export default class UIManager {
         else if (item.id === 'tool-crosshair-free') this.grapher.setCrosshairMode('free');
         else if (item.id === 'tool-crosshair-model') this.grapher.setCrosshairMode('model');
         else if (item.id === 'tool-tangent') this.grapher.setCrosshairMode('tangent');
+        else if (item.id === 'tool-tangent-method') this.grapher.setCrosshairMode('tangent-method');
       });
     });
 

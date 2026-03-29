@@ -515,7 +515,7 @@ export default class Grapher {
 
     // Gestion du clic pour ajouter une annotation avec le réticule libre
     this.chart.container.addEventListener('mousedown', (e) => {
-    if (this.crosshairMode !== 'free' && this.crosshairMode !== 'model' && this.crosshairMode !== 'data' && this.crosshairMode !== 'tangent') return;
+    if (this.crosshairMode !== 'free' && this.crosshairMode !== 'model' && this.crosshairMode !== 'data' && this.crosshairMode !== 'tangent' && this.crosshairMode !== 'tangent-method') return;
 
       e.preventDefault(); // Empêche la sélection de texte pendant le glisser
 
@@ -558,13 +558,13 @@ export default class Grapher {
         this.drawModelCrosshair(payload);
       } else if (this.crosshairMode === 'data') {
         this.drawDataCrosshair(payload);
-      } else if (this.crosshairMode === 'tangent') {
+      } else if (this.crosshairMode === 'tangent' || this.crosshairMode === 'tangent-method') {
         this.drawTangent(payload);
-      }                        
+      }                     
     });
 
     Highcharts.addEvent(this.chart.container, 'mouseleave', () => {
-      this.hideFreeCrosshair(); // On cache toujours quand la souris sort
+      this.hideFreeCrosshair(); // Cache toujours quand la souris sort
     });
 
     // Ajoute un écouteur pour l'événement redraw pour les modèles
@@ -737,9 +737,8 @@ updateChart(yCurveTitles, redraw = true) {
   setCrosshairMode(mode) {
     this.crosshairMode = mode;
 
-    const needsMouseTracking = (mode === 'data' || mode === 'model' || mode === 'tangent');
-    // On active le "sticky tracking" pour les outils qui doivent s'accrocher aux points
-    const needsStickyTracking = (mode === 'data' || mode === 'tangent');
+    const needsMouseTracking = (mode === 'data' || mode === 'model' || mode === 'tangent' || mode === 'tangent-method');
+    const needsStickyTracking = (mode === 'data' || mode === 'tangent' || mode === 'tangent-method');
 
     this.hideFreeCrosshair();
 
@@ -1203,6 +1202,98 @@ updateChart(yCurveTitles, redraw = true) {
         renderedTangent.slopeLabel.translate(labelX, labelY);
 
         this.renderedAnnotations.push(renderedTangent);
+      } else if (annotation.type === 'tangent-method') {
+        const { point1, point2, slope, seriesName } = annotation;
+        const pixelX1 = xAxis.toPixels(point1.x);
+        const pixelY1 = yAxis.toPixels(point1.y);
+        const pixelX2 = xAxis.toPixels(point2.x);
+        const pixelY2 = yAxis.toPixels(point2.y);
+
+        const renderedTangentMethod = {};
+
+        // 1. Dessin des deux points de tangence avec le réticule
+        renderedTangentMethod.pt1 = this._drawEndpoint(pixelX1, pixelY1)[0];
+        renderedTangentMethod.pt2 = this._drawEndpoint(pixelX2, pixelY2)[0];
+
+        // Fonction utilitaire pour dessiner une droite sur toute la largeur
+        const { min: xMin, max: xMax } = chart.xAxis[0].getExtremes();
+        const drawLine = (p, color, dashStyle = 'Solid') => {
+          const yAtMin = slope * (xMin - p.x) + p.y;
+          const yAtMax = slope * (xMax - p.x) + p.y;
+          const pMin = { x: xAxis.toPixels(xMin), y: yAxis.toPixels(yAtMin) };
+          const pMax = { x: xAxis.toPixels(xMax), y: yAxis.toPixels(yAtMax) };
+          return chart.renderer.path(['M', pMin.x, pMin.y, 'L', pMax.x, pMax.y])
+            .attr({ 'stroke-width': 2, stroke: color, dashstyle: dashStyle, zIndex: 4 }).add();
+        };
+
+        // 2. Droites parallèles
+        renderedTangentMethod.line1 = drawLine(point1, 'rgba(0, 200, 100, 0.8)');
+        renderedTangentMethod.line2 = drawLine(point2, 'rgba(0, 200, 100, 0.8)');
+
+        // 3. Droite médiane
+        const b1 = point1.y - slope * point1.x;
+        const b2 = point2.y - slope * point2.x;
+        const bMed = (b1 + b2) / 2;
+        const pMed = { x: 0, y: bMed }; 
+        renderedTangentMethod.medianLine = drawLine(pMed, 'rgba(0, 200, 100, 0.5)', 'Dash');
+
+        // 4. Calcul de l'intersection (Point d'équivalence)
+        const series = chart.series.find(s => s.name === seriesName);
+        if (series) {
+          const data = series.options.data;
+          const isArrayData = Array.isArray(data[0]);
+          const getPt = (p) => isArrayData ? {x: p[0], y: p[1]} : {x: p.x, y: p.y};
+          let eqPoint = null;
+
+          // Limiter la zone de recherche strictement entre les deux points de tangence
+          const minSearchX = Math.min(point1.x, point2.x);
+          const maxSearchX = Math.max(point1.x, point2.x);
+          
+          // Cherche l'intersection entre le segment de la courbe et la médiane
+          for(let i = 0; i < data.length - 1; i++) {
+            const pA = getPt(data[i]);
+            const pB = getPt(data[i+1]);
+
+            // On ignore totalement les segments de courbe qui sont en dehors de la zone [P1, P2]
+            if (Math.max(pA.x, pB.x) < minSearchX || Math.min(pA.x, pB.x) > maxSearchX) {
+              continue;
+            }
+            const mSeg = (pB.y - pA.y) / (pB.x - pA.x);
+            if (mSeg !== slope) {
+              const xInt = (pA.y - mSeg * pA.x - bMed) / (slope - mSeg);
+              // Vérifie si l'intersection tombe bien entre les deux points du segment
+              if (xInt >= Math.min(pA.x, pB.x) && xInt <= Math.max(pA.x, pB.x)) {
+                eqPoint = { x: xInt, y: slope * xInt + bMed };
+                break;
+              }
+            }
+          }
+
+          // 5. Affichage du Point d'équivalence
+          if (eqPoint) {
+            const pxEq = xAxis.toPixels(eqPoint.x);
+            const pyEq = yAxis.toPixels(eqPoint.y);
+            renderedTangentMethod.eqPoint = chart.renderer.circle(pxEq, pyEq, 4)
+              .attr({ fill: 'rgba(220, 53, 69, 0.9)', stroke: 'white', 'stroke-width': 1, zIndex: 6 }).add();
+            
+            const eqText = `<b>V<sub>eq</sub></b> = ${formatNumber(eqPoint.x, significantDigits)}<br/><b>pH<sub>eq</sub></b> = ${formatNumber(eqPoint.y, significantDigits)}`;
+            renderedTangentMethod.eqLabel = chart.renderer.label(eqText, pxEq + 12, pyEq - 20, 'callout', null, null, true)
+              .attr({ 
+                  fill: 'rgba(255, 255, 255, 0.95)', // Fond presque opaque
+                  stroke: '#dbdbdb',                 // Bordure standard de votre app
+                  'stroke-width': 1, 
+                  r: 6,                              // Bords arrondis
+                  padding: 8, 
+                  zIndex: 6 
+              })
+              .css({ 
+                  color: 'black', 
+                  fontSize: '14px' 
+              }).add();
+          }
+        }
+
+        this.renderedAnnotations.push(renderedTangentMethod);
       }
     });
   }
@@ -1325,6 +1416,32 @@ updateChart(yCurveTitles, redraw = true) {
             });
           }
         }
+      } else if (this.crosshairMode === 'tangent-method') {
+        const point = this._findNearestPoint({ chartX: endX, chartY: endY });
+        if (point) {
+          const slope1 = this._calculateSlope(point);
+          if (slope1 !== null) {
+            const result = this._findTangentMethodPoints(point, slope1);
+            if (result) {
+
+              // Supprime l'ancienne méthode des tangentes avant d'ajouter la nouvelle
+              this.data.annotations = this.data.annotations.filter(ann => ann.type !== 'tangent-method');
+
+              this.data.annotations.push({
+                id: Highcharts.uniqueKey(),
+                type: 'tangent-method',
+                point1: result.p1,
+                point2: result.p2,
+                slope: slope1,
+                seriesName: point.series.name
+              });
+
+              // Simule un clic sur l'outil pour le désélectionner
+              const silentClick = new MouseEvent('click', { bubbles: false });
+              $('#tool-tangent-method').dispatchEvent(silentClick);
+            }
+          }
+        }
       } else { // Réticule libre
         xValue = chart.xAxis[0].toValue(endX);
         yValue = chart.yAxis[0].toValue(endY);
@@ -1381,7 +1498,6 @@ updateChart(yCurveTitles, redraw = true) {
     // Utilise la méthode Highcharts pour trouver le point le plus proche
     const point = chart.pointer.findNearestKDPoint(searchableSeries, false, event);
     
-    console.log(point);
     return point;
   }
 
@@ -1444,10 +1560,80 @@ updateChart(yCurveTitles, redraw = true) {
     return null;
   }
 
+  // méthode de la tangente pour trouver un second point sur la courbe
+  _findTangentMethodPoints(point, slope1) {
+    const series = point.series;
+    const data = series.options.data;
+    const n = data.length;
+    if (n < 2) return null;
+
+    const isArrayData = Array.isArray(data[0]);
+    const getPointObject = (p) => {
+        if (!p) return null;
+        if (isArrayData) return { x: p[0], y: p[1] };
+        return { x: p.x, y: p.y };
+    };
+
+    const slopes = [];
+    let maxSlope = -Infinity;
+    let jumpIndex = -1;
+    let p1Index = -1;
+
+    // 1. Calculer toutes les pentes locales pour trouver le saut (dérivée max)
+    for (let i = 0; i < n; i++) {
+        const p = getPointObject(data[i]);
+        if (p.x === point.x && p.y === point.y) p1Index = i;
+
+        const p_minus_1 = getPointObject(i > 0 ? data[i - 1] : null);
+        const p_plus_1 = getPointObject(i < n - 1 ? data[i + 1] : null);
+        let s = null;
+        if (p_minus_1 && p_plus_1) {
+            s = (p_plus_1.y - p_minus_1.y) / (p_plus_1.x - p_minus_1.x);
+        } else if (p_plus_1) {
+            s = (p_plus_1.y - p.y) / (p_plus_1.x - p.x);
+        } else if (p_minus_1) {
+            s = (p.y - p_minus_1.y) / (p.x - p_minus_1.x);
+        }
+        slopes.push(s);
+
+        if (s !== null && Math.abs(s) > maxSlope) {
+            maxSlope = Math.abs(s);
+            jumpIndex = i;
+        }
+    }
+
+    if (p1Index === -1 || jumpIndex === -1) return null;
+
+    // 2. Chercher de l'autre côté du saut le point ayant la pente la plus proche
+    let bestP2Index = -1;
+    let minDiff = Infinity;
+
+    const searchStart = p1Index < jumpIndex ? jumpIndex + 1 : 0;
+    const searchEnd = p1Index < jumpIndex ? n : jumpIndex;
+
+    for (let i = searchStart; i < searchEnd; i++) {
+        if (slopes[i] !== null) {
+            const diff = Math.abs(slopes[i] - slope1);
+            if (diff < minDiff) {
+                minDiff = diff;
+                bestP2Index = i;
+            }
+        }
+    }
+
+    if (bestP2Index !== -1) {
+        return {
+            p1: getPointObject(data[p1Index]),
+            p2: getPointObject(data[bestP2Index])
+        };
+    }
+    return null;
+  }
+
   /**
    * Dessine le réticule, la tangente et le label de la pente.
    */
-  drawTangent(event) {
+drawTangent(event) {
     this.hideFreeCrosshair();
 
     const chart = this.chart;
@@ -1457,10 +1643,19 @@ updateChart(yCurveTitles, redraw = true) {
     const slope = this._calculateSlope(point);
     if (slope === null) return;
 
-    // 1. Dessiner le réticule au point de tangence
     const pixelX = point.plotX + chart.plotLeft;
     const pixelY = point.plotY + chart.plotTop;
-    const crosshairElements = this._drawStyledCrosshair(pixelX, pixelY, point.x, point.y);
+    
+    let crosshairElements = {};
+
+    // 1. Dessin conditionnel du point central ou du réticule complet selon le mode
+    if (this.crosshairMode === 'tangent-method') {
+        // Juste un point discret pour la méthode des tangentes
+        crosshairElements.centerPoint = this._drawEndpoint(pixelX, pixelY)[0];
+    } else {
+        // Réticule complet pour la tangente classique
+        crosshairElements = this._drawStyledCrosshair(pixelX, pixelY, point.x, point.y);
+    }
 
     // 2. Calculer et dessiner la ligne de tangente
     const { min: xMin, max: xMax } = chart.xAxis[0].getExtremes();
@@ -1473,32 +1668,37 @@ updateChart(yCurveTitles, redraw = true) {
     const tangentLine = chart.renderer.path(['M', p1.x, p1.y, 'L', p2.x, p2.y])
       .attr({ 'stroke-width': 2, stroke: 'rgba(0, 200, 100, 0.8)', zIndex: 4 }).add();
 
-    // 3. Dessiner le label de la pente
-    const slopeText = `pente = ${formatNumber(slope, this.data.settings.significantDigits)}`;
-    const slopeLabel = chart.renderer.label(slopeText, 0, 0, 'callout')
-      .attr({ fill: 'white', stroke: '#dbdbdb', 'stroke-width': 1, r: 6, padding: 8, zIndex: 6 })
-      .css({ color: 'black', fontSize: '14px' })
-      .add();
+    // 3. Stocker les éléments de base
+    this.freeCrosshair = { ...crosshairElements, tangentLine };
 
-    const labelBBox = slopeLabel.getBBox();
-    const labelX = pixelX + 15 > chart.plotWidth + chart.plotLeft - labelBBox.width ? pixelX - 15 - labelBBox.width : pixelX + 15;
-    let labelY;
-    if (slope > 0) {
-        labelY = pixelY + 15;
-    } else {
-        labelY = pixelY - 15 - labelBBox.height;
+    // 4. DESSIN CONDITIONNEL DU LABEL DE PENTE (uniquement pour l'outil classique)
+    if (this.crosshairMode !== 'tangent-method') {
+        const slopeText = `pente = ${formatNumber(slope, this.data.settings.significantDigits)}`;
+        const slopeLabel = chart.renderer.label(slopeText, 0, 0, 'callout')
+          .attr({ fill: 'white', stroke: '#dbdbdb', 'stroke-width': 1, r: 6, padding: 8, zIndex: 6 })
+          .css({ color: 'black', fontSize: '14px' })
+          .add();
+
+        const labelBBox = slopeLabel.getBBox();
+        const labelX = pixelX + 15 > chart.plotWidth + chart.plotLeft - labelBBox.width ? pixelX - 15 - labelBBox.width : pixelX + 15;
+        let labelY;
+        if (slope > 0) {
+            labelY = pixelY + 15;
+        } else {
+            labelY = pixelY - 15 - labelBBox.height;
+        }
+        if (labelY < chart.plotTop) {
+            labelY = pixelY + 15;
+        }
+        if (labelY + labelBBox.height > chart.plotTop + chart.plotHeight) {
+            labelY = pixelY - 15 - labelBBox.height;
+        }    
+
+        slopeLabel.translate(labelX, labelY);
+        
+        // On ajoute le label à la liste des éléments à nettoyer
+        this.freeCrosshair.slopeLabel = slopeLabel;
     }
-    if (labelY < chart.plotTop) {
-        labelY = pixelY + 15;
-    }
-    if (labelY + labelBBox.height > chart.plotTop + chart.plotHeight) {
-        labelY = pixelY - 15 - labelBBox.height;
-    }    
-
-    slopeLabel.translate(labelX, labelY);
-
-    // 4. Stocker tous les éléments pour le nettoyage
-    this.freeCrosshair = { ...crosshairElements, tangentLine, slopeLabel };
   }
 }
 
