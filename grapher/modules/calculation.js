@@ -316,6 +316,10 @@ evaluateBlock(formulas, initialScope) {
               // Si elle n'existe pas, on lève une erreur claire et on arrête tout.
               throw new Error(`La variable "${symbol}" n'est pas définie.`);
             }
+            // On s'assure que si la grandeur fait partie de nos données (scope), elle contient bien des valeurs
+            if (symbol in scope && Array.isArray(scope[symbol]) && scope[symbol].length === 0) {
+              throw new Error(`La grandeur "${symbol}" ne contient aucune donnée.`);
+            }
           }
         });
 
