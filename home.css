@@ -28,3 +28,20 @@
   box-shadow: 0 1em 2em 0 hsla(var(--h), var(--s), var(--l), var(--a)),0 2em 4em 0 hsla(var(--h), var(--s), var(--l), var(--a));
   transform: translateY(-.5em)
 }
+
+/* --- MODALE DE TÉLÉCHARGEMENT --- */
+
+#download-modal-card {
+  /* Taille fixe */
+  height: 510px; 
+  
+  /* Sécurités responsives : pour que la modale ne déborde pas sur les petits écrans*/
+  max-width: 95vw; 
+  max-height: 95vh;
+}
+
+#download-modal-card .modal-card-body {
+  /* On arrondit les coins inférieurs (puisqu'il n'y a plus de footer) */
+  border-bottom-left-radius: 8px; 
+  border-bottom-right-radius: 8px;
+}

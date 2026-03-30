@@ -123,44 +123,83 @@
         <p class="modal-card-title">Télécharger PhyWeb</p>
         <button class="delete" aria-label="close"></button>
       </header>
-      <section class="modal-card-body ">
+      
+      <section class="modal-card-body">
         <p class="block">
           PhyWeb est une application web. Cependant, vous pouvez télécharger une version de l'application pour l'utiliser hors-ligne.
         </p>
+        
         <div class="buttons is-centered">
-          <button class="button is-link" id="windows-button">
+          <button class="button is-link os-tab" data-target="windows-content">
             <span class="icon">
               <i class="fa-brands fa-lg fa-windows"></i>
             </span>
             <span>Windows</span>
           </button>
-          <button class="button" id="macos-button" disabled>
+          <button class="button os-tab" id="macos-button" data-target="macos-content">
             <span class="icon">
               <i class="fa-brands fa-lg fa-apple"></i>
             </span>
             <span>MacOS</span>
           </button>
-          <button class="button" id="linux-button" disabled>
+          <button class="button os-tab" data-target="linux-content">
             <span class="icon">
               <i class="fa-brands fa-lg fa-linux"></i>
             </span>
             <span>Linux</span>
           </button>
         </div>
-        <article class="message">
-          <div class="message-body">
-            Fichier .exe ne nécessitant pas d'installation. Il suffit de le télécharger et de l'exécuter. Un message d'avertissement peut apparaître, cliquez sur "Plus d'infos" puis sur "Exécuter quand même".
+
+        <div id="windows-content" class="os-content">
+          <article class="message mb-4">
+            <div class="message-body">
+              Installez PhyWeb facilement via le Microsoft Store, ou téléchargez l'exécutable portable (.exe) qui ne nécessite pas d'installation (cliquez sur "Plus d'infos" puis "Exécuter quand même" si un avertissement apparaît).
+            </div>
+          </article>
+          
+          <div class="is-flex is-justify-content-center is-align-items-center" style="gap: 1rem; flex-wrap: wrap;">
+            <a href="ms-windows-store://pdp/?ProductId=9n7j35642kv5" target="_blank" title="Obtenir sur le Microsoft Store" class="is-flex">
+              <img src="https://get.microsoft.com/images/en-us%20dark.svg" alt="Get it from Microsoft" style="height: 64px; display: block;">
+            </a>
+            
+            <a href="https://github.com/PhyWeb/phyweb.github.io/releases/latest/download/phyweb.exe" class="button is-primary is-outlined" style="height: 64px;">
+              <span class="icon">
+                <i class="fas fa-download"></i>
+              </span>
+              <span>Exécutable (.exe)</span>
+            </a>
           </div>
-        </article>
+        </div>
+        <div id="macos-content" class="os-content is-hidden">
+          <article class="message mb-4">
+            <div class="message-body">
+              <strong>Pas encore disponible !</strong><br>
+              La version native de PhyWeb pour MacOS n'est pas encore prête. En attendant, vous pouvez continuer à utiliser la version web !
+            </div>
+          </article>
+        </div>
+        <div id="linux-content" class="os-content is-hidden">
+          <article class="message mb-4">
+            <div class="message-body">
+              PhyWeb est disponible sous forme de Flatpak. Vous pourrez bientôt l'installer via Flathub, ou télécharger le fichier directement dès maintenant.
+            </div>
+          </article>
+          
+          <div class="is-flex is-justify-content-center is-align-items-center" style="gap: 1rem; flex-wrap: wrap;">
+            <a href="#" class="is-flex" style="opacity: 0.5; cursor: not-allowed;" title="Bientôt disponible sur Flathub">
+              <img src="https://dl.flathub.org/assets/badges/flathub-badge-en.svg" alt="Get it on Flathub" style="height: 64px; display: block;">
+            </a>
+            
+            <a href="https://github.com/PhyWeb/phyweb.github.io/releases/latest/download/io.github.phyweb_stable_x86_64.flatpak" class="button is-primary is-outlined" style="height: 64px;">
+              <span class="icon">
+                <i class="fas fa-download"></i>
+              </span>
+              <span>Fichier (.flatpak)</span>
+            </a>
+          </div>
+        </div>
+
       </section>
-      <footer class="modal-card-foot">
-        <a href="https://github.com/PhyWeb/phyweb.github.io/releases/latest/download/phyweb.exe" class="button is-fullwidth is-primary" id="download-file-button">
-          <span class="icon">
-            <i class="fas fa-download"></i>
-          </span>
-          <span>Télécharger Phyweb</span>
-        </a>
-      </footer>
     </div>
   </div>
   </body>

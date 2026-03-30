@@ -57,8 +57,9 @@
     - le nom de la variable disparait quand on switch de page dans l'outil de creation de variables.
 
 # MISC
- - Mettre a jour longlet telechargement pour mettre le lien vers le store (détecter auto l'os)
  - tester le flatpak puis flathub
+ - tester sous linux la préselection automatique de l'onglet linux dans la modale de téléchargement
+ - ajouter petit texte pour expliquer pas encore de macos
 
 
 # Idées
