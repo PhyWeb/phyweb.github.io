@@ -1100,7 +1100,8 @@ export default class UIManager {
       } else {
         const currentText = this.editor.getValue();
         const separator = currentText.trim() === '' ? '' : '\n\n'; 
-        const newContent = currentText + separator + newEntry.formulaLine;
+        const newContent = currentText.trimEnd() + separator + newEntry.formulaLine;
+        
         this.editor.setValue(newContent);
         this.app.applyCalculation(this.editor.getValue());
       }
