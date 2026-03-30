@@ -106,7 +106,7 @@
             {
               "type": "video",
               "title": "Palet lancé sur une table",
-              "description": "Palet métalliaque (m = xxx g) glissant sur une table horizontale.",
+              "description": "Palet métallique (m = 100 g) glissant sur une table horizontale.",
               "path": "frottements/palet-table.mp4",
               "thumb": "frottements/palet-table.png"
             }
