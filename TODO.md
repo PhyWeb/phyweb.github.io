@@ -54,7 +54,6 @@
 
     - erreur silencieuse highcharts quand on met des lettres dans le table
 
-    - ajout de lignes inutiles quand on ajoute des variables par l'outil d'ajout.
     - le nom de la variable disparait quand on switch de page dans l'outil de creation de variables.
 
 # MISC
