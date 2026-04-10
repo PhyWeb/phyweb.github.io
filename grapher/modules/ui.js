@@ -1245,9 +1245,72 @@ export default class UIManager {
     this.initChooseCurvesModal();
     this.initZoomControls();
 
-    // Ajout de l'écouteur pour le bouton de suppression des annotations
     $("#clear-annotations-button").addEventListener("click", () => {
         this.grapher.clearAllAnnotations();
+    });
+
+    let activeModelToStop = null; 
+    
+    document.addEventListener('model-fit-start', (e) => {
+      activeModelToStop = e.detail.model;
+       
+      const loadingInner = document.querySelector('.highcharts-loading-inner');
+      const loadingContainer = document.querySelector('.highcharts-loading'); // Le voile de fond
+       
+      if (loadingInner && !document.getElementById('dynamic-stop-btn')) {
+        if (loadingContainer) {
+          loadingContainer.style.opacity = '1'; 
+          loadingContainer.style.backgroundColor = 'rgba(255, 255, 255, 0.7)'; 
+        }
+           
+        const texteExistant = loadingInner.innerHTML;
+           
+          loadingInner.innerHTML = `
+            <div style="font-size: 1.3em; font-weight: bold; margin-bottom: 20px; color: #363636;">
+              ${texteExistant}
+            </div>
+            <button id="dynamic-stop-btn" class="button is-danger is-rounded is-medium" style="pointer-events: auto; box-shadow: 0 4px 8px rgba(0,0,0,0.3); font-weight: bold; transition: transform 0.1s;">
+              <span class="icon"><i class="fas fa-stop"></i></span>
+              <span>Arrêter le calcul</span>
+            </button>
+          `;
+
+          const btn = document.getElementById('dynamic-stop-btn');
+          btn.onmouseenter = () => btn.style.transform = 'scale(1.05)';
+          btn.onmouseleave = () => btn.style.transform = 'scale(1)';
+
+          // Conversion de l'icône FontAwesome
+          setTimeout(() => {
+            if (window.FontAwesome && window.FontAwesome.dom) {
+              window.FontAwesome.dom.i2svg({ node: loadingInner });
+            }
+          }, 10);
+       }
+    });
+
+    document.addEventListener('model-fit-end', () => {
+      activeModelToStop = null;
+    });
+
+    document.addEventListener('click', (e) => {
+      const stopBtn = e.target.closest('#dynamic-stop-btn');
+      if (stopBtn && activeModelToStop) {
+        stopBtn.classList.add('is-loading'); 
+        
+        // Force l'arrêt du modèle actif
+        activeModelToStop.stopFit();
+        
+        // Met à jour l'UI avec le résultat partiel
+        if (typeof this.updateModelPanel === "function") {
+          this.updateModelPanel(activeModelToStop);
+        }
+        
+        // Redessine le graphe et on masque le chargement manuellement au cas où
+        if (this.grapher && this.grapher.chart) {
+          this.grapher.chart.redraw();
+          this.grapher.chart.hideLoading();
+        }
+      }
     });
   }
 

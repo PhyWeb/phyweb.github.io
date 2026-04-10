@@ -412,64 +412,73 @@ class Model {
     }
   }
 
-  /**
-   * Lance l'ajustement du modèle dans un Web Worker pour ne pas bloquer le thread principal.
-   * @returns {Promise<Model>} Une promesse qui se résout avec l'instance du modèle mis à jour.
-   */
+// Méthode utilitaire pour appliquer des paramètres au modèle
+  _applyParams(params, data) {
+    // Vider les anciens paramètres
+    this.parameters.forEach(param => {
+      delete this.data.parameters[param.name];
+    });
+    this.parameters.length = 0;
+
+    const baseNames = ['a', 'b', 'c', 'd', 'e', 'f'];
+    params.forEach((paramValue, i) => {
+      let baseName = baseNames[i] || `p${i}`;
+      let finalName = baseName;
+      let counter = 1;
+      while (this.data.parameters.hasOwnProperty(finalName) || this.data.curves.some(c => c.title === finalName)) {
+        finalName = `${baseName}${counter}`;
+        counter++;
+      }
+      this.parameters.push({ name: finalName, value: paramValue });
+      this.data.parameters[finalName] = { value: paramValue, unit: '', type: 'model' };
+    });
+
+    this.calculateRMSE();
+    this.calculateRSquared(data);
+  }
+
+  // Méthode fit() mise à jour pour le Post & Terminate
   fit() {
     return new Promise((resolve, reject) => {
       const data = this._buildData();
       if (data.length < 2) {
-        console.error("Pas assez de données valides pour effectuer une modélisation.");
-        return reject(new Error("Pas assez de données valides pour effectuer une modélisation."));
+        return reject(new Error("Pas assez de données valides."));
       }
       
-      // Créer un Web Worker pour l'ajustement
       const worker = new Worker('./modules/fitter.worker.js');
+      this.activeWorker = worker; // On stocke le worker actif
+      this.resolveFit = resolve;  // On garde une trace de la résolution
+
+      // On prévient l'interface graphique que le calcul démarre
+      document.dispatchEvent(new CustomEvent('model-fit-start', { detail: { model: this } }));
 
       worker.onmessage = (e) => {
-        if (e.data.success) {
-          const params = e.data.params;
-
-          // Vider les anciens paramètres du modèle de l'objet global
-          this.parameters.forEach(param => {
-            delete this.data.parameters[param.name];
-          });
-          
-          // Vide le tableau de paramètres du modèle lui-même
-          this.parameters.length = 0;
-
-          const baseNames = ['a', 'b', 'c', 'd', 'e', 'f'];
-          params.forEach((paramValue, i) => {
-            let baseName = baseNames[i] || `p${i}`;
-            let finalName = baseName;
-            let counter = 1;
-            while (this.data.parameters.hasOwnProperty(finalName) || this.data.curves.some(c => c.title === finalName)) {
-              finalName = `${baseName}${counter}`;
-              counter++;
-            }
-
-            this.parameters.push({ name: finalName, value: paramValue });
-            this.data.parameters[finalName] = { value: paramValue, unit: '', type: 'model' };
-          });
-
-          console.log("Fitted parameters with names", this.parameters);
-          
-          this.calculateRMSE();
-          this.calculateRSquared(data);
-          
-          worker.terminate(); // Libérer les ressources du worker
-          resolve(this);
-        } else {
-          console.error("Erreur du Web Worker:", e.data.error);
-          worker.terminate();
-          reject(new Error(e.data.error));
+        const message = e.data;
+        if (message.type === 'partial_update') {
+          // On stocke silencieusement le dernier état partiel
+          this.lastPartialParams = message.params;
+        } else if (message.type === 'final_result') {
+          if (message.success) {
+            this._applyParams(message.params, data);
+            this.activeWorker = null;
+            document.dispatchEvent(new CustomEvent('model-fit-end'));
+            resolve(this);
+          } else {
+            this.activeWorker = null;
+            document.dispatchEvent(new CustomEvent('model-fit-end'));
+            reject(new Error(message.error));
+          }
+        } else if (message.type === 'error') {
+            this.activeWorker = null;
+            document.dispatchEvent(new CustomEvent('model-fit-end'));
+            reject(new Error(message.error));
         }
       };
 
       worker.onerror = (error) => {
-        console.error(`Erreur du Web Worker: ${error.message}`, error);
-        worker.terminate();
+        if (this.activeWorker) this.activeWorker.terminate();
+        this.activeWorker = null;
+        document.dispatchEvent(new CustomEvent('model-fit-end'));
         reject(error);
       };
 
@@ -481,10 +490,11 @@ class Model {
       if (this.type === 'dampedsin' || this.type === 'dampedcos') guessSize = 5;
       
       let initialGuess = this._estimateInitialGuess(data);
-      
       if (!initialGuess || initialGuess.length !== guessSize || initialGuess.some(v => !isFinite(v))) {
           initialGuess = Array(guessSize).fill(1);
       }
+
+      this.lastPartialParams = [...initialGuess]; // Initialisation au cas où on coupe instantanément
 
       worker.postMessage({
         data: data,
@@ -492,6 +502,26 @@ class Model {
         initialGuess: initialGuess
       });
     });
+  }
+
+  // Permet d'arrêter le processus de fit en cours
+  stopFit() {
+    if (this.activeWorker) {
+      this.activeWorker.terminate(); // Tue brutalement le worker
+      this.activeWorker = null;
+      
+      // Récupère et applique les derniers paramètres partiels connus
+      const data = this._buildData();
+      if (this.lastPartialParams) {
+         this._applyParams(this.lastPartialParams, data);
+      }
+      
+      // Prévient l'interface et débloque le programme principal
+      document.dispatchEvent(new CustomEvent('model-fit-end'));
+      if (this.resolveFit) {
+         this.resolveFit(this);
+      }
+    }
   }
 
   getHighResData(minX, maxX, points = DEFAULT_MODEL_RESOLUTION){

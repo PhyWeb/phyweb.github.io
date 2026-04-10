@@ -53,17 +53,26 @@ function getFunction(type) {
 
 // Écouteur pour les messages venant du thread principal
 self.onmessage = async function (e) {
-  if (!self.Alglib) {
-    return; // Stoppe si Alglib n'est pas chargé
-  }
+  if (!self.Alglib) return;
 
   const { data, modelType, initialGuess } = e.data;
+  let iterationCount = 0; // Compteur pour ne pas spammer
 
   try {
     const f = getFunction(modelType);
 
-    // La fonction d'erreur à minimiser
     const fn1 = function (a) {
+      iterationCount++;
+
+      // Toutes les 1000 itérations, on envoie l'état actuel au thread principal
+      if (iterationCount % 1000 === 0) {
+        self.postMessage({ 
+          type: 'partial_update', 
+          params: Array.from(a) 
+        });
+      }
+
+      // Calcul classique
       let sum = 0;
       for (let i = 0; i < data.length; i++) {
         sum += Math.pow(data[i][1] - f(a, data[i][0]), 2);
@@ -73,17 +82,16 @@ self.onmessage = async function (e) {
 
     let solver = new Alglib();
     solver.add_function(fn1);
-    await solver.promise; // Attendre que le module wasm soit prêt
+    await solver.promise;
 
     solver.solve('min', initialGuess);
     let params = solver.get_results();
     solver.remove();
 
-    // Renvoyer le résultat au thread principal
-    self.postMessage({ success: true, params: params });
+    // Renvoyer le résultat FINAL
+    self.postMessage({ type: 'final_result', success: true, params: params });
 
   } catch (error) {
-    console.error("Erreur dans le Web Worker d'ajustement:", error);
-    self.postMessage({ success: false, error: error.message });
+    self.postMessage({ type: 'error', success: false, error: error.message });
   }
 };
