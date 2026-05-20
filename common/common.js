@@ -387,9 +387,50 @@ function quitConfirmationModal(_cb){
 function aboutModal(_app){
   // electron
   let version = "";
+  let platformInfo = "";
+
   if(window.electronAPI){
     version = "v0.1.11";
+    // Affichage spécifique à l'application Electron
+    platformInfo = `
+        <div class="field is-horizontal">
+          <div class="field-label is-flex-grow-0">
+            <label class="label">
+              <span class="icon is-large"><i class="fa-solid fa-globe fa-2xl"></i></span>
+            </label>
+          </div>
+          <div class="field-body">
+            <div class="field">
+              <div class="content pt-3">
+                <p>Toutes les applications PhyWeb sont également disponibles en ligne sur <a href="https://phyweb.fr" target="_blank">phyweb.fr</a>.</p>
+              </div>
+            </div>
+          </div>
+        </div>`;
+  } else {
+    // Affichage spécifique au navigateur web
+    platformInfo = `
+        <div class="field is-horizontal">
+          <div class="field-label is-flex-grow-0">
+            <label class="label">
+              <span class="icon is-large"><i class="fa-brands fa-chrome fa-2xl"></i></span>
+            </label>
+          </div>
+          <div class="field-body">
+            <div class="field">
+              <div class="content">
+                <p class="has-text-justified">PhyWeb utilise des technologies modernes pour fonctionner. Un navigateur récent est nécessaire au bon fonctionnement des applications. Exemples de navigateurs compatibles :</p>
+                <ul>
+                  <li>Google Chrome version 94 et +</li>
+                  <li>Microsoft Edge version 94 et +</li>
+                  <li>Mozilla Firefox version 130 et +</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>`;
   }
+
   // Description
   let description;
   switch (_app) {
@@ -456,27 +497,11 @@ function aboutModal(_app){
               + description +  
             `</div>
           </div>
-        </div>
-        <div class="field is-horizontal">
-          <div class="field-label is-flex-grow-0">
-            <label class="label">
-              <span class="icon is-large"><i class="fa-brands fa-chrome fa-2xl"></i></i></span>
-            </label>
-          </div>
-          <div class="field-body">
-            <div class="field">
-              <div class="content">
-                <p class="has-text-justified">PhyWeb utilise des technologies modernes pour fonctionner. Un navigateur récent est nécessaire au bon fonctionnement des applications. Exemples de navigateurs compatibles :</p>
-                <ul>
-                  <li>Google Chrome version 94 et +</li>
-                  <li>Microsoft Edge version 94 et +</li>
-                  <li>Mozilla Firefox version 130 et +</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="field is-horizontal">
+        </div>`
+        
+        + platformInfo + // Injection du bloc conditionnel ici
+        
+        `<div class="field is-horizontal">
             <div class="field-label is-flex-grow-0">
                 <label class="label">
                     <span class="icon is-large"><i class="fa-brands fa-github fa-2xl"></i></span>
