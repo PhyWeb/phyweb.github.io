@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Afficher un loader dans la modale
     uiManager.setModalLoading(true);
 
-    console.log("Données importées depuis une autre application :", importedPW);
+    console.log("Données importées depuis une autre application.");
 
     setTimeout(() => {
       try {

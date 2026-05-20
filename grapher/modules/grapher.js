@@ -446,6 +446,21 @@ export default class Grapher {
         minPadding: 0,
         maxPadding: 0,
         events: {
+          setExtremes: function (e) {
+            const grapher = this.chart.options.customGrapherInstance;
+            if (grapher && !grapher.suppressModelAutoUpdate) {
+              // On récupère les nouvelles bornes du zoom (e.min et e.max)
+              // Si c'est un "Reset Zoom" (null), on prend les bornes globales des données
+              let newMin = e.min !== undefined && e.min !== null ? e.min : this.dataMin;
+              let newMax = e.max !== undefined && e.max !== null ? e.max : this.dataMax;
+              
+              if (newMin !== undefined && newMax !== undefined) {
+                // On recalcule instantanément les 400 points du modèle sur cette nouvelle fenêtre
+                // AVANT que Highcharts ne commence à dessiner la courbe !
+                grapher.redrawAllModels(newMin, newMax);
+              }
+            }
+          },
           afterSetExtremes: function () {
             const oldExponent = this.exponent;
             const maxAbs = Math.max(Math.abs(this.max), Math.abs(this.min));
