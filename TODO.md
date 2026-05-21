@@ -85,3 +85,5 @@ appxmanifest.xml
 commit & sync
 git tag vx.x.x
 git push origin vx.x.x
+
+partner.microsoft.com/fr-fr/dashboard/home
