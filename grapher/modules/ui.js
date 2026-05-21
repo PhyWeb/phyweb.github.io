@@ -1346,7 +1346,12 @@ export default class UIManager {
 
       // Cherche la première courbe affichée (cochée) et la sélectionne
       const firstCheckedCurve = $("#choose-curves-menu").querySelector("input:checked");
-      if (firstCheckedCurve) {
+      
+      if (this.data.curves.length === 1) {
+        // EXCEPTION : S'il n'y a qu'une seule courbe au total, on force sa sélection (cochée ou non)
+        const firstCurve = $("#choose-curves-menu").querySelector("a");
+        if (firstCurve) firstCurve.click();
+      } else if (firstCheckedCurve) {
         firstCheckedCurve.closest("a").click();
       } else {
         // Si aucune courbe n'est cochée, masquer le panneau de détails

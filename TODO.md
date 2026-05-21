@@ -15,9 +15,6 @@
 
     - gerer les quota sessionstorage
 
-    - LAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA brave détecté comme pas bon navigateur sur tracker
-    - cliquer sur courbe quand il n'y a qu'une courbe (vide)?
-
 # Home
     - package linux et macos
 
