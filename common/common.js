@@ -215,6 +215,10 @@ function setupGlobalShortcuts(actions = {}) {
 ----------------------------------------------------------------------------------------------*/
 class ModalManager {
 	constructor() {
+
+    // Permet de stocker une fonction de rappel à exécuter lors de l'ouverture d'une modale
+    this.onModalOpen = null;
+
     // Add a click event on buttons to open a specific modal
     (document.querySelectorAll('.js-modal-trigger') || []).forEach(($trigger) => {
       const modal = $trigger.dataset.target;
@@ -242,6 +246,11 @@ class ModalManager {
 	}
 
   openModal($el) {
+    // Appelle la fonction de rappel d'ouverture de modale, si elle est définie
+    if (typeof this.onModalOpen === 'function') {
+      this.onModalOpen();
+    }
+
     $el.classList.add('is-active');
 
     // Recherche un élément avec l'attribut autofocus dans la modale
