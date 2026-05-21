@@ -883,6 +883,35 @@ export default class UIManager {
     const parameterUnitInput = $('#parameter-unit-input');
     const parameterValueInput = $('#parameter-value-input');
 
+    const allSymbolInputs = [emptyCurveSymbolInput, calcCurveSymbolInput, derivateCurveSymbolInput, parameterSymbolInput];
+    const allUnitInputs = [emptyCurveUnitInput, calcCurveUnitInput, derivateCurveUnitInput, parameterUnitInput];
+
+    // Synchronise le symbole entre tous les panneaux
+    allSymbolInputs.forEach(input => {
+      if (input) {
+        input.addEventListener('input', (e) => {
+          allSymbolInputs.forEach(otherInput => {
+            if (otherInput !== input && otherInput) {
+              otherInput.value = e.target.value;
+            }
+          });
+        });
+      }
+    });
+
+    // Synchronise l'unité entre tous les panneaux
+    allUnitInputs.forEach(input => {
+      if (input) {
+        input.addEventListener('input', (e) => {
+          allUnitInputs.forEach(otherInput => {
+            if (otherInput !== input && otherInput) {
+              otherInput.value = e.target.value;
+            }
+          });
+        });
+      }
+    });
+
     /**
      * Met à jour le panneau visible en fonction du bouton radio sélectionné.
      */
@@ -1073,11 +1102,16 @@ export default class UIManager {
      * Gère l'ouverture de la modale pour ajouter une courbe vide ou une courbe de calcul.
      */
     $('#add-curve-button').addEventListener("click", () => {
+      if (this.spreadsheet && this.spreadsheet.hot) this.spreadsheet.hot.deselectCell(); // Désélectionne toute cellule active pour éviter les conflits de focus
+
       resetAddCurveModal();
       addCurveModal.querySelector('input[value="empty-curve"]').click();
       this.common.modalManager.openModal(addCurveModal);
+      $('#empty-curve-symbol-input').focus();
     });
     $('#add-curve-calculation-button').addEventListener("click", () => {
+      if (this.spreadsheet && this.spreadsheet.hot) this.spreadsheet.hot.deselectCell(); // Désélectionne toute cellule active pour éviter les conflits de focus
+
       resetAddCurveModal();
       addCurveModal.querySelector('input[value="calc-curve"]').click();
       this.common.modalManager.openModal(addCurveModal);
