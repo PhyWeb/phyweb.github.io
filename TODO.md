@@ -53,8 +53,6 @@
 
     - erreur silencieuse highcharts quand on met des lettres dans le table
 
-    - le nom de la variable disparait quand on switch de page dans l'outil de creation de variables.
-
 # MISC
  - tester le flatpak puis flathub
  - tester sous linux la préselection automatique de l'onglet linux dans la modale de téléchargement
