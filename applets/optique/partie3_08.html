@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Le génie de Mendeleïev - page 8</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="data.js"></script>
+    <script src="game.js"></script>
+</head>
+<body>
+
+    <header>
+        <h2>Le génie de Mendeleïev - Les gaz nobles (suite)</h2>
+    </header>
+
+    <div class="main-container">
+        
+        <section class="game-area">
+            
+            <div class="question-box intro-text">
+                <p>
+                    Il ne vous reste plus qu'à ajouter au tableau les <strong style="color: #FF0066;">symboles chimiques</strong> des gaz rares avant de valider.
+                </p>
+                <p class="consigne" style="font-size: 0.9em; margin-top: 5px;">
+                    (Ils ont pour noms, dans l'ordre : <strong style="color: var(--primary-color);">hélium, néon, argon</strong>).
+                </p>
+            </div>
+
+            <div class="grid-missing-col" id="grid-container"></div>
+
+        </section>
+
+    </div>
+
+    <footer class="controls">
+        <button class="btn" id="btn-verif" onclick="verifierReponse()">Valider</button>
+        <div id="message-box"></div>
+        <div class="nav-links">
+            <a href="partie3_07.html" class="link-simple">&larr; Retour</a>
+            <a href="partie3_09.html" id="btn-suite" class="btn" style="display:none;">Suite &rarr;</a>
+        </div>
+    </footer>
+
+    <script>
+        // --- 1. CONSTRUCTION DE LA GRILLE ---
+        const grid = document.getElementById('grid-container');
+
+        // Helper : Ajoute une carte atomique standard (Z + Symbole)
+        const addAtom = (id) => {
+            const data = elementsData.find(e => e.id === id);
+            if(data) grid.appendChild(createCard(data, false, { mode: 'atomic' }));
+        };
+
+        // Helper : Ajoute la carte input pour les gaz rares (Z fixe + Input Symbole)
+        const addInput = (zValue, inputId) => {
+            // On passe un objet dummy avec le Z voulu
+            const fakeData = { id: "unknown", z: zValue }; 
+            grid.appendChild(createCard(fakeData, false, { 
+                mode: 'atomic_inputSymbol', 
+                inputId: inputId 
+            }));
+        };
+
+        // --- LIGNE 1 : H ...... He? ---
+        addAtom("H");
+        // Espaceur (nécessite la classe .spacer-row1 ajoutée au CSS)
+        const spacer = document.createElement('div');
+        spacer.className = 'spacer-row1';
+        grid.appendChild(spacer);
+        
+        addInput(2, "rep1"); // He (Z=2)
+
+        // --- LIGNE 2 : Li -> F ... Ne? ---
+        ["Li", "Be", "B", "C", "N", "O", "F"].forEach(id => addAtom(id));
+        addInput(10, "rep2"); // Ne (Z=10)
+
+        // --- LIGNE 3 : Na -> Cl ... Ar? ---
+        ["Na", "Mg", "Al", "Si", "P", "S", "Cl"].forEach(id => addAtom(id));
+        addInput(18, "rep3"); // Ar (Z=18)
+
+
+        // --- 2. VÉRIFICATION ---
+        function verifierReponse() {
+            const rep1 = document.getElementById('rep1').value.trim();
+            const rep2 = document.getElementById('rep2').value.trim();
+            const rep3 = document.getElementById('rep3').value.trim();
+            
+            const reponses = [rep1, rep2, rep3];
+            const solutions = ["He", "Ne", "Ar"]; // Les symboles attendus
+            let testrep = 0;
+
+            for(let i=0; i<3; i++) {
+                const inputEl = document.getElementById(`rep${i+1}`);
+                const cardParent = inputEl.parentElement; 
+
+                // Note: La comparaison est sensible à la casse (He != he)
+                if(reponses[i] === solutions[i]) {
+                    testrep++;
+                    cardParent.classList.add('correct');
+                    cardParent.classList.remove('incorrect');
+                    cardParent.style.borderStyle = "solid"; // Fige le style
+                } else {
+                    cardParent.classList.add('incorrect');
+                    cardParent.classList.remove('correct');
+                    cardParent.style.borderStyle = "solid";
+                }
+            }
+
+            const err = 3 - testrep;
+            const msgBox = document.getElementById('message-box');
+            const btnSuite = document.getElementById('btn-suite');
+
+            if (testrep === 3) {
+                msgBox.innerHTML = "Bien. Ce sont les bons symboles pour l'hélium, le néon et l'argon. <br/>Vous pouvez passer à la conclusion du TP.";
+                msgBox.className = "msg-success";
+                
+                document.getElementById('btn-verif').disabled = true;
+                for(let i=1; i<=3; i++) document.getElementById(`rep${i}`).disabled = true;
+                
+                btnSuite.style.display = "inline-block";
+            } else {
+                msgBox.innerHTML = "Non ! Vous avez commis " + err + " erreur(s)<br/>Respectez les majuscules / minuscules.";
+                msgBox.className = "msg-error";
+            }
+        }
+    </script>
+</body>
+</html>
