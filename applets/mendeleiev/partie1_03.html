@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premier classement des fiches</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="data.js"></script>
+    <script src="game.js"></script> 
+</head>
+<body>
+
+    <header>
+        <h2>Premier classement</h2>
+        <p>Vous disposez de 19 fiches semblables à celles qu'avait élaborées Mendeleiev (celles des principaux éléments les plus légers). </p>
+        <p>Vous devez ici, dans un premier temps, classer ces fiches suivant <strong>le premier critère utilisé par Mendeleiev pour les ranger</strong>.</p>
+    </header>
+
+    <div class="main-container">
+        <section class="game-area">
+            <div class="card-pool cards-pool" id="pool"></div>
+            <h3 style="margin-bottom: 5px;">Votre classement:</h3>
+            <div class="slots-container" id="slots-area"></div>
+        </section>
+
+        <aside class="info-panel">
+            <div class="info-header">
+                <div id="info-symbole">--</div>
+                <div id="info-nom">Survolez un élément</div>
+            </div>
+            
+            <div class="info-item">
+                <span class="info-label">Masse atomique (H=1)</span>
+                <span id="info-masse" class="info-value"></span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Formule corps simple</span>
+                <span id="info-formule" class="info-value"></span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Propriétés Physiques</span>
+                <span id="info-propPhy" class="info-value"></span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Propriétés Chimiques</span>
+                <span id="info-propChi" class="info-value"></span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Composés</span>
+                <span id="info-composes" class="info-value"></span>
+            </div>
+        </aside>
+    </div>
+
+    <footer class="controls">
+        <button class="btn" id="btn-verif" onclick="verifierClassement()">Valider le classement</button>
+        <div id="message-box"></div>
+        <div class="nav-links">
+            <a href="partie1_02.html" class="link-simple">&larr; Retour</a>
+            <a href="partie1_04.html" id="btn-suite" class="btn" style="display:none;">SUITE : Recherche des familles &rarr;</a>
+        </div>
+    </footer>
+
+    <script>
+        const pool = document.getElementById('pool');
+        const slotsArea = document.getElementById('slots-area');
+
+        // --- INITIALISATION SIMPLIFIÉE GRÂCE À GAME.JS ---
+        elementsData
+            .filter(el => el.famille) 
+            .forEach(el => {
+                // On utilise la fonction createCard de game.js
+                const card = createCard(el, true); 
+                pool.appendChild(card);
+            });
+
+        // Init Slots (Ça reste spécifique à cette page)
+        for (let i = 1; i <= 19; i++) {
+            const slot = document.createElement('div');
+            slot.className = 'slot';
+            slot.setAttribute('data-index', i);
+            
+            // On utilise commonAllowDrop de game.js
+            slot.addEventListener('dragover', commonAllowDrop); 
+            slot.addEventListener('drop', drop); // Le drop reste spécifique (logique de jeu)
+            
+            if (i === 1) slot.title = "Plus léger";
+            if (i === 19) slot.title = "Plus lourd";
+            slotsArea.appendChild(slot);
+        }
+        
+        // Configurer le pool pour recevoir les retours
+        pool.addEventListener('dragover', commonAllowDrop);
+        pool.addEventListener('drop', drop);
+
+        // --- LOGIQUE SPÉCIFIQUE À CETTE PAGE ---
+        
+        function drop(ev) {
+            ev.preventDefault();
+            const data = ev.dataTransfer.getData("text");
+            const element = document.getElementById(data);
+            
+            // Logique de placement spécifique à l'exercice 1
+            if (ev.target.classList.contains('slot')) {
+                if (ev.target.children.length > 0) pool.appendChild(ev.target.children[0]);
+                ev.target.appendChild(element);
+            } else if (ev.target.id === 'pool' || ev.target.classList.contains('card-pool')) {
+                pool.appendChild(element);
+            }
+        }
+
+        // Convertit "10,8" en 10.8 pour les comparaisons mathématiques
+        function getMasseValue(id) {
+            const el = elementsData.find(e => e.id === id);
+            if (!el) return 0;
+            return parseFloat(el.masse.replace(',', '.'));
+        }
+
+        function verifierClassement() {
+            const slots = document.querySelectorAll('.slot');
+            const messageBox = document.getElementById('message-box');
+            let cards = [];
+            let emptySlots = 0;
+
+            // 1. Récupération de l'état du tableau
+            slots.forEach((slot, index) => {
+                const card = slot.querySelector('.element-card');
+                if (card) {
+                    cards.push({
+                        dom: card,
+                        id: card.id,
+                        masse: getMasseValue(card.id),
+                        slotIndex: index
+                    });
+                } else {
+                    emptySlots++;
+                    cards.push(null); // Trou
+                }
+            });
+
+            // CAS 1 : Tableau incomplet
+            if (emptySlots > 0) {
+                messageBox.innerHTML = `Le classement n'est pas terminé. Il reste <strong>${emptySlots} cases vides</strong>.`;
+                messageBox.className = "msg-warning"; // Vous pouvez définir cette classe en jaune/orange
+                return;
+            }
+
+            // CAS 2 : Vérification de l'ordre croissant (Logique relative)
+            let inversionTrouvee = false;
+            for (let i = 0; i < cards.length - 1; i++) {
+                let current = cards[i];
+                let next = cards[i+1];
+
+                // On compare la masse de l'élément actuel avec le suivant
+                if (current.masse > next.masse) {
+                    // ERREUR LOGIQUE DÉTECTÉE
+                    messageBox.innerHTML = `Erreur de logique : <strong>${current.id}</strong> (${current.masse}) est plus lourd que <strong>${next.id}</strong> (${next.masse}).<br>L'ordre doit être croissant.`;
+                    messageBox.className = "msg-error";
+                    
+                    // On met en évidence les deux coupables
+                    current.dom.className = 'element-card incorrect';
+                    next.dom.className = 'element-card incorrect';
+                    inversionTrouvee = true;
+                    break; // On s'arrête à la première erreur logique pour ne pas spammer
+                }
+            }
+
+            if (inversionTrouvee) return;
+
+            // CAS 3 : L'ordre est croissant, mais est-ce le BON ordre absolu ?
+            // (Par exemple si l'élève a mis les bonnes masses mais a inversé deux éléments de même masse, ou s'il y a un décalage subtil)
+            let correctCount = 0;
+            
+            slots.forEach((slot, index) => {
+                const card = slot.querySelector('.element-card');
+                const expectedId = ORDRE_MASSE[index];
+
+                if (card.id === expectedId) {
+                    card.className = 'element-card correct';
+                    correctCount++;
+                } else {
+                    card.className = 'element-card incorrect';
+                }
+            });
+
+            if (correctCount === 19) {
+                messageBox.innerHTML = "Bravo ! Votre classement est parfait.<br>Vous pouvez passer à l'étape suivante.";
+                messageBox.className = "msg-success";
+                document.getElementById('btn-verif').disabled = true;
+                document.getElementById('btn-suite').style.display = 'inline-block';
+                
+                // Désactiver le drag & drop pour figer le succès
+                document.querySelectorAll('.element-card').forEach(c => c.draggable = false);
+            } else {
+                // Cas rare : masses croissantes mais mauvais éléments (ex: inversion Cobalt/Nickel si les masses sont proches, ou erreur dans data.js)
+                messageBox.innerHTML = "Les masses semblent croissantes, mais certains éléments ne sont pas à leur place exacte. Vérifiez les cases rouges.";
+                messageBox.className = "msg-partial";
+            }
+        }
+    </script>
+</body>
+</html>

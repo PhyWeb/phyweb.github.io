@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TP Mendeleïev - Accueil</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Styles spécifiques à la page d'accueil pour la mise en page en grille */
+        .home-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        .hero-section {
+            grid-column: 1 / -1;
+            text-align: center;
+        }
+        
+        .intro-text img {
+            max-width: 150px;
+            float: left;
+            margin-right: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .menu-section {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .menu-card {
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 20px;
+            text-decoration: none;
+            color: var(--text-color);
+            transition: transform 0.2s, box-shadow 0.2s;
+            border-left: 5px solid var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .menu-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            background-color: #f8f9fa;
+        }
+
+        .menu-card h3 { margin: 0; font-size: 1.1em; color: var(--primary-color); text-align: left; }
+        .menu-card p { margin: 5px 0 0 0; font-size: 0.9em; color: #666; }
+
+        .resources-section {
+            background-color: var(--panel-bg);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            height: fit-content;
+        }
+        .doc-link {
+            display: block;
+            margin-bottom: 10px;
+            color: var(--primary-color);
+            text-decoration: none;
+            font-size: 0.9em;
+        }
+        .doc-link:hover { text-decoration: underline; }
+
+        @media (max-width: 768px) {
+            .home-grid { grid-template-columns: 1fr; }
+            .intro-text img { float: none; display: block; margin: 0 auto 15px auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>La Classification Périodique</h1>
+        <h2>Sur les traces de Dimitri Mendeleïev (1834 - 1907)</h2>
+    </header>
+
+    <div class="main-container home-grid">
+        
+        <main class="content-card hero-section intro-text" style="text-align: left;">
+            <img src="assets/portrait.jpg" alt="Portrait de Mendeleiev">
+            <p>
+                Vous connaissez tous les classifications périodiques qui ornent les murs de tous les laboratoires de chimie. 
+                Dans ce grand tableau sont rangés tous les éléments chimiques, qu'ils existent dans la nature ou qu'ils aient été synthétisés dans les accélérateurs de particules.
+            </p>
+            <p>
+                <strong>Comment ce tableau a-t-il été initialement conçu ? Comment est-il construit aujourd'hui ?</strong>
+            </p>
+            <p>
+                Le TP qui suit, divisé en quatre parties, va vous permettre de répondre à ces questions en reconstruisant la démarche historique.
+            </p>
+        </main>
+
+        <section class="menu-section">
+            <h3 style="text-align: left; margin-bottom: 5px;">Sommaire du TP</h3>
+            
+            <a href="partie1_01.html" class="menu-card">
+                <div>
+                    <h3>1. La démarche historique</h3>
+                    <p>Reconstituez la démarche de Mendeleïev pour créer le premier tableau.</p>
+                </div>
+                <span>&rarr;</span>
+            </a>
+
+            <a href="partie2_01.html" class="menu-card">
+                <div>
+                    <h3>2. Les critères actuels</h3>
+                    <p>Comprendre le rangement moderne des éléments.</p>
+                </div>
+                <span>&rarr;</span>
+            </a>
+
+            <a href="partie3_01.html" class="menu-card">
+                <div>
+                    <h3>3. Comparaison</h3>
+                    <p>Le génie de Mendeleïev face à la science moderne.</p>
+                </div>
+                <span>&rarr;</span>
+            </a>
+
+            <a href="partie4_intro.html" class="menu-card">
+                <div>
+                    <h3>4. Utilisation du tableau</h3>
+                    <p>Familles chimiques et prévisions.</p>
+                </div>
+                <span>&rarr;</span>
+            </a>
+        </section>
+
+        <aside class="resources-section">
+            <h3 style="margin-top:0;">Documents PDF</h3>
+            <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Documents à télécharger ou imprimer pour accompagner le TP.</p>
+            
+            <a href="images/jeu_cartes_mendeleiev.pdf" target="_blank" class="doc-link">
+                📄 Cartes à imprimer
+            </a>
+            <a href="images/Etude_classif_periodique.pdf" target="_blank" class="doc-link">
+                📄 Énoncé complet du TP
+            </a>
+            <a href="images/tableau_simplifie.pdf" target="_blank" class="doc-link">
+                📄 Tableau simplifié
+            </a>
+
+            <hr style="border: 0; border-top: 1px solid #ccc; margin: 20px 0;">
+            
+            <div style="font-size: 0.8em; color: #888; text-align: center;">
+                Application originale : Sylvain REMY (2011)<br>
+                <em>Refonte moderne (2025)</em>
+            </div>
+        </aside>
+
+    </div>
+
+</body>
+</html>

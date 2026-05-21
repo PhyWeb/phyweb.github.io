@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Le génie de Mendeleïev - page 3</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="data.js"></script>
+    <script src="game.js"></script>
+
+</head>
+<body>
+
+    <header>
+        <h2>Le génie de Mendeleïev - Les prévisions</h2>
+    </header>
+
+    <div class="main-container">
+        
+        <section class="game-area">
+            
+            <div class="question-box">
+                <p style="margin-top: 0px;">Mendeleiev n'a toutefois pas laissé ces deux cases totalement vides: il a prévu que devraient y prendre place deux éléments non encore identifiés qu'il a dénommés eka-aluminium ("à côté de l'aluminium") et eka-silicium. De plus, il a émis des prévisions sur leurs propriétés physiques et chimiques.</p>
+                <p>Il n'a fallu que quelques années pour que ces deux éléments soient successivement découverts :</p>
+                <ul>
+                    <li>En 1875, l'élément correspondant à l'ékaaluminium a été découvert: il a été nommé <strong>"Gallium"</strong></li>
+                    <li>En 1886, l'élément correspondant à l'ékasilicium a été découvert: il a été nommé <strong>"Germanium"</strong></li>
+                </ul>
+                <p>L'étude des propriétés de ces deux nouveaux éléments a montré qu'elles étaient <strong>très proches de celles prédites par Mendeleiev:</strong> ces découvertes ont évidemment déclenché la <strong>renommée de Mendeleiev.</strong></p>
+                
+                
+                <p class="consigne" style="font-weight: bold; color: var(--primary-color); margin-bottom:0px;">
+                    Complétez le tableau ci-dessous avec les symboles de ces éléments (deux lettres pour chaque symbole).
+                </p>
+            </div>
+
+            <div class="mendeleev-grid" id="grid-container">
+                </div>
+
+        </section>
+
+        <aside class="info-panel">
+            <div class="info-header">
+                <div id="info-symbole">--</div>
+                <div id="info-nom">Survolez un élément</div>
+            </div>
+            <div class="info-item"><span class="info-label">Masse atomique (H=1)</span><span id="info-masse" class="info-value"></span></div>
+            <div class="info-item"><span class="info-label">Formule corps simple</span><span id="info-formule" class="info-value"></span></div>
+            <div class="info-item"><span class="info-label">Propriétés Physiques</span><span id="info-propPhy" class="info-value"></span></div>
+            <div class="info-item"><span class="info-label">Propriétés Chimiques</span><span id="info-propChi" class="info-value"></span></div>
+            <div class="info-item"><span class="info-label">Composés</span><span id="info-composes" class="info-value"></span></div>
+        </aside>
+
+    </div>
+
+    <footer class="controls">
+        <button class="btn" id="btn-verif" onclick="verifierReponse()">Valider</button>
+        <div id="message-box"></div>
+        <div class="nav-links">
+            <a href="partie3_02.html" class="link-simple">&larr; Retour</a>
+            <a href="partie3_04.html" id="btn-suite" class="btn" style="display:none;">SUITE &rarr;</a>
+        </div>
+    </footer>
+
+<script>
+        // --- CONSTRUCTION DE LA GRILLE ---
+        const grid = document.getElementById('grid-container');
+        renderMendeleevGrid(grid, { mode: 'input' });
+
+        // --- VERIFICATION (Logique originale) ---
+        function verifierReponse() {
+            const rep1 = document.getElementById('input-ga').value.trim();
+            const rep2 = document.getElementById('input-ge').value.trim();
+            const msgBox = document.getElementById('message-box');
+            const btnSuite = document.getElementById('btn-suite');
+
+            // Tableau des réponses (L'ordre est important : Ga puis Ge)
+            const rep = [rep1, rep2];
+            const bonrep = ["Ga", "Ge"];
+            
+            let testrep = 0;
+
+            for(let i=0; i<2; i++) {
+                // Vérification exacte (sensible à la casse selon le script original "Ga" != "ga")
+                if(rep[i] === bonrep[i]) {
+                    testrep++;
+                }
+            }
+
+            const err = 2 - testrep;
+
+            if (testrep === 2) {
+                // Succès
+                msgBox.innerHTML = "Bien. Ces deux éléments apparaissent effectivement sous ces symboles dans notre tableau actuel. <br/>Vous pouvez passer à la suite.";
+                msgBox.className = "msg-success";
+                
+                document.getElementById('btn-verif').disabled = true;
+                btnSuite.style.display = "inline-block";
+                
+                // On fige les inputs
+                document.getElementById('input-ga').disabled = true;
+                document.getElementById('input-ge').disabled = true;
+                
+                // Petit bonus visuel : on rend les cartes "correctes"
+                document.getElementById('input-ga').parentElement.classList.add('correct');
+                document.getElementById('input-ge').parentElement.classList.add('correct');
+            } else {
+                // Erreur (Texte original)
+                msgBox.innerHTML = "Non ! Vous avez commis " + err + " erreur(s)<br/>Il n'y a pas de piège pour déterminer ces symboles (voir les noms des éléments chimiques dans le texte ci-dessus)<br/>Veillez par ailleurs à bien utiliser une majuscule suivie d'une minuscule.";
+                msgBox.className = "msg-error";
+            }
+        }
+    </script>
+</body>
+</html>
