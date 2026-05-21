@@ -619,6 +619,8 @@ export default class UIManager {
 
     // Ouvrir la modale
     document.getElementById('settings-button').addEventListener('click', () => {
+      if (this.spreadsheet && this.spreadsheet.hot) this.spreadsheet.hot.deselectCell(); // Désélectionne toute cellule active pour éviter les problèmes d'interaction avec la modale
+
       // Charger les paramètres ACTUELS de l'application dans la modale
       this.loadSettingsIntoModalUI(this.readCurrentAppSettings());
       settingsModal.classList.add('is-active');
@@ -775,6 +777,8 @@ export default class UIManager {
 
     // Ouvre la modale de sauvegarde
     $("#save-button").addEventListener("click", () => {
+      if (this.spreadsheet && this.spreadsheet.hot) this.spreadsheet.hot.deselectCell(); // Désélectionne toute cellule active pour éviter les problèmes de focus lors de la sauvegarde
+
       if (this.data.curves.length === 0 && this.editor.getValue().trim() === '') {
         alertModal({
           title: "Aucune donnée",
@@ -1234,6 +1238,8 @@ export default class UIManager {
 
     // Méthode pour ouvrir la modale avec les bonnes données
     this.openEditHeaderModal = (curve) => {
+      if (this.spreadsheet && this.spreadsheet.hot) this.spreadsheet.hot.deselectCell(); // Désélectionne toute cellule active pour éviter les conflits de focus
+      
       currentCurveOriginalTitle = curve.title;
       symbolInput.value = curve.title;
       unitInput.value = curve.unit || '';
@@ -1994,6 +2000,8 @@ export default class UIManager {
    * @param {Object} model - Le modèle à utiliser pour le calcul.
    */
   openComputeModelModal(model) {
+    if (this.spreadsheet && this.spreadsheet.hot) this.spreadsheet.hot.deselectCell(); // Désélectionne toute cellule active
+
     const xInput = $('#compute-model-x-input');
     const yOutput = $('#compute-model-y-output');
 
@@ -2025,6 +2033,8 @@ export default class UIManager {
    * @param {Object} model - Le modèle à éditer.
    */
   openEditModelModal(model){
+    if (this.spreadsheet && this.spreadsheet.hot) this.spreadsheet.hot.deselectCell(); // Désélectionne toute cellule active pour éviter les conflits de focus
+
     const editModelModal = $('#edit-model-modal');
     const colorPicker = $('#model-edit-color-picker');
     const lineWidthSelect = $('#model-edit-linewidth-select');
@@ -2728,6 +2738,8 @@ export default class UIManager {
 
     // Événement d'ouverture de la nouvelle session
     newFileBtn.addEventListener("click", () => {
+      if (this.spreadsheet && this.spreadsheet.hot) this.spreadsheet.hot.deselectCell(); // Désélectionne toute cellule active pour éviter les conflits de focus
+
       this.navManager.confirmAction(() => {
         this.app.resetSession();
         this.editor.setValue('');
