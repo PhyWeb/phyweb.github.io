@@ -1,4 +1,4 @@
-const { app, BrowserWindow, globalShortcut } = require('electron/main')
+const { app, BrowserWindow, shell, globalShortcut } = require('electron/main')
 const { ipcMain } = require('electron')
 const path = require('node:path')
 const fs = require('node:fs') // <-- Ajout du module fs pour lire le fichier
@@ -18,6 +18,15 @@ const createWindow = (winPath) => {
       nodeIntegration: false,  // désactivé pour sécurité
     }
   })
+
+  // Intercepte toutes les tentatives d'ouverture de nouvelles fenêtres (les liens target="_blank")
+  win.webContents.setWindowOpenHandler((details) => {
+    // Demande à l'OS d'ouvrir l'URL dans le navigateur par défaut
+    shell.openExternal(details.url);
+    
+    // Bloque la création de la fenêtre interne à Electron
+    return { action: 'deny' }; 
+  });
 
   windows.add(win);
 
