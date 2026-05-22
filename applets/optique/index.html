@@ -28,98 +28,125 @@
         canvas {
             display: block;
         }
+        /* Panneau de contrôle */
         .controls-panel {
             background: white;
-            padding: 1.5rem;
+            padding: 1.25rem; 
             border-radius: 6px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.05);
             height: 100%;
+            width: 100%;
+            max-width: 320px; 
+            margin: 0 auto;
+        }
+        /* Encart d'export séparé */
+        .export-box {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 0.75rem;
+            margin-bottom: 1.25rem;
         }
         .lens-control-box {
             border-left: 4px solid #3298dc;
-            padding-left: 12px;
-            margin-bottom: 15px;
+            padding-left: 10px;
+            margin-bottom: 12px;
         }
         .lens-control-box.l2 { border-left-color: #48c774; }
         h1.title { color: var(--primary-color); }
         input[type="range"] { cursor: pointer; }
         
-        /* Disposition en tableau pour créer la "ligne imaginaire" verticale */
+        /* Disposition en tableau ("ligne imaginaire") */
         .control-row {
             display: flex;
             align-items: center;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.35rem; 
         }
         .control-row .label {
             margin-bottom: 0;
             white-space: nowrap; 
             font-size: 0.85rem;
             font-weight: 600;
-            width: 140px; /* Largeur fixe pour aligner tous les inputs */
-            flex-shrink: 0; /* Empêche le label de rétrécir */
+            width: 130px; 
+            flex-shrink: 0;
         }
         .control-row .input {
             width: 80px;
-            text-align: left; /* Alignement du texte à gauche */
+            text-align: left;
+        }
+        .control-row .select select {
+            font-size: 0.85rem;
+            width: 140px;
         }
     </style>
 </head>
 <body>
 
-<section class="section pt-4">
+<section class="section pt-4 pb-4">
     <div class="container is-fluid">
-        <h1 class="title is-4"><i class="fas fa-lightbulb has-text-warning"></i> Optique Géométrique - Editeur de Schémas</h1>
+        <h1 class="title is-4 mb-4"><i class="fas fa-lightbulb has-text-warning"></i> Optique Géométrique</h1>
         
-        <div class="columns">
+        <div class="columns is-desktop">
             <!-- Zone de dessin (Canvas) -->
-            <div class="column is-8-desktop is-9-widescreen has-text-centered">
+            <div class="column is-narrow has-text-centered">
                 <div class="canvas-container" id="canvasWrapper">
-                    <canvas id="opticsCanvas" width="1000" height="800"></canvas>
+                    <canvas id="opticsCanvas"></canvas>
                 </div>
             </div>
 
             <!-- Panneau de contrôle -->
-            <div class="column is-4-desktop is-3-widescreen">
+            <div class="column">
                 <div class="controls-panel">
-                    
-                    <!-- Options globales -->
-                    <h2 class="title is-6"><i class="fas fa-cogs"></i> Options</h2>
-                    
-                    <div class="field mb-1">
-                        <label class="checkbox">
-                            <input type="checkbox" id="toggleGrid" checked> Grille papier millimétré
-                        </label>
-                    </div>
-                    <!-- Opacité alignée sur la même ligne imaginaire -->
-                    <div class="control-row mb-3">
-                        <label class="label has-text-grey has-text-weight-normal pl-4">↳ Opacité</label>
-                        <div class="control">
-                            <input type="range" id="gridOpacity" min="0.1" max="1" step="0.1" value="0.3" style="width: 80px; vertical-align: middle;">
+
+                    <!-- Export Box -->
+                    <div class="export-box">
+                        <h2 class="title is-6 mb-2 has-text-centered"><i class="fas fa-camera"></i> Export HD (300 dpi)</h2>
+                        <div class="is-flex" style="gap: 8px;">
+                            <button class="button is-small is-info is-light is-flex-grow-1" onclick="copyToClipboard()">
+                                <span class="icon"><i class="fas fa-copy"></i></span><span>Copier</span>
+                            </button>
+                            <button class="button is-small is-success is-flex-grow-1" onclick="downloadImage()">
+                                <span class="icon"><i class="fas fa-download"></i></span><span>PNG</span>
+                            </button>
                         </div>
                     </div>
+                    
+                    <!-- Options globales -->
+                    <h2 class="title is-6 mb-3"><i class="fas fa-eye"></i> Affichage</h2>
 
-                    <div class="field mb-3">
-                        <label class="checkbox">
-                            <input type="checkbox" id="toggleSnap" checked> Magnétisme (snap mm)
-                        </label>
+                    <div class="control-row mb-3">
+                        <label class="label">Taille (Word)</label>
+                        <div class="control">
+                            <div class="select is-small">
+                                <select id="canvasSizeSelect">
+                                    <option value="24" selected>Paysage (24x18cm)</option>
+                                    <option value="18">A4 Étroit (18x14cm)</option>
+                                    <option value="16">A4 Normal (16x12cm)</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
                     
-                    <hr class="my-3">
+                    <div class="field mb-1">
+                        <label class="checkbox"><input type="checkbox" id="toggleGrid" checked> Grille papier millimétré</label>
+                    </div>
+                    <!-- Opacité alignée sur la même ligne que les inputs numériques -->
+                    <div class="control-row mb-3">
+                        <label class="label has-text-grey has-text-weight-normal pl-4">↳ Opacité</label>
+                        <div class="control"><input type="range" id="gridOpacity" min="0.1" max="1" step="0.1" value="0.3" style="width: 80px; vertical-align: middle;"></div>
+                    </div>
                     
                     <div class="field mb-2">
-                        <label class="checkbox">
-                            <input type="checkbox" id="toggleObj" checked> Afficher l'objet AB
-                        </label>
+                        <label class="checkbox"><input type="checkbox" id="toggleSnap" checked> Magnétisme (snap mm)</label>
                     </div>
                     <div class="field mb-2">
-                        <label class="checkbox">
-                            <input type="checkbox" id="toggleRays" checked> Tracer les rayons
-                        </label>
+                        <label class="checkbox"><input type="checkbox" id="toggleObj" checked> Afficher l'objet AB</label>
+                    </div>
+                    <div class="field mb-2">
+                        <label class="checkbox"><input type="checkbox" id="toggleRays" checked> Tracer les rayons</label>
                     </div>
                     <div class="field mb-4">
-                        <label class="checkbox">
-                            <input type="checkbox" id="toggleImages" checked> Afficher les images
-                        </label>
+                        <label class="checkbox"><input type="checkbox" id="toggleImages" checked> Afficher les images</label>
                     </div>
 
                     <hr class="my-3">
@@ -135,11 +162,11 @@
                         <div class="control"><input class="input is-small" type="number" id="objY" step="0.1" value="3"></div>
                     </div>
 
-                    <hr class="my-4">
+                    <hr class="my-3">
 
                     <!-- Lentille 1 -->
                     <div class="lens-control-box">
-                        <h2 class="title is-6 mb-3" id="l1Title"><i class="fas fa-eye"></i> Lentille L</h2>
+                        <h2 class="title is-6 mb-2" id="l1Title"><i class="fas fa-eye"></i> Lentille L</h2>
                         <div class="control-row">
                             <label class="label">Position x (cm)</label>
                             <div class="control"><input class="input is-small" type="number" id="l1X" step="0.1" value="0"></div>
@@ -155,8 +182,8 @@
                     </div>
 
                     <!-- Lentille 2 -->
-                    <div class="lens-control-box l2">
-                        <h2 class="title is-6 mb-3">
+                    <div class="lens-control-box l2 mb-0">
+                        <h2 class="title is-6 mb-2">
                             <label class="checkbox">
                                 <input type="checkbox" id="toggleL2"> <i class="fas fa-eye"></i> Lentille L<sub>2</sub>
                             </label>
@@ -189,9 +216,32 @@
     const canvas = document.getElementById('opticsCanvas');
     const ctx = canvas.getContext('2d');
     
+    // Le secret de la netteté absolue (Supersampling)
+    const RESOLUTION_SCALE = 3; 
+    
     const CM_TO_PX = 40; 
-    const ORIGIN_X = canvas.width / 2;
-    const ORIGIN_Y = canvas.height / 2;
+    let logicalWidth = 960;
+    let logicalHeight = 720;
+    let ORIGIN_X = logicalWidth / 2;
+    let ORIGIN_Y = logicalHeight / 2;
+
+    // Fonction pour appliquer la taille HD
+    function setCanvasSize(w, h) {
+        logicalWidth = w;
+        logicalHeight = h;
+        
+        // Taille CSS (affichage sur l'écran)
+        canvas.style.width = w + "px";
+        canvas.style.height = h + "px";
+        
+        // Taille réelle des pixels (export HD)
+        canvas.width = w * RESOLUTION_SCALE;
+        canvas.height = h * RESOLUTION_SCALE;
+        
+        ORIGIN_X = logicalWidth / 2;
+        ORIGIN_Y = logicalHeight / 2;
+        render();
+    }
 
     // --- État de l'application ---
     let state = {
@@ -209,7 +259,39 @@
     let draggedElement = null;
     let pendingTexts = []; 
 
-    // --- Fonctions de conversion Math <-> Pixels ---
+
+
+    // --- Gestion de la taille du Canevas ---
+    document.getElementById('canvasSizeSelect').addEventListener('change', (e) => {
+        const val = e.target.value;
+        if (val === "24") { setCanvasSize(960, 720); }
+        else if (val === "18") { setCanvasSize(720, 560); }
+        else if (val === "16") { setCanvasSize(640, 480); }
+    });
+
+    // --- Fonctions d'Export ---
+    function copyToClipboard() {
+        render(); 
+        canvas.toBlob(function(blob) {
+            const item = new ClipboardItem({ "image/png": blob });
+            navigator.clipboard.write([item]).then(function() {
+                alert("Schéma HD copié dans le presse-papier ! (Prêt à être collé dans Word)");
+            }).catch(function(error) {
+                console.error("Erreur lors de la copie : ", error);
+                alert("Erreur lors de la copie.");
+            });
+        });
+    }
+
+    function downloadImage() {
+        render(); 
+        const link = document.createElement('a');
+        link.download = 'schema_optique_HD.png';
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+    }
+
+    // --- Fonctions de conversion Math <-> Pixels logiques ---
     const toPxX = (cmX) => ORIGIN_X + cmX * CM_TO_PX;
     const toPxY = (cmY) => ORIGIN_Y - cmY * CM_TO_PX;
     const toCmX = (pxX) => (pxX - ORIGIN_X) / CM_TO_PX;
@@ -283,33 +365,43 @@
         pendingTexts = []; 
     }
 
+    // Initialisation
+    setCanvasSize(960, 720);
+
     // --- Dessin principal ---
     function render() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // Remise à zéro de la matrice
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Application du zoom pour le dessin (tout est multiplié par 3)
+        ctx.scale(RESOLUTION_SCALE, RESOLUTION_SCALE);
 
         // 1. Papier millimétré
         if (state.grid && state.gridOpacity > 0) {
             const mmPx = CM_TO_PX / 10;
             const op = state.gridOpacity;
-            for (let i = 0; i <= canvas.width / mmPx; i++) {
+            for (let i = 0; i <= logicalWidth / mmPx; i++) {
                 let x = i * mmPx;
                 let is1cm = i % 10 === 0;
                 let is5mm = i % 5 === 0 && !is1cm;
                 let alpha = is1cm ? op : (is5mm ? op * 0.5 : op * 0.2);
-                drawLine(x, 0, x, canvas.height, `rgba(0,0,0,${alpha})`, is1cm ? 1 : 0.5);
+                drawLine(x, 0, x, logicalHeight, `rgba(0,0,0,${alpha})`, is1cm ? 1 : 0.5);
             }
-            for (let i = 0; i <= canvas.height / mmPx; i++) {
+            for (let i = 0; i <= logicalHeight / mmPx; i++) {
                 let y = i * mmPx;
                 let is1cm = i % 10 === 0;
                 let is5mm = i % 5 === 0 && !is1cm;
                 let alpha = is1cm ? op : (is5mm ? op * 0.5 : op * 0.2);
-                drawLine(0, y, canvas.width, y, `rgba(0,0,0,${alpha})`, is1cm ? 1 : 0.5);
+                drawLine(0, y, logicalWidth, y, `rgba(0,0,0,${alpha})`, is1cm ? 1 : 0.5);
             }
         }
 
         // 2. Axe optique (Delta)
-        drawArrow(0, ORIGIN_Y, canvas.width - 20, ORIGIN_Y, "#2c3e50", 2);
-        drawText("Δ", canvas.width - 15, ORIGIN_Y + 20, "#2c3e50", "bold 16px Arial", "right");
+        drawArrow(0, ORIGIN_Y, logicalWidth - 20, ORIGIN_Y, "#2c3e50", 2);
+        drawText("Δ", logicalWidth - 15, ORIGIN_Y + 20, "#2c3e50", "bold 16px Arial", "right");
 
         // 3. Lentilles
         const idx1 = state.l2.active ? "₁" : ""; 
@@ -438,7 +530,7 @@
         const pxObjX = toPxX(obj.x);
         const pxObjY = toPxY(obj.y);
         const pxLensX = toPxX(lens.x);
-        const endX_real = limitToNextLens ? toPxX(nextLensX) : canvas.width + 100;
+        const endX_real = limitToNextLens ? toPxX(nextLensX) : logicalWidth + 100;
         const endX_virt = -100;
         const col = lens.name === "L1" ? "#e67e22" : "#27ae60";
 
@@ -599,7 +691,6 @@
     });
 
     updateInputsFromState();
-    render();
 
 </script>
 </body>
