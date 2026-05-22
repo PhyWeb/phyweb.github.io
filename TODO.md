@@ -18,6 +18,7 @@
     -deselectionner case quand changement d'onglet
     - quand charge pw on a pas les traits entre les points
     - appliquer les calculs si on change le mode de derivées
+    - raccourci entrer quand on veut sauvegarder lance pas la sauvegarde dans la modale
 
 # Home
     - package linux et macos
