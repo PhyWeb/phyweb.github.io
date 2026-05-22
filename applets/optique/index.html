@@ -574,7 +574,7 @@
         if (img.isInf) {
             let slope = 0;
             if (lensY === ORIGIN_Y) slope = (ORIGIN_Y - startY) / (lensX - startX);
-            else if (startY === lensY) slope = (ORIGIN_Y - lensY) / (lensX + CM_TO_PX * state.l1.f - lensX);
+            else if (startY === lensY) slope = (ORIGIN_Y - lensY) / (CM_TO_PX * lens.f);
             
             let yEnd = lensY + slope * (endX - lensX);
             drawRay(lensX, lensY, endX, yEnd, color);
@@ -681,10 +681,31 @@
     }
 
     function updateStateFromInputs() {
-        state.obj.x = parseFloat(ids.objX.value) || 0; state.obj.y = parseFloat(ids.objY.value) || 0;
-        state.l1.x = parseFloat(ids.l1X.value) || 0; state.l1.f = parseFloat(ids.l1F.value) || 0.1; state.l1.r = Math.max(0.5, parseFloat(ids.l1R.value) || 3.5);
-        state.l2.x = parseFloat(ids.l2X.value) || 0; state.l2.f = parseFloat(ids.l2F.value) || 0.1; state.l2.r = Math.max(0.5, parseFloat(ids.l2R.value) || 3.5);
-        state.gridOpacity = parseFloat(ids.gridOpacity.value) || 0;
+        // Sécurise la conversion numérique pour autoriser la valeur "0"
+        const safeParse = (val, fallback = 0) => {
+            const parsed = parseFloat(val);
+            return isNaN(parsed) ? fallback : parsed;
+        };
+
+        // Empêche spécifiquement la focale d'être strictement égale à 0 (division par zéro)
+        const safeFocal = (val) => {
+            const parsed = parseFloat(val);
+            return (isNaN(parsed) || parsed === 0) ? 0.1 : parsed; 
+        };
+
+        state.obj.x = safeParse(ids.objX.value); 
+        state.obj.y = safeParse(ids.objY.value);
+        
+        state.l1.x = safeParse(ids.l1X.value); 
+        state.l1.f = safeFocal(ids.l1F.value); 
+        state.l1.r = Math.max(0.5, safeParse(ids.l1R.value, 3.5));
+        
+        state.l2.x = safeParse(ids.l2X.value); 
+        state.l2.f = safeFocal(ids.l2F.value); 
+        state.l2.r = Math.max(0.5, safeParse(ids.l2R.value, 3.5));
+        
+        state.gridOpacity = safeParse(ids.gridOpacity.value);
+        
         render();
     }
 
@@ -698,13 +719,24 @@
     
     document.getElementById('toggleL2').addEventListener('change', (e) => { 
         state.l2.active = e.target.checked; 
-        document.getElementById('l2Controls').style.opacity = state.l2.active ? '1' : '0.5';
-        document.getElementById('l2Controls').style.pointerEvents = state.l2.active ? 'auto' : 'none';
+        
+        const l2Controls = document.getElementById('l2Controls');
+        l2Controls.style.opacity = state.l2.active ? '1' : '0.5';
+        l2Controls.style.pointerEvents = state.l2.active ? 'auto' : 'none';
+        
         document.getElementById('l1Title').innerHTML = state.l2.active ? '<i class="fas fa-eye"></i> Lentille L<sub>1</sub>' : '<i class="fas fa-eye"></i> Lentille L';
+        
+        // NOUVEAU : Désactivation réelle des champs (empêche le focus au clavier)
+        const l2Inputs = l2Controls.querySelectorAll('input');
+        l2Inputs.forEach(input => input.disabled = !state.l2.active);
+        
         render(); 
     });
 
     updateInputsFromState();
+
+    document.getElementById('toggleL2').dispatchEvent(new Event('change'));
+
 
 </script>
 </body>
