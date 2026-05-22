@@ -103,6 +103,11 @@
             opacity: 1;
             bottom: 50px;
         }
+        
+        .type-badge {
+            width: 45px;
+            justify-content: center;
+        }
     </style>
 </head>
 <body>
@@ -179,7 +184,6 @@
                     <!-- Objet AB -->
                     <div class="is-flex is-align-items-center is-justify-content-space-between mb-3">
                         <h2 class="title is-6 mb-0"><i class="fas fa-arrow-up"></i> Objet AB</h2>
-                        <!-- Correction de l'alignement vertical avec is-flex et is-align-items-center -->
                         <label class="checkbox is-size-7 has-text-weight-bold is-flex is-align-items-center" style="gap: 4px; margin-top: 0;">
                             <input type="checkbox" id="toggleObjInf"> à l'infini
                         </label>
@@ -209,7 +213,9 @@
                         </div>
                         <div class="control-row">
                             <label class="label">Focale f' (cm)</label>
+                            <!-- La case reprend sa largeur naturelle de 80px, et le badge s'ajoute sur le côté (ml-2 = margin-left) -->
                             <div class="control"><input class="input is-small" type="number" id="l1F" step="0.1" value="4"></div>
+                            <span id="l1F_type" class="tag is-success is-light is-small type-badge ml-2">Conv.</span>
                         </div>
                         <div class="control-row">
                             <label class="label">Demi-hauteur (cm)</label>
@@ -220,7 +226,6 @@
                     <!-- Lentille 2 -->
                     <div class="lens-control-box l2 mb-0">
                         <h2 class="title is-6 mb-2">
-                            <!-- Correction de l'alignement vertical pour la lentille L2 -->
                             <label class="checkbox is-flex is-align-items-center" style="gap: 6px;">
                                 <input type="checkbox" id="toggleL2"> <span><i class="fas fa-up-down"></i> Lentille L<sub>2</sub></span>
                             </label>
@@ -232,7 +237,9 @@
                             </div>
                             <div class="control-row">
                                 <label class="label">Focale f' (cm)</label>
+                                <!-- Idem ici, restauration de la largeur de 80px -->
                                 <div class="control"><input class="input is-small" type="number" id="l2F" step="0.1" value="5"></div>
+                                <span id="l2F_type" class="tag is-success is-light is-small type-badge ml-2">Conv.</span>
                             </div>
                             <div class="control-row">
                                 <label class="label">Demi-hauteur (cm)</label>
@@ -266,7 +273,6 @@
     let ORIGIN_X = logicalWidth / 2;
     let ORIGIN_Y = logicalHeight / 2;
 
-    // Fonction pour appliquer la taille
     function setCanvasSize(w, h) {
         logicalWidth = w;
         logicalHeight = h;
@@ -318,9 +324,7 @@
         const savedScale = currentScale; 
         currentScale = EXPORT_SCALE;     
         setCanvasSize(logicalWidth, logicalHeight); 
-        
         exportAction(); 
-        
         currentScale = savedScale;       
         setCanvasSize(logicalWidth, logicalHeight); 
     }
@@ -332,7 +336,6 @@
                 navigator.clipboard.write([item]).then(function() {
                     showToast("Schéma HD copié (prêt à être collé dans Word) !");
                 }).catch(function(error) {
-                    console.error("Erreur lors de la copie : ", error);
                     showToast("Erreur lors de la copie.");
                 });
             });
@@ -348,7 +351,6 @@
         });
     }
 
-    // --- Fonctions de conversion Math <-> Pixels logiques ---
     const toPxX = (cmX) => ORIGIN_X + cmX * CM_TO_PX;
     const toPxY = (cmY) => ORIGIN_Y - cmY * CM_TO_PX;
     const toCmX = (pxX) => (pxX - ORIGIN_X) / CM_TO_PX;
@@ -430,7 +432,6 @@
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.scale(currentScale, currentScale);
 
-        // 1. Papier millimétré
         if (state.grid && state.gridOpacity > 0) {
             const mmPx = CM_TO_PX / 10;
             const op = state.gridOpacity;
@@ -450,18 +451,15 @@
             }
         }
 
-        // 2. Axe optique (Delta)
         drawArrow(0, ORIGIN_Y, logicalWidth - 20, ORIGIN_Y, "#2c3e50", 2);
         drawText("Δ", logicalWidth - 15, ORIGIN_Y + 20, "#2c3e50", "bold 16px Arial", "right");
 
-        // 3. Lentilles
         const idx1 = state.l2.active ? "₁" : ""; 
         const idx2 = "₂";
         
         drawLensGeometry(state.l1, idx1);
         if (state.l2.active) drawLensGeometry(state.l2, idx2);
 
-        // 4. Objet AB
         if (state.showObj) {
             if (state.obj.isInfObject) {
                 drawText("∞", 30, ORIGIN_Y - 20, "#e74c3c", "bold 24px Arial", "left");
@@ -477,7 +475,6 @@
             }
         }
 
-        // 5. Calcul des images et Tracé des rayons
         let img1 = calculateImage(state.obj, state.l1);
         
         if (state.l2.active) {
@@ -495,11 +492,9 @@
             if (state.showImages) drawObject(img1, "A'", "B'", "#3498db", img1.x > state.l1.x);
         }
 
-        // 6. Rendu final des textes
         flushTexts();
     }
 
-    // --- Mathématiques de l'optique ---
     function calculateImage(obj, lens) {
         let img = { x: 0, y: 0, isInf: false, slope: 0 };
         
@@ -528,7 +523,6 @@
         return img;
     }
 
-    // --- Fonctions de Tracé Spécifiques ---
     function drawLensGeometry(lens, indexStr) {
         const pxX = toPxX(lens.x);
         const pxTop = toPxY(lens.r);
@@ -543,10 +537,10 @@
             drawLine(pxX, pxBot, pxX-size, pxBot-size, "#2980b9", 2);
             drawLine(pxX, pxBot, pxX+size, pxBot-size, "#2980b9", 2);
         } else {
-            drawLine(pxX-size, pxTop, pxX, pxTop+size, "#2980b9", 2);
-            drawLine(pxX+size, pxTop, pxX, pxTop+size, "#2980b9", 2);
-            drawLine(pxX-size, pxBot, pxX, pxBot-size, "#2980b9", 2);
-            drawLine(pxX+size, pxBot, pxX, pxBot-size, "#2980b9", 2);
+            drawLine(pxX-size, pxTop, pxX, pxTop-size, "#2980b9", 2);
+            drawLine(pxX+size, pxTop, pxX, pxTop-size, "#2980b9", 2);
+            drawLine(pxX-size, pxBot, pxX, pxBot+size, "#2980b9", 2);
+            drawLine(pxX+size, pxBot, pxX, pxBot+size, "#2980b9", 2);
         }
 
         const f = lens.f;
@@ -625,7 +619,6 @@
             const pxObjY = toPxY(obj.y);
             
             if (lens.r >= 0) drawFullRay(pxObjX, pxObjY, pxLensX, ORIGIN_Y, img, endX_real, endX_virt, col);
-            
             if (Math.abs(obj.y) <= lens.r + 0.01) drawFullRay(pxObjX, pxObjY, pxLensX, pxObjY, img, endX_real, endX_virt, col);
             
             if(Math.abs(obj.x - (lens.x - lens.f)) > 0.01) {
@@ -648,7 +641,6 @@
 
         if (img.isInf) {
             let slope_px = -img.slope; 
-            
             let yEnd = lensY + slope_px * (endX - lensX);
             drawRay(lensX, lensY, endX, yEnd, color);
             let yVirt = lensY + slope_px * (virtX - lensX);
@@ -757,32 +749,69 @@
         toggleObjInf: document.getElementById('toggleObjInf'),
         l1X: document.getElementById('l1X'), l1F: document.getElementById('l1F'), l1R: document.getElementById('l1R'),
         l2X: document.getElementById('l2X'), l2F: document.getElementById('l2F'), l2R: document.getElementById('l2R'),
-        gridOpacity: document.getElementById('gridOpacity')
+        gridOpacity: document.getElementById('gridOpacity'),
+        l1F_type: document.getElementById('l1F_type'),
+        l2F_type: document.getElementById('l2F_type')
     };
 
-    function updateInputsFromState() {
-        ids.objX.value = state.obj.x; 
-        ids.objY.value = state.obj.y;
-        ids.objAngle.value = state.obj.angle;
+    // La clé est ici : "force=false" par défaut. On ne modifie pas le texte de la case si l'utilisateur est en train de taper dedans.
+    function updateInputsFromState(force = false) {
+        const updateField = (field, val) => {
+            if (force || document.activeElement !== field) {
+                field.value = val;
+            }
+        };
+
+        updateField(ids.objX, state.obj.x); 
+        updateField(ids.objY, state.obj.y);
+        updateField(ids.objAngle, state.obj.angle);
         
-        ids.l1X.value = state.l1.x; ids.l1F.value = state.l1.f; ids.l1R.value = state.l1.r;
-        ids.l2X.value = state.l2.x; ids.l2F.value = state.l2.f; ids.l2R.value = state.l2.r;
-        ids.gridOpacity.value = state.gridOpacity;
+        updateField(ids.l1X, state.l1.x); 
+        updateField(ids.l1F, state.l1.f); 
+        updateField(ids.l1R, state.l1.r);
+        
+        updateField(ids.l2X, state.l2.x); 
+        updateField(ids.l2F, state.l2.f); 
+        updateField(ids.l2R, state.l2.r);
+        
+        if (force || document.activeElement !== ids.gridOpacity) {
+            ids.gridOpacity.value = state.gridOpacity;
+        }
         
         document.getElementById('rowObjX').style.display = state.obj.isInfObject ? 'none' : 'flex';
         document.getElementById('rowObjY').style.display = state.obj.isInfObject ? 'none' : 'flex';
         document.getElementById('rowObjAngle').style.display = state.obj.isInfObject ? 'flex' : 'none';
+
+        // Mise à jour des badges (Conv / Div)
+        if (state.l1.f > 0) {
+            ids.l1F_type.textContent = "Conv.";
+            ids.l1F_type.className = "tag is-success is-light is-small type-badge ml-2";
+        } else {
+            ids.l1F_type.textContent = "Div.";
+            ids.l1F_type.className = "tag is-danger is-light is-small type-badge ml-2";
+        }
+
+        if (state.l2.f > 0) {
+            ids.l2F_type.textContent = "Conv.";
+            ids.l2F_type.className = "tag is-success is-light is-small type-badge ml-2";
+        } else {
+            ids.l2F_type.textContent = "Div.";
+            ids.l2F_type.className = "tag is-danger is-light is-small type-badge ml-2";
+        }
     }
 
     function updateStateFromInputs() {
+        // La tolérance à la saisie de 0 est ici :
+        const safeFocal = (val) => {
+            const parsed = parseFloat(val);
+            if (isNaN(parsed)) return 4; // Sécurité si l'input est totalement vide
+            if (parsed === 0) return 0.001; // Évite mathématiquement la division par 0, mais l'utilisateur peut taper "0." !
+            return parsed; 
+        };
+
         const safeParse = (val, fallback = 0) => {
             const parsed = parseFloat(val);
             return isNaN(parsed) ? fallback : parsed;
-        };
-
-        const safeFocal = (val) => {
-            const parsed = parseFloat(val);
-            return (isNaN(parsed) || parsed === 0) ? 0.1 : parsed; 
         };
 
         state.obj.isInfObject = ids.toggleObjInf.checked;
@@ -798,6 +827,7 @@
         state.l2.f = safeFocal(ids.l2F.value); 
         state.l2.r = Math.max(0.5, safeParse(ids.l2R.value, 3.5));
 
+        // Empêcher l'objet de passer à droite de la lentille
         if (!state.obj.isInfObject && state.obj.x > state.l1.x) state.obj.x = state.l1.x;
         if (state.l2.active && state.l2.x < state.l1.x) state.l2.x = state.l1.x;
         if (!state.obj.isInfObject && state.l1.x < state.obj.x) state.l1.x = state.obj.x;
@@ -809,7 +839,13 @@
         render();
     }
 
-    Object.values(ids).forEach(input => { input.addEventListener('input', updateStateFromInputs); });
+    Object.values(ids).forEach(element => { 
+        if(element && element.tagName === "INPUT") {
+            element.addEventListener('input', updateStateFromInputs); 
+            // Quand l'utilisateur quitte la case (blur), on force le nettoyage (ex: si on a laissé vide ou "-")
+            element.addEventListener('blur', () => updateInputsFromState(true)); 
+        }
+    });
     ids.toggleObjInf.addEventListener('change', updateStateFromInputs);
 
     document.getElementById('toggleGrid').addEventListener('change', (e) => { state.grid = e.target.checked; render(); });
@@ -838,7 +874,6 @@
         render(); 
     });
 
-    // Appliqué sur L2 pour régler l'alignement de la checkbox
     document.querySelector('#toggleL2').parentElement.classList.add('is-flex', 'is-align-items-center');
 
     updateInputsFromState();
