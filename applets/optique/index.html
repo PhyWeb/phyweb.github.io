@@ -4,10 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Générateur de Schémas d'Optique</title>
+    <link rel="icon" href="../../assets/favicons/grapher.ico" />
     <!-- Bulma CSS pour l'interface -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <link rel="stylesheet" href="../../common/bulma/bulma.min.css">
     <!-- FontAwesome pour les icônes -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script defer src="../../common/fontawesome/solid.min.js"></script>
+    <script defer src="../../common/fontawesome/fontawesome.min.js"></script>
+
     <style>
         :root {
             --primary-color: #2c3e50;
@@ -114,7 +117,7 @@
 
 <section class="section pt-4 pb-4">
     <div class="container is-fluid">
-        <h1 class="title is-4 mb-4"><i class="fas fa-lightbulb has-text-warning"></i> Optique Géométrique</h1>
+        <h1 class="title is-4 mb-4"><i class="fas fa-lightbulb has-text-warning"></i> Générateur de Schémas d'Optique</h1>
         
         <div class="columns is-desktop">
             
@@ -151,8 +154,8 @@
                             <div class="select is-small is-fullwidth">
                                 <select id="canvasSizeSelect">
                                     <option value="24" selected>Paysage (24x18cm)</option>
-                                    <option value="18">A4 Étroit (18x14cm)</option>
-                                    <option value="16">A4 Normal (16x12cm)</option>
+                                    <option value="18">Portrait large (18x14cm)</option>
+                                    <option value="16">Portrait (16x12cm)</option>
                                 </select>
                             </div>
                         </div>
@@ -334,7 +337,7 @@
             canvas.toBlob(function(blob) {
                 const item = new ClipboardItem({ "image/png": blob });
                 navigator.clipboard.write([item]).then(function() {
-                    showToast("Schéma HD copié (prêt à être collé dans Word) !");
+                    showToast("Schéma HD copié (prêt à être collé) !");
                 }).catch(function(error) {
                     showToast("Erreur lors de la copie.");
                 });
