@@ -56,7 +56,7 @@
         h1.title { color: var(--primary-color); }
         input[type="range"] { cursor: pointer; }
         
-        /* Disposition en tableau ("ligne imaginaire") */
+        /* Disposition en tableau */
         .control-row {
             display: flex;
             align-items: center;
@@ -78,6 +78,31 @@
             font-size: 0.85rem;
             width: 100%;
         }
+
+        /* Système de notification (Toast) */
+        #toast {
+            visibility: hidden;
+            min-width: 250px;
+            background-color: #3298dc;
+            color: #fff;
+            text-align: center;
+            border-radius: 30px;
+            padding: 12px 24px;
+            position: fixed;
+            z-index: 1000;
+            left: 50%;
+            bottom: 30px;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.4s, bottom 0.4s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            font-weight: bold;
+        }
+        #toast.show {
+            visibility: visible;
+            opacity: 1;
+            bottom: 50px;
+        }
     </style>
 </head>
 <body>
@@ -88,16 +113,15 @@
         
         <div class="columns is-desktop">
             
-            <!-- Zone de dessin : Prend tout l'espace restant et se centre -->
+            <!-- Zone de dessin -->
             <div class="column is-flex is-justify-content-center is-align-items-flex-start">
                 <div class="canvas-container" id="canvasWrapper">
                     <canvas id="opticsCanvas"></canvas>
                 </div>
             </div>
 
-            <!-- Panneau de contrôle : Taille fixe (is-narrow) alignée à droite -->
+            <!-- Panneau de contrôle -->
             <div class="column is-narrow">
-                <!-- On force la largeur à 320px pour qu'elle ne bouge jamais -->
                 <div class="controls-panel" style="width: 320px;">
 
                     <!-- Export Box -->
@@ -132,7 +156,6 @@
                     <div class="field mb-1">
                         <label class="checkbox"><input type="checkbox" id="toggleGrid" checked> Grille papier millimétré</label>
                     </div>
-                    <!-- Opacité alignée sur la même ligne que les inputs numériques -->
                     <div class="control-row mb-3">
                         <label class="label has-text-grey has-text-weight-normal pl-4">↳ Opacité</label>
                         <div class="control"><input type="range" id="gridOpacity" min="0.1" max="1" step="0.1" value="0.3" style="width: 80px; vertical-align: middle;"></div>
@@ -154,14 +177,25 @@
                     <hr class="my-3">
 
                     <!-- Objet AB -->
-                    <h2 class="title is-6 mb-3"><i class="fas fa-arrow-up"></i> Objet AB</h2>
-                    <div class="control-row">
+                    <div class="is-flex is-align-items-center is-justify-content-space-between mb-3">
+                        <h2 class="title is-6 mb-0"><i class="fas fa-arrow-up"></i> Objet AB</h2>
+                        <!-- Correction de l'alignement vertical avec is-flex et is-align-items-center -->
+                        <label class="checkbox is-size-7 has-text-weight-bold is-flex is-align-items-center" style="gap: 4px; margin-top: 0;">
+                            <input type="checkbox" id="toggleObjInf"> à l'infini
+                        </label>
+                    </div>
+                    
+                    <div class="control-row" id="rowObjX">
                         <label class="label">Position x (cm)</label>
                         <div class="control"><input class="input is-small" type="number" id="objX" step="0.1" value="-8"></div>
                     </div>
-                    <div class="control-row">
+                    <div class="control-row" id="rowObjY">
                         <label class="label">Taille y (cm)</label>
                         <div class="control"><input class="input is-small" type="number" id="objY" step="0.1" value="3"></div>
+                    </div>
+                    <div class="control-row" id="rowObjAngle" style="display: none;">
+                        <label class="label">Angle θ (°)</label>
+                        <div class="control"><input class="input is-small" type="number" id="objAngle" step="1" value="0"></div>
                     </div>
 
                     <hr class="my-3">
@@ -186,8 +220,9 @@
                     <!-- Lentille 2 -->
                     <div class="lens-control-box l2 mb-0">
                         <h2 class="title is-6 mb-2">
-                            <label class="checkbox">
-                                <input type="checkbox" id="toggleL2"> <i class="fas fa-up-down"></i> Lentille L<sub>2</sub>
+                            <!-- Correction de l'alignement vertical pour la lentille L2 -->
+                            <label class="checkbox is-flex is-align-items-center" style="gap: 6px;">
+                                <input type="checkbox" id="toggleL2"> <span><i class="fas fa-up-down"></i> Lentille L<sub>2</sub></span>
                             </label>
                         </h2>
                         <div id="l2Controls" style="opacity: 0.5; pointer-events: none;">
@@ -212,13 +247,16 @@
     </div>
 </section>
 
+<!-- Élément de notification (Toast) -->
+<div id="toast">Message</div>
+
 <script>
     // --- Configuration Globale ---
     const canvasWrapper = document.getElementById('canvasWrapper');
     const canvas = document.getElementById('opticsCanvas');
     const ctx = canvas.getContext('2d');
     
-    // Résolution d'export (HD) et résolution d'affichage (adaptée à l'écran)
+    // Résolution d'export (HD) et résolution d'affichage
     const EXPORT_SCALE = 3; 
     let currentScale = window.devicePixelRatio || 1; 
     
@@ -233,11 +271,9 @@
         logicalWidth = w;
         logicalHeight = h;
         
-        // Taille CSS (affichage sur l'écran) fixe
         canvas.style.width = w + "px";
         canvas.style.height = h + "px";
         
-        // Taille réelle des pixels (dépend si on affiche ou si on exporte)
         canvas.width = w * currentScale;
         canvas.height = h * currentScale;
         
@@ -254,15 +290,13 @@
         showObj: true,
         showRays: true,
         showImages: true,
-        obj: { x: -8, y: 3 },
+        obj: { x: -8, y: 3, isInfObject: false, angle: 10 },
         l1: { active: true, x: 0, f: 4, r: 3.5, name: "L1" }, 
         l2: { active: false, x: 10, f: 5, r: 3.5, name: "L2" }
     };
 
     let draggedElement = null;
     let pendingTexts = []; 
-
-
 
     // --- Gestion de la taille du Canevas ---
     document.getElementById('canvasSizeSelect').addEventListener('change', (e) => {
@@ -272,16 +306,23 @@
         else if (val === "16") { setCanvasSize(640, 480); }
     });
 
-    // Utilitaire pour basculer en HD le temps d'une opération
+    // --- Gestion du Toast ---
+    function showToast(message) {
+        const toast = document.getElementById("toast");
+        toast.textContent = message;
+        toast.className = "show";
+        setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
+    }
+
     function withHDExport(exportAction) {
-        const savedScale = currentScale; // Sauvegarde l'échelle d'affichage
-        currentScale = EXPORT_SCALE;     // Passe en mode HD
-        setCanvasSize(logicalWidth, logicalHeight); // Redessine en HD
+        const savedScale = currentScale; 
+        currentScale = EXPORT_SCALE;     
+        setCanvasSize(logicalWidth, logicalHeight); 
         
-        exportAction(); // Exécute la copie ou le téléchargement
+        exportAction(); 
         
-        currentScale = savedScale;       // Restaure l'échelle d'affichage
-        setCanvasSize(logicalWidth, logicalHeight); // Redessine pour l'écran
+        currentScale = savedScale;       
+        setCanvasSize(logicalWidth, logicalHeight); 
     }
 
     function copyToClipboard() {
@@ -289,10 +330,10 @@
             canvas.toBlob(function(blob) {
                 const item = new ClipboardItem({ "image/png": blob });
                 navigator.clipboard.write([item]).then(function() {
-                    alert("Schéma HD copié dans le presse-papier ! (Prêt à être collé dans Word)");
+                    showToast("Schéma HD copié (prêt à être collé dans Word) !");
                 }).catch(function(error) {
                     console.error("Erreur lors de la copie : ", error);
-                    alert("Erreur lors de la copie.");
+                    showToast("Erreur lors de la copie.");
                 });
             });
         });
@@ -368,13 +409,11 @@
             ctx.font = t.font;
             ctx.textAlign = t.align;
             ctx.textBaseline = "middle";
-            
             ctx.lineJoin = "round";
             ctx.miterLimit = 2;
             ctx.lineWidth = 4;
             ctx.strokeStyle = "rgba(255, 255, 255, 0.9)";
             ctx.strokeText(t.text, t.x, t.y);
-            
             ctx.fillStyle = t.color;
             ctx.fillText(t.text, t.x, t.y);
         });
@@ -386,13 +425,9 @@
 
     // --- Dessin principal ---
     function render() {
-        // Remise à zéro de la matrice
         ctx.setTransform(1, 0, 0, 1, 0, 0);
-        
         ctx.fillStyle = "#ffffff";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        // Application du zoom dynamique (affichage ou export)
         ctx.scale(currentScale, currentScale);
 
         // 1. Papier millimétré
@@ -428,11 +463,18 @@
 
         // 4. Objet AB
         if (state.showObj) {
-            const pxObjX = toPxX(state.obj.x);
-            const pxObjY = toPxY(state.obj.y);
-            drawArrow(pxObjX, ORIGIN_Y, pxObjX, pxObjY, "#e74c3c", 3);
-            drawText("A", pxObjX - 8, ORIGIN_Y + 18, "#e74c3c", "bold italic 15px Arial", "right");
-            drawText("B", pxObjX - 8, pxObjY - 10 * (state.obj.y > 0 ? 1 : -1), "#e74c3c", "bold italic 15px Arial", "right");
+            if (state.obj.isInfObject) {
+                drawText("∞", 30, ORIGIN_Y - 20, "#e74c3c", "bold 24px Arial", "left");
+                if (state.obj.angle !== 0) {
+                    drawText(`θ = ${state.obj.angle}°`, 30, ORIGIN_Y + 15, "#e74c3c", "italic 15px Arial", "left");
+                }
+            } else {
+                const pxObjX = toPxX(state.obj.x);
+                const pxObjY = toPxY(state.obj.y);
+                drawArrow(pxObjX, ORIGIN_Y, pxObjX, pxObjY, "#e74c3c", 3);
+                drawText("A", pxObjX - 8, ORIGIN_Y + 18, "#e74c3c", "bold italic 15px Arial", "right");
+                drawText("B", pxObjX - 8, pxObjY - 10 * (state.obj.y > 0 ? 1 : -1), "#e74c3c", "bold italic 15px Arial", "right");
+            }
         }
 
         // 5. Calcul des images et Tracé des rayons
@@ -459,18 +501,29 @@
 
     // --- Mathématiques de l'optique ---
     function calculateImage(obj, lens) {
-        let p = obj.x - lens.x; 
-        let f = lens.f;
-        let img = { x: 0, y: 0, isInf: false };
-
-        if (Math.abs(p + f) < 0.001) { 
-            img.isInf = true;
-            img.x = obj.x > lens.x ? -1000 : 1000; 
+        let img = { x: 0, y: 0, isInf: false, slope: 0 };
+        
+        if (obj.isInfObject) {
+            img.x = lens.x + lens.f;
+            let theta = obj.angle * Math.PI / 180;
+            img.y = lens.f * Math.tan(theta); 
+        } else if (obj.isInf) {
+            img.x = lens.x + lens.f;
+            img.y = lens.f * obj.slope;
         } else {
-            let p_prime = (p * f) / (p + f); 
-            let gamma = p_prime / p; 
-            img.x = lens.x + p_prime;
-            img.y = obj.y * gamma;
+            let p = obj.x - lens.x; 
+            let f = lens.f;
+            
+            if (Math.abs(p + f) < 0.001) { 
+                img.isInf = true;
+                img.x = obj.x > lens.x ? -1000 : 1000; 
+                img.slope = obj.y / p; 
+            } else {
+                let p_prime = (p * f) / (p + f); 
+                let gamma = p_prime / p; 
+                img.x = lens.x + p_prime;
+                img.y = obj.y * gamma;
+            }
         }
         return img;
     }
@@ -543,24 +596,44 @@
     }
 
     function traceRays(obj, img, lens, limitToNextLens, nextLensX) {
-        const pxObjX = toPxX(obj.x);
-        const pxObjY = toPxY(obj.y);
         const pxLensX = toPxX(lens.x);
         const endX_real = limitToNextLens ? toPxX(nextLensX) : logicalWidth + 100;
         const endX_virt = -100;
         const col = lens.name === "L1" ? "#e67e22" : "#27ae60";
 
-        if (lens.r >= 0) {
-            drawFullRay(pxObjX, pxObjY, pxLensX, ORIGIN_Y, img, endX_real, endX_virt, col);
-        }
-        if (Math.abs(obj.y) <= lens.r + 0.01) {
-            drawFullRay(pxObjX, pxObjY, pxLensX, pxObjY, img, endX_real, endX_virt, col);
-        }
-        if(Math.abs(obj.x - (lens.x - lens.f)) > 0.01) {
-            let interceptY_cm = -obj.y * lens.f / (lens.x - lens.f - obj.x);
-            if (Math.abs(interceptY_cm) <= lens.r + 0.01) {
-                let interceptY_px = toPxY(interceptY_cm);
-                drawFullRay(pxObjX, pxObjY, pxLensX, interceptY_px, img, endX_real, endX_virt, col);
+        if (obj.isInfObject || obj.isInf) {
+            let slope = obj.isInfObject ? Math.tan(obj.angle * Math.PI / 180) : obj.slope;
+            
+            let drawRayInf = (y_hit_cm) => {
+                let startX_cm = obj.isInfObject ? toCmX(0) : state.l1.x; 
+                let pxStartX = toPxX(startX_cm);
+                let startY_cm = y_hit_cm + slope * (startX_cm - lens.x);
+                drawFullRay(pxStartX, toPxY(startY_cm), pxLensX, toPxY(y_hit_cm), img, endX_real, endX_virt, col);
+            };
+
+            if (Math.abs(slope) < 0.001) {
+                drawRayInf(0); 
+                drawRayInf(lens.r * 0.8); 
+                drawRayInf(-lens.r * 0.8); 
+            } else {
+                drawRayInf(0); 
+                drawRayInf(slope * lens.f);  
+            }
+            
+        } else {
+            const pxObjX = toPxX(obj.x);
+            const pxObjY = toPxY(obj.y);
+            
+            if (lens.r >= 0) drawFullRay(pxObjX, pxObjY, pxLensX, ORIGIN_Y, img, endX_real, endX_virt, col);
+            
+            if (Math.abs(obj.y) <= lens.r + 0.01) drawFullRay(pxObjX, pxObjY, pxLensX, pxObjY, img, endX_real, endX_virt, col);
+            
+            if(Math.abs(obj.x - (lens.x - lens.f)) > 0.01) {
+                let interceptY_cm = -obj.y * lens.f / (lens.x - lens.f - obj.x);
+                if (Math.abs(interceptY_cm) <= lens.r + 0.01) {
+                    let interceptY_px = toPxY(interceptY_cm);
+                    drawFullRay(pxObjX, pxObjY, pxLensX, interceptY_px, img, endX_real, endX_virt, col);
+                }
             }
         }
     }
@@ -574,13 +647,11 @@
         }
 
         if (img.isInf) {
-            let slope = 0;
-            if (lensY === ORIGIN_Y) slope = (ORIGIN_Y - startY) / (lensX - startX);
-            else if (startY === lensY) slope = (ORIGIN_Y - lensY) / (CM_TO_PX * lens.f);
+            let slope_px = -img.slope; 
             
-            let yEnd = lensY + slope * (endX - lensX);
+            let yEnd = lensY + slope_px * (endX - lensX);
             drawRay(lensX, lensY, endX, yEnd, color);
-            let yVirt = lensY + slope * (virtX - lensX);
+            let yVirt = lensY + slope_px * (virtX - lensX);
             drawLine(lensX, lensY, virtX, yVirt, color, 1.5, [5,5]);
         } else {
             const pxImgX = toPxX(img.x);
@@ -601,7 +672,7 @@
     // --- Interactions Drag & Drop ---
     function getHoveredElement(cmX, cmY) {
         const tol = 0.5;
-        if (state.showObj) {
+        if (state.showObj && !state.obj.isInfObject) {
             if (Math.abs(cmX - state.obj.x) < tol && Math.abs(cmY - state.obj.y) < tol) return 'objB';
             let minY = Math.min(0, state.obj.y) - 0.2;
             let maxY = Math.max(0, state.obj.y) + 0.2;
@@ -639,13 +710,24 @@
             const cmX = snap(cmX_raw);
             const cmY = snap(cmY_raw);
 
-            if (draggedElement === 'objB') { state.obj.x = cmX; state.obj.y = cmY; } 
-            else if (draggedElement === 'objBody') { state.obj.x = cmX; } 
-            else if (draggedElement === 'l1') { state.l1.x = cmX; } 
+            if (draggedElement === 'objB') { 
+                state.obj.x = Math.min(cmX, state.l1.x); 
+                state.obj.y = cmY; 
+            } 
+            else if (draggedElement === 'objBody') { 
+                state.obj.x = Math.min(cmX, state.l1.x); 
+            } 
+            else if (draggedElement === 'l1') { 
+                let maxX = state.l2.active ? state.l2.x : Infinity;
+                let minX = state.obj.isInfObject ? -Infinity : state.obj.x;
+                state.l1.x = Math.max(minX, Math.min(cmX, maxX)); 
+            } 
             else if (draggedElement === 'l1_F') { state.l1.f = snap(state.l1.x - cmX); } 
             else if (draggedElement === 'l1_Fp') { state.l1.f = snap(cmX - state.l1.x); } 
             else if (draggedElement === 'l1_edge') { state.l1.r = Math.max(0.5, snap(Math.abs(cmY_raw))); } 
-            else if (draggedElement === 'l2') { state.l2.x = cmX; } 
+            else if (draggedElement === 'l2') { 
+                state.l2.x = Math.max(cmX, state.l1.x); 
+            } 
             else if (draggedElement === 'l2_F') { state.l2.f = snap(state.l2.x - cmX); } 
             else if (draggedElement === 'l2_Fp') { state.l2.f = snap(cmX - state.l2.x); } 
             else if (draggedElement === 'l2_edge') { state.l2.r = Math.max(0.5, snap(Math.abs(cmY_raw))); }
@@ -669,34 +751,44 @@
 
     // --- Liaison avec le DOM ---
     const ids = {
-        objX: document.getElementById('objX'), objY: document.getElementById('objY'),
+        objX: document.getElementById('objX'), 
+        objY: document.getElementById('objY'),
+        objAngle: document.getElementById('objAngle'),
+        toggleObjInf: document.getElementById('toggleObjInf'),
         l1X: document.getElementById('l1X'), l1F: document.getElementById('l1F'), l1R: document.getElementById('l1R'),
         l2X: document.getElementById('l2X'), l2F: document.getElementById('l2F'), l2R: document.getElementById('l2R'),
         gridOpacity: document.getElementById('gridOpacity')
     };
 
     function updateInputsFromState() {
-        ids.objX.value = state.obj.x; ids.objY.value = state.obj.y;
+        ids.objX.value = state.obj.x; 
+        ids.objY.value = state.obj.y;
+        ids.objAngle.value = state.obj.angle;
+        
         ids.l1X.value = state.l1.x; ids.l1F.value = state.l1.f; ids.l1R.value = state.l1.r;
         ids.l2X.value = state.l2.x; ids.l2F.value = state.l2.f; ids.l2R.value = state.l2.r;
         ids.gridOpacity.value = state.gridOpacity;
+        
+        document.getElementById('rowObjX').style.display = state.obj.isInfObject ? 'none' : 'flex';
+        document.getElementById('rowObjY').style.display = state.obj.isInfObject ? 'none' : 'flex';
+        document.getElementById('rowObjAngle').style.display = state.obj.isInfObject ? 'flex' : 'none';
     }
 
     function updateStateFromInputs() {
-        // Sécurise la conversion numérique pour autoriser la valeur "0"
         const safeParse = (val, fallback = 0) => {
             const parsed = parseFloat(val);
             return isNaN(parsed) ? fallback : parsed;
         };
 
-        // Empêche spécifiquement la focale d'être strictement égale à 0 (division par zéro)
         const safeFocal = (val) => {
             const parsed = parseFloat(val);
             return (isNaN(parsed) || parsed === 0) ? 0.1 : parsed; 
         };
 
+        state.obj.isInfObject = ids.toggleObjInf.checked;
         state.obj.x = safeParse(ids.objX.value); 
         state.obj.y = safeParse(ids.objY.value);
+        state.obj.angle = safeParse(ids.objAngle.value);
         
         state.l1.x = safeParse(ids.l1X.value); 
         state.l1.f = safeFocal(ids.l1F.value); 
@@ -705,13 +797,20 @@
         state.l2.x = safeParse(ids.l2X.value); 
         state.l2.f = safeFocal(ids.l2F.value); 
         state.l2.r = Math.max(0.5, safeParse(ids.l2R.value, 3.5));
-        
+
+        if (!state.obj.isInfObject && state.obj.x > state.l1.x) state.obj.x = state.l1.x;
+        if (state.l2.active && state.l2.x < state.l1.x) state.l2.x = state.l1.x;
+        if (!state.obj.isInfObject && state.l1.x < state.obj.x) state.l1.x = state.obj.x;
+        if (state.l2.active && state.l1.x > state.l2.x) state.l1.x = state.l2.x;
+
         state.gridOpacity = safeParse(ids.gridOpacity.value);
         
+        updateInputsFromState();
         render();
     }
 
     Object.values(ids).forEach(input => { input.addEventListener('input', updateStateFromInputs); });
+    ids.toggleObjInf.addEventListener('change', updateStateFromInputs);
 
     document.getElementById('toggleGrid').addEventListener('change', (e) => { state.grid = e.target.checked; render(); });
     document.getElementById('toggleSnap').addEventListener('change', (e) => { state.snap = e.target.checked; });
@@ -722,23 +821,28 @@
     document.getElementById('toggleL2').addEventListener('change', (e) => { 
         state.l2.active = e.target.checked; 
         
+        if (state.l2.active && state.l2.x < state.l1.x) {
+            state.l2.x = state.l1.x + 5;
+            updateInputsFromState();
+        }
+        
         const l2Controls = document.getElementById('l2Controls');
         l2Controls.style.opacity = state.l2.active ? '1' : '0.5';
         l2Controls.style.pointerEvents = state.l2.active ? 'auto' : 'none';
         
         document.getElementById('l1Title').innerHTML = state.l2.active ? '<i class="fas fa-up-down"></i> Lentille L<sub>1</sub>' : '<i class="fas fa-up-down"></i> Lentille L';
         
-        // NOUVEAU : Désactivation réelle des champs (empêche le focus au clavier)
         const l2Inputs = l2Controls.querySelectorAll('input');
         l2Inputs.forEach(input => input.disabled = !state.l2.active);
         
         render(); 
     });
 
+    // Appliqué sur L2 pour régler l'alignement de la checkbox
+    document.querySelector('#toggleL2').parentElement.classList.add('is-flex', 'is-align-items-center');
+
     updateInputsFromState();
-
     document.getElementById('toggleL2').dispatchEvent(new Event('change'));
-
 
 </script>
 </body>
