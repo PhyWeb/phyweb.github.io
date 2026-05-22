@@ -15,6 +15,9 @@
 
     - gerer les quota sessionstorage
 
+    -deselectionner case quand changement d'onglet
+    - quand charge pw on a pas les traits entre les points
+
 # Home
     - package linux et macos
 
