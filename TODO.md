@@ -17,6 +17,7 @@
 
     -deselectionner case quand changement d'onglet
     - quand charge pw on a pas les traits entre les points
+    - appliquer les calculs si on change le mode de derivées
 
 # Home
     - package linux et macos
