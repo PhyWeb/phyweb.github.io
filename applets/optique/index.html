@@ -76,7 +76,7 @@
         }
         .control-row .select select {
             font-size: 0.85rem;
-            width: 140px;
+            width: 100%;
         }
     </style>
 </head>
@@ -87,20 +87,22 @@
         <h1 class="title is-4 mb-4"><i class="fas fa-lightbulb has-text-warning"></i> Optique Géométrique</h1>
         
         <div class="columns is-desktop">
-            <!-- Zone de dessin (Canvas) -->
-            <div class="column is-narrow has-text-centered">
+            
+            <!-- Zone de dessin : Prend tout l'espace restant et se centre -->
+            <div class="column is-flex is-justify-content-center is-align-items-flex-start">
                 <div class="canvas-container" id="canvasWrapper">
                     <canvas id="opticsCanvas"></canvas>
                 </div>
             </div>
 
-            <!-- Panneau de contrôle -->
-            <div class="column">
-                <div class="controls-panel">
+            <!-- Panneau de contrôle : Taille fixe (is-narrow) alignée à droite -->
+            <div class="column is-narrow">
+                <!-- On force la largeur à 320px pour qu'elle ne bouge jamais -->
+                <div class="controls-panel" style="width: 320px;">
 
                     <!-- Export Box -->
                     <div class="export-box">
-                        <h2 class="title is-6 mb-2 has-text-centered"><i class="fas fa-camera"></i> Export HD (300 dpi)</h2>
+                        <h2 class="title is-6 mb-2 has-text-centered"><i class="fas fa-camera"></i> Export HD</h2>
                         <div class="is-flex" style="gap: 8px;">
                             <button class="button is-small is-info is-light is-flex-grow-1" onclick="copyToClipboard()">
                                 <span class="icon"><i class="fas fa-copy"></i></span><span>Copier</span>
@@ -115,13 +117,13 @@
                     <h2 class="title is-6 mb-3"><i class="fas fa-eye"></i> Affichage</h2>
 
                     <div class="control-row mb-3">
-                        <label class="label">Taille (Word)</label>
-                        <div class="control">
-                            <div class="select is-small">
+                        <label class="label" style="width: auto; margin-right: 12px;">Taille</label>
+                        <div class="control is-expanded">
+                            <div class="select is-small is-fullwidth">
                                 <select id="canvasSizeSelect">
                                     <option value="24" selected>Paysage (24x18cm)</option>
-                                    <option value="18">Portrait petite marges (18x14cm)</option>
-                                    <option value="16">Portrait grandes marges (16x12cm)</option>
+                                    <option value="18">A4 Étroit (18x14cm)</option>
+                                    <option value="16">A4 Normal (16x12cm)</option>
                                 </select>
                             </div>
                         </div>
@@ -166,7 +168,7 @@
 
                     <!-- Lentille 1 -->
                     <div class="lens-control-box">
-                        <h2 class="title is-6 mb-2" id="l1Title"><i class="fas fa-eye"></i> Lentille L</h2>
+                        <h2 class="title is-6 mb-2" id="l1Title"><i class="fas fa-up-down"></i> Lentille L</h2>
                         <div class="control-row">
                             <label class="label">Position x (cm)</label>
                             <div class="control"><input class="input is-small" type="number" id="l1X" step="0.1" value="0"></div>
@@ -185,7 +187,7 @@
                     <div class="lens-control-box l2 mb-0">
                         <h2 class="title is-6 mb-2">
                             <label class="checkbox">
-                                <input type="checkbox" id="toggleL2"> <i class="fas fa-eye"></i> Lentille L<sub>2</sub>
+                                <input type="checkbox" id="toggleL2"> <i class="fas fa-up-down"></i> Lentille L<sub>2</sub>
                             </label>
                         </h2>
                         <div id="l2Controls" style="opacity: 0.5; pointer-events: none;">
@@ -724,7 +726,7 @@
         l2Controls.style.opacity = state.l2.active ? '1' : '0.5';
         l2Controls.style.pointerEvents = state.l2.active ? 'auto' : 'none';
         
-        document.getElementById('l1Title').innerHTML = state.l2.active ? '<i class="fas fa-eye"></i> Lentille L<sub>1</sub>' : '<i class="fas fa-eye"></i> Lentille L';
+        document.getElementById('l1Title').innerHTML = state.l2.active ? '<i class="fas fa-up-down"></i> Lentille L<sub>1</sub>' : '<i class="fas fa-up-down"></i> Lentille L';
         
         // NOUVEAU : Désactivation réelle des champs (empêche le focus au clavier)
         const l2Inputs = l2Controls.querySelectorAll('input');
