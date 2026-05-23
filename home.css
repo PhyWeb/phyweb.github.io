@@ -45,3 +45,27 @@
   border-bottom-left-radius: 8px; 
   border-bottom-right-radius: 8px;
 }
+
+/* --- TUILES SECONDAIRES --- */
+
+/* Force la grille à 3 colonnes sur tablette/ordinateur pour aligner avec la ligne du haut */
+@media screen and (min-width: 769px) {
+  .grid.is-fixed-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Variante plus compacte pour les tuiles moins importantes */
+.app-tile.is-small {
+  padding: 0.8em 1.2em 1.2em;
+  gap: 0.3em;
+}
+
+.app-tile.is-small .title {
+  font-size: 1.1rem; 
+  margin-bottom: 0.2em;
+}
+
+.app-tile.is-small p {
+  font-size: 0.85rem;
+}
