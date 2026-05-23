@@ -65,6 +65,8 @@ export default class UIManager {
         this.common.modalManager.closeAllModals();
         // Désactive les outils du grapheur (réticule, etc.)
         this.clearActiveTool(); 
+        // Deselectionne toute cellule sélectionnée dans le tableur
+        this.spreadsheet.hot.deselectCell();
       },
       onTab1: () => {
         const tab = document.querySelector('#tableur-tab');
@@ -444,6 +446,11 @@ export default class UIManager {
       $("#tableur-panel").classList.add("is-hidden");
       $("#grapheur-panel").classList.remove("is-hidden");
       $("#calculs-panel").classList.add("is-hidden");
+
+      // Deselectionne toute cellule sélectionnée dans le tableur
+      if (this.spreadsheet && this.spreadsheet.hot) {
+        this.spreadsheet.hot.deselectCell();
+      }
     });
     $("#calculs-tab").addEventListener("click", () => {
       $("#tableur-tab").classList.remove("is-active");
@@ -453,6 +460,11 @@ export default class UIManager {
       $("#tableur-panel").classList.add("is-hidden");
       $("#grapheur-panel").classList.add("is-hidden");
       $("#calculs-panel").classList.remove("is-hidden");
+
+      // Deselectionne toute cellule sélectionnée dans le tableur
+      if (this.spreadsheet && this.spreadsheet.hot) {
+        this.spreadsheet.hot.deselectCell();
+      }
     });
 
     $("#menu-dropdown-toggle").addEventListener("click", function (event) {
@@ -768,8 +780,22 @@ export default class UIManager {
     }
     
     // Appliquer aux calculs
-    this.calculation.derivatePoints = settings.derivatePoints;
-    this.calculation.derivateEdges = settings.derivateEdges;
+    let calcSettingsChanged = false;
+
+    if (this.calculation.derivatePoints !== settings.derivatePoints) {
+      this.calculation.derivatePoints = settings.derivatePoints;
+      calcSettingsChanged = true;
+    }
+
+    if (this.calculation.derivateEdges !== settings.derivateEdges) {
+      this.calculation.derivateEdges = settings.derivateEdges;
+      calcSettingsChanged = true;
+    }
+
+    // On relance les calculs globaux si un réglage de dérivation a été modifié
+    if (calcSettingsChanged) {
+      this.app.applyCalculation(this.editor.getValue());
+    }
   }
 
   /**
@@ -822,6 +848,14 @@ export default class UIManager {
     $("#pw-button").addEventListener("click", () => updateFormatSelection('pw'));
     $("#csv-button").addEventListener("click", () => updateFormatSelection('csv'));
     $("#rw3-button").addEventListener("click", () => updateFormatSelection('rw3'));
+
+    // Shortcut clavier : appuie sur "Entrée" pour valider le téléchargement
+    fileNameInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        $("#download-file-button").click();
+      }
+    });
 
     // Gère le téléchargement final
     $("#download-file-button").addEventListener("click", () => {
