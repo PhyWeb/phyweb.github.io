@@ -377,9 +377,17 @@
     }
 
     function drawArrow(x1, y1, x2, y2, color="black", width=2) {
-        drawLine(x1, y1, x2, y2, color, width);
         const angle = Math.atan2(y2 - y1, x2 - x1);
         const headlen = 10;
+        
+        // Calcul de la distance exacte entre la pointe et la base du triangle
+        const baseDist = headlen * Math.cos(Math.PI / 6);
+        
+        // On arrête la ligne à la base exacte
+        const lineEndX = x2 - baseDist * Math.cos(angle);
+        const lineEndY = y2 - baseDist * Math.sin(angle);
+        drawLine(x1, y1, lineEndX, lineEndY, color, width);
+        
         ctx.beginPath();
         ctx.fillStyle = color;
         ctx.moveTo(x2, y2);
@@ -569,15 +577,17 @@
         drawText(label, pxX + offsetX, pxY + 15, "#2980b9", "bold 15px Arial", align);
     }
 
-    function drawObject(obj, nameA, nameB, color, isReal) {
+function drawObject(obj, nameA, nameB, color, isReal) {
         if (obj.isInf) return; 
         const pxX = toPxX(obj.x);
         const pxY = toPxY(obj.y);
         const dash = isReal ? [] : [5, 5];
-        
-        drawLine(pxX, ORIGIN_Y, pxX, pxY, color, 3, dash);
         const headlen = 10;
         const dir = obj.y > 0 ? 1 : -1;
+        
+        // On arrête la ligne à la base du triangle de la flèche (pxY + dir*headlen)
+        drawLine(pxX, ORIGIN_Y, pxX, pxY + dir * headlen, color, 3, dash);
+        
         ctx.beginPath();
         ctx.fillStyle = color;
         ctx.moveTo(pxX, pxY);
