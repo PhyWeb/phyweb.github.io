@@ -160,9 +160,9 @@
                         <div class="control is-expanded">
                             <div class="select is-small is-fullwidth">
                                 <select id="canvasSizeSelect">
-                                    <option value="24" selected>Paysage (24x18cm)</option>
-                                    <option value="18">Portrait large (18x14cm)</option>
-                                    <option value="16">Portrait (16x12cm)</option>
+                                    <option value="18" selected>Portrait large (18x14cm)</option>
+                                    <option value="16">Portrait étroit (16x12cm)</option>
+                                    <option value="24">Paysage (24x18cm)</option>
                                 </select>
                             </div>
                         </div>
@@ -221,7 +221,7 @@
                         </div>
                         <div class="control-row">
                             <label class="label">Focale f' (cm)</label>
-                            <div class="control"><input class="input is-small" type="number" id="l1F" step="0.1" value="4"></div>
+                            <div class="control"><input class="input is-small" type="number" id="l1F" step="0.1" value="3"></div>
                             <span id="l1F_type" class="tag is-success is-light is-small type-badge ml-2">Conv.</span>
                         </div>
                         <div class="control-row">
@@ -301,8 +301,8 @@
         showRays: true,
         showImages: true,
         obj: { x: -8, y: 3, isInfObject: false, angle: 10 },
-        l1: { active: true, x: 0, f: 4, r: 3.5, name: "L1" }, 
-        l2: { active: false, x: 10, f: 5, r: 3.5, name: "L2" }
+        l1: { active: true, x: 0, f: 3, r: 3.5, name: "L1" }, 
+        l2: { active: false, x: 7, f: 1, r: 3.5, name: "L2" }
     };
 
     let draggedElement = null;
@@ -435,7 +435,7 @@
     }
 
     // Initialisation
-    setCanvasSize(960, 720);
+    document.getElementById('canvasSizeSelect').dispatchEvent(new Event('change'));
 
     // --- Dessin principal ---
     function render() {
