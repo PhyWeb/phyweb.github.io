@@ -21,25 +21,36 @@ class Spreadsheet {
     return curve;
   }
 
-  update(){
+update(){
     const significantDigits = this.data.settings.significantDigits;
-
-    // Récupération des en-têtes pour construire la config des colonnes
     const headers = this.data.getHeaders();
-    const columnsConfig = headers.map(() => ({ type: 'numeric' }));
+
+    const columnsConfig = headers.map(() => ({ 
+      type: 'numeric',
+      renderer: (instance, td, row, col, prop, value, cellProperties) => {
+        // 1. Conversion de sécurité : on s'assure d'avoir un vrai nombre
+        let parsedValue = value;
+        if (typeof value === 'string' && value.trim() !== '') {
+          parsedValue = parseFloat(value.replace(',', '.'));
+        }
+
+        // 2. Formatage uniquement si c'est un nombre valide
+        let formattedValue = value;
+        if (parsedValue !== null && parsedValue !== undefined && !isNaN(parsedValue) && value !== '') {
+          formattedValue = formatNumber(parsedValue, significantDigits);
+        }
+
+        // 3. Application de l'affichage via le renderer de texte
+        Handsontable.renderers.getRenderer('text')(instance, td, row, col, prop, formattedValue, cellProperties);
+      }
+    }));
 
     this.hot.updateSettings({
       data: this.data.getTable(),
       colHeaders: headers,
       columns: columnsConfig,
       autoColumnSize: false,
-      autoRowSize: false,
-      cells: (row, col, prop) => ({
-        renderer: (instance, td, row, col, prop, value, cellProperties) => {
-          value = formatNumber(value, significantDigits);
-          Handsontable.renderers.TextRenderer.apply(this, [instance, td, row, col, prop, value, cellProperties]);
-        }
-      })
+      autoRowSize: false
     });
   }
 
@@ -47,7 +58,6 @@ class Spreadsheet {
     const onSpreadsheetHeaderDblClick = (colIndex) => {
       const curve = this.data.getCurveByIndex(colIndex);
       if (curve) {
-        // Empêche de renommer une grandeur calculée
         if (curve.type === 'calculation') {
           alertModal({
             title: "Action impossible",
@@ -72,13 +82,10 @@ class Spreadsheet {
         this.data.setValue(element[1], element[0], element[3]);
       });
 
-      //this.update();  // TODO only update cells that changed
       this.cb(change);
     };
 
-    // Gestion du double-clic sur un en-tête de colonne
     const afterOnCellMouseDown = (event, coords, TD) => {
-      // coords.row === -1 correspond à un en-tête de colonne
       if (event.detail === 2 && coords.row === -1) {
         event.stopImmediatePropagation();
         onSpreadsheetHeaderDblClick(coords.col);
@@ -86,8 +93,7 @@ class Spreadsheet {
     };
 
     const afterGetColHeader = (col, TH) => {
-      // S'applique uniquement aux en-têtes de colonnes (col >= 0)
-    if (col >= 0) {
+      if (col >= 0) {
         const curve = this.data.getCurveByIndex(col);
         if (!curve) return;
         if (curve.type !== 'calculation') {
@@ -103,7 +109,22 @@ class Spreadsheet {
       minSpareRows: 1,
       rowHeaders: true,
       colHeaders: this.data.getHeaders(),
-      columns: this.data.getHeaders().map(() => ({ type: 'numeric' })), 
+      columns: this.data.getHeaders().map(() => ({ 
+        type: 'numeric',
+        renderer: (instance, td, row, col, prop, value, cellProperties) => {
+          let parsedValue = value;
+          if (typeof value === 'string' && value.trim() !== '') {
+            parsedValue = parseFloat(value.replace(',', '.'));
+          }
+
+          let formattedValue = value;
+          if (parsedValue !== null && parsedValue !== undefined && !isNaN(parsedValue) && value !== '') {
+            formattedValue = formatNumber(parsedValue, significantDigits);
+          }
+
+          Handsontable.renderers.getRenderer('text')(instance, td, row, col, prop, formattedValue, cellProperties);
+        }
+      })),
       afterOnCellMouseDown: afterOnCellMouseDown,
       afterGetColHeader: afterGetColHeader,
       autoColumnSize: false,
@@ -116,13 +137,7 @@ class Spreadsheet {
       autoWrapCol: true,
       afterChange: afterChange,
       outsideClickDeselects: false,
-      licenseKey: 'non-commercial-and-evaluation', // for non-commercial use only
-      cells: (row, col) => ({
-        renderer: (instance, td, row, col, prop, value, cellProperties) => {
-          value = formatNumber(value, significantDigits);
-          Handsontable.renderers.TextRenderer.apply(this, [instance, td, row, col, prop, value, cellProperties]);
-        }
-      })
+      licenseKey: 'non-commercial-and-evaluation', 
     });
   }
 
