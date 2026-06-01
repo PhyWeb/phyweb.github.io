@@ -15,6 +15,8 @@
 
     - gerer les quota sessionstorage
 
+    aggrandir la fenetre par defaut dans electron
+
 # Home
     - package linux et macos
 
