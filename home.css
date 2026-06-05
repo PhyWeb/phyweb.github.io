@@ -76,7 +76,7 @@
 }
 
 /* --- COMPACTAGE VERTICAL POUR ÉCRANS < 767px --- */
-@media screen and (max-height: 767px) {
+@media screen and (max-height: 740px) {
 
   /* 2. Réduire l'espacement principal au-dessus du conteneur */
   #app > .container {
