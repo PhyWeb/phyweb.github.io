@@ -37,9 +37,11 @@ class Common {
         $("#navbar-dropdown").classList.remove("is-active");
       });
     }
-    $("#about-button").addEventListener("click",()=>{
-      aboutModal(this.app);
-    })
+    if($("#about-button")){
+      $("#about-button").addEventListener("click",()=>{
+        aboutModal(this.app);
+      })
+    }
   }
 
   isNumber(str) {
@@ -1422,17 +1424,88 @@ export class FileDropManager {
 
 
 /*----------------------------------------------------------------------------------------------
-------------------------------------------MISC FUNCTIONS----------------------------------------
+-------------------------------------SECONDARY NAVBAR-------------------------------------------
 ----------------------------------------------------------------------------------------------*/
-// TODO still usefull ?
-/*function maxOfArray(array){
-  let max = 0;
-  for(let i = 0; i < array.length; i++){
-    if(array[i] > max){
-      max = array[i];
-    }
+/**
+ * Initialise automatiquement la Navbar secondaire épurée et configure l'environnement Common.
+ * @param {string} title - Le titre de l'application à afficher dans la barre.
+ * @param {string} basePath - Le chemin relatif vers la racine du projet (ex: "../..").
+ * @returns {Common} L'instance de la classe Common configurée.
+ */
+function initApplets(title, basePath = "..") {
+  // 1. Créer le conteneur de la navbar s'il n'existe pas déjà et l'injecter tout en haut du body
+  let container = document.getElementById('navbar-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'navbar-container';
+    // On l'insère comme tout premier élément du <body> pour qu'il soit collé en haut
+    document.body.insertBefore(container, document.body.firstChild);
   }
-  return max;
-}*/
 
-export {Common, setupGlobalShortcuts, ModalManager, alertModal, quitConfirmationModal, TabManager, Serie, exportToPW,exportToCSV, exportToRW3, downloadFile};
+  const nav = document.createElement('nav');
+  nav.className = 'navbar has-box-shadow is-flex-shrink-0 mb-3';
+  nav.setAttribute('role', 'navigation');
+  nav.setAttribute('aria-label', 'main navigation');
+
+  // Forcer la hauteur de la navbar à 56px
+  nav.style.height = '56px';
+  nav.style.minHeight = '56px';
+
+  nav.innerHTML = `
+    <div class="navbar-brand" style="height: 100%;">
+      <a href="${basePath}/index.html" class="navbar-item is-size-4 has-text-weight-bold" style="gap:0.3rem; height: 100%;">
+        <span class="is-flex has-text-primary">
+          <i class="phyweb-logo"></i>
+        </span>
+        <span>PhyWeb</span>
+      </a>
+    </div>
+    <div class="navbar-menu is-active" style="box-shadow: none; background: transparent; height: 100%;">
+      <div class="navbar-start" style="height: 100%;">
+        <div id="navbar-dropdown" class="navbar-item has-dropdown is-boxed" style="height: 100%;">
+          <a class="navbar-link has-text-primary is-size-5 has-text-weight-bold" style="height: 100%;">
+            <span class="icon"><i class="fa-solid fa-cubes"></i></span>
+            <span>Apps</span>
+          </a>
+          <div class="navbar-dropdown">
+            <a class="navbar-item is-size-5 has-text-weight-bold" href="${basePath}/index.html">
+              <span class="icon has-text-primary"><i class="fa fa-home"></i></span>
+              <span>Accueil</span>
+            </a>
+            <hr class="navbar-divider">
+            <a class="navbar-item is-size-5 has-text-weight-bold" href="${basePath}/tracker/index.html">
+              <span class="icon has-text-primary"><i class="fa fa-crosshairs"></i></span>
+              <span>Tracker</span>
+            </a>
+            <a class="navbar-item is-size-5 has-text-weight-bold" href="${basePath}/audio/index.html">
+              <span class="is-flex has-text-primary">
+                <i class="audio-logo-small"></i>
+              </span>
+              <span>Audio</span>
+            </a>
+            <a class="navbar-item is-size-5 has-text-weight-bold" href="${basePath}/grapher/index.html">
+              <span class="is-flex has-text-primary">
+                <i class="fa-solid fa-chart-line"></i>
+              </span>
+              <span>Grapher</span>
+            </a>
+          </div>
+        </div>
+        <div class="navbar-item" style="height: 100%;">
+          <h1 class="title is-4 mb-0">${title}</h1>
+        </div>
+      </div>
+      <div class="navbar-end is-flex is-align-items-center" style="height: 100%;">
+        <div class="window-controls"></div>
+      </div>
+    </div>
+  `;
+
+  // 2. Injecter la navbar générée dans le conteneur
+  container.appendChild(nav);
+
+  // 3. Initialiser la classe Common pour activer l'application (Boutons Electron, Logos SVGs, Dropdowns, etc.)
+  return new Common(title);
+}
+
+export {Common,initApplets ,setupGlobalShortcuts, ModalManager, alertModal, quitConfirmationModal, TabManager, Serie, exportToPW,exportToCSV, exportToRW3, downloadFile};

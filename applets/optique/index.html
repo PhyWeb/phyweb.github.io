@@ -9,6 +9,8 @@
     <script defer src="../../common/fontawesome/solid.min.js"></script>
     <script defer src="../../common/fontawesome/fontawesome.min.js"></script>
 
+    <link rel="stylesheet" href="../../common/common.css">
+
     <style>
         :root {
             --primary-color: #2c3e50;
@@ -105,28 +107,9 @@
     </style>
 </head>
 <body>
-
+<div id="navbar-container"></div>
 <section class="section pt-2 pb-2">
     <div class="container is-fluid">
-        
-        <nav class="level mb-3">
-            <div class="level-left" style="width: 250px;">
-                <a href="../../index.html" class="level-item is-size-4 has-text-weight-bold is-flex is-align-items-center has-text-dark" style="gap: 0.5rem; text-decoration: none;">
-                    <span class="has-text-primary is-flex">
-                        <svg width="24px" height="24px" viewBox="0 0 30 50" xmlns="http://www.w3.org/2000/svg">
-                            <path fill="currentColor" d="M 0,0 V 4.0584501 14.149746 L 3.6344035,9.1379401 H 14.204818 c 3.314029,-9.68e-5 6.000531,2.7278249 6.00015,6.0926599 -4.75e-4,3.364219 -2.686727,6.091182 -6.00015,6.091086 H 0 V 50 L 14.470951,30.46015 c 8.284355,6.6e-5 15.52935,-6.818718 15.529285,-15.230075 C 30.000301,6.8187179 23.284473,-6.6169597e-5 15.000118,0 Z"/>
-                        </svg>
-                    </span>
-                    <span>PhyWeb</span>
-                </a>
-            </div>
-
-            <div class="level-item has-text-centered">
-                <h1 class="title is-4 mb-0">Générateur de Schémas d'Optique</h1>
-            </div>
-
-            <div class="level-right" style="width: 250px;"></div>
-        </nav>
         
         <div class="columns is-desktop">
             
@@ -261,7 +244,13 @@
 
 <div id="toast">Message</div>
 
+<script type="module">
+    import { initApplets } from '../../common/common.js';
+    const common = initApplets("Générateur de Schémas d'Optique", "../..");
+</script>
+
 <script>
+
     // --- Configuration Globale ---
     const canvasWrapper = document.getElementById('canvasWrapper');
     const canvas = document.getElementById('opticsCanvas');
