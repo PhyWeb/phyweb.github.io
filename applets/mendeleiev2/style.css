@@ -15,7 +15,6 @@
 body {
     font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     color: var(--text-color);
-    align-items: center;
     min-height: 100vh;
     box-sizing: border-box; /* Crucial pour que le padding n'ajoute pas de hauteur */
     overflow-x: hidden;     /* Empêche le scroll horizontal parasite */
@@ -127,7 +126,7 @@ h2 { margin: 10px 0; font-size: 1.5rem; }
 #info-propChi { color: var(--prop-chi-color); }
 
 /* --- ZONES DE JEU --- */
-.game-area { flex: 1; min-width: 350px; display: flex; flex-direction: column; gap: 15px; }
+.game-area { flex: 1; min-width: 350px; display: flex; flex-direction: column;}
 
 .card-pool {
     display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
@@ -165,8 +164,9 @@ h2 { margin: 10px 0; font-size: 1.5rem; }
 
 .found-zone {
     display: flex;
-    flex-direction: column; /* Une famille par ligne */
-    gap: 5px;
+    flex-direction: row; /* <-- Change 'column' par 'row' */
+    flex-wrap: wrap;     /* <-- Ajoute ceci pour que ça passe à la ligne si l'écran est trop petit */
+    align-items: center; /* <-- C'est LA ligne magique pour centrer verticalement */
     background: rgba(255,255,255,0.5);
     padding: 15px;
     border-radius: 8px;
@@ -177,7 +177,7 @@ h2 { margin: 10px 0; font-size: 1.5rem; }
     display: flex;
     flex-direction: row;
     align-items: center;
-    padding-left: 20px; /* Espace pour la première carte */
+    padding-left: 10px; /* Espace pour la première carte */
     height: 48px;
 }
 
@@ -396,4 +396,57 @@ h2 { margin: 10px 0; font-size: 1.5rem; }
     background-color: #fff;
     box-shadow: 0 0 4px rgba(0, 102, 153, 0.3);
     outline: none;
+}
+
+/* =========================================
+   MODIFICATIONS : CHEVAUCHEMENT ET HAUTEUR COMPACTE
+   ========================================= */
+
+/* 1. Chevauchement horizontal des familles identifiées */
+.found-group {
+    display: inline-flex;
+    align-items: center;
+    overflow: visible; /* Évite de couper les cartes au survol */
+}
+.found-group .element-card {
+    margin: 0 0 0 -25px !important; /* Marge négative pour le chevauchement */
+    position: relative;
+    box-shadow: -4px 0 6px rgba(0,0,0,0.15) !important; /* Ombre portée sur la gauche */
+    transition: transform 0.2s, z-index 0s;
+    z-index: 1;
+}
+.found-group .element-card:first-child {
+    margin-left: 0 !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+}
+.found-group .element-card:hover {
+    transform: translateY(-8px); /* Soulève la carte au survol */
+    z-index: 10; /* Passe au premier plan */
+}
+
+/* 2. Compactage de l'interface pour les écrans < 750px de haut */
+@media screen and (max-height: 750px) {
+    /* On force la réduction des paddings et margins imposés par Bulma */
+    .section { padding-top: 0rem !important; padding-bottom: 0.5rem !important; }
+    header.mb-5 { margin-bottom: 0.5rem !important; }
+    .title.is-2 { font-size: 1.5rem !important; margin-bottom: 0.5rem !important; }
+    .subtitle.is-4 { font-size: 1.1rem !important; }
+    
+    /* On compacte les boites et les textes */
+    .box { padding: 0.75rem !important; margin-bottom: 0.75rem !important; }
+    .content p, .content ul { margin-bottom: 0.5em !important; }
+    .game-area { padding: 0.75rem !important; }
+    
+    /* Footer et info-panel */
+    #global-controls { margin-top: 0.75rem !important; padding: 0.5rem !important; }
+    .info-panel { padding: 0.75rem !important; top: 10px !important; }
+    .info-header { margin-bottom: 0.5rem !important; padding-bottom: 0.25rem !important; }
+    .info-item { margin-bottom: 0.25rem !important; }
+    
+    /* Zones de drag & drop plus fines */
+    .card-pool { margin-bottom: 0.5rem !important; min-height: 70px; }
+    .test-zone { min-height: 80px !important; }
+
+    .found-group { margin-bottom: 0rem !important; }
+
 }

@@ -1,4 +1,4 @@
-/* --- game.js (Version avec intégration Bulma) --- */
+/* --- game.js (Chevauchement horizontal + Hauteur compacte) --- */
 
 const zMap = { "H": 1, "He": 2, "Li": 3, "Be": 4, "B": 5, "C": 6, "N": 7, "O": 8, "F": 9, "Ne": 10, "Na": 11, "Mg": 12, "Al": 13, "Si": 14, "P": 15, "S": 16, "Cl": 17, "Ar": 18, "K": 19, "Ca": 20, "Sc": 21, "Ti": 22, "V": 23, "Cr": 24, "Mn": 25, "Fe": 26, "Co": 27, "Ni": 28, "Cu": 29, "Zn": 30, "Ga": 31, "Ge": 32, "As": 33, "Se": 34, "Br": 35, "Kr": 36 };
 
@@ -101,19 +101,20 @@ function handleCardDrop(ev) {
     targetZone.appendChild(draggedCard);
 }
 
-// Mise à jour du style de l'info panel en utilisant les classes de boites Bulma
 const infoPanelTemplate = `
-    <aside class="info-panel box has-background-white-bis p-4">
-        <div class="info-header mb-3 pb-2" style="border-bottom: 2px solid #ddd;">
-            <div id="info-symbole" class="title is-4 mb-0 has-text-link">--</div>
-            <div id="info-nom" class="subtitle is-6 has-text-grey">Survolez un élément</div>
-        </div>
-        <div class="info-item mb-2"><span class="has-text-weight-bold is-size-7 mr-2">Masse atomique (H=1) :</span><span id="info-masse" class="is-size-7"></span></div>
-        <div class="info-item mb-2"><span class="has-text-weight-bold is-size-7 mr-2">Formule corps simple :</span><span id="info-formule" class="has-text-info has-text-weight-bold is-size-7"></span></div>
-        <div class="info-item mb-2"><span class="has-text-weight-bold is-size-7 is-block">Propriétés Physiques :</span><span id="info-propPhy" class="is-size-7 is-block pl-2"></span></div>
-        <div class="info-item mb-2"><span class="has-text-weight-bold is-size-7 is-block">Propriétés Chimiques :</span><span id="info-propChi" class="is-size-7 is-block pl-2"></span></div>
-        <div class="info-item"><span class="has-text-weight-bold is-size-7 is-block">Composés :</span><span id="info-composes" class="is-size-7 is-block pl-2"></span></div>
-    </aside>`;
+    <div class="column is-narrow" style="width: 320px;">
+        <aside class="info-panel box has-background-white-bis p-4" style="position: sticky; top: 20px;">
+            <div class="info-header mb-3 pb-2" style="border-bottom: 2px solid #ddd;">
+                <div id="info-symbole" class="title is-4 mb-0 has-text-link">--</div>
+                <div id="info-nom" class="subtitle is-6 has-text-grey">Survolez un élément</div>
+            </div>
+            <div class="info-item mb-2"><span class="has-text-weight-bold is-size-7 mr-2">Masse atomique (H=1) :</span><span id="info-masse" class="is-size-7"></span></div>
+            <div class="info-item mb-2"><span class="has-text-weight-bold is-size-7 mr-2">Formule corps simple :</span><span id="info-formule" class="has-text-info has-text-weight-bold is-size-7"></span></div>
+            <div class="info-item mb-2"><span class="has-text-weight-bold is-size-7 is-block">Propriétés Physiques :</span><span id="info-propPhy" class="is-size-7 is-block pl-2"></span></div>
+            <div class="info-item mb-2"><span class="has-text-weight-bold is-size-7 is-block">Propriétés Chimiques :</span><span id="info-propChi" class="is-size-7 is-block pl-2"></span></div>
+            <div class="info-item"><span class="has-text-weight-bold is-size-7 is-block">Composés :</span><span id="info-composes" class="is-size-7 is-block pl-2"></span></div>
+        </aside>
+    </div>`;
 
 let currentPart = ""; let currentStepIndex = 0;
 
@@ -149,11 +150,16 @@ const STRUCTURE_TP = {
                 <p>Vous disposez de 19 fiches semblables à celles qu'avait élaborées Mendeleiev (celles des principaux éléments les plus légers). </p>
                 <p>Vous devez ici, dans un premier temps, classer ces fiches suivant <strong>le premier critère utilisé par Mendeleiev pour les ranger</strong>.</p>
             </div>
-            <section class="game-area box has-background-light">
-                <div class="card-pool cards-pool mb-4" id="pool"></div>
-                <h3 class="title is-5 mb-2"><i class="fas fa-sort-numeric-down has-text-info"></i> Votre classement :</h3>
-                <div class="slots-container" id="slots-area"></div>
-            </section>${infoPanelTemplate}`,
+            <div class="columns">
+                <div class="column">
+                    <section class="game-area box has-background-light" style="height: 100%;">
+                        <div class="card-pool cards-pool mb-4" id="pool"></div>
+                        <h3 class="title is-5 mb-2 mt-2"><i class="fas fa-sort-numeric-down has-text-info"></i> Votre classement :</h3>
+                        <div class="slots-container" id="slots-area"></div>
+                    </section>
+                </div>
+                ${infoPanelTemplate}
+            </div>`,
             onLoad: () => {
                 const pool = document.getElementById('pool'); const slotsArea = document.getElementById('slots-area');
                 elementsData.filter(el => el.famille).forEach(el => pool.appendChild(createCard(el, true)));
@@ -194,12 +200,17 @@ const STRUCTURE_TP = {
                 <p>Vous devez maintenant étudier attentivement les fiches pour essayer de constituer des familles d'éléments à partir de leurs ressemblances :</p>
                 <ul><li>Observez les propriétés physiques et chimiques.</li><li>Observez les formules des corps simples et composés.</li></ul>
             </div>
-            <section class="game-area box has-background-light">
-                <div class="card-pool mb-4" id="pool"></div>
-                <h3 class="title is-5 mb-2 has-text-info"><i class="fas fa-flask"></i> Zone de test (glissez ici les éléments similaires) :</h3>
-                <div class="test-zone box" id="test-box" style="min-height: 120px; border: 2px dashed #ccc;"></div>
-                <div class="found-zone mt-4" id="found-zone"><h4 class="title is-6 has-text-grey mb-2">Familles identifiées :</h4></div>
-            </section>${infoPanelTemplate}`,
+            <div class="columns">
+                <div class="column">
+                    <section class="game-area box has-background-light" style="height: 100%;">
+                        <div class="card-pool mb-2" id="pool"></div>
+                        <h3 class="title is-6 mb-2 mt-2 has-text-info"><i class="fas fa-flask"></i> Zone de test (glissez ici les éléments similaires) :</h3>
+                        <div class="test-zone box" id="test-box" style="min-height: 120px; border: 2px dashed #ccc;"></div>
+                        <div class="found-zone" id="found-zone"><h4 class="title is-6 has-text-grey mb-0">Familles identifiées :</h4></div>
+                    </section>
+                </div>
+                ${infoPanelTemplate}
+            </div>`,
             onLoad: () => {
                 const pool = document.getElementById('pool'); const testBox = document.getElementById('test-box');
                 ORDRE_MASSE.filter(id => id !== "H").forEach(id => pool.appendChild(createCard(elementsData.find(e=>e.id===id))));
@@ -220,7 +231,11 @@ const STRUCTURE_TP = {
                 if (!currentIds.every(id => targetFam.includes(id))) { testBox.style.borderColor = "#f14668"; setTimeout(() => { testBox.style.borderColor = "#ccc"; }, 2000); return { success: false, msg: "Intrus détecté ! Ces éléments n'ont pas assez de points communs." }; }
                 if (currentIds.length === targetFam.length) {
                     testBox.style.borderColor = "#48c774"; setTimeout(() => { testBox.style.borderColor = "#ccc"; }, 2000);
-                    const fz = document.getElementById('found-zone'); const grp = document.createElement('div'); grp.className = 'found-group box p-2 is-inline-block mr-2 mb-2 has-background-white';
+                    const fz = document.getElementById('found-zone'); const grp = document.createElement('div'); 
+                    
+                    // Modification ici : on utilise is-inline-flex
+                    grp.className = 'found-group is-inline-flex mr-2';
+                    
                     children.forEach(c => { c.draggable = false; c.classList.add('locked'); grp.appendChild(c); });
                     fz.appendChild(grp); window.foundFamilies.add(elementsData.find(e=>e.id===currentIds[0]).famille);
                     if(window.foundFamilies.size >= window.totalFamilies) return { success: true, msg: "Toutes les familles ont été trouvées ! Vous pouvez passer à la suite." };
@@ -246,7 +261,15 @@ const STRUCTURE_TP = {
                 <p>A ce stade, vous devez constituer le tableau comme l'a fait Mendeleiev pour la première fois.</p>
                 <p>Déplacez les vignettes vers les cases vides du tableau situé en bas de page pour respecter à la fois <strong>les masses (en ligne)</strong> et <strong>les familles (en colonne)</strong>.</p>
             </div>
-            <section class="game-area box has-background-light"><div class="card-pool mb-4" id="pool"></div><div class="periodic-grid" id="grid"></div></section>${infoPanelTemplate}`,
+            <div class="columns">
+                <div class="column">
+                    <section class="game-area box has-background-light" style="height: 100%;">
+                        <div class="card-pool mb-4" id="pool"></div>
+                        <div class="periodic-grid" id="grid"></div>
+                    </section>
+                </div>
+                ${infoPanelTemplate}
+            </div>`,
             onLoad: () => {
                 const pool = document.getElementById('pool'); const grid = document.getElementById('grid');
                 [...elementsData].sort((a,b) => parseFloat(a.masse.replace(',','.')) - parseFloat(b.masse.replace(',','.'))).forEach(el => { if(el.id !== "H" && el.famille) pool.appendChild(createCard(el)); });
@@ -270,7 +293,15 @@ const STRUCTURE_TP = {
         {
             type: "game", title: "Où placer l'Hydrogène ?",
             html: `<div class="box content"><p>L'Hydrogène est resté à part. Etudiez ses propriétés pour lui trouver une position qui soit en accord avec les principes établis jusqu'ici.</p></div>
-            <section class="game-area box has-background-light"><div class="card-pool mb-4" id="pool" style="min-height:80px;"></div><div class="periodic-grid" id="grid"></div></section>${infoPanelTemplate}`,
+            <div class="columns">
+                <div class="column">
+                    <section class="game-area box has-background-light" style="height: 100%;">
+                        <div class="card-pool mb-4" id="pool" style="min-height:80px;"></div>
+                        <div class="periodic-grid" id="grid"></div>
+                    </section>
+                </div>
+                ${infoPanelTemplate}
+            </div>`,
             onLoad: () => {
                 const pool = document.getElementById('pool'); const grid = document.getElementById('grid');
                 pool.addEventListener('dragover', commonAllowDrop); pool.addEventListener('drop', handleCardDrop);
@@ -309,18 +340,23 @@ const STRUCTURE_TP = {
         {
             type: "game", title: "Les trous du tableau",
             html: `<div class="box content"><p>Entre le zinc (Zn) et l'arsenic (As), Mendeleiev a laissé <span class="has-text-danger has-text-weight-bold">deux places vacantes</span> alors que dans l'ordre des masses atomiques As vient juste après Zn.</p></div>
-            <section class="game-area box has-background-light">
-                <div class="box has-background-info-light" style="border-left: 4px solid #3298dc;">
-                    <p class="has-text-weight-bold mb-3">Pourquoi Mendeleiev n'a-t-il pas placé As en dessous de Al ou de Si ? <span class="has-text-grey is-size-7 has-text-weight-normal">(observez les propriétés...)</span></p>
-                    <div class="control">
-                        <label class="radio is-block mb-2"><input type="radio" name="reponse" value="a" class="mr-2"> aucune raison particulière, juste par amusement</label>
-                        <label class="radio is-block mb-2"><input type="radio" name="reponse" value="b" class="mr-2"> parce que l'arsenic est très toxique et qu'il était ainsi mis en évidence</label>
-                        <label class="radio is-block mb-2"><input type="radio" name="reponse" value="c" class="mr-2"> parce que As n'a aucun point commun avec Al ou Si alors qu'il "ressemble" à P</label>
-                        <label class="radio is-block"><input type="radio" name="reponse" value="d" class="mr-2"> parce que l'arsenic est beaucoup trop lourd</label>
-                    </div>
+            <div class="columns">
+                <div class="column">
+                    <section class="game-area box has-background-light" style="height: 100%;">
+                        <div class="box has-background-info-light" style="border-left: 4px solid #3298dc;">
+                            <p class="has-text-weight-bold mb-3">Pourquoi Mendeleiev n'a-t-il pas placé As en dessous de Al ou de Si ? <span class="has-text-grey is-size-7 has-text-weight-normal">(observez les propriétés...)</span></p>
+                            <div class="control">
+                                <label class="radio is-block mb-2"><input type="radio" name="reponse" value="a" class="mr-2"> aucune raison particulière, juste par amusement</label>
+                                <label class="radio is-block mb-2"><input type="radio" name="reponse" value="b" class="mr-2"> parce que l'arsenic est très toxique et qu'il était ainsi mis en évidence</label>
+                                <label class="radio is-block mb-2"><input type="radio" name="reponse" value="c" class="mr-2"> parce que As n'a aucun point commun avec Al ou Si alors qu'il "ressemble" à P</label>
+                                <label class="radio is-block"><input type="radio" name="reponse" value="d" class="mr-2"> parce que l'arsenic est beaucoup trop lourd</label>
+                            </div>
+                        </div>
+                        <div class="mendeleev-grid mt-4" id="grid-container"></div>
+                    </section>
                 </div>
-                <div class="mendeleev-grid mt-4" id="grid-container"></div>
-            </section>${infoPanelTemplate}`,
+                ${infoPanelTemplate}
+            </div>`,
             onLoad: () => renderMendeleevGrid(document.getElementById('grid-container'), { mode: 'hole' }),
             validate: () => {
                 const r = document.querySelector('input[name="reponse"]:checked');
@@ -331,14 +367,19 @@ const STRUCTURE_TP = {
         },
         {
             type: "game", title: "Les prévisions",
-            html: `<section class="game-area box has-background-light">
-                <div class="box content has-background-info-light" style="border-left: 4px solid #3298dc;">
-                    <p>Mendeleiev a prévu que devraient y prendre place deux éléments non encore identifiés. Il n'a fallu que quelques années pour que ces deux éléments soient découverts :</p>
-                    <ul><li>En 1875 : le <strong>"Gallium"</strong></li><li>En 1886 : le <strong>"Germanium"</strong></li></ul>
-                    <p class="has-text-link has-text-weight-bold mt-3"><i class="fas fa-edit mr-2"></i> Complétez le tableau ci-dessous avec les symboles de ces éléments (deux lettres).</p>
+            html: `<div class="columns">
+                <div class="column">
+                    <section class="game-area box has-background-light" style="height: 100%;">
+                        <div class="box content has-background-info-light" style="border-left: 4px solid #3298dc;">
+                            <p>Mendeleiev a prévu que devraient y prendre place deux éléments non encore identifiés. Il n'a fallu que quelques années pour que ces deux éléments soient découverts :</p>
+                            <ul><li>En 1875 : le <strong>"Gallium"</strong></li><li>En 1886 : le <strong>"Germanium"</strong></li></ul>
+                            <p class="has-text-link has-text-weight-bold mt-3"><i class="fas fa-edit mr-2"></i> Complétez le tableau ci-dessous avec les symboles de ces éléments (deux lettres).</p>
+                        </div>
+                        <div class="mendeleev-grid mt-4" id="grid-container"></div>
+                    </section>
                 </div>
-                <div class="mendeleev-grid mt-4" id="grid-container"></div>
-            </section>${infoPanelTemplate}`,
+                ${infoPanelTemplate}
+            </div>`,
             onLoad: () => renderMendeleevGrid(document.getElementById('grid-container'), { mode: 'input' }),
             validate: () => {
                 const ga = document.getElementById('input-ga').value.trim(); const ge = document.getElementById('input-ge').value.trim();
@@ -369,19 +410,24 @@ const STRUCTURE_TP = {
         },
         {
             type: "game", title: "Exceptions aux règles",
-            html: `<section class="game-area box has-background-light">
-                <div class="box content has-background-info-light" style="border-left: 4px solid #3298dc;">
-                    <p>Dans certains cas, Mendeleiev n'a pas hésité à <strong>adapter et contourner les règles</strong> qu'il s'était fixées.</p>
-                    <p class="has-text-link has-text-weight-bold"><i class="fas fa-hand-pointer mr-2"></i> Vous devez placer dans la cinquième ligne de l'extrait du tableau ci-dessous les trois éléments Sb, I et Te.</p>
+            html: `<div class="columns">
+                <div class="column">
+                    <section class="game-area box has-background-light" style="height: 100%;">
+                        <div class="box content has-background-info-light" style="border-left: 4px solid #3298dc;">
+                            <p>Dans certains cas, Mendeleiev n'a pas hésité à <strong>adapter et contourner les règles</strong> qu'il s'était fixées.</p>
+                            <p class="has-text-link has-text-weight-bold"><i class="fas fa-hand-pointer mr-2"></i> Vous devez placer dans la fifth ligne de l'extrait du tableau ci-dessous les trois éléments Sb, I et Te.</p>
+                        </div>
+                        <div class="card-pool mb-4" id="card-pool"></div>
+                        <div class="box has-background-white is-inline-block mx-auto" style="display: flex; flex-direction: column; align-items: center;">
+                            <div style="display: grid; grid-template-columns: 140px repeat(3, 70px); gap: 10px; justify-items: center; align-items: center;">
+                                <div class="has-text-weight-bold has-text-grey is-size-7">-- 4ème ligne --</div><div class="slot" id="slot-As"></div><div class="slot" id="slot-Se"></div><div class="slot" id="slot-Br"></div>
+                                <div class="has-text-weight-bold has-text-grey is-size-7">-- 5ème ligne --</div><div class="slot placeholder" id="zone-1"></div><div class="slot placeholder" id="zone-2"></div><div class="slot placeholder" id="zone-3"></div>
+                            </div>
+                        </div>
+                    </section>
                 </div>
-                <div class="card-pool mb-4" id="card-pool"></div>
-                <div class="box has-background-white is-inline-block mx-auto" style="display: flex; flex-direction: column; align-items: center;">
-                    <div style="display: grid; grid-template-columns: 140px repeat(3, 70px); gap: 10px; justify-items: center; align-items: center;">
-                        <div class="has-text-weight-bold has-text-grey is-size-7">-- 4ème ligne --</div><div class="slot" id="slot-As"></div><div class="slot" id="slot-Se"></div><div class="slot" id="slot-Br"></div>
-                        <div class="has-text-weight-bold has-text-grey is-size-7">-- 5ème ligne --</div><div class="slot placeholder" id="zone-1"></div><div class="slot placeholder" id="zone-2"></div><div class="slot placeholder" id="zone-3"></div>
-                    </div>
-                </div>
-            </section>${infoPanelTemplate}`,
+                ${infoPanelTemplate}
+            </div>`,
             onLoad: () => {
                 const pool = document.getElementById('card-pool');
                 const updates = [
@@ -491,13 +537,18 @@ const STRUCTURE_TP = {
         },
         {
             type: "game", title: "Conclusion",
-            html: `<section class="game-area box has-background-light">
-                <div class="box content has-background-success-light" style="border-left: 4px solid #48c774;">
-                    <p class="has-text-weight-bold is-size-5 mb-2"><i class="fas fa-trophy has-text-success mr-2"></i> Félicitations</p>
-                    <p>Le tableau est désormais complet et son étude dans sa version actuelle parallèlement à la version de Mendeleiev est terminée.</p>
+            html: `<div class="columns">
+                <div class="column">
+                    <section class="game-area box has-background-light" style="height: 100%;">
+                        <div class="box content has-background-success-light" style="border-left: 4px solid #48c774;">
+                            <p class="has-text-weight-bold is-size-5 mb-2"><i class="fas fa-trophy has-text-success mr-2"></i> Félicitations</p>
+                            <p>Le tableau est désormais complet et son étude dans sa version actuelle parallèlement à la version de Mendeleiev est terminée.</p>
+                        </div>
+                        <div id="grid-container" class="mt-4"></div>
+                    </section>
                 </div>
-                <div id="grid-container" class="mt-4"></div>
-            </section>${infoPanelTemplate}`,
+                ${infoPanelTemplate}
+            </div>`,
             onLoad: () => {
                 const nobleGases = [
                     { id: "He", nom: "HELIUM", masse: "4,0", formule: "He", propPhy: "* Gaz incolore<br>* Très léger", propChi: "* Inerte (ne réagit pas)", composes: "Aucun composé stable connu" },
@@ -628,3 +679,21 @@ document.getElementById('global-btn-prev').onclick = () => { if (currentStepInde
 document.getElementById('global-btn-next').onclick = () => { if (currentStepIndex < STRUCTURE_TP[currentPart].length - 1) { currentStepIndex++; renderStep(); } else { renderHome(); } };
 document.getElementById('global-btn-home').onclick = () => { renderHome(); };
 window.onload = () => { renderHome(); };
+
+// ==========================================
+// ECOUTEURS GLOBAUX (RACCOURCIS CLAVIER)
+// ==========================================
+document.addEventListener('keydown', (event) => {
+    // Force le passage à la suite (pour les professeurs / débuggage) avec "Ctrl + Flèche Droite"
+    if (event.ctrlKey && event.key === 'ArrowRight') {
+        event.preventDefault(); // Empêche un comportement par défaut indésirable
+        if (currentPart !== "") {
+            if (currentStepIndex < STRUCTURE_TP[currentPart].length - 1) {
+                currentStepIndex++;
+                renderStep();
+            } else {
+                renderHome();
+            }
+        }
+    }
+});
