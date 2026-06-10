@@ -146,7 +146,7 @@ const STRUCTURE_TP = {
         },
         {
             type: "game", title: "Premier classement",
-            html: `<div class="box content">
+            html: `<div class="box content consigne-box">
                 <p>Vous disposez de 19 fiches semblables à celles qu'avait élaborées Mendeleiev (celles des principaux éléments les plus légers). </p>
                 <p>Vous devez ici, dans un premier temps, classer ces fiches suivant <strong>le premier critère utilisé par Mendeleiev pour les ranger</strong>.</p>
             </div>
@@ -196,7 +196,7 @@ const STRUCTURE_TP = {
         },
         {
             type: "game", title: "Recherche des familles",
-            html: `<div class="box content">
+            html: `<div class="box content consigne-box">
                 <p>Vous devez maintenant étudier attentivement les fiches pour essayer de constituer des familles d'éléments à partir de leurs ressemblances :</p>
                 <ul><li>Observez les propriétés physiques et chimiques.</li><li>Observez les formules des corps simples et composés.</li></ul>
             </div>
@@ -257,7 +257,7 @@ const STRUCTURE_TP = {
         },
         {
             type: "game", title: "Construction du Tableau",
-            html: `<div class="box content">
+            html: `<div class="box content consigne-box">
                 <p>A ce stade, vous devez constituer le tableau comme l'a fait Mendeleiev pour la première fois.</p>
                 <p>Déplacez les vignettes vers les cases vides du tableau situé en bas de page pour respecter à la fois <strong>les masses (en ligne)</strong> et <strong>les familles (en colonne)</strong>.</p>
             </div>
@@ -292,7 +292,9 @@ const STRUCTURE_TP = {
         },
         {
             type: "game", title: "Où placer l'Hydrogène ?",
-            html: `<div class="box content"><p>L'Hydrogène est resté à part. Etudiez ses propriétés pour lui trouver une position qui soit en accord avec les principes établis jusqu'ici.</p></div>
+            html: `<div class="box content consigne-box">
+                <p>L'Hydrogène est resté à part. Etudiez ses propriétés pour lui trouver une position qui soit en accord avec les principes établis jusqu'ici.</p>
+            </div>
             <div class="columns">
                 <div class="column">
                     <section class="game-area box has-background-light" style="height: 100%;">
@@ -343,7 +345,7 @@ const STRUCTURE_TP = {
             <div class="columns">
                 <div class="column">
                     <section class="game-area box has-background-light" style="height: 100%;">
-                        <div class="box has-background-info-light" style="border-left: 4px solid #3298dc;">
+                        <div class="box consigne-box">
                             <p class="has-text-weight-bold mb-3">Pourquoi Mendeleiev n'a-t-il pas placé As en dessous de Al ou de Si ? <span class="has-text-grey is-size-7 has-text-weight-normal">(observez les propriétés...)</span></p>
                             <div class="control">
                                 <label class="radio is-block mb-2"><input type="radio" name="reponse" value="a" class="mr-2"> aucune raison particulière, juste par amusement</label>
@@ -370,7 +372,7 @@ const STRUCTURE_TP = {
             html: `<div class="columns">
                 <div class="column">
                     <section class="game-area box has-background-light" style="height: 100%;">
-                        <div class="box content has-background-info-light" style="border-left: 4px solid #3298dc;">
+                        <div class="box content consigne-box">
                             <p>Mendeleiev a prévu que devraient y prendre place deux éléments non encore identifiés. Il n'a fallu que quelques années pour que ces deux éléments soient découverts :</p>
                             <ul><li>En 1875 : le <strong>"Gallium"</strong></li><li>En 1886 : le <strong>"Germanium"</strong></li></ul>
                             <p class="has-text-link has-text-weight-bold mt-3"><i class="fas fa-edit mr-2"></i> Complétez le tableau ci-dessous avec les symboles de ces éléments (deux lettres).</p>
@@ -394,11 +396,11 @@ const STRUCTURE_TP = {
         },
         {
             type: "game", title: "Les numéros atomiques",
-            html: `<section class="game-area box has-background-light">
-                <div class="box content has-background-info-light" style="border-left: 4px solid #3298dc;">
+            html: `<section class="game-area box has-background-light" >
+                <div class="box content consigne-box">
                     <p class="has-text-weight-bold"><i class="fas fa-list-ol mr-2"></i> Vous pouvez désormais ajouter dans ce tableau les <span class="has-text-danger">numéros atomiques</span> du gallium et du germanium (inconnus à l'époque de Mendeleiev).</p>
                 </div>
-                <div class="mendeleev-grid mt-4" id="grid-container"></div>
+                <div class="mendeleev-grid mt-4 mx-auto" id="grid-container" style="width: 984px;"></div>
             </section>`,
             onLoad: () => renderMendeleevGrid(document.getElementById('grid-container'), { mode: 'atomic_input' }),
             validate: () => {
@@ -413,9 +415,9 @@ const STRUCTURE_TP = {
             html: `<div class="columns">
                 <div class="column">
                     <section class="game-area box has-background-light" style="height: 100%;">
-                        <div class="box content has-background-info-light" style="border-left: 4px solid #3298dc;">
+                        <div class="box content consigne-box">
                             <p>Dans certains cas, Mendeleiev n'a pas hésité à <strong>adapter et contourner les règles</strong> qu'il s'était fixées.</p>
-                            <p class="has-text-link has-text-weight-bold"><i class="fas fa-hand-pointer mr-2"></i> Vous devez placer dans la fifth ligne de l'extrait du tableau ci-dessous les trois éléments Sb, I et Te.</p>
+                            <p class="has-text-link has-text-weight-bold"><i class="fas fa-hand-pointer mr-2"></i> Vous devez placer dans la cinquième ligne de l'extrait du tableau ci-dessous les trois éléments Sb, I et Te.</p>
                         </div>
                         <div class="card-pool mb-4" id="card-pool"></div>
                         <div class="box has-background-white is-inline-block mx-auto" style="display: flex; flex-direction: column; align-items: center;">
@@ -431,9 +433,9 @@ const STRUCTURE_TP = {
             onLoad: () => {
                 const pool = document.getElementById('card-pool');
                 const updates = [
-                    { id: "Sb", nom: "ANTIMOINE", masse: "121,8", formule: "Sb", propPhy: "* Solide cassant", propChi: "* Dérivés toxiques", composes: "SbH<sub>3</sub>&nbsp;&nbsp;Sb<sub>2</sub>O<sub>5</sub>" },
-                    { id: "Te", nom: "TELLURE", masse: "127,6", formule: "Te", propPhy: "* Solide cristallin", propChi: "* Brûle dans le dioxygène", composes: "H<sub>2</sub>Te&nbsp;&nbsp;TeO<sub>2</sub>" },
-                    { id: "I", nom: "IODE", masse: "126,9", formule: "I<sub>2</sub>", propPhy: "* Vapeurs violettes", propChi: "* Réagit avec les métaux", composes: "NaI&nbsp;&nbsp;HI" },
+                    { id: "Sb", nom: "ANTIMOINE", masse: "122", formule: "Sb", propPhy: "* Solide cassant", propChi: "* Dérivés toxiques", composes: "SbH<sub>3</sub>&nbsp;&nbsp;Sb<sub>2</sub>O<sub>5</sub>" },
+                    { id: "Te", nom: "TELLURE", masse: "128", formule: "Te", propPhy: "* Solide cristallin", propChi: "* Brûle dans le dioxygène", composes: "H<sub>2</sub>Te&nbsp;&nbsp;TeO<sub>2</sub>" },
+                    { id: "I", nom: "IODE", masse: "127", formule: "I<sub>2</sub>", propPhy: "* Vapeurs violettes", propChi: "* Réagit avec les métaux", composes: "NaI&nbsp;&nbsp;HI" },
                     { id: "Se", nom: "SELENIUM", masse: "79,0", formule: "Se", propPhy: "* Photoconducteur", propChi: "* Dérivés très toxiques", composes: "H<sub>2</sub>Se&nbsp;&nbsp;SeO<sub>2</sub>" }
                 ];
                 updates.forEach(u => { const idx = elementsData.findIndex(e=>e.id===u.id); if(idx!==-1) elementsData[idx]=u; else elementsData.push(u); });
@@ -453,7 +455,7 @@ const STRUCTURE_TP = {
         {
             type: "game", title: "La colonne manquante",
             html: `<section class="game-area box has-background-light">
-                <div class="box content has-background-info-light" style="border-left: 4px solid #3298dc;">
+                <div class="box content consigne-box">
                     <p>Dans le tableau de Mendeleiev, <strong class="has-text-danger">la dernière colonne</strong> (celle des éléments aujourd'hui dénommés "gaz rares") <strong class="has-text-danger">était manquante.</strong></p>
                     <p class="has-text-weight-bold mb-3"><i class="fas fa-question-circle mr-2"></i> Pour quelle raison en était-il ainsi ?</p>
                     <div class="control">
@@ -482,7 +484,7 @@ const STRUCTURE_TP = {
         {
             type: "game", title: "La continuité",
             html: `<section class="game-area box has-background-light">
-                <div class="box content has-background-info-light" style="border-left: 4px solid #3298dc;">
+                <div class="box content consigne-box">
                     <p class="has-text-weight-bold"><i class="fas fa-keyboard mr-2"></i> Indiquez dans le tableau ci-dessous les <strong class="has-text-danger">numéros atomiques</strong> des gaz rares.</p>
                 </div>
                 <div class="grid-missing-col mt-4" id="grid-container"></div>
@@ -509,7 +511,7 @@ const STRUCTURE_TP = {
         {
             type: "game", title: "Les gaz nobles (suite)",
             html: `<section class="game-area box has-background-light">
-                <div class="box content has-background-info-light" style="border-left: 4px solid #3298dc;">
+                <div class="box content consigne-box">
                     <p>Il ne vous reste plus qu'à ajouter au tableau les <strong class="has-text-danger">symboles chimiques</strong> des gaz rares avant de valider.</p>
                     <p class="is-size-7 has-text-grey">(Ils ont pour noms, dans l'ordre : <strong class="has-text-link">hélium, néon, argon</strong>).</p>
                 </div>
@@ -574,9 +576,11 @@ function renderHome() {
             
             <div class="column is-7">
                 <div class="box content is-medium" style="min-height: 100%;">
-                    <img src="assets/portrait.jpg" alt="Portrait de Mendeleiev" class="box p-1" style="max-width: 150px; float: left; margin: 0 20px 10px 0;">
-                    <p>Vous connaissez tous les classifications périodiques qui ornent les murs de tous les laboratoires de chimie. Dans ce grand tableau sont rangés tous les éléments chimiques, qu'ils existent dans la nature ou qu'ils aient été synthétisés dans les accélérateurs de particules.</p>
-                    <p class="has-text-weight-bold has-text-info mt-4">Comment ce tableau a-t-il été initialement conçu ? Comment est-il construit aujourd'hui ?</p>
+                    <img src="assets/portrait.jpg" alt="Portrait de Mendeleiev" class="box p-1" style="max-width: 140px; float: left; margin: 0 20px 10px 0;">
+                    <p>Vous connaissez tous les classifications périodiques qui ornent les murs de tous les laboratoires de chimie.</p>
+                    <p> Dans ce grand tableau sont rangés tous les éléments chimiques, qu'ils existent dans la nature ou qu'ils aient été synthétisés dans les accélérateurs de particules.</p>
+                    <p class="has-text-weight-bold has-text-primary has-text-centered mt-4">Comment ce tableau a-t-il été initialement conçu ?</p>
+                    <p class="has-text-weight-bold has-text-primary has-text-centered mt-4">Comment est-il construit aujourd'hui ?</p>
                     <p>Le TP qui suit va vous permettre de répondre à ces questions en reconstruisant la démarche historique de son créateur.</p>
                 </div>
             </div>

@@ -244,28 +244,29 @@ h2 { margin: 10px 0; font-size: 1.5rem; }
 .transition-container {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 2px;
+    /* On retire justify-content: center car le texte va gérer l'espacement */
+    gap: 4px; /* On peut augmenter légèrement l'écartement de base */
     background-color: #e9ecef;
     border-radius: 4px;
-    padding: 2px;
+    padding: 2px 6px; /* Un peu de padding horizontal pour ne pas coller aux bords */
     height: 100%;
-    /* Important pour garder Ti Cu Zn sur la même ligne */
     white-space: nowrap; 
+}
+
+.transition-text {
+    flex-grow: 1;       /* LA LIGNE MAGIQUE : Le texte prend tout l'espace restant */
+    font-size: 0.7rem;
+    text-align: center;
+    color: #495057;
+    line-height: 1.2;
+    margin: 0 10px;     /* On écarte un peu le texte des cartes */
+    white-space: normal; /* Permet au texte de se comporter normalement */
 }
 
 /* Pour réduire un peu la taille des cartes dans la transition si ça déborde */
 .transition-container .element-card {
     transform: scale(0.9);
     margin: 0;
-}
-
-.transition-text {
-    font-size: 0.7rem;
-    text-align: center;
-    color: #495057;
-    line-height: 1.1;
-    margin: 0 5px;
 }
 
 /* Case vide (Le trou) */
@@ -396,6 +397,19 @@ h2 { margin: 10px 0; font-size: 1.5rem; }
     background-color: #fff;
     box-shadow: 0 0 4px rgba(0, 102, 153, 0.3);
     outline: none;
+}
+
+/* Nudge vertical pour corriger le décalage de la flèche de droite FontAwesome */
+#global-btn-next .icon {
+    transform: translateY(1px); /* Ajustez à -2px si elle vous semble encore trop basse */
+}
+
+/* =========================================
+   BOX DE CONSIGNE (Actions de l'utilisateur)
+   ========================================= */
+.consigne-box {
+    background-color: #eef6fc !important; /* Correspond au info-light de Bulma */
+    border-left: 4px solid #3298dc !important; /* Bordure bleue de mise en évidence */
 }
 
 /* =========================================

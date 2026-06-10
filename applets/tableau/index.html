@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TP Mendeleïev - Application Interactive</title>
+    
+    <link rel="icon" href="../../assets/favicons/phyweb.ico" />
+    <link rel="stylesheet" href="../../common/bulma/bulma.min.css">
+    <script defer src="../../common/fontawesome/solid.min.js"></script>
+    <script defer src="../../common/fontawesome/fontawesome.min.js"></script>
+    <link rel="stylesheet" href="../../common/common.css">
+
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="navbar-container"></div>
+    
+    <section class="section pt-4 pb-4">
+        <div class="container">
+            
+            <div id="spa-container"></div>
+
+            <footer id="global-controls" class="box mt-5 has-background-white-ter" style="display: none;">
+                <div class="level is-flex-wrap-wrap">
+                    <div class="level-left">
+                        <div class="level-item">
+                            <button class="button is-success" id="global-btn-verif">
+                                <span class="icon"><i class="fas fa-check"></i></span><span id="btn-verif-text">Valider</span>
+                            </button>
+                        </div>
+                        <div class="level-item">
+                            <button class="button is-warning" id="global-btn-action" style="display: none;"></button>
+                        </div>
+                    </div>
+                    
+                    <div class="level-item" style="flex-grow: 1;">
+                        <div id="global-message-box" class="has-text-centered" style="width: 100%;"></div>
+                    </div>
+                    
+                    <div class="level-right">
+                        <div class="level-item">
+                            <button id="global-btn-prev" class="button is-light">
+                                <span class="icon"><i class="fas fa-arrow-left"></i></span><span>Retour</span>
+                            </button>
+                        </div>
+                        <div class="level-item">
+                            <button id="global-btn-next" class="button is-link">
+                                <span>Suite</span><span class="icon"><i class="fas fa-arrow-right"></i></span>
+                            </button>
+                        </div>
+                        <div class="level-item">
+                            <button id="global-btn-home" class="button is-dark" style="display: none;">
+                                <span class="icon"><i class="fas fa-home"></i></span><span>Accueil</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+
+        </div> </section>
+
+    <script src="data.js"></script>
+    <script src="game.js"></script>
+
+    <script type="module">
+        import { initApplets } from '../../common/common.js';
+        const common = initApplets("La Classification Périodique", "../..");
+    </script>
+
+</body>
+</html>
