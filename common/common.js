@@ -1433,7 +1433,7 @@ export class FileDropManager {
  * @returns {Common} L'instance de la classe Common configurée.
  */
 function initApplets(title, basePath = "..") {
-  // 1. Créer le conteneur de la navbar s'il n'existe pas déjà et l'injecter tout en haut du body
+  // Créer le conteneur de la navbar s'il n'existe pas déjà et l'injecter tout en haut du body
   let container = document.getElementById('navbar-container');
   if (!container) {
     container = document.createElement('div');
@@ -1501,10 +1501,13 @@ function initApplets(title, basePath = "..") {
     </div>
   `;
 
-  // 2. Injecter la navbar générée dans le conteneur
+  // Injecter la navbar générée dans le conteneur
   container.appendChild(nav);
 
-  // 3. Initialiser la classe Common pour activer l'application (Boutons Electron, Logos SVGs, Dropdowns, etc.)
+  // Activer le gestionnaire de navigation (qui va lier le bouton fermer d'Electron)
+  new NavigationManager(hasDataCallback);
+
+  // Initialiser la classe Common pour activer l'application (Boutons Electron, Logos SVGs, Dropdowns, etc.)
   return new Common(title);
 }
 
