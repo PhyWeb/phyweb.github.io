@@ -1432,8 +1432,7 @@ export class FileDropManager {
  * @param {string} basePath - Le chemin relatif vers la racine du projet (ex: "../..").
  * @returns {Common} L'instance de la classe Common configurée.
  */
-function initApplets(title, basePath = "..") {
-  // Créer le conteneur de la navbar s'il n'existe pas déjà et l'injecter tout en haut du body
+function initApplets(title, basePath = "..", hasDataCallback = () => false) {  // Créer le conteneur de la navbar s'il n'existe pas déjà et l'injecter tout en haut du body
   let container = document.getElementById('navbar-container');
   if (!container) {
     container = document.createElement('div');
