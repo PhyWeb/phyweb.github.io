@@ -404,6 +404,24 @@ h2 { margin: 10px 0; font-size: 1.5rem; }
     transform: translateY(1px); /* Ajustez à -2px si elle vous semble encore trop basse */
 }
 
+/* Barre de navigation fixée en bas, mais centrée et de taille contenue */
+#global-controls {
+    position: fixed;
+    bottom: 20px;          /* Laisse un petit espace esthétique en bas */
+    left: 0;
+    right: 0;
+    margin: 0 auto !important; /* Centre la boîte horizontalement */
+    width: calc(100% - 3rem);  /* Garde les marges latérales sur petit écran */
+    max-width: 1344px;         /* Taille maximale du conteneur Bulma */
+    z-index: 1000;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); /* Belle ombre pour l'effet flottant */
+}
+
+/* On garde le padding sur le body pour que les dernières cartes ne soient pas cachées */
+body {
+    padding-bottom: 100px; 
+}
+
 /* =========================================
    BOX DE CONSIGNE (Actions de l'utilisateur)
    ========================================= */
@@ -439,7 +457,7 @@ h2 { margin: 10px 0; font-size: 1.5rem; }
 }
 
 /* 2. Compactage de l'interface pour les écrans < 750px de haut */
-@media screen and (max-height: 750px) {
+@media screen and (max-height: 780px) {
     /* On force la réduction des paddings et margins imposés par Bulma */
     .section { padding-top: 0rem !important; padding-bottom: 0.5rem !important; }
     header.mb-5 { margin-bottom: 0.5rem !important; }
