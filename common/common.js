@@ -1503,11 +1503,14 @@ function initApplets(title, basePath = "..", hasDataCallback = () => false) {  /
   // Injecter la navbar générée dans le conteneur
   container.appendChild(nav);
 
+  // Initialiser Common
+  const common = new Common(title);
+
   // Activer le gestionnaire de navigation (qui va lier le bouton fermer d'Electron)
   new NavigationManager(hasDataCallback);
 
   // Initialiser la classe Common pour activer l'application (Boutons Electron, Logos SVGs, Dropdowns, etc.)
-  return new Common(title);
+  return common;
 }
 
 export {Common,initApplets ,setupGlobalShortcuts, ModalManager, alertModal, quitConfirmationModal, TabManager, Serie, exportToPW,exportToCSV, exportToRW3, downloadFile};
