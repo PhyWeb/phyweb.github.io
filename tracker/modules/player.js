@@ -406,9 +406,10 @@ export default class PLAYER {
     // Update the coordinates label
     const scaleX = this.measurement.scale.getOrientedScaleX();
     const scaleY = this.measurement.scale.getOrientedScaleY(this.measurement.aspectRatio);
-
-    const x = (((this.distPoint.x + 0.5) - this.measurement.scale.origin.x) * scaleX).round(4);
-    const y = (((this.distPoint.y + 0.5) - this.measurement.scale.origin.y) * scaleY).round(4);
+    
+    const digits = this.measurement.maxDigits;
+    const x = (((this.distPoint.x + 0.5) - this.measurement.scale.origin.x) * scaleX).toFixed(digits);
+    const y = (((this.distPoint.y + 0.5) - this.measurement.scale.origin.y) * scaleY).toFixed(digits);
 
     if(this.measurement.scale.scaleSegment.x2 != null || this.segment.x2 != null){
       // a scale has been set

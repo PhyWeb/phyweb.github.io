@@ -296,12 +296,42 @@ $("#validate-settings-button").addEventListener("click", ()=>{
 });
 
 // Coordinates
-$("#show-coordinates-input").addEventListener("change", (e)=>{
-  if(e.target.checked){
-    $("#coordinates-labels").classList.remove("is-hidden");
+// Fonction centrale pour appliquer le style du tiroir selon l'état souhaité
+function setCoordinatesPanelExpanded(isExpanded) {
+  const panel = $("#coordinates-panel");
+  const arrow = $("#toggle-arrow");
+  const checkbox = $("#show-coordinates-input");
+
+  checkbox.checked = isExpanded;
+
+  if (isExpanded) {
+    // Déploiement
+    panel.style.transform = "translateX(calc(100% + 10px))";
+    panel.style.boxShadow = ""; // Restaure l'ombre Bulma
+    
+    arrow.classList.remove("fa-chevron-right");
+    arrow.classList.add("fa-chevron-left");
   } else {
-    $("#coordinates-labels").classList.add("is-hidden");
+    // Repli
+    panel.style.transform = "translateX(24px)";
+    panel.style.boxShadow = "none"; // Coupe l'ombre pour éviter la superposition
+    
+    arrow.classList.remove("fa-chevron-left");
+    arrow.classList.add("fa-chevron-right");
   }
+}
+
+// Clic sur la petite flèche qui dépasse
+$("#toggle-coordinates-button").addEventListener("click", () => {
+  // On regarde l'état actuel de la checkbox et on demande l'inverse
+  const currentStatus = $("#show-coordinates-input").checked;
+  setCoordinatesPanelExpanded(!currentStatus);
+});
+
+// Changement depuis la modale "Paramètres"
+$("#show-coordinates-input").addEventListener("change", (e) => {
+  // On applique directement l'état de la case à cocher
+  setCoordinatesPanelExpanded(e.target.checked);
 });
 
 // Max digits

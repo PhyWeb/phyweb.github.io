@@ -143,35 +143,43 @@
         <div id="canvas-shadow"></div>
       </div>
       <div class="is-hidden is-flex is-justify-content-center" id="video-controls">
-        <div class="box has-text-centered p-3 mr-3 mb-0">
-          <button class="button is-white" id="play-button">
-            <span class="icon is-medium"><i class="fas fa-play fa-lg"></i></span>
-          </button>
-          <button class="button is-white is-hidden" id="pause-button">
-            <span class="icon is-medium"><i class="fas fa-pause fa-lg"></i></span>
-          </button>
-          <button class="button is-white" id="first-button">
-            <span class="icon is-medium"><i class="fas fa-backward-step fa-lg"></i></span>
-          </button>
-          <button class="button is-white" id="previous-button">
-            <span class="icon is-medium"><i class="fas fa-backward fa-lg"></i></span>
-          </button>
-          <button class="button is-white" id="next-button">
-            <span class="icon is-medium"><i class="fas fa-forward fa-lg"></i></span>
-          </button>
-          <button class="button is-white" id="last-button">
-            <span class="icon is-medium"><i class="fas fa-forward-step fa-lg"></i></span>
-          </button>
-          <label class="is-size-4 is-inline-block" id="frame-label">
-          </label>
-        </div>
-        <div class="box p-2 mb-0 is-hidden" style="width: 150px" id="coordinates-labels">
-          <label class="is-size-6 is-block" id="x-coord-label">
-            X
-          </label>
-          <label class="is-size-6 is-block" id="y-coord-label">
-            Y
-          </label>
+        <div style="position: relative; display: flex; align-items: stretch;">
+
+          <div class="box has-text-centered p-3 mb-0 is-flex is-align-items-center" style="gap: 0.5rem; position: relative; z-index: 10;">
+            <button class="button is-white" id="play-button">
+              <span class="icon is-medium"><i class="fas fa-play fa-lg"></i></span>
+            </button>
+            <button class="button is-white is-hidden" id="pause-button">
+              <span class="icon is-medium"><i class="fas fa-pause fa-lg"></i></span>
+            </button>
+            <button class="button is-white" id="first-button">
+              <span class="icon is-medium"><i class="fas fa-backward-step fa-lg"></i></span>
+            </button>
+            <button class="button is-white" id="previous-button">
+              <span class="icon is-medium"><i class="fas fa-backward fa-lg"></i></span>
+            </button>
+            <button class="button is-white" id="next-button">
+              <span class="icon is-medium"><i class="fas fa-forward fa-lg"></i></span>
+            </button>
+            <button class="button is-white" id="last-button">
+              <span class="icon is-medium"><i class="fas fa-forward-step fa-lg"></i></span>
+            </button>
+            <label class="is-size-4 is-inline-block mr-2" id="frame-label">
+            </label>
+          </div>
+          <div class="box p-0 mb-0 is-flex is-align-items-center" id="coordinates-panel" style="position: absolute; right: 0; top: 0; bottom: 0; z-index: 5; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s; transform: translateX(24px); box-shadow: none;">
+            <div class="p-2 ml-2" style="min-width: 110px; white-space: nowrap; font-family: monospace; font-variant-numeric: tabular-nums;" id="coordinates-labels">
+              <label class="is-size-6 is-block has-text-left" id="x-coord-label">
+                X : 0.0000
+              </label>
+              <label class="is-size-6 is-block has-text-left" id="y-coord-label">
+                Y : 0.0000
+              </label>
+            </div>
+            <button class="button is-white is-small px-0" id="toggle-coordinates-button" style="height: 100%; width: 24px; border-radius: 0; background: transparent; border: none; box-shadow: none;" title="Afficher/Masquer les coordonnées">
+              <span class="icon is-small"><i class="fas fa-chevron-right" id="toggle-arrow"></i></span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
