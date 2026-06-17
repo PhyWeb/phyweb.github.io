@@ -140,3 +140,73 @@ body, html {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/*----------------------------------------------------------------------------------------------
+---------------------------------- FIX NAVBAR BULMA (DESKTOP ONLY) -----------------------------
+----------------------------------------------------------------------------------------------*/
+/* 1. Force le conteneur principal à ne jamais passer à la ligne */
+.navbar {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  align-items: stretch !important;
+}
+
+/* 2. Force le conteneur du menu à rester horizontal et visible */
+.navbar-menu {
+  display: flex !important;
+  flex-grow: 1;
+  padding: 0 !important;
+  box-shadow: none !important;
+  background-color: transparent !important;
+}
+
+/* 3. Garde l'alignement gauche/droite intact */
+.navbar-start,
+.navbar-end {
+  display: flex !important;
+  align-items: stretch;
+}
+
+.navbar-start {
+  justify-content: flex-start;
+  margin-right: auto;
+}
+
+.navbar-end {
+  justify-content: flex-end;
+  margin-left: auto;
+}
+
+/* 4. FORCE LES BOUTONS ET LIENS À RESTER HORIZONTAUX (Corrige l'icône Audio et la flèche) */
+.navbar-item,
+.navbar-link {
+  display: flex !important;
+  flex-direction: row !important; /* Force l'icône et le texte à rester côte à côte */
+  align-items: center !important; /* Centre verticalement */
+  white-space: nowrap !important; /* Interdit au texte de passer à la ligne */
+}
+
+/* 5. Force les menus déroulants à rester des pop-ups flottants */
+.navbar-item.has-dropdown {
+  position: relative;
+}
+
+.navbar-dropdown {
+  position: absolute !important;
+  top: 100%;
+  left: 0;
+  display: none !important;
+  background-color: white !important;
+  border-top: 2px solid #dbdbdb;
+  border-radius: 0 0 6px 6px;
+  box-shadow: 0 8px 8px rgba(10, 10, 10, 0.1) !important;
+  min-width: 100%;
+  padding: 0.5rem 0;
+  z-index: 20;
+}
+
+/* 6. Affiche le menu déroulant au clic/survol */
+.navbar-item.has-dropdown.is-active .navbar-dropdown,
+.navbar-item.has-dropdown:hover .navbar-dropdown {
+  display: block !important;
+}
