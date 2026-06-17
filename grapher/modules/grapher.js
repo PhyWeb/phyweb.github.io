@@ -1543,17 +1543,31 @@ updateChart(yCurveTitles, redraw = true) {
     // --- MODE ÉDITION DES BORNES ---
     if (this.crosshairMode === 'edit-bounds') {
       if (this.isDragging && this.draggingBound && this.editingModel) {
-        // Relance le calcul mathématique Alglib via le Worker
+        
+        // 1. ON AFFICHE LE MESSAGE DE CHARGEMENT
+        this.chart.showLoading('Mise à jour du modèle...');
+
+        // 2. Relance le calcul mathématique Alglib via le Worker
         this.editingModel.fit().then(() => {
           const ex = this.chart.xAxis[0].getExtremes();
           this.suppressModelAutoUpdate = true;
+          
+          // On met à jour les points en mémoire
           this.redrawAllModels(ex.min, ex.max);
-          this.chart.redraw();
+          
+          // On force Highcharts à redessiner le graphique !
+          this.chart.redraw(); 
+          
           this.suppressModelAutoUpdate = false;
           
           if (this.uiManager) {
             this.uiManager.updateModelPanel(this.editingModel);
           }
+        }).catch(error => {
+          console.error("Erreur lors du recalcul des bornes :", error);
+        }).finally(() => {
+          // 3. ON MASQUE LE MESSAGE QUOI QU'IL ARRIVE
+          this.chart.hideLoading();
         });
       }
       
