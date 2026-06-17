@@ -2393,10 +2393,11 @@ export default class UIManager {
         if(series) {
           series.update({
             color: model.color,
-            lineWidth: model.lineWidth,
+            lineWidth: parseInt(model.lineWidth),
             dashStyle: model.lineStyle,
-          });
-        }
+          },
+          false // Ne pas redessiner immédiatement
+        );}
         
         this.updateModelPanel(model);
         this.updateCalculationUI();

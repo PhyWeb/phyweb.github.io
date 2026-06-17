@@ -795,7 +795,7 @@ updateChart(yCurveTitles, redraw = true) {
     }
 
     // Application de la classe CSS pour forcer le curseur
-    if (mode === 'free' || mode === 'model' || mode === 'data' || mode === 'edit-bounds') {
+    if (mode === 'free' || mode === 'model' || mode === 'data') {
       this.chart.container.classList.add('chart-free-crosshair');
     } else {
       this.chart.container.classList.remove('chart-free-crosshair');
@@ -876,7 +876,6 @@ updateChart(yCurveTitles, redraw = true) {
     const chart = this.chart;
     const xAxis = chart.xAxis[0];
     
-    // Utilisation de la méthode sécurisée pour éviter les NaN ou Infinity
     const xMin = this._getSafeBound(model.minX, xAxis.dataMin, xAxis.min, 0);
     const xMax = this._getSafeBound(model.maxX, xAxis.dataMax, xAxis.max, 1);
 
@@ -885,7 +884,6 @@ updateChart(yCurveTitles, redraw = true) {
     const pyTop = chart.plotTop;
     const pyBottom = chart.plotTop + chart.plotHeight;
 
-    // Calcul sécurisé (évite une largeur négative qui ferait planter le <rect>)
     const rectX = Math.min(pxMin, pxMax);
     const rectW = Math.abs(pxMax - pxMin);
 
@@ -894,17 +892,24 @@ updateChart(yCurveTitles, redraw = true) {
       .attr({ fill: 'rgba(0, 0, 0, 0.1)', zIndex: 3 })
       .add();
 
-    // 2. Ligne et Poignée gauche
+    // 2. Lignes Visibles (plus de curseur dessus)
     const leftHandle = chart.renderer.path(['M', pxMin, pyTop, 'L', pxMin, pyBottom])
-      .attr({ 'stroke-width': 4, stroke: '#544fc5', zIndex: 4, cursor: 'ew-resize' })
+      .attr({ 'stroke-width': 4, stroke: model.color, zIndex: 4 })
       .add();
-
-    // 3. Ligne et Poignée droite
     const rightHandle = chart.renderer.path(['M', pxMax, pyTop, 'L', pxMax, pyBottom])
-      .attr({ 'stroke-width': 4, stroke: '#544fc5', zIndex: 4, cursor: 'ew-resize' })
+      .attr({ 'stroke-width': 4, stroke: model.color, zIndex: 4 })
       .add();
 
-    this.modelBoundsElements = { band, leftHandle, rightHandle };
+    // 3. Trackers Transparents (hitbox large pour déclencher le curseur double flèche)
+    const leftTracker = chart.renderer.path(['M', pxMin, pyTop, 'L', pxMin, pyBottom])
+      .attr({ 'stroke-width': 40, stroke: 'transparent', zIndex: 5, cursor: 'ew-resize' })
+      .add();
+    const rightTracker = chart.renderer.path(['M', pxMax, pyTop, 'L', pxMax, pyBottom])
+      .attr({ 'stroke-width': 40, stroke: 'transparent', zIndex: 5, cursor: 'ew-resize' })
+      .add();
+
+    // On stocke tous les éléments
+    this.modelBoundsElements = { band, leftHandle, rightHandle, leftTracker, rightTracker };
   }
 
   updateModelBoundsVisuals() {
@@ -913,7 +918,6 @@ updateChart(yCurveTitles, redraw = true) {
     const chart = this.chart;
     const xAxis = chart.xAxis[0];
     
-    // Utilisation de la méthode sécurisée
     const xMin = this._getSafeBound(this.editingModel.minX, xAxis.dataMin, xAxis.min, 0);
     const xMax = this._getSafeBound(this.editingModel.maxX, xAxis.dataMax, xAxis.max, 1);
 
@@ -925,19 +929,20 @@ updateChart(yCurveTitles, redraw = true) {
     const rectX = Math.min(pxMin, pxMax);
     const rectW = Math.abs(pxMax - pxMin);
 
-    // Mise à jour ultra-rapide des attributs
-    this.modelBoundsElements.band.attr({
-      x: rectX,
-      width: rectW
-    });
+    // Mise à jour de la bande
+    this.modelBoundsElements.band.attr({ x: rectX, width: rectW });
 
-    this.modelBoundsElements.leftHandle.attr({
-      d: ['M', pxMin, pyTop, 'L', pxMin, pyBottom]
-    });
+    // Chemins réutilisés pour la poignée et son tracker
+    const leftPath = ['M', pxMin, pyTop, 'L', pxMin, pyBottom];
+    const rightPath = ['M', pxMax, pyTop, 'L', pxMax, pyBottom];
 
-    this.modelBoundsElements.rightHandle.attr({
-      d: ['M', pxMax, pyTop, 'L', pxMax, pyBottom]
-    });
+    // Mise à jour Gauche
+    this.modelBoundsElements.leftHandle.attr({ d: leftPath });
+    this.modelBoundsElements.leftTracker.attr({ d: leftPath });
+
+    // Mise à jour Droite
+    this.modelBoundsElements.rightHandle.attr({ d: rightPath });
+    this.modelBoundsElements.rightTracker.attr({ d: rightPath });
   }
 
   hideModelBounds() {
@@ -1543,6 +1548,7 @@ updateChart(yCurveTitles, redraw = true) {
           const ex = this.chart.xAxis[0].getExtremes();
           this.suppressModelAutoUpdate = true;
           this.redrawAllModels(ex.min, ex.max);
+          this.chart.redraw();
           this.suppressModelAutoUpdate = false;
           
           if (this.uiManager) {
