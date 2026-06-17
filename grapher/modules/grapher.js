@@ -288,7 +288,16 @@ export default class Grapher {
 
             // 4. On affiche notre bouton personnalisé.
             $("#auto-zoom-button").classList.remove("is-hidden");
-          }
+          },
+          // Cet événement se déclenche lorsqu'on clique sur le fond du graphique
+          click: function () {
+            const selectedPoints = this.getSelectedPoints();
+            
+            // On désélectionne tous les points actuellement sélectionnés
+            selectedPoints.forEach(point => {
+              point.select(false);
+            });
+          },
         }
       },
       legend: {
