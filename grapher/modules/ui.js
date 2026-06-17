@@ -91,16 +91,24 @@ export default class UIManager {
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Delete' || e.key === 'Backspace') {
         
-        // Ne rien faire si l'utilisateur écrit dans un champ
+        // SÉCURITÉ 1 : Ne rien faire si l'utilisateur écrit dans un champ
         const activeElement = document.activeElement;
-        const activeTagName = activeElement.tagName.toLowerCase();
+        const activeTagName = activeElement ? activeElement.tagName.toLowerCase() : '';
         
         const isTyping = activeTagName === 'input' || 
                          activeTagName === 'textarea' || 
-                         activeElement.isContentEditable ||
-                         activeElement.closest('.handsontable'); // Protéger le tableur
+                         (activeElement && activeElement.isContentEditable) ||
+                         (activeElement && activeElement.closest('.handsontable')); 
                          
         if (isTyping) return;
+
+        // SÉCURITÉ 2 : Ne rien faire si une modale (Bulma) est actuellement ouverte
+        const isModalOpen = document.querySelector('.modal.is-active') !== null;
+        if (isModalOpen) return;
+
+        // SÉCURITÉ 3 : Ne rien faire si on n'est pas sur l'onglet du grapheur
+        const isGrapherTabActive = document.querySelector('#grapheur-tab').classList.contains('is-active');
+        if (!isGrapherTabActive) return;
 
         // Vérifie qu'on a bien un graphe avec des points sélectionnés
         if (this.grapher && this.grapher.chart) {
@@ -111,7 +119,7 @@ export default class UIManager {
             
             // S'assurer qu'on ne supprime pas un point d'un modèle mathématique
             if (!point.series.options.id?.startsWith('model-')) {
-              // Supprime le point du tableau de données via l'index du point
+              // On utilise la méthode de votre app qui gère déjà la suppression complète !
               this.app.deleteRow(point.index, 1);
             }
           }
