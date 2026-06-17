@@ -67,6 +67,10 @@ export default class UIManager {
         this.clearActiveTool(); 
         // Deselectionne toute cellule sélectionnée dans le tableur
         this.spreadsheet.hot.deselectCell();
+        // Si on était en mode "edit-bounds" pour un modèle, on le quitte
+        if (this.grapher.crosshairMode === 'edit-bounds') {
+          this.grapher.setCrosshairMode(null);
+        }
       },
       onTab1: () => {
         const tab = document.querySelector('#tableur-tab');
@@ -347,6 +351,18 @@ export default class UIManager {
       liRSquared.innerHTML = `Corrélation R² = ${model.rSquared !== null ? formatNumber(model.rSquared, 5) : 'Indéfini'}`;
       ul2.appendChild(liRSquared);
     }
+  }
+
+  activateEditBoundsMode(modelId) {
+    const model = this.data.models.find(m => m.id == modelId);
+    if (!model) return;
+
+    this.grapher.setCrosshairMode('edit-bounds');
+    this.grapher.editingModel = model;
+    this.grapher.drawModelBounds(model);
+    
+    // (Optionnel) Désélectionner le bouton précédent si besoin
+    this.clearActiveTool();
   }
 
   updateSortUI() {
@@ -1991,6 +2007,35 @@ export default class UIManager {
       const modelId = modelArticle.dataset.modelId;
       const model = this.data.models.find(m => m.id === modelId);
 
+      // Clic sur le bouton "éditer bornes"
+      const editBoundsBtn = event.target.closest('.edit-bounds-button');
+      if (editBoundsBtn) {
+        const grapher = this.grapher;
+
+        // Si le mode est déjà actif pour ce modèle, on le désactive
+        if (grapher.crosshairMode === 'edit-bounds' && grapher.editingModel?.id === model.id) {
+          grapher.setCrosshairMode(null);
+          editBoundsBtn.classList.remove('is-info'); // Retire la couleur active
+        } 
+        // Sinon, on l'active
+        else {
+          // 1. Nettoyer visuellement tous les autres boutons 'bornes' des autres modèles
+          document.querySelectorAll('.edit-bounds-button').forEach(btn => btn.classList.remove('is-info'));
+          
+          // 2. Nettoyer les autres outils (tangente, etc.) s'ils sont actifs
+          if (typeof this.clearActiveTool === 'function') this.clearActiveTool();
+
+          // 3. Activer le mode dans le module graphique
+          grapher.setCrosshairMode('edit-bounds');
+          grapher.editingModel = model;
+          grapher.drawModelBounds(model);
+
+          // 4. Mettre en surbrillance le bouton cliqué
+          editBoundsBtn.classList.add('is-info');
+        }
+        return; // Important pour ne pas déclencher d'autres actions
+      }
+
       // Clic sur le bouton "afficher/cacher"
       if (event.target.closest('.toggle-visibility-button')) {
         this.toggleModelVisibility(model);
@@ -2658,7 +2703,7 @@ export default class UIManager {
     // Ajouter le panneau entièrement construit au DOM
     modelListContainer.appendChild(panelClone);
     
-    // Mettre à jour les icônes FontAwesome (si vous l'utilisez)
+    // Mettre à jour les icônes FontAwesome
     window.FontAwesome.dom.i2svg({ node: article });
   }
 
