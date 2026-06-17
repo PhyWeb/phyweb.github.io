@@ -38,7 +38,6 @@
 
 # Grapher
     - permettre de visualiser les bornes des modèles
-    - permettre d'exclure un point d'une modélisation
 
     - sauvegarder le niveau de zoom et la position de la caméra dans les pw
 

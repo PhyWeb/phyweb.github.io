@@ -505,6 +505,7 @@ export default class Grapher {
       },
       plotOptions: {
         series: {
+          allowPointSelect: true,
           animation: ANIMATION_FLAG,
           stickyTracking: false,
           states: {

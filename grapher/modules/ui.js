@@ -87,6 +87,38 @@ export default class UIManager {
       }
     });
 
+    // Gestion de la suppression d'un point sélectionné dans le grapheur via la touche "Suppr" ou "Backspace"
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        
+        // Ne rien faire si l'utilisateur écrit dans un champ
+        const activeElement = document.activeElement;
+        const activeTagName = activeElement.tagName.toLowerCase();
+        
+        const isTyping = activeTagName === 'input' || 
+                         activeTagName === 'textarea' || 
+                         activeElement.isContentEditable ||
+                         activeElement.closest('.handsontable'); // Protéger le tableur
+                         
+        if (isTyping) return;
+
+        // Vérifie qu'on a bien un graphe avec des points sélectionnés
+        if (this.grapher && this.grapher.chart) {
+          const selectedPoints = this.grapher.chart.getSelectedPoints();
+
+          if (selectedPoints.length > 0) {
+            const point = selectedPoints[0];
+            
+            // S'assurer qu'on ne supprime pas un point d'un modèle mathématique
+            if (!point.series.options.id?.startsWith('model-')) {
+              // Supprime le point du tableau de données via l'index du point
+              this.app.deleteRow(point.index, 1);
+            }
+          }
+        }
+      }
+    });
+
     // Convertit les icônes FontAwesome
     window.FontAwesome.dom.i2svg();
 
