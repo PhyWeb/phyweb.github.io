@@ -15,8 +15,6 @@
 
     - gerer les quota sessionstorage
 
-    - Les navbar perdent leurs controles (et le secondaires font des trucs bizarres) quand on reduit trop la page latéralement.
-
 # Home
     - package linux et macos
 
