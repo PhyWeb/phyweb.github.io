@@ -37,7 +37,8 @@
     - typos dans les options de réduction de poids et centrage des checkboxes (seulement sur petit ecran ?)
 
 # Grapher
-    - permettre de visualiser les bornes des modèles
+    - permettre de visualiser les bornes des modèles (A TESTER EN PROFONDEUR NOTAMENT APRES UN CHARGEMENT PW)
+    - colorer les panels des modèles
 
     - sauvegarder le niveau de zoom et la position de la caméra dans les pw
 
