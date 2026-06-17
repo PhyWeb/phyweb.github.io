@@ -36,8 +36,6 @@
 
     - typos dans les options de réduction de poids et centrage des checkboxes (seulement sur petit ecran ?)
 
-    - bug dans les coordonnées affichées !!!
-
 # Grapher
     - permettre de visualiser les bornes des modèles
     - permettre d'exclure un point d'une modélisation
