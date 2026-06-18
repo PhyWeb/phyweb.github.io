@@ -253,6 +253,9 @@ class ModalManager {
       this.onModalOpen();
     }
 
+    // Force le navigateur à recalculer le style pour s'assurer que la transition CSS fonctionne correctement
+    void $el.offsetWidth;
+
     $el.classList.add('is-active');
 
     // Recherche un élément avec l'attribut autofocus dans la modale
@@ -290,7 +293,7 @@ function closeAlertModal(_e){
 }
 
 function alertModal(_config){
-  let modal = createElement("div", "modal is-active", document.body);
+  let modal = createElement("div", "modal", document.body);
   let background = createElement("div", "modal-background", modal);
   let card = createElement("div", "modal-card", modal);
   let head = createElement("header", "modal-card-head", card);
@@ -375,6 +378,10 @@ function alertModal(_config){
   if(!_config.backgroundNotClickable){
     background.addEventListener("click", ()=>{closeAlertModal(modal)});
   }
+
+  // On force le calcul du navigateur et on active l'animation à la fin
+  void modal.offsetWidth;
+  modal.classList.add("is-active");
 
   return modal;
 }

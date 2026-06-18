@@ -222,7 +222,7 @@ body, html {
   opacity: 0;
   visibility: hidden; /* Remplace le display:none pour cacher l'élément */
   pointer-events: none;
-  transition: opacity 0.2s ease-out, visibility 0.2s ease-out;
+  transition: opacity 0.15s ease-out, visibility 0.15s ease-out;
 }
 /* État actif : on rend la modale visible */
 .modal.is-active {
@@ -233,8 +233,8 @@ body, html {
 
 /* L'effet de zoom sur la carte à l'intérieur */
 .modal-card, .modal-content {
-  transform: scale(0.95);
-  transition: transform 0.2s ease-out;
+  transform: scale(0.96);
+  transition: transform 0.15s ease-out;
 }
 
 .modal.is-active .modal-card, .modal.is-active .modal-content {
