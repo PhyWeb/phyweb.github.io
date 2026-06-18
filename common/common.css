@@ -210,3 +210,27 @@ body, html {
 .navbar-item.has-dropdown:hover .navbar-dropdown {
   display: block !important;
 }
+.modal {
+  display: flex !important; 
+  opacity: 0;
+  visibility: hidden; /* Remplace le display:none pour cacher l'élément */
+  pointer-events: none;
+  transition: opacity 0.2s ease-out, visibility 0.2s ease-out;
+}
+
+/* État actif : on rend la modale visible */
+.modal.is-active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+/* L'effet de zoom sur la carte à l'intérieur */
+.modal-card, .modal-content {
+  transform: scale(0.95);
+  transition: transform 0.2s ease-out;
+}
+
+.modal.is-active .modal-card, .modal.is-active .modal-content {
+  transform: scale(1);
+}
