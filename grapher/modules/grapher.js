@@ -689,14 +689,49 @@ setVisibilityFromList(titles) {
   /**
    * Affiche l'écran de chargement avec un délai pour éviter le clignotement
    */
-  showLoading(text = 'Chargement...', delay = 500) {
-    // On nettoie d'abord au cas où un ancien minuteur traînerait
+showLoading(text = 'Chargement...', delay = 500, showStopButton = false) {
     if (this.loadingTimeout) {
       clearTimeout(this.loadingTimeout);
     }
     
     this.loadingTimeout = setTimeout(() => {
-      this.chart.showLoading(text);
+      let content = text;
+      
+      // Si on veut le bouton d'arrêt, on fabrique le HTML complet
+      if (showStopButton) {
+        content = `
+          <div style="font-size: 1.3em; font-weight: bold; margin-bottom: 20px; color: #363636;">
+            ${text}
+          </div>
+          <button id="dynamic-stop-btn" class="button is-danger is-rounded is-medium" 
+                  style="pointer-events: auto; box-shadow: 0 4px 8px rgba(0,0,0,0.3); font-weight: bold; transition: transform 0.1s;"
+                  onmouseenter="this.style.transform='scale(1.05)'" 
+                  onmouseleave="this.style.transform='scale(1)'">
+            <span class="icon"><i class="fas fa-stop"></i></span>
+            <span>Arrêter le calcul</span>
+          </button>
+        `;
+      }
+      
+      if (this.chart) {
+        this.chart.showLoading(content);
+        
+        if (showStopButton) {
+          setTimeout(() => {
+            // Conversion de l'icône FontAwesome pour le bouton généré
+            const btn = document.getElementById('dynamic-stop-btn');
+            if (btn && window.FontAwesome && window.FontAwesome.dom) {
+              window.FontAwesome.dom.i2svg({ node: btn });
+            }
+            // Rend le fond bien opaque pour bloquer la vue en dessous
+            const loadingContainer = this.chart.container.querySelector('.highcharts-loading');
+            if (loadingContainer) {
+              loadingContainer.style.opacity = '1'; 
+              loadingContainer.style.backgroundColor = 'rgba(255, 255, 255, 0.7)'; 
+            }
+          }, 10);
+        }
+      }
     }, delay);
   }
 
@@ -1565,7 +1600,7 @@ updateChart(yCurveTitles, redraw = true) {
       if (this.isDragging && this.draggingBound && this.editingModel) {
         
         // 1. ON AFFICHE LE MESSAGE DE CHARGEMENT
-        this.showLoading('Mise à jour du modèle...');
+        this.showLoading('Mise à jour du modèle...', 500, true);
 
         // 2. Relance le calcul mathématique Alglib via le Worker
         this.editingModel.fit().then(() => {

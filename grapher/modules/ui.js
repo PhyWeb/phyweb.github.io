@@ -1391,39 +1391,6 @@ export default class UIManager {
     
     document.addEventListener('model-fit-start', (e) => {
       activeModelToStop = e.detail.model;
-       
-      const loadingInner = document.querySelector('.highcharts-loading-inner');
-      const loadingContainer = document.querySelector('.highcharts-loading'); // Le voile de fond
-       
-      if (loadingInner && !document.getElementById('dynamic-stop-btn')) {
-        if (loadingContainer) {
-          loadingContainer.style.opacity = '1'; 
-          loadingContainer.style.backgroundColor = 'rgba(255, 255, 255, 0.7)'; 
-        }
-           
-        const texteExistant = loadingInner.innerHTML;
-           
-          loadingInner.innerHTML = `
-            <div style="font-size: 1.3em; font-weight: bold; margin-bottom: 20px; color: #363636;">
-              ${texteExistant}
-            </div>
-            <button id="dynamic-stop-btn" class="button is-danger is-rounded is-medium" style="pointer-events: auto; box-shadow: 0 4px 8px rgba(0,0,0,0.3); font-weight: bold; transition: transform 0.1s;">
-              <span class="icon"><i class="fas fa-stop"></i></span>
-              <span>Arrêter le calcul</span>
-            </button>
-          `;
-
-          const btn = document.getElementById('dynamic-stop-btn');
-          btn.onmouseenter = () => btn.style.transform = 'scale(1.05)';
-          btn.onmouseleave = () => btn.style.transform = 'scale(1)';
-
-          // Conversion de l'icône FontAwesome
-          setTimeout(() => {
-            if (window.FontAwesome && window.FontAwesome.dom) {
-              window.FontAwesome.dom.i2svg({ node: loadingInner });
-            }
-          }, 10);
-       }
     });
 
     document.addEventListener('model-fit-end', () => {
@@ -2108,7 +2075,7 @@ export default class UIManager {
       recalculateButton.classList.add('is-loading');
 
       // Affiche l'indicateur de chargement sur le graphique
-      this.grapher.showLoading('Recalcul des modèles en cours...');
+      this.grapher.showLoading('Recalcul des modèles en cours...', 500, true);
 
       try {
         // Appelle la méthode principale pour lancer les calculs
@@ -2319,7 +2286,7 @@ export default class UIManager {
       this.common.modalManager.closeAllModals();
 
       // 2. Affiche l'indicateur de chargement global sur le graphique
-      this.grapher.showLoading('Mise à jour du modèle...');
+      this.grapher.showLoading('Mise à jour du modèle...', 500, true);
 
       try {
         model.color = colorPicker.value;
@@ -2637,8 +2604,8 @@ export default class UIManager {
         // On ferme la modale comme vous l'aviez prévu
         this.common.modalManager.closeAllModals();
         
-        // On affiche l'indicateur de chargement SUR LE GRAPHIQUE
-        this.grapher.showLoading('Calcul du modèle en cours...');
+        // On affiche l'indicateur de chargement
+        this.grapher.showLoading('Calcul du modèle en cours...', 500, true);
 
         try {
           // On lance le calcul en arrière-plan
