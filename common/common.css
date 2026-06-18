@@ -189,6 +189,7 @@ body, html {
 /* 5. Force les menus déroulants à rester des pop-ups flottants */
 .navbar-item.has-dropdown {
   position: relative;
+  align-items: stretch !important;
 }
 
 .navbar-dropdown {
@@ -210,6 +211,12 @@ body, html {
 .navbar-item.has-dropdown:hover .navbar-dropdown {
   display: block !important;
 }
+
+
+
+/*----------------------------------------------------------------------------------------------
+---------------------------------------- Animation des modales----------------------------------
+----------------------------------------------------------------------------------------------*/
 .modal {
   display: flex !important; 
   opacity: 0;
@@ -217,7 +224,6 @@ body, html {
   pointer-events: none;
   transition: opacity 0.2s ease-out, visibility 0.2s ease-out;
 }
-
 /* État actif : on rend la modale visible */
 .modal.is-active {
   opacity: 1;
