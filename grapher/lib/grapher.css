@@ -214,6 +214,14 @@
   overflow-y: auto;
 }
 
+/* Force le retour à la ligne des équations longues dans les panneaux et modales */
+.model-equation, 
+#compute-model-equation {
+  overflow-wrap: anywhere;
+  word-break: normal;
+  white-space: normal;
+}
+
 /* Style pour la coche de succès du calcul */
 #calculation-success-checkmark {
   font-size: 1.5rem; /* Ajustez la taille si besoin */
