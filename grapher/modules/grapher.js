@@ -132,6 +132,8 @@ export default class Grapher {
 
     this.currentXCurve = null;
 
+    this.loadingTimeout = null; // Pour gérer le délai de chargement globalement
+
     // Pour le réticule libre manuel
     this.crosshairMode = null; // Mode par défaut
     this.freeCrosshair = null;   // Pour stocker les éléments du réticule
@@ -682,6 +684,31 @@ setVisibilityFromList(titles) {
     }
     this.chart.redraw(); // Un seul redessin à la fin
     this.currentXCurve = null;
+  }
+
+  /**
+   * Affiche l'écran de chargement avec un délai pour éviter le clignotement
+   */
+  showLoading(text = 'Chargement...', delay = 500) {
+    // On nettoie d'abord au cas où un ancien minuteur traînerait
+    if (this.loadingTimeout) {
+      clearTimeout(this.loadingTimeout);
+    }
+    
+    this.loadingTimeout = setTimeout(() => {
+      this.chart.showLoading(text);
+    }, delay);
+  }
+
+  /**
+   * Masque l'écran de chargement et annule le minuteur s'il n'avait pas encore sonné
+   */
+  hideLoading() {
+    if (this.loadingTimeout) {
+      clearTimeout(this.loadingTimeout);
+      this.loadingTimeout = null;
+    }
+    this.chart.hideLoading();
   }
 
 updateChart(yCurveTitles, redraw = true) {
@@ -1538,7 +1565,7 @@ updateChart(yCurveTitles, redraw = true) {
       if (this.isDragging && this.draggingBound && this.editingModel) {
         
         // 1. ON AFFICHE LE MESSAGE DE CHARGEMENT
-        this.chart.showLoading('Mise à jour du modèle...');
+        this.showLoading('Mise à jour du modèle...');
 
         // 2. Relance le calcul mathématique Alglib via le Worker
         this.editingModel.fit().then(() => {
@@ -1560,7 +1587,7 @@ updateChart(yCurveTitles, redraw = true) {
           console.error("Erreur lors du recalcul des bornes :", error);
         }).finally(() => {
           // 3. ON MASQUE LE MESSAGE QUOI QU'IL ARRIVE
-          this.chart.hideLoading();
+          this.hideLoading();
         });
       }
       

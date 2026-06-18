@@ -37,11 +37,6 @@
     - typos dans les options de réduction de poids et centrage des checkboxes (seulement sur petit ecran ?)
 
 # Grapher
-    - permettre de visualiser les bornes des modèles (A TESTER EN PROFONDEUR NOTAMENT APRES UN CHARGEMENT PW)
-    - colorer les panels des modèles
-
-    - de manière générale peut etre quil faut attendre une demi seconde avant d'afficher le message showloading pour les modèles. 99% du temps on a pas le temps de le lire
-
     - sauvegarder le niveau de zoom et la position de la caméra dans les pw
 
     - possibilité d'avoir 2 axes y

@@ -61,6 +61,10 @@ export default class UIManager {
         if (fileInput) fileInput.click();
       },
       onEscape: () => {
+        // Enlève le focus du bouton ou de l'élément actif
+        if (document.activeElement) {
+          document.activeElement.blur();
+        }
         // Ferme toutes les modales
         this.common.modalManager.closeAllModals();
         // Désactive les outils du grapheur (réticule, etc.)
@@ -1442,7 +1446,7 @@ export default class UIManager {
         // Redessine le graphe et on masque le chargement manuellement au cas où
         if (this.grapher && this.grapher.chart) {
           this.grapher.chart.redraw();
-          this.grapher.chart.hideLoading();
+          this.grapher.hideLoading();
         }
       }
     });
@@ -1950,22 +1954,32 @@ export default class UIManager {
    * Efface l’outil actif et désactive tout réticule.
    */
   clearActiveTool() {
-    if (!this.activeToolElement) {
-      return;
-    }
-    // Enlève toutes les coches
+    // Enlève toutes les coches du menu "Outils"
     document.querySelectorAll('.tool-item .tool-checkmark-container')
       .forEach(c => c.innerHTML = '');
 
-    // Réinitialise le texte du bouton
-    $("#tools-button-text").textContent = 'Outils';
+    // Réinitialise le texte du bouton du menu "Outils"
+    const toolsBtnText = $("#tools-button-text");
+    if (toolsBtnText) toolsBtnText.textContent = 'Outils';
 
-    // Réinitialise l’état
+    // Réinitialise l’état de l'outil principal
     this.activeToolElement = null; 
 
-    // Coupe tout réticule (tooltip + croix)
+    // --- AJOUT : Nettoie visuellement les boutons d'édition des bornes ---
+    document.querySelectorAll('.edit-bounds-button').forEach(btn => {
+      btn.style.backgroundColor = '';
+      btn.style.borderColor = '';
+      btn.style.color = '';
+      btn.classList.remove('is-info');
+    });
+    // ---------------------------------------------------------------------
+
+    // Coupe tout mode spécial (tooltip, croix, et le mode edit-bounds !)
     this.grapher.setCrosshairMode(null);
-    this.grapher.chart.container.classList.remove('chart-free-crosshair');
+    
+    if (this.grapher.chart && this.grapher.chart.container) {
+      this.grapher.chart.container.classList.remove('chart-free-crosshair');
+    }
   }
 
   /**
@@ -2022,12 +2036,20 @@ export default class UIManager {
         // Si le mode est déjà actif pour ce modèle, on le désactive
         if (grapher.crosshairMode === 'edit-bounds' && grapher.editingModel?.id === model.id) {
           grapher.setCrosshairMode(null);
-          editBoundsBtn.classList.remove('is-info'); // Retire la couleur active
+          // On retire les styles personnalisés pour revenir au bouton gris par défaut
+          editBoundsBtn.style.backgroundColor = '';
+          editBoundsBtn.style.borderColor = '';
+          editBoundsBtn.style.color = '';
         } 
         // Sinon, on l'active
         else {
           // 1. Nettoyer visuellement tous les autres boutons 'bornes' des autres modèles
-          document.querySelectorAll('.edit-bounds-button').forEach(btn => btn.classList.remove('is-info'));
+          document.querySelectorAll('.edit-bounds-button').forEach(btn => {
+            btn.style.backgroundColor = '';
+            btn.style.borderColor = '';
+            btn.style.color = '';
+            btn.classList.remove('is-info'); // Sécurité au cas où l'ancienne classe traîne
+          });
           
           // 2. Nettoyer les autres outils (tangente, etc.) s'ils sont actifs
           if (typeof this.clearActiveTool === 'function') this.clearActiveTool();
@@ -2037,8 +2059,10 @@ export default class UIManager {
           grapher.editingModel = model;
           grapher.drawModelBounds(model);
 
-          // 4. Mettre en surbrillance le bouton cliqué
-          editBoundsBtn.classList.add('is-info');
+          // 4. Mettre en surbrillance le bouton cliqué AVEC LA COULEUR DU MODÈLE
+          editBoundsBtn.style.backgroundColor = model.color;
+          editBoundsBtn.style.borderColor = model.color;
+          editBoundsBtn.style.color = 'white'; // Icône en blanc pour bien contraster
         }
         return; // Important pour ne pas déclencher d'autres actions
       }
@@ -2084,7 +2108,7 @@ export default class UIManager {
       recalculateButton.classList.add('is-loading');
 
       // Affiche l'indicateur de chargement sur le graphique
-      this.grapher.chart.showLoading('Recalcul des modèles en cours...');
+      this.grapher.showLoading('Recalcul des modèles en cours...');
 
       try {
         // Appelle la méthode principale pour lancer les calculs
@@ -2111,7 +2135,7 @@ export default class UIManager {
         recalculateButton.classList.remove('is-loading');
 
         // Masque l'indicateur de chargement dans tous les cas
-        this.grapher.chart.hideLoading();
+        this.grapher.hideLoading();
       }
     });
 
@@ -2295,7 +2319,7 @@ export default class UIManager {
       this.common.modalManager.closeAllModals();
 
       // 2. Affiche l'indicateur de chargement global sur le graphique
-      this.grapher.chart.showLoading('Mise à jour du modèle...');
+      this.grapher.showLoading('Mise à jour du modèle...');
 
       try {
         model.color = colorPicker.value;
@@ -2420,7 +2444,7 @@ export default class UIManager {
         });
       } finally {
         // 5. Masque l'indicateur de chargement, que l'opération ait réussi ou non
-        this.grapher.chart.hideLoading();
+        this.grapher.hideLoading();
       }
     };
     
@@ -2614,7 +2638,7 @@ export default class UIManager {
         this.common.modalManager.closeAllModals();
         
         // On affiche l'indicateur de chargement SUR LE GRAPHIQUE
-        this.grapher.chart.showLoading('Calcul du modèle en cours...');
+        this.grapher.showLoading('Calcul du modèle en cours...');
 
         try {
           // On lance le calcul en arrière-plan
@@ -2632,7 +2656,7 @@ export default class UIManager {
           });
         } finally {
           // Dans tous les cas, on masque l'indicateur de chargement du graphique
-          this.grapher.chart.hideLoading();
+          this.grapher.hideLoading();
         }
       } else {
         alertModal({ title: 'Sélection manquante', body: 'Veuillez sélectionner une courbe et un type de modèle.', confirm: 'OK' });
