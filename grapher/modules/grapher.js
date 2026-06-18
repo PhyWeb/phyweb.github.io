@@ -1458,18 +1458,14 @@ updateChart(yCurveTitles, redraw = true) {
   handleMouseMove(e) {
     if (!this.isDragging) return;
 
-    // --- CORRECTION CRUCIALE ICI ---
-    // On isole d'abord le mode edit-bounds !
     if (this.crosshairMode === 'edit-bounds') {
       
-      // On vérifie ensuite SEULEMENT SI on a bien attrapé une poignée
       if (this.editingModel && this.draggingBound) {
         const pos = this.chart.pointer.getChartPosition();
         const chartX = e.pageX - pos.left;
         const xAxis = this.chart.xAxis[0];
         const xValue = xAxis.toValue(chartX);
 
-        // Empêcher la poignée gauche de dépasser la droite et inversement
         if (this.draggingBound === 'min') {
           const currentMax = this._getSafeBound(this.editingModel.maxX, xAxis.dataMax, xAxis.max, 1);
           this.editingModel.minX = Math.min(xValue, currentMax);
@@ -1478,12 +1474,9 @@ updateChart(yCurveTitles, redraw = true) {
           this.editingModel.maxX = Math.max(xValue, currentMin);
         }
 
-        // Redessiner en temps réel (uniquement les SVG, pas le modèle lourd)
-        this.drawModelBounds(this.editingModel);
+        this.updateModelBoundsVisuals();
       }
       
-      // VITAL : Ce return empêche de descendre plus bas (là où se trouvent les outils de dessin)
-      // Que l'on ait attrapé la poignée OU cliqué dans le vide, on s'arrête ici !
       return; 
     }
 

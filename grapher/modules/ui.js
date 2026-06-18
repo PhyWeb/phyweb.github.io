@@ -316,6 +316,13 @@ export default class UIManager {
     const significantDigits = this.data.settings.significantDigits;
     const panel = $(`#model-list article[data-model-id="${model.id}"]`);
 
+    // Mise a jour des couleurs et du style du panneau
+    const header = panel.querySelector('.message-header');
+    if (header) {
+      header.style.backgroundColor = model.color;
+    }
+    panel.style.border = `1px solid ${model.color}`;
+
     panel.querySelector('.message-header p').innerHTML = `${model.y.title} = f(${model.x.title})`;
     panel.querySelector('.message-body p:nth-of-type(2)').innerHTML = model.getEquationString();
     const ul = panel.querySelector('ul');
@@ -2675,6 +2682,15 @@ export default class UIManager {
     // Sélectionner les éléments DANS LE CLONE et les remplir avec les données du modèle
     const article = panelClone.querySelector('article');
     article.dataset.modelId = model.id;
+
+    // Appliquer la couleur du modèle à l'en-tête et à la bordure de l'article
+    const header = article.querySelector('.message-header');
+    if (header) {
+      header.style.backgroundColor = model.color;
+      // S'assure que le texte reste bien lisible en blanc
+      header.style.color = '#ffffff'; 
+    }
+    article.style.border = `1px solid ${model.color}`;
     
     panelClone.querySelector('.model-title').textContent = `${model.y.title} = f(${model.x.title})`;
     panelClone.querySelector('.model-name').innerHTML = `<strong>${model.getModelName()}</strong>`;
