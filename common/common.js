@@ -1472,15 +1472,15 @@ function initApplets(title, basePath = "..", hasDataCallback = () => false) {  /
               <span>Accueil</span>
             </a>
             <hr class="navbar-divider">
-            <a class="navbar-item is-size-5 has-text-weight-bold" href="${basePath}/tracker/index.html">
-              <span class="icon has-text-primary"><i class="fa fa-crosshairs"></i></span>
-              <span>Tracker</span>
-            </a>
             <a class="navbar-item is-size-5 has-text-weight-bold" href="${basePath}/audio/index.html">
               <span class="is-flex has-text-primary">
                 <i class="audio-logo-small"></i>
               </span>
               <span>Audio</span>
+            </a>
+            <a class="navbar-item is-size-5 has-text-weight-bold" href="${basePath}/tracker/index.html">
+              <span class="icon has-text-primary"><i class="fa fa-crosshairs"></i></span>
+              <span>Tracker</span>
             </a>
             <a class="navbar-item is-size-5 has-text-weight-bold" href="${basePath}/grapher/index.html">
               <span class="is-flex has-text-primary">
