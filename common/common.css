@@ -24,7 +24,15 @@ body, html {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  overflow: auto;
+  overflow: hidden;
+}
+
+/* Nouveau conteneur pleine largeur pour gérer le scroll */
+.app-content {
+  flex-grow: 1; /* Prend tout l'espace sous la navbar */
+  width: 100%; /* S'assure de toucher le bord droit de l'écran */
+  overflow-y: auto; /* Active l'ascenseur ici, tout à droite ! */
+  overflow-x: hidden;
 }
 
 .vertical-divider{
