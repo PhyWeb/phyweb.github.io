@@ -1,6 +1,6 @@
 {
   "name": "phyweb",
-  "version": "0.1.22",
+  "version": "0.2.0",
   "description": "PhyWeb apps",
   "main": "main.js",
   "scripts": {

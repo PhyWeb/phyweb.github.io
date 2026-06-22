@@ -80,17 +80,17 @@
 
   /* 2. Réduire l'espacement principal au-dessus du conteneur */
   .app-content > .container {
-    padding-top: 1.8rem;
+    padding-top: 1.6rem;
     padding-bottom: 4rem; /* Laisse de la place pour le bouton Télécharger en bas */
   }
 
   /* 3. Réduire de moitié les grandes marges de Bulma (.mt-6 = 3rem par défaut) */
   .mt-6 {
-    margin-top: 1.4rem !important;
+    margin-top: 1.3rem !important;
   }
 
   .app-tile .title {
-    margin-bottom: 0.2rem !important;
+    margin-bottom: 0rem !important;
   }
   
 }

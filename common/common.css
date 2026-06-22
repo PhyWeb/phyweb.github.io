@@ -186,8 +186,8 @@ body, html {
 }
 
 /* 4. FORCE LES BOUTONS ET LIENS À RESTER HORIZONTAUX (Corrige l'icône Audio et la flèche) */
-.navbar-item,
-.navbar-link {
+.navbar-item:not(.is-hidden),
+.navbar-link:not(.is-hidden) {
   display: flex !important;
   flex-direction: row !important; /* Force l'icône et le texte à rester côte à côte */
   align-items: center !important; /* Centre verticalement */
