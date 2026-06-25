@@ -1,25 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10" xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10" xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities">
   <Identity Name="PhyWeb.PhyWeb" ProcessorArchitecture="x64" Publisher="CN=2A272021-41C4-4363-BC75-191E2B3B681C" Version="0.2.1.0" />
+  
   <Properties>
     <DisplayName>PhyWeb</DisplayName>
     <PublisherDisplayName>PhyWeb</PublisherDisplayName>
     <Description>Application PhyWeb</Description>
-    <Logo>assets\SampleAppx.50x50.png</Logo>
+    <Logo>assets\StoreLogo.png</Logo>
   </Properties>
+  
   <Resources>
     <Resource Language="fr-fr" />
   </Resources>
+  
   <Dependencies>
     <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.14316.0" MaxVersionTested="10.0.14316.0" />
   </Dependencies>
+  
   <Capabilities>
     <rescap:Capability Name="runFullTrust"/>
   </Capabilities>
+  
   <Applications>
     <Application Id="PhyWeb" Executable="app\phyweb.exe" EntryPoint="Windows.FullTrustApplication">
-      <uap:VisualElements BackgroundColor="#464646" DisplayName="PhyWeb" Square150x150Logo="assets\SampleAppx.150x150.png" Square44x44Logo="assets\SampleAppx.44x44.png" Description="PhyWeb">
-        <uap:DefaultTile Wide310x150Logo="assets\SampleAppx.310x150.png" />
+      
+      <uap:VisualElements 
+        BackgroundColor="transparent" 
+        DisplayName="PhyWeb" 
+        Description="PhyWeb"
+        Square150x150Logo="assets\Square150x150Logo.png" 
+        Square44x44Logo="assets\Square44x44Logo.png">
+        
+        <uap:DefaultTile 
+          Square71x71Logo="assets\Square71x71Logo.png" 
+          Wide310x150Logo="assets\Wide310x150Logo.png" 
+          Square310x310Logo="assets\Square310x310Logo.png" />
+          
+        <uap:SplashScreen Image="assets\SplashScreen.png" BackgroundColor="transparent" />
+        
       </uap:VisualElements>
       
       <Extensions>
@@ -28,7 +46,7 @@
             <uap:SupportedFileTypes>
               <uap:FileType>.pw</uap:FileType>
             </uap:SupportedFileTypes>
-            <uap:Logo>assets\SampleAppx.44x44.png</uap:Logo>
+            <uap:Logo>assets\Square44x44Logo.png</uap:Logo>
           </uap:FileTypeAssociation>
         </uap:Extension>
       </Extensions>

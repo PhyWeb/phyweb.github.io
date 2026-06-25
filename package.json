@@ -25,7 +25,8 @@
     "@electron/fuses": "^1.8.0",
     "@malept/flatpak-bundler": "^0.4.0",
     "@rabbitholesyndrome/electron-forge-maker-portable": "^0.2.0",
-    "electron": "^41.0.3"
+    "electron": "^41.0.3",
+    "sharp": "^0.35.2"
   },
   "dependencies": {
     "electron-squirrel-startup": "^1.0.1",
