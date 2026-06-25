@@ -61,12 +61,20 @@ export default class UIManager {
         if (fileInput) fileInput.click();
       },
       onEscape: () => {
+        // Enlève le focus du bouton ou de l'élément actif
+        if (document.activeElement) {
+          document.activeElement.blur();
+        }
         // Ferme toutes les modales
         this.common.modalManager.closeAllModals();
         // Désactive les outils du grapheur (réticule, etc.)
         this.clearActiveTool(); 
         // Deselectionne toute cellule sélectionnée dans le tableur
         this.spreadsheet.hot.deselectCell();
+        // Si on était en mode "edit-bounds" pour un modèle, on le quitte
+        if (this.grapher.crosshairMode === 'edit-bounds') {
+          this.grapher.setCrosshairMode(null);
+        }
       },
       onTab1: () => {
         const tab = document.querySelector('#tableur-tab');
@@ -312,6 +320,13 @@ export default class UIManager {
     const significantDigits = this.data.settings.significantDigits;
     const panel = $(`#model-list article[data-model-id="${model.id}"]`);
 
+    // Mise a jour des couleurs et du style du panneau
+    const header = panel.querySelector('.message-header');
+    if (header) {
+      header.style.backgroundColor = model.color;
+    }
+    panel.style.border = `1px solid ${model.color}`;
+
     panel.querySelector('.message-header p').innerHTML = `${model.y.title} = f(${model.x.title})`;
     panel.querySelector('.message-body p:nth-of-type(2)').innerHTML = model.getEquationString();
     const ul = panel.querySelector('ul');
@@ -347,6 +362,18 @@ export default class UIManager {
       liRSquared.innerHTML = `Corrélation R² = ${model.rSquared !== null ? formatNumber(model.rSquared, 5) : 'Indéfini'}`;
       ul2.appendChild(liRSquared);
     }
+  }
+
+  activateEditBoundsMode(modelId) {
+    const model = this.data.models.find(m => m.id == modelId);
+    if (!model) return;
+
+    this.grapher.setCrosshairMode('edit-bounds');
+    this.grapher.editingModel = model;
+    this.grapher.drawModelBounds(model);
+    
+    // (Optionnel) Désélectionner le bouton précédent si besoin
+    this.clearActiveTool();
   }
 
   updateSortUI() {
@@ -1364,39 +1391,6 @@ export default class UIManager {
     
     document.addEventListener('model-fit-start', (e) => {
       activeModelToStop = e.detail.model;
-       
-      const loadingInner = document.querySelector('.highcharts-loading-inner');
-      const loadingContainer = document.querySelector('.highcharts-loading'); // Le voile de fond
-       
-      if (loadingInner && !document.getElementById('dynamic-stop-btn')) {
-        if (loadingContainer) {
-          loadingContainer.style.opacity = '1'; 
-          loadingContainer.style.backgroundColor = 'rgba(255, 255, 255, 0.7)'; 
-        }
-           
-        const texteExistant = loadingInner.innerHTML;
-           
-          loadingInner.innerHTML = `
-            <div style="font-size: 1.3em; font-weight: bold; margin-bottom: 20px; color: #363636;">
-              ${texteExistant}
-            </div>
-            <button id="dynamic-stop-btn" class="button is-danger is-rounded is-medium" style="pointer-events: auto; box-shadow: 0 4px 8px rgba(0,0,0,0.3); font-weight: bold; transition: transform 0.1s;">
-              <span class="icon"><i class="fas fa-stop"></i></span>
-              <span>Arrêter le calcul</span>
-            </button>
-          `;
-
-          const btn = document.getElementById('dynamic-stop-btn');
-          btn.onmouseenter = () => btn.style.transform = 'scale(1.05)';
-          btn.onmouseleave = () => btn.style.transform = 'scale(1)';
-
-          // Conversion de l'icône FontAwesome
-          setTimeout(() => {
-            if (window.FontAwesome && window.FontAwesome.dom) {
-              window.FontAwesome.dom.i2svg({ node: loadingInner });
-            }
-          }, 10);
-       }
     });
 
     document.addEventListener('model-fit-end', () => {
@@ -1419,7 +1413,7 @@ export default class UIManager {
         // Redessine le graphe et on masque le chargement manuellement au cas où
         if (this.grapher && this.grapher.chart) {
           this.grapher.chart.redraw();
-          this.grapher.chart.hideLoading();
+          this.grapher.hideLoading();
         }
       }
     });
@@ -1927,22 +1921,32 @@ export default class UIManager {
    * Efface l’outil actif et désactive tout réticule.
    */
   clearActiveTool() {
-    if (!this.activeToolElement) {
-      return;
-    }
-    // Enlève toutes les coches
+    // Enlève toutes les coches du menu "Outils"
     document.querySelectorAll('.tool-item .tool-checkmark-container')
       .forEach(c => c.innerHTML = '');
 
-    // Réinitialise le texte du bouton
-    $("#tools-button-text").textContent = 'Outils';
+    // Réinitialise le texte du bouton du menu "Outils"
+    const toolsBtnText = $("#tools-button-text");
+    if (toolsBtnText) toolsBtnText.textContent = 'Outils';
 
-    // Réinitialise l’état
+    // Réinitialise l’état de l'outil principal
     this.activeToolElement = null; 
 
-    // Coupe tout réticule (tooltip + croix)
+    // --- AJOUT : Nettoie visuellement les boutons d'édition des bornes ---
+    document.querySelectorAll('.edit-bounds-button').forEach(btn => {
+      btn.style.backgroundColor = '';
+      btn.style.borderColor = '';
+      btn.style.color = '';
+      btn.classList.remove('is-info');
+    });
+    // ---------------------------------------------------------------------
+
+    // Coupe tout mode spécial (tooltip, croix, et le mode edit-bounds !)
     this.grapher.setCrosshairMode(null);
-    this.grapher.chart.container.classList.remove('chart-free-crosshair');
+    
+    if (this.grapher.chart && this.grapher.chart.container) {
+      this.grapher.chart.container.classList.remove('chart-free-crosshair');
+    }
   }
 
   /**
@@ -1991,6 +1995,45 @@ export default class UIManager {
       const modelId = modelArticle.dataset.modelId;
       const model = this.data.models.find(m => m.id === modelId);
 
+      // Clic sur le bouton "éditer bornes"
+      const editBoundsBtn = event.target.closest('.edit-bounds-button');
+      if (editBoundsBtn) {
+        const grapher = this.grapher;
+
+        // Si le mode est déjà actif pour ce modèle, on le désactive
+        if (grapher.crosshairMode === 'edit-bounds' && grapher.editingModel?.id === model.id) {
+          grapher.setCrosshairMode(null);
+          // On retire les styles personnalisés pour revenir au bouton gris par défaut
+          editBoundsBtn.style.backgroundColor = '';
+          editBoundsBtn.style.borderColor = '';
+          editBoundsBtn.style.color = '';
+        } 
+        // Sinon, on l'active
+        else {
+          // 1. Nettoyer visuellement tous les autres boutons 'bornes' des autres modèles
+          document.querySelectorAll('.edit-bounds-button').forEach(btn => {
+            btn.style.backgroundColor = '';
+            btn.style.borderColor = '';
+            btn.style.color = '';
+            btn.classList.remove('is-info'); // Sécurité au cas où l'ancienne classe traîne
+          });
+          
+          // 2. Nettoyer les autres outils (tangente, etc.) s'ils sont actifs
+          if (typeof this.clearActiveTool === 'function') this.clearActiveTool();
+
+          // 3. Activer le mode dans le module graphique
+          grapher.setCrosshairMode('edit-bounds');
+          grapher.editingModel = model;
+          grapher.drawModelBounds(model);
+
+          // 4. Mettre en surbrillance le bouton cliqué AVEC LA COULEUR DU MODÈLE
+          editBoundsBtn.style.backgroundColor = model.color;
+          editBoundsBtn.style.borderColor = model.color;
+          editBoundsBtn.style.color = 'white'; // Icône en blanc pour bien contraster
+        }
+        return; // Important pour ne pas déclencher d'autres actions
+      }
+
       // Clic sur le bouton "afficher/cacher"
       if (event.target.closest('.toggle-visibility-button')) {
         this.toggleModelVisibility(model);
@@ -2032,7 +2075,7 @@ export default class UIManager {
       recalculateButton.classList.add('is-loading');
 
       // Affiche l'indicateur de chargement sur le graphique
-      this.grapher.chart.showLoading('Recalcul des modèles en cours...');
+      this.grapher.showLoading('Recalcul des modèles en cours...', 500, true);
 
       try {
         // Appelle la méthode principale pour lancer les calculs
@@ -2059,7 +2102,7 @@ export default class UIManager {
         recalculateButton.classList.remove('is-loading');
 
         // Masque l'indicateur de chargement dans tous les cas
-        this.grapher.chart.hideLoading();
+        this.grapher.hideLoading();
       }
     });
 
@@ -2243,7 +2286,7 @@ export default class UIManager {
       this.common.modalManager.closeAllModals();
 
       // 2. Affiche l'indicateur de chargement global sur le graphique
-      this.grapher.chart.showLoading('Mise à jour du modèle...');
+      this.grapher.showLoading('Mise à jour du modèle...', 500, true);
 
       try {
         model.color = colorPicker.value;
@@ -2348,10 +2391,11 @@ export default class UIManager {
         if(series) {
           series.update({
             color: model.color,
-            lineWidth: model.lineWidth,
+            lineWidth: parseInt(model.lineWidth),
             dashStyle: model.lineStyle,
-          });
-        }
+          },
+          false // Ne pas redessiner immédiatement
+        );}
         
         this.updateModelPanel(model);
         this.updateCalculationUI();
@@ -2367,7 +2411,7 @@ export default class UIManager {
         });
       } finally {
         // 5. Masque l'indicateur de chargement, que l'opération ait réussi ou non
-        this.grapher.chart.hideLoading();
+        this.grapher.hideLoading();
       }
     };
     
@@ -2560,8 +2604,8 @@ export default class UIManager {
         // On ferme la modale comme vous l'aviez prévu
         this.common.modalManager.closeAllModals();
         
-        // On affiche l'indicateur de chargement SUR LE GRAPHIQUE
-        this.grapher.chart.showLoading('Calcul du modèle en cours...');
+        // On affiche l'indicateur de chargement
+        this.grapher.showLoading('Calcul du modèle en cours...', 500, true);
 
         try {
           // On lance le calcul en arrière-plan
@@ -2579,7 +2623,7 @@ export default class UIManager {
           });
         } finally {
           // Dans tous les cas, on masque l'indicateur de chargement du graphique
-          this.grapher.chart.hideLoading();
+          this.grapher.hideLoading();
         }
       } else {
         alertModal({ title: 'Sélection manquante', body: 'Veuillez sélectionner une courbe et un type de modèle.', confirm: 'OK' });
@@ -2629,6 +2673,15 @@ export default class UIManager {
     // Sélectionner les éléments DANS LE CLONE et les remplir avec les données du modèle
     const article = panelClone.querySelector('article');
     article.dataset.modelId = model.id;
+
+    // Appliquer la couleur du modèle à l'en-tête et à la bordure de l'article
+    const header = article.querySelector('.message-header');
+    if (header) {
+      header.style.backgroundColor = model.color;
+      // S'assure que le texte reste bien lisible en blanc
+      header.style.color = '#ffffff'; 
+    }
+    article.style.border = `1px solid ${model.color}`;
     
     panelClone.querySelector('.model-title').textContent = `${model.y.title} = f(${model.x.title})`;
     panelClone.querySelector('.model-name').innerHTML = `<strong>${model.getModelName()}</strong>`;
@@ -2658,7 +2711,7 @@ export default class UIManager {
     // Ajouter le panneau entièrement construit au DOM
     modelListContainer.appendChild(panelClone);
     
-    // Mettre à jour les icônes FontAwesome (si vous l'utilisez)
+    // Mettre à jour les icônes FontAwesome
     window.FontAwesome.dom.i2svg({ node: article });
   }
 

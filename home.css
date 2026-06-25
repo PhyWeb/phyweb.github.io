@@ -5,7 +5,7 @@
 }
 
   /* 2. Réduire l'espacement principal au-dessus du conteneur */
-  #app > .container {
+  .app-content > .container {
     padding-top: 4rem;
   }
 
@@ -79,18 +79,18 @@
 @media screen and (max-height: 780px) {
 
   /* 2. Réduire l'espacement principal au-dessus du conteneur */
-  #app > .container {
-    padding-top: 2rem;
+  .app-content > .container {
+    padding-top: 1.6rem;
     padding-bottom: 4rem; /* Laisse de la place pour le bouton Télécharger en bas */
   }
 
   /* 3. Réduire de moitié les grandes marges de Bulma (.mt-6 = 3rem par défaut) */
   .mt-6 {
-    margin-top: 1.5rem !important;
+    margin-top: 1.3rem !important;
   }
 
   .app-tile .title {
-    margin-bottom: 0.5rem !important;
+    margin-bottom: 0rem !important;
   }
   
 }

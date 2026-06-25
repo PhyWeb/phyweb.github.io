@@ -253,6 +253,9 @@ class ModalManager {
       this.onModalOpen();
     }
 
+    // Force le navigateur à recalculer le style pour s'assurer que la transition CSS fonctionne correctement
+    void $el.offsetWidth;
+
     $el.classList.add('is-active');
 
     // Recherche un élément avec l'attribut autofocus dans la modale
@@ -290,7 +293,7 @@ function closeAlertModal(_e){
 }
 
 function alertModal(_config){
-  let modal = createElement("div", "modal is-active", document.body);
+  let modal = createElement("div", "modal", document.body);
   let background = createElement("div", "modal-background", modal);
   let card = createElement("div", "modal-card", modal);
   let head = createElement("header", "modal-card-head", card);
@@ -376,6 +379,10 @@ function alertModal(_config){
     background.addEventListener("click", ()=>{closeAlertModal(modal)});
   }
 
+  // On force le calcul du navigateur et on active l'animation à la fin
+  void modal.offsetWidth;
+  modal.classList.add("is-active");
+
   return modal;
 }
 
@@ -401,7 +408,7 @@ function aboutModal(_app){
   let platformInfo = "";
 
   if(window.electronAPI){
-    version = "v0.1.21";
+    version = "v0.2.1";
     // Affichage spécifique à l'application Electron
     platformInfo = `
         <div class="field is-horizontal">
@@ -1472,15 +1479,15 @@ function initApplets(title, basePath = "..", hasDataCallback = () => false) {  /
               <span>Accueil</span>
             </a>
             <hr class="navbar-divider">
-            <a class="navbar-item is-size-5 has-text-weight-bold" href="${basePath}/tracker/index.html">
-              <span class="icon has-text-primary"><i class="fa fa-crosshairs"></i></span>
-              <span>Tracker</span>
-            </a>
             <a class="navbar-item is-size-5 has-text-weight-bold" href="${basePath}/audio/index.html">
               <span class="is-flex has-text-primary">
                 <i class="audio-logo-small"></i>
               </span>
               <span>Audio</span>
+            </a>
+            <a class="navbar-item is-size-5 has-text-weight-bold" href="${basePath}/tracker/index.html">
+              <span class="icon has-text-primary"><i class="fa fa-crosshairs"></i></span>
+              <span>Tracker</span>
             </a>
             <a class="navbar-item is-size-5 has-text-weight-bold" href="${basePath}/grapher/index.html">
               <span class="is-flex has-text-primary">

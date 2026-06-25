@@ -24,7 +24,15 @@ body, html {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  overflow: auto;
+  overflow: hidden;
+}
+
+/* Nouveau conteneur pleine largeur pour gérer le scroll */
+.app-content {
+  flex-grow: 1; /* Prend tout l'espace sous la navbar */
+  width: 100%; /* S'assure de toucher le bord droit de l'écran */
+  overflow-y: auto; /* Active l'ascenseur ici, tout à droite ! */
+  overflow-x: hidden;
 }
 
 .vertical-divider{
@@ -178,8 +186,8 @@ body, html {
 }
 
 /* 4. FORCE LES BOUTONS ET LIENS À RESTER HORIZONTAUX (Corrige l'icône Audio et la flèche) */
-.navbar-item,
-.navbar-link {
+.navbar-item:not(.is-hidden),
+.navbar-link:not(.is-hidden) {
   display: flex !important;
   flex-direction: row !important; /* Force l'icône et le texte à rester côte à côte */
   align-items: center !important; /* Centre verticalement */
@@ -189,6 +197,7 @@ body, html {
 /* 5. Force les menus déroulants à rester des pop-ups flottants */
 .navbar-item.has-dropdown {
   position: relative;
+  align-items: stretch !important;
 }
 
 .navbar-dropdown {
@@ -209,4 +218,33 @@ body, html {
 .navbar-item.has-dropdown.is-active .navbar-dropdown,
 .navbar-item.has-dropdown:hover .navbar-dropdown {
   display: block !important;
+}
+
+
+
+/*----------------------------------------------------------------------------------------------
+---------------------------------------- Animation des modales----------------------------------
+----------------------------------------------------------------------------------------------*/
+.modal {
+  display: flex !important; 
+  opacity: 0;
+  visibility: hidden; /* Remplace le display:none pour cacher l'élément */
+  pointer-events: none;
+  transition: opacity 0.15s ease-out, visibility 0.15s ease-out;
+}
+/* État actif : on rend la modale visible */
+.modal.is-active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+/* L'effet de zoom sur la carte à l'intérieur */
+.modal-card, .modal-content {
+  transform: scale(0.96);
+  transition: transform 0.15s ease-out;
+}
+
+.modal.is-active .modal-card, .modal.is-active .modal-content {
+  transform: scale(1);
 }

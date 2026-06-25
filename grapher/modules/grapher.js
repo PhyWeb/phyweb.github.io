@@ -132,6 +132,8 @@ export default class Grapher {
 
     this.currentXCurve = null;
 
+    this.loadingTimeout = null; // Pour gérer le délai de chargement globalement
+
     // Pour le réticule libre manuel
     this.crosshairMode = null; // Mode par défaut
     this.freeCrosshair = null;   // Pour stocker les éléments du réticule
@@ -146,6 +148,10 @@ export default class Grapher {
     this.tempAnnotation = null; // Pour stocker les éléments temporaires
     this.snappedModelPoint = null;
     this.snappedDataPoint = null;
+
+    this.editingModel = null;       // Modèle actuellement en cours d'édition
+    this.draggingBound = null;      // 'min' ou 'max' selon la poignée attrapée
+    this.modelBoundsElements = null; // Stockage des éléments SVG (bande et poignées)
   }
 
   setUIManager(uiManager) {
@@ -540,7 +546,7 @@ export default class Grapher {
 
     // Gestion du clic pour ajouter une annotation avec le réticule libre
     this.chart.container.addEventListener('mousedown', (e) => {
-    if (this.crosshairMode !== 'free' && this.crosshairMode !== 'model' && this.crosshairMode !== 'data' && this.crosshairMode !== 'tangent' && this.crosshairMode !== 'tangent-method') return;
+    if (this.crosshairMode !== 'free' && this.crosshairMode !== 'model' && this.crosshairMode !== 'data' && this.crosshairMode !== 'tangent' && this.crosshairMode !== 'tangent-method' && this.crosshairMode !== 'edit-bounds') return;
 
       e.preventDefault(); // Empêche la sélection de texte pendant le glisser
 
@@ -561,6 +567,24 @@ export default class Grapher {
         const point = this._findNearestModelPoint(this.mouseDownInfo);
         if (point) {
             this.mouseDownInfo.snappedPoint = { x: point.x, y: point.y };
+        }
+      }
+
+      // Capture des poignées
+      if (this.crosshairMode === 'edit-bounds' && this.editingModel) {
+        const xAxis = this.chart.xAxis[0];
+        const xMin = this._getSafeBound(this.editingModel.minX, xAxis.dataMin, xAxis.min, 0);
+        const xMax = this._getSafeBound(this.editingModel.maxX, xAxis.dataMax, xAxis.max, 1);
+
+        const pxVal = this.mouseDownInfo.chartX;
+        const pxMin = xAxis.toPixels(xMin);
+        const pxMax = xAxis.toPixels(xMax);
+
+        // Tolérance de 20 pixels pour attraper la poignée
+        if (Math.abs(pxVal - pxMin) < 20) {
+          this.draggingBound = 'min';
+        } else if (Math.abs(pxVal - pxMax) < 20) {
+          this.draggingBound = 'max';
         }
       }
 
@@ -660,6 +684,66 @@ setVisibilityFromList(titles) {
     }
     this.chart.redraw(); // Un seul redessin à la fin
     this.currentXCurve = null;
+  }
+
+  /**
+   * Affiche l'écran de chargement avec un délai pour éviter le clignotement
+   */
+showLoading(text = 'Chargement...', delay = 500, showStopButton = false) {
+    if (this.loadingTimeout) {
+      clearTimeout(this.loadingTimeout);
+    }
+    
+    this.loadingTimeout = setTimeout(() => {
+      let content = text;
+      
+      // Si on veut le bouton d'arrêt, on fabrique le HTML complet
+      if (showStopButton) {
+        content = `
+          <div style="font-size: 1.3em; font-weight: bold; margin-bottom: 20px; color: #363636;">
+            ${text}
+          </div>
+          <button id="dynamic-stop-btn" class="button is-danger is-rounded is-medium" 
+                  style="pointer-events: auto; box-shadow: 0 4px 8px rgba(0,0,0,0.3); font-weight: bold; transition: transform 0.1s;"
+                  onmouseenter="this.style.transform='scale(1.05)'" 
+                  onmouseleave="this.style.transform='scale(1)'">
+            <span class="icon"><i class="fas fa-stop"></i></span>
+            <span>Arrêter le calcul</span>
+          </button>
+        `;
+      }
+      
+      if (this.chart) {
+        this.chart.showLoading(content);
+        
+        if (showStopButton) {
+          setTimeout(() => {
+            // Conversion de l'icône FontAwesome pour le bouton généré
+            const btn = document.getElementById('dynamic-stop-btn');
+            if (btn && window.FontAwesome && window.FontAwesome.dom) {
+              window.FontAwesome.dom.i2svg({ node: btn });
+            }
+            // Rend le fond bien opaque pour bloquer la vue en dessous
+            const loadingContainer = this.chart.container.querySelector('.highcharts-loading');
+            if (loadingContainer) {
+              loadingContainer.style.opacity = '1'; 
+              loadingContainer.style.backgroundColor = 'rgba(255, 255, 255, 0.7)'; 
+            }
+          }, 10);
+        }
+      }
+    }, delay);
+  }
+
+  /**
+   * Masque l'écran de chargement et annule le minuteur s'il n'avait pas encore sonné
+   */
+  hideLoading() {
+    if (this.loadingTimeout) {
+      clearTimeout(this.loadingTimeout);
+      this.loadingTimeout = null;
+    }
+    this.chart.hideLoading();
   }
 
 updateChart(yCurveTitles, redraw = true) {
@@ -767,6 +851,11 @@ updateChart(yCurveTitles, redraw = true) {
 
     this.hideFreeCrosshair();
 
+    if (mode !== 'edit-bounds') {
+      this.hideModelBounds();
+      this.editingModel = null;
+    }
+
     // Application de la classe CSS pour forcer le curseur
     if (mode === 'free' || mode === 'model' || mode === 'data') {
       this.chart.container.classList.add('chart-free-crosshair');
@@ -840,6 +929,97 @@ updateChart(yCurveTitles, redraw = true) {
     // Cacher l'ancien réticule et dessiner le nouveau
     this.hideFreeCrosshair();
     this.freeCrosshair = this._drawStyledCrosshair(pixelX, pixelY, best.x, best.y);
+  }
+
+  drawModelBounds(model) {
+    this.hideModelBounds();
+    if (!model || !this.chart) return;
+
+    const chart = this.chart;
+    const xAxis = chart.xAxis[0];
+    
+    const xMin = this._getSafeBound(model.minX, xAxis.dataMin, xAxis.min, 0);
+    const xMax = this._getSafeBound(model.maxX, xAxis.dataMax, xAxis.max, 1);
+
+    const pxMin = xAxis.toPixels(xMin);
+    const pxMax = xAxis.toPixels(xMax);
+    const pyTop = chart.plotTop;
+    const pyBottom = chart.plotTop + chart.plotHeight;
+
+    const rectX = Math.min(pxMin, pxMax);
+    const rectW = Math.abs(pxMax - pxMin);
+
+    // 1. Dessiner la zone semi-transparente
+    const band = chart.renderer.rect(rectX, pyTop, rectW, pyBottom - pyTop)
+      .attr({ fill: 'rgba(0, 0, 0, 0.1)', zIndex: 3 })
+      .add();
+
+    // 2. Lignes Visibles (plus de curseur dessus)
+    const leftHandle = chart.renderer.path(['M', pxMin, pyTop, 'L', pxMin, pyBottom])
+      .attr({ 'stroke-width': 4, stroke: model.color, zIndex: 4 })
+      .add();
+    const rightHandle = chart.renderer.path(['M', pxMax, pyTop, 'L', pxMax, pyBottom])
+      .attr({ 'stroke-width': 4, stroke: model.color, zIndex: 4 })
+      .add();
+
+    // 3. Trackers Transparents (hitbox large pour déclencher le curseur double flèche)
+    const leftTracker = chart.renderer.path(['M', pxMin, pyTop, 'L', pxMin, pyBottom])
+      .attr({ 'stroke-width': 40, stroke: 'transparent', zIndex: 5, cursor: 'ew-resize' })
+      .add();
+    const rightTracker = chart.renderer.path(['M', pxMax, pyTop, 'L', pxMax, pyBottom])
+      .attr({ 'stroke-width': 40, stroke: 'transparent', zIndex: 5, cursor: 'ew-resize' })
+      .add();
+
+    // On stocke tous les éléments
+    this.modelBoundsElements = { band, leftHandle, rightHandle, leftTracker, rightTracker };
+  }
+
+  updateModelBoundsVisuals() {
+    if (!this.modelBoundsElements || !this.editingModel || !this.chart) return;
+
+    const chart = this.chart;
+    const xAxis = chart.xAxis[0];
+    
+    const xMin = this._getSafeBound(this.editingModel.minX, xAxis.dataMin, xAxis.min, 0);
+    const xMax = this._getSafeBound(this.editingModel.maxX, xAxis.dataMax, xAxis.max, 1);
+
+    const pxMin = xAxis.toPixels(xMin);
+    const pxMax = xAxis.toPixels(xMax);
+    const pyTop = chart.plotTop;
+    const pyBottom = chart.plotTop + chart.plotHeight;
+
+    const rectX = Math.min(pxMin, pxMax);
+    const rectW = Math.abs(pxMax - pxMin);
+
+    // Mise à jour de la bande
+    this.modelBoundsElements.band.attr({ x: rectX, width: rectW });
+
+    // Chemins réutilisés pour la poignée et son tracker
+    const leftPath = ['M', pxMin, pyTop, 'L', pxMin, pyBottom];
+    const rightPath = ['M', pxMax, pyTop, 'L', pxMax, pyBottom];
+
+    // Mise à jour Gauche
+    this.modelBoundsElements.leftHandle.attr({ d: leftPath });
+    this.modelBoundsElements.leftTracker.attr({ d: leftPath });
+
+    // Mise à jour Droite
+    this.modelBoundsElements.rightHandle.attr({ d: rightPath });
+    this.modelBoundsElements.rightTracker.attr({ d: rightPath });
+  }
+
+  hideModelBounds() {
+    if (this.modelBoundsElements) {
+      Object.values(this.modelBoundsElements).forEach(el => el.destroy());
+      this.modelBoundsElements = null;
+    }
+  }
+
+  _getSafeBound(val1, val2, val3, fallback) {
+    const isValid = (v) => typeof v === 'number' && !isNaN(v) && isFinite(v);
+    if (isValid(val1)) return val1;
+    if (isValid(val2)) return val2;
+    if (isValid(val3)) return val3;
+    return fallback;
   }
 
   /**
@@ -1340,6 +1520,28 @@ updateChart(yCurveTitles, redraw = true) {
   handleMouseMove(e) {
     if (!this.isDragging) return;
 
+    if (this.crosshairMode === 'edit-bounds') {
+      
+      if (this.editingModel && this.draggingBound) {
+        const pos = this.chart.pointer.getChartPosition();
+        const chartX = e.pageX - pos.left;
+        const xAxis = this.chart.xAxis[0];
+        const xValue = xAxis.toValue(chartX);
+
+        if (this.draggingBound === 'min') {
+          const currentMax = this._getSafeBound(this.editingModel.maxX, xAxis.dataMax, xAxis.max, 1);
+          this.editingModel.minX = Math.min(xValue, currentMax);
+        } else {
+          const currentMin = this._getSafeBound(this.editingModel.minX, xAxis.dataMin, xAxis.min, 0);
+          this.editingModel.maxX = Math.max(xValue, currentMin);
+        }
+
+        this.updateModelBoundsVisuals();
+      }
+      
+      return; 
+    }
+
     const chart = this.chart;
     const pos = chart.pointer.getChartPosition();
     const startInfo = this.mouseDownInfo;
@@ -1393,6 +1595,50 @@ updateChart(yCurveTitles, redraw = true) {
   }
 
   handleMouseUp(e) {
+    // --- MODE ÉDITION DES BORNES ---
+    if (this.crosshairMode === 'edit-bounds') {
+      if (this.isDragging && this.draggingBound && this.editingModel) {
+        
+        // 1. ON AFFICHE LE MESSAGE DE CHARGEMENT
+        this.showLoading('Mise à jour du modèle...', 500, true);
+
+        // 2. Relance le calcul mathématique Alglib via le Worker
+        this.editingModel.fit().then(() => {
+          const ex = this.chart.xAxis[0].getExtremes();
+          this.suppressModelAutoUpdate = true;
+          
+          // On met à jour les points en mémoire
+          this.redrawAllModels(ex.min, ex.max);
+          
+          // On force Highcharts à redessiner le graphique !
+          this.chart.redraw(); 
+          
+          this.suppressModelAutoUpdate = false;
+          
+          if (this.uiManager) {
+            this.uiManager.updateModelPanel(this.editingModel);
+          }
+        }).catch(error => {
+          console.error("Erreur lors du recalcul des bornes :", error);
+        }).finally(() => {
+          // 3. ON MASQUE LE MESSAGE QUOI QU'IL ARRIVE
+          this.hideLoading();
+        });
+      }
+      
+      // On réinitialise l'état
+      this.isDragging = false;
+      this.draggingBound = null;
+      this.mouseDownInfo = null;
+
+      // On retire les écouteurs globaux
+      document.removeEventListener('mousemove', this.handleMouseMove);
+      document.removeEventListener('mouseup', this.handleMouseUp);
+      
+      // On sort de la fonction sans créer d'annotation
+      return;
+    }
+
     // Nettoyer les écouteurs globaux
     document.removeEventListener('mousemove', this.handleMouseMove);
     document.removeEventListener('mouseup', this.handleMouseUp);
