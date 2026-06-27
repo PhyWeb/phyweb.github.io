@@ -11,7 +11,7 @@ const createWindow = (winPath) => {
     width: 1280,
     height: 720,
     frame: false,
-    icon: __dirname + '/assets/icons/phyweb.png',
+    icon: __dirname + '/assets/icons/phyweb.ico',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,  // recommandé et nécessaire pour contextBridge
@@ -50,6 +50,8 @@ const createWindow = (winPath) => {
 app.whenReady().then(() => {
   const args = process.argv;
   let fileToLoad = null;
+
+  app.setAppUserModelId("PhyWeb.PhyWeb")
 
   // Vérification des arguments passés à l'application
   if (args.length >= 2) {
