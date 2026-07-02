@@ -18,7 +18,7 @@
   </Capabilities>
   <Applications>
     <Application Id="PhyWeb" Executable="app\phyweb.exe" EntryPoint="Windows.FullTrustApplication">
-      <uap:VisualElements BackgroundColor="#464646" DisplayName="PhyWeb" Square150x150Logo="assets\SampleAppx.150x150.png" Square44x44Logo="assets\SampleAppx.44x44.png" Description="PhyWeb">
+      <uap:VisualElements BackgroundColor="#ffffff00" DisplayName="PhyWeb" Square150x150Logo="assets\SampleAppx.150x150.png" Square44x44Logo="assets\SampleAppx.44x44.png" Description="PhyWeb">
         <uap:DefaultTile Wide310x150Logo="assets\SampleAppx.310x150.png" />
       </uap:VisualElements>
       
