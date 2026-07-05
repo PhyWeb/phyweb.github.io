@@ -1,7 +1,12 @@
 const { app, BrowserWindow, shell, globalShortcut } = require('electron/main')
 const { ipcMain } = require('electron')
 const path = require('node:path')
-const fs = require('node:fs') // <-- Ajout du module fs pour lire le fichier
+const fs = require('node:fs')
+
+// IMPORTANT POUR L'APPX (Transparence de l'icône)
+if (process.platform === 'win32') {
+  app.setAppUserModelId('PhyWeb.PhyWeb!PhyWeb');
+}
 
 // Création d'un Set global pour stocker les références des fenêtres
 const windows = new Set();
