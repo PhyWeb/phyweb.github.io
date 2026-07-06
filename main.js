@@ -3,11 +3,6 @@ const { ipcMain } = require('electron')
 const path = require('node:path')
 const fs = require('node:fs')
 
-// IMPORTANT POUR L'APPX (Transparence de l'icône)
-if (process.platform === 'win32') {
-  app.setAppUserModelId('PhyWeb.PhyWeb!PhyWeb');
-}
-
 // Création d'un Set global pour stocker les références des fenêtres
 const windows = new Set();
 
@@ -16,7 +11,7 @@ const createWindow = (winPath) => {
     width: 1280,
     height: 720,
     frame: false,
-    icon: __dirname + '/assets/icons/phyweb.png',
+    icon: process.windowsStore ? undefined : path.join(__dirname, 'assets/icons/phyweb.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,  // recommandé et nécessaire pour contextBridge
