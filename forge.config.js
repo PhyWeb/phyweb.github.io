@@ -37,6 +37,7 @@ module.exports = {
         languages: ['fr-FR'],
         assets: './assets/appx',
         manifest: './appxmanifest.xml',
+        makePri: true,
         // Ajout des paramètres silencieux pour le serveur CI :
         devCert: 'devCert.pfx',
         certPass: 'password123',
