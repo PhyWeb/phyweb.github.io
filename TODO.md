@@ -13,8 +13,6 @@
 
     - REGRESSI ne lit que les lignes completes. Il faut un disclaimer quand on genere un rw3 incomplet
 
-    - gerer les quota sessionstorage
-
 # Home
     - package linux et macos
 

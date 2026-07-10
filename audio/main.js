@@ -956,16 +956,13 @@ $("#send-to-grapher-button").addEventListener('click', () => {
 });
 
 // confirm-send-to-grapher-button listener
-$('#confirm-send-to-grapher-button').addEventListener('click', () => {
+$('#confirm-send-to-grapher-button').addEventListener('click', async () => {
   const saveData = saves[tabManager.activeTab - 2];
-
   const effectiveSampleRate = baseSampleRate / saveData.displaySampleRateLvl;
 
-  // 1. Déterminer l'intervalle de temps sélectionné par l'utilisateur
   let startTime;
   let endTime;
 
-  // Determine the time range from user's choice
   if (stgOnscreenDataButton.classList.contains('is-link')) {
     startTime = savWaveChart.xAxis[0].min;
     endTime = savWaveChart.xAxis[0].max;
@@ -975,13 +972,20 @@ $('#confirm-send-to-grapher-button').addEventListener('click', () => {
   }
   
   const series = prepareSeriesForDownload(saveData, startTime, endTime, effectiveSampleRate);
-
   const pw = exportToPW(series, {rowMustBeComplete : false}, "Audio", "// Enregistrement PhyWeb Tracker");
 
-  // Send data to Grapher
-  ExchangeManager.sendToGrapher(pw);
-
-  $('#send-to-grapher-modal').classList.remove('is-active');
+  try {
+    await ExchangeManager.sendToGrapher(pw);
+    $('#send-to-grapher-modal').classList.remove('is-active');
+  } catch(e) {
+    console.error(e);
+    alertModal({
+      type: 'error',
+      title: 'Erreur lors de l\'envoi à Grapher',
+      body: 'Une erreur est survenue lors de l\'envoi des données à Grapher. Veuillez réessayer.',
+      confirm: 'OK'
+    });
+  }
 });
 
 /*----------------------------------------------------------------------------------------------

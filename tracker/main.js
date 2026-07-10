@@ -120,12 +120,22 @@ $("#mesures-button").addEventListener("click", ()=>{
   $("#etalonnage-panel").classList.add("is-hidden");
 });
 
-$("#send-to-grapher-button").addEventListener("click", () => {
+$("#send-to-grapher-button").addEventListener("click", async () => {
   const series = measurement.prepareDownloadData();
   const pw = exportToPW(series, {rowMustBeComplete : true}, "Tracker", "// Pointage PhyWeb Tracker");
 
-  // Send data to Grapher
-  ExchangeManager.sendToGrapher(pw);
+  try {
+    // Attente de l'enregistrement dans IndexedDB (ou IPC Electron)
+    await ExchangeManager.sendToGrapher(pw);
+  } catch(e) {
+    console.error(e);
+    alertModal({
+      type: 'error',
+      title: 'Erreur lors de l\'envoi à Grapher',
+      body: 'Une erreur est survenue lors de l\'envoi des données à Grapher. Veuillez réessayer.',
+      confirm: 'OK'
+    });
+  }
 });
 
 $("#empty-state-new-session-btn").addEventListener("click", ()=>{
