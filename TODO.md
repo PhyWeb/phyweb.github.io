@@ -13,6 +13,8 @@
 
     - REGRESSI ne lit que les lignes completes. Il faut un disclaimer quand on genere un rw3 incomplet
 
+    BUG. quand on est en mode selection de zoom et quon appuie sur echap on arrete bien mais le bouton reste enfoncé.
+
 # Home
     - package linux et macos
 

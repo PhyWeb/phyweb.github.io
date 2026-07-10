@@ -135,9 +135,6 @@ export default class UIManager {
       }
     });
 
-    // Convertit les icônes FontAwesome
-    window.FontAwesome.dom.i2svg();
-
   }
 
   /**

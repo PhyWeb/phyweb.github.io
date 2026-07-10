@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 512 512"
+   version="1.1"
+   id="svg1"
+   sodipodi:docname="arrows-up-right.svg"
+   inkscape:version="1.4.4 (dcaf3e7, 2026-05-05)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1" />
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#999999"
+     borderopacity="1"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="1.2568359"
+     inkscape:cx="191.75136"
+     inkscape:cy="209.65346"
+     inkscape:window-width="2560"
+     inkscape:window-height="1369"
+     inkscape:window-x="-8"
+     inkscape:window-y="564"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg1" />
+  <!--! Font Awesome Free 7.3.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc. -->
+  <path
+     fill="currentColor"
+     d="m 142.64798,8.333695 c -9.76103,-11.1115933 -25.613,-11.1115933 -35.37405,0 L 7.3207872,122.11641 c -9.7610496,11.11159 -9.7610496,29.15682 0,40.26842 9.7610478,11.11159 25.6129918,11.11159 35.3740408,0 L 100.01171,97.13756 v 386.41676 c 0,15.73402 11.16664,28.44569 24.98829,28.44569 13.82164,0 24.98828,-12.71167 24.98828,-28.44569 V 97.13756 l 57.31689,65.24727 c 9.76105,11.11159 25.61298,11.11159 35.37405,0 9.76104,-11.1116 9.76104,-29.15683 0,-40.26842 L 142.72607,8.333695 Z"
+     id="path1"
+     style="stroke-width:0.833156" />
+  <path
+     fill="currentColor"
+     d="m 503.66631,405.64798 c 11.1116,-9.76104 11.1116,-25.613 0,-35.37405 L 389.8836,270.32078 c -11.11159,-9.76104 -29.15682,-9.76104 -40.26842,0 -11.11159,9.76105 -11.11159,25.613 0,35.37405 l 65.24727,57.31689 H 28.44569 C 12.71167,363.01172 0,374.17835 0,388 c 0,13.82164 12.71167,24.98828 28.44569,24.98828 h 386.41676 l -65.24727,57.31689 c -11.11159,9.76105 -11.11159,25.61298 0,35.37405 11.1116,9.76104 29.15683,9.76104 40.26842,0 l 113.78271,-99.95315 z"
+     id="path1-5"
+     style="stroke-width:0.833156" />
+</svg>

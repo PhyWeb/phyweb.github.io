@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 512 512"
+   version="1.1"
+   id="svg1"
+   sodipodi:docname="magnifying-glass-plus.svg"
+   inkscape:version="1.4.4 (dcaf3e7, 2026-05-05)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1" />
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#999999"
+     borderopacity="1"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="1.7774344"
+     inkscape:cx="203.10173"
+     inkscape:cy="290.58737"
+     inkscape:window-width="2560"
+     inkscape:window-height="1369"
+     inkscape:window-x="-8"
+     inkscape:window-y="564"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg1" />
+  <!--! Font Awesome Free 7.3.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc. -->
+  <path
+     fill="currentColor"
+     d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376C296.3 401.1 253.9 416 208 416 93.1 416 0 322.9 0 208S93.1 0 208 0 416 93.1 416 208zM208 352a144 144 0 1 0 0-288 144 144 0 1 0 0 288z"
+     id="path1" />
+  <path
+     fill="currentColor"
+     d="m 226.26386,107.54446 c 0,-9.208873 -7.92482,-16.648815 -17.73385,-16.648815 -9.80904,0 -17.73386,7.439942 -17.73386,16.648815 v 83.24411 H 102.1269 c -9.809048,0 -17.733863,7.43994 -17.733863,16.64882 0,9.20888 7.924815,16.64882 17.733863,16.64882 h 88.66925 v 83.24411 c 0,9.20887 7.92482,16.64882 17.73386,16.64882 9.80903,0 17.73385,-7.43995 17.73385,-16.64882 v -83.24411 h 88.66926 c 9.80903,0 17.73385,-7.43994 17.73385,-16.64882 0,-9.20888 -7.92482,-16.64882 -17.73385,-16.64882 h -88.66926 z"
+     id="path1-2"
+     style="stroke-width:0.536962" />
+</svg>

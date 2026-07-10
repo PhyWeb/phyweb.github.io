@@ -24,15 +24,8 @@
     <script type="text/javascript" src="../common/codemirror/codemirror.min.js"></script>
     <script type="text/javascript" src="../common/codemirror/overlay.min.js"></script>
 
-    <script defer src="../common/fontawesome/solid.min.js"></script>
-    <script defer src="../common/fontawesome/brands.min.js"></script>
-    <script defer src="../common/fontawesome/fontawesome.min.js"></script>
-
-    <script>
-      window.FontAwesomeConfig = {
-        autoReplaceSvg: false 
-      };
-    </script>
+    <link rel="preload" href="../common/fontawesome/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="../common/fontawesome/css/all.min.css">
 
     <script type="text/javascript" src="../common/handsontable/handsontable.full.min.js"></script>
 
@@ -53,7 +46,9 @@
     <div class="navbar-brand">
       <div class="navbar-item is-size-4 has-text-weight-bold" style="gap:0.3rem">
         <span class="is-flex has-text-primary">
-          <i class="phyweb-logo"></i>
+          <svg width="28" height="28" viewBox="0 0 30 50" fill="currentColor" aria-hidden="true">
+            <path d="M0 0v14.149746l3.6344035-5.011805H14.204818c3.314029-.0000968 6.000531 2.7278249 6.00015 6.0926599-.000475 3.364219-2.686727 6.091182-6.00015 6.091086H0V50l14.470951-19.53985c8.284355.000066 15.52935-6.818718 15.529285-15.230075C30.000301 6.818718 23.284473-.000066 15.000118 0Z"/>
+          </svg>
         </span>
         <span>
           PhyWeb
@@ -75,7 +70,9 @@
             <hr class="navbar-divider">
             <a class="navbar-item  is-size-5 has-text-weight-bold" id="navbar-audio-button">
               <span class="is-flex has-text-primary">
-                <i class="audio-logo"></i>
+                <svg width="28" height="24" viewBox="0 0 39.825478 43.453163" fill="currentColor" aria-hidden="true">
+                  <path d="M18.496546 0A1.5 1.5 0 0016.996379 1.49965v4.063835A1.5 1.5 0 0015.662093 4.74183 1.5 1.5 0 0014.161927 6.241997v7.765417a1.5 1.5 0 00-1.332219-.81442A1.5 1.5 0 0011.330058 14.69316v3.780131A1.5 1.5 0 009.997323 17.659904 1.5 1.5 0 008.665104 18.48621v-.91984A1.5 1.5 0 007.164938 16.066203 1.5 1.5 0 005.832719 16.884758v-1.685685A1.5 1.5 0 004.332552 13.698906 1.5 1.5 0 002.832902 15.199073v3.143477A1.5 1.5 0 001.500167 17.529163 1.5 1.5 0 000 19.02933v5.394503a1.5 1.5 0 001.500167 1.49965 1.5 1.5 0 001.332735-.826307v3.156397a1.5 1.5 0 001.49965 1.500167 1.5 1.5 0 001.500167-1.500167v-1.685685a1.5 1.5 0 001.332219.818554 1.5 1.5 0 001.500166-1.49965v-.920357a1.5 1.5 0 001.332219.826306 1.5 1.5 0 001.332735-.826306v3.79305a1.5 1.5 0 001.49965 1.500167 1.5 1.5 0 001.332219-.814421v7.765418a1.5 1.5 0 001.500166 1.500167 1.5 1.5 0 001.334286-.848527v4.090706a1.5 1.5 0 001.500167 1.500167 1.5 1.5 0 001.500167-1.500167v-4.646228a1.5 1.5 0 001.332218.845427 1.5 1.5 0 001.500167-1.500167v-5.093746a1.5 1.5 0 001.332218.851627 1.5 1.5 0 001.500167-1.500166v-6.454387a1.5 1.5 0 001.332218.82579 1.5 1.5 0 001.332736-.826307v2.462899a1.5 1.5 0 001.49965 1.500167 1.5 1.5 0 001.332735-.831474v4.739763a1.5 1.5 0 001.49965 1.49965 1.5 1.5 0 001.500167-1.49965v-1.359607a1.5 1.5 0 001.334285.855761 1.5 1.5 0 001.500167-1.500166v-3.189987a1.5 1.5 0 001.332219.819072 1.5 1.5 0 001.500166-1.500167v-9.449552a1.5 1.5 0 00-1.500166-1.49965 1.5 1.5 0 00-1.332219.818554v-3.189986a1.5 1.5 0 00-1.500167-1.49965 1.5 1.5 0 00-1.334285.855245v-1.35754a1.5 1.5 0 00-1.500167-1.49965 1.5 1.5 0 00-1.49965 1.49965v4.720642a1.5 1.5 0 00-1.332735-.81442 1.5 1.5 0 00-1.49965 1.500166v2.449463a1.5 1.5 0 00-1.332736-.81287 1.5 1.5 0 00-1.332218.825789v-6.454386a1.5 1.5 0 00-1.500167-1.500167 1.5 1.5 0 00-1.332218.852145V6.800619a1.5 1.5 0 00-1.500167-1.500167 1.5 1.5 0 00-1.332218.845943V1.49965A1.5 1.5 0 0018.496546 0Z"/>
+                </svg>
               </span>
               <span>Audio</span>
             </a>
@@ -257,26 +254,23 @@
           </button>
           <button class="button is-white" id="zoom-in-button">
             <span class="icon">
-              <span class="fa-layers fa-fw">
-                <i class="fa-solid  fa-magnifying-glass" data-fa-transform=""></i>
-                <i class="fa-solid  fa-plus" data-fa-transform="shrink-7 up-1.5 left-1.5">></i>
-              </span>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true">
+                <path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376C296.3 401.1 253.9 416 208 416 93.1 416 0 322.9 0 208S93.1 0 208 0 416 93.1 416 208zM208 352a144 144 0 1 0 0-288 144 144 0 1 0 0 288z"/>
+                <path d="m226.264 107.544c0-9.209-7.925-16.649-17.734-16.649-9.809 0-17.734 7.44-17.734 16.649v83.244H102.127c-9.809 0-17.734 7.44-17.734 16.649s7.925 16.649 17.734 16.649h88.669v83.244c0 9.209 7.925 16.649 17.734 16.649 9.809 0 17.734-7.44 17.734-16.649v-83.244h88.669c9.809 0 17.734-7.44 17.734-16.649s-7.925-16.649-17.734-16.649h-88.669z"/>
+              </svg>
             </span>
           </button>
           <button class="button is-white" id="zoom-out-button">
             <span class="icon">
-              <span class="fa-layers fa-fw">
-                <i class="fa-solid  fa-magnifying-glass" data-fa-transform=""></i>
-                <i class="fa-solid  fa-minus" data-fa-transform="shrink-7 up-1.5 left-1.5">></i>
-              </span>
+              <svg viewBox="0 0 512 512" fill="currentColor" aria-hidden="true">
+                <path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376C296.3 401.1 253.9 416 208 416 93.1 416 0 322.9 0 208S93.1 0 208 0 416 93.1 416 208zM208 352a144 144 0 1 0 0-288 144 144 0 1 0 0 288z"/>
+                <path d="M102.127 190.789c-9.809 0-17.734 7.44-17.734 16.649s7.925 16.649 17.734 16.649h212.806c9.809 0 17.734-7.44 17.734-16.649s-7.925-16.649-17.734-16.649z"/>
+              </svg>
             </span>
           </button>
           <button class="button is-white" id="auto-zoom-button">
             <span class="icon">
-              <span class="fa-layers fa-fw">
-                <i class="fa-solid  fa-magnifying-glass" data-fa-transform=""></i>
-                <i class="fa-solid  fa-xmark" data-fa-transform="shrink-7 up-1.5 left-1.5">></i>
-              </span>
+              <i class="fa-solid fa-maximize"></i>
             </span>
             <span>Zoom auto</span>
           </button>

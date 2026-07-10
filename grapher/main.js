@@ -12,8 +12,6 @@ import {loadSettings} from "./modules/settingsManager.js";
 const $ = document.querySelector.bind(document);
 
 document.addEventListener('DOMContentLoaded', () => {
-  
-  window.FontAwesome.dom.i2svg();
 
   // On charge les paramètres sauvegardés (ou les défauts) dès le début.
   const initialSettings = loadSettings();
