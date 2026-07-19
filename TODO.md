@@ -50,6 +50,8 @@
 
     - erreur silencieuse highcharts quand on met des lettres dans le table
 
+    - ajuster automatiquement la largeur des colonnes aux noms des entetes ?
+
 # MISC
  - tester le flatpak puis flathub
  - tester sous linux la préselection automatique de l'onglet linux dans la modale de téléchargement
