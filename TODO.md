@@ -15,6 +15,8 @@
 
     BUG. quand on est en mode selection de zoom et quon appuie sur echap on arrete bien mais le bouton reste enfoncé.
 
+    - dans electron. les controles de fenetres sont injectés par la suite ce qui creer un décalage temporelle dans leur apparition.
+
 # Home
     - package linux et macos
 
