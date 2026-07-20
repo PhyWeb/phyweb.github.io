@@ -415,7 +415,6 @@ export default class UIManager {
         const visibleButton = panel.querySelector('.fa-eye, .fa-eye-slash').closest('button');
         const isVisible = model.x.title === this.grapher.currentXCurve && model.visible;
         visibleButton.innerHTML = `<span class="icon"><i class="fas fa-${isVisible ? 'eye' : 'eye-slash'}"></i></span>`;
-        window.FontAwesome.dom.i2svg({ node: visibleButton });
       }
     });
   }
@@ -506,6 +505,10 @@ export default class UIManager {
       this.spreadsheet.hot.updateSettings({ height: newHeight })
 
       this.updateSortUI();
+
+      // On coupe les outils et le zoom en quittant le grapheur
+      this.clearActiveTool();
+      if (this.isZoomEnabled) this.resetZoomUI();
     });
     $("#grapheur-tab").addEventListener("click", () => {
       $("#tableur-tab").classList.remove("is-active");
@@ -534,6 +537,10 @@ export default class UIManager {
       if (this.spreadsheet && this.spreadsheet.hot) {
         this.spreadsheet.hot.deselectCell();
       }
+
+      // On coupe les outils et le zoom en quittant le grapheur
+      this.clearActiveTool();
+      if (this.isZoomEnabled) this.resetZoomUI();
     });
 
     $("#menu-dropdown-toggle").addEventListener("click", function (event) {
@@ -1759,9 +1766,6 @@ export default class UIManager {
       const checkmarkContainer = clickedItem.querySelector('.tool-checkmark-container');
       if (checkmarkContainer) {
         checkmarkContainer.innerHTML = '<i class="fa-solid fa-check"></i>';
-        setTimeout(() => {
-          window.FontAwesome.dom.i2svg({ node: toolsDropdown });
-        }, 0);
         return true;
       }
     }
@@ -2463,8 +2467,6 @@ export default class UIManager {
 
     toggleUpIcon.classList.toggle('is-hidden', !isActive);
     toggleDownIcon.classList.toggle('is-hidden', isActive);
-    
-    window.FontAwesome.dom.i2svg({ node: header });
   }
   /**
    * Bascule la visibilité d'un modèle donné.
@@ -2649,8 +2651,6 @@ export default class UIManager {
         toggleDownIcon.classList.remove('is-hidden');
 
         header.style.borderRadius = '6px';
-        
-        window.FontAwesome.dom.i2svg({ node: header });
       });
     }
   }
@@ -2712,9 +2712,6 @@ export default class UIManager {
 
     // Ajouter le panneau entièrement construit au DOM
     modelListContainer.appendChild(panelClone);
-    
-    // Mettre à jour les icônes FontAwesome
-    window.FontAwesome.dom.i2svg({ node: article });
   }
 
   /**
@@ -2766,8 +2763,6 @@ export default class UIManager {
         const checkmark = $('#calculation-success-checkmark');
         // Ajoute l'icône FontAwesome
         checkmark.innerHTML = '<i class="fas fa-check-circle"></i>';
-        // Convertit l'icône en SVG
-        window.FontAwesome.dom.i2svg({ node: checkmark });
 
         // Lance l'animation
         checkmark.classList.add('show');
@@ -2845,8 +2840,6 @@ export default class UIManager {
           tr.querySelectorAll('input').forEach(input => input.value = '');
         }
       });
-
-      window.FontAwesome.dom.i2svg({ node: tr }); // Convertit les icônes FontAwesome en SVG
       return tr;
     };
 

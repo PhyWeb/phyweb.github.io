@@ -575,10 +575,6 @@ function aboutModal(_app){
     $("#licence-body").classList.toggle("is-hidden");
   });
 
-  // Convert icons to SVG
-  if (window.FontAwesome) {
-    window.FontAwesome.dom.i2svg({ node: $("#about-modal") });
-  }
 }
 
 /*----------------------------------------------------------------------------------------------

@@ -720,9 +720,6 @@ showLoading(text = 'Chargement...', delay = 500, showStopButton = false) {
           setTimeout(() => {
             // Conversion de l'icône FontAwesome pour le bouton généré
             const btn = document.getElementById('dynamic-stop-btn');
-            if (btn && window.FontAwesome && window.FontAwesome.dom) {
-              window.FontAwesome.dom.i2svg({ node: btn });
-            }
             // Rend le fond bien opaque pour bloquer la vue en dessous
             const loadingContainer = this.chart.container.querySelector('.highcharts-loading');
             if (loadingContainer) {
