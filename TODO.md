@@ -13,8 +13,6 @@
 
     - REGRESSI ne lit que les lignes completes. Il faut un disclaimer quand on genere un rw3 incomplet
 
-    BUG. quand on est en mode selection de zoom et quon appuie sur echap on arrete bien mais le bouton reste enfoncé.
-
     - dans electron. les controles de fenetres sont injectés par la suite ce qui creer un décalage temporelle dans leur apparition.
 
 # Home

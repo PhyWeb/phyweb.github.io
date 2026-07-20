@@ -75,6 +75,11 @@ export default class UIManager {
         if (this.grapher.crosshairMode === 'edit-bounds') {
           this.grapher.setCrosshairMode(null);
         }
+        
+        // Si le zoom était activé, on le désactive et on réinitialise l'UI
+        if (this.isZoomEnabled) {
+          this.resetZoomUI();
+        }
       },
       onTab1: () => {
         const tab = document.querySelector('#tableur-tab');
