@@ -386,18 +386,17 @@
         <p class="modal-card-title">Ouvrir une vidéo</p>
         <button class="delete" aria-label="close"></button>
       </header>
-      <section class="modal-card-body is-flex">
-        <div class="columns is-flex-grow-1">
-          <div class="column">
+      <section class="modal-card-body is-flex" style="min-height: 400px;">
+        <div class="columns is-flex-grow-1 is-marginless" style="width: 100%;">
+          <div class="column" style="overflow-y: auto;">
             <aside class="menu" id="video-list"></aside>
           </div>
-          <div class="column is-narrow vertical-divider">
-          </div>
-          <div class="column">
-            <div class="block">
-              <img id="video-thumbnail" />
+          <div class="column is-narrow vertical-divider p-0" style="min-height: 100%;"></div>
+          <div class="column is-flex is-flex-direction-column">
+            <div class="block is-flex is-justify-content-center is-align-items-center" style="height: 280px; flex-shrink: 0;">
+              <img id="video-thumbnail" style="max-height: 100%; max-width: 100%; object-fit: contain;" />
             </div>
-            <div class="block">
+            <div class="block is-flex-grow-1" style="overflow-y: auto;">
               <p id="video-description"></p>
             </div>
           </div>

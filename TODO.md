@@ -28,7 +28,6 @@
     - bug or feature ? : frame is downloaded only if all points are set
     - Add vidéos
     - pan and zoom
-    - fixed size preview images
     - add a button to stop the decode and still exploit the already decoded frames
     - passer a ffmpeg.wasm
 
