@@ -10,6 +10,11 @@
     <link rel="stylesheet" href="../common/common.css">
     <link rel="stylesheet" href="lib/audio.css">
 
+    <script>
+      if (navigator.userAgent.toLowerCase().indexOf('electron') > -1)
+        document.documentElement.classList.add('is-electron');
+    </script>
+
     <script src="lib/highcharts_old/highcharts.js"></script>
     <script src="lib/highcharts_old/highcharts-heatmap.js"></script>
     <script src="lib/highcharts_old/boost.js"></script>
@@ -106,7 +111,35 @@
               </a>
             </div>
           </div>
-          <div class="window-controls"></div>
+          <div class="vertical-divider m-2 window-control"></div>
+          <div class="navbar-item window-control">
+            <a class="button is-white" id="window-minimize-button">
+              <span class="icon">
+                <i class="fa-solid fa-window-minimize"></i>
+              </span>
+            </a>
+          </div>
+          <div class="navbar-item window-control is-hidden">
+            <a class="button is-white" id="window-restore-button">
+              <span class="icon">
+                <i class="fa-solid fa-window-restore"></i>
+              </span>
+            </a>
+          </div>
+          <div class="navbar-item window-control">
+            <a class="button is-white" id="window-maximize-button">
+              <span class="icon">
+                <i class="fa-solid fa-square"></i>
+              </span>
+            </a>
+          </div>
+          <div class="navbar-item window-control mr-2">
+            <a class="button is-white" id="window-close-button">
+              <span class="icon">
+                <i class="fas fa-xmark"></i>
+              </span>
+            </a>
+          </div>
         </div>
       </div>
     </nav>

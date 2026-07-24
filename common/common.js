@@ -52,46 +52,14 @@ class Common {
 
 async function electronSetup(){
   if (window.electronAPI){
-    // Electron window controls
-    if($(".window-controls")){
-      $(".window-controls").outerHTML = `
-        <div class="vertical-divider m-2 window-control"></div>
-        <div class="navbar-item window-control">
-          <a class="button is-white" id="window-minimize-button">
-            <span class="icon">
-              <i class="fa-solid fa-window-minimize"></i>
-            </span>
-          </a>
-        </div>
-        <div class="navbar-item window-control is-hidden">
-          <a class="button is-white" id="window-restore-button">
-            <span class="icon">
-              <i class="fa-solid fa-window-restore"></i>
-            </span>
-          </a>
-        </div>
-        <div class="navbar-item window-control">
-          <a class="button is-white" id="window-maximize-button">
-            <span class="icon">
-              <i class="fa-solid fa-square"></i>
-            </span>
-          </a>
-        </div>
-        <div class="navbar-item window-control mr-2">
-          <a class="button is-white" id="window-close-button">
-            <span class="icon">
-              <i class="fas fa-xmark"></i>
-            </span>
-          </a>
-        </div>
-      `;
-
-      const isMaximized = await window.electronAPI.isMaximized()
-      if(isMaximized){
-        $("#window-maximize-button").parentNode.classList.add("is-hidden");
-        $("#window-restore-button").parentNode.classList.remove("is-hidden");
-      }
+    // Met à jour l'état du bouton "maximiser/restaurer"
+    const isMaximized = await window.electronAPI.isMaximized()
+    if(isMaximized){
+      $("#window-maximize-button").parentNode.classList.add("is-hidden");
+      $("#window-restore-button").parentNode.classList.remove("is-hidden");
     }
+
+    // Écoute les événements de changement d'état de la fenêtre pour mettre à jour les boutons
     $("#window-minimize-button").addEventListener('click', () => window.electronAPI.minimize())
     $("#window-maximize-button").addEventListener('click', () => {
       window.electronAPI.maximize()
@@ -1454,7 +1422,35 @@ function initApplets(title, basePath = "..", hasDataCallback = () => false) {  /
         </div>
       </div>
       <div class="navbar-end is-flex is-align-items-center" style="height: 100%;">
-        <div class="window-controls"></div>
+        <div class="vertical-divider m-2 window-control"></div>
+        <div class="navbar-item window-control">
+          <a class="button is-white" id="window-minimize-button">
+            <span class="icon">
+              <i class="fa-solid fa-window-minimize"></i>
+            </span>
+          </a>
+        </div>
+        <div class="navbar-item window-control is-hidden">
+          <a class="button is-white" id="window-restore-button">
+            <span class="icon">
+              <i class="fa-solid fa-window-restore"></i>
+            </span>
+          </a>
+        </div>
+        <div class="navbar-item window-control">
+          <a class="button is-white" id="window-maximize-button">
+            <span class="icon">
+              <i class="fa-solid fa-square"></i>
+            </span>
+          </a>
+        </div>
+        <div class="navbar-item window-control mr-2">
+          <a class="button is-white" id="window-close-button">
+            <span class="icon">
+              <i class="fas fa-xmark"></i>
+            </span>
+          </a>
+        </div>
       </div>
     </div>
   `;
