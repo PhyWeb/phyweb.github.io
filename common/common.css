@@ -89,10 +89,7 @@ body, html {
   -webkit-app-region: no-drag;
 }
 
-.window-control{
-  padding-left: 0px;
-  padding-right: 0px;
-}
+
 
 #menu-dropdown-container .navbar-dropdown {
   right: 0;
@@ -102,13 +99,21 @@ body, html {
 /*----------------------------------------------------------------------------------------------
 ---------------------------------------Controles de fenètre-------------------------------------
 ----------------------------------------------------------------------------------------------*/
-/* Par défaut (sur le web), le conteneur est caché */
-.window-controls {
+
+.window-control {
+  padding-left: 0px;
+  padding-right: 0px;
+}
+
+/* On utilise .navbar pour donner un poids plus fort que la correction Bulma plus bas */
+.navbar .navbar-item.window-control,
+.window-control {
   display: none !important;
 }
 
 /* Si la balise html possède la classe 'is-electron', on l'affiche instantanément */
-html.is-electron .window-controls {
+html.is-electron .navbar .navbar-item.window-control,
+html.is-electron .window-control {
   display: flex !important;
 }
 
