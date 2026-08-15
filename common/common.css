@@ -111,9 +111,9 @@ body, html {
   display: none !important;
 }
 
-/* Si la balise html possède la classe 'is-electron', on l'affiche instantanément */
-html.is-electron .navbar .navbar-item.window-control,
-html.is-electron .window-control {
+/* Si la balise html possède la classe 'is-electron', on l'affiche instantanément, SAUF s'il est masqué par le JS */
+html.is-electron .navbar .navbar-item.window-control:not(.is-hidden),
+html.is-electron .window-control:not(.is-hidden) {
   display: flex !important;
 }
 

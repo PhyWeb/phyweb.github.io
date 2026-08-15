@@ -9,6 +9,11 @@
     <link rel="stylesheet" href="./common/common.css">
     <link rel="stylesheet" href="home.css">
 
+    <script>
+      if (navigator.userAgent.toLowerCase().indexOf('electron') > -1)
+        document.documentElement.classList.add('is-electron');
+    </script>
+
     <link rel="preload" href="./common/fontawesome/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="./common/fontawesome/css/all.min.css">
 

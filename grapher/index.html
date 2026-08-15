@@ -19,6 +19,11 @@
 
     <link rel="stylesheet" href="lib/grapher.css">
 
+    <script>
+      if (navigator.userAgent.toLowerCase().indexOf('electron') > -1)
+        document.documentElement.classList.add('is-electron');
+    </script>
+
     <link rel="stylesheet" href="../common/codemirror/codemirror.min.css">
 
     <script type="text/javascript" src="../common/codemirror/codemirror.min.js"></script>

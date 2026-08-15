@@ -12,6 +12,11 @@
 
     <link rel="stylesheet" href="../../common/common.css">
 
+    <script>
+      if (navigator.userAgent.toLowerCase().indexOf('electron') > -1)
+        document.documentElement.classList.add('is-electron');
+    </script>
+
     <style>
         :root {
             --primary-color: #2c3e50;

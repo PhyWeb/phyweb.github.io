@@ -14,6 +14,11 @@
     <link rel="stylesheet" href="../../common/common.css">
 
     <link rel="stylesheet" href="style.css">
+
+    <script>
+      if (navigator.userAgent.toLowerCase().indexOf('electron') > -1)
+        document.documentElement.classList.add('is-electron');
+    </script>
 </head>
 <body>
 

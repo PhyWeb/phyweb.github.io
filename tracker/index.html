@@ -11,6 +11,11 @@
 
     <link rel="stylesheet" href="../common/common.css">
     <link rel="stylesheet" href="lib/tracker.css">
+
+    <script>
+      if (navigator.userAgent.toLowerCase().indexOf('electron') > -1)
+        document.documentElement.classList.add('is-electron');
+    </script>
     
     <link href="../common/noUIslider/nouislider.css" rel="stylesheet">
     <script src="../common/noUIslider/nouislider.js"></script>
