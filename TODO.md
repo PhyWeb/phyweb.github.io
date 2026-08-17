@@ -49,6 +49,10 @@
 
     - ajuster automatiquement la largeur des colonnes aux noms des entetes ?
 
+    - il n'y a pas les e3 e-6 etc aux abscisses
+    - option pour regler la finesse de la grille arriere
+    - option pour forcer l'affichage de grands ou petits nombres sans passer en puissances.
+
 # MISC
  - tester le flatpak puis flathub
  - tester sous linux la préselection automatique de l'onglet linux dans la modale de téléchargement

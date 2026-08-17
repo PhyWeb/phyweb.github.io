@@ -213,7 +213,10 @@ export default class Grapher {
                 'L', xEnd - 10, yPos - 5,
                 'L', xEnd - 10, yPos + 5,
                 'Z'
-              ]).attr({ fill: 'black' }).add();
+              ]).attr({ 
+                fill: 'black',
+                zIndex: 10
+              }).add();
 
               chart.customArrows.push(arrowX);
 
@@ -267,7 +270,10 @@ export default class Grapher {
                   'L', xPos - 5, yEnd + 10,
                   'L', xPos + 5, yEnd + 10,
                   'Z'
-              ]).attr({ fill: 'black' }).add();
+              ]).attr({ 
+                fill: 'black',
+                zIndex: 10
+              }).add();
 
               chart.customArrows.push(arrowY);
             }
