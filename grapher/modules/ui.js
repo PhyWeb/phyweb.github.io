@@ -1435,9 +1435,12 @@ export default class UIManager {
     const select = $('#xaxis-select');
 
     select.addEventListener('change', (e) => {
+      e.target.blur();
+      
       const newXAxis = e.target.value;
       // Appelle la méthode de grapher.js pour changer l'axe des x
       this.grapher.setXCurve(newXAxis);
+
     });
   }
 

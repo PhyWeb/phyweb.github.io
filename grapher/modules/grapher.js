@@ -239,27 +239,11 @@ export default class Grapher {
                 unitText = xUnit;
               }
 
-              // Ancien label X (désactivé)
-              /*let labelText = self.currentXCurve;
-              if (unitText) {
-                labelText += ` (${unitText})`;
+              // Mise à jour du label HTML à côté du dropdown
+              const unitLabel = document.getElementById('xaxis-unit-label');
+              if (unitLabel) {
+                unitLabel.innerHTML = unitText ? `(${unitText})` : '';
               }
-
-              // Mesure la largeur du texte
-              const tempText = chart.renderer.label(labelText, 0, -9999, null, null, null, true).css({
-                fontSize: '16px'
-              }).add();
-              const textWidth = tempText.getBBox().width;
-              tempText.destroy();
-
-              // Texte pour axe X
-              const labelX = chart.renderer.label(labelText, xEnd - textWidth, yPos + 24, null, null, null, true)
-                .css({
-                  color: 'black',
-                  fontSize: '16px'
-                })
-                .add();
-              chart.customArrows.push(labelX);*/
 
               // Flèche Y (haut)
               const yEnd = yAxis.toPixels(yAxis.max);
