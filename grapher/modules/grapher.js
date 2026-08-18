@@ -129,6 +129,7 @@ export default class Grapher {
 
     this.grid = initialSettings.grapherGrid; // Default value for grid visibility
     this.minorGrid = initialSettings.minorGrid || false;
+    this.disableScientificNotation = initialSettings.disableScientificNotation || false;
     this.includeOriginOnAutoZoom = initialSettings.includeOriginOnAutoZoom;
 
     this.currentXCurve = null;
@@ -401,20 +402,22 @@ export default class Grapher {
         minRange: 1e-30, // Pour éviter les zooms extrêmes
         events: {
           afterSetExtremes: function () {
+            const grapher = this.chart.options.customGrapherInstance; // Récupère l'instance
             const oldExponent = this.exponent;
-            const maxAbs = Math.max(Math.abs(this.max), Math.abs(this.min));
-            
-            this.exponent = 0;
+            this.exponent = 0; // Par défaut, on force à 0
 
-            if (maxAbs > 0) {
-              const power = Math.floor(Math.log10(maxAbs));
-              const range = Math.abs(this.max - this.min);
-
-              if (power >= 3 || power < -3) {
-                if (power >= 3 && range > 0 && Math.log10(maxAbs / range) > 2) {
-                  this.exponent = 0;
-                } else {
-                  this.exponent = Math.floor(power / 3) * 3;
+            // Si l'option N'EST PAS désactivée, on fait le calcul habituel
+            if (!grapher.disableScientificNotation) {
+              const maxAbs = Math.max(Math.abs(this.max), Math.abs(this.min));
+              if (maxAbs > 0) {
+                const power = Math.floor(Math.log10(maxAbs));
+                const range = Math.abs(this.max - this.min);
+                if (power >= 3 || power < -3) {
+                  if (power >= 3 && range > 0 && Math.log10(maxAbs / range) > 2) {
+                    this.exponent = 0;
+                  } else {
+                    this.exponent = Math.floor(power / 3) * 3;
+                  }
                 }
               }
             }
@@ -474,20 +477,27 @@ export default class Grapher {
             }
           },
           afterSetExtremes: function () {
+            const grapher = this.chart.options.customGrapherInstance; // Récupère l'instance
             const oldExponent = this.exponent;
-            const maxAbs = Math.max(Math.abs(this.max), Math.abs(this.min));
-            this.exponent = 0;
-            if (maxAbs > 0) {
-              const power = Math.floor(Math.log10(maxAbs));
-              const range = Math.abs(this.max - this.min);
-              if (power >= 3 || power < -3) {
-                if (power >= 3 && range > 0 && Math.log10(maxAbs / range) > 2) {
-                  this.exponent = 0;
-                } else {
-                  this.exponent = Math.floor(power / 3) * 3;
+            this.exponent = 0; // Par défaut, on force à 0 (pas de puissance de 10)
+
+            // Si l'option N'EST PAS désactivée, on fait le calcul habituel
+            if (!grapher.disableScientificNotation) {
+              const maxAbs = Math.max(Math.abs(this.max), Math.abs(this.min));
+              if (maxAbs > 0) {
+                const power = Math.floor(Math.log10(maxAbs));
+                const range = Math.abs(this.max - this.min);
+                if (power >= 3 || power < -3) {
+                  if (power >= 3 && range > 0 && Math.log10(maxAbs / range) > 2) {
+                    this.exponent = 0;
+                  } else {
+                    this.exponent = Math.floor(power / 3) * 3;
+                  }
                 }
               }
             }
+            
+            // Pour l'axe Y, c'est la légende qui affiche la puissance de 10
             if (oldExponent !== this.exponent) {
               this.chart.legend.update({});
             }
@@ -850,6 +860,21 @@ updateChart(yCurveTitles, redraw = true) {
           minorTickInterval: visible ? 'auto' : null
         }
       });
+    }
+  }
+
+setDisableScientificNotation(disabled) {
+    this.disableScientificNotation = disabled;
+    if (this.chart) {
+      // Force l'exécution de l'événement pour recalculer les exposants
+      Highcharts.fireEvent(this.chart.xAxis[0], 'afterSetExtremes');
+      Highcharts.fireEvent(this.chart.yAxis[0], 'afterSetExtremes');
+      
+      // Indique à Highcharts que les axes ont été modifiés 
+      this.chart.xAxis[0].isDirty = true;
+      this.chart.yAxis[0].isDirty = true;
+      
+      this.chart.redraw();
     }
   }
 

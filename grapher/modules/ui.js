@@ -792,6 +792,7 @@ export default class UIManager {
       significantDigits: this.data.settings.significantDigits,
       grapherGrid: this.grapher.grid,
       minorGrid: this.grapher.minorGrid,
+      disableScientificNotation: this.grapher.disableScientificNotation,
       includeOriginOnAutoZoom: this.grapher.includeOriginOnAutoZoom,
       derivatePoints: this.calculation.derivatePoints,
       derivateEdges: this.calculation.derivateEdges,
@@ -807,10 +808,11 @@ export default class UIManager {
     $('#significant-digits-select').value = settings.significantDigits;
     $('#graph-grid-switch').checked = settings.grapherGrid;
     $('#graph-grid-minor-switch').checked = settings.minorGrid || false;
+    $('#graph-disable-scientific-switch').checked = settings.disableScientificNotation || false;
     $('#include-origin-switch').checked = settings.includeOriginOnAutoZoom;
     $('#derivative-points-select').value = settings.derivatePoints;
     $('#derivate-edges-switch').checked = settings.derivateEdges;
-    // Par défaut, la case de sauvegarde n'est pas cochée
+
     $('#save-settings-permanently-switch').checked = false; 
   }
 
@@ -823,6 +825,7 @@ export default class UIManager {
       significantDigits: parseInt(document.getElementById('significant-digits-select').value),
       grapherGrid: document.getElementById('graph-grid-switch').checked,
       minorGrid: document.getElementById('graph-grid-minor-switch').checked,
+      disableScientificNotation: document.getElementById('graph-disable-scientific-switch').checked,
       includeOriginOnAutoZoom: document.getElementById('include-origin-switch').checked,
       derivatePoints: parseInt(document.getElementById('derivative-points-select').value),
       derivateEdges: document.getElementById('derivate-edges-switch').checked,
@@ -852,6 +855,10 @@ export default class UIManager {
     }
     if (this.grapher.minorGrid !== settings.minorGrid) {
       this.grapher.setMinorGridVisibility(settings.minorGrid);
+    }
+
+    if (this.grapher.disableScientificNotation !== settings.disableScientificNotation) {
+      this.grapher.setDisableScientificNotation(settings.disableScientificNotation);
     }
 
     if (this.grapher.includeOriginOnAutoZoom !== settings.includeOriginOnAutoZoom) {

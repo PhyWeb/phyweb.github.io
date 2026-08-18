@@ -911,18 +911,28 @@
           <div id="settings-panel-graph" class="settings-panel-content is-hidden">
             <div class="field">
               <label class="label">Grilles</label>
-              <div class="control">
-                <label class="switch is-rounded">
-                  <input type="checkbox" id="graph-grid-switch" checked>
-                  <span class="check"></span>
-                </label>
+              <div class="field is-grouped" style="gap: 1.5rem;">
+                <div class="control">
+                  <label class="switch is-rounded">
+                    <input type="checkbox" id="graph-grid-switch" checked>
+                    <span class="check"></span>
+                    <span class="control-label">Principale</span>
+                  </label>
+                </div>
+                <div class="control">
+                  <label class="switch is-rounded">
+                    <input type="checkbox" id="graph-grid-minor-switch">
+                    <span class="check"></span>
+                    <span class="control-label">Secondaire (subdivisions)</span>
+                  </label>
+                </div>
               </div>
             </div>
             <div class="field">
-              <label class="label">Grille secondaire (subdivisions)</label>
+              <label class="label">Forcer l'affichage total des nombres (pas de puissances de 10)</label>
               <div class="control">
                 <label class="switch is-rounded">
-                  <input type="checkbox" id="graph-grid-minor-switch">
+                  <input type="checkbox" id="graph-disable-scientific-switch">
                   <span class="check"></span>
                 </label>
               </div>
