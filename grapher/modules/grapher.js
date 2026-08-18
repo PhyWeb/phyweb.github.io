@@ -128,6 +128,7 @@ export default class Grapher {
     this.uiManager = null;
 
     this.grid = initialSettings.grapherGrid; // Default value for grid visibility
+    this.minorGrid = initialSettings.minorGrid || false;
     this.includeOriginOnAutoZoom = initialSettings.includeOriginOnAutoZoom;
 
     this.currentXCurve = null;
@@ -390,6 +391,9 @@ export default class Grapher {
           text: null
         },
         gridLineWidth: 1,
+        minorGridLineWidth: this.minorGrid ? 1 : 0,
+        minorTickInterval: this.minorGrid ? 'auto' : null,
+        minorGridLineColor: '#f2f2f2', // Gris très clair pour ne pas surcharger
         startOnTick: false,
         endOnTick: false,
         minPadding: 0,
@@ -444,6 +448,9 @@ export default class Grapher {
           text: null
         },
         lineWidth: 1,
+        minorGridLineWidth: this.minorGrid ? 1 : 0,
+        minorTickInterval: this.minorGrid ? 'auto' : null,
+        minorGridLineColor: '#f2f2f2', // Gris très clair pour ne pas surcharger
         gridLineWidth: 1,
         tickWidth: 1,
         startOnTick: false,
@@ -825,6 +832,22 @@ updateChart(yCurveTitles, redraw = true) {
         },
         yAxis: {
           gridLineWidth: visible ? 1 : 0
+        }
+      });
+    }
+  }
+
+  setMinorGridVisibility(visible) {
+    this.minorGrid = visible;
+    if (this.chart) {
+      this.chart.update({
+        xAxis: {
+          minorGridLineWidth: visible ? 1 : 0,
+          minorTickInterval: visible ? 'auto' : null
+        },
+        yAxis: {
+          minorGridLineWidth: visible ? 1 : 0,
+          minorTickInterval: visible ? 'auto' : null
         }
       });
     }

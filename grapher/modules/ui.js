@@ -791,6 +791,7 @@ export default class UIManager {
     return {
       significantDigits: this.data.settings.significantDigits,
       grapherGrid: this.grapher.grid,
+      minorGrid: this.grapher.minorGrid,
       includeOriginOnAutoZoom: this.grapher.includeOriginOnAutoZoom,
       derivatePoints: this.calculation.derivatePoints,
       derivateEdges: this.calculation.derivateEdges,
@@ -805,6 +806,7 @@ export default class UIManager {
   loadSettingsIntoModalUI(settings) {
     $('#significant-digits-select').value = settings.significantDigits;
     $('#graph-grid-switch').checked = settings.grapherGrid;
+    $('#graph-grid-minor-switch').checked = settings.minorGrid || false;
     $('#include-origin-switch').checked = settings.includeOriginOnAutoZoom;
     $('#derivative-points-select').value = settings.derivatePoints;
     $('#derivate-edges-switch').checked = settings.derivateEdges;
@@ -820,6 +822,7 @@ export default class UIManager {
     return {
       significantDigits: parseInt(document.getElementById('significant-digits-select').value),
       grapherGrid: document.getElementById('graph-grid-switch').checked,
+      minorGrid: document.getElementById('graph-grid-minor-switch').checked,
       includeOriginOnAutoZoom: document.getElementById('include-origin-switch').checked,
       derivatePoints: parseInt(document.getElementById('derivative-points-select').value),
       derivateEdges: document.getElementById('derivate-edges-switch').checked,
@@ -846,6 +849,9 @@ export default class UIManager {
     // Appliquer au grapheur
     if (this.grapher.grid !== settings.grapherGrid) {
       this.grapher.setGridVisibility(settings.grapherGrid);
+    }
+    if (this.grapher.minorGrid !== settings.minorGrid) {
+      this.grapher.setMinorGridVisibility(settings.minorGrid);
     }
 
     if (this.grapher.includeOriginOnAutoZoom !== settings.includeOriginOnAutoZoom) {

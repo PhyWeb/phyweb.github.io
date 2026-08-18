@@ -49,7 +49,6 @@
 
     - ajuster automatiquement la largeur des colonnes aux noms des entetes ?
 
-    - option pour regler la finesse de la grille arriere
     - option pour forcer l'affichage de grands ou petits nombres sans passer en puissances.
     augmenter la taille du texte dans le dropdown abscisse
 
