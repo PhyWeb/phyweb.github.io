@@ -50,7 +50,6 @@
     - ajuster automatiquement la largeur des colonnes aux noms des entetes ?
 
     - option pour forcer l'affichage de grands ou petits nombres sans passer en puissances.
-    augmenter la taille du texte dans le dropdown abscisse
 
 # MISC
  - tester le flatpak puis flathub
