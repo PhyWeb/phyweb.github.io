@@ -13,6 +13,10 @@
 
     - REGRESSI ne lit que les lignes completes. Il faut un disclaimer quand on genere un rw3 incomplet
 
+# ELECTRON
+    garder en mémoire la taille de la fenetre ?
+    BUG DES CONTROLES DE FENETRE. si on est maximisé, démaximiser la fenetre enla glissant depuis la barre change pas l'icone
+
 # Home
     - package linux et macos
 
