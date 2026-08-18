@@ -51,8 +51,6 @@
 
     - option pour forcer l'affichage de grands ou petits nombres sans passer en puissance.
 
-    BUGGGGGGGGGGG le bouton annuler des parametres marche pas.
-
     VERIFICATION on peut changer les parametres par defaut dans un appx ?
 
 # MISC
