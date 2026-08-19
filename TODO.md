@@ -15,7 +15,6 @@
 
 # ELECTRON
     garder en mémoire la taille de la fenetre ?
-    BUG DES CONTROLES DE FENETRE. si on est maximisé, démaximiser la fenetre enla glissant depuis la barre change pas l'icone
 
 # Home
     - package linux et macos

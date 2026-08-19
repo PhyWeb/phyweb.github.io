@@ -6,6 +6,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   restore: () => ipcRenderer.send('restore'),
   maximize: () => ipcRenderer.send('maximize'),
   isMaximized: () => ipcRenderer.invoke('isMaximized'),
+  onMaximized: (callback) => ipcRenderer.on('window-maximized', callback),
+  onUnmaximized: (callback) => ipcRenderer.on('window-unmaximized', callback),
 
   // Envoi de données (depuis Tracker/Audio vers Grapher)
   openGrapherWindow: (data) => ipcRenderer.send('openGrapherWindow', data),

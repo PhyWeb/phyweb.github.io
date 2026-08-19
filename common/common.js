@@ -52,25 +52,31 @@ class Common {
 
 async function electronSetup(){
   if (window.electronAPI){
-    // Met à jour l'état du bouton "maximiser/restaurer"
+    // Met à jour l'état du bouton "maximiser/restaurer" initialement
     const isMaximized = await window.electronAPI.isMaximized()
     if(isMaximized){
       $("#window-maximize-button").parentNode.classList.add("is-hidden");
       $("#window-restore-button").parentNode.classList.remove("is-hidden");
     }
 
-    // Écoute les événements de changement d'état de la fenêtre pour mettre à jour les boutons
+    // ACTIONS DES BOUTONS
     $("#window-minimize-button").addEventListener('click', () => window.electronAPI.minimize())
-    $("#window-maximize-button").addEventListener('click', () => {
-      window.electronAPI.maximize()
-      $("#window-maximize-button").parentNode.classList.add("is-hidden");
-      $("#window-restore-button").parentNode.classList.remove("is-hidden");
-    })
-    $("#window-restore-button").addEventListener('click', () => {
-      window.electronAPI.restore()
-      $("#window-maximize-button").parentNode.classList.remove("is-hidden");
-      $("#window-restore-button").parentNode.classList.add("is-hidden");
-    })
+    $("#window-maximize-button").addEventListener('click', () => window.electronAPI.maximize())
+    $("#window-restore-button").addEventListener('click', () => window.electronAPI.restore())
+    // Note : Le bouton de fermeture est déjà géré par NavigationManager
+
+    // MISE À JOUR VISUELLE AUTOMATIQUE
+    if (window.electronAPI.onMaximized && window.electronAPI.onUnmaximized) {
+      window.electronAPI.onMaximized(() => {
+        $("#window-maximize-button").parentNode.classList.add("is-hidden");
+        $("#window-restore-button").parentNode.classList.remove("is-hidden");
+      });
+
+      window.electronAPI.onUnmaximized(() => {
+        $("#window-maximize-button").parentNode.classList.remove("is-hidden");
+        $("#window-restore-button").parentNode.classList.add("is-hidden");
+      });
+    }
   }
 }
 
