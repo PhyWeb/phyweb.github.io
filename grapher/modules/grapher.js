@@ -12,7 +12,7 @@ const PADDING = 0.02; // 2% de padding pour le zoom auto
     const chart = this.chart;
     
     // Vérifie si c'est un reset zoom (newMin et newMax null) et option activée
-    if (newMin === null && newMax === null && chart.options.customGrapherInstance.includeOriginOnAutoZoom){
+    if (newMin === null && newMax === null && chart.options.customGrapherInstance?.includeOriginOnAutoZoom){
       // Calcule manuellement les extrêmes globaux pour cet axe
       let globalDataMin = Infinity;
       let globalDataMax = -Infinity;
@@ -391,7 +391,7 @@ export default class Grapher {
         title: {
           text: null
         },
-        gridLineWidth: 1,
+        gridLineWidth: this.grid ? 1 : 0,
         minorGridLineWidth: this.minorGrid ? 1 : 0,
         minorTickInterval: this.minorGrid ? 'auto' : null,
         minorGridLineColor: '#f2f2f2', // Gris très clair pour ne pas surcharger
@@ -402,12 +402,12 @@ export default class Grapher {
         minRange: 1e-30, // Pour éviter les zooms extrêmes
         events: {
           afterSetExtremes: function () {
-            const grapher = this.chart.options.customGrapherInstance; // Récupère l'instance
+            const grapher = this.chart.options.customGrapherInstance;
             const oldExponent = this.exponent;
             this.exponent = 0; // Par défaut, on force à 0
 
             // Si l'option N'EST PAS désactivée, on fait le calcul habituel
-            if (!grapher.disableScientificNotation) {
+            if (grapher &&!grapher.disableScientificNotation) {
               const maxAbs = Math.max(Math.abs(this.max), Math.abs(this.min));
               if (maxAbs > 0) {
                 const power = Math.floor(Math.log10(maxAbs));
@@ -454,7 +454,7 @@ export default class Grapher {
         minorGridLineWidth: this.minorGrid ? 1 : 0,
         minorTickInterval: this.minorGrid ? 'auto' : null,
         minorGridLineColor: '#f2f2f2', // Gris très clair pour ne pas surcharger
-        gridLineWidth: 1,
+        gridLineWidth: this.grid ? 1 : 0,
         tickWidth: 1,
         startOnTick: false,
         endOnTick: false,
@@ -482,7 +482,7 @@ export default class Grapher {
             this.exponent = 0; // Par défaut, on force à 0 (pas de puissance de 10)
 
             // Si l'option N'EST PAS désactivée, on fait le calcul habituel
-            if (!grapher.disableScientificNotation) {
+            if (grapher && !grapher.disableScientificNotation) {
               const maxAbs = Math.max(Math.abs(this.max), Math.abs(this.min));
               if (maxAbs > 0) {
                 const power = Math.floor(Math.log10(maxAbs));
