@@ -14,7 +14,6 @@
     - REGRESSI ne lit que les lignes completes. Il faut un disclaimer quand on genere un rw3 incomplet
 
 # ELECTRON
-    garder en mémoire la taille de la fenetre ?
 
 # Home
     - package linux et macos

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, shell, globalShortcut } = require('electron/main')
+const { app, BrowserWindow, shell, globalShortcut, screen } = require('electron/main')
 const { ipcMain } = require('electron')
 const path = require('node:path')
 const fs = require('node:fs')
@@ -7,50 +7,100 @@ const fs = require('node:fs')
 const windows = new Set();
 
 const createWindow = (winPath) => {
+  // Définit le chemin du fichier de sauvegarde dans les données de l'utilisateur (AppData)
+  const stateFileName = winPath.replace(/[\/\\]/g, '_') + '-state.json';
+  const stateFilePath = path.join(app.getPath('userData'), stateFileName);
+
+  // Charge l'état précédent (ou valeurs par défaut)
+  let windowState = { width: 1280, height: 720 };
+  try {
+    if (fs.existsSync(stateFilePath)) {
+      windowState = JSON.parse(fs.readFileSync(stateFilePath, 'utf-8'));
+      
+      // SÉCURITÉ MULTI-ÉCRANS
+      if (windowState.x !== undefined && windowState.y !== undefined) {
+        const displays = screen.getAllDisplays();
+        
+        // Vérifie si le coin supérieur gauche de la fenêtre est dans les limites d'un écran actif
+        const isVisible = displays.some(display => {
+          const bounds = display.bounds;
+          return (
+            windowState.x >= bounds.x &&
+            windowState.y >= bounds.y &&
+            windowState.x < bounds.x + bounds.width &&
+            windowState.y < bounds.y + bounds.height
+          );
+        });
+
+        // Si l'écran a été débranché, on supprime X et Y pour centrer la fenêtre sur l'écran principal
+        if (!isVisible) {
+          delete windowState.x;
+          delete windowState.y;
+        }
+      }
+    }
+  } catch (e) {
+    console.error("Impossible de lire l'état de la fenêtre", e);
+  }
+
+  // Crée la fenêtre
   const win = new BrowserWindow({
-    width: 1280,
-    height: 720,
+    x: windowState.x,
+    y: windowState.y,
+    width: windowState.width,
+    height: windowState.height,
     frame: false,
     icon: process.windowsStore ? undefined : path.join(__dirname, 'assets/icons/phyweb.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
-      contextIsolation: true,  // recommandé et nécessaire pour contextBridge
-      nodeIntegration: false,  // désactivé pour sécurité
+      contextIsolation: true,  
+      nodeIntegration: false,  
     }
-  })
+  });
 
-  // Intercepte toutes les tentatives d'ouverture de nouvelles fenêtres (les liens target="_blank")
+  // Restaure l'état maximisé s'il l'était
+  if (windowState.isMaximized) {
+    win.maximize();
+  }
+
+  // Intercepte toutes les tentatives d'ouverture de nouvelles fenêtres
   win.webContents.setWindowOpenHandler((details) => {
-    // Demande à l'OS d'ouvrir l'URL dans le navigateur par défaut
     shell.openExternal(details.url);
-    
-    // Bloque la création de la fenêtre interne à Electron
     return { action: 'deny' }; 
   });
 
   windows.add(win);
+  win.loadFile(winPath);
 
-  win.loadFile(winPath)
-
-  // Open the DevTools.
   win.webContents.on('before-input-event', (_, input) => {
     if (input.type === 'keyDown' && input.key === 'F12') {
       win.webContents.toggleDevTools();
     }
   });
 
-  // Permet à la mémoire d'être libérée proprement.
-  win.on('closed', () => {
+  // Sauvegarde l'état juste avant la fermeture de la fenêtre
+  win.on('close', () => {
+    try {
+      // getNormalBounds() récupère les dimensions réelles, même si la fenêtre est actuellement maximisée !
+      const bounds = win.getNormalBounds(); 
+      const stateToSave = {
+        x: bounds.x,
+        y: bounds.y,
+        width: bounds.width,
+        height: bounds.height,
+        isMaximized: win.isMaximized()
+      };
+      fs.writeFileSync(stateFilePath, JSON.stringify(stateToSave));
+    } catch (e) {
+      console.error("Erreur lors de la sauvegarde de l'état", e);
+    }
+    
     windows.delete(win);
   });
 
-  win.on('maximize', () => {
-    win.webContents.send('window-maximized');
-  });
-
-  win.on('unmaximize', () => {
-    win.webContents.send('window-unmaximized');
-  });
+  // Écouter le redimensionnement natif pour vos icônes UI
+  win.on('maximize', () => win.webContents.send('window-maximized'));
+  win.on('unmaximize', () => win.webContents.send('window-unmaximized'));
 
   return win;
 }
