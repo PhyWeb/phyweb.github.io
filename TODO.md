@@ -5,7 +5,7 @@
     - continuer d'ajouter des raccourcis clavier
 
     - mettre une icone en grand (dans le background) de chaque app pour visuellement rapidement voir ou on est.
-      - du coup centrer verticalement le splashscreen ?
+    - du coup centrer verticalement le splashscreen ?
 
     - ajouter les licences des libs qui n'en ont pas
 
