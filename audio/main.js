@@ -33,9 +33,13 @@ let simpleMode = false;
 // Declare vars
 let rtWaveData;
 let recWaveData;
-
 let rtFourierData;
 let recFourierData;
+
+let rtWaveChart, rtFourierChart;
+let recWaveChart, recFourierChart;
+let savWaveChart, savFourierChart, savTemporalFourierChart;
+let filePreviewChart;
 
 const rtBasebufferSize = 4096;
 const rtLength = 0.04;
@@ -535,72 +539,184 @@ fileReader.addEventListener("loadend", ()=>{
 });
 
 function onAudioDecodeEnd(_rawData){
+  $("#file-label").classList.remove("is-hidden");
+  $("#file-progress-bar").classList.add("is-hidden");
 
-	$("#file-label").classList.remove("is-hidden");
-	$("#file-progress-bar").classList.add("is-hidden");
-
-	let length = _rawData.duration * baseSampleRate;
-	if(_rawData.duration > 30){
-    // open the resize modal and reset the slider
-    $("#file-slider").noUiSlider.reset();
-    $("#file-slider").noUiSlider.updateOptions({
-      range:{
-        'min': 0,
-        'max': _rawData.duration
-      }
-    });
+  let length = _rawData.duration * baseSampleRate;
+  if(_rawData.duration > 30){
+    // Création de l'aperçu visuel sous-échantillonné
+    let channelData = _rawData.getChannelData(0);
+    let step = Math.ceil(channelData.length / 500); // 500 blocs = 1000 points
+    let previewData = [];
     
+    for (let i = 0; i < channelData.length; i += step) {
+      let max = 0;
+      let min = 0;
+      
+      // On cherche le point le plus haut et le plus bas dans ce bloc
+      for (let j = 0; j < step && (i + j) < channelData.length; j++) {
+        let s = channelData[i + j];
+        if (s > max) max = s;
+        if (s < min) min = s;
+      }
+      
+      // On ajoute les deux points pour former l'enveloppe
+      previewData.push(max < 0 ? max * 32768 : max * 32767);
+      previewData.push(min < 0 ? min * 32768 : min * 32767);
+    }
+
+    // Mise à jour du graphique d'aperçu
+    filePreviewChart.series[0].setData(previewData, false);
+    filePreviewChart.series[0].update({
+      pointInterval: _rawData.duration / previewData.length
+    }, false);
+    filePreviewChart.xAxis[0].setExtremes(0, _rawData.duration, false);
+    filePreviewChart.redraw();
+    
+    // Initialise les valeurs à 0 et max
+    let initialEnd = Math.min(_rawData.duration, 60);
+    $("#start-length-input").value = 0;
+    $("#end-length-input").value = initialEnd.toFixed(3);
+    updatePreviewVisuals(0, initialEnd);
+
     $("#file-length-modal").classList.add("is-active");
+
+    // Force le graphique à s'adapter correctement aux dimensions de la modale fraîchement ouverte
+    setTimeout(() => { filePreviewChart.reflow(); }, 10);
 
     // save the data in a buffer
     onAudioDecodeEndedBuffer = _rawData;
-	} else {
+  } else {
     drawDecodedAudio(_rawData, length);
   }
 }
 
 // file modal confirm
 $("#open-resized-file").addEventListener("click",()=>{
-  let length = parseInt(($("#file-slider").noUiSlider.get(true)[1] - $("#file-slider").noUiSlider.get(true)[0]) * baseSampleRate);
-  let start = parseInt($("#file-slider").noUiSlider.get(true)[0] * baseSampleRate);
+  let start = parseFloat($("#start-length-input").value);
+  let end = parseFloat($("#end-length-input").value);
+  
+  let length = parseInt((end - start) * baseSampleRate);
+  let startSample = parseInt(start * baseSampleRate);
 
-  drawDecodedAudio(onAudioDecodeEndedBuffer, length, start);
+  drawDecodedAudio(onAudioDecodeEndedBuffer, length, startSample);
 
   $("#file-length-modal").classList.remove("is-active");
 });
 
-// file slider
-noUiSlider.create($("#file-slider"), {
-  start: [0, 10],
-  connect: true,
-  range: {
-      'min': 0,
-      'max': 1
-  },
-  margin: 0.05,
-  limit: 60,
-  behaviour: 'tap-drag',
-  tooltips: false,
-  pips: {
-    mode: 'steps',
-    stepped: true,
-    density: 4
-	}
-});
-$("#file-slider").noUiSlider.on('update', function (values, handle) {
-  let value = values[handle];
+// --- FONCTION DE MISE À JOUR VISUELLE ---
+function updatePreviewVisuals(start, end) {
+  if (!filePreviewChart) return;
+  filePreviewChart.xAxis[0].update({
+    plotLines: [
+      { value: start, color: '#3273dc', width: 4, zIndex: 5, id: 'start-line' },
+      { value: end, color: '#3273dc', width: 4, zIndex: 5, id: 'end-line' }
+    ],
+    plotBands: [
+      { from: start, to: end, color: '#ffffff', id: 'selected-zone', zIndex: 1 }
+    ]
+  }, true);
+}
 
-  if (handle) {
-    $("#end-length-input").value = value;
-  } else {
-    $("#start-length-input").value = value;
+// --- LOGIQUE DE GLISSER-DÉPOSER (DRAG & DROP) ---
+let isDraggingPreview = false;
+let activePreviewHandle = null;
+let dragZoneOffset = 0; // Pour mémoriser où on a cliqué par rapport au début de la zone
+let dragZoneLength = 0; // Pour mémoriser la taille de la zone
+
+$('#file-preview-graph-container').addEventListener('mousedown', function(e) {
+  if (!filePreviewChart) return;
+  
+  // Traduire le clic en valeur temporelle sur l'axe X
+  let eXY = filePreviewChart.pointer.normalize(e);
+  let clickVal = filePreviewChart.xAxis[0].toValue(eXY.chartX);
+  
+  let startVal = parseFloat($("#start-length-input").value);
+  let endVal = parseFloat($("#end-length-input").value);
+  
+  // Tolérance de clic pour les barres (5% de la largeur totale)
+  let threshold = (filePreviewChart.xAxis[0].max - filePreviewChart.xAxis[0].min) * 0.05; 
+  
+  let distStart = Math.abs(clickVal - startVal);
+  let distEnd = Math.abs(clickVal - endVal);
+  
+  // Déterminer ce qu'on est en train d'attraper
+  if (distStart < threshold) {
+    isDraggingPreview = true;
+    activePreviewHandle = 'start';
+  } else if (distEnd < threshold) {
+    isDraggingPreview = true;
+    activePreviewHandle = 'end';
+  } else if (clickVal > startVal && clickVal < endVal) {
+    // Si on clique au milieu de la zone blanche
+    isDraggingPreview = true;
+    activePreviewHandle = 'zone';
+    dragZoneOffset = clickVal - startVal;
+    dragZoneLength = endVal - startVal;
   }
 });
-$("#start-length-input").addEventListener('change', function () {
-  $("#file-slider").noUiSlider.set([this.value, null]);
+
+window.addEventListener('mouseup', function() {
+  isDraggingPreview = false;
+  activePreviewHandle = null;
 });
-$("#end-length-input").addEventListener('change', function () {
-  $("#file-slider").noUiSlider.set([null, this.value]);
+
+$('#file-preview-graph-container').addEventListener('mousemove', function(e) {
+  if (!filePreviewChart) return;
+  
+  let eXY = filePreviewChart.pointer.normalize(e);
+  let hoverVal = filePreviewChart.xAxis[0].toValue(eXY.chartX);
+  
+  let startVal = parseFloat($("#start-length-input").value);
+  let endVal = parseFloat($("#end-length-input").value);
+  
+  // Gérer dynamiquement l'apparence du curseur
+  let threshold = (filePreviewChart.xAxis[0].max - filePreviewChart.xAxis[0].min) * 0.05; 
+  if (Math.abs(hoverVal - startVal) < threshold || Math.abs(hoverVal - endVal) < threshold) {
+    this.style.cursor = 'ew-resize'; // Flèches de redimensionnement sur les bords
+  } else if (hoverVal > startVal && hoverVal < endVal) {
+    this.style.cursor = isDraggingPreview ? 'grabbing' : 'grab'; // Main qui attrape au milieu
+  } else {
+    this.style.cursor = 'default';
+  }
+
+  // Si on ne clique pas, on s'arrête là
+  if (!isDraggingPreview) return;
+  
+  let maxLimit = filePreviewChart.xAxis[0].max;
+  let val = Math.max(0, Math.min(maxLimit, hoverVal));
+  
+  if (activePreviewHandle === 'start') {
+    if (val >= endVal) val = endVal - 0.001;
+    if (endVal - val > 60) val = endVal - 60; // Limite stricte de 60s
+    $("#start-length-input").value = val.toFixed(3);
+    startVal = val;
+  } else if (activePreviewHandle === 'end') {
+    if (val <= startVal) val = startVal + 0.001; 
+    if (val - startVal > 60) val = startVal + 60; // Limite stricte de 60s
+    $("#end-length-input").value = val.toFixed(3);
+    endVal = val;
+  } else if (activePreviewHandle === 'zone') {
+    // Calcul de la nouvelle position en gardant la même taille
+    let newStart = hoverVal - dragZoneOffset;
+    let newEnd = newStart + dragZoneLength;
+    
+    // Bloquer contre les bords
+    if (newStart < 0) {
+      newStart = 0;
+      newEnd = dragZoneLength;
+    } else if (newEnd > maxLimit) {
+      newEnd = maxLimit;
+      newStart = maxLimit - dragZoneLength;
+    }
+    
+    $("#start-length-input").value = newStart.toFixed(3);
+    $("#end-length-input").value = newEnd.toFixed(3);
+    startVal = newStart;
+    endVal = newEnd;
+  }
+  
+  updatePreviewVisuals(startVal, endVal);
 });
 
 
@@ -1231,6 +1347,28 @@ let savTemporalFourierOptions = {
 	}]
 }
 
+let filePreviewOptions = new HighchartOptions(null, "Temps (s)", "", 0, 1, null, null, 0, undefined, false, false);
+
+// 1. Dimensions pour accueillir l'axe X
+filePreviewOptions.chart.height = 130;
+filePreviewOptions.chart.backgroundColor = 'transparent';
+filePreviewOptions.chart.margin = [10, 15, 45, 15]; // Espace en bas pour l'axe
+filePreviewOptions.chart.plotBorderWidth = 0;
+
+// 2. Axe X visible et normal
+filePreviewOptions.xAxis.visible = true; 
+filePreviewOptions.xAxis.minPadding = 0; 
+filePreviewOptions.xAxis.maxPadding = 0; 
+
+// 3. Axe Y (toujours invisible pour maximiser la hauteur d'onde)
+filePreviewOptions.yAxis.visible = false;
+filePreviewOptions.yAxis.startOnTick = false;
+filePreviewOptions.yAxis.endOnTick = false;
+
+filePreviewOptions.plotOptions.series.lineWidth = 1;
+filePreviewOptions.plotOptions.series.enableMouseTracking = false;
+filePreviewOptions.series = [{ data: [], animation: false, color: common.colors.primaryRGB }];
+
 savWaveOptions.chart.events = {selection: function(event){onSavWaveGraphSelection(event)}};
 savFourierOptions.chart.events = {selection: function(event){onSavFourierGraphSelection(event)}};
 savTemporalFourierOptions.chart.events = {selection: function(event){onSavTemporalFourierGraphSelection(event)}};
@@ -1238,15 +1376,17 @@ savTemporalFourierOptions.chart.events = {selection: function(event){onSavTempor
 /*----------------------------------------------------------------------------------------------
 ---------------------------------------Create the graphs ---------------------------------------
 ----------------------------------------------------------------------------------------------*/
-let rtWaveChart = Highcharts.chart('rt-graph-container', rtWaveOptions);
-let rtFourierChart = Highcharts.chart('rt-fourier-container', rtFourierOptions);
+rtWaveChart = Highcharts.chart('rt-graph-container', rtWaveOptions);
+rtFourierChart = Highcharts.chart('rt-fourier-container', rtFourierOptions);
 
-let recWaveChart = Highcharts.chart('rec-graph-container', recWaveOptions);
-let recFourierChart = Highcharts.chart('rec-fourier-container', recFourierOptions);
+recWaveChart = Highcharts.chart('rec-graph-container', recWaveOptions);
+recFourierChart = Highcharts.chart('rec-fourier-container', recFourierOptions);
 
-let savWaveChart = Highcharts.chart('sav-graph-container', savWaveOptions);
-let savFourierChart = Highcharts.chart('sav-fourier-container', savFourierOptions);
-let savTemporalFourierChart = Highcharts.chart('sav-temporal-fourier-container', savTemporalFourierOptions);
+savWaveChart = Highcharts.chart('sav-graph-container', savWaveOptions);
+savFourierChart = Highcharts.chart('sav-fourier-container', savFourierOptions);
+savTemporalFourierChart = Highcharts.chart('sav-temporal-fourier-container', savTemporalFourierOptions);
+
+filePreviewChart = Highcharts.chart('file-preview-graph-container', filePreviewOptions);
 
 /*savWaveChart.xAxis[0].allowZoomOutside = true;
 savWaveChart.yAxis[0].allowZoomOutside = true;

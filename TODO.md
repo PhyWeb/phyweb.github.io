@@ -19,7 +19,6 @@
     - package linux et macos
 
 # Audio
-    - preview wave when loading a file
     - fft add 0s to have a power of two and use faster fft ??
     - play the selected part of the audio when downloading
 
