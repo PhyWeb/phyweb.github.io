@@ -37,9 +37,6 @@
 
     - possibilité d'avoir 2 axes y
 
-    - BUG : les icones du menu nouveau apparraissent en retard sur le ptb (again)
-
-    - icones personnalisées
     - export image / print
 
     - Vérifier que les guess initiaux sont plus performants que des 1 1 1 1 1
