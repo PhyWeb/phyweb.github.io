@@ -14,19 +14,7 @@ let common = new Common("Audio");
 // Initialisation des raccourcis clavier globaux
 setupGlobalShortcuts({
   onSave: () => {
-    if(tabManager.activeTab > 1){
-      $("#save-button").click();
-    }
-    if(tabManager.activeTab == 0){
-      if(paused == true){
-        $("#rt-save-to-tab-button").click();
-      }
-    }
-    if(tabManager.activeTab == 1){
-      if(recWaveData){
-        $("#rec-save-to-tab-button").click();
-      }
-    }
+    $("#save-button").click();
   },
   onNew: () => {
     $("#new-session-button").click();
@@ -627,6 +615,33 @@ let drawDecodedAudio = (_rawData, _length, _start = 0)=>{
 /*----------------------------------------------------------------------------------------------
 --------------------------------------------DOWNLOAD--------------------------------------------
 ----------------------------------------------------------------------------------------------*/
+
+
+function getActiveData() {
+  if (tabManager.activeTab === 0) {
+    if (!rtWaveData) return null;
+    return {
+      saveData: { linearData: rtWaveData, fLinearData: rtFourierData, displaySampleRateLvl: 1 },
+      effectiveSampleRate: baseSampleRate,
+      waveChart: rtWaveChart
+    };
+  } else if (tabManager.activeTab === 1) {
+    if (!recWaveData) return null;
+    return {
+      saveData: { linearData: recWaveData, fLinearData: recFourierData, displaySampleRateLvl: baseSampleRate / recordedSampleRate },
+      effectiveSampleRate: recordedSampleRate,
+      waveChart: recWaveChart
+    };
+  } else {
+    let s = saves[tabManager.activeTab - 2];
+    return {
+      saveData: s,
+      effectiveSampleRate: baseSampleRate / s.displaySampleRateLvl,
+      waveChart: savWaveChart
+    };
+  }
+}
+
 // SLIDER
 noUiSlider.create($("#data-slider"), {
 	start: [0, 10],
@@ -673,7 +688,9 @@ $("#end-size-input").addEventListener('change', function () {
 
 // Download button
 $("#save-button").addEventListener("click", ()=>{
-  if(!rtWaveData){
+  const active = getActiveData();
+  
+  if(!active || !active.saveData.linearData){
     alertModal({
       type: "warning",
       title: "Aucune donnée à sauvegarder",
@@ -682,31 +699,26 @@ $("#save-button").addEventListener("click", ()=>{
     })
     return;
   }
-  // Check if we're on a save tab
-  if(tabManager.activeTab < 2){
-    alertModal({
-      type: "warning",
-      title: "Aucune donnée à sauvegarder",
-      body: "Seules les données enregistrées dans un onglet peuvent être téléchargées.",
-      confirm: "OK"
-    })
-    return;
+
+  // Mettre en pause automatiquement si on est en Temps Réel
+  if(tabManager.activeTab === 0 && !paused) {
+     $("#pause-button").click();
   }
 
   // Slider reset
   $("#data-slider").noUiSlider.updateOptions({
     range:{
       'min': 0,
-      'max': saves[tabManager.activeTab-2].linearData.getDuration()
+      'max': active.saveData.linearData.getDuration()
     }
   });
   $("#data-slider").noUiSlider.reset();
 
-	// Display save modal
-	$("#download-modal").classList.add("is-active");
-	// Focus the input
-	$("#file-name-input").focus();
-})
+  // Display save modal
+  $("#download-modal").classList.add("is-active");
+  // Focus the input
+  $("#file-name-input").focus();
+});
 
 $("#file-name-input").addEventListener("keyup", (event)=> {
 	if (event.key === "Enter") {
@@ -821,53 +833,53 @@ function prepareSeriesForDownload(saveData, startTime, endTime, effectiveSampleR
 }
 
 $("#download-file-button").addEventListener('click', () => {
-    let filename = $("#file-name-input").value || 'enregistrement';
-    const saveData = saves[tabManager.activeTab - 2];
+  let filename = $("#file-name-input").value || 'enregistrement';
+  
+  const active = getActiveData();
+  const saveData = active.saveData;
+  const effectiveSampleRate = active.effectiveSampleRate;
 
-	const effectiveSampleRate = baseSampleRate / saveData.displaySampleRateLvl;
+  // Déterminer l'intervalle de temps sélectionné par l'utilisateur
+  let startTime;
+  let endTime;
 
+  if ($("#on-screen-button").classList.contains('is-link')) {
+    startTime = active.waveChart.xAxis[0].min;
+    endTime = active.waveChart.xAxis[0].max;
+  } else if ($("#part-button").classList.contains('is-link')) {
+    startTime = parseFloat($("#start-size-input").value);
+    endTime = parseFloat($("#end-size-input").value);
+  }
+  const series = prepareSeriesForDownload(saveData, startTime, endTime, effectiveSampleRate);
 
-    // 1. Déterminer l'intervalle de temps sélectionné par l'utilisateur
-    let startTime;
-    let endTime;
-
-    if ($("#on-screen-button").classList.contains('is-link')) {
-      startTime = savWaveChart.xAxis[0].min;
-      endTime = savWaveChart.xAxis[0].max;
-    } else if ($("#part-button").classList.contains('is-link')) {
-      startTime = parseFloat($("#start-size-input").value);
-      endTime = parseFloat($("#end-size-input").value);
-    }
-    const series = prepareSeriesForDownload(saveData, startTime, endTime, effectiveSampleRate);
-
-    // Si on exporte en WAV, on ne traite que le signal audio
-    if ($("#wav-button").classList.contains('is-link')) {
-      const wavDataSerie = new Serie('Amplitude', 'u.a.');
-      wavDataSerie.setData(series[1].data); // L'amplitude est la deuxième série
-      const file = audio.generateWavFile(wavDataSerie, effectiveSampleRate);
-      downloadFile(file, 'wav', filename);
-      common.modalManager.closeAllModals();
-      return; // Fin du processus pour WAV
-    }
-
-    // 5. Lancer le téléchargement pour PW, CSV ou RW3
-    let file;
-    let type;
-    if($("#pw-button").classList.contains("is-link")){
-      file = exportToPW(series, {rowMustBeComplete: false}, "Audio", "// Enregistrement PhyWeb Audio");
-      type="pw";
-    }
-    if($("#csv-button").classList.contains("is-link")){
-      file = exportToCSV(series, false);
-      type="csv";
-    }
-    if($("#rw3-button").classList.contains("is-link")){
-      file = exportToRW3(series, false, "Enregistrement PhyWeb Audio");
-      type="rw3";
-    }
-    downloadFile(file, type, filename)
-
+  // Si on exporte en WAV, on ne traite que le signal audio
+  if ($("#wav-button").classList.contains('is-link')) {
+    const wavDataSerie = new Serie('Amplitude', 'u.a.');
+    wavDataSerie.setData(series[1].data); // L'amplitude est la deuxième série
+    const file = audio.generateWavFile(wavDataSerie, effectiveSampleRate);
+    downloadFile(file, 'wav', filename);
     common.modalManager.closeAllModals();
+    return; // Fin du processus pour WAV
+  }
+
+  // Lancer le téléchargement pour PW, CSV ou RW3
+  let file;
+  let type;
+  if($("#pw-button").classList.contains("is-link")){
+    file = exportToPW(series, {rowMustBeComplete: false}, "Audio", "// Enregistrement PhyWeb Audio");
+    type="pw";
+  }
+  if($("#csv-button").classList.contains("is-link")){
+    file = exportToCSV(series, false);
+    type="csv";
+  }
+  if($("#rw3-button").classList.contains("is-link")){
+    file = exportToRW3(series, false, "Enregistrement PhyWeb Audio");
+    type="rw3";
+  }
+  downloadFile(file, type, filename)
+
+  common.modalManager.closeAllModals();
 });
 
 /*----------------------------------------------------------------------------------------------
@@ -933,19 +945,24 @@ stgPartButton.addEventListener('click', () => {
 
 // send-to-grapher-button listener
 $("#send-to-grapher-button").addEventListener('click', () => {
-  // Check if we are on a saved tab
-  if (tabManager.activeTab < 2) {
+  const active = getActiveData();
+  
+  if(!active || !active.saveData.linearData){
     alertModal({
       type: 'warning',
       title: 'Aucune donnée à envoyer',
-      body: 'Seules les données enregistrées dans un onglet peuvent être envoyées à Grapher.',
+      body: "Aucune donnée n'a encore été enregistrée. Veuillez d'abord enregistrer ou importer un signal audio.",
       confirm: 'OK'
     });
     return;
   }
 
-  const saveData = saves[tabManager.activeTab - 2];
-  const duration = saveData.linearData.getDuration();
+  // Mettre en pause automatiquement si on est en Temps Réel
+  if(tabManager.activeTab === 0 && !paused) {
+     $("#pause-button").click();
+  }
+
+  const duration = active.saveData.linearData.getDuration();
 
   // Configure slider and show the modal
   stgDataSlider.noUiSlider.updateOptions({
@@ -957,19 +974,22 @@ $("#send-to-grapher-button").addEventListener('click', () => {
 
 // confirm-send-to-grapher-button listener
 $('#confirm-send-to-grapher-button').addEventListener('click', async () => {
-  const saveData = saves[tabManager.activeTab - 2];
-  const effectiveSampleRate = baseSampleRate / saveData.displaySampleRateLvl;
+  const active = getActiveData();
+  const saveData = active.saveData;
+  const effectiveSampleRate = active.effectiveSampleRate;
 
   let startTime;
   let endTime;
 
   if (stgOnscreenDataButton.classList.contains('is-link')) {
-    startTime = savWaveChart.xAxis[0].min;
-    endTime = savWaveChart.xAxis[0].max;
+    startTime = active.waveChart.xAxis[0].min;
+    endTime = active.waveChart.xAxis[0].max;
   } else if (stgPartButton.classList.contains('is-link')) {
     startTime = parseFloat(stgStartSizeInput.value);
     endTime = parseFloat(stgEndSizeInput.value);
   }
+  
+  // ... Gardez tout le reste de la fonction intact ...
   
   const series = prepareSeriesForDownload(saveData, startTime, endTime, effectiveSampleRate);
   const pw = exportToPW(series, {rowMustBeComplete : false}, "Audio", "// Enregistrement PhyWeb Tracker");

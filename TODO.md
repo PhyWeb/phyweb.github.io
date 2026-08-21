@@ -23,7 +23,6 @@
     - fft add 0s to have a power of two and use faster fft ??
     - play the selected part of the audio when downloading
 
-    - permettre de télécharger depuis les onglets RT et REC et virer le warning
     - creer un wizard pour le téléchargement en étape (comme ca on peut dl a partir de nimporte ou, le choix se fait dans le wizard)
 
 # Tracker
