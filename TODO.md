@@ -45,8 +45,6 @@
 
     - ajuster automatiquement la largeur des colonnes aux noms des entetes ?
 
-    - option pour forcer l'affichage de grands ou petits nombres sans passer en puissance.
-
     VERIFICATION on peut changer les parametres par defaut dans un appx ?
 
 # MISC
