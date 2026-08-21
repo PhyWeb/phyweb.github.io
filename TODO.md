@@ -19,6 +19,8 @@
     - package linux et macos
 
 # Audio
+    - permettre de cocher une case ou qq chose pour forcer l'ouverture de la selection d'une portion quand on charge un fichier.
+    - permettre d'ouvrir un fichier via le menu ?
     - fft add 0s to have a power of two and use faster fft ??
     - play the selected part of the audio when downloading
 
