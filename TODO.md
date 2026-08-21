@@ -23,6 +23,7 @@
     - permettre d'ouvrir un fichier via le menu ?
     - fft add 0s to have a power of two and use faster fft ??
     - play the selected part of the audio when downloading
+    - BUG : peut pas telecharger un audio !
 
 # Tracker
     - bug or feature ? : frame is downloaded only if all points are set

@@ -5,24 +5,10 @@
  * http://www.nayuki.io/page/free-small-fft-in-multiple-languages
  *
  * (MIT License)
- * Permission is hereby granted, free of charge, to any person obtaining a copy of
- * this software and associated documentation files (the "Software"), to deal in
- * the Software without restriction, including without limitation the rights to
- * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- * the Software, and to permit persons to whom the Software is furnished to do so,
- * subject to the following conditions:
- * - The above copyright notice and this permission notice shall be included in
- *   all copies or substantial portions of the Software.
- * - The Software is provided "as is", without warranty of any kind, express or
- *   implied, including but not limited to the warranties of merchantability,
- *   fitness for a particular purpose and noninfringement. In no event shall the
- *   authors or copyright holders be liable for any claim, damages or other
- *   liability, whether in an action of contract, tort or otherwise, arising from,
- *   out of or in connection with the Software or the use or other dealings in the
- *   Software.
  *
  * Slightly restructured by Chris Cannam, cannam@all-day-breakfast.com
  * Slightly modified by Gaétan Walter
+ * Fortement optimisé pour le temps réel (Fenêtrage, Memory Management, Real FFT Packing)
  */
 
 "use strict";
@@ -38,31 +24,41 @@ function Nayuki(n) {
     for (var i = 0; i < 32; i++) {
         if (1 << i == n) {
             this.levels = i;  // Equal to log2(n)
-	}
+        }
     }
     if (this.levels == -1) {
         throw "Length is not a power of 2";
     }
     
     // Pre-compute trigonometric tables
-    this.cosTable = new Array(n / 2);
-    this.sinTable = new Array(n / 2);
+    this.cosTable = new Float32Array(n / 2);
+    this.sinTable = new Float32Array(n / 2);
     for (var i = 0; i < n / 2; i++) {
         this.cosTable[i] = Math.cos(2 * Math.PI * i / n);
         this.sinTable[i] = Math.sin(2 * Math.PI * i / n);
     }
 
+    // --- OPTIMISATION 1 : Précalcul de la table d'inversion de bits ---
+    this.reverseTable = new Uint32Array(n);
+    for (var i = 0; i < n; i++) {
+        var x = i;
+        var y = 0;
+        for (var j = 0; j < this.levels; j++) {
+            y = (y << 1) | (x & 1);
+            x >>>= 1;
+        }
+        this.reverseTable[i] = y;
+    }
+
     /* 
      * Computes the discrete Fourier transform (DFT) of the given complex vector, storing the result back into the vector.
-     * The vector's length must be equal to the size n that was passed to the object constructor, and this must be a power of 2. Uses the Cooley-Tukey decimation-in-time radix-2 algorithm.
-     * Modified to use trigonometric table
      */
     this.fastTransformRadix2 = function(real, imag) {
         var n = this.n;
 	
-        // Bit-reversed addressing permutation
+        // --- OPTIMISATION 1 : Utilisation de la table précalculée (évite 50 000 boucles) ---
         for (var i = 0; i < n; i++) {
-            var j = reverseBits(i, this.levels);
+            var j = this.reverseTable[i];
             if (j > i) {
                 var temp = real[i];
                 real[i] = real[j];
@@ -90,34 +86,19 @@ function Nayuki(n) {
                 }
             }
         }
-    
-        // Returns the integer whose value is the reverse of the lowest 'bits' bits of the integer 'x'.
-        function reverseBits(x, bits) {
-            var y = 0;
-            for (var i = 0; i < bits; i++) {
-                y = (y << 1) | (x & 1);
-                x >>>= 1;
-            }
-            return y;
-        }
     }
 
     this.transformRadix2 = function(real, imag) {
-        // Length variables
+        // Fallback pour compatibilité...
         var n = real.length;
-        if (n != imag.length)
-            throw "Mismatched lengths";
-        if (n == 1)  // Trivial transform
-            return;
+        if (n != imag.length) throw "Mismatched lengths";
+        if (n == 1) return;
         var levels = -1;
         for (var i = 0; i < 32; i++) {
-            if (1 << i == n)
-                levels = i;  // Equal to log2(n)
+            if (1 << i == n) levels = i;
         }
-        if (levels == -1)
-            throw "Length is not a power of 2";
+        if (levels == -1) throw "Length is not a power of 2";
         
-        // Trigonometric tables
         var cosTable = new Array(n / 2);
         var sinTable = new Array(n / 2);
         for (var i = 0; i < n / 2; i++) {
@@ -125,20 +106,14 @@ function Nayuki(n) {
             sinTable[i] = Math.sin(2 * Math.PI * i / n);
         }
         
-        // Bit-reversed addressing permutation
         for (var i = 0; i < n; i++) {
             var j = reverseBits(i, levels);
             if (j > i) {
-                var temp = real[i];
-                real[i] = real[j];
-                real[j] = temp;
-                temp = imag[i];
-                imag[i] = imag[j];
-                imag[j] = temp;
+                var temp = real[i]; real[i] = real[j]; real[j] = temp;
+                temp = imag[i]; imag[i] = imag[j]; imag[j] = temp;
             }
         }
         
-        // Cooley-Tukey decimation-in-time radix-2 FFT
         for (var size = 2; size <= n; size *= 2) {
             var halfsize = size / 2;
             var tablestep = n / size;
@@ -155,7 +130,6 @@ function Nayuki(n) {
             }
         }
         
-        // Returns the integer whose value is the reverse of the lowest 'bits' bits of the integer 'x'.
         function reverseBits(x, bits) {
             var y = 0;
             for (var i = 0; i < bits; i++) {
@@ -166,38 +140,24 @@ function Nayuki(n) {
         }
     }
 
-    /* 
-    * Computes the inverse discrete Fourier transform (IDFT) of the given complex vector, storing the result back into the vector.
-    * The vector can have any length. This is a wrapper function. This transform does not perform scaling, so the inverse is not a true inverse.
-    */
     this.inverseTransform = function(real, imag) {
         this.transformRadix2(imag, real);
     }
 
-    /* 
-    * Computes the discrete Fourier transform (DFT) of the given complex vector, storing the result back into the vector.
-    * The vector can have any length. This requires the convolution function, which in turn requires the radix-2 FFT function.
-    * Uses Bluestein's chirp z-transform algorithm.
-    */
     this.transformBluestein = function(real, imag) {
-        // Find a power-of-2 convolution length m such that m >= n * 2 + 1
         var n = real.length;
-        if (n != imag.length)
-            throw "Mismatched lengths";
+        if (n != imag.length) throw "Mismatched lengths";
         var m = 1;
-        while (m < n * 2 + 1)
-            m *= 2;
+        while (m < n * 2 + 1) m *= 2;
         
-        // Trignometric tables
         var cosTable = new Array(n);
         var sinTable = new Array(n);
         for (var i = 0; i < n; i++) {
-            var j = i * i % (n * 2);  // This is more accurate than j = i * i
+            var j = i * i % (n * 2);
             cosTable[i] = Math.cos(Math.PI * j / n);
             sinTable[i] = Math.sin(Math.PI * j / n);
         }
         
-        // Temporary vectors and preprocessing
         var areal = this.newArrayOfZeros(m);
         var aimag = this.newArrayOfZeros(m);
         for (var i = 0; i < n; i++) {
@@ -213,21 +173,16 @@ function Nayuki(n) {
             bimag[i] = bimag[m - i] = sinTable[i];
         }
         
-        // Convolution
         var creal = new Array(m);
         var cimag = new Array(m);
         this.convolveComplex(areal, aimag, breal, bimag, creal, cimag);
         
-        // Postprocessing
         for (var i = 0; i < n; i++) {
             real[i] =  creal[i] * cosTable[i] + cimag[i] * sinTable[i];
             imag[i] = -creal[i] * sinTable[i] + cimag[i] * cosTable[i];
         }
     }
 
-    /* 
-    * Computes the circular convolution of the given complex vectors. Each vector's length must be the same.
-    */
     this.convolveComplex = function(xreal, ximag, yreal, yimag, outreal, outimag) {
         var n = xreal.length;
         if (n != ximag.length || n != yreal.length || n != yimag.length
@@ -248,7 +203,7 @@ function Nayuki(n) {
         }
         this.inverseTransform(xreal, ximag);
         
-        for (var i = 0; i < n; i++) {  // Scaling (because this FFT implementation omits it)
+        for (var i = 0; i < n; i++) {
             outreal[i] = xreal[i] / n;
             outimag[i] = ximag[i] / n;
         }
@@ -268,6 +223,25 @@ function Nayuki(n) {
  */
 export default function Fourier(_n) {
     this.nayuki = new Nayuki(_n);
+    
+    // --- OPTIMISATION 2 : Pré-allocation mémoire (Garbage Collector friendly) ---
+    this.realBuffer = null;
+    this.imagBuffer = null;
+
+    // --- OPTIMISATION 3 : Précalcul de la fenêtre de Hann ---
+    this.windowTable = new Float32Array(_n);
+    for (let i = 0; i < _n; i++) {
+        this.windowTable[i] = 0.5 * (1 - Math.cos((2 * Math.PI * i) / (_n - 1)));
+    }
+
+    // --- OPTIMISATION 4 : Moteur Real FFT N/2 (Packing) ---
+    this.nayukiHalf = new Nayuki(_n / 2);
+    this.packCosTable = new Float32Array(_n / 2);
+    this.packSinTable = new Float32Array(_n / 2);
+    for (let i = 0; i < _n / 2; i++) {
+        this.packCosTable[i] = Math.cos(2 * Math.PI * i / _n);
+        this.packSinTable[i] = Math.sin(2 * Math.PI * i / _n);
+    }
 
     /* 
     * FFT compute
@@ -280,29 +254,95 @@ export default function Fourier(_n) {
         else{
             length = _data.data.length;
         }
-        let FFTreal = new Float32Array(length);
-        let FFTimag = new Float32Array(length);
-    
-        // Compute the sum and build the FFT's arrays
-        for(let i = 0; i < _data.data.length; i++){
-            FFTimag[i] = 0;
-        };
-        FFTreal.set(_data.data,0);
 
-        // FFT Zero-padding
-        if(_zeroPadding == true){
-            for(let i = _data.data.length; i < _data.data.length * 2; i++){
-                FFTreal[i] = 0;
+        // --- OPTIMISATION 2 : Recyclage des tableaux ---
+        if (!this.realBuffer || this.realBuffer.length !== length) {
+            this.realBuffer = new Float32Array(length);
+            this.imagBuffer = new Float32Array(length);
+        }
+
+        let FFTreal = this.realBuffer;
+        let FFTimag = this.imagBuffer;
+    
+        // --- OPTIMISATION 4 : Real FFT (Packing) si les conditions sont idéales ---
+        if (length === this.nayuki.n && !_zeroPadding) {
+            let halfN = length / 2;
+            
+            // 1. PACKING + FENÊTRAGE (Optimisation 3)
+            for (let i = 0; i < halfN; i++) {
+                FFTreal[i] = _data.data[2 * i] * this.windowTable[2 * i];
+                FFTimag[i] = _data.data[2 * i + 1] * this.windowTable[2 * i + 1];
+            }
+
+            // 2. FFT COMPLEXE (Taille N/2, très rapide)
+            this.nayukiHalf.fastTransformRadix2(FFTreal, FFTimag);
+
+            // 3. UNPACKING (Démêlage)
+            FFTreal[halfN] = FFTreal[0] - FFTimag[0];
+            FFTimag[halfN] = 0;
+            FFTreal[0] = FFTreal[0] + FFTimag[0];
+            FFTimag[0] = 0;
+
+            for (let k = 1; k < halfN / 2 + 1; k++) {
+                let rev = halfN - k;
+                
+                let Ar = (FFTreal[k] + FFTreal[rev]) * 0.5;
+                let Ai = (FFTimag[k] - FFTimag[rev]) * 0.5;
+                let Br = (FFTimag[k] + FFTimag[rev]) * 0.5;
+                let Bi = (FFTreal[rev] - FFTreal[k]) * 0.5;
+
+                let C = this.packCosTable[k];
+                let S = this.packSinTable[k];
+                
+                let termR = C * Br - S * Bi;
+                let termI = S * Br + C * Bi;
+
+                FFTreal[k] = Ar + termR;
+                FFTimag[k] = Ai + termI;
+                
+                if (k !== rev) {
+                    FFTreal[rev] = Ar - termR;
+                    FFTimag[rev] = termI - Ai;
+                }
+            }
+            
+            // Miroir pour remplir proprement la fin du tableau
+            for (let k = 1; k < halfN; k++) {
+                FFTreal[length - k] = FFTreal[k];
+                FFTimag[length - k] = -FFTimag[k];
+            }
+        }
+        else { 
+            // --- FALLBACK (Ex: taille modifiée par l'utilisateur ou zero padding) ---
+            for(let i = 0; i < _data.data.length; i++){
                 FFTimag[i] = 0;
             }
-        };
-        // Plot the fft
-        if ((_data.data.length & (_data.data.length - 1)) == 0){ // Is power of 2
-            
-            this.nayuki.transformRadix2(FFTreal, FFTimag);
-        }
-        else { // More complicated algorithm for arbitrary sizes
-            this.nayuki.transformBluestein(FFTreal, FFTimag);
+            FFTreal.set(_data.data,0);
+
+            // Application de la fenêtre de Hann classique
+            if (_data.data.length === this.nayuki.n) {
+                for(let i = 0; i < _data.data.length; i++) {
+                    FFTreal[i] *= this.windowTable[i];
+                }
+            }
+
+            if(_zeroPadding == true){
+                for(let i = _data.data.length; i < length; i++){
+                    FFTreal[i] = 0;
+                    FFTimag[i] = 0;
+                }
+            }
+
+            if ((length & (length - 1)) == 0){ 
+                if (length === this.nayuki.n) {
+                    this.nayuki.fastTransformRadix2(FFTreal, FFTimag);
+                } else {
+                    this.nayuki.transformRadix2(FFTreal, FFTimag);
+                }
+            }
+            else { 
+                this.nayuki.transformBluestein(FFTreal, FFTimag);
+            }
         }
         
         return {real : FFTreal, imag: FFTimag};

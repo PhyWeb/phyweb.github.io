@@ -58,6 +58,7 @@ let baseSampleRate;
 
 // RTS vars
 let paused = false;
+let lastFftDrawTime = 0; // stocke le temps de la dernière FFT
 
 // Record vars
 let sampleLength = parseFloat($("#sample-length-input").value);
@@ -1400,35 +1401,46 @@ savTemporalFourierChart.yAxis[0].allowZoomOutside = true;*/
 ----------------------------------------------------------------------------------------------*/
 function realtimeDraw() {
 	if(paused == false){
-	// sample
-	rtWaveData = new LinearData(audio.getGraph(), 1 / baseSampleRate);
+		// 1. Récupération des données du signal temporel (60 Hz)
+		rtWaveData = new LinearData(audio.getGraph(), 1 / baseSampleRate);
 
-
-	// Compute the fourier
-	if(simpleMode == false){
-		rtFourierData = computeFourier(rtWaveData, baseSampleRate);
-	} else{
-		rtFourierData = null;
-	}
-
-	// Initial Draw
-	if(rtInitialDraw && rtWaveData.data.length > 0){
-		rtWaveChart.series[0].pointInterval = rtWaveData.step * 2;
-		rtWaveChart.series[0].setData(arrayCopy(rtWaveData.getData(2, rtLength, true)));
-		if(simpleMode == false){
-			rtFourierChart.series[0].pointInterval = rtFourierData.step;
-			rtFourierChart.series[0].setData(arrayCopy(rtFourierData.getData()));
+		// Initial Draw de l'onde temporelle
+		if(rtInitialDraw && rtWaveData.data.length > 0){
+			rtWaveChart.series[0].pointInterval = rtWaveData.step * 2;
+			rtWaveChart.series[0].setData(arrayCopy(rtWaveData.getData(2, rtLength, true)));
 		}
-		rtInitialDraw = false;
-	}
 
-	// Update datas and redraw the serie (not the whole graph)
-	rtWaveChart.series[0].setData(arrayCopy(rtWaveData.getData(2, rtLength, true)), false);
-	rtWaveChart.series[0].redraw();
-	if(simpleMode == false){
-		rtFourierChart.series[0].setData(arrayCopy(rtFourierData.getData()), false);
-		rtFourierChart.series[0].redraw();
-	}
+		// Update datas and redraw the temporal serie at 60 Hz
+		rtWaveChart.series[0].setData(arrayCopy(rtWaveData.getData(2, rtLength, true)), false);
+		rtWaveChart.series[0].redraw();
+
+		// 2. Bridage de la FFT à ~30 Hz (toutes les 33.3 ms)
+		const now = performance.now();
+		if (now - lastFftDrawTime >= 33.3) {
+			lastFftDrawTime = now;
+
+			// Compute the fourier
+			if(simpleMode == false){
+				rtFourierData = computeFourier(rtWaveData, baseSampleRate, undefined, rtFourierData);
+
+				// Initial Draw de la FFT
+				if(rtInitialDraw && rtWaveData.data.length > 0){
+					rtFourierChart.series[0].pointInterval = rtFourierData.step;
+					rtFourierChart.series[0].setData(arrayCopy(rtFourierData.getData()));
+				}
+
+				// Update datas and redraw the fourier serie
+				rtFourierChart.series[0].setData(arrayCopy(rtFourierData.getData()), false);
+				rtFourierChart.series[0].redraw();
+			} else {
+				rtFourierData = null;
+			}
+		}
+
+		// Une fois les deux graphiques initialisés, on passe rtInitialDraw à false
+		if(rtInitialDraw && rtWaveData.data.length > 0){
+			rtInitialDraw = false;
+		}
 	};
 }
 
@@ -1612,7 +1624,7 @@ function arrayCopy(_array, _length = _array.length){
 /*----------------------------------------------------------------------------------------------
 ---------------------------------------COMPUTE FOURIER------------------------------------------
 ----------------------------------------------------------------------------------------------*/
-function computeFourier(_wave, _sampleRate, _range){
+function computeFourier(_wave, _sampleRate, _range, _outBuffer = null){
 	let startIndex;
 	let stopIndex;
 	if(_range == undefined){
@@ -1624,19 +1636,25 @@ function computeFourier(_wave, _sampleRate, _range){
 		stopIndex = Math.floor(_range[1] * _sampleRate);
 	}
 
-	// Select the needed datas
-	let fftInput = new LinearData(_wave.getData(baseSampleRate / _sampleRate).slice(startIndex, stopIndex));
+	// Optimisation : On utilise subarray() plutôt que slice() pour ne pas cloner la mémoire
+	let waveData = _wave.getData(baseSampleRate / _sampleRate);
+	let slicedData = waveData.subarray ? waveData.subarray(startIndex, stopIndex) : waveData.slice(startIndex, stopIndex);
+	let fftInput = new LinearData(slicedData);
 
 	// limit dft to 10 kHz
 	let maxIndex = fftInput.data.length / 2;
 	if(_sampleRate / 2 > 10000){
-		maxIndex = fftInput.data.length / _sampleRate * 10000 + 1;
+		maxIndex = Math.floor(fftInput.data.length / _sampleRate * 10000) + 1;
 	}
-	// Plot the dft
-	let result = new LinearData(new Float32Array(maxIndex));
+	
+	// Optimisation : On recycle le buffer s'il a la bonne taille
+	let result = _outBuffer;
+	if (!result || result.data.length !== maxIndex) {
+		result = new LinearData(new Float32Array(maxIndex));
+	}
+
 	fourier.computeNormalizedFft(fftInput, result, _sampleRate, false);
 	return result;
-
 }
 
 function computeTemporalFourier(_wave, _sampleRate, _range){
