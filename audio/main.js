@@ -636,7 +636,7 @@ $('#file-preview-graph-container').addEventListener('mousedown', function(e) {
   let endVal = parseFloat($("#end-length-input").value);
   
   // Tolérance de clic pour les barres (5% de la largeur totale)
-  let threshold = (filePreviewChart.xAxis[0].max - filePreviewChart.xAxis[0].min) * 0.05; 
+  let threshold = (filePreviewChart.xAxis[0].max - filePreviewChart.xAxis[0].min) * 0.02; 
   
   let distStart = Math.abs(clickVal - startVal);
   let distEnd = Math.abs(clickVal - endVal);
@@ -672,7 +672,7 @@ $('#file-preview-graph-container').addEventListener('mousemove', function(e) {
   let endVal = parseFloat($("#end-length-input").value);
   
   // Gérer dynamiquement l'apparence du curseur
-  let threshold = (filePreviewChart.xAxis[0].max - filePreviewChart.xAxis[0].min) * 0.05; 
+  let threshold = (filePreviewChart.xAxis[0].max - filePreviewChart.xAxis[0].min) * 0.02; 
   if (Math.abs(hoverVal - startVal) < threshold || Math.abs(hoverVal - endVal) < threshold) {
     this.style.cursor = 'ew-resize'; // Flèches de redimensionnement sur les bords
   } else if (hoverVal > startVal && hoverVal < endVal) {
