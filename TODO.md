@@ -23,7 +23,6 @@
     - permettre d'ouvrir un fichier via le menu ?
     - fft add 0s to have a power of two and use faster fft ??
     - play the selected part of the audio when downloading
-    - tracer les perfs du chargement d'un fichier de 1 min pour voir les améliorations de vitesse à apporter.
     - MARCHE PAS DENVOYER VERS GRAPHER DES TROP GROSSES DONNEES
 
 # Tracker
