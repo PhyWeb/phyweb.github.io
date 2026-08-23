@@ -1311,6 +1311,8 @@ function HighchartOptions(_title, _xTitle, _yTitle, _xMin, _xMax, _yMin, _yMax, 
 		},
 		min: _yMin,
 		max: _yMax,
+    endOnTick: false,
+    startOnTick: false
 	};
 	this.credits = {
 		enabled: false
@@ -1335,10 +1337,10 @@ let rtWaveOptions = new HighchartOptions(null, "Temps (s)", "Amplitude", 0, 0.04
 let rtFourierOptions = new HighchartOptions(null, "Fréquence (Hz)", "Amplitude", 0, 10000, 0, 32768, 0, undefined, false, false);
 
 let recWaveOptions = new HighchartOptions(null, "Temps (s)", "Amplitude", 0, 0.05, -32768, 32768, 7, "xy");
-let recFourierOptions = new HighchartOptions(null, "Fréquence (Hz)", "Amplitude", 0, 10000, 0, 32768, 2, "xy");
+let recFourierOptions = new HighchartOptions(null, "Fréquence (Hz)", "Amplitude", 0, 10000, 0, null, 2, "xy");
 
 let savWaveOptions = new HighchartOptions(null, "Temps (s)", "Amplitude", 0, 0.05, -32768, 32768, 7, "xy");
-let savFourierOptions = new HighchartOptions(null, "Fréquence (Hz)", "Amplitude", 0, 10000, 0, 32768, 2, "xy");
+let savFourierOptions = new HighchartOptions(null, "Fréquence (Hz)", "Amplitude", 0, 10000, 0, null, 2, "xy");
 let savTemporalFourierOptions = {
   accessibility: {
     enabled : false
