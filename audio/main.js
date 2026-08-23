@@ -169,6 +169,11 @@ $("#new-session-button").addEventListener("click", ()=>{
   );
 });
 
+$("#menu-open-file-button").addEventListener("click", () => {
+  // Déclenche un clic virtuel sur l'input file original
+  $("#file-input").click();
+});
+
 /*----------------------------------------------------------------------------------------------
 -----------------------------------------DRAG AND DROP------------------------------------------
 ----------------------------------------------------------------------------------------------*/
@@ -186,8 +191,18 @@ const audioDropManager = new FileDropManager(document.body, async (file) => {
     return;
   }
 
-  // 1. Initialiser le contexte audio si nécessaire (similaire au clic sur l'onglet Acquisition)
-  await safeStartAudio("REC");
+  // Initialisation sécurisée si on est sur l'écran d'accueil
+  if (!$("#empty-state-container").classList.contains("is-hidden")) {
+    if(!await audioInit()) return; // Récupère les permissions et calcule baseSampleRate
+    
+    $("#empty-state-container").classList.add("is-hidden");
+    $("#tab-bar").classList.remove("is-hidden");
+    simpleMode = false; // On choisit le mode complet par défaut
+    draw(); // On lance la boucle d'affichage
+  } else {
+    // Si l'appli tourne déjà, on bascule juste le micro
+    await safeStartAudio("REC");
+  }
 
   // 2. Basculer l'interface visuellement sur "Acquisition" -> "Fichier"
   // On passe sur l'onglet principal "Acquisition"
@@ -521,15 +536,40 @@ function populateSampleRateSelect(_select, _initLvl = 1, _l = 4){
 /*----------------------------------------------------------------------------------------------
 -------------------------------------------FILE LOAD--------------------------------------------
 ----------------------------------------------------------------------------------------------*/
-$("#file-input").addEventListener("change",(event)=>{
-	// Read the file
-	fileReader.readAsArrayBuffer($("#file-input").files[0]);
-	// Hide the playback controls
-	$("#sample-panel").classList.add("is-hidden");
-	// Hide the fileInput button
-	$("#file-label").classList.add("is-hidden");
-	// Display the decoding label
-	$("#file-progress-bar").classList.remove("is-hidden");
+$("#file-input").addEventListener("change", async (event)=>{
+  if(!$("#file-input").files.length) return; // Sécurité si l'utilisateur annule
+
+  // Initialisation sécurisée si on est sur l'écran d'accueil
+  if (!$("#empty-state-container").classList.contains("is-hidden")) {
+    if(!await audioInit()) return;
+    
+    $("#empty-state-container").classList.add("is-hidden");
+    $("#tab-bar").classList.remove("is-hidden");
+    simpleMode = false;
+    draw();
+  } else {
+    await safeStartAudio("REC");
+  }
+
+  // Basculer l'interface visuellement sur "Acquisition" -> "Fichier"
+  tabManager.activeTab = 1; 
+  $("#rt-tab-button").classList.remove("is-active");
+  $("#rec-tab-button").classList.add("is-active");
+  $("#rt-panel").classList.add("is-hidden");
+  $("#rec-panel").classList.remove("is-hidden");
+  
+  $("#file-tab-button").classList.add("is-active");
+  $("#mic-tab-button").classList.remove("is-active");
+  $("#mic-panel").classList.add("is-hidden");
+  $("#file-panel").classList.remove("is-hidden");
+
+  // Lire le fichier
+  fileReader.readAsArrayBuffer($("#file-input").files[0]);
+  
+  // Mettre à jour l'UI
+  $("#sample-panel").classList.add("is-hidden");
+  $("#file-label").classList.add("is-hidden");
+  $("#file-progress-bar").classList.remove("is-hidden");
 });
 
 fileReader.addEventListener("loadend", ()=>{
@@ -969,14 +1009,22 @@ $("#download-file-button").addEventListener('click', () => {
   }
   const series = prepareSeriesForDownload(saveData, startTime, endTime, effectiveSampleRate);
 
-  // Si on exporte en WAV, on ne traite que le signal audio
+  // Si on exporte en WAV, on traite directement le signal audio brut de la sélection
   if ($("#wav-button").classList.contains('is-link')) {
+    const startSample = Math.round((startTime || 0) * effectiveSampleRate);
+    const endSample = Math.round((endTime || saveData.linearData.getDuration()) * effectiveSampleRate);
+    
+    // Récupération directe de la tranche de données audio
+    const rawWaveArray = saveData.linearData.getData(saveData.displaySampleRateLvl);
+    const slicedWavData = rawWaveArray.slice(startSample, endSample);
+
     const wavDataSerie = new Serie('Amplitude', 'u.a.');
-    wavDataSerie.setData(series[1].data); // L'amplitude est la deuxième série
+    wavDataSerie.setData(slicedWavData);
+    
     const file = audio.generateWavFile(wavDataSerie, effectiveSampleRate);
     downloadFile(file, 'wav', filename);
     common.modalManager.closeAllModals();
-    return; // Fin du processus pour WAV
+    return; 
   }
 
   // Lancer le téléchargement pour PW, CSV ou RW3

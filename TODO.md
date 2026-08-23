@@ -24,6 +24,8 @@
     - fft add 0s to have a power of two and use faster fft ??
     - play the selected part of the audio when downloading
     - BUG : peut pas telecharger un audio !
+    - tracer les perfs du chargement d'un fichier de 1 min pour voir les améliorations de vitesse à apporter.
+    - MARCHE PAS DENVOYER VERS GRAPHER DES TROP GROSSES DONNEES
 
 # Tracker
     - bug or feature ? : frame is downloaded only if all points are set
