@@ -1684,24 +1684,68 @@ function computeFourier(_wave, _sampleRate, _range, _outBuffer = null){
 		stopIndex = Math.floor(_range[1] * _sampleRate);
 	}
 
-	// Optimisation : On utilise subarray() plutôt que slice() pour ne pas cloner la mémoire
+	// Utilisation de subarray pour ne pas dupliquer la mémoire
 	let waveData = _wave.getData(baseSampleRate / _sampleRate);
 	let slicedData = waveData.subarray ? waveData.subarray(startIndex, stopIndex) : waveData.slice(startIndex, stopIndex);
-	let fftInput = new LinearData(slicedData);
+	
+	// La taille de notre moteur FFT ultra-rapide (4096)
+	let chunkSize = fourier.nayuki.n; 
 
-	// limit dft to 10 kHz
-	let maxIndex = fftInput.data.length / 2;
+	// Si la sélection utilisateur est plus petite que 4096 points, on réduit la taille
+	let actualChunkSize = chunkSize;
+	if (slicedData.length < chunkSize) {
+		actualChunkSize = Math.pow(2, Math.floor(Math.log2(slicedData.length)));
+		if (actualChunkSize < 256) actualChunkSize = 256; // Minimum vital pour avoir un spectre
+	}
+
+	let maxIndex = actualChunkSize / 2;
 	if(_sampleRate / 2 > 10000){
-		maxIndex = Math.floor(fftInput.data.length / _sampleRate * 10000) + 1;
+		maxIndex = Math.floor(actualChunkSize / _sampleRate * 10000) + 1;
 	}
 	
-	// Optimisation : On recycle le buffer s'il a la bonne taille
 	let result = _outBuffer;
 	if (!result || result.data.length !== maxIndex) {
 		result = new LinearData(new Float32Array(maxIndex));
 	}
+	
+	// Mise à zéro du buffer de résultat (important pour accumuler)
+	for (let i = 0; i < maxIndex; i++) result.data[i] = 0;
 
-	fourier.computeNormalizedFft(fftInput, result, _sampleRate, false);
+	// --- MÉTHODE DE WELCH ---
+	if (slicedData.length >= actualChunkSize) {
+		let stepSize = Math.floor(actualChunkSize / 2); // Chevauchement de 50%
+		let numChunks = Math.floor((slicedData.length - actualChunkSize) / stepSize) + 1;
+		
+		let tempResult = new LinearData(new Float32Array(maxIndex));
+
+		// Boucle ultra-rapide sur tous les blocs du signal
+		for (let i = 0; i < numChunks; i++) {
+			let chunkStart = i * stepSize;
+			let chunkData = slicedData.subarray(chunkStart, chunkStart + actualChunkSize);
+			let chunkInput = new LinearData(chunkData);
+			
+			// On calcule la FFT du bloc (temps d'exécution : ~0.3ms par bloc)
+			fourier.computeNormalizedFft(chunkInput, tempResult, _sampleRate, false);
+			
+			// On accumule la somme des spectres
+			for (let j = 0; j < maxIndex; j++) {
+				result.data[j] += tempResult.data[j];
+			}
+		}
+		
+		// On calcule la moyenne
+		for (let j = 0; j < maxIndex; j++) {
+			result.data[j] /= numChunks;
+		}
+		result.step = tempResult.step;
+	} 
+	else {
+		// Fallback si l'utilisateur a zoomé sur une portion microscopique (< 4096 points)
+		let padData = new Float32Array(actualChunkSize);
+		padData.set(slicedData);
+		fourier.computeNormalizedFft(new LinearData(padData), result, _sampleRate, false);
+	}
+
 	return result;
 }
 
