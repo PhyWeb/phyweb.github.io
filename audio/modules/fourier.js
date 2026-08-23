@@ -353,19 +353,20 @@ export default function Fourier(_n) {
     */
     this.computeNormalizedFft = function(_data, _result, _samplingFrequency, _zeroPadding){
         let rawFft = this.computeFft(_data, _zeroPadding);
-
-        // Determine how many Hz represented by each sample
         let hzPerSample = _samplingFrequency / _data.data.length;
     
+        // Facteur de compensation pour la fenêtre de Hann (qui divise l'énergie par 2)
+        let windowCompensation = 2.0;
+
         if(_zeroPadding == true){
             for(let i = 0; i < rawFft.real.length; i++){
-                _result.data[i] = 2 / rawFft.real.length * Math.sqrt(rawFft.real[i*2+1]*rawFft.real[i*2+1]+rawFft.imag[i*2+1]*rawFft.imag[i*2+1]);
+                _result.data[i] = (2 * windowCompensation) / rawFft.real.length * Math.sqrt(rawFft.real[i*2+1]*rawFft.real[i*2+1]+rawFft.imag[i*2+1]*rawFft.imag[i*2+1]);
                 _result.step = hzPerSample * 2;
             }
         }
         else{
             for(let i = 0; i <  _result.data.length; i++){
-                _result.data[i] = 2 / rawFft.real.length * Math.sqrt(rawFft.real[i]*rawFft.real[i]+rawFft.imag[i]*rawFft.imag[i]);
+                _result.data[i] = (2 * windowCompensation) / rawFft.real.length * Math.sqrt(rawFft.real[i]*rawFft.real[i]+rawFft.imag[i]*rawFft.imag[i]);
                 _result.step = hzPerSample;
             }
         }   
