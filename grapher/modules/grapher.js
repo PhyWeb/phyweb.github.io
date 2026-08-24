@@ -181,7 +181,7 @@ export default class Grapher {
     this.chart = Highcharts.chart("chart", {
       animation: ANIMATION_FLAG,
       boost: {
-        seriesThreshold: 5000,
+        useGPUTranslations: true
       },
       chart: {
         type: "line",
@@ -527,6 +527,7 @@ export default class Grapher {
       },
       plotOptions: {
         series: {
+          boostThreshold: 50000,
           allowPointSelect: true,
           animation: ANIMATION_FLAG,
           stickyTracking: false,
