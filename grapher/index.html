@@ -221,8 +221,37 @@
         </button>
       </div>
     </nav>
-    <div class="block" style="overflow:auto; height: 100%" id="table-container">
+    <div class="block mb-1" style="overflow:auto; height: 100%" id="table-container">
       <div id="table" class="ht-theme-horizon "></div>
+    </div>
+    <div class="is-flex is-justify-content-center is-hidden" id="pagination-controls">
+      <div class="buttons has-addons mb-0 is-align-items-center">
+        <!-- Bouton Première page -->
+        <button class="button is-small" id="page-first-button" disabled>
+          <span class="icon"><i class="fas fa-angle-double-left"></i></span>
+        </button>
+        <!-- Bouton Page précédente -->
+        <button class="button is-small" id="page-prev-button" disabled>
+          <span class="icon"><i class="fas fa-chevron-left"></i></span>
+        </button>
+        
+        <span class="button is-small is-static">Page</span>
+        
+        <div class="control">
+          <input class="input is-small has-text-centered" type="number" id="page-input" value="1" min="1" style="width: 60px; border-radius: 0;">
+        </div>
+        
+        <span class="button is-small is-static" id="page-total-label">sur 1</span>
+
+        <!-- Bouton Page suivante -->
+        <button class="button is-small" id="page-next-button">
+          <span class="icon"><i class="fas fa-chevron-right"></i></span>
+        </button>
+        <!-- Bouton Dernière page -->
+        <button class="button is-small" id="page-last-button">
+          <span class="icon"><i class="fas fa-angle-double-right"></i></span>
+        </button>
+      </div>
     </div>
   </div>
   <!------------------------------------------------------------------------------------------------------------>

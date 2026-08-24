@@ -162,8 +162,13 @@ export default class Grapher {
 
   formatData(xCurve, yCurve){
     let length = lengthOfTheLongestTable([xCurve, yCurve]);
-    let data = []
-    for(let i = 0; i < length; i++){
+    let data = [];
+    
+    // Optimisation : on limite le nombre maximum de points envoyés au graphique
+    const MAX_POINTS = 100000; 
+    let step = length > MAX_POINTS ? Math.ceil(length / MAX_POINTS) : 1;
+
+    for(let i = 0; i < length; i += step){
       if(xCurve[i] !== "" && yCurve[i] !== "" && xCurve[i] !== undefined && yCurve[i] !== undefined){
         data.push([xCurve[i], yCurve[i]]);
       }
@@ -752,7 +757,7 @@ showLoading(text = 'Chargement...', delay = 500, showStopButton = false) {
   }
 
 updateChart(yCurveTitles, redraw = true) {
-    if (!this.currentXCurve) return;
+    if (!this.chart || !this.currentXCurve) return;
 
     // Déterminer les courbes à afficher
     let curvesToShow;
@@ -1550,7 +1555,9 @@ setDisableScientificNotation(disabled) {
       this.uiManager.updateClearAnnotationsButtonVisibility();
     }
 
-    this.chart.redraw();
+    if (this.chart) {
+      this.chart.redraw();
+    }
   }
 
   handleMouseMove(e) {

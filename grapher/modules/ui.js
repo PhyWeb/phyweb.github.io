@@ -973,6 +973,70 @@ export default class UIManager {
       }
     });
 
+    document.getElementById('page-prev-button').addEventListener('click', () => {
+      if (this.spreadsheet.currentPage > 0) {
+        this.spreadsheet.currentPage--;
+        this.spreadsheet.update();
+      }
+    });
+
+    document.getElementById('page-next-button').addEventListener('click', () => {
+      const totalRows = this.data.getTable().length;
+      if ((this.spreadsheet.currentPage + 1) * this.spreadsheet.pageSize < totalRows) {
+        this.spreadsheet.currentPage++;
+        this.spreadsheet.update();
+      }
+    });
+
+    document.getElementById('page-first-button').addEventListener('click', () => {
+      if (this.spreadsheet.currentPage > 0) {
+        this.spreadsheet.currentPage = 0;
+        this.spreadsheet.update();
+        this.spreadsheet.focusFirstCell(false); // Optionnel : remonte en haut
+      }
+    });
+
+    document.getElementById('page-last-button').addEventListener('click', () => {
+      const totalRows = this.data.getTable().length;
+      const totalPages = Math.ceil(totalRows / this.spreadsheet.pageSize);
+      
+      if (this.spreadsheet.currentPage < totalPages - 1) {
+        this.spreadsheet.currentPage = totalPages - 1;
+        this.spreadsheet.update();
+        this.spreadsheet.focusFirstCell(false); // Optionnel
+      }
+    });
+
+    const pageInput = document.getElementById('page-input');
+    if (pageInput) {
+      // Valider avec la touche Entrée
+      pageInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.target.blur(); // Déclenche le blur pour valider
+        }
+      });
+
+      // Valider quand on sort du champ
+      pageInput.addEventListener('change', (e) => {
+        const totalRows = this.data.getTable().length;
+        const totalPages = Math.ceil(totalRows / this.spreadsheet.pageSize);
+        
+        let targetPage = parseInt(e.target.value, 10) - 1; // Passage en index 0
+        
+        // Sécurisation des bornes
+        if (isNaN(targetPage) || targetPage < 0) targetPage = 0;
+        if (targetPage >= totalPages) targetPage = totalPages - 1;
+
+        if (targetPage !== this.spreadsheet.currentPage) {
+          this.spreadsheet.currentPage = targetPage;
+          this.spreadsheet.update();
+        } else {
+          // Remet la valeur correcte si l'utilisateur a tapé n'importe quoi
+          e.target.value = this.spreadsheet.currentPage + 1;
+        }
+      });
+    }
+
     this.initAddCurveModal();
     this.initDeleteCurveModal();
     this.initDeleteLineButton();

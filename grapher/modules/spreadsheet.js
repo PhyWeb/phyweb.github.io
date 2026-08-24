@@ -10,6 +10,10 @@ class Spreadsheet {
     this.data = data;
     this.cb = cb;
     this.hot;
+
+    // Paramètres de pagination
+    this.currentPage = 0;
+    this.pageSize = 10000;
   }   
 
   addCurve(title, unit, size, fill, line, markers){
@@ -21,40 +25,95 @@ class Spreadsheet {
     return curve;
   }
 
-update(){
-    const significantDigits = this.data.settings.significantDigits;
+  update(){
     const headers = this.data.getHeaders();
+    const currentHeaders = this.hot ? this.hot.getColHeader() : null; 
+    
+    const headersChanged = !currentHeaders || 
+                           headers.length !== currentHeaders.length || 
+                           headers.some((h, i) => h !== currentHeaders[i]);
 
-    const columnsConfig = headers.map(() => ({ 
-      type: 'numeric',
-      renderer: (instance, td, row, col, prop, value, cellProperties) => {
-        // 1. Conversion de sécurité : on s'assure d'avoir un vrai nombre
-        let parsedValue = value;
-        if (typeof value === 'string' && value.trim() !== '') {
-          parsedValue = parseFloat(value.replace(',', '.'));
+    const fullTableData = this.data.getTable();
+    const totalRows = fullTableData.length;
+
+    // Découpage des données (Pagination)
+    const startIdx = this.currentPage * this.pageSize;
+    const endIdx = Math.min(startIdx + this.pageSize, totalRows);
+    const displayData = fullTableData.slice(startIdx, endIdx);
+
+    // Mise à jour de l'UI de pagination
+    this.updatePaginationUI(totalRows, startIdx, endIdx);
+
+    if (!headersChanged) {
+      this.hot.loadData(displayData);
+    } else {
+      const columnsConfig = headers.map(() => ({ 
+        type: 'numeric',
+        renderer: (instance, td, row, col, prop, value, cellProperties) => {
+          const currentSignificantDigits = this.data.settings.significantDigits;
+          let parsedValue = value;
+          if (typeof value === 'string' && value.trim() !== '') {
+            parsedValue = parseFloat(value.replace(',', '.'));
+          }
+
+          let formattedValue = value;
+          if (parsedValue !== null && parsedValue !== undefined && !isNaN(parsedValue) && value !== '') {
+            formattedValue = formatNumber(parsedValue, currentSignificantDigits);
+          }
+          Handsontable.renderers.getRenderer('text')(instance, td, row, col, prop, formattedValue, cellProperties);
         }
+      }));
 
-        // 2. Formatage uniquement si c'est un nombre valide
-        let formattedValue = value;
-        if (parsedValue !== null && parsedValue !== undefined && !isNaN(parsedValue) && value !== '') {
-          formattedValue = formatNumber(parsedValue, significantDigits);
-        }
-
-        // 3. Application de l'affichage via le renderer de texte
-        Handsontable.renderers.getRenderer('text')(instance, td, row, col, prop, formattedValue, cellProperties);
-      }
-    }));
-
-    this.hot.updateSettings({
-      data: this.data.getTable(),
-      colHeaders: headers,
-      columns: columnsConfig,
-      autoColumnSize: false,
-      autoRowSize: false
-    });
+      this.hot.updateSettings({
+        data: displayData,
+        colHeaders: headers,
+        columns: columnsConfig,
+        // Fonction dynamique pour calculer le bon numéro de ligne (à cause de la pagination)
+        rowHeaders: (index) => {
+           return (this.currentPage * this.pageSize) + index + 1;
+        },
+        autoColumnSize: false,
+        autoRowSize: false
+      });
+    }
   }
 
-  build(uiManager){
+  // Met à jour les boutons et le texte
+  updatePaginationUI(totalRows) {
+    const controls = document.getElementById('pagination-controls');
+    const firstBtn = document.getElementById('page-first-button');
+    const prevBtn = document.getElementById('page-prev-button');
+    const nextBtn = document.getElementById('page-next-button');
+    const lastBtn = document.getElementById('page-last-button');
+    const pageInput = document.getElementById('page-input');
+    const totalLabel = document.getElementById('page-total-label');
+
+    if (!controls) return;
+
+    const totalPages = Math.ceil(totalRows / this.pageSize);
+
+    if (totalRows <= this.pageSize) {
+      controls.classList.add('is-hidden');
+    } else {
+      controls.classList.remove('is-hidden');
+      
+      pageInput.value = this.currentPage + 1;
+      pageInput.max = totalPages;
+      totalLabel.textContent = `sur ${totalPages}`;
+
+      // Désactiver au début
+      const isFirst = this.currentPage === 0;
+      firstBtn.disabled = isFirst;
+      prevBtn.disabled = isFirst;
+
+      // Désactiver à la fin
+      const isLast = this.currentPage >= totalPages - 1;
+      nextBtn.disabled = isLast;
+      lastBtn.disabled = isLast;
+    }
+  }
+
+build(uiManager){
     const onSpreadsheetHeaderDblClick = (colIndex) => {
       const curve = this.data.getCurveByIndex(colIndex);
       if (curve) {
@@ -103,11 +162,25 @@ update(){
       }
     };
     
+    // --- SECURITE : Initialisation de la pagination au cas où ---
+    if (typeof this.currentPage === 'undefined') this.currentPage = 0;
+    if (typeof this.pageSize === 'undefined') this.pageSize = 10000;
+
+    // --- DECOUPAGE DES DONNÉES (PAGINATION) ---
+    const fullTableData = this.data.getTable();
+    const startIdx = this.currentPage * this.pageSize;
+    const endIdx = Math.min(startIdx + this.pageSize, fullTableData.length);
+    const displayData = fullTableData.slice(startIdx, endIdx);
+
+    // --- CRÉATION DU TABLEAU ---
     this.hot = new Handsontable(container, {
-      data: this.data.getTable(),
+      data: displayData, // On ne charge que la première page
       type: 'numeric',
       minSpareRows: 1,
-      rowHeaders: true,
+      // On calcule le bon numéro de ligne
+      rowHeaders: (index) => {
+        return (this.currentPage * this.pageSize) + index + 1;
+      },
       colHeaders: this.data.getHeaders(),
       columns: this.data.getHeaders().map(() => ({ 
         type: 'numeric',

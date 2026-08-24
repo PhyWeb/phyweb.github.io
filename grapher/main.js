@@ -29,7 +29,9 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   function spreadsheetModifiedData(e){
-    grapher.updateChart();
+    if (grapher.chart) {
+      grapher.updateChart();
+    }
   }
   let spreadsheet = new Spreadsheet(data, spreadsheetModifiedData);
 

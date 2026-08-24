@@ -308,3 +308,20 @@
 #file-extension-label {
   width: 4rem;
 }
+
+/* Masquer les flèches des inputs number (Chrome, Safari, Edge, Opera) */
+#page-input::-webkit-outer-spin-button,
+#page-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+/* Masquer pour Firefox */
+#page-input[type=number] {
+  -moz-appearance: textfield;
+}
+
+/* Remplacer le "sens interdit" par la flèche classique sur les boutons inactifs */
+.button[disabled],
+fieldset[disabled] .button {
+  cursor: default !important;
+}
