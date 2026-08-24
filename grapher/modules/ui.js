@@ -2740,6 +2740,16 @@ export default class UIManager {
       this.editor.getWrapperElement().classList.add('textarea');
       this.editor.getWrapperElement().classList.add('p-0');
 
+      // Raccourcis clavier
+      this.editor.setOption("extraKeys", {
+        "Ctrl-Enter": () => {
+          $("#apply-calculation-button").click();
+        },
+        "Cmd-Enter": () => { // Pour les utilisateurs Mac
+          $("#apply-calculation-button").click();
+        }
+      });
+
       // Met à jour l'affichage quand on change d'onglet
       $("#calculs-tab").addEventListener("click", () => {
         setTimeout(() => {
