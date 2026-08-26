@@ -13,7 +13,7 @@
 
     - REGRESSI ne lit que les lignes completes. Il faut un disclaimer quand on genere un rw3 incomplet
 
-    - TRANSFORMER LES ALERTS EN TOAST PARTOUT OU NECESSAIRE (audio ok normalement)
+    - Ajouter des toats quand c'est utilie
 
 # ELECTRON
 
