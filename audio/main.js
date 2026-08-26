@@ -182,12 +182,7 @@ const audioDropManager = new FileDropManager(document.body, async (file) => {
 
   // Vérification basique du type de fichier (optionnel mais recommandé)
   if (!file.type.startsWith('audio/') && !file.name.match(/\.(wav|mp3|ogg|flac|m4a)$/i)) {
-    alertModal({
-      type: "warning",
-      title: "Fichier non supporté",
-      body: "Veuillez déposer un fichier audio valide.",
-      confirm: "OK"
-    });
+    showToast("Le fichier déposé n'est pas un audio valide.", "is-warning");
     return;
   }
 
@@ -1095,11 +1090,16 @@ $("#send-to-grapher-button").addEventListener('click', () => {
   const active = getActiveData();
   
   if(!active || !active.saveData.linearData){
-    alertModal({
-      type: 'warning',
-      title: 'Aucune donnée à envoyer',
-      body: "Aucune donnée n'a encore été enregistrée. Veuillez d'abord enregistrer ou importer un signal audio.",
-      confirm: 'OK'
+    showToast("Aucune donnée à envoyer. Veuillez d'abord enregistrer ou importer un signal audio.", "is-warning");
+    return;
+  }
+
+  // Mettre en pause automatiquement si on est en Temps Réel
+  if(tabManager.activeTab === 0 && !paused) {
+     $("#pause-button").click();
+  }
+
+  const duration = active.saveData.linearData.getDuration();
     });
     return;
   }
@@ -1784,12 +1784,7 @@ function onFourierReplotButtonClick() {
 	else{
 		// check data size and return if too short
 		if(saves[tabManager.activeTab-2].fourierPlottingRange[1] - saves[tabManager.activeTab-2].fourierPlottingRange[0] < 0.5){
-      alertModal({
-        type: "warning",
-        title: "Durée insuffisante",
-        body: "La durée de l'enregistrement doit être supérieure à 0,5s pour réaliser une analyse spectrale temporelle.",
-        confirm: "OK"
-      })
+      showToast("La durée de l'enregistrement doit être supérieure à 0,5s pour réaliser une analyse spectrale temporelle.", "is-warning");
 			return;
 		}
 		// display the temporal dft
