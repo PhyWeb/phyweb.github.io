@@ -34,7 +34,7 @@ export default class IOManager {
    */
   saveFile(fileName, format) {
     let content = '';
-    const separator = '\t';
+    const separator = ';';
 
     if (format === 'csv') {
       content = this.generateCSV(separator);
@@ -120,16 +120,23 @@ generatePW() {
    * @returns {string} Le contenu du fichier CSV.
    */
   generateCSV(separator) {
-    const headers = this.app.data.curves.map(c => c.title).join(separator);
-    const units = this.app.data.curves.map(c => c.unit).join(separator);
+    // Préparation des en-têtes et des unités (tableaux simples)
+    const headers = this.app.data.curves.map(c => c.title);
+    const units = this.app.data.curves.map(c => c.unit);
+    
+    // Préparation des données (remplacement des points par des virgules pour le format FR)
     const tableData = this.app.data.getTable();
-
     const dataRows = tableData.map(row => {
-      // Remplace les null/undefined par des chaînes vides et les points par des virgules pour le format FR
-      return row.map(cell => (cell === null || cell === undefined) ? '' : String(cell).replace('.', ',')).join(separator);
-    }).join('\n');
+      return row.map(cell => (cell === null || cell === undefined) ? '' : String(cell).replace('.', ','));
+    });
 
-    return `${headers}\n${units}\n${dataRows}`;
+    // Fusion de toutes les lignes dans un seul grand tableau 2D
+    const allRows = [headers, units, ...dataRows];
+
+    // Délégation à Papa Parse pour générer le texte sécurisé
+    return Papa.unparse(allRows, {
+      delimiter: separator
+    });
   }
 
   /**
@@ -227,7 +234,7 @@ generatePW() {
    * @param {string} fileName - Le nom du fichier.
    */
   triggerDownload(content, fileName) {
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const blob = new Blob(['\uFEFF', content], { type: 'text/csv;charset=utf-8' });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
     

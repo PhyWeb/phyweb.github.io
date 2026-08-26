@@ -1,3 +1,5 @@
+import Papa from './papaparse/papaparse.esm.js';
+
 const $ = document.querySelector.bind(document);
 
 /*----------------------------------------------------------------------------------------------
@@ -1075,51 +1077,45 @@ function exportToPW(series, options = {}, app, calculations = "") {
   return JSON.stringify(sessionData, null, 2);
 }
 
-function exportToCSV(_series, _rowMustBeComplete = false){
-  let csv = [];
-  let row = [];
-
+function exportToCSV(_series, _rowMustBeComplete = false) {
+  let headers = [];
   let hasNameFlag = false;
-
-  // create the name row and find the length of the biggest serie
   let largestSerieLength = 0;
-  for(let i = 0; i < _series.length; i++){
-    if(_series[i].title){
-      hasNameFlag = true;
-      row.push(_series[i].title);
-    } else {
-      row.push("");
-    }
 
-    if(_series[i].length > largestSerieLength){
+  for (let i = 0; i < _series.length; i++) {
+    if (_series[i].title) hasNameFlag = true;
+    headers.push(_series[i].title || "");
+    if (_series[i].length > largestSerieLength) {
       largestSerieLength = _series[i].length;
     }
   }
-  // At least one serie has a name
-  if(hasNameFlag){
-    csv.push(row.join(","));
-  }
 
-  // push value rows
-  for(let i = 0; i < largestSerieLength; i++){
+  let dataRows = [];
+  for (let i = 0; i < largestSerieLength; i++) {
     let row = [];
     let rowIsComplete = true;
-    for(let j = 0; j < _series.length; j++){
-      if(_series[j][i] === "" || _series[j][i] === undefined || _series[j][i] === null){
+    for (let j = 0; j < _series.length; j++) {
+      let val = _series[j][i];
+      if (val === "" || val === undefined || val === null) {
         rowIsComplete = false;
       }
-      row.push(_series[j][i]);
+      // On s'assure que les points décimaux sont des virgules pour Excel FR
+      row.push(val !== undefined && val !== null ? String(val).replace('.', ',') : val);
     }
-    if(_rowMustBeComplete){
-      if(rowIsComplete){
-        csv.push(row.join(","));
-      }
-    } else{
-      csv.push(row.join(","));
+    if (!_rowMustBeComplete || rowIsComplete) {
+      dataRows.push(row);
     }
   }
 
-  return csv.join("\n");
+  const csvContent = Papa.unparse({
+    fields: hasNameFlag ? headers : undefined,
+    data: dataRows
+  }, {
+    delimiter: ";" // Point-virgule pour Excel FR
+  });
+
+  // On retourne la chaîne avec le BOM intégré au tout début
+  return '\uFEFF' + csvContent;
 }
 
 function exportToRW3(_series, _rowMustBeComplete = false, _title){
