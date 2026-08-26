@@ -4,7 +4,7 @@ import EXTRACTOR from "./modules/extractor.js"
 import MEASUREMENT from "./modules/measurement.js"
 import PLAYER from "./modules/player.js"
 
-import {Common, setupGlobalShortcuts, alertModal, NavigationManager, exportToPW, FileDropManager} from "../common/common.js"
+import {Common, setupGlobalShortcuts, alertModal, showToast, NavigationManager, exportToPW, FileDropManager} from "../common/common.js"
 
 import ExchangeManager from '../common/modules/ExchangeManager.js';
 
@@ -129,12 +129,7 @@ $("#send-to-grapher-button").addEventListener("click", async () => {
     await ExchangeManager.sendToGrapher(pw);
   } catch(e) {
     console.error(e);
-    alertModal({
-      type: 'error',
-      title: 'Erreur lors de l\'envoi à Grapher',
-      body: 'Une erreur est survenue lors de l\'envoi des données à Grapher. Veuillez réessayer.',
-      confirm: 'OK'
-    });
+    showToast("Une erreur est survenue lors de l'envoi des données à Grapher.", "is-danger");
   }
 });
 

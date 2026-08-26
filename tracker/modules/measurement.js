@@ -1,4 +1,4 @@
-import {Serie, downloadFile, exportToPW, exportToCSV, exportToRW3} from "../../common/common.js"
+import {Serie, downloadFile, exportToPW, exportToCSV, exportToRW3, showToast} from "../../common/common.js"
 
 const $ = document.querySelector.bind(document);
 
@@ -348,10 +348,10 @@ export default class MEASUREMENT {
 
   exportToClipboard() {
     const csv = exportToCSV(this.prepareDownloadData(), true);
-    const tsvContent = csv.replace(/,/g, '\t');
+    const tsvContent = csv.replace(/;/g, '\t');
 
     navigator.clipboard.writeText(tsvContent).then(() => {
-      console.log("Données copiées dans le presse-papiers !");
+      showToast("Données copiées dans le presse-papiers !", "is-success");
     }).catch(err => {
       console.error("Erreur lors de la copie : ", err);
     });
