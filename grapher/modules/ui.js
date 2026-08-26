@@ -1506,6 +1506,9 @@ export default class UIManager {
       // Appelle la méthode de grapher.js pour changer l'axe des x
       this.grapher.setXCurve(newXAxis);
 
+      // Met à jour les icônes "oeil" de tous les panneaux de modélisation
+      this.updateAllModelPanelVisibilityIcons();
+
     });
   }
 
