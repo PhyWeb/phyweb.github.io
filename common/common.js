@@ -1346,6 +1346,37 @@ export class FileDropManager {
   }
 }
 
+/*----------------------------------------------------------------------------------------------
+----------------------------------------TOAST MANAGER-------------------------------------------
+----------------------------------------------------------------------------------------------*/
+export function showToast(message, type = 'is-info', duration = 4000) {
+  let container = document.querySelector('.toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.className = 'toast-container';
+    document.body.appendChild(container);
+  }
+
+  const toast = document.createElement('div');
+  toast.className = `notification ${type} is-light`; 
+  toast.innerHTML = message; // On met directement le texte
+
+  // Fonction pour faire disparaître le toast en douceur
+  const dismissToast = () => {
+    if (!toast.parentElement) return; 
+    toast.style.animation = 'fadeOut 0.3s ease forwards'; 
+    setTimeout(() => toast.remove(), 300); 
+  };
+
+  // Fermeture manuelle au clic n'importe où sur le toast
+  toast.onclick = dismissToast;
+
+  container.appendChild(toast);
+
+  // Fermeture automatique après X secondes
+  setTimeout(dismissToast, duration);
+}
+
 
 
 /*----------------------------------------------------------------------------------------------

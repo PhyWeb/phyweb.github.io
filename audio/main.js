@@ -1,7 +1,7 @@
 import FOURIER from "./modules/fourier.js"
 import {PhyAudio, convertFloat32ToInt16} from "./modules/audio.js"
 
-import {Common, setupGlobalShortcuts ,alertModal, TabManager, NavigationManager, downloadFile, exportToPW, exportToCSV, exportToRW3, Serie, FileDropManager} from "../common/common.js"
+import {Common, setupGlobalShortcuts ,alertModal, showToast, TabManager, NavigationManager, downloadFile, exportToPW, exportToCSV, exportToRW3, Serie, FileDropManager} from "../common/common.js"
 
 import ExchangeManager from '../common/modules/ExchangeManager.js';
 
@@ -418,30 +418,15 @@ $("#confirm-save-button").addEventListener("click", ()=>{
 $("#sample-button").addEventListener("click",()=>{
 	// SampleLength value verifications
 	if($("#sample-length-input").value === ""){
-    alertModal({
-      type: "warning",
-      title: "Durée non valide",
-      body: "La durée d'enregistrement n'est pas un nombre valide.",
-      confirm: "OK"
-    })
+    showToast("La durée d'enregistrement n'est pas un nombre valide.", "is-warning");
 		return;
 	}
 	if($("#sample-length-input").value < 0.01){
-    alertModal({
-      type: "warning",
-      title: "Durée insuffisante",
-      body: "La durée d'enregistrement minimale est de 0,01 s.",
-      confirm: "OK"
-    })
+    showToast("La durée d'enregistrement minimale est de 0,01 s.", "is-warning");
 		return;
 	}
 	if($("#sample-length-input").value > 60){
-    alertModal({
-      type: "warning",
-      title: "Durée trop importante",
-      body: "La durée d'enregistrement maximale est de 60 s.",
-      confirm: "OK"
-    })
+    showToast("La durée d'enregistrement maximale est de 60 s.", "is-warning");
 		return;
 	}
 	// Get the sampleLength
@@ -844,16 +829,13 @@ $("#end-size-input").addEventListener('change', function () {
 });
 
 // Download button
+// Download button
 $("#save-button").addEventListener("click", ()=>{
   const active = getActiveData();
   
   if(!active || !active.saveData.linearData){
-    alertModal({
-      type: "warning",
-      title: "Aucune donnée à sauvegarder",
-      body: "Aucune donnée n'a encore été enregistrée. Veuillez d'abord enregistrer ou importer un signal audio.",
-      confirm: "OK"
-    })
+    // Utilisation du Toast à la place de la modale bloquante
+    showToast("Aucune donnée à sauvegarder. Veuillez d'abord enregistrer ou importer un signal.", "is-warning");
     return;
   }
 
