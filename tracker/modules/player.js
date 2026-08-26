@@ -56,8 +56,13 @@ export default class PLAYER {
       // destroy previous frames
       if(this.decodedVideo){
         this.decodedVideo.frames.forEach((e)=>{
-          e.close();
+          // Vérification de sécurité et libération de l'URL du Blob
+          if (e && e.src) {
+            URL.revokeObjectURL(e.src);
+          }
         });
+        // On vide proprement le tableau
+        this.decodedVideo.frames = [];
       }
     }
 
@@ -85,7 +90,8 @@ export default class PLAYER {
 
       this.setFrame(this.currentFrame);
 
-      this.animationFrameRequest = requestAnimationFrame(this.loop);
+      // On passe a un rendu par frame plutot qu'un rendu continu pour eviter les ralentissements
+      //this.animationFrameRequest = requestAnimationFrame(this.loop);
     }
     
     // Check if _file is a file or a path and start extraction
@@ -288,6 +294,8 @@ export default class PLAYER {
       $("#magnifier-button").classList.add("is-active");
       this.magnifier = true;
     }
+
+    this.drawFrame(this.currentFrame);
   }
 
   firstFrame(){
@@ -389,11 +397,6 @@ export default class PLAYER {
     }
   }
 
-  loop = () => {
-    this.animationFrameRequest = requestAnimationFrame(this.loop);
-    this.drawFrame(this.currentFrame);
-  }
-
   onMouseMove = (ev) => {
     let rect = this.videoCanvas.getBoundingClientRect();
 		this.point = { x: (ev.clientX/* - 7*/) - rect.left, y: (ev.clientY/* - 7*/) - rect.top };
@@ -419,6 +422,11 @@ export default class PLAYER {
       $("#x-coord-label").innerHTML = "X : " + x;
       $("#y-coord-label").innerHTML = "Y : " + y;
     }
+
+    // On redessine uniquement si la loupe est active ou si on est en train de tracer l'échelle (pour voir le trait en direct)
+    if (this.magnifier === true || this.segment.x1 != null) {
+      this.drawFrame(this.currentFrame);
+    }
   }
 
   onClick = (ev) => {
@@ -439,7 +447,8 @@ export default class PLAYER {
 
 
     if(this.currentPoint < ((this.measurement.series.length - 1) / 2) - 1){
-      this.currentPoint++
+      this.currentPoint++;
+      this.drawFrame(this.currentFrame);
     } else{
       this.nextFrame();
     }
@@ -481,6 +490,7 @@ export default class PLAYER {
 
     // Remove keyboard shortcut
     document.removeEventListener("keyup", this.originModeKeyboardShortcut);
+    this.drawFrame(this.currentFrame);
   }
 
   onOriginClick = (ev) => {
@@ -511,6 +521,7 @@ export default class PLAYER {
 
     this.measurement.updateTable();
 
+    this.drawFrame(this.currentFrame);
     this.exitOriginMode();
   }
 
@@ -554,6 +565,7 @@ export default class PLAYER {
 
     // Remove keyboard shortcut
     document.removeEventListener("keyup", this.scaleModeKeyboardShortcut);
+    this.drawFrame(this.currentFrame);
   }
 
   onScaleClick = (ev) => {
@@ -582,6 +594,7 @@ export default class PLAYER {
 
       this.measurement.updateTable();
 
+      this.drawFrame(this.currentFrame);
       this.exitScaleMode();
     }
   }

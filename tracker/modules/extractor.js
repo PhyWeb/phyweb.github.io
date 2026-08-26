@@ -16,7 +16,7 @@ export default class EXTRACTOR {
     this.nbSamples = null;
     this.duration = null;
     this.size = 0;
-    this.sizeThreshold = 1024;
+    this.sizeThreshold = 512; // 512 Mio
     this._finishTriggered = false;
     this._pendingBitmapsCount = 0;
   }
@@ -173,7 +173,9 @@ export default class EXTRACTOR {
     let fps = $("#fps-size-input").checked ? this.fps / 2 : this.fps;
     let duration = $("#duration-size-input").checked ? ($("#end-size-input").value - $("#start-size-input").value) : this.duration;
     let nb = duration * fps;
-    this.size = Math.ceil(h * w * 4 * nb / (1024*1024));
+    // ~0.5 octets par pixel compressé au lieu de 4 octets bruts
+    let estimatedBytesPerPixel = 0.5;
+    this.size = Math.ceil(h * w * estimatedBytesPerPixel * nb / (1024*1024));
     if(this.size < this.sizeThreshold) {
       $("#size-label").className = "has-text-success";
       $("#open-resized-video").className = "button is-success";
@@ -208,12 +210,18 @@ export default class EXTRACTOR {
     let firstFrameTimestamp = 0;
     let isOver = false;
 
+    // Création du canvas hors-champ pour la compression
+    const offscreenCanvas = new OffscreenCanvas(this.decodedVideo.width, this.decodedVideo.height);
+    const offscreenCtx = offscreenCanvas.getContext("2d", { alpha: false }); // alpha: false optimise le rendu JPEG
+
     this.decoder = new VideoDecoder({
       output: (frame) => {
+        // Capture de l'index actuel pour garantir le bon ordre des images
+        let currentIndex = frameCount; 
+        
         if(frameCount == 0) firstFrameTimestamp = $("#duration-size-input").checked ? (frame.timestamp - frame.duration) : 0;
         let progress = ((frame.timestamp + frame.duration ) / 1e3 - firstFrameTimestamp / 1e3) / this.decodedVideo.duration * 100;
 
-        // On vérifie si on a atteint le nombre total de samples
         if (this.nbSamples && !$("#duration-size-input").checked && !$("#fps-size-input").checked) {
           if (frameCount + 1 >= this.nbSamples) {
             if(!isOver){ isOver = true; this.triggerFinish(false); }
@@ -230,7 +238,6 @@ export default class EXTRACTOR {
           frame.close(); return;
         }
 
-        // Sécurité : Vérifier si l'élément existe avant d'assigner .value
         let progressEl = $("#extract-decode-progress");
         if(progressEl) progressEl.value = Math.ceil(progress);
 
@@ -243,18 +250,29 @@ export default class EXTRACTOR {
         }
 
         this._pendingBitmapsCount++;
-        let promise = $("#def-size-input").checked 
-          ? createImageBitmap(frame,{resizeWidth : this.decodedVideo.width, resizeHeight : this.decodedVideo.height, resizeQuality : "medium"})
-          : createImageBitmap(frame);
+        
+        // Dessiner la frame sur le canvas
+        offscreenCtx.drawImage(frame, 0, 0, this.decodedVideo.width, this.decodedVideo.height);
+        frame.close(); // On peut fermer la frame immédiatement après l'avoir dessinée
 
-        promise.then((result)=>{
-          this.decodedVideo.frames.push(result);
-          frame.close();
+        // Convertir le canvas en Blob JPEG avec qualité 0.85
+        offscreenCanvas.convertToBlob({ type: "image/jpeg", quality: 0.85 })
+        .then((blob) => {
+          // On génère une URL locale pour le Blob pour faciliter son affichage dans le player
+          const blobUrl = URL.createObjectURL(blob);
+          
+          // On crée un élément Image standard
+          const img = new Image();
+          img.src = blobUrl;
+          
+          // On stocke l'élément Image prêt à être dessiné
+          this.decodedVideo.frames[currentIndex] = img; 
           this._pendingBitmapsCount--;
-        }).catch(() => {
-          frame.close();
+        }).catch((e) => {
+          console.error("Erreur de conversion Blob:", e);
           this._pendingBitmapsCount--;
         });
+        
         frameCount++;
       },
       error: (e) => { console.error(e); },
@@ -293,6 +311,14 @@ export default class EXTRACTOR {
         else this.keyFrameFound = true;
       }
     }
+
+    // --- SÉCURITÉ RAM : Si le processeur a plus de 15 images de retard en compression ---
+    // On attend un peu avant de décoder la suite pour éviter de saturer la mémoire.
+    if (this._pendingBitmapsCount > 15) {
+      setTimeout(() => this.onChunk(chunk), 50);
+      return;
+    }
+
     this.decoder.decode(chunk);
   }
 
@@ -304,8 +330,12 @@ export default class EXTRACTOR {
       
       if ($('#extract-loading-modal')) $('#extract-loading-modal').remove();
 
-      if (wasCanceled) {
-        for (const frameBitmap of this.decodedVideo.frames) frameBitmap.close();
+    if (wasCanceled) {
+        for (const frameImg of this.decodedVideo.frames) {
+          if (frameImg && frameImg.src) {
+            URL.revokeObjectURL(frameImg.src);
+          }
+        }
         this.decodedVideo.frames = [];
         return;
       }

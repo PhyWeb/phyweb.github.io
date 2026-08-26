@@ -143,7 +143,9 @@ export default class MEASUREMENT {
 
     this.tableHead.appendChild(titleRow);
 
-    this.series[0].forEach((value,i)=>{
+    const fragment = document.createDocumentFragment();
+
+    this.series[0].forEach((value,i) => {
       let row = document.createElement('tr');
 
       // image index column
@@ -177,14 +179,14 @@ export default class MEASUREMENT {
       }
 
       row.id = "row" + i;
-
       row.onclick = (e) =>{
         this.selectRow(e.currentTarget.id.replace("row",""));
         player.setFrame(parseInt(e.currentTarget.id.replace("row","")));
       }
 
-      this.tableBody.appendChild(row);
+      fragment.appendChild(row);
     });
+    this.tableBody.appendChild(fragment);
   }
 
   selectRow(index){
@@ -201,6 +203,27 @@ export default class MEASUREMENT {
       this.series[i][index] = "";
     }
     this.updateTable();
+  }
+
+  // Méthode pour ne mettre à jour qu'une seule ligne
+  updateRow(i) {
+    let ppf = (this.series.length - 1) / 2;
+    const scaleX = this.scale.getOrientedScaleX();
+    const scaleY = this.scale.getOrientedScaleY(this.aspectRatio);
+
+    if(i < this.originFrame){
+      $("#" + "t" + i).innerHTML = "";
+      for(let j = 1; j < ppf + 1; j++){
+        $("#" + "x" + j + i).innerHTML = "";
+        $("#" + "y" + j + i).innerHTML = "";
+      } 
+    } else{
+      $("#" + "t" + i).innerHTML = (this.series[0][i] - this.series[0][this.originFrame]).round(3);
+      for(let j = 1; j < ppf + 1; j++){
+        $("#" + "x" + j + i).innerHTML = this.series[((j - 1) * 2) + 1][i] === "" ? "" : this.series[((j - 1) * 2) + 1].get(i, this.scale.origin.x, scaleX).round(this.maxDigits);
+        $("#" + "y" + j + i).innerHTML = this.series[((j - 1) * 2) + 2][i] === "" ? "" : this.series[((j - 1) * 2) + 2].get(i, this.scale.origin.y, scaleY).round(this.maxDigits);
+      }
+    }
   }
 
   clearTable(){
@@ -261,7 +284,7 @@ export default class MEASUREMENT {
   changeValue(frameIndex, pointIndex, x, y){
     this.series[(pointIndex * 2) + 1][frameIndex] = x;
     this.series[(pointIndex * 2) + 2][frameIndex] = y;
-    this.updateTable();
+    this.updateRow(frameIndex);
   }
 
   setOriginFrame(_id){

@@ -415,10 +415,12 @@ $("#ppf-input").addEventListener("keyup", (event)=> {
 		$("#ppf-input").blur();
 	}
 });
+
 $("#ppf-input").addEventListener("change", (e)=> {
   if(e.target.value < 1){e.target.value = 1;}
   if(e.target.value > 9){e.target.value = 9;}
   measurement.setPointPerFrame(parseInt(e.target.value), player);
+  player.drawFrame(player.currentFrame);
 });
 
 // TABLE CONTROLS
@@ -429,13 +431,19 @@ $("#clear-table-button").addEventListener("click", ()=> {
     body: "Etes-vous sûr de vouloir vider le tableau de toutes ses données ?",
     confirm:{
       label: "Vider le tableau",
-      cb: ()=>{measurement.clearTable();}},
+      cb: ()=>{
+        measurement.clearTable();
+        player.drawFrame(player.currentFrame);
+      }},
     cancel: "Annuler"
   })
 });
+
 $("#clear-row").addEventListener("click", ()=> {
   measurement.clearRow(player.currentFrame);
+  player.drawFrame(player.currentFrame);
 });
+
 $("#copy-table-button").addEventListener("click", ()=> {
   measurement.exportToClipboard()
 });
