@@ -1,5 +1,5 @@
 import { formatNumber } from '../../common/formatter.js';
-import { alertModal, NavigationManager, setupGlobalShortcuts, FileDropManager} from '../../common/common.js';
+import { alertModal, showToast, NavigationManager, setupGlobalShortcuts, FileDropManager} from '../../common/common.js';
 import { DEFAULT_SETTINGS, saveSettings, loadSettings, clearSavedSettings } from './settingsManager.js';
 
 const $ = document.querySelector.bind(document);
@@ -898,11 +898,7 @@ export default class UIManager {
     // Ouvre la modale de sauvegarde
     $("#save-button").addEventListener("click", () => {
       if (this.data.curves.length === 0 && this.editor.getValue().trim() === '') {
-        alertModal({
-          title: "Aucune donnée",
-          body: "Aucune donnée à sauvegarder.",
-          confirm: "OK"
-        });
+        showToast("Aucune donnée à sauvegarder.", "is-warning");
         return;
       }
       // Réinitialise le nom du fichier à chaque ouverture
@@ -1381,11 +1377,7 @@ export default class UIManager {
       const selectedRange = this.spreadsheet.hot.getSelectedRangeLast();
 
       if (!selectedRange) {
-        alertModal({
-          title: "Aucune sélection",
-          body: "Veuillez sélectionner une ou plusieurs lignes à supprimer.",
-          confirm: "OK"
-        });
+        showToast("Veuillez sélectionner une ou plusieurs lignes à supprimer.", "is-warning");
         return;
       }
 
@@ -1440,11 +1432,7 @@ export default class UIManager {
       const newUnit = unitInput.value.trim();
 
       if (!newSymbol) {
-        alertModal({
-          title: 'Symbole manquant',
-          body: 'Veuillez entrer un symbole.',
-          confirm: 'OK'
-        });
+        showToast("Veuillez entrer un symbole.", "is-danger");
         return;
       }
 
@@ -2555,12 +2543,7 @@ export default class UIManager {
   toggleModelVisibility(model){
     // Verification que l'abscisse est la bonne
     if (model.visible === false && model.x.title !== this.grapher.currentXCurve) {
-      alertModal({
-        type: "",
-        title: "Affichage impossible",
-        body: `Pour afficher ce modèle, vous devez sélectionner <strong>${model.x.title}</strong> comme grandeur en abscisse.`,
-        confirm: "OK"
-      });
+      showToast(`Pour afficher ce modèle, vous devez sélectionner <strong>${model.x.title}</strong> comme grandeur en abscisse.`, "is-danger");
       return; // Empêche le reste du code de s'exécuter
     }
 
@@ -2710,7 +2693,7 @@ export default class UIManager {
           this.grapher.hideLoading();
         }
       } else {
-        alertModal({ title: 'Sélection manquante', body: 'Veuillez sélectionner une courbe et un type de modèle.', confirm: 'OK' });
+        showToast("Veuillez sélectionner une courbe et un type de modèle.", "is-warning");
       }
     });
 

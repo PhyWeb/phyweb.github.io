@@ -1,6 +1,6 @@
 const $ = document.querySelector.bind(document);
 import { formatNumber } from '../../common/formatter.js';
-import { alertModal } from '../../common/common.js';
+import { alertModal, showToast } from '../../common/common.js';
 
 /*----------------------------------------------------------------------------------------------
 --------------------------------------------Spreadsheet-----------------------------------------
@@ -118,11 +118,7 @@ build(uiManager){
       const curve = this.data.getCurveByIndex(colIndex);
       if (curve) {
         if (curve.type === 'calculation') {
-          alertModal({
-            title: "Action impossible",
-            body: "Vous ne pouvez pas renommer une grandeur qui est le résultat d'un calcul.",
-            confirm: "OK"
-          });
+          showToast("Vous ne pouvez pas renommer une grandeur issue d'un calcul.", "is-danger");
           return;
         }
         uiManager.openEditHeaderModal(curve);

@@ -1,5 +1,5 @@
 import IOManager from './ioManager.js';
-import { alertModal } from '../../common/common.js';
+import { alertModal, showToast } from '../../common/common.js';
 import SymbolValidator from './symbolValidator.js'; 
 
 const $ = document.querySelector.bind(document);
@@ -139,11 +139,7 @@ export default class App {
     
     // Avertir si le nom est utilisé dans les calculs
     if (this.editor.getValue().includes(oldTitle)) {
-      alertModal({
-        title: "Attention",
-        body: `Le nom "${oldTitle}" est utilisé dans l'éditeur de calculs. Vous devrez peut-être mettre à jour les formules manuellement.`,
-        confirm: "OK"
-      });
+      showToast(`Attention : "${oldTitle}" est utilisé dans l'éditeur de calculs. Mettez à jour vos formules.`, "is-warning", 6000);
     }
   }
 
@@ -215,11 +211,7 @@ export default class App {
 
       return model;
     } else {
-      alertModal({
-        title: "Modélisation impossible",
-        body: "Pour créer un modèle, vous devez avoir au moins deux grandeurs dans votre tableur.",
-        confirm: "OK"
-      });
+      showToast("Pour créer un modèle, vous devez avoir au moins deux grandeurs dans votre tableur.", "is-danger");
     }
   }
 
