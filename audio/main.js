@@ -1100,16 +1100,6 @@ $("#send-to-grapher-button").addEventListener('click', () => {
   }
 
   const duration = active.saveData.linearData.getDuration();
-    });
-    return;
-  }
-
-  // Mettre en pause automatiquement si on est en Temps Réel
-  if(tabManager.activeTab === 0 && !paused) {
-     $("#pause-button").click();
-  }
-
-  const duration = active.saveData.linearData.getDuration();
 
   // Configure slider and show the modal
   stgDataSlider.noUiSlider.updateOptions({
