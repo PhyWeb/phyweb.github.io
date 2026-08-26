@@ -254,6 +254,7 @@ export default class MEASUREMENT {
       this.updateTable();
     } else {
       console.error("Invalid max digits value:", _digits);
+      showToast("Valeur invalide pour le nombre de décimales.", "is-warning");
     }
   }
 
