@@ -383,6 +383,15 @@ export default class Grapher {
       accessibility: {
         enabled: false
       },
+      exporting: {
+        enabled: true,
+        fallbackToExportServer: false,
+        buttons: {
+          contextButton: {
+            enabled: false // On cache le bouton
+          }
+        }
+      },
       title: {
         text: null
       },

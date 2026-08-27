@@ -37,6 +37,8 @@
 
     <script type="text/javascript" src="../common/Highcharts/highcharts.src.js"></script>
     <script type="text/javascript" src="../common/Highcharts/modules/boost.js"></script>
+    <script type="text/javascript" src="../common/Highcharts/modules/exporting.js"></script>
+    <script type="text/javascript" src="../common/Highcharts/modules/offline-exporting.js"></script>
 
     <script type="text/javascript" src="../common/math.js/math.min.js"></script>
 
@@ -123,6 +125,10 @@
             <a class="navbar-item" id="save-button">
               <span class="icon"><i class="fa-solid fa-save"></i></span>
               <span>Sauvegarder</span>
+            </a>
+            <a class="navbar-item" id="export-menu-button">
+              <span class="icon"><i class="fa-solid fa-file-export"></i></span>
+              <span>Exporter / Imprimer</span>
             </a>
             <a class="navbar-item" id="settings-button">
               <span class="icon"><i class="fa-solid fa-cog"></i></span>
@@ -1472,6 +1478,141 @@
         <div class="buttons">
           <button class="button" id="init-session-skip-btn">Passer (Fichier vide)</button>
           <button class="button is-primary" id="init-session-confirm-btn">Valider et commencer</button>
+        </div>
+      </footer>
+    </div>
+  </div>
+  <!------------------------------------------------------------------------------------------------------------>
+  <!----------------------------------------------EXPORT MODAL-------------------------------------------------->
+  <!------------------------------------------------------------------------------------------------------------>
+  <div id="export-modal" class="modal">
+    <div class="modal-background"></div>
+    <!-- Limite à 720px ajoutée ici -->
+    <div class="modal-card" style="width: 80vw; max-width: 1200px; min-height: 720px; height: 80%;">
+      
+      <!-- Padding vertical allégé -->
+      <header class="modal-card-head" style="padding-top: 24px; padding-bottom: 24px;">
+        <p class="modal-card-title">Exporter / Imprimer</p>
+        <button class="delete modal-close-button" aria-label="close"></button>
+      </header>
+      
+      <section class="modal-card-body pb-3">
+        <div class="columns">
+          
+          <!-- COLONNE GAUCHE : Options (retour au style par défaut) -->
+          <div class="column is-3">
+            <div class="field">
+              <label class="label">Action souhaitée</label>
+              <div class="control">
+                <div class="select is-fullwidth">
+                  <select id="export-action-select">
+                    <option value="print">Document (Impression / PDF)</option>
+                    <option value="image">Image (Graphe uniquement)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="field mb-4">
+              <label class="label">Titre du document (optionnel)</label>
+              <div class="control">
+                <input class="input export-trigger" type="text" id="export-title-input" placeholder="Ex: TP Physique">
+              </div>
+            </div>
+
+            <div class="field mb-4">
+              <label class="label">Taille du graphique</label>
+              <div class="control">
+                <div class="select is-fullwidth">
+                  <select id="export-graph-size" class="export-trigger">
+                    <option value="1" selected>100% (Identique à l'écran)</option>
+                    <option value="0.75">75% (Polices plus lisibles)</option>
+                    <option value="0.5">50% (Polices très lisibles)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Options pour PDF/Impression -->
+            <div id="export-sections-container" class="mt-4 box">
+              <label class="label">Éléments à inclure</label>
+              <div class="field mt-3">
+                <label class="checkbox block is-size-6" style="display: block; margin-bottom: 10px;">
+                  <input type="checkbox" id="export-check-graph" class="export-trigger" checked> Grapheur
+                </label>
+                <label class="checkbox block is-size-6" style="display: block; margin-bottom: 10px;">
+                  <input type="checkbox" id="export-check-table" class="export-trigger"> Tableur (Données)
+                </label>
+                <label class="checkbox block is-size-6" style="display: block;">
+                  <input type="checkbox" id="export-check-calc" class="export-trigger"> Feuille de calculs
+                </label>
+              </div>
+
+              <div class="field mt-4">
+                <label class="label">Marges (Format A4)</label>
+                <div class="control">
+                  <div class="select is-fullwidth">
+                    <select id="export-margin-select" class="export-trigger">
+                      <option value="1cm" selected>Étroites (1 cm)</option>
+                      <option value="2cm">Normales (2 cm)</option>
+                      <option value="3cm">Larges (3 cm)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Options pour Image -->
+            <div id="export-image-options" class="mt-4 box is-hidden">
+              <div class="columns is-mobile">
+                <div class="column">
+                  <label class="label">Format</label>
+                  <div class="field">
+                    <div class="control">
+                      <div class="select is-fullwidth">
+                        <select id="export-image-format" class="export-trigger">
+                          <option value="image/png">PNG</option>
+                          <option value="image/jpeg">JPEG</option>
+                          <option value="image/svg+xml">SVG</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="column">
+                  <label class="label">Qualité</label>
+                  <div class="field">
+                    <div class="control">
+                      <div class="select is-fullwidth">
+                        <select id="export-image-scale" class="export-trigger">
+                          <option value="1">x1 (Normal)</option>
+                          <option value="2" selected>x2 (HD)</option>
+                          <option value="3">x3 (Très HD)</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- COLONNE DROITE : Aperçu -->
+          <div class="column is-9 is-flex is-flex-direction-column" style="overflow: hidden;">
+            <h3 class="title is-5 mb-2">Aperçu du document</h3>
+            <div class="box is-flex-grow-1 p-0 has-background-grey-lighter is-flex is-flex-direction-column" style="overflow: hidden;">
+              <iframe id="export-preview-iframe" style="width: 100%; flex-grow: 1; border: none; height: 100%;"></iframe>
+            </div>
+          </div>
+
+        </div>
+      </section>
+      
+      <!-- Padding vertical allégé -->
+      <footer class="modal-card-foot" style="padding-top: 12px; padding-bottom: 12px;">
+        <div class="buttons">
+          <button class="button is-success" id="export-confirm-button">Imprimer / Exporter</button>
+          <button class="button modal-close-button">Annuler</button>
         </div>
       </footer>
     </div>

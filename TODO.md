@@ -13,7 +13,7 @@
 
     - REGRESSI ne lit que les lignes completes. Il faut un disclaimer quand on genere un rw3 incomplet
 
-    - Ajouter des toats quand c'est utilie
+    - Ajouter des toasts quand c'est utilie
 
 # ELECTRON
 
@@ -22,8 +22,6 @@
 
 # Audio
     - permettre de cocher une case ou qq chose pour forcer l'ouverture de la selection d'une portion quand on charge un fichier.
-    - permettre d'ouvrir un fichier via le menu ?
-    - fft add 0s to have a power of two and use faster fft ??
     - play the selected part of the audio when downloading
 
 # Tracker
@@ -49,6 +47,11 @@
     - ajuster automatiquement la largeur des colonnes aux noms des entetes ?
 
     VERIFICATION on peut changer les parametres par defaut dans un appx ?
+
+    BUG : IL FAUT VERIFIER SI LES NOMS DE COURBES SONT COMFORME QUAND ON IMPORTE "Fréquence" et "Amplitude spectrale marchent pas!
+    AFFICHER la prévisualisation en grand
+    Tweaker encore un peu l'interface
+    Abscisse drawé aux fraises.
 
 # MISC
  - tester le flatpak puis flathub

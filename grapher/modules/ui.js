@@ -45,6 +45,7 @@ export default class UIManager {
     this.initModelisationControls();
     this.initCalculationControls();
     this.initNewSessionModal();
+    this.initExportModal();
 
     // Initialisation des raccourcis clavier globaux
     setupGlobalShortcuts({
@@ -3052,5 +3053,259 @@ export default class UIManager {
 
       closeAndStart();
     });
+  }
+/**
+   * Initialise la modale d'exportation avec aperçu en temps réel
+   */
+  initExportModal() {
+    const exportModal = $('#export-modal');
+    const actionSelect = $('#export-action-select');
+    const sectionsContainer = $('#export-sections-container');
+    const imageOptions = $('#export-image-options');
+    const confirmBtn = $('#export-confirm-button');
+    
+    const iframe = $('#export-preview-iframe');
+    const titleInput = $('#export-title-input');
+
+const getChartDimensions = () => {
+      if (!this.grapher || !this.grapher.chart) return { w: 800, h: 500 };
+      const factor = parseFloat($('#export-graph-size').value);
+      
+      // On prend strictement la taille actuelle du graphique
+      return {
+        w: Math.round(this.grapher.chart.chartWidth * factor),
+        h: Math.round(this.grapher.chart.chartHeight * factor)
+      };
+    };
+
+    const updatePreview = () => {
+      const action = actionSelect.value;
+      const title = titleInput.value.trim();
+      const dims = getChartDimensions();
+      const iframeContainer = iframe.parentElement; // <-- Nouveau
+
+      if (action === 'image') {
+        sectionsContainer.classList.add('is-hidden');
+        imageOptions.classList.remove('is-hidden');
+        confirmBtn.textContent = "Télécharger l'image";
+        
+        // Enlève le cadre gris pour une image pure
+        iframeContainer.classList.remove('has-background-grey-lighter');
+        iframeContainer.classList.add('has-background-white');
+        
+        iframe.srcdoc = this.generateImagePreviewHTML(title, dims.w, dims.h);
+      } else {
+        sectionsContainer.classList.remove('is-hidden');
+        imageOptions.classList.add('is-hidden');
+        confirmBtn.textContent = "Imprimer / Exporter en PDF";
+
+        // Restaure le fond gris pour détacher la feuille A4
+        iframeContainer.classList.add('has-background-grey-lighter');
+        iframeContainer.classList.remove('has-background-white');
+
+        const includeGraph = $('#export-check-graph').checked;
+        const includeTable = $('#export-check-table').checked;
+        const includeCalc = $('#export-check-calc').checked;
+        const margin = $('#export-margin-select').value;
+
+        iframe.srcdoc = this.generatePrintHTML(includeGraph, includeTable, includeCalc, margin, title, dims.w, dims.h);
+      }
+    };
+
+    $('#export-menu-button').addEventListener('click', () => {
+      // Bascule automatique sur l'onglet graphe
+      const graphTabButton = document.getElementById('grapheur-tab');
+      if (graphTabButton) graphTabButton.click();
+
+      // Délai augmenté pour laisser le temps à l'onglet de s'afficher
+      setTimeout(() => {      
+        updatePreview();
+        this.common.modalManager.openModal(exportModal);
+      }, 300); // 300ms garantit que le rendu du navigateur est terminé
+    });
+
+    actionSelect.addEventListener('change', updatePreview);
+    document.querySelectorAll('.export-trigger').forEach(el => el.addEventListener('change', updatePreview));
+    titleInput.addEventListener('input', updatePreview);
+
+    confirmBtn.addEventListener('click', () => {
+      if (actionSelect.value === 'image') {
+        const format = $('#export-image-format').value;
+        const scale = parseInt($('#export-image-scale').value, 10);
+        const dims = getChartDimensions();
+
+        if (this.grapher && this.grapher.chart) {
+           const exportChartOptions = {
+               chart: { width: dims.w, height: dims.h },
+               legend: { title: { text: `Abscisse : ${this.grapher.currentXCurve}`, style: { fontWeight: 'bold' } } },
+               series: this.grapher.chart.series.map(s => ({ showInLegend: s.visible && s.options.showInLegend !== false }))
+           };
+
+           this.grapher.chart.exportChartLocal({
+               type: format,
+               filename: 'phyweb_graphe',
+               scale: scale,
+               sourceWidth: dims.w,
+               sourceHeight: dims.h
+           }, exportChartOptions);
+        }
+        this.common.modalManager.closeAllModals();
+      } else {
+        const includeGraph = $('#export-check-graph').checked;
+        const includeTable = $('#export-check-table').checked;
+        const includeCalc = $('#export-check-calc').checked;
+
+        if (!includeGraph && !includeTable && !includeCalc) {
+            alertModal({ type: 'warning', title: 'Erreur', body: 'Veuillez sélectionner au moins un élément.', confirm: 'OK' });
+            return;
+        }
+
+        iframe.contentWindow.print();
+      }
+    });
+  }
+
+  /**
+   * Génère l'aperçu spécifique pour le mode Image
+   */
+  generateImagePreviewHTML(title, width, height) {
+    if (!this.grapher.chart) return '';
+    
+    const exportChartOptions = {
+        chart: { width: width, height: height },
+        legend: { title: { text: `Abscisse : ${this.grapher.currentXCurve}`, style: { fontWeight: 'bold' } } },
+        series: this.grapher.chart.series.map(s => ({ showInLegend: s.visible && s.options.showInLegend !== false }))
+    };
+    const svg = this.grapher.chart.getSVG(exportChartOptions);
+    
+    let html = `
+      <body style="background-color: white; font-family: sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; box-sizing: border-box;">`;
+    
+    if (title) {
+        html += `<h1 style="color: #333; margin-top: 0; margin-bottom: 15px; flex-shrink: 0; text-align: center;">${title}</h1>`;
+    }
+    
+    html += `<div style="flex-grow: 1; display: flex; justify-content: center; align-items: center; width: 100%; min-height: 0;">
+               ${svg}
+             </div>
+             <style>
+               /* Le SVG garde son ratio d'aspect naturel */
+               svg { max-width: 100%; max-height: 100%; width: auto !important; height: auto !important; }
+             </style>
+             </body>`;
+    
+    return html;
+  }
+
+  /**
+   * Retourne une composition HTML propre pour l'impression / export PDF
+   */
+  generatePrintHTML(includeGraph, includeTable, includeCalc, margin, title, width, height) {
+    const sigDigits = this.data.settings.significantDigits; 
+
+    let html = `
+      <!DOCTYPE html>
+      <html lang="fr">
+      <head>
+        <meta charset="utf-8">
+        <style>
+          @page { size: A4; margin: ${margin}; }
+          
+          /* --- Mode Aperçu (Écran) --- */
+          @media screen {
+            html {
+              background-color: transparent;
+              display: flex;
+              justify-content: center;
+              padding: 20px 0;
+            }
+            body { 
+              background-color: white;
+              width: 210mm; /* Largeur stricte A4 */
+              min-height: 297mm; /* Hauteur stricte A4 */
+              padding: ${margin};
+              box-sizing: border-box;
+              box-shadow: 0 4px 12px rgba(0,0,0,0.15); /* Effet d'ombre de la feuille */
+              margin: 0;
+            }
+          }
+          
+          /* --- Mode Impression --- */
+          @media print {
+            body { 
+              padding: 0 !important; 
+              width: auto;
+              min-height: auto;
+              box-shadow: none;
+            }
+          }
+
+          body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            color: #333; 
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          
+          .flex-table { display: flex; flex-wrap: wrap; row-gap: 6px; padding-left: 1px; padding-top: 1px; margin-bottom: 20px; }
+          .flex-col { display: flex; flex-direction: column; margin-left: -1px; }
+          .header-col { font-weight: bold; background-color: #f0f0f0; }
+          .flex-cell { border: 1px solid #aaa; margin-top: -1px; padding: 4px 6px; font-size: 10px; text-align: center; white-space: nowrap; }
+          .row-header { text-align: right; background-color: #f9f9f9; }
+          
+          pre { background: #f9f9f9; padding: 15px; border: 1px solid #ddd; border-radius: 5px; white-space: pre-wrap; font-family: monospace; font-size: 12px;}
+          
+          .svg-container { text-align: center; margin-bottom: 20px; page-break-inside: avoid; }
+          /* C'est cette ligne simplifiée qui empêche la compression */
+          .svg-container svg { max-width: 100%; height: auto !important; }
+        </style>
+      </head>
+      <body>
+    `;
+
+    if (title) {
+        html += `<h1 style="text-align: center; color: #333; margin-top: 0; margin-bottom: 20px; font-size: 18px;">${title}</h1>`;
+    }
+
+    if (includeGraph && this.grapher.chart) {
+      const exportChartOptions = {
+          chart: { width: width, height: height },
+          legend: { title: { text: `Abscisse : ${this.grapher.currentXCurve}`, style: { fontWeight: 'bold' } } },
+          series: this.grapher.chart.series.map(s => ({ showInLegend: s.visible && s.options.showInLegend !== false }))
+      };
+      const svg = this.grapher.chart.getSVG(exportChartOptions);
+      html += `<div class="svg-container">${svg}</div>`;
+    }
+
+    if (includeTable) {
+      const headers = this.data.getHeaders();
+      const data = this.data.getTable(); 
+      const curvesData = headers.map((_, colIndex) => data.map(row => row[colIndex]));
+      const numPoints = data.length;
+      
+      html += `<div class="flex-table"><div class="flex-col header-col"><div class="flex-cell row-header">Point #</div>`;
+      headers.forEach(h => html += `<div class="flex-cell row-header">${h}</div>`);
+      html += `</div>`;
+
+      for (let j = 0; j < numPoints; j++) {
+        html += `<div class="flex-col"><div class="flex-cell" style="background-color:#f9f9f9; font-weight:bold;">${j + 1}</div>`;
+        headers.forEach((h, colIndex) => {
+          let val = curvesData[colIndex][j];
+          let displayVal = (val !== null && val !== undefined && !isNaN(val) && val !== '') 
+                           ? formatNumber(val, sigDigits) : '';
+          html += `<div class="flex-cell">${displayVal}</div>`;
+        });
+        html += `</div>`;
+      }
+      html += `</div>`;
+    }
+
+    if (includeCalc) {
+      const calcText = this.editor.getValue();
+      html += `<pre>${calcText.trim() ? calcText : 'Aucun calcul enregistré.'}</pre>`;
+    }
+
+    html += `</body></html>`;
+    return html;
   }
 }
