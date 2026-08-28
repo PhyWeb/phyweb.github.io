@@ -49,9 +49,7 @@
     VERIFICATION on peut changer les parametres par defaut dans un appx ?
 
     BUG : IL FAUT VERIFIER SI LES NOMS DE COURBES SONT COMFORME QUAND ON IMPORTE "Fréquence" et "Amplitude spectrale marchent pas! ET AUDIO NE FOURNIT PAS DUNITES!
-    AFFICHER la prévisualisation en grand
     Tweaker encore un peu l'interface
-    reiter le 300ms de delay si on est deja sur la tab graphe
 
 # MISC
  - tester le flatpak puis flathub
