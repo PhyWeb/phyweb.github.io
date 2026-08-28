@@ -1496,8 +1496,8 @@
         <button class="delete modal-close-button" aria-label="close"></button>
       </header>
       
-      <section class="modal-card-body pb-3">
-        <div class="columns">
+      <section class="modal-card-body pb-3 is-flex is-flex-direction-column">
+        <div class="columns is-flex-grow-1 mb-0" style="min-height: 0;">
           
           <!-- COLONNE GAUCHE : Options (retour au style par défaut) -->
           <div class="column is-3">
@@ -1563,11 +1563,12 @@
             </div>
 
             <!-- Options pour Image -->
-            <div id="export-image-options" class="mt-4 box is-hidden">
+            <div id="export-image-options" class="is-hidden">
               <div class="columns is-mobile">
+                
                 <div class="column">
-                  <label class="label">Format</label>
                   <div class="field">
+                    <label class="label">Format</label>
                     <div class="control">
                       <div class="select is-fullwidth">
                         <select id="export-image-format" class="export-trigger">
@@ -1579,9 +1580,10 @@
                     </div>
                   </div>
                 </div>
+
                 <div class="column">
-                  <label class="label">Qualité</label>
                   <div class="field">
+                    <label class="label">Qualité</label>
                     <div class="control">
                       <div class="select is-fullwidth">
                         <select id="export-image-scale" class="export-trigger">
@@ -1593,6 +1595,7 @@
                     </div>
                   </div>
                 </div>
+
               </div>
             </div>
           </div>
@@ -1612,6 +1615,11 @@
       <footer class="modal-card-foot" style="padding-top: 12px; padding-bottom: 12px;">
         <div class="buttons">
           <button class="button is-success" id="export-confirm-button">Imprimer / Exporter</button>
+          <button class="button is-info is-hidden" id="export-copy-button">
+            <span class="icon"><i class="fas fa-copy"></i></span>
+            <span>Copier l'image</span>
+          </button>
+          
           <button class="button modal-close-button">Annuler</button>
         </div>
       </footer>

@@ -3054,7 +3054,7 @@ export default class UIManager {
       closeAndStart();
     });
   }
-/**
+  /**
    * Initialise la modale d'exportation avec aperçu en temps réel
    */
   initExportModal() {
@@ -3063,11 +3063,12 @@ export default class UIManager {
     const sectionsContainer = $('#export-sections-container');
     const imageOptions = $('#export-image-options');
     const confirmBtn = $('#export-confirm-button');
+    const copyBtn = $('#export-copy-button');
     
     const iframe = $('#export-preview-iframe');
     const titleInput = $('#export-title-input');
 
-const getChartDimensions = () => {
+    const getChartDimensions = () => {
       if (!this.grapher || !this.grapher.chart) return { w: 800, h: 500 };
       const factor = parseFloat($('#export-graph-size').value);
       
@@ -3082,24 +3083,23 @@ const getChartDimensions = () => {
       const action = actionSelect.value;
       const title = titleInput.value.trim();
       const dims = getChartDimensions();
-      const iframeContainer = iframe.parentElement; // <-- Nouveau
+      const iframeContainer = iframe.parentElement;
+      const factor = parseFloat($('#export-graph-size').value);
 
       if (action === 'image') {
         sectionsContainer.classList.add('is-hidden');
         imageOptions.classList.remove('is-hidden');
         confirmBtn.textContent = "Télécharger l'image";
-        
-        // Enlève le cadre gris pour une image pure
+        copyBtn.classList.remove('is-hidden');
         iframeContainer.classList.remove('has-background-grey-lighter');
         iframeContainer.classList.add('has-background-white');
         
-        iframe.srcdoc = this.generateImagePreviewHTML(title, dims.w, dims.h);
+        iframe.srcdoc = this.generateImagePreviewHTML(title, dims.w, dims.h, factor);
       } else {
         sectionsContainer.classList.remove('is-hidden');
         imageOptions.classList.add('is-hidden');
         confirmBtn.textContent = "Imprimer / Exporter en PDF";
-
-        // Restaure le fond gris pour détacher la feuille A4
+        copyBtn.classList.add('is-hidden');
         iframeContainer.classList.add('has-background-grey-lighter');
         iframeContainer.classList.remove('has-background-white');
 
@@ -3108,20 +3108,28 @@ const getChartDimensions = () => {
         const includeCalc = $('#export-check-calc').checked;
         const margin = $('#export-margin-select').value;
 
-        iframe.srcdoc = this.generatePrintHTML(includeGraph, includeTable, includeCalc, margin, title, dims.w, dims.h);
+        iframe.srcdoc = this.generatePrintHTML(includeGraph, includeTable, includeCalc, margin, title, dims.w, dims.h, factor);
       }
     };
 
     $('#export-menu-button').addEventListener('click', () => {
-      // Bascule automatique sur l'onglet graphe
       const graphTabButton = document.getElementById('grapheur-tab');
-      if (graphTabButton) graphTabButton.click();
+      const isAlreadyOnGraph = graphTabButton && graphTabButton.classList.contains('is-active');
 
-      // Délai augmenté pour laisser le temps à l'onglet de s'afficher
-      setTimeout(() => {      
+      if (!isAlreadyOnGraph && graphTabButton) {
+        // Bascule automatique sur l'onglet graphe
+        graphTabButton.click();
+        
+        // Délai de 300ms pour laisser le temps à l'onglet de s'afficher et à Highcharts de reflow
+        setTimeout(() => {      
+          updatePreview();
+          this.common.modalManager.openModal(exportModal);
+        }, 300);
+      } else {
+        // Si on y est déjà, on affiche la modale instantanément
         updatePreview();
         this.common.modalManager.openModal(exportModal);
-      }, 300); // 300ms garantit que le rendu du navigateur est terminé
+      }
     });
 
     actionSelect.addEventListener('change', updatePreview);
@@ -3133,13 +3141,10 @@ const getChartDimensions = () => {
         const format = $('#export-image-format').value;
         const scale = parseInt($('#export-image-scale').value, 10);
         const dims = getChartDimensions();
+        const factor = parseFloat($('#export-graph-size').value);
 
         if (this.grapher && this.grapher.chart) {
-           const exportChartOptions = {
-               chart: { width: dims.w, height: dims.h },
-               legend: { title: { text: `Abscisse : ${this.grapher.currentXCurve}`, style: { fontWeight: 'bold' } } },
-               series: this.grapher.chart.series.map(s => ({ showInLegend: s.visible && s.options.showInLegend !== false }))
-           };
+           const exportChartOptions = this.getExportChartOptions(dims.w, dims.h, factor);
 
            this.grapher.chart.exportChartLocal({
                type: format,
@@ -3163,19 +3168,89 @@ const getChartDimensions = () => {
         iframe.contentWindow.print();
       }
     });
+
+    copyBtn.addEventListener('click', () => {
+      const dims = getChartDimensions();
+      const factor = parseFloat($('#export-graph-size').value);
+      const scale = parseInt($('#export-image-scale').value, 10);
+
+      if (this.grapher && this.grapher.chart) {
+        // 1. Récupère le SVG brut
+        const exportChartOptions = this.getExportChartOptions(dims.w, dims.h, factor);
+        const svg = this.grapher.chart.getSVG(exportChartOptions);
+        
+        // 2. Prépare un canvas avec la résolution voulue (scale)
+        const canvas = document.createElement('canvas');
+        canvas.width = dims.w * scale;
+        canvas.height = dims.h * scale;
+        const ctx = canvas.getContext('2d');
+        
+        // 3. Dessine le SVG sur le Canvas via une balise Image
+        const img = new Image();
+        img.onload = () => {
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          
+          // 4. Extrait le PNG et l'envoie au presse-papier
+          canvas.toBlob((blob) => {
+            if (blob) {
+              navigator.clipboard.write([
+                new ClipboardItem({ 'image/png': blob })
+              ]).then(() => {
+                showToast("Image copiée dans le presse-papier !", "is-success");
+                this.common.modalManager.closeAllModals();
+              }).catch(err => {
+                console.error("Erreur Clipboard:", err);
+                showToast("Erreur lors de la copie.", "is-danger");
+              });
+            }
+          }, 'image/png');
+        };
+        // Encodage propre du SVG en Base64 pour éviter les conflits d'URL
+        img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
+      }
+    });
+  }
+
+  /**
+   * Génère les options communes pour l'export du graphique (image ou PDF)
+   */
+  getExportChartOptions(width, height, factor = 1) {
+    if (!this.grapher || !this.grapher.chart) return {};
+    
+    const xCurveObj = this.data.getCurveByTitle(this.grapher.currentXCurve);
+    const xUnit = xCurveObj && xCurveObj.unit ? ` (${xCurveObj.unit})` : '';
+
+    return {
+      chart: { 
+        width: width, 
+        height: height,
+        // On réduit l'espacement par défaut proportionnellement à la taille
+        spacing: [10 * factor, 10 * factor, 15 * factor, 10 * factor]
+      },
+      xAxis: [{
+        title: {
+          text: `${this.grapher.currentXCurve}${xUnit}`,
+          align: 'high',
+          style: { 
+            color: '#000000', 
+            fontSize: '16px',
+            fontWeight: 'normal' 
+          }
+        }
+      }],
+      series: this.grapher.chart.series.map(s => ({ 
+        showInLegend: s.visible && s.options.showInLegend !== false 
+      }))
+    };
   }
 
   /**
    * Génère l'aperçu spécifique pour le mode Image
    */
-  generateImagePreviewHTML(title, width, height) {
-    if (!this.grapher.chart) return '';
+  generateImagePreviewHTML(title, width, height, factor) {
+    if (!this.grapher || !this.grapher.chart) return '';
     
-    const exportChartOptions = {
-        chart: { width: width, height: height },
-        legend: { title: { text: `Abscisse : ${this.grapher.currentXCurve}`, style: { fontWeight: 'bold' } } },
-        series: this.grapher.chart.series.map(s => ({ showInLegend: s.visible && s.options.showInLegend !== false }))
-    };
+    const exportChartOptions = this.getExportChartOptions(width, height, factor);
     const svg = this.grapher.chart.getSVG(exportChartOptions);
     
     let html = `
@@ -3189,8 +3264,12 @@ const getChartDimensions = () => {
                ${svg}
              </div>
              <style>
-               /* Le SVG garde son ratio d'aspect naturel */
-               svg { max-width: 100%; max-height: 100%; width: auto !important; height: auto !important; }
+               /* On force le SVG à s'étirer pour remplir l'iframe tout en gardant son ratio */
+               svg { 
+                 width: 100% !important; 
+                 height: 100% !important; 
+                 max-height: 100%;
+               }
              </style>
              </body>`;
     
@@ -3200,7 +3279,7 @@ const getChartDimensions = () => {
   /**
    * Retourne une composition HTML propre pour l'impression / export PDF
    */
-  generatePrintHTML(includeGraph, includeTable, includeCalc, margin, title, width, height) {
+  generatePrintHTML(includeGraph, includeTable, includeCalc, margin, title, width, height, factor) {
     const sigDigits = this.data.settings.significantDigits; 
 
     let html = `
@@ -3217,7 +3296,10 @@ const getChartDimensions = () => {
               background-color: transparent;
               display: flex;
               justify-content: center;
+              align-items: flex-start; /* Aligne la feuille en haut */
+              min-height: 100%; /* S'assure que le fond prend toute la place de l'iframe */
               padding: 20px 0;
+              box-sizing: border-box;
             }
             body { 
               background-color: white;
@@ -3268,11 +3350,7 @@ const getChartDimensions = () => {
     }
 
     if (includeGraph && this.grapher.chart) {
-      const exportChartOptions = {
-          chart: { width: width, height: height },
-          legend: { title: { text: `Abscisse : ${this.grapher.currentXCurve}`, style: { fontWeight: 'bold' } } },
-          series: this.grapher.chart.series.map(s => ({ showInLegend: s.visible && s.options.showInLegend !== false }))
-      };
+      const exportChartOptions = this.getExportChartOptions(width, height, factor);
       const svg = this.grapher.chart.getSVG(exportChartOptions);
       html += `<div class="svg-container">${svg}</div>`;
     }
