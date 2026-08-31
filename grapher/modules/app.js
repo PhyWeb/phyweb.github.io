@@ -293,7 +293,6 @@ export default class App {
     }
 
     const lines = text.trim().split('\n');
-    const validSymbolRegex = /^[a-zA-Z][a-zA-Z0-9_]*$/; // Ne commence PAS par un underscore
     const definedInBlock = new Set();
     const rawCurveTitles = this.data.curves.filter(c => c.type !== 'calculation').map(c => c.title);
     const modelParameterNames = Object.keys(this.data.parameters).filter(key => this.data.parameters[key].type === 'model');

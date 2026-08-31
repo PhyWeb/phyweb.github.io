@@ -269,7 +269,7 @@ export default class UIManager {
 
           // Regex qui capture un "mot" (variable + unité complexe) jusqu'à un séparateur.
           // Un séparateur est un espace, une virgule, ou un opérateur mathématique principal.
-          if (stream.match(/^[a-zA-Z_][^=+\-*(),\s]*/)) {
+          if (stream.match(/^[a-zA-ZÀ-ÿ_][^=+\-*(),\s]*/)) {
             const word = stream.current();
             
             if (functionNames.includes(word)) {

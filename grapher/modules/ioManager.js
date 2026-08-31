@@ -15,6 +15,71 @@ function isTabularData(text) {
   return sameCount >= lines.length - 1 && firstCount >= 2;
 }
 
+// Fonction utilitaire pour enlever les accents d'une chaîne de caractères
+function removeAccents(str) {
+  if (!str) return str;
+  // Décompose les accents (é -> e + ´) puis supprime les marques diacritiques
+  return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+/**
+ * Nettoie un symbole pour respecter : /^[a-zA-ZÀ-ÿ][a-zA-Z0-9À-ÿ]*$/
+ * et le passe en CamelCase si besoin.
+ */
+function sanitizeSymbol(str, existingSymbols) {
+  if (!str) return "var";
+  
+  // 1. Transforme les espaces, tirets et underscores en CamelCase
+  let s = str.trim().replace(/[-_\s]+(.)?/g, (match, c) => c ? c.toUpperCase() : '');
+  
+  // 2. Ne garde que les lettres (avec accents) et les chiffres
+  s = s.replace(/[^a-zA-ZÀ-ÿ0-9]/g, '');
+  
+  // 3. S'assure que ça commence par une lettre
+  if (/^[0-9]/.test(s) || s === "") {
+    s = "v" + (s === "" ? "ar" : s);
+  }
+  
+  // 4. Garantit l'unicité
+  let finalSymbol = s;
+  let counter = 2;
+  while (existingSymbols && existingSymbols.has(finalSymbol)) {
+    finalSymbol = `${s}${counter}`;
+    counter++;
+  }
+  
+  if (existingSymbols) existingSymbols.add(finalSymbol);
+  return finalSymbol;
+}
+
+/**
+ * Nettoie une unité : remplace les underscores par des tirets 
+ * pour ne pas casser la séparation variable_unité.
+ */
+function sanitizeUnit(str) {
+  if (!str) return "";
+  return String(str).replace(/_/g, '-').trim();
+}
+
+/**
+ * Met à jour un texte de formules en remplaçant les anciens noms par les nouveaux
+ */
+function updateFormulasReferences(text, nameMap) {
+  if (!text) return text;
+  let newText = text;
+  // Trie par longueur décroissante pour éviter de remplacer un sous-mot (ex: "vx" avant "vx_max")
+  const keys = Object.keys(nameMap).sort((a, b) => b.length - a.length);
+  
+  for (const oldName of keys) {
+    // Echappe l'ancien nom pour la regex
+    const escapedOld = oldName.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+    // Regex simulant une limite de mot (word boundary) incluant les accents et l'underscore
+    const regex = new RegExp(`(?<![a-zA-Z0-9À-ÿ_])${escapedOld}(?![a-zA-Z0-9À-ÿ_])`, 'g');
+    newText = newText.replace(regex, nameMap[oldName]);
+  }
+  return newText;
+}
+
 //-----------------------------------------------------------------------------------------------
 // --------------------------------------------IOManager-----------------------------------------
 // ----------------------------------------------------------------------------------------------
@@ -148,8 +213,8 @@ generatePW() {
     const rawCurves = this.app.data.curves.filter(c => c.type !== 'calculation');
     
     // 2. Les noms et unités ne proviennent QUE de ces courbes brutes.
-    const rawNames = rawCurves.map(c => c.title);
-    const rawUnits = rawCurves.map(c => c.unit);
+    const rawNames = rawCurves.map(c => removeAccents(c.title));
+    const rawUnits = rawCurves.map(c => removeAccents(c.unit));
 
     // 3. On construit le fichier en utilisant uniquement les données brutes.
     let output = "EVARISTE REGRESSI WINDOWS 1.0\n";
@@ -178,7 +243,7 @@ generatePW() {
     output += dataRows.join('\n');
 
   // 4. On ajoute les formules pour que Regressi puisse créer les grandeurs calculées.
-  const calculationsText = this.app.editor.getValue();
+  const calculationsText = removeAccents(this.app.editor.getValue());
   if (calculationsText) {
     const memoLines = calculationsText.split('\n').map(line => {
       const trimmedLine = line.trim();
@@ -294,10 +359,18 @@ generatePW() {
       throw new Error("Fichier PW invalide : données de courbes manquantes.");
     }
 
+    const existingSymbols = new Set();
+    const nameMap = {}; // Dictionnaire de traduction { "ancien_nom": "nouveauNom" }
+
     this.app.data.curves = []; // Assurer vide avant
     state.data.curves.forEach((savedCurve, index) => {
-      const newCurve = new Curve(savedCurve.title || `Courbe ${index + 1}`, savedCurve.unit || '');
+      const oldTitle = savedCurve.title || `Courbe ${index + 1}`;
+      const newTitle = sanitizeSymbol(oldTitle, existingSymbols);
+      if (oldTitle !== newTitle) nameMap[oldTitle] = newTitle;
+
+      const newCurve = new Curve(newTitle, sanitizeUnit(savedCurve.unit));
       Object.assign(newCurve, savedCurve);
+      newCurve.title = newTitle; // S'assure que le titre est bien le nouveau
       newCurve.length = 0;
 
       if (Array.isArray(savedCurve.values)) {
@@ -325,13 +398,23 @@ generatePW() {
     });
 
     // 2. Restaurer TOUS les paramètres
-    this.app.data.parameters = state.data.parameters || {};
+    this.app.data.parameters = {};
+    if (state.data.parameters) {
+      for (const [oldName, paramObj] of Object.entries(state.data.parameters)) {
+        const newName = sanitizeSymbol(oldName, existingSymbols);
+        if (oldName !== newName) nameMap[oldName] = newName;
+        this.app.data.parameters[newName] = paramObj;
+      }
+    }
 
     // 3. Restaurer les modèles SANS RECALCUL
     if (Array.isArray(state.data.models)) {
       for (const savedModel of state.data.models) {
-        const xCurve = this.app.data.getCurveByTitle(savedModel.xTitle);
-        const yCurve = this.app.data.getCurveByTitle(savedModel.yTitle);
+        const updatedXTitle = nameMap[savedModel.xTitle] || savedModel.xTitle;
+        const updatedYTitle = nameMap[savedModel.yTitle] || savedModel.yTitle;
+
+        const xCurve = this.app.data.getCurveByTitle(updatedXTitle);
+        const yCurve = this.app.data.getCurveByTitle(updatedYTitle);
 
         if (!xCurve || !yCurve) {
           console.warn(`Modèle pour "${savedModel.yTitle}" ignoré car les courbes sont introuvables.`);
@@ -349,7 +432,9 @@ generatePW() {
     }
 
     // 4. Restaurer les autres éléments
-    this.app.editor.setValue(state.calculations ?? "");
+    let calculationsText = state.calculations ?? "";
+    calculationsText = updateFormulasReferences(calculationsText, nameMap);
+    this.app.editor.setValue(calculationsText);
     this.app.data.annotations = state.data.annotations ?? [];
     this.app.uiManager.updateClearAnnotationsButtonVisibility();
     
@@ -605,8 +690,20 @@ generatePW() {
         ? genres.map((g, idx) => (g === 0 ? idx : -1)).filter(idx => idx !== -1)
         : names.map((_, idx) => idx);
 
-      const headerNames = measuredIdx.map(i => names[i]);
-      const headerUnits = (units.length ? measuredIdx.map(i => units[i]) : measuredIdx.map(() => ''));
+      const cleanNames = names.map(name => {
+        const newName = sanitizeSymbol(name, existingSymbols);
+        if (name !== newName) nameMap[name] = newName;
+        return newName;
+      });
+
+      const cleanConstNames = constNames.map(name => {
+        const newName = sanitizeSymbol(name, existingSymbols);
+        if (name !== newName) nameMap[name] = newName;
+        return newName;
+      });
+
+      const headerNames = measuredIdx.map(i => cleanNames[i]);
+      const headerUnits = (units.length ? measuredIdx.map(i => sanitizeUnit(units[i])) : measuredIdx.map(() => ''));
 
       // Sérialisation TSV: 2 en-têtes + lignes “mesurées”
       let output = '';
@@ -616,11 +713,11 @@ generatePW() {
 
       // lecture des paramètres
       const paramLines = [];
-      if (constNames.length) {
-        const n = Math.max(constNames.length, constUnits.length, constRawValues.length);
+      if (cleanConstNames.length) { // <-- Modification ici
+        const n = Math.max(cleanConstNames.length, constUnits.length, constRawValues.length);
         for (let k = 0; k < n; k++) {
-          const name = (constNames[k] || '').trim();
-          const unit = (constUnits[k] || '').trim();
+          const name = (cleanConstNames[k] || '').trim(); // <-- Modification ici
+          const unit = sanitizeUnit(constUnits[k]);
           const rawVal = String(constRawValues[k] ?? '').trim();
           if (!name || !rawVal) continue; // on n’écrit que s’il y a une valeur
           const lhs = unit ? `${name}_${unit}` : name;
@@ -640,18 +737,30 @@ generatePW() {
         const lhs = s.slice(0, eq).trim();
         const rhs = s.slice(eq + 1).trim();
 
-        const unitMatches = [...rhs.matchAll(/\b[A-Za-z][\w²]*_([A-Za-zµ°]+)\b/g)];
+        // Regex élargie
+        const unitRegexStr = "[a-zA-ZÀ-ÿ0-9µ°\\/\\-\\.\\^]+"; 
+        const varRegexStr = "[a-zA-ZÀ-ÿ][a-zA-Z0-9À-ÿ]*";
+        
+        // Remplacement de \b par des lookarounds supportant les accents
+        const boundLeft = "(?<![a-zA-Z0-9À-ÿ_])";
+        const boundRight = "(?![a-zA-Z0-9À-ÿ_])";
+        
+        const extractRegex = new RegExp(`${boundLeft}${varRegexStr}_(${unitRegexStr})${boundRight}`, 'g');
+        const unitMatches = [...rhs.matchAll(extractRegex)];
+        
         if (unitMatches.length === 0) return t;
 
-        // Cette partie de la logique reste INCHANGÉE car m[1] est toujours l'unité
         const suffixes = new Set(unitMatches.map(m => m[1]));
         if (suffixes.size !== 1) return t;
         const unit = [...suffixes][0];
-        if (/_([A-Za-zµ°]+)$/.test(lhs)) return t;
+        
+        if (new RegExp(`_(${unitRegexStr})$`).test(lhs)) return t;
 
         const lhsNew = `${lhs}_${unit}`;
 
-        const rhsNew = rhs.replace(new RegExp(`\\b([A-Za-z][\\w²]*)_${unit}\\b`, 'g'), '$1');
+        const escapedUnit = unit.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+        const replaceRegex = new RegExp(`${boundLeft}(${varRegexStr})_${escapedUnit}${boundRight}`, 'g');
+        const rhsNew = rhs.replace(replaceRegex, '$1');
         
         return `${lhsNew} = ${rhsNew}`;
       }
@@ -741,6 +850,9 @@ generatePW() {
           headers.push(trimmedHeader === "" ? `Colonne${i + 1}` : trimmedHeader);
         }
 
+        const existingSymbols = new Set(Object.keys(this.app.data.parameters));
+        headers = headers.map(h => sanitizeSymbol(h, existingSymbols));
+
         // Vérifie si la deuxième ligne correspond aux unités ou aux données
         if (lines.length > 1) {
           const secondLineCells = splitFlexible(lines[1]);
@@ -755,7 +867,7 @@ generatePW() {
             const rawUnits = splitFlexible(lines[1]);
             units = Array.from({
               length: numColumns
-            }, (_, i) => (rawUnits[i] || "").trim());
+            }, (_, i) => sanitizeUnit(rawUnits[i]));
             dataLines = lines.slice(2);
           }
         } else {
