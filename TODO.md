@@ -49,8 +49,6 @@
     - ajuster automatiquement la largeur des colonnes aux noms des entetes ?
 
     VERIFICATION on peut changer les parametres par defaut dans un appx ?
-
-    BUG : IL FAUT VERIFIER SI LES NOMS DE COURBES SONT COMFORME QUAND ON IMPORTE "Fréquence" et "Amplitude spectrale marchent pas! ET AUDIO NE FOURNIT PAS DUNITES!
     
     Tweaker encore un peu l'interface de l'export
 
