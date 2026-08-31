@@ -2804,9 +2804,19 @@ export default class UIManager {
       // Met à jour l'affichage quand on change d'onglet
       $("#calculs-tab").addEventListener("click", () => {
         setTimeout(() => {
-          this.editor.refresh()
+          this.editor.refresh();
+          
+          const currentCursor = this.editor.getCursor();
+          if (currentCursor.line === 0 && currentCursor.ch === 0) {
+            const lastLineIndex = this.editor.lastLine();
+            const lastLineContent = this.editor.getLine(lastLineIndex);
+            if (lastLineContent !== "") {
+              this.editor.replaceRange('\n', { line: lastLineIndex, ch: lastLineContent.length });
+            }
+            this.editor.setCursor(this.editor.lastLine(), 0);
+          }
+          
           this.editor.focus();
-          this.app.editor.setCursor(this.app.editor.lineCount(), 0); // Place le curseur à la fin
         }, 1);
       });
     }
