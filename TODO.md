@@ -15,6 +15,8 @@
 
     - Ajouter des toasts quand c'est utilie
 
+    - FOND NOIR QUAND THEME TRES NOIR ???
+
 # ELECTRON
 
 # Home
