@@ -3134,7 +3134,20 @@ export default class UIManager {
 
     actionSelect.addEventListener('change', updatePreview);
     document.querySelectorAll('.export-trigger').forEach(el => el.addEventListener('change', updatePreview));
-    titleInput.addEventListener('input', updatePreview);
+
+    titleInput.addEventListener('input', (e) => {
+      const newTitle = e.target.value.trim();
+      const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+      
+      if (iframeDoc) {
+        const titleEl = iframeDoc.getElementById('preview-title');
+        if (titleEl) {
+          titleEl.textContent = newTitle;
+          // Affiche le titre s'il y a du texte, sinon le cache
+          titleEl.style.display = newTitle ? 'block' : 'none';
+        }
+      }
+    });
 
     confirmBtn.addEventListener('click', () => {
       if (actionSelect.value === 'image') {
@@ -3254,24 +3267,19 @@ export default class UIManager {
     const svg = this.grapher.chart.getSVG(exportChartOptions);
     
     let html = `
-      <body style="background-color: white; font-family: sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; box-sizing: border-box;">`;
-    
-    if (title) {
-        html += `<h1 style="color: #333; margin-top: 0; margin-bottom: 15px; flex-shrink: 0; text-align: center;">${title}</h1>`;
-    }
-    
-    html += `<div style="flex-grow: 1; display: flex; justify-content: center; align-items: center; width: 100%; min-height: 0;">
-               ${svg}
-             </div>
-             <style>
-               /* On force le SVG à s'étirer pour remplir l'iframe tout en gardant son ratio */
-               svg { 
-                 width: 100% !important; 
-                 height: 100% !important; 
-                 max-height: 100%;
-               }
-             </style>
-             </body>`;
+      <body style="background-color: white; font-family: sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; box-sizing: border-box;">;
+      <div style="flex-grow: 1; display: flex; justify-content: center; align-items: center; width: 100%; min-height: 0;">
+        ${svg}
+      </div>
+      <style>
+        /* On force le SVG à s'étirer pour remplir l'iframe tout en gardant son ratio */
+        svg { 
+          width: 100% !important; 
+          height: 100% !important; 
+          max-height: 100%;
+        }
+      </style>
+      </body>`;
     
     return html;
   }
@@ -3345,9 +3353,7 @@ export default class UIManager {
       <body>
     `;
 
-    if (title) {
-        html += `<h1 style="text-align: center; color: #333; margin-top: 0; margin-bottom: 20px; font-size: 18px;">${title}</h1>`;
-    }
+    html += `<h1 id="preview-title" style="text-align: center; color: #333; margin-top: 0; margin-bottom: 20px; font-size: 18px; display: ${title ? 'block' : 'none'};">${title}</h1>`;
 
     if (includeGraph && this.grapher.chart) {
       const exportChartOptions = this.getExportChartOptions(width, height, factor);

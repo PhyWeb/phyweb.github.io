@@ -916,7 +916,7 @@ $("#rw3-button").addEventListener("click", ()=>{
 });
 
 // Actual download
-function prepareSeriesForDownload(saveData, startTime, endTime, effectiveSampleRate){
+function prepareSeriesForDownload(saveData, startTime, endTime, effectiveSampleRate, format = 'csv'){
   const originalWaveData = saveData.linearData;
 
 	startTime = startTime || 0;
@@ -958,7 +958,8 @@ function prepareSeriesForDownload(saveData, startTime, endTime, effectiveSampleR
       series.push(frequencySerie);
 
       // Colonne Amplitude Spectrale
-      const spectralAmplitudeSerie = new Serie('Amplitude spectrale', 'u.a.');
+      const title = (format === 'pw' || format === 'rw3') ? 'AmplitudeSpectrale' : 'Amplitude spectrale';
+      const spectralAmplitudeSerie = new Serie(title, 'u.a.');
       spectralAmplitudeSerie.setData(Array.from(fourierData.data));
       series.push(spectralAmplitudeSerie);
     }
@@ -984,7 +985,11 @@ $("#download-file-button").addEventListener('click', () => {
     startTime = parseFloat($("#start-size-input").value);
     endTime = parseFloat($("#end-size-input").value);
   }
-  const series = prepareSeriesForDownload(saveData, startTime, endTime, effectiveSampleRate);
+
+  let format = 'csv';
+  if ($("#pw-button").classList.contains("is-link")) format = 'pw';
+  if ($("#rw3-button").classList.contains("is-link")) format = 'rw3';
+  const series = prepareSeriesForDownload(saveData, startTime, endTime, effectiveSampleRate, format);
 
   // Si on exporte en WAV, on traite directement le signal audio brut de la sélection
   if ($("#wav-button").classList.contains('is-link')) {
@@ -1128,7 +1133,7 @@ $('#confirm-send-to-grapher-button').addEventListener('click', async () => {
   
   // ... Gardez tout le reste de la fonction intact ...
   
-  const series = prepareSeriesForDownload(saveData, startTime, endTime, effectiveSampleRate);
+  const series = prepareSeriesForDownload(saveData, startTime, endTime, effectiveSampleRate, 'pw');
   const pw = exportToPW(series, {rowMustBeComplete : false}, "Audio", "// Enregistrement PhyWeb Tracker");
 
   try {
