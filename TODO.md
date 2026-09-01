@@ -58,6 +58,7 @@
 
 
 # Idées
+    - Générateur de chromatogrammes
     - salsaJ ?
     - animation titrage
     - animation RVB

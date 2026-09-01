@@ -134,6 +134,9 @@
                         <button class="button is-small is-success is-rounded" onclick="downloadImage()">
                             <span class="icon is-small"><i class="fas fa-download"></i></span><span>PNG</span>
                         </button>
+                        <button class="button is-small is-warning is-light is-rounded" onclick="downloadEmptyGrid()" title="Télécharger une grille vierge">
+                            <span class="icon is-small"><i class="fas fa-border-all"></i></span><span>Grille vide</span>
+                        </button>
                     </div>
                 </div>
 
@@ -142,9 +145,15 @@
             <div class="column is-narrow">
                 <div class="controls-panel" style="width: 320px;">
                     
-                    <h2 class="title is-6 mb-2"><i class="fas fa-eye"></i> Affichage</h2>
+                    <div class="is-flex is-align-items-center is-justify-content-space-between mb-2">
+                        <h2 class="title is-6 mb-0"><i class="fas fa-eye"></i> Affichage</h2>
+                        <button class="button is-small is-danger is-light is-rounded" onclick="resetApplet()" style="height: 24px;">
+                            <span class="icon is-small"><i class="fas fa-rotate-left"></i></span>
+                            <span>Réinitialiser</span>
+                        </button>
+                    </div>
 
-                    <div class="control-row mb-2">
+                    <div class="control-row mb-3">
                         <label class="label" style="width: auto; margin-right: 12px;">Taille</label>
                         <div class="control is-expanded">
                             <div class="select is-small is-fullwidth">
@@ -157,14 +166,16 @@
                         </div>
                     </div>
                     
-                    <div class="field mb-1">
-                        <label class="checkbox"><input type="checkbox" id="toggleGrid" checked> Grille papier millimétré</label>
+                    <div class="is-flex is-align-items-center is-justify-content-space-between mb-1">
+                        <label class="checkbox is-flex is-align-items-center" style="gap: 6px;">
+                            <input type="checkbox" id="toggleGrid" checked> Grille
+                        </label>
+                        <div class="is-flex is-align-items-center" style="gap: 6px;">
+                            <span class="has-text-grey is-size-7">Opacité</span>
+                            <input type="range" id="gridOpacity" min="0.1" max="1" step="0.1" value="0.3" style="width: 70px; cursor: pointer;">
+                        </div>
                     </div>
-                    <div class="control-row mb-2">
-                        <label class="label has-text-grey has-text-weight-normal pl-4">↳ Opacité</label>
-                        <div class="control"><input type="range" id="gridOpacity" min="0.1" max="1" step="0.1" value="0.3" style="width: 80px; vertical-align: middle;"></div>
-                    </div>
-                    
+
                     <div class="field mb-1">
                         <label class="checkbox"><input type="checkbox" id="toggleSnap" checked> Magnétisme (snap mm)</label>
                     </div>
@@ -174,8 +185,11 @@
                     <div class="field mb-1">
                         <label class="checkbox"><input type="checkbox" id="toggleRays" checked> Tracer les rayons</label>
                     </div>
-                    <div class="field mb-3">
+                    <div class="field mb-1">
                         <label class="checkbox"><input type="checkbox" id="toggleImages" checked> Afficher les images</label>
+                    </div>
+                    <div class="field mb-3">
+                        <label class="checkbox"><input type="checkbox" id="toggleFocals" checked> Afficher les foyers</label>
                     </div>
 
                     <hr class="my-2">
@@ -295,6 +309,7 @@
         showObj: true,
         showRays: true,
         showImages: true,
+        showFocals: true,
         obj: { x: -8, y: 3, isInfObject: false, angle: 10 },
         l1: { active: true, x: 0, f: 3, r: 3.5, name: "L1" }, 
         l2: { active: false, x: 7, f: 1, r: 3.5, name: "L2" }
@@ -302,6 +317,7 @@
 
     let draggedElement = null;
     let pendingTexts = []; 
+    let isExportingEmptyGrid = false;
 
     // --- Gestion de la taille du Canevas ---
     document.getElementById('canvasSizeSelect').addEventListener('change', (e) => {
@@ -348,6 +364,19 @@
             link.href = canvas.toDataURL("image/png");
             link.click();
         });
+    }
+
+    function downloadEmptyGrid() {
+        isExportingEmptyGrid = true;
+        withHDExport(() => {
+            const link = document.createElement('a');
+            link.download = 'grille_optique_vierge_HD.png';
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+        });
+        // Restauration de l'affichage normal
+        isExportingEmptyGrid = false;
+        render(); 
     }
 
     const toPxX = (cmX) => ORIGIN_X + cmX * CM_TO_PX;
@@ -432,6 +461,43 @@
     // Initialisation
     document.getElementById('canvasSizeSelect').dispatchEvent(new Event('change'));
 
+    // --- Réinitialisation de l'applet ---
+    function resetApplet() {
+        // 1. On restaure l'état par défaut (incluant l'option focales qu'on a ajoutée)
+        state = {
+            grid: true,
+            gridOpacity: 0.3,
+            snap: true,
+            showObj: true,
+            showRays: true,
+            showImages: true,
+            showFocals: true,
+            obj: { x: -8, y: 3, isInfObject: false, angle: 10 },
+            l1: { active: true, x: 0, f: 3, r: 3.5, name: "L1" }, 
+            l2: { active: false, x: 7, f: 1, r: 3.5, name: "L2" }
+        };
+
+        // 2. On recoche les bonnes cases dans l'interface
+        document.getElementById('toggleGrid').checked = true;
+        document.getElementById('toggleSnap').checked = true;
+        document.getElementById('toggleObj').checked = true;
+        document.getElementById('toggleRays').checked = true;
+        document.getElementById('toggleImages').checked = true;
+        document.getElementById('toggleFocals').checked = true;
+        document.getElementById('toggleObjInf').checked = false;
+        
+        // 3. On désactive la lentille 2 proprement pour regriser ses paramètres
+        const toggleL2 = document.getElementById('toggleL2');
+        if (toggleL2.checked) {
+            toggleL2.checked = false;
+            toggleL2.dispatchEvent(new Event('change'));
+        }
+
+        // 4. On rafraîchit les inputs numériques et le canevas
+        updateInputsFromState(true); // Le 'true' force la mise à jour même si un champ est actif
+        render();
+    }
+
     // --- Dessin principal ---
     function render() {
         ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -460,6 +526,11 @@
 
         drawArrow(0, ORIGIN_Y, logicalWidth - 20, ORIGIN_Y, "#2c3e50", 2);
         drawText("Δ", logicalWidth - 15, ORIGIN_Y + 20, "#2c3e50", "bold 16px Arial", "right");
+
+        if (isExportingEmptyGrid) {
+            flushTexts();
+            return; // Arrête le rendu ici pour garder la grille vide
+        }
 
         const idx1 = state.l2.active ? "₁" : ""; 
         const idx2 = "₂";
@@ -552,8 +623,11 @@
 
         const f = lens.f;
         drawPoint(lens.x, 0, `O${indexStr}`);
-        drawPoint(lens.x - f, 0, `F${indexStr}`);
-        drawPoint(lens.x + f, 0, `F'${indexStr}`);
+
+        if (state.showFocals) {
+            drawPoint(lens.x - f, 0, `F${indexStr}`);
+            drawPoint(lens.x + f, 0, `F'${indexStr}`);
+        }
     }
 
     function drawPoint(cmX, cmY, label) {
@@ -857,6 +931,7 @@ function drawObject(obj, nameA, nameB, color, isReal) {
     document.getElementById('toggleObj').addEventListener('change', (e) => { state.showObj = e.target.checked; render(); });
     document.getElementById('toggleRays').addEventListener('change', (e) => { state.showRays = e.target.checked; render(); });
     document.getElementById('toggleImages').addEventListener('change', (e) => { state.showImages = e.target.checked; render(); });
+    document.getElementById('toggleFocals').addEventListener('change', (e) => { state.showFocals = e.target.checked; render(); });
     
     document.getElementById('toggleL2').addEventListener('change', (e) => { 
         state.l2.active = e.target.checked; 
