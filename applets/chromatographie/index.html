@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Générateur de Chromatogrammes - PhyWeb</title>
+    <link rel="icon" href="../../assets/favicons/phyweb.ico" />
+    <link rel="stylesheet" href="../../common/bulma/bulma.min.css">
+    
+    <link rel="preload" href="../../common/fontawesome/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="../../common/fontawesome/css/all.min.css">
+
+    <link rel="stylesheet" href="../../common/common.css">
+
+    <script>
+      if (navigator.userAgent.toLowerCase().indexOf('electron') > -1)
+        document.documentElement.classList.add('is-electron');
+    </script>
+
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --canvas-bg: #ffffff;
+        }
+        html, body { 
+            min-height: 100vh;
+            background-color: #f5f7fa; 
+            user-select: none;
+        }
+        .canvas-container {
+            background-color: var(--canvas-bg);
+            border: 2px solid #b5b5b5;
+            border-radius: 6px;
+            overflow: auto;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            display: inline-block;
+        }
+        canvas {
+            display: block;
+        }
+        /* Panneau de contrôle */
+        .controls-panel {
+            background: white;
+            padding: 1.25rem; 
+            border-radius: 6px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            height: auto;
+            width: 100%;
+            max-width: 360px; 
+            margin: 0 auto;
+        }
+        .lane-control-box {
+            border-left: 4px solid #3298dc;
+            padding-left: 10px;
+            margin-bottom: 12px;
+        }
+        .lane-control-box.l2 { border-left-color: #48c774; }
+        .lane-control-box.l3 { border-left-color: #e74c3c; }
+        .lane-control-box.l4 { border-left-color: #9b59b6; }
+        
+        h1.title { color: var(--primary-color); }
+        input[type="color"] { cursor: pointer; }
+        
+        /* Disposition en tableau */
+        .control-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.35rem; 
+        }
+        .control-row .label {
+            margin-bottom: 0;
+            white-space: nowrap; 
+            font-size: 0.85rem;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+        .control-row input[type="color"] {
+            width: 28px;
+            padding: 1px;
+            height: 28px;
+            border: 1px solid #dbdbdb;
+            border-radius: 4px;
+        }
+
+        /* Système de notification (Toast) */
+        #toast {
+            visibility: hidden;
+            min-width: 250px;
+            background-color: #3298dc;
+            color: #fff;
+            text-align: center;
+            border-radius: 30px;
+            padding: 12px 24px;
+            position: fixed;
+            z-index: 1000;
+            left: 50%;
+            bottom: 30px;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.4s, bottom 0.4s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            font-weight: bold;
+        }
+        #toast.show {
+            visibility: visible;
+            opacity: 1;
+            bottom: 50px;
+        }
+    </style>
+</head>
+<body>
+<div id="navbar-container"></div>
+<section class="section pt-2 pb-2">
+    <div class="container is-fluid">
+        
+        <div class="columns is-desktop">
+            
+            <div class="column is-flex is-flex-direction-column is-align-items-center">
+                
+                <div class="canvas-container" id="canvasWrapper">
+                    <canvas id="chromatoCanvas"></canvas>
+                </div>
+
+                <!-- Panneau Export avec les bulles -->
+                <div class="box mt-3 p-2 is-flex is-align-items-center is-justify-content-center is-flex-wrap-wrap" style="gap: 1rem; border-radius: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                    
+                    <!-- Zone 1 : Chromatogramme -->
+                    <div class="is-flex is-align-items-center" style="gap: 6px; padding-right: 0.5rem; border-right: 2px solid #f5f5f5;">
+                        <span class="has-text-grey-dark has-text-weight-bold is-size-7 ml-2 mr-1">Chromatogramme</span>
+                        <button class="button is-small is-info is-light is-rounded" onclick="copyToClipboard()" title="Copier le chromatogramme complet">
+                            <span class="icon is-small"><i class="fas fa-copy"></i></span><span>Copier</span>
+                        </button>
+                        <button class="button is-small is-success is-rounded" onclick="downloadImage()" title="Télécharger le chromatogramme complet">
+                            <span class="icon is-small"><i class="fas fa-download"></i></span><span>PNG</span>
+                        </button>
+                    </div>
+
+                    <!-- Zone 2 : Plaque vide -->
+                    <div class="is-flex is-align-items-center" style="gap: 6px;">
+                        <span class="has-text-grey-dark has-text-weight-bold is-size-7 mr-1">Plaque vide</span>
+                        <button class="button is-small is-info is-light is-rounded" onclick="copyEmptyGrid()" title="Copier la plaque vierge">
+                            <span class="icon is-small"><i class="fas fa-copy"></i></span><span>Copier</span>
+                        </button>
+                        <button class="button is-small is-warning is-light is-rounded" onclick="downloadEmptyGrid()" title="Télécharger la plaque vierge">
+                            <span class="icon is-small"><i class="fas fa-download"></i></span><span>PNG</span>
+                        </button>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="column is-narrow">
+                <div class="controls-panel">
+                    
+                    <div class="is-flex is-align-items-center is-justify-content-space-between mb-2">
+                        <h2 class="title is-6 mb-0"><i class="fas fa-sliders"></i> Paramètres</h2>
+                        <button class="button is-small is-danger is-light is-rounded" onclick="resetApplet()" style="height: 24px;">
+                            <span class="icon is-small"><i class="fas fa-rotate-left"></i></span>
+                            <span>Réinitialiser</span>
+                        </button>
+                    </div>
+
+                    <div class="is-flex is-align-items-center mb-1">
+                        <label class="checkbox is-flex is-align-items-center" style="gap: 6px;" title="Afficher/Masquer 'Ligne de dépôt' et 'Front de l'éluant'">
+                            <input type="checkbox" id="toggleLabels" checked> Afficher les légendes globales
+                        </label>
+                    </div>
+                    
+                    <div class="control-row mt-3 mb-4">
+                        <label class="label" style="width:140px;">Hauteur éluant (px)</label>
+                        <div class="control"><input class="input is-small" style="width:75px;" type="number" id="solventH" step="10" value="400"></div>
+                    </div>
+
+                    <hr class="my-2">
+
+                    <div id="lanesContainer"></div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div id="toast">Message</div>
+
+<script type="module">
+    import { initApplets } from '../../common/common.js';
+    const common = initApplets("Générateur de Chromatogrammes", "../..");
+</script>
+
+<script>
+
+    const canvasWrapper = document.getElementById('canvasWrapper');
+    const canvas = document.getElementById('chromatoCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    const EXPORT_SCALE = 3; 
+    let currentScale = window.devicePixelRatio || 1; 
+    let logicalWidth = 0;
+    let logicalHeight = 0;
+
+    let state = {
+        showLabels: false,
+        solventH: 380,
+        lanes: [
+            { active: true, name: "A", showName: true, spots: [ 
+                { rf: 0.4, color: "#e74c3c", size: 6, shape: 'oval' }
+            ]},
+            { active: true, name: "B", showName: true, spots: [ 
+                { rf: 0.8, color: "#3498db", size: 6, shape: 'oval' }
+            ]},
+            { active: true, name: "C", showName: true, spots: [ 
+                { rf: 0.4, color: "#e74c3c", size: 6, shape: 'oval' }, 
+                { rf: 0.8, color: "#3498db", size: 6, shape: 'oval' } 
+            ]},
+            { active: false, name: "M", showName: true, spots: [ 
+                { rf: 0.5, color: "#9b59b6", size: 6, shape: 'oval' }, 
+                { rf: 0.7, color: "#f1c40f", size: 6, shape: 'oval' } 
+            ]}
+        ]
+    };
+
+    let draggedSpot = null;
+    let isExportingEmptyGrid = false;
+    let pendingTexts = [];
+
+    const LANE_SPACING = 80;
+    const PLATE_PADDING_X = 60;
+    const PLATE_PADDING_TOP = 60;
+    const PLATE_PADDING_BOTTOM = 80;
+
+    function getMargins() {
+        return {
+            left: state.showLabels ? 130 : 40,
+            right: 40,
+            top: 40,
+            bottom: 40
+        };
+    }
+
+    function updateCanvasDimensions() {
+        const activeLanesCount = state.lanes.filter(l => l.active).length || 1;
+        const plateW = (activeLanesCount - 1) * LANE_SPACING + 2 * PLATE_PADDING_X;
+        const plateH = state.solventH + PLATE_PADDING_TOP + PLATE_PADDING_BOTTOM;
+        
+        const m = getMargins();
+        logicalWidth = plateW + m.left + m.right;
+        logicalHeight = plateH + m.top + m.bottom;
+        
+        canvas.style.width = logicalWidth + "px";
+        canvas.style.height = logicalHeight + "px";
+        canvas.width = logicalWidth * currentScale;
+        canvas.height = logicalHeight * currentScale;
+    }
+
+    function getPlateGeometry() {
+        const activeLanesCount = state.lanes.filter(l => l.active).length || 1;
+        const plateW = (activeLanesCount - 1) * LANE_SPACING + 2 * PLATE_PADDING_X;
+        const plateH = state.solventH + PLATE_PADDING_TOP + PLATE_PADDING_BOTTOM;
+        
+        const m = getMargins();
+        const plateX = m.left;
+        const plateY = m.top;
+        
+        const baselineY = plateY + plateH - PLATE_PADDING_BOTTOM;
+        const solventY = baselineY - state.solventH;
+
+        const lanePositions = [];
+        let currentX = plateX + PLATE_PADDING_X;
+        
+        for (let i = 0; i < state.lanes.length; i++) {
+            if (state.lanes[i].active) {
+                lanePositions[i] = currentX;
+                currentX += LANE_SPACING;
+            } else {
+                lanePositions[i] = -1;
+            }
+        }
+
+        return { plateX, plateY, plateW, plateH, baselineY, solventY, lanePositions };
+    }
+
+    // --- Génération de l'UI des pistes ---
+    function buildLanesUI() {
+        const container = document.getElementById('lanesContainer');
+        container.innerHTML = '';
+        
+        state.lanes.forEach((lane, idx) => {
+            const n = idx + 1;
+            
+            // Ligne d'en-tête (affichée uniquement s'il y a des taches)
+            let spotsHtml = '';
+            if (lane.spots.length > 0) {
+                spotsHtml += `
+                    <div class="is-flex is-size-7 has-text-grey-light mt-3 mb-1" style="font-size: 0.7rem;">
+                        <div style="width: 65px;" class="has-text-centered">Rf</div>
+                        <div style="width: 38px;" class="has-text-centered">Coul.</div>
+                        <div style="width: 50px;" class="has-text-centered">Taille</div>
+                        <div style="width: 65px;" class="has-text-centered">Forme</div>
+                        <div style="width: 28px;"></div>
+                    </div>
+                `;
+            }
+
+            // Génération dynamique des taches
+            lane.spots.forEach((spot, s) => {
+                spotsHtml += `
+                    <div class="is-flex is-align-items-center mt-1" style="gap: 4px;">
+                        <div class="control">
+                            <input class="input is-small spot-rf" data-lane="${idx}" data-spot="${s}" id="rf-input-${idx}-${s}" style="width:65px; text-align:center;" type="number" step="0.01" min="0" max="1" value="${spot.rf}" title="Rf">
+                        </div>
+                        <input type="color" class="spot-color" data-lane="${idx}" data-spot="${s}" value="${spot.color}" style="width:28px; padding:1px; height:28px;" title="Couleur">
+                        <div class="control">
+                            <input class="input is-small spot-size" data-lane="${idx}" data-spot="${s}" style="width:45px; text-align:center;" type="number" step="1" min="2" max="30" value="${spot.size}" title="Taille">
+                        </div>
+                        <div class="select is-small">
+                            <select class="spot-shape" data-lane="${idx}" data-spot="${s}" title="Forme">
+                                <option value="oval" ${spot.shape === 'oval' ? 'selected' : ''}>Ovale</option>
+                                <option value="circle" ${spot.shape === 'circle' ? 'selected' : ''}>Rond</option>
+                                <option value="line" ${spot.shape === 'line' ? 'selected' : ''}>Trait</option>
+                            </select>
+                        </div>
+                        <button class="button is-small is-danger is-light px-2 remove-spot" data-lane="${idx}" data-spot="${s}" title="Supprimer la tache">
+                            <span class="icon is-small"><i class="fas fa-times"></i></span>
+                        </button>
+                    </div>
+                `;
+            });
+
+            const html = `
+                <div class="lane-control-box l${n} ${n===4 ? 'mb-0' : ''}">
+                    <div class="is-flex is-justify-content-space-between is-align-items-center mb-1">
+                        <h2 class="title is-6 mb-0">
+                            <label class="checkbox is-flex is-align-items-center" style="gap: 6px;">
+                                <input type="checkbox" class="toggle-lane" data-lane="${idx}" ${lane.active ? 'checked' : ''}> <span>Piste ${n}</span>
+                            </label>
+                        </h2>
+                        <button class="button is-small is-primary is-light px-2 add-spot" data-lane="${idx}" style="display: ${lane.active ? 'flex' : 'none'};" title="Ajouter une tache">
+                            <span class="icon is-small"><i class="fas fa-plus"></i></span>
+                        </button>
+                    </div>
+                    <div id="l${n}Controls" style="display: ${lane.active ? 'block' : 'none'};">
+                        <div class="control-row mb-0">
+                            <label class="label" style="width:50px;">Nom</label>
+                            <div class="control is-expanded">
+                                <input class="input is-small lane-name" data-lane="${idx}" style="width: 100%;" type="text" value="${lane.name}">
+                            </div>
+                            <button class="button is-small is-white px-2 ml-1 toggle-name" data-lane="${idx}" title="Afficher/Masquer le nom sur la plaque">
+                                <span class="icon is-small"><i class="fas ${lane.showName ? 'fa-eye' : 'fa-eye-slash has-text-grey-light'}"></i></span>
+                            </button>
+                        </div>
+                        ${spotsHtml}
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', html);
+        });
+    }
+
+    // --- Gestion des événements par délégation ---
+    const lanesContainer = document.getElementById('lanesContainer');
+
+    lanesContainer.addEventListener('input', (e) => {
+        const target = e.target;
+        const laneIdx = target.dataset.lane;
+        const spotIdx = target.dataset.spot;
+
+        if (target.classList.contains('spot-rf')) {
+            state.lanes[laneIdx].spots[spotIdx].rf = parseFloat(target.value) || 0;
+            render();
+        } else if (target.classList.contains('spot-color')) {
+            state.lanes[laneIdx].spots[spotIdx].color = target.value;
+            render();
+        } else if (target.classList.contains('spot-size')) {
+            state.lanes[laneIdx].spots[spotIdx].size = parseInt(target.value) || 6;
+            render();
+        } else if (target.classList.contains('lane-name')) {
+            state.lanes[laneIdx].name = target.value;
+            render();
+        }
+    });
+
+    lanesContainer.addEventListener('change', (e) => {
+        const target = e.target;
+        const laneIdx = target.dataset.lane;
+        const spotIdx = target.dataset.spot;
+
+        if (target.classList.contains('spot-shape')) {
+            state.lanes[laneIdx].spots[spotIdx].shape = target.value;
+            render();
+        } else if (target.classList.contains('toggle-lane')) {
+            state.lanes[laneIdx].active = target.checked;
+            buildLanesUI(); 
+            updateCanvasDimensions();
+            render();
+        }
+    });
+
+    lanesContainer.addEventListener('click', (e) => {
+        const addBtn = e.target.closest('.add-spot');
+        const removeBtn = e.target.closest('.remove-spot');
+        const toggleNameBtn = e.target.closest('.toggle-name');
+
+        if (addBtn) {
+            const laneIdx = addBtn.dataset.lane;
+            state.lanes[laneIdx].spots.push({ rf: 0.5, color: "#3498db", size: 6, shape: 'oval' });
+            buildLanesUI();
+            render();
+        } else if (removeBtn) {
+            const laneIdx = removeBtn.dataset.lane;
+            const spotIdx = removeBtn.dataset.spot;
+            state.lanes[laneIdx].spots.splice(spotIdx, 1);
+            buildLanesUI();
+            render();
+        } else if (toggleNameBtn) {
+            const laneIdx = toggleNameBtn.dataset.lane;
+            state.lanes[laneIdx].showName = !state.lanes[laneIdx].showName;
+            buildLanesUI();
+            render();
+        }
+    });
+
+
+    // --- Logique globale de l'Applet ---
+    document.getElementById('solventH').addEventListener('input', (e) => {
+        let val = parseFloat(e.target.value);
+        if(!isNaN(val)) {
+            state.solventH = Math.min(1000, Math.max(50, val));
+            updateCanvasDimensions();
+            render();
+        }
+    });
+    
+    document.getElementById('solventH').addEventListener('blur', (e) => {
+        e.target.value = state.solventH; // Force le retour à une valeur valide
+    });
+
+    document.getElementById('toggleLabels').addEventListener('change', (e) => { 
+        state.showLabels = e.target.checked;
+        updateCanvasDimensions(); // La marge change
+        render(); 
+    });
+
+
+    function showToast(message) {
+        const toast = document.getElementById("toast");
+        toast.textContent = message;
+        toast.className = "show";
+        setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
+    }
+
+    function withHDExport(exportAction) {
+        const savedScale = currentScale; 
+        currentScale = EXPORT_SCALE;     
+        updateCanvasDimensions(); 
+        render(); 
+        exportAction(); 
+        currentScale = savedScale;       
+        updateCanvasDimensions(); 
+        render();
+    }
+
+    function copyToClipboard() {
+        withHDExport(() => {
+            canvas.toBlob(function(blob) {
+                const item = new ClipboardItem({ "image/png": blob });
+                navigator.clipboard.write([item]).then(function() {
+                    showToast("Chromatogramme HD copié !");
+                }).catch(function() {
+                    showToast("Erreur lors de la copie.");
+                });
+            });
+        });
+    }
+
+    function copyEmptyGrid() {
+        isExportingEmptyGrid = true;
+        copyToClipboard();
+        isExportingEmptyGrid = false;
+        render(); // Correctif: force l'affichage normal après copie
+    }
+
+    function downloadImage() {
+        withHDExport(() => {
+            const link = document.createElement('a');
+            link.download = 'chromatogramme_HD.png';
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+        });
+    }
+
+    function downloadEmptyGrid() {
+        isExportingEmptyGrid = true;
+        withHDExport(() => {
+            const link = document.createElement('a');
+            link.download = 'plaque_vierge_HD.png';
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+        });
+        isExportingEmptyGrid = false;
+        render(); 
+    }
+
+    function drawLine(x1, y1, x2, y2, color="black", width=1, dash=[]) {
+        ctx.beginPath();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = width;
+        ctx.setLineDash(dash);
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+    }
+
+    function drawText(text, x, y, color="black", font="16px Arial", align="center", baseline="middle") {
+        pendingTexts.push({ text, x, y, color, font, align, baseline });
+    }
+
+    function flushTexts() {
+        pendingTexts.forEach(t => {
+            ctx.font = t.font;
+            ctx.textAlign = t.align;
+            ctx.textBaseline = t.baseline;
+            ctx.lineJoin = "round";
+            ctx.miterLimit = 2;
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.9)";
+            ctx.strokeText(t.text, t.x, t.y);
+            ctx.fillStyle = t.color;
+            ctx.fillText(t.text, t.x, t.y);
+        });
+        pendingTexts = []; 
+    }
+
+    function drawSpot(pxX, pxY, color, size, shape) {
+        let w, h;
+        if (shape === 'circle') {
+            w = size; h = size;
+        } else if (shape === 'line') {
+            w = size * 1.5; h = 2;
+        } else {
+            w = size; h = size * 1.5;
+        }
+        
+        ctx.beginPath();
+        ctx.ellipse(pxX, pxY, w, h, 0, 0, 2 * Math.PI);
+        ctx.fillStyle = color + "cc"; 
+        ctx.fill();
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = color;
+        ctx.stroke();
+    }
+
+    function resetApplet() {
+        state = {
+            showLabels: true,
+            solventH: 400,
+            lanes: [
+                { active: true, name: "A", showName: true, spots: [ { rf: 0.4, color: "#e74c3c", size: 6, shape: 'oval' } ] },
+                { active: true, name: "B", showName: true, spots: [ { rf: 0.8, color: "#3498db", size: 6, shape: 'oval' } ] },
+                { active: true, name: "C", showName: true, spots: [ { rf: 0.4, color: "#e74c3c", size: 6, shape: 'oval' }, { rf: 0.8, color: "#3498db", size: 6, shape: 'oval' } ] },
+                { active: false, name: "M", showName: true, spots: [ { rf: 0.5, color: "#9b59b6", size: 6, shape: 'oval' }, { rf: 0.7, color: "#f1c40f", size: 6, shape: 'oval' } ] }
+            ]
+        };
+
+        document.getElementById('toggleLabels').checked = true;
+        document.getElementById('solventH').value = 400;
+        buildLanesUI();
+        updateCanvasDimensions();
+        render();
+    }
+
+    function render() {
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.scale(currentScale, currentScale);
+
+        const geom = getPlateGeometry();
+
+        ctx.fillStyle = "#fdfdfd";
+        ctx.shadowColor = "rgba(0,0,0,0.15)";
+        ctx.shadowBlur = 10;
+        ctx.shadowOffsetX = 4;
+        ctx.shadowOffsetY = 4;
+        ctx.fillRect(geom.plateX, geom.plateY, geom.plateW, geom.plateH);
+        
+        ctx.shadowColor = "transparent";
+        ctx.strokeStyle = "#cccccc";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(geom.plateX, geom.plateY, geom.plateW, geom.plateH);
+
+        drawLine(geom.plateX, geom.baselineY, geom.plateX + geom.plateW, geom.baselineY, "#7f8c8d", 1.5);
+        if (state.showLabels) {
+            drawText("Ligne de dépôt", geom.plateX - 10, geom.baselineY, "#7f8c8d", "italic 13px Arial", "right");
+        }
+
+        drawLine(geom.plateX, geom.solventY, geom.plateX + geom.plateW, geom.solventY, "#7f8c8d", 1.5);
+        if (state.showLabels) {
+            drawText("Front de l'éluant", geom.plateX - 10, geom.solventY, "#7f8c8d", "italic 13px Arial", "right");
+        }
+
+        if (isExportingEmptyGrid) {
+            flushTexts();
+            return;
+        }
+
+        state.lanes.forEach((lane, laneIdx) => {
+            if (!lane.active) return;
+            
+            const pxX = geom.lanePositions[laneIdx];
+            
+            drawLine(pxX - 5, geom.baselineY - 5, pxX + 5, geom.baselineY + 5, "#95a5a6", 1);
+            drawLine(pxX - 5, geom.baselineY + 5, pxX + 5, geom.baselineY - 5, "#95a5a6", 1);
+            
+            if (lane.showName && lane.name) {
+                drawText(lane.name, pxX, geom.baselineY + 20, "#2c3e50", "bold 16px Arial", "center", "top");
+            }
+
+            lane.spots.forEach(spot => {
+                const pxY = geom.baselineY - (spot.rf * state.solventH);
+                drawSpot(pxX, pxY, spot.color, spot.size, spot.shape);
+            });
+        });
+
+        flushTexts();
+    }
+
+    function getHoveredSpot(mouseX, mouseY) {
+        const geom = getPlateGeometry();
+        
+        for (let l = 0; l < state.lanes.length; l++) {
+            if (!state.lanes[l].active) continue;
+            let laneX = geom.lanePositions[l];
+            
+            for (let s = 0; s < state.lanes[l].spots.length; s++) {
+                let spot = state.lanes[l].spots[s];
+                let spotY = geom.baselineY - (spot.rf * state.solventH);
+                
+                let tolX = spot.shape === 'line' ? spot.size * 1.5 : spot.size * 2.5;
+                let tolY = spot.shape === 'line' ? 10 : spot.size * 2.5;
+
+                if (Math.abs(mouseX - laneX) < tolX && Math.abs(mouseY - spotY) < tolY) {
+                    return { laneIndex: l, spotIndex: s };
+                }
+            }
+        }
+        return null;
+    }
+
+    canvas.addEventListener('mousedown', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = (e.clientX - rect.left) * (logicalWidth / rect.width);
+        const mouseY = (e.clientY - rect.top) * (logicalHeight / rect.height);
+        
+        draggedSpot = getHoveredSpot(mouseX, mouseY);
+        if (draggedSpot) canvas.style.cursor = 'grabbing';
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = (e.clientX - rect.left) * (logicalWidth / rect.width);
+        const mouseY = (e.clientY - rect.top) * (logicalHeight / rect.height);
+
+        if (draggedSpot) {
+            canvas.style.cursor = 'grabbing';
+            const geom = getPlateGeometry();
+            
+            let rawRf = (geom.baselineY - mouseY) / state.solventH;
+            let newRf = Math.max(0, Math.min(1, Math.round(rawRf * 100) / 100));
+            
+            state.lanes[draggedSpot.laneIndex].spots[draggedSpot.spotIndex].rf = newRf;
+            
+            const rfInput = document.getElementById(`rf-input-${draggedSpot.laneIndex}-${draggedSpot.spotIndex}`);
+            if (rfInput) rfInput.value = newRf;
+
+            render();
+        } else {
+            const hovered = getHoveredSpot(mouseX, mouseY);
+            if (hovered) {
+                canvas.style.cursor = 'ns-resize';
+            } else {
+                canvas.style.cursor = 'crosshair';
+            }
+        }
+    });
+
+    canvas.addEventListener('mouseup', () => { draggedSpot = null; canvas.style.cursor = 'crosshair'; });
+    canvas.addEventListener('mouseleave', () => { draggedSpot = null; canvas.style.cursor = 'default'; });
+
+    buildLanesUI();
+    updateCanvasDimensions();
+    render();
+    
+</script>
+</body>
+</html>
