@@ -14,7 +14,35 @@ class Spreadsheet {
     // Paramètres de pagination
     this.currentPage = 0;
     this.pageSize = 10000;
+
+
+    this.formatCache = new Map();
   }   
+
+  // Fonction de rendu personnalisé pour formater les nombres avec le nombre de chiffres significatifs actuel
+  customCellRenderer(instance, td, row, col, prop, value, cellProperties) {
+    const currentSignificantDigits = this.data.settings.significantDigits;
+    const cacheKey = `${value}_${currentSignificantDigits}`;
+
+    let formattedValue;
+
+    if (this.formatCache.has(cacheKey)) {
+      formattedValue = this.formatCache.get(cacheKey);
+    } else {
+      let parsedValue = value;
+      if (typeof value === 'string' && value.trim() !== '') {
+        parsedValue = parseFloat(value.replace(',', '.'));
+      }
+
+      formattedValue = value;
+      if (parsedValue !== null && parsedValue !== undefined && !isNaN(parsedValue) && value !== '') {
+        formattedValue = formatNumber(parsedValue, currentSignificantDigits);
+      }
+      this.formatCache.set(cacheKey, formattedValue);
+    }
+
+    Handsontable.renderers.getRenderer('text')(instance, td, row, col, prop, formattedValue, cellProperties);
+  }
 
   addCurve(title, unit, size, fill, line, markers){
 
@@ -29,9 +57,7 @@ class Spreadsheet {
     const headers = this.data.getHeaders();
     const currentHeaders = this.hot ? this.hot.getColHeader() : null; 
     
-    const headersChanged = !currentHeaders || 
-                           headers.length !== currentHeaders.length || 
-                           headers.some((h, i) => h !== currentHeaders[i]);
+    const headersChanged = !currentHeaders || headers.length !== currentHeaders.length || headers.some((h, i) => h !== currentHeaders[i]);
 
     const fullTableData = this.data.getTable();
     const totalRows = fullTableData.length;
@@ -49,19 +75,8 @@ class Spreadsheet {
     } else {
       const columnsConfig = headers.map(() => ({ 
         type: 'numeric',
-        renderer: (instance, td, row, col, prop, value, cellProperties) => {
-          const currentSignificantDigits = this.data.settings.significantDigits;
-          let parsedValue = value;
-          if (typeof value === 'string' && value.trim() !== '') {
-            parsedValue = parseFloat(value.replace(',', '.'));
-          }
-
-          let formattedValue = value;
-          if (parsedValue !== null && parsedValue !== undefined && !isNaN(parsedValue) && value !== '') {
-            formattedValue = formatNumber(parsedValue, currentSignificantDigits);
-          }
-          Handsontable.renderers.getRenderer('text')(instance, td, row, col, prop, formattedValue, cellProperties);
-        }
+        renderer: (instance, td, row, col, prop, value, cellProperties) => 
+          this.customCellRenderer(instance, td, row, col, prop, value, cellProperties)
       }));
 
       this.hot.updateSettings({
@@ -180,19 +195,8 @@ build(uiManager){
       colHeaders: this.data.getHeaders(),
       columns: this.data.getHeaders().map(() => ({ 
         type: 'numeric',
-        renderer: (instance, td, row, col, prop, value, cellProperties) => {
-          let parsedValue = value;
-          if (typeof value === 'string' && value.trim() !== '') {
-            parsedValue = parseFloat(value.replace(',', '.'));
-          }
-
-          let formattedValue = value;
-          if (parsedValue !== null && parsedValue !== undefined && !isNaN(parsedValue) && value !== '') {
-            formattedValue = formatNumber(parsedValue, significantDigits);
-          }
-
-          Handsontable.renderers.getRenderer('text')(instance, td, row, col, prop, formattedValue, cellProperties);
-        }
+        renderer: (instance, td, row, col, prop, value, cellProperties) => 
+          this.customCellRenderer(instance, td, row, col, prop, value, cellProperties)
       })),
       afterOnCellMouseDown: afterOnCellMouseDown,
       afterGetColHeader: afterGetColHeader,
@@ -217,6 +221,8 @@ build(uiManager){
       colHeaders: true,
       columns: null
     });
+
+    this.formatCache.clear();
   }
 
 focusFirstCell(editMode = false) {
