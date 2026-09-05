@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tableau Périodique Simplifié</title>
+    <style>
+        :root {
+            --primary-color: #006699;
+            --z-color: #d64a18;
+        }
+        body {
+            font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f0f4f8;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        .page-title {
+            color: var(--primary-color);
+            margin-top: 10px;
+            margin-bottom: 30px;
+            font-size: 2.2em;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .periodic-table {
+            display: grid;
+            /* width proportionnelle et colonnes identiques */
+            grid-template-columns: repeat(8, minmax(0, 1fr));
+            gap: 10px;
+            width: 100%;
+            max-width: 27cm; 
+        }
+        .cell {
+            background-color: white;
+            border: 2px solid var(--primary-color);
+            border-radius: 8px;
+            /* Rend les cases parfaitement carrées */
+            aspect-ratio: 1 / 1; 
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+            padding: 5px; 
+            box-sizing: border-box;
+        }
+        .empty {
+            background: transparent;
+            border: none;
+            box-shadow: none;
+        }
+        .atomic-number {
+            position: absolute;
+            top: 6px;
+            left: 8px;
+            font-size: 1.1em;
+            font-weight: bold;
+            color: var(--z-color);
+        }
+        .symbol {
+            font-size: 2.2em;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-top: 10px;
+        }
+        .config {
+            font-size: 0.75em; 
+            color: #444;
+            margin-top: auto;
+            margin-bottom: 5px;
+            text-align: center;
+            white-space: nowrap;
+            background-color: #f8f9fa;
+            padding: 4px 6px;
+            border-radius: 4px;
+            border: 1px solid #dee2e6;
+            width: 90%;
+        }
+
+        @media print {
+            @page {
+                size: A4 landscape;
+                margin: 1.5cm; /* Marges d'impression restaurées */
+            }
+            body {
+                background-color: white;
+                height: auto;
+                padding: 0;
+            }
+            .page-title {
+                margin-top: 0;
+                margin-bottom: 20px;
+            }
+            .cell {
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <h1 class="page-title">Tableau Périodique Simplifié</h1>
+    <div class="periodic-table" id="table-container"></div>
+
+    <script>
+        const elements = [
+            // Ligne 1
+            { z: 1, sym: "H", conf: "1s¹" },
+            null, null, null, null, null, null,
+            { z: 2, sym: "He", conf: "1s²" },
+            
+            // Ligne 2
+            { z: 3, sym: "Li", conf: "1s² 2s¹" },
+            { z: 4, sym: "Be", conf: "1s² 2s²" },
+            { z: 5, sym: "B", conf: "1s² 2s² 2p¹" },
+            { z: 6, sym: "C", conf: "1s² 2s² 2p²" },
+            { z: 7, sym: "N", conf: "1s² 2s² 2p³" },
+            { z: 8, sym: "O", conf: "1s² 2s² 2p⁴" },
+            { z: 9, sym: "F", conf: "1s² 2s² 2p⁵" },
+            { z: 10, sym: "Ne", conf: "1s² 2s² 2p⁶" },
+            
+            // Ligne 3
+            { z: 11, sym: "Na", conf: "1s² 2s² 2p⁶ 3s¹" },
+            { z: 12, sym: "Mg", conf: "1s² 2s² 2p⁶ 3s²" },
+            { z: 13, sym: "Al", conf: "1s² 2s² 2p⁶ 3s² 3p¹" },
+            { z: 14, sym: "Si", conf: "1s² 2s² 2p⁶ 3s² 3p²" },
+            { z: 15, sym: "P", conf: "1s² 2s² 2p⁶ 3s² 3p³" },
+            { z: 16, sym: "S", conf: "1s² 2s² 2p⁶ 3s² 3p⁴" },
+            { z: 17, sym: "Cl", conf: "1s² 2s² 2p⁶ 3s² 3p⁵" },
+            { z: 18, sym: "Ar", conf: "1s² 2s² 2p⁶ 3s² 3p⁶" }
+        ];
+
+        const container = document.getElementById('table-container');
+
+        elements.forEach(el => {
+            if (!el) {
+                container.innerHTML += `<div class="cell empty"></div>`;
+                return;
+            }
+            container.innerHTML += `
+                <div class="cell">
+                    <div class="atomic-number">${el.z}</div>
+                    <div class="symbol">${el.sym}</div>
+                    <div class="config">${el.conf}</div>
+                </div>
+            `;
+        });
+    </script>
+
+</body>
+</html>

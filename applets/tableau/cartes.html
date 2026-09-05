@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jeu de Cartes - Mendeleïev</title>
+    <style>
+        :root {
+            --primary-color: #006699;
+        }
+        body {
+            font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f0f4f8;
+            margin: 0;
+            padding: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            /* Force l'impression exacte des couleurs */
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        .card {
+            width: 5.2cm;
+            height: 8.8cm;
+            background-color: white;
+            border: 2px solid var(--primary-color);
+            border-radius: 6px;
+            box-sizing: border-box;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+            page-break-inside: avoid;
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 3px;
+            margin-bottom: 5px;
+        }
+        .symbol {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        .mass {
+            font-size: 0.85em;
+            font-weight: bold;
+            color: #d64a18;
+        }
+        .name {
+            text-align: center;
+            font-size: 0.95em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+        .info-section {
+            font-size: 0.65em;
+            margin-bottom: 4px;
+            line-height: 1.25;
+        }
+        .info-title {
+            font-weight: bold;
+            color: #555;
+            text-decoration: underline;
+        }
+        .info-content {
+            padding-left: 3px;
+        }
+        
+        @media print {
+            @page {
+                size: A4 landscape;
+                margin: 0.8cm;
+            }
+            body {
+                background-color: white;
+                padding: 0;
+                margin: 0;
+            }
+            .card {
+                box-shadow: none;
+                /* On garde la bordure bleue à l'impression */
+                border: 2px solid var(--primary-color);
+            }
+            /* Les couleurs restent celles définies hors media print */
+        }
+    </style>
+</head>
+<body>
+
+    <script>
+        const elementsData = [
+            { id: "Al", nom: "ALUMINIUM", masse: "27,0", formule: "Al", composes: "AlCl<sub>3</sub>&nbsp;&nbsp;Al<sub>2</sub>O<sub>3</sub>", propPhy: "Métal blanc<br/>Bon conducteur thermique", propChi: "S'oxyde à l'air<br/>Réagit avec le dichlore" },
+            { id: "As", nom: "ARSENIC", masse: "74,9", formule: "As", composes: "AsH<sub>3</sub>&nbsp;&nbsp;As<sub>2</sub>O<sub>5</sub>", propPhy: "Gris métallique, cassant", propChi: "Réagit avec le dichlore<br/>Poisons violents" },
+            { id: "B",  nom: "BORE", masse: "10,8", formule: "B", composes: "BCl<sub>3</sub>&nbsp;&nbsp;B<sub>2</sub>O<sub>3</sub>", propPhy: "Solide noir, dur<br/>Semi-conducteur", propChi: "Brûle dans l'air à haute température" },
+            { id: "Be", nom: "BERYLLIUM", masse: "9,0", formule: "Be", composes: "BeO&nbsp;&nbsp;BeCl<sub>2</sub>", propPhy: "Métal blanc brillant<br/>Peu dense", propChi: "Brûle dans l'air (lumière intense)" },
+            { id: "Br", nom: "BROME", masse: "79,9", formule: "Br<sub>2</sub>", composes: "NaBr&nbsp;&nbsp;HBr", propPhy: "Liquide volatil rouge", propChi: "Réagit avec H<sub>2</sub> et vivement avec Na, Ca, Al..." },
+            { id: "C",  nom: "CARBONE", masse: "12,0", formule: "C", composes: "CO<sub>2</sub>&nbsp;&nbsp;CH<sub>4</sub>", propPhy: "Graphite (noir)<br/>Diamant (dur)", propChi: "Brûle dans l'air pour donner CO ou CO<sub>2</sub>" },
+            { id: "Ca", nom: "CALCIUM", masse: "40,1", formule: "Ca", composes: "CaO&nbsp;&nbsp;CaCl<sub>2</sub>", propPhy: "Métal blanc brillant<br/>Peu dense", propChi: "S'enflamme à chaud dans O<sub>2</sub><br/>Réagit avec Cl<sub>2</sub>" },
+            { id: "Cl", nom: "CHLORE", masse: "35,5", formule: "Cl<sub>2</sub>", composes: "NaCl&nbsp;&nbsp;HCl", propPhy: "Gaz verdâtre, peu soluble", propChi: "Violemment réactif avec H<sub>2</sub> et métaux" },
+            { id: "F",  nom: "FLUOR", masse: "19,0", formule: "F<sub>2</sub>", composes: "NaF&nbsp;&nbsp;HF", propPhy: "Gaz jaune moins dense", propChi: "Réagit avec H<sub>2</sub> et la plupart des métaux" },
+            { id: "H",  nom: "HYDROGENE", masse: "1,0", formule: "H<sub>2</sub>", composes: "HCl&nbsp;&nbsp;H<sub>2</sub>O", propPhy: "Gaz incolore, inodore, léger", propChi: "Explosif avec O<sub>2</sub><br/>Réagit avec S, C, Cl<sub>2</sub>" },
+            { id: "K",  nom: "POTASSIUM", masse: "39,1", formule: "K", composes: "KCl&nbsp;&nbsp;K<sub>2</sub>O", propPhy: "Métal argenté mou<br/>Peu dense", propChi: "S'oxyde à l'air<br/>Réagit violemment avec l'eau" },
+            { id: "Li", nom: "LITHIUM", masse: "6,9", formule: "Li", composes: "LiCl&nbsp;&nbsp;Li<sub>2</sub>O", propPhy: "Métal blanc mou<br/>Peu dense", propChi: "Réagit violemment avec eau et Cl<sub>2</sub>" },
+            { id: "Mg", nom: "MAGNESIUM", masse: "24,3", formule: "Mg", composes: "MgO&nbsp;&nbsp;MgCl<sub>2</sub>", propPhy: "Métal blanc argenté, malléable", propChi: "Brûle dans O<sub>2</sub> avec un vif éclat" },
+            { id: "N",  nom: "AZOTE", masse: "14,0", formule: "N<sub>2</sub>", composes: "NH<sub>3</sub>&nbsp;&nbsp;NO<sub>2</sub>", propPhy: "Gaz incolore, inodore<br/>Moins dense que l'air", propChi: "Se combine avec O<sub>2</sub> à très haute T°" },
+            { id: "Na", nom: "SODIUM", masse: "23,0", formule: "Na", composes: "NaCl&nbsp;&nbsp;Na<sub>2</sub>O", propPhy: "Métal blanc mou, peu dense", propChi: "S'oxyde à l'air<br/>Réagit violemment avec l'eau" },
+            { id: "O",  nom: "OXYGENE", masse: "16,0", formule: "O<sub>2</sub>", composes: "H<sub>2</sub>O&nbsp;&nbsp;CaO", propPhy: "Gaz incolore, inodore<br/>Plus dense que l'air", propChi: "Forme des oxydes avec corps simples" },
+            { id: "P",  nom: "PHOSPHORE", masse: "31,0", formule: "P", composes: "PH<sub>3</sub>&nbsp;&nbsp;P<sub>2</sub>O<sub>5</sub>", propPhy: "Plusieurs variétés (blanc, rouge)", propChi: "S'enflamme à l'air (variété blanche)" },
+            { id: "S",  nom: "SOUFRE", masse: "32,1", formule: "S<sub>8</sub>", composes: "H<sub>2</sub>S&nbsp;&nbsp;SO<sub>2</sub>", propPhy: "Solide jaune, isolant", propChi: "Brûle dans O<sub>2</sub> (gaz piquant)<br/>S'enflamme dans H<sub>2</sub>" },
+            { id: "Si", nom: "SILICIUM", masse: "28,1", formule: "Si", composes: "SiO<sub>2</sub>&nbsp;&nbsp;SiH<sub>4</sub>", propPhy: "Solide bleu acier<br/>Semi-conducteur", propChi: "Chauffé à blanc, brûle avec incandescence" }
+        ];
+
+        elementsData.forEach(el => {
+            const cardHTML = `
+                <div class="card">
+                    <div class="card-header">
+                        <span class="symbol">${el.id}</span>
+                        <span class="mass">m = ${el.masse}</span>
+                    </div>
+                    <div class="name">${el.nom}</div>
+                    
+                    <div class="info-section">
+                        <span class="info-title">Formule :</span> 
+                        <span class="info-content">${el.formule}</span>
+                    </div>
+                    
+                    <div class="info-section">
+                        <div class="info-title">Propriétés Physiques :</div>
+                        <div class="info-content">${el.propPhy}</div>
+                    </div>
+                    
+                    <div class="info-section">
+                        <div class="info-title">Propriétés Chimiques :</div>
+                        <div class="info-content">${el.propChi}</div>
+                    </div>
+                    
+                    <div class="info-section" style="margin-top: auto;">
+                        <div class="info-title">Composés :</div>
+                        <div class="info-content">${el.composes}</div>
+                    </div>
+                </div>
+            `;
+            document.body.innerHTML += cardHTML;
+        });
+    </script>
+</body>
+</html>

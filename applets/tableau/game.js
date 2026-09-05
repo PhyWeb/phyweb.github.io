@@ -8,6 +8,18 @@ function showInfo(id) {
     const setHTML = (elemId, html) => { const el = document.getElementById(elemId); if (el) el.innerHTML = html; };
     const setText = (elemId, txt) => { const el = document.getElementById(elemId); if (el) el.textContent = txt; };
     setText('info-nom', data.nom); setText('info-symbole', data.id); setText('info-masse', data.masse);
+    
+    // Affichage conditionnel de Z uniquement pour la partie 2
+    const zContainer = document.getElementById('info-z-container');
+    if (zContainer) {
+        if (currentPart === "partie2") {
+            zContainer.style.display = "block";
+            setText('info-z', zMap[id] || "?");
+        } else {
+            zContainer.style.display = "none";
+        }
+    }
+    
     setHTML('info-formule', data.formule); setHTML('info-propPhy', data.propPhy);
     setHTML('info-propChi', data.propChi); setHTML('info-composes', data.composes);
 }
@@ -108,6 +120,7 @@ const infoPanelTemplate = `
                 <div id="info-symbole" class="title is-4 mb-0 has-text-link">--</div>
                 <div id="info-nom" class="subtitle is-6 has-text-grey">Survolez un élément</div>
             </div>
+            <div id="info-z-container" class="info-item mb-2" style="display: none;"><span class="has-text-weight-bold is-size-7 mr-2">Nb. protons (Numéro atomique) :</span><span id="info-z" class="is-size-6 has-text-danger has-text-weight-bold"></span></div>
             <div class="info-item mb-2"><span class="has-text-weight-bold is-size-7 mr-2">Masse atomique (H=1) :</span><span id="info-masse" class="is-size-7"></span></div>
             <div class="info-item mb-2"><span class="has-text-weight-bold is-size-7 mr-2">Formule corps simple :</span><span id="info-formule" class="has-text-info has-text-weight-bold is-size-7"></span></div>
             <div class="info-item mb-2"><span class="has-text-weight-bold is-size-7 is-block">Propriétés Physiques :</span><span id="info-propPhy" class="is-size-7 is-block pl-2"></span></div>
@@ -329,6 +342,310 @@ const STRUCTURE_TP = {
             }
         }
     ],
+    partie2: (function() {
+        const renderModernSimplifiedGrid = (container, mode) => {
+            container.innerHTML = ""; container.className = "periodic-grid";
+            
+            // Élargissement des cases pour le mode d'affichage des configurations complètes
+            if (mode === 'all-configs') {
+                container.style.gridTemplateColumns = "repeat(8, 140px)"; container.style.gap = "6px";
+            } else {
+                container.style.gridTemplateColumns = "repeat(8, 60px)"; container.style.gap = "8px";
+            }
+            container.style.justifyContent = "center";
+
+            const r1 = ["H", null, null, null, null, null, null, "He"];
+            const r2 = ["Li", "Be", "B", "C", "N", "O", "F", "Ne"];
+            const r3 = ["Na", "Mg", "Al", "Si", "P", "S", "Cl", "Ar"];
+            
+            const toHideZ = ["B", "C", "N", "O", "F", "Al", "Si", "P", "S", "Cl"];
+            
+            // Configurations sur une seule ligne (suppression des <br>)
+            const fullConfigs = {
+                "H": "1s¹", "He": "1s²",
+                "Li": "1s² 2s¹", "Be": "1s² 2s²", "B": "1s² 2s² 2p¹", "C": "1s² 2s² 2p²", "N": "1s² 2s² 2p³", "O": "1s² 2s² 2p⁴", "F": "1s² 2s² 2p⁵", "Ne": "1s² 2s² 2p⁶",
+                "Na": "1s² 2s² 2p⁶ 3s¹", "Mg": "1s² 2s² 2p⁶ 3s²", "Al": "1s² 2s² 2p⁶ 3s² 3p¹", "Si": "1s² 2s² 2p⁶ 3s² 3p²", "P": "1s² 2s² 2p⁶ 3s² 3p³", "S": "1s² 2s² 2p⁶ 3s² 3p⁴", "Cl": "1s² 2s² 2p⁶ 3s² 3p⁵", "Ar": "1s² 2s² 2p⁶ 3s² 3p⁶"
+            };
+
+            [...r1, ...r2, ...r3].forEach(id => {
+                if (!id) { container.appendChild(document.createElement('div')); return; }
+                let elData = elementsData.find(e => e.id === id) || {id: id, masse: ""};
+                let cardOptions = { mode: 'atomic' }; // Affiche par défaut le symbole et Z
+
+                if (mode === 'z-input' && toHideZ.includes(id)) {
+                    cardOptions = { mode: 'inputAtomic', inputId: 'z-' + id.toLowerCase() };
+                }
+
+                let card = createCard(elData, false, cardOptions);
+                card.draggable = false;
+                card.style.cursor = mode === 'z-input' ? "help" : "default";
+
+                // Formatage spécifique avec white-space: nowrap pour forcer l'affichage sur une ligne
+                if (mode === 'all-configs') {
+                    card.style.width = "140px"; card.style.height = "auto"; card.style.padding = "6px 2px";
+                    let confDiv = document.createElement('div');
+                    confDiv.innerHTML = fullConfigs[id];
+                    confDiv.style.fontSize = "0.75em"; confDiv.style.color = "#495057"; confDiv.style.marginTop = "4px"; 
+                    confDiv.style.textAlign = "center"; confDiv.style.whiteSpace = "nowrap"; 
+                    card.appendChild(confDiv);
+                }
+
+                if (mode === 'col1' && ["H", "Li", "Na"].includes(id)) { card.classList.add('correct'); card.style.backgroundColor="#e6fffa"; }
+                if (mode === 'col14' && ["C", "Si"].includes(id)) { card.classList.add('correct'); card.style.backgroundColor="#e6fffa"; }
+                if (mode === 'col17' && ["F", "Cl"].includes(id)) { card.classList.add('correct'); card.style.backgroundColor="#e6fffa"; }
+
+                container.appendChild(card);
+            });
+        };
+
+        return [
+            {
+                type: "text", title: "Constitution actuelle du tableau",
+                html: `<div class="box content is-medium">
+                    <p class="has-text-weight-bold is-size-5">Amélioration des connaissances de la structure de la matière...</p>
+                    <p>Au début du XXème siècle, des découvertes sur les particules qui constituent l'atome et sur sa structure permettent de voir le tableau périodique sous un jour nouveau.</p>
+                    <p>Les activités qui suivent vont vous permettre de découvrir et de comprendre suivant quels critères le tableau périodique est actuellement construit.</p>
+                </div>`
+            },
+            {
+                type: "game", title: "Les numéros atomiques",
+                html: `<div class="box content consigne-box">
+                    <p>Complétez le tableau ci-dessous en y ajoutant les <strong>numéros atomiques Z</strong> demandés (cases avec " ? ") puis validez.</p>
+                    <p class="is-size-7 has-text-grey">Astuce : <strong>Survolez les cases du tableau</strong> pour consulter le panneau d'information à droite.</p>
+                </div>
+                <div class="columns">
+                    <div class="column">
+                        <section class="game-area box has-background-light" style="height: 100%;">
+                            <h3 class="title is-6 has-text-centered mt-2">Tableau actuel (simplifié)</h3>
+                            <div id="grid-container" class="mt-4 mx-auto"></div>
+                        </section>
+                    </div>
+                    ${infoPanelTemplate}
+                </div>`,
+                onLoad: () => { renderModernSimplifiedGrid(document.getElementById('grid-container'), 'z-input'); },
+                validate: () => {
+                    const toCheck = ["B", "C", "N", "O", "F", "Al", "Si", "P", "S", "Cl"];
+                    let err = 0;
+                    toCheck.forEach(id => {
+                        const input = document.getElementById('z-' + id.toLowerCase());
+                        if (input && parseInt(input.value.trim()) === zMap[id]) {
+                            input.style.backgroundColor = "#e6fffa"; input.style.borderColor = "#00AA55";
+                        } else {
+                            if(input) { input.style.backgroundColor = "#ffe6e6"; input.style.borderColor = "#AA0055"; err++; }
+                        }
+                    });
+                    if(err === 0) {
+                        toCheck.forEach(id => document.getElementById('z-' + id.toLowerCase()).disabled = true);
+                        return { success: true, msg: "Votre report des numéros atomiques dans le tableau est parfaitement correct." };
+                    }
+                    return { success: false, msg: `Revoyez les numéros atomiques des éléments concernés (survolez les cases). Il y a ${err} erreur(s).` };
+                }
+            },
+            {
+                type: "game", title: "Le critère de rangement en ligne",
+                html: `<div class="box content consigne-box">
+                    <p>D'après les nouveaux renseignements ainsi collectés, quel est le <u>critère</u> qui se dégage, dans ce tableau, <strong>pour décrire le rangement des éléments chimiques le long des LIGNES</strong> ?</p>
+                    <div class="control mt-4">
+                        <label class="radio is-block mb-2"><input type="radio" name="q_ligne" value="alpha" class="mr-2"> Les éléments sont classés par ordre alphabétique</label>
+                        <label class="radio is-block mb-2"><input type="radio" name="q_ligne" value="hasard" class="mr-2"> Les éléments sont placés sans ordre particulier</label>
+                        <label class="radio is-block mb-2"><input type="radio" name="q_ligne" value="z_decroissant" class="mr-2"> Les éléments sont rangés par numéro atomique décroissant</label>
+                        <label class="radio is-block mb-2"><input type="radio" name="q_ligne" value="z_croissant" class="mr-2"> Les éléments sont rangés par numéro atomique croissant</label>
+                        <label class="radio is-block mb-2"><input type="radio" name="q_ligne" value="annee" class="mr-2"> Les éléments sont classés suivant leur année de découverte</label>
+                    </div>
+                </div>
+                <div class="box has-background-light">
+                    <div id="grid-container" class="mx-auto" style="overflow-x: auto;"></div>
+                </div>`,
+                onLoad: () => { renderModernSimplifiedGrid(document.getElementById('grid-container'), 'show-z'); },
+                validate: () => {
+                    const r = document.querySelector('input[name="q_ligne"]:checked');
+                    if(!r) return { success: false, msg: "Veuillez sélectionner une réponse." };
+                    if(r.value === 'z_croissant') { 
+                        document.querySelectorAll('input[name="q_ligne"]').forEach(i=>i.disabled=true); 
+                        return { success: true, msg: "Effectivement, les éléments chimiques sont classés par numéro atomique croissant (et l'évolution est parfaitement régulière)." }; 
+                    }
+                    return { success: false, msg: "Observez la progression des numéros de gauche à droite dans la grille ci-dessous !"};
+                }
+            },
+            {
+                type: "game", title: "Structures électroniques (Colonne 1)",
+                html: `<section class="game-area box has-background-light" style="height: 100%;">
+                        <div class="box content consigne-box">
+                            <p>Étudiez les <strong>structures électroniques</strong> en commençant par les éléments de la <strong>première colonne</strong> (en surbrillance).</p>
+                            <p class="is-size-7 has-text-grey">Format attendu : <code>1s2 2s1</code> (espaces et exposants tolérés).</p>
+                        </div>
+                        <div id="grid-container" class="mt-4 mx-auto" style="margin-bottom: 30px;"></div>
+                        
+                        <div class="box mx-auto" style="max-width: 400px;">
+                            <div class="field is-horizontal mb-2">
+                                <div class="field-label is-normal"><label class="label" style="font-size: 1.3rem;"><sub>1</sub>H</label></div>
+                                <div class="field-body"><div class="control"><input class="input has-text-weight-bold" type="text" id="conf-h" placeholder="ex: 1s1"></div></div>
+                            </div>
+                            <div class="field is-horizontal mb-2">
+                                <div class="field-label is-normal"><label class="label" style="font-size: 1.3rem;"><sub>3</sub>Li</label></div>
+                                <div class="field-body"><div class="control"><input class="input has-text-weight-bold" type="text" id="conf-li"></div></div>
+                            </div>
+                            <div class="field is-horizontal">
+                                <div class="field-label is-normal"><label class="label" style="font-size: 1.3rem;"><sub>11</sub>Na</label></div>
+                                <div class="field-body"><div class="control"><input class="input has-text-weight-bold" type="text" id="conf-na"></div></div>
+                            </div>
+                        </div>
+                    </section>`,
+                onLoad: () => { renderModernSimplifiedGrid(document.getElementById('grid-container'), 'col1'); },
+                validate: () => {
+                    const clean = (val) => val.replace(/\s+/g, '').replace(/²/g, '2').replace(/⁶/g, '6').replace(/¹/g, '1').toLowerCase();
+                    let err = 0;
+                    const check = (id, expected) => {
+                        const el = document.getElementById(id);
+                        if(clean(el.value) === expected) { el.classList.add('is-success'); el.classList.remove('is-danger'); }
+                        else { el.classList.add('is-danger'); el.classList.remove('is-success'); err++; }
+                    };
+                    check('conf-h', '1s1'); check('conf-li', '1s22s1'); check('conf-na', '1s22s22p63s1');
+                    if (err === 0) {
+                        ['conf-h','conf-li','conf-na'].forEach(id => document.getElementById(id).disabled = true);
+                        return { success: true, msg: "Bravo, aucune erreur. Vous êtes un as de la structure électronique ! Vous pouvez passer à la suite." };
+                    }
+                    return { success: false, msg: "Vous avez commis des erreurs. Revoyez l'ordre de remplissage (1s, 2s, 2p...)." };
+                }
+            },
+            {
+                type: "game", title: "Structures électroniques (Colonne 14)",
+                html: `<section class="game-area box has-background-light" style="height: 100%;">
+                        <div class="box content consigne-box">
+                            <p>Suite des structures électroniques : éléments de la <strong>colonne 14</strong> (Carbone et Silicium).</p>
+                        </div>
+                        <div id="grid-container" class="mt-4 mx-auto" style="margin-bottom: 30px;"></div>
+                        
+                        <div class="box mx-auto" style="max-width: 400px;">
+                            <div class="field is-horizontal mb-2">
+                                <div class="field-label is-normal"><label class="label" style="font-size: 1.3rem;"><sub>6</sub>C</label></div>
+                                <div class="field-body"><div class="control"><input class="input has-text-weight-bold" type="text" id="conf-c"></div></div>
+                            </div>
+                            <div class="field is-horizontal">
+                                <div class="field-label is-normal"><label class="label" style="font-size: 1.3rem;"><sub>14</sub>Si</label></div>
+                                <div class="field-body"><div class="control"><input class="input has-text-weight-bold" type="text" id="conf-si"></div></div>
+                            </div>
+                        </div>
+                    </section>`,
+                onLoad: () => { renderModernSimplifiedGrid(document.getElementById('grid-container'), 'col14'); },
+                validate: () => {
+                    const clean = (val) => val.replace(/\s+/g, '').replace(/²/g, '2').replace(/⁶/g, '6').replace(/⁴/g, '4').toLowerCase();
+                    let err = 0;
+                    const check = (id, expected) => {
+                        const el = document.getElementById(id);
+                        if(clean(el.value) === expected) { el.classList.add('is-success'); el.classList.remove('is-danger'); }
+                        else { el.classList.add('is-danger'); el.classList.remove('is-success'); err++; }
+                    };
+                    check('conf-c', '1s22s22p2'); check('conf-si', '1s22s22p63s23p2');
+                    if (err === 0) {
+                        ['conf-c','conf-si'].forEach(id => document.getElementById(id).disabled = true);
+                        return { success: true, msg: "Bravo, toujours aussi fort ! Vous pouvez passer aux éléments de la colonne 17." };
+                    }
+                    return { success: false, msg: "Attention ! Comptez bien le total des électrons pour arriver à Z." };
+                }
+            },
+            {
+                type: "game", title: "Structures électroniques (Colonne 17)",
+                html: `<section class="game-area box has-background-light" style="height: 100%;">
+                        <div class="box content consigne-box">
+                            <p>Dernière vérification des structures électroniques : éléments de la <strong>colonne 17</strong> (famille des halogènes).</p>
+                        </div>
+                        <div id="grid-container" class="mt-4 mx-auto" style="margin-bottom: 30px;"></div>
+                        
+                        <div class="box mx-auto" style="max-width: 400px;">
+                            <div class="field is-horizontal mb-2">
+                                <div class="field-label is-normal"><label class="label" style="font-size: 1.3rem;"><sub>9</sub>F</label></div>
+                                <div class="field-body"><div class="control"><input class="input has-text-weight-bold" type="text" id="conf-f"></div></div>
+                            </div>
+                            <div class="field is-horizontal">
+                                <div class="field-label is-normal"><label class="label" style="font-size: 1.3rem;"><sub>17</sub>Cl</label></div>
+                                <div class="field-body"><div class="control"><input class="input has-text-weight-bold" type="text" id="conf-cl"></div></div>
+                            </div>
+                        </div>
+                    </section>`,
+                onLoad: () => { renderModernSimplifiedGrid(document.getElementById('grid-container'), 'col17'); },
+                validate: () => {
+                    const clean = (val) => val.replace(/\s+/g, '').replace(/²/g, '2').replace(/⁶/g, '6').replace(/⁵/g, '5').toLowerCase();
+                    let err = 0;
+                    const check = (id, expected) => {
+                        const el = document.getElementById(id);
+                        if(clean(el.value) === expected) { el.classList.add('is-success'); el.classList.remove('is-danger'); }
+                        else { el.classList.add('is-danger'); el.classList.remove('is-success'); err++; }
+                    };
+                    check('conf-f', '1s22s22p5'); check('conf-cl', '1s22s22p63s23p5');
+                    if (err === 0) {
+                        ['conf-f','conf-cl'].forEach(id => document.getElementById(id).disabled = true);
+                        return { success: true, msg: "Bravo, vous êtes décidemment incollable. Vous pouvez passer au récapitulatif." };
+                    }
+                    return { success: false, msg: "Revoyez la capacité maximale des sous-couches s et p." };
+                }
+            },
+            {
+                type: "game", title: "Le critère de changement de ligne",
+                html: `<div class="box content consigne-box">
+                    <p>D'après <strong>les structures électroniques complétées dans le tableau ci-dessous</strong>, quel est le critère qui se dégage <strong>pour le changement de ligne dans ce tableau (c'est à dire ce qui déclenche l'ajout d'une ligne supplémentaire)</strong> ?</p>
+                    <div class="control mt-4">
+                        <label class="radio is-block mb-2"><input type="radio" name="q_periode" value="hasard" class="mr-2"> Il n'y a pas de raisons, c'est comme ça !</label>
+                        <label class="radio is-block mb-2"><input type="radio" name="q_periode" value="couche" class="mr-2"> Le début du remplissage d'une nouvelle couche électronique principale (n=1, n=2, n=3...)</label>
+                        <label class="radio is-block mb-2"><input type="radio" name="q_periode" value="ecran" class="mr-2"> Le manque de place sur l'écran</label>
+                        <label class="radio is-block mb-2"><input type="radio" name="q_periode" value="internes" class="mr-2"> L'absence d'électrons dans les couches internes</label>
+                    </div>
+                </div>
+                <div class="box has-background-light">
+                    <div id="grid-container" class="mx-auto" style="overflow-x: auto;"></div>
+                </div>`,
+                onLoad: () => { renderModernSimplifiedGrid(document.getElementById('grid-container'), 'all-configs'); },
+                validate: () => {
+                    const r = document.querySelector('input[name="q_periode"]:checked');
+                    if(!r) return { success: false, msg: "Veuillez sélectionner une réponse." };
+                    if(r.value === 'couche') { 
+                        document.querySelectorAll('input[name="q_periode"]').forEach(i=>i.disabled=true); 
+                        return { success: true, msg: "Effectivement, à chaque début de ligne (H, Li, Na) correspond l'ajout d'un électron sur une couche principale supplémentaire (1s, puis 2s, puis 3s)." }; 
+                    }
+                    return { success: false, msg: "Essayez de réfléchir au point commun des éléments Li et Na (début des lignes 2 et 3) dans le tableau."};
+                }
+            },
+            {
+                type: "game", title: "Le critère de changement de colonne",
+                html: `<div class="box content consigne-box">
+                    <p>Toujours avec les renseignements de la grille ci-dessous, que remarque-t-on quant <strong>aux éléments chimiques d'une même colonne</strong> ?</p>
+                    <div class="control mt-4">
+                        <label class="radio is-block mb-2"><input type="radio" name="q_col" value="couches" class="mr-2"> Ils ont tous le même nombre de couches électroniques</label>
+                        <label class="radio is-block mb-2"><input type="radio" name="q_col" value="alpha" class="mr-2"> Ils sont classés verticalement dans l'ordre alphabétique</label>
+                        <label class="radio is-block mb-2"><input type="radio" name="q_col" value="rien" class="mr-2"> Rien de particulier n'est remarquable</label>
+                        <label class="radio is-block mb-2"><input type="radio" name="q_col" value="internes" class="mr-2"> Ils ont tous 10 électrons internes</label>
+                        <label class="radio is-block"><input type="radio" name="q_col" value="valence" class="mr-2"> Ils ont tous le même nombre d'électrons sur leur couche externe (électrons de valence)</label>
+                    </div>
+                </div>
+                <div class="box has-background-light">
+                    <div id="grid-container" class="mx-auto" style="overflow-x: auto;"></div>
+                </div>`,
+                onLoad: () => { renderModernSimplifiedGrid(document.getElementById('grid-container'), 'all-configs'); },
+                validate: () => {
+                    const r = document.querySelector('input[name="q_col"]:checked');
+                    if(!r) return { success: false, msg: "Veuillez sélectionner une réponse." };
+                    if(r.value === 'valence') { 
+                        document.querySelectorAll('input[name="q_col"]').forEach(i=>i.disabled=true); 
+                        return { success: true, msg: "Oui, les éléments chimiques d'une même colonne sont effectivement caractérisés par le même nombre d'électrons périphériques (de valence)." }; 
+                    }
+                    return { success: false, msg: "Encore et toujours : OBSERVEZ et REFLECHISSEZ. Comparez les électrons de la dernière couche pour la colonne H-Li-Na, ou F-Cl."};
+                }
+            },
+            {
+                type: "text", title: "Conclusion",
+                html: `<div class="box content is-medium">
+                    <h3 class="title is-4 has-text-success"><i class="fas fa-check-circle mr-2"></i> Bilan de la classification</h3>
+                    <p>Vous connaissez désormais les critères qui gouvernent la structure du tableau actuel :</p>
+                    <ul>
+                        <li>Les éléments sont rangés par <strong>numéro atomique croissant</strong>.</li>
+                        <li>Le passage à une nouvelle ligne correspond au <strong>début de remplissage d'une nouvelle couche électronique principale</strong>.</li>
+                        <li>Les éléments d'une même colonne possèdent le <strong>même nombre d'électrons de valence</strong>, ce qui explique leurs propriétés chimiques similaires (familles).</li>
+                    </ul>
+                    <p class="has-text-centered mt-5"><i class="fas fa-arrow-right has-text-link"></i> Vous pouvez maintenant passer à la <strong>Partie 3 (Comparaison)</strong>.</p>
+                </div>`
+            }
+        ];
+    })(),
     partie3: [
         {
             type: "text", title: "Le génie des travaux de Mendeleïev",
@@ -596,10 +913,10 @@ function renderHome() {
                         </div>
                     </button>
                     
-                    <button class="button is-static is-justify-content-flex-start is-flex-wrap-wrap h-auto p-4" style="height: auto; white-space: normal;">
+                    <button class="button is-link is-light is-justify-content-flex-start is-flex-wrap-wrap h-auto p-4" style="height: auto; white-space: normal;" onclick="startPart('partie2')">
                         <div class="has-text-left w-full" style="width: 100%;">
-                            <strong class="is-block mb-1 is-size-5 has-text-grey"><i class="fas fa-lock mr-2"></i>2. Les critères actuels</strong>
-                            <span class="is-size-7 is-block has-text-grey">Comprendre le rangement moderne des éléments.</span>
+                            <strong class="is-block mb-1 is-size-5"><i class="fas fa-play-circle mr-2"></i>2. Les critères actuels</strong>
+                            <span class="is-size-7 is-block">Comprendre le rangement moderne des éléments.</span>
                         </div>
                     </button>
                     
@@ -615,9 +932,9 @@ function renderHome() {
                 <div class="box mt-5 has-background-white-ter border-left-danger" style="border-left: 4px solid #f14668;">
                     <h3 class="title is-5 mb-2"><i class="fas fa-file-pdf has-text-danger mr-2"></i>Documents PDF</h3>
                     <div class="is-flex is-flex-direction-column" style="gap: 8px;">
-                        <a href="images/jeu_cartes_mendeleiev.pdf" target="_blank" class="has-text-link is-size-7"><i class="fas fa-download mr-1"></i> Cartes à imprimer</a>
-                        <a href="images/Etude_classif_periodique.pdf" target="_blank" class="has-text-link is-size-7"><i class="fas fa-download mr-1"></i> Énoncé complet du TP</a>
-                        <a href="images/tableau_simplifie.pdf" target="_blank" class="has-text-link is-size-7"><i class="fas fa-download mr-1"></i> Tableau simplifié</a>
+                        <a href="assets/cartes.pdf" target="_blank" class="has-text-link is-size-7" disabled><i class="fas fa-download mr-1"></i> Cartes à imprimer</a>
+                        <!-- <a href="images/Etude_classif_periodique.pdf" target="_blank" class="has-text-link is-size-7"><i class="fas fa-download mr-1"></i> Énoncé complet du TP</a> -->
+                        <a href="assets/tableau_simplifie.pdf" target="_blank" class="has-text-link is-size-7"><i class="fas fa-download mr-1"></i> Tableau simplifié</a>
                     </div>
                 </div>
             </div>
