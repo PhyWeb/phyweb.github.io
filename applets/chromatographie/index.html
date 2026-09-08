@@ -166,10 +166,15 @@
                             <input type="checkbox" id="toggleLabels" > Afficher les légendes
                         </label>
                     </div>
+                    <div class="is-flex is-align-items-center mb-1">
+                        <label class="checkbox is-flex is-align-items-center" style="gap: 6px;" title="Afficher/Masquer la cuve et l'éluant">
+                            <input type="checkbox" id="toggleTank" > Afficher la cuve et l'éluant
+                        </label>
+                    </div>
                     
                     <div class="control-row mt-3 mb-4">
                         <label class="label" style="width:140px;">Hauteur éluant (px)</label>
-                        <div class="control"><input class="input is-small" style="width:75px;" type="number" id="solventH" step="10" value="400"></div>
+                        <div class="control"><input class="input is-small" style="width:75px;" type="number" id="solventH" step="10" value="360"></div>
                     </div>
 
                     <hr class="my-2">
@@ -213,7 +218,8 @@
 
     let state = {
         showLabels: false,
-        solventH: 380,
+        showTank: false,
+        solventH: 360,
         lanes: [
             { active: true, name: "A", showName: true, spots: [ { rf: 0.4, color: "#3498db", size: 8, shape: 'oval' } ] },
             { active: true, name: "B", showName: true, spots: [ { rf: 0.8, color: "#3498db", size: 8, shape: 'oval' } ] },
@@ -233,11 +239,14 @@
     const PLATE_PADDING_BOTTOM = 80;
 
     function getMargins() {
+        // Si la cuve est affichée, on ajoute 40px d'espace autour pour qu'elle respire
+        const extraMargin = state.showTank ? 40 : 0; 
+        
         return {
-            left: state.showLabels ? 130 : 40,
-            right: 40,
-            top: 40,
-            bottom: 40
+            left: (state.showLabels ? 130 : 40) + extraMargin,
+            right: 40 + extraMargin,
+            top: 40 + extraMargin,
+            bottom: 40 + extraMargin
         };
     }
 
@@ -452,6 +461,12 @@
         render(); 
     });
 
+    document.getElementById('toggleTank').addEventListener('change', (e) => { 
+        state.showTank = e.target.checked;
+        updateCanvasDimensions(); // <-- NOUVEAU : Recalcule la taille du canvas avec les nouvelles marges
+        render(); 
+    });
+
 
     function showToast(message) {
         const toast = document.getElementById("toast");
@@ -580,7 +595,8 @@
     function resetApplet() {
         state = {
             showLabels: false,
-            solventH: 380,
+            showTank: false,
+            solventH: 360,
             lanes: [
                 { active: true, name: "A", showName: true, spots: [ { rf: 0.4, color: "#3498db", size: 8, shape: 'oval' } ] },
                 { active: true, name: "B", showName: true, spots: [ { rf: 0.8, color: "#3498db", size: 8, shape: 'oval' } ] },
@@ -590,46 +606,89 @@
         };
 
         document.getElementById('toggleLabels').checked = false;
-        document.getElementById('solventH').value = 380;
+        document.getElementById('toggleTank').checked = false;
+        document.getElementById('solventH').value = 360;
         buildLanesUI();
         updateCanvasDimensions();
         render();
     }
 
-    function render() {
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.scale(currentScale, currentScale);
+function render() {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.scale(currentScale, currentScale);
 
-        const geom = getPlateGeometry();
+    const geom = getPlateGeometry();
 
-        ctx.fillStyle = "#fdfdfd";
-        ctx.shadowColor = "rgba(0,0,0,0.15)";
-        ctx.shadowBlur = 10;
-        ctx.shadowOffsetX = 4;
-        ctx.shadowOffsetY = 4;
-        ctx.fillRect(geom.plateX, geom.plateY, geom.plateW, geom.plateH);
+    // --- Géométrie de la cuve et de l'éluant ---
+    const tankMargin = 30; // La cuve dépasse de 30px autour de la plaque
+    const tankX = geom.plateX - tankMargin;
+    const tankY = geom.plateY - tankMargin;
+    const tankW = geom.plateW + tankMargin * 2;
+    const tankH = geom.plateH + tankMargin * 2;
+    
+    // L'éluant monte jusqu'à juste en dessous de la ligne de dépôt
+    const eluentLevelY = geom.baselineY + 15; 
+    const eluentH = (tankY + tankH) - eluentLevelY;
+    
+    // Position dynamique des légendes (décalées si la cuve est affichée)
+    const textX = state.showTank ? tankX - 10 : geom.plateX - 10;
+
+    // --- 1. Dessin du fond de la cuve ---
+    if (state.showTank) {
+        ctx.fillStyle = "rgba(236, 240, 241, 0.4)";
+        ctx.fillRect(tankX, tankY, tankW, tankH);
+    }
+
+    // --- 2. Dessin de la plaque ---
+    ctx.fillStyle = "#fdfdfd";
+    ctx.shadowColor = "rgba(0,0,0,0.15)";
+    ctx.shadowBlur = 10;
+    ctx.shadowOffsetX = 4;
+    ctx.shadowOffsetY = 4;
+    ctx.fillRect(geom.plateX, geom.plateY, geom.plateW, geom.plateH);
+    
+    ctx.shadowColor = "transparent";
+    ctx.strokeStyle = "#cccccc";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(geom.plateX, geom.plateY, geom.plateW, geom.plateH);
+
+    // --- 3. Dessin de l'éluant et vitres ---
+    if (state.showTank) {
+        ctx.fillStyle = "rgba(52, 152, 219, 0.35)"; 
+        ctx.fillRect(tankX, eluentLevelY, tankW, eluentH);
         
-        ctx.shadowColor = "transparent";
-        ctx.strokeStyle = "#cccccc";
-        ctx.lineWidth = 2;
-        ctx.strokeRect(geom.plateX, geom.plateY, geom.plateW, geom.plateH);
+        ctx.strokeStyle = "rgba(149, 165, 166, 0.6)";
+        ctx.lineWidth = 5;
+        ctx.strokeRect(tankX, tankY, tankW, tankH);
+        
+        drawLine(tankX - 10, tankY, tankX + tankW + 10, tankY, "rgba(127, 140, 141, 0.9)", 7);
 
-        drawLine(geom.plateX, geom.baselineY, geom.plateX + geom.plateW, geom.baselineY, "#7f8c8d", 1.5);
+        // Légendes Cuve/Éluant (utilisent textX)
         if (state.showLabels) {
-            drawText("Ligne de dépôt", geom.plateX - 10, geom.baselineY, "#7f8c8d", "italic 13px Arial", "right");
+            drawText("Cuve", textX, tankY + 40, "#7f8c8d", "italic 13px Arial", "right");
+            drawText("Éluant", textX, eluentLevelY + (eluentH / 2), "#2980b9", "italic 13px Arial", "right");
         }
+    }
 
-        drawLine(geom.plateX, geom.solventY, geom.plateX + geom.plateW, geom.solventY, "#7f8c8d", 1.5);
-        if (state.showLabels) {
-            drawText("Front de l'éluant", geom.plateX - 10, geom.solventY, "#7f8c8d", "italic 13px Arial", "right");
-        }
+    // --- 4. Lignes de dépôt et de front ---
+    drawLine(geom.plateX, geom.baselineY, geom.plateX + geom.plateW, geom.baselineY, "#7f8c8d", 1.5);
+    if (state.showLabels) {
+        // Remplacement de 'geom.plateX - 10' par 'textX'
+        drawText("Ligne de dépôt", textX, geom.baselineY, "#7f8c8d", "italic 13px Arial", "right");
+    }
 
-        if (isExportingEmptyGrid) {
-            flushTexts();
-            return;
-        }
+    drawLine(geom.plateX, geom.solventY, geom.plateX + geom.plateW, geom.solventY, "#7f8c8d", 1.5);
+    if (state.showLabels) {
+        // Remplacement de 'geom.plateX - 10' par 'textX'
+        drawText("Front de l'éluant", textX, geom.solventY, "#7f8c8d", "italic 13px Arial", "right");
+    }
+
+    if (isExportingEmptyGrid) {
+        flushTexts();
+        return;
+    }
 
         state.lanes.forEach((lane, laneIdx) => {
             if (!lane.active) return;
