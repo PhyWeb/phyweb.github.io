@@ -477,7 +477,7 @@ function aboutModal(_app){
   let year = d.getFullYear();
   alertModal({
     id: "about-modal",
-    title: "A propos de PhyWeb " + _app + version,
+    title: "A propos de PhyWeb " + _app + " " + version,
     delete: true,
     width: "50rem",
     body: `<div class="field is-horizontal">
