@@ -36,17 +36,11 @@
     - typos dans les options de réduction de poids et centrage des checkboxes (seulement sur petit ecran ?)
 
 # Grapher
-    - sauvegarder le niveau de zoom et la position de la caméra dans les pw
-
     - possibilité d'avoir 2 axes y
-
-    - export image / print
 
     - Vérifier que les guess initiaux sont plus performants que des 1 1 1 1 1
 
     - erreur silencieuse highcharts quand on met des lettres dans le table
-
-    - ajuster automatiquement la largeur des colonnes aux noms des entetes ?
 
     VERIFICATION on peut changer les parametres par defaut dans un appx ?
     

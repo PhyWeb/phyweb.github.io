@@ -163,6 +163,19 @@ generatePW() {
     .filter(s => !s.options?.id?.startsWith('model-') && s.visible !== false)
     .map(s => s.name);
 
+  // 3. Sauvegarde de l'état de zoom
+  let zoomState = null;
+  if (this.app.grapher.chart) {
+    const xEx = this.app.grapher.chart.xAxis[0].getExtremes();
+    const yEx = this.app.grapher.chart.yAxis[0].getExtremes();
+    zoomState = {
+      xUserMin: xEx.userMin !== undefined ? xEx.userMin : null,
+      xUserMax: xEx.userMax !== undefined ? xEx.userMax : null,
+      yUserMin: yEx.userMin !== undefined ? yEx.userMin : null,
+      yUserMax: yEx.userMax !== undefined ? yEx.userMax : null
+    };
+  }
+
   const state = {
     version: "3.0",
     data: dataToSave,
@@ -170,6 +183,7 @@ generatePW() {
     grapher: {
       xCurve: this.app.grapher.currentXCurve,
       yCurves: yCurves,
+      zoom: zoomState
     },
     sort: {
       lastSortVariable: this.app.data.lastSortVariable ?? null,
@@ -177,7 +191,7 @@ generatePW() {
   };
 
   return JSON.stringify(state, null, 2);
-}
+  }
 
   /**
    * Génère le contenu pour un fichier CSV.
@@ -458,12 +472,27 @@ generatePW() {
     this.app.uiManager.updateXAxisSelector();
     this.app.grapher.updateModelVisibility();
     this.app.grapher.reorderLegendByVisibility();
-    this.app.grapher.chart.redraw();
-    this.app.grapher.resetZoom();
+    
+    // Restauration de l'état de Zoom
+    if (state.grapher && state.grapher.zoom) {
+      const z = state.grapher.zoom;
+      // Applique les extrêmes (bornes) sauvegardées, sans forcer un redessin immédiat (false)
+      this.app.grapher.chart.xAxis[0].setExtremes(z.xUserMin ?? null, z.xUserMax ?? null, false);
+      this.app.grapher.chart.yAxis[0].setExtremes(z.yUserMin ?? null, z.yUserMax ?? null, false);
+      
+      // Affiche ou masque le bouton "Zoom Auto" en fonction de l'état
+      if (z.xUserMin !== null || z.yUserMin !== null) {
+          document.querySelector("#auto-zoom-button").classList.remove("is-hidden");
+      } else {
+          this.app.uiManager.resetZoomUI();
+      }
+      this.app.grapher.chart.redraw(); // Redessine une seule fois avec le bon zoom
+    } else {
+      // Comportement par défaut (anciens fichiers)
+      this.app.grapher.resetZoom();
+    }
 
     console.log("Session .pw (v3.0) restaurée avec succès.");
-
-
   }
 
   /**

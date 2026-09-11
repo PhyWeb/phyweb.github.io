@@ -17,7 +17,34 @@ class Spreadsheet {
 
 
     this.formatCache = new Map();
-  }   
+  }
+
+  // Calcule la largeur d'une colonne avec précision en utilisant l'API Canvas
+  calculateColWidth(index) {
+    const headers = this.data.getHeaders();
+    if (headers && headers[index]) {
+      const text = headers[index];
+      
+      // On initialise le contexte Canvas une seule fois pour garder des performances optimales
+      if (!this.textMeasureContext) {
+        const canvas = document.createElement("canvas");
+        this.textMeasureContext = canvas.getContext("2d");
+        
+        // On reproduit la police et la taille (en gras) des en-têtes Handsontable (thème Bulma/Horizon)
+        this.textMeasureContext.font = "bold 13px BlinkMacSystemFont, -apple-system, 'Segoe UI', Roboto, sans-serif";
+      }
+      
+      // Mesure la largeur exacte du texte au pixel près
+      const textWidth = this.textMeasureContext.measureText(text).width;
+      
+      // On ajoute un espace fixe pour le padding de la cellule et l'icône de tri (~40px)
+      const calculatedWidth = Math.ceil(textWidth) + 40;
+      
+      // On garde 100px comme largeur minimum absolue
+      return Math.max(100, calculatedWidth);
+    }
+    return 100;
+  }
 
   // Fonction de rendu personnalisé pour formater les nombres avec le nombre de chiffres significatifs actuel
   customCellRenderer(instance, td, row, col, prop, value, cellProperties) {
@@ -83,6 +110,7 @@ class Spreadsheet {
         data: displayData,
         colHeaders: headers,
         columns: columnsConfig,
+        colWidths: (index) => this.calculateColWidth(index),
         // Fonction dynamique pour calculer le bon numéro de ligne (à cause de la pagination)
         rowHeaders: (index) => {
            return (this.currentPage * this.pageSize) + index + 1;
@@ -203,7 +231,7 @@ build(uiManager){
       autoColumnSize: false,
       autoRowSize: false,
       rowHeaderWidth: 80,
-      colWidths: 100,
+      colWidths: (index) => this.calculateColWidth(index),
       manualColumnResize: true,
       height: 500,
       autoWrapRow: true,
