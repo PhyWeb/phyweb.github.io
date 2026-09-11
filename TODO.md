@@ -52,9 +52,9 @@
     
     Tweaker encore un peu l'interface de l'export
 
+# Mendeleiev
+# Optique
 # Chromato
-    uniformisation des couleurs quand on ajoute des taches. la premiere a tujours la meme couleur etc
-    ajouter un point a gauche de chaque ligne de tache pour la clareté
 
 # MISC
  - tester le flatpak puis flathub
