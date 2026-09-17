@@ -719,6 +719,9 @@ generatePW() {
         ? genres.map((g, idx) => (g === 0 ? idx : -1)).filter(idx => idx !== -1)
         : names.map((_, idx) => idx);
 
+      const existingSymbols = new Set();
+      const nameMap = {};
+
       const cleanNames = names.map(name => {
         const newName = sanitizeSymbol(name, existingSymbols);
         if (name !== newName) nameMap[name] = newName;
@@ -800,6 +803,8 @@ generatePW() {
       const memoText = normalizedMemoLines.length ? normalizedMemoLines.join('\n') : '';
       const paramsText = paramLines.length ? paramLines.join('\n') : '';
       const finalText = memoText && paramsText ? `${paramsText}\n\n${memoText}` : (memoText || paramsText);
+      let finalText = memoText && paramsText ? `${paramsText}\n\n${memoText}` : (memoText || paramsText);
+      finalText = updateFormulasReferences(finalText, nameMap);
       if (finalText) {
         this.app.editor.setValue(finalText.endsWith('\n') ? finalText : finalText + '\n');
       }
@@ -809,11 +814,16 @@ generatePW() {
       this.loadData(output.trim());
 
       // Configurer le graphe
+      const cleanGraphX = graphX.map(t => nameMap[t] || t);
+      const cleanGraphY = graphY.map(t => nameMap[t] || t);
+
       const existingTitles = this.app.data.curves.map(c => c.title);
       const chosenX = graphX.find(t => existingTitles.includes(t)) || existingTitles[0];
+      const chosenX = cleanGraphX.find(t => existingTitles.includes(t)) || existingTitles[0];
       if (chosenX) this.app.grapher.setXCurve(chosenX, false);
 
       const yNow = graphY.filter(t => existingTitles.includes(t));
+      const yNow = cleanGraphY.filter(t => existingTitles.includes(t));
       this.app.grapher.updateChart();
       this.app.grapher.reorderLegendByVisibility();
       if (yNow.length) this.app.grapher.setVisibilityFromList(yNow);
@@ -822,6 +832,7 @@ generatePW() {
       this.app.pendingRW3 = {
         x: chosenX || null, 
         y: graphY.filter(t => !existingTitles.includes(t))
+        y: cleanGraphY.filter(t => !existingTitles.includes(t))
       };
     } catch (error) {
       throw new Error(`Le fichier RW3 ne peut pas être lu : ${error}`);
