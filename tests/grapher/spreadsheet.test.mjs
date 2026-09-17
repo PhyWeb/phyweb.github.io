@@ -216,5 +216,77 @@ describe('Spreadsheet - handleAfterChange() et correction du bug de pagination',
       assert.equal(curveX[2], 2, 'La ligne 2 (page 0) ne doit pas être écrasée');
     });
   });
+
+  describe('Méthodes de calcul d\'offset de pagination (getPageOffset et getActualRowIndex)', () => {
+    it('doit calculer un offset nul sur la page 0', () => {
+      const { spreadsheet } = createTestContext(25, 10, 0);
+      assert.equal(spreadsheet.getPageOffset(), 0);
+      assert.equal(spreadsheet.getActualRowIndex(3), 3);
+    });
+
+    it('doit calculer un offset de 10 sur la page 1 avec pageSize = 10', () => {
+      const { spreadsheet } = createTestContext(25, 10, 1);
+      assert.equal(spreadsheet.getPageOffset(), 10);
+      assert.equal(spreadsheet.getActualRowIndex(3), 13);
+    });
+
+    it('doit calculer un offset de 20 sur la page 2 avec pageSize = 10', () => {
+      const { spreadsheet } = createTestContext(25, 10, 2);
+      assert.equal(spreadsheet.getPageOffset(), 20);
+      assert.equal(spreadsheet.getActualRowIndex(4), 24);
+    });
+
+    it('doit gérer les cas où currentPage ou pageSize ne sont pas définis', () => {
+      const { spreadsheet } = createTestContext(25, 10, 0);
+      delete spreadsheet.currentPage;
+      delete spreadsheet.pageSize;
+      assert.equal(spreadsheet.getPageOffset(), 0);
+      assert.equal(spreadsheet.getActualRowIndex(5), 5);
+    });
+  });
+
+  describe('Spreadsheet - update() et réajustement de pagination après suppression', () => {
+    it('doit réajuster currentPage vers la dernière page valide si les lignes restantes ne remplissent plus la page courante', () => {
+      // 25 lignes au départ, 10 par page -> 3 pages (0, 1, 2)
+      const { data, spreadsheet } = createTestContext(25, 10, 2);
+      assert.equal(spreadsheet.currentPage, 2);
+
+      // Suppression des 5 lignes de la page 2 (lignes 20 à 24)
+      data.deleteRow(20, 5);
+      assert.equal(data.getTable().length, 20);
+
+      // Mock minimal de hot pour update()
+      let loadedData = null;
+      spreadsheet.hot = {
+        getColHeader: () => data.getHeaders(),
+        loadData: (d) => { loadedData = d; }
+      };
+
+      spreadsheet.update();
+
+      // currentPage doit avoir été automatiquement décrémenté à 1
+      assert.equal(spreadsheet.currentPage, 1);
+      assert.equal(loadedData.length, 10);
+    });
+
+    it('doit réinitialiser currentPage à 0 si toutes les données sont supprimées', () => {
+      const { data, spreadsheet } = createTestContext(15, 10, 1);
+      assert.equal(spreadsheet.currentPage, 1);
+
+      data.deleteRow(0, 15);
+      assert.equal(data.getTable().length, 0);
+
+      let loadedData = null;
+      spreadsheet.hot = {
+        getColHeader: () => data.getHeaders(),
+        loadData: (d) => { loadedData = d; }
+      };
+
+      spreadsheet.update();
+
+      assert.equal(spreadsheet.currentPage, 0);
+      assert.equal(loadedData.length, 0);
+    });
+  });
 });
 

@@ -1389,6 +1389,11 @@ export default class UIManager {
       const amount = (endRow - startRow) + 1;
       const rowLabel = amount > 1 ? 'lignes' : 'ligne';
 
+      const pageOffset = (typeof this.spreadsheet.getPageOffset === 'function')
+        ? this.spreadsheet.getPageOffset()
+        : (this.spreadsheet.currentPage || 0) * (this.spreadsheet.pageSize || 0);
+      const actualStartRow = pageOffset + startRow;
+
       alertModal({
         type: "danger",
         title: "Confirmer la suppression",
@@ -1397,7 +1402,7 @@ export default class UIManager {
           label: "Supprimer",
           type: "danger", // Pour un bouton rouge
           cb: () => { 
-            this.app.deleteRow(startRow, amount); 
+            this.app.deleteRow(actualStartRow, amount); 
           }
         },
         cancel: "Annuler"

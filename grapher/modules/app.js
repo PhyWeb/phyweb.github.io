@@ -186,7 +186,7 @@ export default class App {
 
   deleteRow(startRow, amount) {
     // On vérifie que les arguments sont valides
-    if (typeof startRow === 'undefined' || typeof amount === 'undefined' || amount < 1) {
+    if (typeof startRow === 'undefined' || typeof amount === 'undefined' || amount < 1 || startRow < 0) {
       return;
     }
     

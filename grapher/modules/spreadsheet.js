@@ -19,6 +19,16 @@ class Spreadsheet {
     this.formatCache = new Map();
   }
 
+  // Retourne le décalage absolu de ligne pour la page courante
+  getPageOffset() {
+    return (this.currentPage || 0) * (this.pageSize || 0);
+  }
+
+  // Convertit un indice relatif (visuel) de ligne en indice absolu de données
+  getActualRowIndex(visualRow) {
+    return this.getPageOffset() + visualRow;
+  }
+
   // Calcule la largeur d'une colonne avec précision en utilisant l'API Canvas
   calculateColWidth(index) {
     const headers = this.data.getHeaders();
@@ -89,6 +99,14 @@ class Spreadsheet {
     const fullTableData = this.data.getTable();
     const totalRows = fullTableData.length;
 
+    // Recalcul et ajustement de currentPage si le nombre total de pages a diminué (ex: suppression de lignes)
+    const totalPages = Math.ceil(totalRows / (this.pageSize || 10000));
+    if (this.currentPage >= totalPages && totalPages > 0) {
+      this.currentPage = totalPages - 1;
+    } else if (totalPages === 0) {
+      this.currentPage = 0;
+    }
+
     // Découpage des données (Pagination)
     const startIdx = this.currentPage * this.pageSize;
     const endIdx = Math.min(startIdx + this.pageSize, totalRows);
@@ -97,27 +115,29 @@ class Spreadsheet {
     // Mise à jour de l'UI de pagination
     this.updatePaginationUI(totalRows, startIdx, endIdx);
 
-    if (!headersChanged) {
-      this.hot.loadData(displayData);
-    } else {
-      const columnsConfig = headers.map(() => ({ 
-        type: 'numeric',
-        renderer: (instance, td, row, col, prop, value, cellProperties) => 
-          this.customCellRenderer(instance, td, row, col, prop, value, cellProperties)
-      }));
+    if (this.hot) {
+      if (!headersChanged) {
+        this.hot.loadData(displayData);
+      } else {
+        const columnsConfig = headers.map(() => ({ 
+          type: 'numeric',
+          renderer: (instance, td, row, col, prop, value, cellProperties) => 
+            this.customCellRenderer(instance, td, row, col, prop, value, cellProperties)
+        }));
 
-      this.hot.updateSettings({
-        data: displayData,
-        colHeaders: headers,
-        columns: columnsConfig,
-        colWidths: (index) => this.calculateColWidth(index),
-        // Fonction dynamique pour calculer le bon numéro de ligne (à cause de la pagination)
-        rowHeaders: (index) => {
-           return (this.currentPage * this.pageSize) + index + 1;
-        },
-        autoColumnSize: false,
-        autoRowSize: false
-      });
+        this.hot.updateSettings({
+          data: displayData,
+          colHeaders: headers,
+          columns: columnsConfig,
+          colWidths: (index) => this.calculateColWidth(index),
+          // Fonction dynamique pour calculer le bon numéro de ligne (à cause de la pagination)
+          rowHeaders: (index) => {
+             return (this.currentPage * this.pageSize) + index + 1;
+          },
+          autoColumnSize: false,
+          autoRowSize: false
+        });
+      }
     }
   }
 
@@ -163,7 +183,7 @@ class Spreadsheet {
 
     if (!change || change.length === 0) return;
 
-    const pageOffset = (this.currentPage || 0) * (this.pageSize || 0);
+    const pageOffset = this.getPageOffset();
 
     change.forEach(element => {
       const actualRow = pageOffset + element[0];

@@ -1,10 +1,34 @@
-// Configuration globale pour simuler l'environnement minimal requis par les modules dans Node.js
+const createMockElement = () => ({
+  value: '',
+  textContent: '',
+  style: {},
+  classList: {
+    add: () => {},
+    remove: () => {},
+    toggle: () => {},
+    contains: () => false
+  },
+  addEventListener: () => {},
+  removeEventListener: () => {},
+  setAttribute: () => {},
+  removeAttribute: () => {},
+  appendChild: () => {},
+  remove: () => {}
+});
+
 if (!global.document) {
   global.document = {
-    querySelector: () => ({ value: '' }),
-    querySelectorAll: () => [],
-    getElementById: () => null
+    querySelector: (sel) => (global.__querySelectorOverride ? global.__querySelectorOverride(sel) : createMockElement()),
+    querySelectorAll: (sel) => (global.__querySelectorAllOverride ? global.__querySelectorAllOverride(sel) : []),
+    getElementById: (id) => (global.__getElementByIdOverride ? global.__getElementByIdOverride(id) : createMockElement()),
+    createElement: (tag) => (global.__createElementOverride ? global.__createElementOverride(tag) : createMockElement()),
+    body: createMockElement()
   };
+} else {
+  const origQS = global.document.querySelector;
+  global.document.querySelector = (sel) => (global.__querySelectorOverride ? global.__querySelectorOverride(sel) : (origQS ? origQS(sel) : createMockElement()));
+  if (!global.document.createElement) global.document.createElement = (tag) => (global.__createElementOverride ? global.__createElementOverride(tag) : createMockElement());
+  if (!global.document.body) global.document.body = createMockElement();
 }
 
 if (!global.window) {
