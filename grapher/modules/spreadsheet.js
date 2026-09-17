@@ -156,7 +156,26 @@ class Spreadsheet {
     }
   }
 
-build(uiManager){
+  handleAfterChange(change, source) {
+    if (source === "loadData" || source === "updateData") {
+      return; // don't save this change
+    }
+
+    if (!change || change.length === 0) return;
+
+    const pageOffset = (this.currentPage || 0) * (this.pageSize || 0);
+
+    change.forEach(element => {
+      const actualRow = pageOffset + element[0];
+      this.data.setValue(element[1], actualRow, element[3]);
+    });
+
+    if (typeof this.cb === 'function') {
+      this.cb(change);
+    }
+  }
+
+  build(uiManager){
     const onSpreadsheetHeaderDblClick = (colIndex) => {
       const curve = this.data.getCurveByIndex(colIndex);
       if (curve) {
@@ -171,16 +190,8 @@ build(uiManager){
     const container = document.querySelector('#table');
     const significantDigits = this.data.settings.significantDigits;
 
-    const afterChange = (change, source) =>  {
-      if (source === "loadData" || source === "updateData") {
-        return; //don't save this change
-      }
-    
-      change.forEach(element => {
-        this.data.setValue(element[1], element[0], element[3]);
-      });
-
-      this.cb(change);
+    const afterChange = (change, source) => {
+      this.handleAfterChange(change, source);
     };
 
     const afterOnCellMouseDown = (event, coords, TD) => {
