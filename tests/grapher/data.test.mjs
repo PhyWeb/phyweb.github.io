@@ -1,7 +1,7 @@
 import '../helpers/setup.mjs';
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { Model } from '../../grapher/modules/data.js';
+import Data, { Model } from '../../grapher/modules/data.js';
 
 describe('Model - calculateRMSE() et gestion des bornes', () => {
   const createMockData = () => ({
@@ -147,4 +147,105 @@ describe('Model - calculateRMSE() et gestion des bornes', () => {
     });
   });
 });
+
+describe('Data - sortDataBy()', () => {
+  const createTestData = () => new Data({ significantDigits: 4 });
+
+  it('doit trier les données selon la première courbe (index 0) sans modifier l\'ordre des colonnes', () => {
+    const data = createTestData();
+    const curveA = data.addCurve('A', 'm');
+    curveA.push(30, 10, 20);
+    const curveB = data.addCurve('B', 's');
+    curveB.push(3, 1, 2);
+
+    data.sortDataBy('A');
+
+    assert.deepEqual(data.curves.map(c => c.title), ['A', 'B']);
+    assert.deepEqual([...data.curves[0]], [10, 20, 30]);
+    assert.deepEqual([...data.curves[1]], [1, 2, 3]);
+    assert.equal(data.lastSortVariable, 'A');
+  });
+
+  it('doit déplacer la courbe en tête (index 0) et trier correctement toutes les données lorsque sortCurveIndex > 0', () => {
+    const data = createTestData();
+    const curveA = data.addCurve('A', 'm');
+    curveA.push(10, 30, 20);
+    const curveB = data.addCurve('B', 's');
+    curveB.push(3, 1, 2);
+
+    data.sortDataBy('B');
+
+    // La courbe B doit être déplacée en première position (index 0)
+    assert.deepEqual(data.curves.map(c => c.title), ['B', 'A']);
+    // B doit être triée par ordre croissant : [1, 2, 3]
+    assert.deepEqual([...data.curves[0]], [1, 2, 3]);
+    // A doit être réordonnée selon le tri de B (valeurs associées à B=1 -> 30, B=2 -> 20, B=3 -> 10)
+    assert.deepEqual([...data.curves[1]], [30, 20, 10]);
+    assert.equal(data.lastSortVariable, 'B');
+  });
+
+  it('doit trier correctement avec 3 courbes lorsque la colonne ciblée est à l\'index 2', () => {
+    const data = createTestData();
+    const curveA = data.addCurve('A', 'm');
+    curveA.push(2, 1, 3);
+    const curveB = data.addCurve('B', 's');
+    curveB.push(20, 10, 30);
+    const curveC = data.addCurve('C', 'kg');
+    curveC.push(300, 100, 200);
+
+    data.sortDataBy('C');
+
+    // C doit être déplacée en tête
+    assert.deepEqual(data.curves.map(c => c.title), ['C', 'A', 'B']);
+    // C triée : [100, 200, 300] (indices d'origine : 1, 2, 0)
+    assert.deepEqual([...data.curves[0]], [100, 200, 300]);
+    // A réordonnée : A[1]=1, A[2]=3, A[0]=2 -> [1, 3, 2]
+    assert.deepEqual([...data.curves[1]], [1, 3, 2]);
+    // B réordonnée : B[1]=10, B[2]=30, B[0]=20 -> [10, 30, 20]
+    assert.deepEqual([...data.curves[2]], [10, 30, 20]);
+    assert.equal(data.lastSortVariable, 'C');
+  });
+
+  it('doit placer les valeurs null et undefined à la fin du tri', () => {
+    const data = createTestData();
+    const curveA = data.addCurve('A', 'm');
+    curveA.push(3, null, 1, 2);
+    const curveB = data.addCurve('B', 's');
+    curveB.push(30, 99, 10, 20);
+
+    data.sortDataBy('A');
+
+    assert.deepEqual([...data.curves[0]], [1, 2, 3, null]);
+    assert.deepEqual([...data.curves[1]], [10, 20, 30, 99]);
+  });
+
+  it('doit gérer sans crash une variable inexistante (sortCurveIndex === -1)', () => {
+    const data = createTestData();
+    const curveA = data.addCurve('A', 'm');
+    curveA.push(3, 1, 2);
+
+    assert.doesNotThrow(() => {
+      data.sortDataBy('Inexistante');
+    });
+
+    // Les données ne doivent pas être altérées
+    assert.deepEqual([...data.curves[0]], [3, 1, 2]);
+    // lastSortVariable ne doit pas être mis à jour vers la variable invalide
+    assert.equal(data.lastSortVariable, null);
+  });
+
+  it('doit supporter le tri lexicographique lorsque les valeurs ne sont pas numériques', () => {
+    const data = createTestData();
+    const curveA = data.addCurve('A', 'txt');
+    curveA.push('banane', 'ananas', 'cerise');
+    const curveB = data.addCurve('B', 'num');
+    curveB.push(2, 1, 3);
+
+    data.sortDataBy('A');
+
+    assert.deepEqual([...data.curves[0]], ['ananas', 'banane', 'cerise']);
+    assert.deepEqual([...data.curves[1]], [1, 2, 3]);
+  });
+});
+
 

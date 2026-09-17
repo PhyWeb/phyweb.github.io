@@ -847,6 +847,11 @@ export default class Data {
   sortDataBy(variableTitle) {
     const sortCurveIndex = this.curves.findIndex(c => c.title === variableTitle);
 
+    if (sortCurveIndex === -1) {
+      console.warn(`Curve "${variableTitle}" not found for sorting.`);
+      return;
+    }
+
     this.lastSortVariable = variableTitle;
 
     // Si la colonne de tri n'est pas déjà la première, on la déplace au début.
@@ -856,7 +861,7 @@ export default class Data {
       this.curves.unshift(sortedCurve);
     }
 
-    const sortColumn = this.curves[sortCurveIndex];
+    const sortColumn = this.curves[0];
 
     // Trouver le nombre maximum de lignes parmi toutes les courbes
     const rowCount = this.curves.reduce((max, curve) => Math.max(max, curve.length), 0);
