@@ -435,7 +435,7 @@ generatePW() {
           continue;
         }
 
-        const model = new Model(xCurve, yCurve, savedModel.type, this.app.data.parameters);
+        const model = new Model(xCurve, yCurve, savedModel.type, this.app.data);
         
         Object.assign(model, savedModel);
         
