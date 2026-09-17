@@ -120,5 +120,93 @@ describe('Calculation Module', () => {
       assert.match(errors[1].error, /La variable "variableInconnue" n'est pas définie/);
     });
   });
+
+  describe('diff() & numericalDerivative() - Robustesse, pas variable et constantes', () => {
+    it('doit calculer correctement la dérivée sur une série à pas variable (fonction affine)', () => {
+      // x = 2*t sur un échantillonnage irrégulier (dt = 1, 1, 3, 1)
+      const t = [0, 1, 2, 5, 6];
+      const x = [0, 2, 4, 10, 12];
+      const result = calc.evaluate('diff(x, t)', { x, t });
+
+      // La dérivée de 2*t est 2 partout, y compris au point i = 2 où l'ancien stencil 5 points échouait
+      assert.equal(result.length, 5);
+      for (let i = 0; i < result.length; i++) {
+        assert.equal(result[i], 2, `La dérivée au point ${i} devrait être 2`);
+      }
+    });
+
+    it('doit calculer exactement la dérivée d\'un polynôme de degré 2 sur une grille non-uniforme', () => {
+      // x = t^2 -> dx/dt = 2*t
+      const t = [0, 1, 3, 6, 10];
+      const x = [0, 1, 9, 36, 100];
+      const result = calc.evaluate('diff(x, t)', { x, t });
+
+      // Les points intérieurs doivent être exacts grâce au schéma d'ordre 2 pour pas variable
+      assert.equal(result[1], 2);  // 2 * 1
+      assert.equal(result[2], 6);  // 2 * 3
+      assert.equal(result[3], 12); // 2 * 6
+    });
+
+    it('doit lever une erreur explicite lors d\'une dérivation par rapport à une constante (Array, number)', () => {
+      assert.throws(
+        () => calc.evaluate('diff(x, 2)', { x: [1, 2, 3] }),
+        /Impossible de dériver par rapport à une constante\./
+      );
+    });
+
+    it('doit lever une erreur explicite lors d\'une dérivation par rapport à une constante (number, number)', () => {
+      assert.throws(
+        () => calc.evaluate('diff(5, 2)', {}),
+        /Impossible de dériver par rapport à une constante\./
+      );
+    });
+
+    it('doit intégrer l\'erreur de dérivation par constante dans evaluateBlock sans planter', () => {
+      const formulas = [
+        { variableName: 'v_bad', expression: 'diff(x, 2)', unit: 'm/s' }
+      ];
+      const scope = { x: [1, 2, 3] };
+      const { results, errors } = calc.evaluateBlock(formulas, scope);
+
+      assert.equal(results.length, 0);
+      assert.equal(errors.length, 1);
+      assert.match(errors[0].error, /Impossible de dériver par rapport à une constante\./);
+    });
+
+    it('doit renvoyer null si le point courant est null, sans corrompre les points voisins', () => {
+      const t = [0, 1, 2, 3, 4, 5];
+      const y = [0, null, 4, 6, 8, 10]; // affine avec y[1] = null
+      const result = calc.evaluate('diff(y, t)', { y, t });
+
+      // Le point i=1 doit être null
+      assert.equal(result[1], null);
+      // Le point i=3 doit être calculé correctement (2) et ne pas être bloqué par le null en i=1
+      assert.equal(result[3], 2);
+    });
+
+    it('doit respecter derivateEdges: false sur les bords', () => {
+      const calcNoEdges = new Calculation({ derivatePoints: 5, derivateEdges: false });
+      const t = [0, 1, 2, 3, 4];
+      const x = [0, 2, 4, 6, 8];
+      const result = calcNoEdges.evaluate('diff(x, t)', { x, t });
+
+      // Avec 5 points et offset = 2, les indices 0, 1 et 3, 4 sont des bords
+      assert.equal(result[0], null);
+      assert.equal(result[1], null);
+      assert.equal(result[2], 2);
+      assert.equal(result[3], null);
+      assert.equal(result[4], null);
+    });
+
+    it('doit utiliser le stencil uniforme à 7 points avec haute précision', () => {
+      const calc7 = new Calculation({ derivatePoints: 7, derivateEdges: true });
+      const t = [0, 1, 2, 3, 4, 5, 6];
+      const x = [0, 3, 6, 9, 12, 15, 18];
+      const result = calc7.evaluate('diff(x, t)', { x, t });
+
+      assert.equal(result[3], 3);
+    });
+  });
 });
+
 

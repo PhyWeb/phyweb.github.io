@@ -128,16 +128,20 @@ export default class Calculation {
     // --- Ajout de la fonction de dérivation numérique avec options de lissage ---
 
     /**
-     * Calcule la dérivée numérique de y par rapport à x. Gère les valeurs null.
+     * Calcule la dérivée numérique de y par rapport à x. Gère les valeurs null et les grilles à pas variable.
      * @param {Array<number|null>} y Le tableau des valeurs de la fonction.
      * @param {Array<number|null>} x Le tableau des points de la variable (ex: le temps).
-     * @param {number} [points=3] Le nombre de points à utiliser pour le stencil (3, 5, ou 7).
+     * @param {number} [points=5] Le nombre de points à utiliser pour le stencil (3, 5, ou 7).
      * @param {boolean} [calculateEdges=true] Si false, les points sur les bords qui ne peuvent pas utiliser le stencil complet retourneront null.
      * @returns {Array<number|null>} La dérivée numérique.
      */
     const numericalDerivative = (y, x, points = 5, calculateEdges = true) => {
-        const n = y.length;
-        if (n !== x.length) {
+        const toArr = (v) => (v && v.toArray ? v.toArray() : v);
+        const yArr = toArr(y);
+        const xArr = toArr(x);
+
+        const n = yArr.length;
+        if (n !== xArr.length) {
             throw new Error('Les tableaux pour la dérivation (diff) doivent avoir la même longueur.');
         }
         if (n < points) {
@@ -147,56 +151,108 @@ export default class Calculation {
         const result = new Array(n).fill(null);
         const offset = Math.floor(points / 2);
 
+        // Helper pour vérifier si le sous-ensemble de points possède un pas régulier (tolérance aux arrondis flottants)
+        const isUniformSpacing = (coords, startIdx, count) => {
+            const firstStep = coords[startIdx + 1] - coords[startIdx];
+            if (firstStep === 0) return false;
+            const tol = 1e-3 * Math.abs(firstStep);
+            for (let k = 1; k < count - 1; k++) {
+                const step = coords[startIdx + k + 1] - coords[startIdx + k];
+                if (Math.sign(step) !== Math.sign(firstStep) || Math.abs(step - firstStep) > tol) {
+                    return false;
+                }
+            }
+            return true;
+        };
+
+        let warnedNonUniform = false;
+
         for (let i = 0; i < n; i++) {
+            if (yArr[i] === null || xArr[i] === null) {
+                continue;
+            }
+
             const isEdgeForRequestedStencil = (i < offset || i >= n - offset);
 
             if (isEdgeForRequestedStencil && !calculateEdges) {
                 continue;
             }
 
-            if (points >= 7 && i >= 3 && i < n - 3) {
-                const stencilY = [y[i - 3], y[i - 2], y[i - 1], y[i + 1], y[i + 2], y[i + 3]];
-                const stencilX = [x[i - 3], x[i + 3]];
-                if ([...stencilY, ...stencilX].some(p => p === null)) { continue; }
-                
-                const h = (x[i + 3] - x[i - 3]) / 6;
-                if (h === 0) { continue; }
-                result[i] = (-y[i - 3] + 9 * y[i - 2] - 45 * y[i - 1] + 45 * y[i + 1] - 9 * y[i + 2] + y[i + 3]) / (60 * h);
-            }
-            else if (points >= 5 && i >= 2 && i < n - 2) {
-                const stencilY = [y[i - 2], y[i - 1], y[i + 1], y[i + 2]];
-                const stencilX = [x[i - 2], x[i + 2]];
-                if ([...stencilY, ...stencilX].some(p => p === null)) { continue; }
+            let computed = false;
 
-                const h = (x[i + 2] - x[i - 2]) / 4;
-                if (h === 0) { continue; }
-                result[i] = (y[i - 2] - 8 * y[i - 1] + 8 * y[i + 1] - y[i + 2]) / (12 * h);
+            // Stencil uniforme à 7 points (ordre 6)
+            if (points >= 7 && i >= 3 && i < n - 3) {
+                const stencilY = [yArr[i - 3], yArr[i - 2], yArr[i - 1], yArr[i], yArr[i + 1], yArr[i + 2], yArr[i + 3]];
+                const stencilX = [xArr[i - 3], xArr[i - 2], xArr[i - 1], xArr[i], xArr[i + 1], xArr[i + 2], xArr[i + 3]];
+                if (!stencilY.includes(null) && !stencilX.includes(null) && isUniformSpacing(xArr, i - 3, 7)) {
+                    const h = (xArr[i + 3] - xArr[i - 3]) / 6;
+                    if (h !== 0) {
+                        result[i] = (-yArr[i - 3] + 9 * yArr[i - 2] - 45 * yArr[i - 1] + 45 * yArr[i + 1] - 9 * yArr[i + 2] + yArr[i + 3]) / (60 * h);
+                        computed = true;
+                    }
+                } else if (!warnedNonUniform && points >= 7) {
+                    console.warn("Dérivation : pas variable détecté pour le stencil à 7 points. Utilisation du schéma adapté au pas variable.");
+                    warnedNonUniform = true;
+                }
             }
-            else if (i >= 1 && i < n - 1) {
-                if (y[i + 1] === null || y[i - 1] === null || x[i + 1] === null || x[i - 1] === null) { continue; }
-                const dx = x[i + 1] - x[i - 1];
-                if (dx === 0) { continue; }
-                result[i] = (y[i + 1] - y[i - 1]) / dx;
+
+            // Stencil uniforme à 5 points (ordre 4)
+            if (!computed && points >= 5 && i >= 2 && i < n - 2) {
+                const stencilY = [yArr[i - 2], yArr[i - 1], yArr[i], yArr[i + 1], yArr[i + 2]];
+                const stencilX = [xArr[i - 2], xArr[i - 1], xArr[i], xArr[i + 1], xArr[i + 2]];
+                if (!stencilY.includes(null) && !stencilX.includes(null) && isUniformSpacing(xArr, i - 2, 5)) {
+                    const h = (xArr[i + 2] - xArr[i - 2]) / 4;
+                    if (h !== 0) {
+                        result[i] = (yArr[i - 2] - 8 * yArr[i - 1] + 8 * yArr[i + 1] - yArr[i + 2]) / (12 * h);
+                        computed = true;
+                    }
+                } else if (!warnedNonUniform && points >= 5) {
+                    console.warn("Dérivation : pas variable détecté pour le stencil à 5 points. Utilisation du schéma adapté au pas variable.");
+                    warnedNonUniform = true;
+                }
             }
-            else if (i === 0) {
-                if (y[1] === null || y[0] === null || x[1] === null || x[0] === null) { continue; }
-                const dx = x[1] - x[0];
-                if (dx === 0) { continue; }
-                result[i] = (y[1] - y[0]) / dx;
+
+            // Schéma non-uniforme à 3 points (Lagrange / différences finies d'ordre 2 pour pas variable)
+            if (!computed && i >= 1 && i < n - 1) {
+                if (yArr[i - 1] !== null && xArr[i - 1] !== null && yArr[i + 1] !== null && xArr[i + 1] !== null) {
+                    const h1 = xArr[i] - xArr[i - 1];
+                    const h2 = xArr[i + 1] - xArr[i];
+                    if (h1 !== 0 && h2 !== 0 && (h1 + h2) !== 0) {
+                        result[i] = (Math.pow(h1, 2) * (yArr[i + 1] - yArr[i]) + Math.pow(h2, 2) * (yArr[i] - yArr[i - 1])) / (h1 * h2 * (h1 + h2));
+                        computed = true;
+                    }
+                }
             }
-            else { // i === n - 1
-                if (y[n - 1] === null || y[n - 2] === null || x[n - 1] === null || x[n - 2] === null) { continue; }
-                const dx = x[n - 1] - x[n - 2];
-                if (dx === 0) { continue; }
-                result[i] = (y[n - 1] - y[n - 2]) / dx;
+
+            // Repli sur différences finies à 2 points aux extrémités ou près des points manquants
+            if (!computed) {
+                if (i + 1 < n && yArr[i + 1] !== null && xArr[i + 1] !== null) {
+                    const dx = xArr[i + 1] - xArr[i];
+                    if (dx !== 0) {
+                        result[i] = (yArr[i + 1] - yArr[i]) / dx;
+                        computed = true;
+                    }
+                } else if (i - 1 >= 0 && yArr[i - 1] !== null && xArr[i - 1] !== null) {
+                    const dx = xArr[i] - xArr[i - 1];
+                    if (dx !== 0) {
+                        result[i] = (yArr[i] - yArr[i - 1]) / dx;
+                        computed = true;
+                    }
+                }
             }
         }
         return result;
     };
 
     const typedDiff = mathInstance.typed('diff', {
-      'number, Array': (y, x) => mathInstance.zeros(x.length).toArray(),
-      'Array, Array': (y, x) => numericalDerivative(y, x, this.derivatePoints, this.derivateEdges),
+      'number, Array | Matrix': (y, x) => mathInstance.zeros((x && x.length !== undefined) ? x.length : (x.size && x.size()[0]) || 0).toArray(),
+      'Array | Matrix, Array | Matrix': (y, x) => numericalDerivative(y, x, this.derivatePoints, this.derivateEdges),
+      'Array | Matrix, number': () => {
+        throw new Error('Impossible de dériver par rapport à une constante.');
+      },
+      'number, number': () => {
+        throw new Error('Impossible de dériver par rapport à une constante.');
+      },
     });
     mathInstance.import({ diff: typedDiff }, { override: true });
 
