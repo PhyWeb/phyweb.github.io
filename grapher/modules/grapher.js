@@ -1532,7 +1532,16 @@ setDisableScientificNotation(disabled) {
             renderedTangentMethod.eqPoint = chart.renderer.circle(pxEq, pyEq, 4)
               .attr({ fill: 'rgba(220, 53, 69, 0.9)', stroke: 'white', 'stroke-width': 1, zIndex: 6 }).add();
             
-            const eqText = `<b>V<sub>eq</sub></b> = ${formatNumber(eqPoint.x, significantDigits)}<br/><b>pH<sub>eq</sub></b> = ${formatNumber(eqPoint.y, significantDigits)}`;
+            const xCurveObj = this.data.getCurveByTitle(this.currentXCurve);
+            const yCurveObj = this.data.getCurveByTitle(seriesName);
+
+            const xLabelName = (xCurveObj?.title || this.currentXCurve || 'V') + '<sub>eq</sub>';
+            const yLabelName = (yCurveObj?.title || seriesName || 'pH') + '<sub>eq</sub>';
+
+            const xUnit = xCurveObj?.unit ? ` ${xCurveObj.unit}` : '';
+            const yUnit = yCurveObj?.unit ? ` ${yCurveObj.unit}` : (series?.userOptions?.unit ? ` ${series.userOptions.unit}` : '');
+
+            const eqText = `<b>${xLabelName}</b> = ${formatNumber(eqPoint.x, significantDigits)}${xUnit}<br/><b>${yLabelName}</b> = ${formatNumber(eqPoint.y, significantDigits)}${yUnit}`;
             renderedTangentMethod.eqLabel = chart.renderer.label(eqText, pxEq + 12, pyEq - 20, 'callout', null, null, true)
               .attr({ 
                   fill: 'rgba(255, 255, 255, 0.95)', // Fond presque opaque
