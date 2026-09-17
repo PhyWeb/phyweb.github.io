@@ -2457,23 +2457,28 @@ export default class UIManager {
           newParamNames[oldName] = newName;
         }
         
-        if (boundsChanged) {
-          await model.fit();
-        }
-
-        if(namesHaveChanged){
+        if (namesHaveChanged) {
           const updatedParams = {};
+          const units = {};
+          model.parameters.forEach(param => {
+            units[param.name] = this.data.parameters[param.name]?.unit || '';
+          });
+
           model.parameters.forEach(param => {
             const oldName = param.name;
             const newName = newParamNames[oldName] || oldName;
-            updatedParams[newName] = { value: param.value, unit: '', type: 'model' };
-            if(oldName !== newName){
+            if (oldName !== newName) {
               delete this.data.parameters[oldName];
             }
+            param.name = newName;
+            updatedParams[newName] = { value: param.value, unit: units[oldName] || '', type: 'model' };
           });
-          
-          model.parameters = Object.entries(updatedParams).map(([name, obj]) => ({ name, value: obj.value }));
+
           Object.assign(this.data.parameters, updatedParams);
+        }
+
+        if (boundsChanged) {
+          await model.fit();
         }
         
         const series = this.grapher.chart.get(`model-${model.id}`);

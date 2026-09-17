@@ -414,24 +414,49 @@ class Model {
 
 // Méthode utilitaire pour appliquer des paramètres au modèle
   _applyParams(params, data) {
-    // Vider les anciens paramètres
-    this.parameters.forEach(param => {
-      delete this.data.parameters[param.name];
-    });
-    this.parameters.length = 0;
+    const canPreserveNames = Array.isArray(this.parameters) &&
+      this.parameters.length === params.length &&
+      this.parameters.every(p => p && typeof p.name === 'string' && p.name.trim() !== '');
 
-    const baseNames = ['a', 'b', 'c', 'd', 'e', 'f'];
-    params.forEach((paramValue, i) => {
-      let baseName = baseNames[i] || `p${i}`;
-      let finalName = baseName;
-      let counter = 1;
-      while (this.data.parameters.hasOwnProperty(finalName) || this.data.curves.some(c => c.title === finalName)) {
-        finalName = `${baseName}${counter}`;
-        counter++;
+    if (canPreserveNames) {
+      params.forEach((paramValue, i) => {
+        const paramName = this.parameters[i].name;
+        this.parameters[i].value = paramValue;
+        if (this.data && this.data.parameters) {
+          if (this.data.parameters[paramName]) {
+            this.data.parameters[paramName].value = paramValue;
+          } else {
+            this.data.parameters[paramName] = { value: paramValue, unit: '', type: 'model' };
+          }
+        }
+      });
+    } else {
+      // Vider les anciens paramètres
+      if (this.data && this.data.parameters) {
+        this.parameters.forEach(param => {
+          delete this.data.parameters[param.name];
+        });
       }
-      this.parameters.push({ name: finalName, value: paramValue });
-      this.data.parameters[finalName] = { value: paramValue, unit: '', type: 'model' };
-    });
+      this.parameters.length = 0;
+
+      const baseNames = ['a', 'b', 'c', 'd', 'e', 'f'];
+      params.forEach((paramValue, i) => {
+        let baseName = baseNames[i] || `p${i}`;
+        let finalName = baseName;
+        let counter = 1;
+        while (
+          (this.data && this.data.parameters && this.data.parameters.hasOwnProperty(finalName)) ||
+          (this.data && this.data.curves && this.data.curves.some(c => c.title === finalName))
+        ) {
+          finalName = `${baseName}${counter}`;
+          counter++;
+        }
+        this.parameters.push({ name: finalName, value: paramValue });
+        if (this.data && this.data.parameters) {
+          this.data.parameters[finalName] = { value: paramValue, unit: '', type: 'model' };
+        }
+      });
+    }
 
     this.calculateRMSE(data);
     this.calculateRSquared(data);

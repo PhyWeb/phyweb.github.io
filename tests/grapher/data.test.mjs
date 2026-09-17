@@ -131,7 +131,7 @@ describe('Model - calculateRMSE() et gestion des bornes', () => {
     });
   });
 
-  describe('Intégration avec _applyParams()', () => {
+  describe('Intégration avec _applyParams() et préservation des noms', () => {
     it('doit calculer le bon RMSE et R² via _applyParams avec données bornées', () => {
       const x = [0, 1, 2, 3, 10];
       const y = [1000, 2, 4, 6, 1000];
@@ -144,6 +144,121 @@ describe('Model - calculateRMSE() et gestion des bornes', () => {
 
       assert.equal(model.rmse, 0);
       assert.equal(model.rSquared, 1);
+    });
+
+    it('doit générer les noms par défaut (a, b...) uniquement lors de la création initiale (parameters vide)', () => {
+      const x = [1, 2, 3];
+      const y = [2, 4, 6];
+      const mockData = createMockData();
+      const model = new Model(x, y, 'affine', mockData);
+      assert.equal(model.parameters.length, 0);
+
+      const data = model._buildData();
+      model._applyParams([2, 0], data);
+
+      assert.equal(model.parameters.length, 2);
+      assert.equal(model.parameters[0].name, 'a');
+      assert.equal(model.parameters[1].name, 'b');
+      assert.equal(mockData.parameters['a'].value, 2);
+      assert.equal(mockData.parameters['b'].value, 0);
+    });
+
+    it('doit préserver le nom personnalisé du paramètre lors d\'un réajustement (ex: après modification de bornes)', () => {
+      const x = [0, 1, 2, 3, 4, 10];
+      const y = [999, 2, 4, 6, 8, -999];
+      const mockData = createMockData();
+      const model = new Model(x, y, 'linear', mockData);
+
+      // Premier ajustement initial
+      model._applyParams([2], model._buildData());
+      assert.equal(model.parameters[0].name, 'a');
+
+      // L'utilisateur renomme le paramètre 'a' en 'pente'
+      model.parameters[0].name = 'pente';
+      mockData.parameters['pente'] = { value: 2, unit: 'm/s', type: 'model' };
+      delete mockData.parameters['a'];
+
+      // L'utilisateur change les bornes minX / maxX et relance l'ajustement
+      model.minX = 1;
+      model.maxX = 4;
+      const boundedData = model._buildData();
+      model._applyParams([2], boundedData);
+
+      // Le nom personnalisé 'pente' doit être conservé
+      assert.equal(model.parameters.length, 1);
+      assert.equal(model.parameters[0].name, 'pente');
+      assert.equal(model.parameters[0].value, 2);
+      assert.ok(mockData.parameters['pente']);
+      assert.equal(mockData.parameters['pente'].value, 2);
+      assert.equal(mockData.parameters['pente'].unit, 'm/s');
+      assert.equal(mockData.parameters['a'], undefined, 'Le paramètre a ne doit pas réapparaître');
+      assert.ok(model.getEquationString().includes('pente'));
+    });
+
+    it('doit préserver plusieurs noms personnalisés et leur ordre lors d\'un réajustement (modèle affine)', () => {
+      const x = [1, 2, 3, 4];
+      const y = [5, 7, 9, 11]; // y = 2x + 3
+      const mockData = createMockData();
+      const model = new Model(x, y, 'affine', mockData);
+
+      // Paramètres personnalisés pré-existants
+      model.parameters = [
+        { name: 'coeff_dir', value: 1 },
+        { name: 'ord_origine', value: 0 }
+      ];
+      mockData.parameters['coeff_dir'] = { value: 1, unit: '', type: 'model' };
+      mockData.parameters['ord_origine'] = { value: 0, unit: '', type: 'model' };
+
+      const data = model._buildData();
+      model._applyParams([2, 3], data);
+
+      assert.equal(model.parameters[0].name, 'coeff_dir');
+      assert.equal(model.parameters[0].value, 2);
+      assert.equal(model.parameters[1].name, 'ord_origine');
+      assert.equal(model.parameters[1].value, 3);
+      assert.equal(mockData.parameters['coeff_dir'].value, 2);
+      assert.equal(mockData.parameters['ord_origine'].value, 3);
+      assert.equal(mockData.parameters['a'], undefined);
+      assert.equal(mockData.parameters['b'], undefined);
+      assert.equal(model.rmse, 0);
+      assert.equal(model.rSquared, 1);
+    });
+
+    it('doit supporter le renommage combiné à un réajustement (logique de sauvegarde modale)', () => {
+      const x = [1, 2, 3, 4];
+      const y = [3, 6, 9, 12]; // y = 3x
+      const mockData = createMockData();
+      const model = new Model(x, y, 'linear', mockData);
+
+      // Modèle initial avec 'a'
+      model._applyParams([2], model._buildData());
+
+      // Simulation de la séquence de sauvegarde de openEditModelModal :
+      // 1. L'utilisateur a saisi un nouveau nom 'vitesse' pour l'ancien nom 'a'
+      const newParamNames = { a: 'vitesse' };
+      const updatedParams = {};
+      model.parameters.forEach(param => {
+        const oldName = param.name;
+        const newName = newParamNames[oldName] || oldName;
+        if (oldName !== newName) {
+          delete mockData.parameters[oldName];
+        }
+        param.name = newName;
+        updatedParams[newName] = { value: param.value, unit: '', type: 'model' };
+      });
+      Object.assign(mockData.parameters, updatedParams);
+
+      // 2. Les bornes ont changé -> réajustement
+      model.minX = 1;
+      model.maxX = 4;
+      const boundedData = model._buildData();
+      model._applyParams([3], boundedData);
+
+      // Vérification : le nom 'vitesse' est bien celui conservé avec la nouvelle valeur 3
+      assert.equal(model.parameters[0].name, 'vitesse');
+      assert.equal(model.parameters[0].value, 3);
+      assert.equal(mockData.parameters['vitesse'].value, 3);
+      assert.equal(mockData.parameters['a'], undefined);
     });
   });
 });

@@ -44,7 +44,10 @@ if (!global.math) {
 // Mock minimal pour Highcharts (génération de clés uniques pour Model)
 if (!global.Highcharts) {
   global.Highcharts = {
-    uniqueKey: () => 'model-' + Math.random().toString(36).slice(2)
+    uniqueKey: () => 'model-' + Math.random().toString(36).slice(2),
+    getOptions: () => ({ colors: ['#2caffe', '#544fc5', '#00e272', '#fe6a35'] })
   };
+} else if (!global.Highcharts.getOptions) {
+  global.Highcharts.getOptions = () => ({ colors: ['#2caffe', '#544fc5', '#00e272', '#fe6a35'] });
 }
 
