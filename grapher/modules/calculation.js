@@ -227,18 +227,30 @@ export default class Calculation {
   }
 
   /**
+   * Prétraite une formule pour la normaliser avant analyse syntaxique et évaluation :
+   * - Remplace les virgules décimales par des points
+   * - Remplace les caractères spéciaux (ex: '²' -> '^2')
+   * - Normalise la casse des fonctions connues (ex: SQRT -> sqrt)
+   * @param {string} expression - L'expression à traiter.
+   * @returns {string} - L'expression nettoyée et normalisée.
+   */
+  preprocessExpression(expression) {
+    if (!expression || typeof expression !== 'string') return expression;
+    let clean = expression.replace(/(\d),(\d)/g, '$1.$2');
+    clean = this.preprocessSpecialCharacters(clean);
+    clean = this._normalizeFunctionCases(clean);
+    return clean;
+  }
+
+  /**
    * Évalue une seule expression mathématique.
    * @param {string} expression - La chaîne de caractères de la formule à évaluer.
    * @param {object} scope - Le scope contenant les variables disponibles pour le calcul.
    * @returns Le résultat du calcul.
    */
   evaluate(expression, scope) {
-    // Applique le prétraitement pour les caractères spéciaux
-    const preprocessedExpression = this.preprocessSpecialCharacters(expression);
-    // Normalise la casse des fonctions (ex: SQRT -> sqrt)
-    const normalizedExpr = this._normalizeFunctionCases(preprocessedExpression);
-    // Évalue l'expression nettoyée
-    return this.mathInstance.evaluate(normalizedExpr, scope);
+    const cleanExpression = this.preprocessExpression(expression);
+    return this.mathInstance.evaluate(cleanExpression, scope);
   }
 
 /**
@@ -288,14 +300,7 @@ evaluateBlock(formulas, initialScope) {
 
     for (const calc of pendingCalculations) {
       try {
-        // On remplace les virgules décimales par des points
-        let cleanExpression = calc.expression.replace(/(\d),(\d)/g, '$1.$2');
-
-        // Remplace le caractère '²' AVANT l'analyse (parse)
-        cleanExpression = this.preprocessSpecialCharacters(cleanExpression);
-
-        // Normalise la casse des fonctions (ex: SQRT -> sqrt) AVANT l'analyse
-        cleanExpression = this._normalizeFunctionCases(cleanExpression);
+        const cleanExpression = this.preprocessExpression(calc.expression);
 
         const expressionNode = this.mathInstance.parse(cleanExpression);
         expressionNode.traverse((node, path, parent) => {
