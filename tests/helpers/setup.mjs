@@ -17,3 +17,10 @@ if (!global.math) {
   global.math = mathModule.default || mathModule;
 }
 
+// Mock minimal pour Highcharts (génération de clés uniques pour Model)
+if (!global.Highcharts) {
+  global.Highcharts = {
+    uniqueKey: () => 'model-' + Math.random().toString(36).slice(2)
+  };
+}
+

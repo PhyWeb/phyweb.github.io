@@ -433,7 +433,7 @@ class Model {
       this.data.parameters[finalName] = { value: paramValue, unit: '', type: 'model' };
     });
 
-    this.calculateRMSE();
+    this.calculateRMSE(data);
     this.calculateRSquared(data);
   }
 
@@ -628,19 +628,21 @@ class Model {
     return data;
   }
 
-  calculateRMSE() {
+  calculateRMSE(data) {
     if (this.parameters.length === 0) {
       this.rmse = 0;
       return;
     }
+
+    const points = data || this._buildData();
     
     const f = this._getFunction();
     let sumOfSquaredErrors = 0;
     let validPointsCount = 0;
     
-    for (let i = 0; i < this.x.length; i++) {
-      const xVal = this.x[i];
-      const yVal = this.y[i];
+    for (let i = 0; i < points.length; i++) {
+      const xVal = points[i][0];
+      const yVal = points[i][1];
       
       // On ne calcule l'erreur que pour les points valides
       if (xVal !== null && yVal !== null && isFinite(xVal) && isFinite(yVal)) {
@@ -658,7 +660,8 @@ class Model {
   }
 
   calculateRSquared(data) {
-    if (this.parameters.length === 0 || data.length < 2) {
+    const points = data || this._buildData();
+    if (this.parameters.length === 0 || points.length < 2) {
       this.rSquared = 0;
       return;
     }
@@ -666,14 +669,14 @@ class Model {
     const f = this._getFunction();
 
     // 1. Calculer la moyenne des valeurs y réelles
-    const meanY = data.reduce((sum, point) => sum + point[1], 0) / data.length;
+    const meanY = points.reduce((sum, point) => sum + point[1], 0) / points.length;
 
     let totalSumOfSquares = 0;
     let residualSumOfSquares = 0;
 
-    for (let i = 0; i < data.length; i++) {
-      const xVal = data[i][0];
-      const yVal = data[i][1];
+    for (let i = 0; i < points.length; i++) {
+      const xVal = points[i][0];
+      const yVal = points[i][1];
       
       // Valeur prédite par le modèle
       const predictedY = f(this.parameters.map(p => p.value), xVal);
