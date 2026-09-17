@@ -652,7 +652,8 @@ export default class Grapher {
     });
   }
 
-  reorderLegendByVisibility() {
+  reorderLegendByVisibility(redraw = true) {
+    if (!this.chart) return;
     const series = this.chart.series.filter(s => s.options.showInLegend !== false);
     const visibleSeries = series.filter(s => s.visible);
     const hiddenSeries  = series.filter(s => !s.visible);
@@ -660,7 +661,9 @@ export default class Grapher {
     sorted.forEach((s, idx) => {
       if (s.options.legendIndex !== idx) s.update({ legendIndex: idx }, false);
     });
-    this.chart.redraw();
+    if (redraw) {
+      this.chart.redraw();
+    }
   }
 
 setVisibilityFromList(titles) {
@@ -769,28 +772,28 @@ showLoading(text = 'Chargement...', delay = 500, showStopButton = false) {
 updateChart(yCurveTitles, redraw = true) {
     if (!this.chart || !this.currentXCurve) return;
 
-    // Déterminer les courbes à afficher
+    // Déterminer les courbes à afficher (en excluant la courbe d'abscisse X)
     let curvesToShow;
     if (yCurveTitles) {
-      curvesToShow = new Set(yCurveTitles);
+      curvesToShow = new Set(yCurveTitles.filter(t => t !== this.currentXCurve));
     } else {
-      // Si aucun titre n'est fourni, on essaie de conserver l'état actuel
+      // Si aucun titre n'est fourni, on essaie de conserver l'état actuel (sans l'abscisse)
       const currentlyVisible = this.chart.series
-        .filter(s => s.visible && !s.options.id?.startsWith('model-'))
+        .filter(s => s.visible && !s.options.id?.startsWith('model-') && s.name !== this.currentXCurve)
         .map(s => s.name);
       
       if (currentlyVisible.length > 0) {
         curvesToShow = new Set(currentlyVisible);
       } else {
-        // Cas initial : aucune courbe n'est visible, on affiche la première disponible
+        // Cas initial : aucune courbe ordonnée n'est visible, on affiche la première ordonnée disponible
         const firstYCurve = this.data.curves.find(c => c.title !== this.currentXCurve);
         curvesToShow = firstYCurve ? new Set([firstYCurve.title]) : new Set();
       }
     }
 
-    // 1. Ajouter toutes les courbes si elles n'existent pas déjà
+    // 1. Ajouter toutes les courbes ordonnées si elles n'existent pas déjà
     this.data.curves.forEach(curve => {
-      //if (curve.title === this.currentXCurve) return;
+      if (curve.title === this.currentXCurve) return;
 
       const seriesExists = this.chart.series.some(s => s.name === curve.title);
       if (!seriesExists) {
@@ -815,9 +818,9 @@ updateChart(yCurveTitles, redraw = true) {
       }
     });
 
-    // 2. Mettre à jour les données et la visibilité des séries existantes
+    // 2. Mettre à jour les données et la visibilité des séries existantes (en ignorant la courbe d'abscisse)
     this.chart.series.forEach(serie => {
-      if (serie.options.id?.startsWith('model-')) return;
+      if (serie.options.id?.startsWith('model-') || serie.name === this.currentXCurve) return;
       
       const curveData = this.data.getCurveByTitle(serie.name);
       const xCurveData = this.data.getCurveByTitle(this.currentXCurve);
@@ -832,21 +835,20 @@ updateChart(yCurveTitles, redraw = true) {
       }
     });
 
-    // 3. Supprimer les séries qui n'existent plus dans les données
+    // 3. Supprimer les séries qui n'existent plus dans les données ou qui sont devenues la courbe d'abscisse X
     let i = this.chart.series.length;
     while (i--) {
       const serie = this.chart.series[i];
       if (!serie.options.id?.startsWith('model-')) {
         const curveExists = this.data.curves.some(c => c.title === serie.name);
-        if (!curveExists) {
+        if (!curveExists || serie.name === this.currentXCurve) {
           serie.remove(false);
         }
       }
     }
 
-    if (redraw) {
-      this.chart.redraw();
-    }
+    // 4. Réordonner la légende en fonction de la visibilité des séries
+    this.reorderLegendByVisibility(redraw);
 }
 
   setGridVisibility(visible) {
@@ -1123,7 +1125,7 @@ setDisableScientificNotation(disabled) {
     }
     
     // Mise à jour UI
-    this.uiManager.resetZoomUI();
+    this.uiManager?.resetZoomUI();
   }
 
   /**

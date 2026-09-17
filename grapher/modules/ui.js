@@ -1573,8 +1573,13 @@ export default class UIManager {
         const input = document.createElement("input");
         input.type = "checkbox";
         input.classList.add("mr-2");
+        const isXCurve = curve.title === this.grapher.currentXCurve;
         const s = this.grapher.chart.series.find(s => s.name === curve.title);
         input.checked = !!s?.visible;
+        if (isXCurve) {
+          input.disabled = true;
+          input.style.visibility = "hidden";
+        }
 
         const span = document.createElement("span");
         span.classList.add("ml-2");
@@ -1688,6 +1693,7 @@ export default class UIManager {
       // Update the X curve in the grapher
       this.grapher.setXCurve($("#choose-x-curve-select").value, true);
       this.updateAllModelPanelVisibilityIcons();
+      populateCurveMenu();
     });
 
     /**
