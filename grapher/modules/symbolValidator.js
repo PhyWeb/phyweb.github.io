@@ -7,7 +7,7 @@ export default class SymbolValidator {
    */
   constructor(data) {
     this.data = data;
-    // La regex unifiée : doit commencer par une lettre et ne contenir que des lettres (éventuellement accentuées), des chiffres ou des underscores.
+    // La regex unifiée : doit commencer par une lettre et ne contenir que des lettres (éventuellement accentuées) et des chiffres (aucun underscore ni caractère spécial).
     this.validSymbolRegex = /^[a-zA-ZÀ-ÿ][a-zA-Z0-9À-ÿ]*$/;
   }
 
@@ -26,7 +26,7 @@ export default class SymbolValidator {
     if (!this.validSymbolRegex.test(symbol)) {
       return {
         isValid: false,
-        message: `Le symbole "${symbol}" est invalide. Il doit commencer par une lettre et ne peut contenir que des lettres éventuellement accentuéeset des chiffres.`
+        message: `Le symbole "${symbol}" est invalide. Il doit commencer par une lettre et ne peut contenir que des lettres (éventuellement accentuées) et des chiffres.`
       };
     }
 

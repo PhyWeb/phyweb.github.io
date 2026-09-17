@@ -46,6 +46,10 @@
     
     Tweaker encore un peu l'interface de l'export
 
+    calcul de diff impose des tableaux de meme taille mais ca semble prendre en compte les cellules vides. amis de toute facon on peut peutre etre quand meme faire ce qui est possible
+
+    SQRT est pas reconnu sqrt oui. ca devrait
+
 # Mendeleiev
 # Optique
 # Chromato

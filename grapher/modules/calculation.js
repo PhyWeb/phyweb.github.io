@@ -217,16 +217,6 @@ export default class Calculation {
   }
 
   /**
-   * Retire les unités des noms de variables dans une expression.
-   * @param {string} expression - Ex: "2 * t_s + g"
-   * @returns {string} - Ex: "2 * t + g"
-   */
-  _preprocessExpression(expression) {
-    // Cette regex trouve les variables suivies d'une unité et ne garde que la variable.
-    return expression.replace(/([a-zA-Z_][a-zA-Z0-9_]*)_([a-zA-Z0-9\/\^\*\s\(\)-]+)/g, '$1');
-  }
-
-  /**
    * Remplace les caractères spéciaux comme '²' par leur équivalent pour math.js.
    * @param {string} expression - L'expression à traiter.
    * @returns {string} - L'expression avec les caractères remplacés.
@@ -247,10 +237,8 @@ export default class Calculation {
     const preprocessedExpression = this.preprocessSpecialCharacters(expression);
     // Normalise la casse des fonctions (ex: SQRT -> sqrt)
     const normalizedExpr = this._normalizeFunctionCases(preprocessedExpression);
-    // Retire les unités des variables (ex: t_s -> t)
-    const cleanExpression = this._preprocessExpression(normalizedExpr);
     // Évalue l'expression nettoyée
-    return this.mathInstance.evaluate(cleanExpression, scope);
+    return this.mathInstance.evaluate(normalizedExpr, scope);
   }
 
 /**
@@ -305,6 +293,9 @@ evaluateBlock(formulas, initialScope) {
 
         // Remplace le caractère '²' AVANT l'analyse (parse)
         cleanExpression = this.preprocessSpecialCharacters(cleanExpression);
+
+        // Normalise la casse des fonctions (ex: SQRT -> sqrt) AVANT l'analyse
+        cleanExpression = this._normalizeFunctionCases(cleanExpression);
 
         const expressionNode = this.mathInstance.parse(cleanExpression);
         expressionNode.traverse((node, path, parent) => {
