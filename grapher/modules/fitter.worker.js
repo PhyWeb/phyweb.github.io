@@ -42,10 +42,10 @@ function getFunction(type) {
       return (an, x) => an[0] * Math.sin(an[1] * x + an[2]) + an[3];
     case 'cos': // y = a*cos(b*x+c) + d
       return (an, x) => an[0] * Math.cos(an[1] * x + an[2]) + an[3];
-    case 'dampedsin': // y = a*sin(b*x+c)*e^(-x*d) + e
-      return (an, x) => an[0] * Math.sin(an[1] * x + an[2]) * Math.exp(-x * an[3]) + an[4];
-    case 'dampedcos': // y = a*cos(b*x+c)*e^(-x*d) + e
-      return (an, x) => an[0] * Math.cos(an[1] * x + an[2]) * Math.exp(-x * an[3]) + an[4];
+    case 'dampedsin': // y = a*sin(b*x+c)*e^(-x/d) + e
+      return (an, x) => an[0] * Math.sin(an[1] * x + an[2]) * Math.exp(-x / an[3]) + an[4];
+    case 'dampedcos': // y = a*cos(b*x+c)*e^(-x/d) + e
+      return (an, x) => an[0] * Math.cos(an[1] * x + an[2]) * Math.exp(-x / an[3]) + an[4];
     default:
       return () => 0; // Fonction par défaut qui ne fait rien
   }
