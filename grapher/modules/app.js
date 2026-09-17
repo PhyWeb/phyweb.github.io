@@ -241,8 +241,9 @@ export default class App {
     this.data.deleteModel(modelID);
 
     // Met à jour l'UI
-      this.uiManager.updateCalculationUI();
-      this.uiManager.updateRecalculateButtonVisibility();
+    this.uiManager.updateCalculationUI();
+    this.uiManager.updateRecalculateButtonVisibility();
+    this.uiManager.updateModelToolVisibility();
   }
 
   applyCalculation(text) {

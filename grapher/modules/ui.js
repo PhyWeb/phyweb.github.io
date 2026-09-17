@@ -20,6 +20,8 @@ export default class UIManager {
     this.isZoomEnabled = false;
 
     this.initialSettings = {}; // Pour stocker les paramètres initiaux lors de l'ouverture de la modale des paramètres
+
+    this.updateModelToolVisibility = this.updateModelToolVisibility.bind(this);
   }
 
   setApp(app) {
@@ -1889,16 +1891,20 @@ export default class UIManager {
     const btn = document.getElementById('tool-crosshair-model');
 
     // Vérifie s'il y a au moins une série de modèle visible avec des points
-    const hasRenderedModel = this.grapher.chart.series.some(s =>
+    const hasRenderedModel = this.grapher?.chart?.series?.some(s =>
       s?.options?.id?.startsWith('model-') && s.visible !== false && ((s.points?.length || s.data?.length) > 0)
-    );
+    ) || false;
 
-    btn.classList.toggle('is-hidden', !hasRenderedModel);
+    if (btn) {
+      btn.classList.toggle('is-hidden', !hasRenderedModel);
+    }
 
     // Si l’outil était actif mais qu’il n’y a plus de modèle tracé, on le désactive proprement
     if (!hasRenderedModel && typeof this.activeToolElement !== 'undefined' && this.activeToolElement?.id === 'tool-crosshair-model') {
-      const check = activeToolElement.querySelector('.tool-checkmark-container');
+      const check = this.activeToolElement.querySelector('.tool-checkmark-container');
       if (check) check.innerHTML = '';
+      const toolsButtonText = $("#tools-button-text");
+      if (toolsButtonText) toolsButtonText.textContent = 'Outils';
       this.activeToolElement = null;
       this.grapher.setCrosshairMode(null);
     }
@@ -2556,6 +2562,7 @@ export default class UIManager {
     this.updateAllModelPanelVisibilityIcons();
     // La visibilité de la série est gérée par grapher.updateModelVisibility()
     this.grapher.updateModelVisibility();
+    this.updateModelToolVisibility();
   }
 
   /**

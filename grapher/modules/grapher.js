@@ -276,6 +276,7 @@ export default class Grapher {
             // Re-dessiner à chaque redraw (resize, zoom, etc.)
             Highcharts.addEvent(chart, 'redraw', drawArrows);
             Highcharts.addEvent(chart, 'redraw', drawAnnotationsBound); // Redessiner les annotations
+            Highcharts.addEvent(chart, 'redraw', () => self.uiManager?.updateModelToolVisibility());
 
           },
           selection: (e) => {
