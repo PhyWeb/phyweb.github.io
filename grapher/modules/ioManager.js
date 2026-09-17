@@ -802,7 +802,6 @@ generatePW() {
       // remplir l’éditeur avec le MEMO + paramètres
       const memoText = normalizedMemoLines.length ? normalizedMemoLines.join('\n') : '';
       const paramsText = paramLines.length ? paramLines.join('\n') : '';
-      const finalText = memoText && paramsText ? `${paramsText}\n\n${memoText}` : (memoText || paramsText);
       let finalText = memoText && paramsText ? `${paramsText}\n\n${memoText}` : (memoText || paramsText);
       finalText = updateFormulasReferences(finalText, nameMap);
       if (finalText) {
@@ -818,11 +817,9 @@ generatePW() {
       const cleanGraphY = graphY.map(t => nameMap[t] || t);
 
       const existingTitles = this.app.data.curves.map(c => c.title);
-      const chosenX = graphX.find(t => existingTitles.includes(t)) || existingTitles[0];
       const chosenX = cleanGraphX.find(t => existingTitles.includes(t)) || existingTitles[0];
       if (chosenX) this.app.grapher.setXCurve(chosenX, false);
 
-      const yNow = graphY.filter(t => existingTitles.includes(t));
       const yNow = cleanGraphY.filter(t => existingTitles.includes(t));
       this.app.grapher.updateChart();
       this.app.grapher.reorderLegendByVisibility();
@@ -831,7 +828,6 @@ generatePW() {
       // Y à activer plus tard (courbes calculées absentes pour l’instant)
       this.app.pendingRW3 = {
         x: chosenX || null, 
-        y: graphY.filter(t => !existingTitles.includes(t))
         y: cleanGraphY.filter(t => !existingTitles.includes(t))
       };
     } catch (error) {
