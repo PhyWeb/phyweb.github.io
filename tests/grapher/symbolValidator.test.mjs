@@ -66,5 +66,69 @@ describe('SymbolValidator', () => {
       assert.equal(validator.validate('   ').isValid, false);
     });
   });
+
+  describe('Interdiction des mots réservés (fonctions et constantes mathématiques)', () => {
+    it('doit refuser les constantes mathématiques réservées (e, pi)', () => {
+      assert.equal(validator.validate('e').isValid, false);
+      assert.equal(validator.validate('pi').isValid, false);
+      assert.equal(validator.validate('PI').isValid, false);
+    });
+
+    it('doit refuser les fonctions mathématiques scalaires (sin, cos, exp, log, sqrt, etc.)', () => {
+      assert.equal(validator.validate('sin').isValid, false);
+      assert.equal(validator.validate('cos').isValid, false);
+      assert.equal(validator.validate('tan').isValid, false);
+      assert.equal(validator.validate('asin').isValid, false);
+      assert.equal(validator.validate('acos').isValid, false);
+      assert.equal(validator.validate('atan').isValid, false);
+      assert.equal(validator.validate('exp').isValid, false);
+      assert.equal(validator.validate('log').isValid, false);
+      assert.equal(validator.validate('ln').isValid, false);
+      assert.equal(validator.validate('sqrt').isValid, false);
+      assert.equal(validator.validate('cbrt').isValid, false);
+      assert.equal(validator.validate('abs').isValid, false);
+      assert.equal(validator.validate('round').isValid, false);
+      assert.equal(validator.validate('floor').isValid, false);
+      assert.equal(validator.validate('ceil').isValid, false);
+    });
+
+    it('doit refuser les fonctions personnalisées comme diff', () => {
+      assert.equal(validator.validate('diff').isValid, false);
+    });
+
+    it('doit être insensible à la casse pour les mots réservés (ex: Sin, COS, Diff, Pi, SQRT)', () => {
+      assert.equal(validator.validate('Sin').isValid, false);
+      assert.equal(validator.validate('COS').isValid, false);
+      assert.equal(validator.validate('Diff').isValid, false);
+      assert.equal(validator.validate('Pi').isValid, false);
+      assert.equal(validator.validate('SQRT').isValid, false);
+    });
+
+    it('doit accepter les symboles valides contenant un mot réservé comme sous-chaîne', () => {
+      assert.equal(validator.validate('sinus').isValid, true);
+      assert.equal(validator.validate('piston').isValid, true);
+      assert.equal(validator.validate('difficile').isValid, true);
+      assert.equal(validator.validate('effort').isValid, true);
+      assert.equal(validator.validate('point').isValid, true);
+      assert.equal(validator.validate('exp1').isValid, true);
+      assert.equal(validator.validate('cosinus').isValid, true);
+    });
+
+    it('doit refuser un mot réservé même si présent dans ignoreList', () => {
+      assert.equal(validator.validate('sin', { ignoreList: ['sin'] }).isValid, false);
+      assert.equal(validator.validate('diff', { ignoreList: ['diff'] }).isValid, false);
+    });
+
+    it('doit renvoyer un message d\'erreur explicite pour les mots réservés', () => {
+      const resSin = validator.validate('sin');
+      assert.equal(resSin.isValid, false);
+      assert.match(resSin.message, /mot réservé/i);
+
+      const resDiff = validator.validate('diff');
+      assert.equal(resDiff.isValid, false);
+      assert.match(resDiff.message, /mot réservé/i);
+    });
+  });
 });
+
 
