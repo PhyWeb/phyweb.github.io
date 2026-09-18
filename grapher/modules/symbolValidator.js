@@ -8,7 +8,8 @@ export default class SymbolValidator {
   constructor(data) {
     this.data = data;
     // La regex unifiée : doit commencer par une lettre et ne contenir que des lettres (éventuellement accentuées) et des chiffres (aucun underscore ni caractère spécial).
-    this.validSymbolRegex = /^[a-zA-ZÀ-ÿ][a-zA-Z0-9À-ÿ]*$/;
+    // Note: la plage À-ÖØ-öø-ÿ remplace À-ÿ afin d'exclure les opérateurs arithmétiques \u00D7 (×) et \u00F7 (÷).
+    this.validSymbolRegex = /^[a-zA-ZÀ-ÖØ-öø-ÿ][a-zA-Z0-9À-ÖØ-öø-ÿ]*$/;
   }
 
   /**
