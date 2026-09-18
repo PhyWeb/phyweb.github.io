@@ -334,15 +334,24 @@ generatePW() {
   async loadFile(file) {
     this.app.resetSession();
 
-    if (file.name.endsWith(".pw")) {
+    const fileName = (file?.name || "").toLowerCase();
+    const fileType = (file?.type || "").toLowerCase();
+
+    if (fileName.endsWith(".pw")) {
       await this.loadPWFile(file);
-    } else if (file.type === "text/csv") {
+    } else if (
+      fileName.endsWith(".csv") ||
+      fileType === "text/csv" ||
+      fileType === "application/vnd.ms-excel" ||
+      fileType === "text/x-csv" ||
+      fileType === "application/csv"
+    ) {
       await this.loadCSVFile(file);
-    } else if (file.name.endsWith(".rw3")) {
+    } else if (fileName.endsWith(".rw3")) {
       await this.loadRW3File(file);
     } else {
       // Si aucun format ne correspond, on lève une erreur qui sera attrapée par ui.js
-      throw new Error(`Le type de fichier "${file.name}" n'est pas supporté.`);
+      throw new Error(`Le type de fichier "${file?.name}" n'est pas supporté.`);
     }
   }
 
