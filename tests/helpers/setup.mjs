@@ -16,8 +16,13 @@ const createMockElement = () => ({
   remove: () => {}
 });
 
+const docEventTarget = new EventTarget();
+
 if (!global.document) {
   global.document = {
+    addEventListener: (type, listener, options) => docEventTarget.addEventListener(type, listener, options),
+    removeEventListener: (type, listener, options) => docEventTarget.removeEventListener(type, listener, options),
+    dispatchEvent: (event) => docEventTarget.dispatchEvent(event),
     querySelector: (sel) => (global.__querySelectorOverride ? global.__querySelectorOverride(sel) : createMockElement()),
     querySelectorAll: (sel) => (global.__querySelectorAllOverride ? global.__querySelectorAllOverride(sel) : []),
     getElementById: (id) => (global.__getElementByIdOverride ? global.__getElementByIdOverride(id) : createMockElement()),
@@ -26,6 +31,11 @@ if (!global.document) {
     body: createMockElement()
   };
 } else {
+  if (!global.document.addEventListener) {
+    global.document.addEventListener = (type, listener, options) => docEventTarget.addEventListener(type, listener, options);
+    global.document.removeEventListener = (type, listener, options) => docEventTarget.removeEventListener(type, listener, options);
+    global.document.dispatchEvent = (event) => docEventTarget.dispatchEvent(event);
+  }
   const origQS = global.document.querySelector;
   global.document.querySelector = (sel) => (global.__querySelectorOverride ? global.__querySelectorOverride(sel) : (origQS ? origQS(sel) : createMockElement()));
   if (!global.document.createElement) global.document.createElement = (tag) => (global.__createElementOverride ? global.__createElementOverride(tag) : createMockElement());

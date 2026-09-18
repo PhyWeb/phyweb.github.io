@@ -485,15 +485,18 @@ class Model {
         } else if (message.type === 'final_result') {
           if (message.success) {
             this._applyParams(message.params, data);
+            worker.terminate();
             this.activeWorker = null;
             document.dispatchEvent(new CustomEvent('model-fit-end'));
             resolve(this);
           } else {
+            worker.terminate();
             this.activeWorker = null;
             document.dispatchEvent(new CustomEvent('model-fit-end'));
             reject(new Error(message.error));
           }
         } else if (message.type === 'error') {
+            worker.terminate();
             this.activeWorker = null;
             document.dispatchEvent(new CustomEvent('model-fit-end'));
             reject(new Error(message.error));
@@ -501,7 +504,7 @@ class Model {
       };
 
       worker.onerror = (error) => {
-        if (this.activeWorker) this.activeWorker.terminate();
+        worker.terminate();
         this.activeWorker = null;
         document.dispatchEvent(new CustomEvent('model-fit-end'));
         reject(error);

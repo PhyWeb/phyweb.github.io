@@ -6,10 +6,12 @@
  */
 
 // On importe la librairie Alglib dans le scope du worker.
+let alglibLoadError = null;
 try {
   // Charge le script Alglib dans le scope global du worker.
   importScripts('../../common/alglib/alglib-v1.1.0.js'); 
 } catch (e) {
+  alglibLoadError = e;
   console.error("Alglib n'a pas pu être chargé via importScripts.", e);
 }
 
@@ -53,7 +55,16 @@ function getFunction(type) {
 
 // Écouteur pour les messages venant du thread principal
 self.onmessage = async function (e) {
-  if (!self.Alglib) return;
+  if (!self.Alglib) {
+    self.postMessage({
+      type: 'error',
+      success: false,
+      error: alglibLoadError
+        ? `Alglib n'a pas pu être chargé : ${alglibLoadError.message || alglibLoadError}`
+        : "La bibliothèque Alglib n'a pas pu être chargée dans le Web Worker."
+    });
+    return;
+  }
 
   const { data, modelType, initialGuess } = e.data;
   let iterationCount = 0; // Compteur pour ne pas spammer
