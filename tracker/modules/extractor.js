@@ -21,15 +21,43 @@ export default class EXTRACTOR {
     this._pendingBitmapsCount = 0;
   }
 
-  triggerFinish = (wasCanceled = false) => {
+  triggerFinish = async (wasCanceled = false) => {
     if (this._finishTriggered) return;
     this._finishTriggered = true;
-    
+
+    try {
+      if (this.decoder && this.decoder.state === "configured") {
+        await this.decoder.flush();
+      }
+      if (this.mp4boxfile) {
+        this.mp4boxfile.flush();
+      }
+    } catch (e) {
+      console.warn("Decoder flush warning:", e);
+    }
+
     const checkAndFinish = () => {
       if (this._pendingBitmapsCount <= 0 || wasCanceled) {
-        this.onFinish(wasCanceled);
+        if ($('#extract-loading-modal')) $('#extract-loading-modal').remove();
+
+        if (wasCanceled) {
+          for (const frameImg of this.decodedVideo.frames) {
+            if (frameImg && frameImg.src) {
+              URL.revokeObjectURL(frameImg.src);
+            }
+          }
+          this.decodedVideo.frames = [];
+          this.decodedVideo.timestamps = [];
+          return;
+        }
+
+        if (this.decodedVideo.timestamps.length > 1) {
+          this.decodedVideo.duration = (this.decodedVideo.timestamps[this.decodedVideo.timestamps.length - 1] - this.decodedVideo.timestamps[0]) * 1000;
+        }
+
+        this.decodedVideoCB(this.decodedVideo);
       } else {
-        setTimeout(checkAndFinish, 50);
+        setTimeout(checkAndFinish, 30);
       }
     };
     checkAndFinish();
@@ -293,13 +321,18 @@ export default class EXTRACTOR {
 
         // Convertir le canvas en Blob JPEG avec qualité 0.85
         offscreenCanvas.convertToBlob({ type: "image/jpeg", quality: 0.85 })
-        .then((blob) => {
+        .then(async (blob) => {
           // On génère une URL locale pour le Blob pour faciliter son affichage dans le player
           const blobUrl = URL.createObjectURL(blob);
           
           // On crée un élément Image standard
           const img = new Image();
           img.src = blobUrl;
+          if (img.decode) {
+            try {
+              await img.decode();
+            } catch (_) {}
+          }
           
           // On stocke l'élément Image prêt à être dessiné
           this.decodedVideo.frames[currentIndex] = img; 
@@ -330,7 +363,9 @@ export default class EXTRACTOR {
         duration: 1e6 * sample.duration / sample.timescale,
         data: sample.data
       }));
-      if (sample.number + 1 >= this.nbSamples) this.decoder.flush();
+      if (sample.number + 1 >= this.nbSamples) {
+        this.triggerFinish(false);
+      }
     }
   }
 
@@ -339,7 +374,6 @@ export default class EXTRACTOR {
       const endTime = parseFloat($("#end-size-input").value);
       const startTime = parseFloat($("#start-size-input").value);
       if ((chunk.timestamp - chunk.duration) / 1e6 > endTime + 0.2) {
-        this.triggerFinish(false);
         return;
       }
       if (chunk.timestamp / 1e6 < startTime - 5) return;
@@ -359,33 +393,5 @@ export default class EXTRACTOR {
     }
 
     this.decoder.decode(chunk);
-  }
-
-  onFinish = (wasCanceled) => {
-    // On ne retire la modale que si on est sûr d'avoir tout fini
-    let finalize = async () => {
-      await this.decoder.flush();
-      await this.mp4boxfile.flush();
-      
-      if ($('#extract-loading-modal')) $('#extract-loading-modal').remove();
-
-      if (wasCanceled) {
-        for (const frameImg of this.decodedVideo.frames) {
-          if (frameImg && frameImg.src) {
-            URL.revokeObjectURL(frameImg.src);
-          }
-        }
-        this.decodedVideo.frames = [];
-        this.decodedVideo.timestamps = [];
-        return;
-      }
-
-      if (this.decodedVideo.timestamps.length > 1) {
-        this.decodedVideo.duration = (this.decodedVideo.timestamps[this.decodedVideo.timestamps.length - 1] - this.decodedVideo.timestamps[0]) * 1000;
-      }
-
-      this.decodedVideoCB(this.decodedVideo);
-    }
-    finalize();
   }
 }

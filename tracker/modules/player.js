@@ -70,6 +70,10 @@ export default class PLAYER {
     // Decoded video callback
     let decodedVideoCB = (_decodedVideo) => {
       console.log("Video decoded", _decodedVideo);
+      if (!_decodedVideo || !_decodedVideo.frames || _decodedVideo.frames.length === 0) {
+        console.warn("Aucune image extraite de la vidéo");
+        return;
+      }
       this.decodedVideo = _decodedVideo;
       this.currentFrame = 0;
       this.currentPoint = 0;
@@ -109,7 +113,9 @@ export default class PLAYER {
 
   drawFrame(_frameID){
     this.ctx.clearRect(0, 0, this.videoCanvas.width, this.videoCanvas.height);
-    this.ctx.drawImage(this.decodedVideo.frames[_frameID]/*e.target*/, 0, 0 ,this.videoCanvas.width, this.videoCanvas.height);
+    if (this.decodedVideo && this.decodedVideo.frames && this.decodedVideo.frames[_frameID]) {
+      this.ctx.drawImage(this.decodedVideo.frames[_frameID]/*e.target*/, 0, 0 ,this.videoCanvas.width, this.videoCanvas.height);
+    }
     
     if($("#etalonnage-button").classList.contains("is-active")){
       // Draw the origin
