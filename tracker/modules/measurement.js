@@ -104,7 +104,9 @@ export default class MEASUREMENT {
     this.series.push(new Serie("y", "m"));
 
     _decodedVideo.frames.forEach((value,i)=>{
-      this.series[0][i] = (_decodedVideo.duration / _decodedVideo.frames.length) * i / 1000,
+      this.series[0][i] = (_decodedVideo.timestamps && _decodedVideo.timestamps[i] !== undefined)
+        ? _decodedVideo.timestamps[i]
+        : (_decodedVideo.duration / _decodedVideo.frames.length) * i / 1000;
       this.series[1][i] = "";
       this.series[2][i] = "";
     });

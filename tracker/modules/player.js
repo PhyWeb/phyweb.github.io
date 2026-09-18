@@ -63,6 +63,7 @@ export default class PLAYER {
         });
         // On vide proprement le tableau
         this.decodedVideo.frames = [];
+        if (this.decodedVideo.timestamps) this.decodedVideo.timestamps = [];
       }
     }
 
@@ -352,7 +353,11 @@ export default class PLAYER {
   playing = () => {
     if(this.currentFrame < this.decodedVideo.frames.length - 1 && this.pauseFlag === false){
       let elapsedTime = performance.now() - this.dateOrigin;
-      if(elapsedTime > this.decodedVideo.duration / this.decodedVideo.frames.length){
+      let frameInterval = (this.decodedVideo.timestamps && this.decodedVideo.timestamps.length > this.currentFrame + 1)
+        ? (this.decodedVideo.timestamps[this.currentFrame + 1] - this.decodedVideo.timestamps[this.currentFrame]) * 1000
+        : (this.decodedVideo.duration / this.decodedVideo.frames.length);
+
+      if(elapsedTime > frameInterval){
         this.dateOrigin = performance.now();
 
         this.setFrame(this.currentFrame + 1, false);

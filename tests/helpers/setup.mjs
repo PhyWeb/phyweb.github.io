@@ -22,12 +22,14 @@ if (!global.document) {
     querySelectorAll: (sel) => (global.__querySelectorAllOverride ? global.__querySelectorAllOverride(sel) : []),
     getElementById: (id) => (global.__getElementByIdOverride ? global.__getElementByIdOverride(id) : createMockElement()),
     createElement: (tag) => (global.__createElementOverride ? global.__createElementOverride(tag) : createMockElement()),
+    createDocumentFragment: () => createMockElement(),
     body: createMockElement()
   };
 } else {
   const origQS = global.document.querySelector;
   global.document.querySelector = (sel) => (global.__querySelectorOverride ? global.__querySelectorOverride(sel) : (origQS ? origQS(sel) : createMockElement()));
   if (!global.document.createElement) global.document.createElement = (tag) => (global.__createElementOverride ? global.__createElementOverride(tag) : createMockElement());
+  if (!global.document.createDocumentFragment) global.document.createDocumentFragment = () => createMockElement();
   if (!global.document.body) global.document.body = createMockElement();
 }
 

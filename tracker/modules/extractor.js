@@ -51,7 +51,8 @@ export default class EXTRACTOR {
       duration: null,
       width: null,
       height: null,
-      frames: []
+      frames: [],
+      timestamps: []
     }
 
     $("#open-modal").classList.remove("is-active");
@@ -151,8 +152,8 @@ export default class EXTRACTOR {
       $("#def-size-label").innerHTML = ` ( ${this.width} / ${this.height} => ${this.width / 2} / ${this.height / 2} )`;
       $("#fps-size-label").innerHTML = ` ( ${this.fps.toFixed(2)/1} => ${this.fps.toFixed(2)/2} img/s )`;
       $("#duration-size-label").innerHTML = this.duration.toFixed(2);
-      $("#file-slider").noUiSlider.reset();
-      $("#file-slider").noUiSlider.updateOptions({ range:{ 'min': 0, 'max': this.duration } });
+      $("#file-slider").noUiSlider.updateOptions({ range:{ 'min': 0, 'max': this.duration }, start: [0, this.duration] });
+      $("#file-slider").noUiSlider.set([0, this.duration]);
 
       this.updateSize();
       $("#def-size-input").addEventListener("click", () => this.updateSize());
@@ -190,11 +191,22 @@ export default class EXTRACTOR {
 
   extract(){
     this.checksizeCB()
-    this.decodedVideo.duration = $("#duration-size-input").checked ? ($("#end-size-input").value - $("#start-size-input").value) * 1000 : this.track.movie_duration * 1000 / this.track.movie_timescale; 
-    this.decodedVideo.width = $("#def-size-input").checked ? this.width / 2 : this.width;
-    this.decodedVideo.height = $("#def-size-input").checked ? this.height / 2 : this.height;
 
-    let frameCount = 0;
+    const durationReduction = $("#duration-size-input").checked;
+    const fpsReduction = $("#fps-size-input").checked;
+    const defReduction = $("#def-size-input").checked;
+
+    const startTime = durationReduction ? parseFloat($("#start-size-input").value) : 0;
+    const endTime = durationReduction ? parseFloat($("#end-size-input").value) : Infinity;
+
+    this.decodedVideo.duration = durationReduction ? (endTime - startTime) * 1000 : this.track.movie_duration * 1000 / this.track.movie_timescale; 
+    this.decodedVideo.width = defReduction ? this.width / 2 : this.width;
+    this.decodedVideo.height = defReduction ? this.height / 2 : this.height;
+    this.decodedVideo.frames = [];
+    this.decodedVideo.timestamps = [];
+
+    let candidateFrameCount = 0;
+    let savedFrameCount = 0;
     let canceled = false;
     this._finishTriggered = false;
     this._pendingBitmapsCount = 0;
@@ -207,7 +219,7 @@ export default class EXTRACTOR {
       id:"extract-loading-modal"
     });
 
-    let firstFrameTimestamp = 0;
+    let firstFrameTimestamp = null;
     let isOver = false;
 
     // Création du canvas hors-champ pour la compression
@@ -216,38 +228,62 @@ export default class EXTRACTOR {
 
     this.decoder = new VideoDecoder({
       output: (frame) => {
-        // Capture de l'index actuel pour garantir le bon ordre des images
-        let currentIndex = frameCount; 
-        
-        if(frameCount == 0) firstFrameTimestamp = $("#duration-size-input").checked ? (frame.timestamp - frame.duration) : 0;
-        let progress = ((frame.timestamp + frame.duration ) / 1e3 - firstFrameTimestamp / 1e3) / this.decodedVideo.duration * 100;
+        if (isOver || canceled) {
+          if (canceled && !isOver) {
+            isOver = true;
+            this.triggerFinish(true);
+          }
+          frame.close();
+          return;
+        }
 
-        if (this.nbSamples && !$("#duration-size-input").checked && !$("#fps-size-input").checked) {
-          if (frameCount + 1 >= this.nbSamples) {
-            if(!isOver){ isOver = true; this.triggerFinish(false); }
+        const frameTimeSec = frame.timestamp / 1e6;
+
+        // Frames before start time
+        if (durationReduction && frameTimeSec < startTime) {
+          frame.close();
+          return;
+        }
+
+        // Frame is after end time: finish extraction immediately
+        if (durationReduction && frameTimeSec > endTime) {
+          isOver = true;
+          this.triggerFinish(false);
+          frame.close();
+          return;
+        }
+
+        // FPS reduction: keep 1 frame out of 2
+        if (fpsReduction && candidateFrameCount % 2 === 1) {
+          candidateFrameCount++;
+          frame.close();
+          return;
+        }
+        candidateFrameCount++;
+
+        if (firstFrameTimestamp === null) {
+          firstFrameTimestamp = frame.timestamp;
+        }
+
+        let progress = durationReduction
+          ? Math.min(100, Math.max(0, ((frame.timestamp - firstFrameTimestamp) / 1e3 + (frame.duration / 1e3)) / this.decodedVideo.duration * 100))
+          : (this.nbSamples ? ((savedFrameCount + 1) / this.nbSamples * 100) : 100);
+
+        let progressEl = $("#extract-decode-progress");
+        if (progressEl) progressEl.value = Math.ceil(progress);
+
+        if (this.nbSamples && !durationReduction && !fpsReduction) {
+          if (savedFrameCount + 1 >= this.nbSamples) {
+            isOver = true;
+            this.triggerFinish(false);
           }
         }
 
-        if(canceled){
-          if(!isOver) { isOver = true; this.triggerFinish(true); }
-          frame.close(); return;
-        }
-        
-        if(progress >= 99.9 && !isOver){
-          isOver = true; this.triggerFinish(false);
-          frame.close(); return;
-        }
+        let currentIndex = savedFrameCount;
+        savedFrameCount++;
 
-        let progressEl = $("#extract-decode-progress");
-        if(progressEl) progressEl.value = Math.ceil(progress);
-
-        if($("#duration-size-input").checked && frame.timestamp / 1000000 < $("#start-size-input").value){
-          frame.close(); return;
-        }
-
-        if($("#fps-size-input").checked && frameCount % 2 == 1){
-          frame.close(); frameCount++; return;
-        }
+        // Timestamp in seconds relative to the first kept frame
+        this.decodedVideo.timestamps[currentIndex] = (frame.timestamp - firstFrameTimestamp) / 1e6;
 
         this._pendingBitmapsCount++;
         
@@ -272,16 +308,14 @@ export default class EXTRACTOR {
           console.error("Erreur de conversion Blob:", e);
           this._pendingBitmapsCount--;
         });
-        
-        frameCount++;
       },
       error: (e) => { console.error(e); },
     });
 
     this.decoder.configure(this.config);
     this.mp4boxfile.setExtractionOptions(this.info.videoTracks[0].id);
-    if($("#duration-size-input").checked){
-      let seekTime = parseInt($("#start-size-input").value) - 5;
+    if(durationReduction){
+      let seekTime = startTime - 5;
       if(seekTime > 0) this.mp4boxfile.seek(seekTime);
     }
     this.mp4boxfile.start();
@@ -301,14 +335,19 @@ export default class EXTRACTOR {
   }
 
   onChunk(chunk){
-    if ($("#duration-size-input").checked && (chunk.timestamp - chunk.duration) / 1000000 > (parseInt($("#end-size-input").value) + 1)) {
-      this.triggerFinish(false); return;
-    }
-    if($("#duration-size-input").checked && chunk.timestamp / 1000000 < $("#start-size-input").value - 5) return;
-    if($("#duration-size-input").checked && chunk.timestamp / 1000000 <= $("#start-size-input").value){
-      if(!this.keyFrameFound){
-        if(chunk.type !== "key") return;
-        else this.keyFrameFound = true;
+    if ($("#duration-size-input").checked) {
+      const endTime = parseFloat($("#end-size-input").value);
+      const startTime = parseFloat($("#start-size-input").value);
+      if ((chunk.timestamp - chunk.duration) / 1e6 > endTime + 0.2) {
+        this.triggerFinish(false);
+        return;
+      }
+      if (chunk.timestamp / 1e6 < startTime - 5) return;
+      if (chunk.timestamp / 1e6 <= startTime) {
+        if (!this.keyFrameFound) {
+          if (chunk.type !== "key") return;
+          else this.keyFrameFound = true;
+        }
       }
     }
 
@@ -330,15 +369,21 @@ export default class EXTRACTOR {
       
       if ($('#extract-loading-modal')) $('#extract-loading-modal').remove();
 
-    if (wasCanceled) {
+      if (wasCanceled) {
         for (const frameImg of this.decodedVideo.frames) {
           if (frameImg && frameImg.src) {
             URL.revokeObjectURL(frameImg.src);
           }
         }
         this.decodedVideo.frames = [];
+        this.decodedVideo.timestamps = [];
         return;
       }
+
+      if (this.decodedVideo.timestamps.length > 1) {
+        this.decodedVideo.duration = (this.decodedVideo.timestamps[this.decodedVideo.timestamps.length - 1] - this.decodedVideo.timestamps[0]) * 1000;
+      }
+
       this.decodedVideoCB(this.decodedVideo);
     }
     finalize();
