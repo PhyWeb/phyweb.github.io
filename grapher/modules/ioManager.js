@@ -23,6 +23,28 @@ function removeAccents(str) {
 }
 
 /**
+ * Vérifie si une valeur représente un nombre valide.
+ * Évite les faux positifs de parseFloat (ex: "1ère mesure", "24h", "1/s", "10^-3").
+ */
+function isNumeric(val) {
+  if (val === null || val === undefined) return false;
+  const s = String(val).replace(',', '.').trim();
+  if (s === '') return false;
+  return /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/.test(s);
+}
+
+/**
+ * Vérifie si une ligne de cellules correspond à des données numériques.
+ * Une ligne est considérée numérique si elle contient au moins une cellule non vide
+ * et que toutes ses cellules non vides représentent des nombres valides.
+ */
+function isLineNumeric(cells) {
+  if (!cells || cells.length === 0) return false;
+  const nonEmpty = cells.map(c => String(c).trim()).filter(c => c.length > 0);
+  return nonEmpty.length > 0 && nonEmpty.every(isNumeric);
+}
+
+/**
  * Nettoie un symbole pour respecter : /^[a-zA-ZÀ-ÿ][a-zA-Z0-9À-ÿ]*$/
  * et le passe en CamelCase si besoin.
  */
@@ -875,7 +897,7 @@ generatePW() {
 
       // Vérifie si la première ligne ressemble à des données (c-à-d, est numérique).
       const firstLineCells = splitFlexible(lines[0]);
-      const isFirstLineNumeric = firstLineCells.length > 0 && !isNaN(parseFloat(String(firstLineCells[0]).replace(',', '.').trim()));
+      const isFirstLineNumeric = isLineNumeric(firstLineCells);
 
       if (isFirstLineNumeric) {
         // Pas de ligne d'en-tête. On génère des en-têtes génériques pour toutes les colonnes.
@@ -901,7 +923,7 @@ generatePW() {
         // Vérifie si la deuxième ligne correspond aux unités ou aux données
         if (lines.length > 1) {
           const secondLineCells = splitFlexible(lines[1]);
-          const isSecondLineNumeric = secondLineCells.length > 0 && !isNaN(parseFloat(String(secondLineCells[0]).replace(',', '.').trim()));
+          const isSecondLineNumeric = isLineNumeric(secondLineCells);
 
           if (isSecondLineNumeric) {
             // La deuxième ligne contient des données, donc pas de ligne d'unités
@@ -972,3 +994,5 @@ generatePW() {
     }
   }
 }
+
+export { isNumeric, isLineNumeric, sanitizeSymbol, sanitizeUnit };
