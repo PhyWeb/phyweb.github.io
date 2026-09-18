@@ -35,6 +35,8 @@
 
     - typos dans les options de réduction de poids et centrage des checkboxes (seulement sur petit ecran ?)
 
+    - fleches pour passer les frames. (haut bas dans le tableau et droite gauxhe sinon ?)
+
 # Grapher
     - possibilité d'avoir 2 axes y
 
