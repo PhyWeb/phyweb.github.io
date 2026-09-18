@@ -2,14 +2,22 @@ import {Curve, Model, COLOR_LIST} from './data.js';
 import Papa from '../../common/papaparse/papaparse.esm.js';
 
 // Fonctions utilitaires
-function splitFlexible(line) {
-  return line.trim().split(/\s{2,}|\t/);
+function splitFlexible(line, delimiter) {
+  if (typeof line !== 'string') return [];
+  const cleanLine = line.replace(/\r$/, '');
+  const sep = delimiter || (cleanLine.includes('\t') ? '\t' : null);
+  if (sep) {
+    return cleanLine.split(sep).map(cell => cell.trim());
+  }
+  return cleanLine.trim().split(/\s{2,}/).map(cell => cell.trim());
 }
 
 function isTabularData(text) {
-  const lines = text.trim().split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  if (!text || typeof text !== 'string') return false;
+  const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
   if (lines.length < 2) return false;
-  const colCounts = lines.map(line => splitFlexible(line).length);
+  const delimiter = text.includes('\t') ? '\t' : undefined;
+  const colCounts = lines.map(line => splitFlexible(line, delimiter).length);
   const firstCount = colCounts[0];
   const sameCount = colCounts.filter(c => c === firstCount).length;
   return sameCount >= lines.length - 1 && firstCount >= 2;
@@ -878,14 +886,16 @@ generatePW() {
     this.isLoading = true;
 
     try {
-      const lines = data.trim().split('\n').filter(l => l.trim().length > 0);
+      const lines = data.split(/\r?\n/).filter(l => l.trim().length > 0);
       if (lines.length === 0) {
         this.isLoading = false; // S'assurer de réinitialiser le drapeau
         return; // Rien à charger
       }
 
+      const delimiter = data.includes('\t') ? '\t' : undefined;
+
       // Déterminer le nombre maximum de colonnes dans l'ensemble des données
-      const numColumns = lines.reduce((max, line) => Math.max(max, splitFlexible(line).length), 0);
+      const numColumns = lines.reduce((max, line) => Math.max(max, splitFlexible(line, delimiter).length), 0);
       if (numColumns === 0) {
         this.isLoading = false;
         return;
@@ -896,7 +906,7 @@ generatePW() {
       let dataLines;
 
       // Vérifie si la première ligne ressemble à des données (c-à-d, est numérique).
-      const firstLineCells = splitFlexible(lines[0]);
+      const firstLineCells = splitFlexible(lines[0], delimiter);
       const isFirstLineNumeric = isLineNumeric(firstLineCells);
 
       if (isFirstLineNumeric) {
@@ -909,7 +919,7 @@ generatePW() {
       } else {
         // La ligne d'en-tête existe.
         // On s'assure d'avoir un en-tête pour chaque colonne détectée.
-        const rawHeaders = splitFlexible(lines[0]);
+        const rawHeaders = splitFlexible(lines[0], delimiter);
         headers = [];
         for (let i = 0; i < numColumns; i++) {
           const h = rawHeaders[i] || ""; // Utilise l'en-tête s'il existe, sinon une chaîne vide
@@ -922,7 +932,7 @@ generatePW() {
 
         // Vérifie si la deuxième ligne correspond aux unités ou aux données
         if (lines.length > 1) {
-          const secondLineCells = splitFlexible(lines[1]);
+          const secondLineCells = splitFlexible(lines[1], delimiter);
           const isSecondLineNumeric = isLineNumeric(secondLineCells);
 
           if (isSecondLineNumeric) {
@@ -931,7 +941,7 @@ generatePW() {
             dataLines = lines.slice(1);
           } else {
             // La deuxième ligne contient les unités. On s'assure d'en avoir pour chaque colonne.
-            const rawUnits = splitFlexible(lines[1]);
+            const rawUnits = splitFlexible(lines[1], delimiter);
             units = Array.from({
               length: numColumns
             }, (_, i) => sanitizeUnit(rawUnits[i]));
@@ -947,10 +957,10 @@ generatePW() {
       const curvesData = headers.map(() => []);
 
       for (const line of dataLines) {
-        const cells = splitFlexible(line);
+        const cells = splitFlexible(line, delimiter);
         for (let i = 0; i < headers.length; i++) {
           const rawValue = cells[i];
-          const value = rawValue !== undefined ? parseFloat(String(rawValue).replace(',', '.').trim()) : null;
+          const value = rawValue !== undefined && rawValue !== "" ? parseFloat(String(rawValue).replace(',', '.').trim()) : null;
           curvesData[i].push(isNaN(value) ? null : value);
         }
       }
@@ -995,4 +1005,4 @@ generatePW() {
   }
 }
 
-export { isNumeric, isLineNumeric, sanitizeSymbol, sanitizeUnit };
+export { isNumeric, isLineNumeric, sanitizeSymbol, sanitizeUnit, splitFlexible, isTabularData };
