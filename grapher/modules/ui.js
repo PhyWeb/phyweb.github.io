@@ -4,6 +4,8 @@ import { DEFAULT_SETTINGS, saveSettings, loadSettings, clearSavedSettings } from
 
 const $ = document.querySelector.bind(document);
 
+export const MAX_PRINT_TABLE_POINTS = 500;
+
 export default class UIManager {
   constructor(common, data, grapher, calculation, editor, spreadsheet) {
     this.common = common;
@@ -3158,6 +3160,16 @@ export default class UIManager {
         const includeCalc = $('#export-check-calc').checked;
         const margin = $('#export-margin-select').value;
 
+        const tableLabel = $('#export-table-label');
+        if (tableLabel) {
+          const totalPoints = (this.data && this.data.getTable) ? this.data.getTable().length : 0;
+          if (totalPoints > MAX_PRINT_TABLE_POINTS) {
+            tableLabel.textContent = `Tableur (Données - limité aux ${MAX_PRINT_TABLE_POINTS} premiers points)`;
+          } else {
+            tableLabel.textContent = 'Tableur (Données)';
+          }
+        }
+
         iframe.srcdoc = this.generatePrintHTML(includeGraph, includeTable, includeCalc, margin, title, dims.w, dims.h, factor);
       }
     };
@@ -3338,7 +3350,7 @@ export default class UIManager {
    * Retourne une composition HTML propre pour l'impression / export PDF
    */
   generatePrintHTML(includeGraph, includeTable, includeCalc, margin, title, width, height, factor) {
-    const sigDigits = this.data.settings.significantDigits; 
+    const sigDigits = (this.data && this.data.settings && this.data.settings.significantDigits) ? this.data.settings.significantDigits : 4; 
 
     let html = `
       <!DOCTYPE html>
@@ -3411,31 +3423,42 @@ export default class UIManager {
       html += `<div class="svg-container">${svg}</div>`;
     }
 
-    if (includeTable) {
-      const headers = this.data.getHeaders();
-      const data = this.data.getTable(); 
-      const curvesData = headers.map((_, colIndex) => data.map(row => row[colIndex]));
-      const numPoints = data.length;
+    if (includeTable && this.data) {
+      const headers = this.data.getHeaders() || [];
+      const data = this.data.getTable() || [];
+      const totalPoints = data.length;
+      const numPoints = Math.min(totalPoints, MAX_PRINT_TABLE_POINTS);
       
-      html += `<div class="flex-table"><div class="flex-col header-col"><div class="flex-cell row-header">Point #</div>`;
-      headers.forEach(h => html += `<div class="flex-cell row-header">${h}</div>`);
-      html += `</div>`;
-
-      for (let j = 0; j < numPoints; j++) {
-        html += `<div class="flex-col"><div class="flex-cell" style="background-color:#f9f9f9; font-weight:bold;">${j + 1}</div>`;
-        headers.forEach((h, colIndex) => {
-          let val = curvesData[colIndex][j];
-          let displayVal = (val !== null && val !== undefined && !isNaN(val) && val !== '') 
-                           ? formatNumber(val, sigDigits) : '';
-          html += `<div class="flex-cell">${displayVal}</div>`;
-        });
+      if (headers.length > 0 && totalPoints > 0) {
+        html += `<div class="flex-table"><div class="flex-col header-col"><div class="flex-cell row-header">Point #</div>`;
+        headers.forEach(h => html += `<div class="flex-cell row-header">${h}</div>`);
         html += `</div>`;
+
+        for (let j = 0; j < numPoints; j++) {
+          html += `<div class="flex-col"><div class="flex-cell" style="background-color:#f9f9f9; font-weight:bold;">${j + 1}</div>`;
+          headers.forEach((h, colIndex) => {
+            let val = data[j] ? data[j][colIndex] : undefined;
+            let displayVal = (val !== null && val !== undefined && !isNaN(val) && val !== '') 
+                             ? formatNumber(val, sigDigits) : '';
+            html += `<div class="flex-cell">${displayVal}</div>`;
+          });
+          html += `</div>`;
+        }
+        html += `</div>`;
+
+        if (totalPoints > MAX_PRINT_TABLE_POINTS) {
+          const totalPointsFormatted = totalPoints.toLocaleString('fr-FR');
+          html += `
+            <div class="print-table-notice" style="font-size: 11px; color: #555; background-color: #f8f9fa; border: 1px solid #ddd; border-radius: 4px; padding: 8px 12px; margin-top: -10px; margin-bottom: 20px; text-align: center;">
+              Affichage limité aux ${MAX_PRINT_TABLE_POINTS} premiers points (sur ${totalPointsFormatted} au total) pour préserver la fluidité d'impression. Pour exploiter l'ensemble des données, utilisez l'export de fichier (CSV / RW3).
+            </div>
+          `;
+        }
       }
-      html += `</div>`;
     }
 
-    if (includeCalc) {
-      const calcText = this.editor.getValue();
+    if (includeCalc && this.editor) {
+      const calcText = this.editor.getValue() || '';
       html += `<pre>${calcText.trim() ? calcText : 'Aucun calcul enregistré.'}</pre>`;
     }
 
@@ -3443,3 +3466,5 @@ export default class UIManager {
     return html;
   }
 }
+
+UIManager.MAX_PRINT_TABLE_POINTS = MAX_PRINT_TABLE_POINTS;
