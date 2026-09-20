@@ -1,3 +1,5 @@
+import { showToast } from "../../common/common.js";
+
 const $ = document.querySelector.bind(document);
 
 function isNumber(str) {
@@ -595,8 +597,22 @@ export default class PLAYER {
       this.segment.x1 = distPoint.x + 0.5;
       this.segment.y1 = distPoint.y + 0.5;
     } else{
-      this.segment.x2 = distPoint.x + 0.5;
-      this.segment.y2 = distPoint.y + 0.5;
+      const x2 = distPoint.x + 0.5;
+      const y2 = distPoint.y + 0.5;
+
+      const safeRatio = Number.isFinite(this.measurement.aspectRatio) && this.measurement.aspectRatio > 0 ? this.measurement.aspectRatio : 1;
+      const dx = x2 - this.segment.x1;
+      const dy = (y2 - this.segment.y1) / safeRatio;
+      const dist = Math.hypot(dx, dy);
+
+      // Si l'utilisateur clique deux fois au même endroit ou très près
+      if (dist <= 1e-4) {
+        showToast("Le segment d'étalonnage est trop court.", "is-warning");
+        return;
+      }
+
+      this.segment.x2 = x2;
+      this.segment.y2 = y2;
 
       this.measurement.scale.scaleSegment.x1 = this.segment.x1;
       this.measurement.scale.scaleSegment.y1 = this.segment.y1;

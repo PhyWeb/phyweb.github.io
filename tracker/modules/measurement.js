@@ -44,7 +44,8 @@ export default class MEASUREMENT {
 
       getOrientedScaleX(){
         // "right" signifie que l'axe X est positif vers la droite
-        let scale = this.origin.type.includes("right") ? this.value : 0 - this.value;
+        const val = Number.isFinite(this.value) && this.value > 0 ? this.value : 1;
+        let scale = this.origin.type.includes("right") ? val : 0 - val;
         return scale;
       },
 
@@ -52,8 +53,10 @@ export default class MEASUREMENT {
         // "top" signifie que l'axe Y est positif vers le haut.
         // Comme le canvas augmente vers le bas, on inverse le signe.
         // On divise par le ratio pour compenser la normalisation (0 à 1) sur la hauteur.
-        let baseScale = this.origin.type.includes("top") ? 0 - this.value : this.value;
-        return baseScale / ratio;
+        const safeRatio = Number.isFinite(ratio) && ratio > 0 ? ratio : 1;
+        const val = Number.isFinite(this.value) && this.value > 0 ? this.value : 1;
+        let baseScale = this.origin.type.includes("top") ? 0 - val : val;
+        return baseScale / safeRatio;
       },
 
       init(){
@@ -74,13 +77,34 @@ export default class MEASUREMENT {
       update(ratio){
         this.value = 1;
         if(this.scaleSegment.x1 != null && this.scaleSegment.x2 != null && this.scaleSegment.y1 != null && this.scaleSegment.y2 != null){
-          if(isNumber($("#scale-input").value) == true){
-            // Calcul de la distance réelle en tenant compte du ratio d'aspect
-            // On divise la composante Y par le ratio pour ramener les unités à l'échelle de la largeur
-            const dx = this.scaleSegment.x2 - this.scaleSegment.x1;
-            const dy = (this.scaleSegment.y2 - this.scaleSegment.y1) / ratio;
-            
-            this.value = $("#scale-input").value / Math.sqrt(dx * dx + dy * dy);
+          const safeRatio = Number.isFinite(ratio) && ratio > 0 ? ratio : 1;
+          // Calcul de la distance réelle en tenant compte du ratio d'aspect
+          // On divise la composante Y par le ratio pour ramener les unités à l'échelle de la largeur
+          const dx = this.scaleSegment.x2 - this.scaleSegment.x1;
+          const dy = (this.scaleSegment.y2 - this.scaleSegment.y1) / safeRatio;
+          const dist = Math.hypot(dx, dy);
+
+          // Seuil minimal pour éviter la division par zéro ou une distance quasi-nulle
+          const MIN_DIST = 1e-5;
+          if(dist <= MIN_DIST){
+            // Segment nul ou quasi-nul : invalide, on réinitialise les coordonnées du segment
+            this.scaleSegment.x1 = null;
+            this.scaleSegment.y1 = null;
+            this.scaleSegment.x2 = null;
+            this.scaleSegment.y2 = null;
+            return;
+          }
+
+          const scaleInputElement = $("#scale-input");
+          const rawScaleVal = scaleInputElement ? scaleInputElement.value : "";
+          if(isNumber(rawScaleVal)){
+            const scaleInput = parseFloat(rawScaleVal);
+            if(Number.isFinite(scaleInput) && scaleInput > 0){
+              const calculatedValue = scaleInput / dist;
+              if(Number.isFinite(calculatedValue) && calculatedValue > 0){
+                this.value = calculatedValue;
+              }
+            }
           }
         }
       }

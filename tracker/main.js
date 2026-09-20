@@ -387,7 +387,8 @@ $("#scale-input").addEventListener("keyup", (event)=> {
 });
 
 $("#scale-input").addEventListener("input", ()=> {
-  if(!common.isNumber($("#scale-input").value)){
+  const val = parseFloat($("#scale-input").value);
+  if(!common.isNumber($("#scale-input").value) || !Number.isFinite(val) || val <= 0){
     $("#scale-input").classList.add("has-background-danger");
   } else {
     $("#scale-input").classList.remove("has-background-danger");
