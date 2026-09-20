@@ -34,6 +34,14 @@ export default class MEASUREMENT {
         return this._value;
       },
 
+      get isCalibrated(){
+        return Boolean(this.scaleSegment &&
+          this.scaleSegment.x1 != null &&
+          this.scaleSegment.y1 != null &&
+          this.scaleSegment.x2 != null &&
+          this.scaleSegment.y2 != null);
+      },
+
       set value(v){
         if(Number.isFinite(v) && v > 0){
           this._value = v;
@@ -130,6 +138,51 @@ export default class MEASUREMENT {
     }
   }   
 
+  get isCalibrated(){
+    return Boolean(this.scale && this.scale.isCalibrated);
+  }
+
+  updateUnits(){
+    const unit = this.isCalibrated ? "m" : "";
+    for(let i = 1; i < this.series.length; i++){
+      this.series[i].unit = unit;
+    }
+  }
+
+  buildTableHead(){
+    if(!this.tableHead) return;
+    let ppf = (this.series.length - 1) / 2;
+    this.tableHead.innerHTML = "";
+
+    const unitSuffix = this.isCalibrated ? " (m)" : "";
+
+    let titleRow = document.createElement('tr');
+    let cell = document.createElement('th');
+    cell.innerHTML = "n°";
+    cell.classList.add("has-text-centered");
+    titleRow.appendChild(cell);
+
+    let cell2 = document.createElement('th');
+    cell2.innerHTML = "t (s)";
+    cell2.classList.add("has-text-centered");
+    titleRow.appendChild(cell2);
+
+    for(let i = 1; i < ppf + 1; i++){
+      let cellx = document.createElement('th');
+      cellx.classList.add("has-text-centered");
+      cellx.innerHTML = ppf > 1 ? "x" + i + unitSuffix : "x" + unitSuffix;
+
+      let celly = document.createElement('th');
+      celly.classList.add("has-text-centered");
+      celly.innerHTML = ppf > 1 ? "y" + i + unitSuffix : "y" + unitSuffix;
+
+      titleRow.appendChild(cellx);
+      titleRow.appendChild(celly);
+    }
+
+    this.tableHead.appendChild(titleRow);
+  }
+
   init(_decodedVideo, player){
     // Inits
     this.series = [];
@@ -142,9 +195,10 @@ export default class MEASUREMENT {
     $("#ppf-input").value = 1;
     $("#scale-input").value = 1;
 
+    const unit = this.isCalibrated ? "m" : "";
     this.series.push(new Serie("t","s"));
-    this.series.push(new Serie("x", "m"));
-    this.series.push(new Serie("y", "m"));
+    this.series.push(new Serie("x", unit));
+    this.series.push(new Serie("y", unit));
 
     _decodedVideo.frames.forEach((value,i)=>{
       this.series[0][i] = (_decodedVideo.timestamps && _decodedVideo.timestamps[i] !== undefined)
@@ -163,30 +217,8 @@ export default class MEASUREMENT {
 
   buildTable(player){
     let ppf = (this.series.length - 1) / 2;
-    this.tableHead.innerHTML="";
+    this.buildTableHead();
     this.tableBody.innerHTML="";
-
-    let titleRow = document.createElement('tr');
-    let cell = document.createElement('th');
-    cell.innerHTML = "n°"
-    cell.classList.add("has-text-centered");
-    titleRow.appendChild(cell);
-    let cell2 = document.createElement('th');
-    cell2.innerHTML = "t (s)"
-    cell2.classList.add("has-text-centered");
-    titleRow.appendChild(cell2);
-    for(let i = 1; i < ppf + 1; i++){
-      let cellx = document.createElement('th');
-      cellx.classList.add("has-text-centered");
-      cellx.innerHTML = ppf > 1 ? "x" + i + " (m)" : "x" + " (m)";
-      let celly = document.createElement('th');
-      celly.classList.add("has-text-centered");
-      celly.innerHTML = ppf > 1 ? "y" + i + " (m)" : "y" + " (m)";
-      titleRow.appendChild(cellx);
-      titleRow.appendChild(celly);
-    }
-
-    this.tableHead.appendChild(titleRow);
 
     const fragment = document.createDocumentFragment();
 
@@ -291,9 +323,10 @@ export default class MEASUREMENT {
 
     // create new series if ppf increases
     if(ppf > currentPpf){
+      const unit = this.isCalibrated ? "m" : "";
       for(let i = currentPpf; i < ppf; i++){
-        let xSerie = new Serie("x","m");
-        let ySerie = new Serie("y","m");
+        let xSerie = new Serie("x", unit);
+        let ySerie = new Serie("y", unit);
         xSerie.init(this.series[0].length, "");
         ySerie.init(this.series[0].length, "");
         this.series.push(xSerie);
@@ -340,6 +373,8 @@ export default class MEASUREMENT {
   updateTable(){
     let ppf = (this.series.length - 1) / 2;
     this.scale.update(this.aspectRatio); // Mise à jour avec le ratio
+    this.updateUnits();
+    this.buildTableHead();
 
     for(let i = 0; i < this.tableBody.children.length; i++){
       // update t values
@@ -369,6 +404,7 @@ export default class MEASUREMENT {
 
   prepareDownloadData(){
     this.scale.update(this.aspectRatio);
+    this.updateUnits();
 
     let series = structuredClone(this.series);
 

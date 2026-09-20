@@ -400,5 +400,198 @@ describe('Tracker Scale & Étalonnage (scale.update)', () => {
   });
 });
 
+describe('Tracker Unités & Étalonnage (isCalibrated et synchronisation)', () => {
+  let measurement;
+  let tableHeadMock;
+  let tableBodyMock;
+  let scaleInputElement;
+  const originalQSOverride = global.__querySelectorOverride;
+  const originalCreateElementOverride = global.__createElementOverride;
+
+  const createMockTableHead = () => ({
+    _innerHTML: '',
+    children: [],
+    get innerHTML() { return this._innerHTML; },
+    set innerHTML(val) {
+      this._innerHTML = val;
+      if (val === '') this.children = [];
+    },
+    appendChild(child) {
+      this.children.push(child);
+    }
+  });
+
+  const createMockElement = (tag = 'div') => ({
+    tagName: tag,
+    innerHTML: '',
+    children: [],
+    classList: { add: () => {}, remove: () => {} },
+    appendChild(child) {
+      this.children.push(child);
+    }
+  });
+
+  beforeEach(() => {
+    tableHeadMock = createMockTableHead();
+    tableBodyMock = createMockElement('tbody');
+    scaleInputElement = createMockElement('input');
+    scaleInputElement.value = '1';
+
+    global.__createElementOverride = (tag) => createMockElement(tag);
+
+    global.__querySelectorOverride = (sel) => {
+      if (sel === '#table-head') return tableHeadMock;
+      if (sel === '#table-body') return tableBodyMock;
+      if (sel === '#scale-input') return scaleInputElement;
+      return createMockElement();
+    };
+
+    measurement = new MEASUREMENT();
+  });
+
+  afterEach(() => {
+    global.__querySelectorOverride = originalQSOverride;
+    global.__createElementOverride = originalCreateElementOverride;
+  });
+
+  const setupDefaultVideo = () => {
+    const fakePlayer = { setFrame: () => {} };
+    const mockDecodedVideo = {
+      width: 1000,
+      height: 1000,
+      duration: 1000,
+      frames: [{}, {}],
+      timestamps: [0.0, 0.0333]
+    };
+    measurement.init(mockDecodedVideo, fakePlayer);
+    return { fakePlayer, mockDecodedVideo };
+  };
+
+  it('doit avoir isCalibrated à false et des unités vides pour x et y à l\'initialisation (sans segment)', () => {
+    setupDefaultVideo();
+
+    // 1. isCalibrated doit être false
+    assert.equal(measurement.isCalibrated, false);
+    assert.equal(measurement.scale.isCalibrated, false);
+
+    // 2. Les unités des séries : t = "s", x = "", y = ""
+    assert.equal(measurement.series[0].unit, 's');
+    assert.equal(measurement.series[1].unit, '');
+    assert.equal(measurement.series[2].unit, '');
+
+    // 3. Les en-têtes du tableau ne doivent pas contenir "(m)"
+    assert.ok(tableHeadMock.children.length > 0, 'Le tableHead doit contenir la ligne d\'en-tête');
+    const headers = tableHeadMock.children[0].children.map(th => th.innerHTML);
+    assert.deepEqual(headers, ['n°', 't (s)', 'x', 'y']);
+
+    // 4. prepareDownloadData() doit exporter des unités vides pour x et y
+    const exportedData = measurement.prepareDownloadData();
+    assert.equal(exportedData[0].unit, 's');
+    assert.equal(exportedData[1].unit, '');
+    assert.equal(exportedData[2].unit, '');
+  });
+
+  it('doit passer isCalibrated à true et mettre les unités à "m" après étalonnage valide', () => {
+    setupDefaultVideo();
+
+    // Configuration d'un segment d'étalonnage valide
+    measurement.scale.scaleSegment = { x1: 0.1, y1: 0.2, x2: 0.6, y2: 0.2 };
+    scaleInputElement.value = '1.0';
+
+    // Déclenchement de la mise à jour du tableau
+    measurement.updateTable();
+
+    // 1. isCalibrated doit être true
+    assert.equal(measurement.isCalibrated, true);
+    assert.equal(measurement.scale.isCalibrated, true);
+
+    // 2. Les séries spatiales passent à l'unité "m"
+    assert.equal(measurement.series[1].unit, 'm');
+    assert.equal(measurement.series[2].unit, 'm');
+
+    // 3. Les en-têtes du tableau doivent maintenant afficher "(m)"
+    const headers = tableHeadMock.children[0].children.map(th => th.innerHTML);
+    assert.deepEqual(headers, ['n°', 't (s)', 'x (m)', 'y (m)']);
+
+    // 4. prepareDownloadData() doit exporter l'unité "m"
+    const exportedData = measurement.prepareDownloadData();
+    assert.equal(exportedData[1].unit, 'm');
+    assert.equal(exportedData[2].unit, 'm');
+  });
+
+  it('doit repasser les unités à "" et retirer "(m)" du tableau si le segment est invalidé ou réinitialisé', () => {
+    setupDefaultVideo();
+
+    // Étalonnage valide
+    measurement.scale.scaleSegment = { x1: 0.1, y1: 0.2, x2: 0.6, y2: 0.2 };
+    scaleInputElement.value = '1.0';
+    measurement.updateTable();
+    assert.equal(measurement.isCalibrated, true);
+    assert.equal(measurement.series[1].unit, 'm');
+
+    // Invalidation du segment (dx=0, dy=0)
+    measurement.scale.scaleSegment = { x1: 0.5, y1: 0.5, x2: 0.5, y2: 0.5 };
+    measurement.updateTable();
+
+    // 1. isCalibrated repasse à false
+    assert.equal(measurement.isCalibrated, false);
+    assert.equal(measurement.scale.isCalibrated, false);
+
+    // 2. Les séries repassent à ""
+    assert.equal(measurement.series[1].unit, '');
+    assert.equal(measurement.series[2].unit, '');
+
+    // 3. Les en-têtes du tableau perdent "(m)"
+    const headers = tableHeadMock.children[0].children.map(th => th.innerHTML);
+    assert.deepEqual(headers, ['n°', 't (s)', 'x', 'y']);
+
+    // 4. prepareDownloadData() exporte des unités vides
+    const exportedData = measurement.prepareDownloadData();
+    assert.equal(exportedData[1].unit, '');
+    assert.equal(exportedData[2].unit, '');
+  });
+
+  it('doit gérer correctement les unités lors du changement de points par image (setPointPerFrame)', () => {
+    const { fakePlayer } = setupDefaultVideo();
+
+    // 1. Augmentation des ppf AVANT étalonnage
+    measurement.setPointPerFrame(2, fakePlayer);
+
+    assert.equal(measurement.series.length, 5); // t, x1, y1, x2, y2
+    assert.equal(measurement.series[1].unit, '');
+    assert.equal(measurement.series[2].unit, '');
+    assert.equal(measurement.series[3].unit, '');
+    assert.equal(measurement.series[4].unit, '');
+
+    let headers = tableHeadMock.children[0].children.map(th => th.innerHTML);
+    assert.deepEqual(headers, ['n°', 't (s)', 'x1', 'y1', 'x2', 'y2']);
+
+    // 2. Étalonnage avec les ppf = 2
+    measurement.scale.scaleSegment = { x1: 0, y1: 0, x2: 0.5, y2: 0 };
+    scaleInputElement.value = '2.0';
+    measurement.updateTable();
+
+    assert.equal(measurement.isCalibrated, true);
+    assert.equal(measurement.series[1].unit, 'm');
+    assert.equal(measurement.series[2].unit, 'm');
+    assert.equal(measurement.series[3].unit, 'm');
+    assert.equal(measurement.series[4].unit, 'm');
+
+    headers = tableHeadMock.children[0].children.map(th => th.innerHTML);
+    assert.deepEqual(headers, ['n°', 't (s)', 'x1 (m)', 'y1 (m)', 'x2 (m)', 'y2 (m)']);
+
+    // 3. Augmentation des ppf APRÈS étalonnage (ppf -> 3)
+    measurement.setPointPerFrame(3, fakePlayer);
+
+    assert.equal(measurement.series.length, 7); // t, x1, y1, x2, y2, x3, y3
+    assert.equal(measurement.series[5].unit, 'm');
+    assert.equal(measurement.series[6].unit, 'm');
+
+    headers = tableHeadMock.children[0].children.map(th => th.innerHTML);
+    assert.deepEqual(headers, ['n°', 't (s)', 'x1 (m)', 'y1 (m)', 'x2 (m)', 'y2 (m)', 'x3 (m)', 'y3 (m)']);
+  });
+});
+
+
 
 

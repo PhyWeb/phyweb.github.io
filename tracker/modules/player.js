@@ -428,7 +428,7 @@ export default class PLAYER {
     const x = (((this.distPoint.x + 0.5) - this.measurement.scale.origin.x) * scaleX).toFixed(digits);
     const y = (((this.distPoint.y + 0.5) - this.measurement.scale.origin.y) * scaleY).toFixed(digits);
 
-    if(this.measurement.scale.scaleSegment.x2 != null || this.segment.x2 != null){
+    if(this.measurement.scale.isCalibrated || this.segment.x2 != null){
       // a scale has been set
       $("#x-coord-label").innerHTML = "X : " + x + " m";
       $("#y-coord-label").innerHTML = "Y : " + y + " m";
