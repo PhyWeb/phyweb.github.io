@@ -1415,46 +1415,63 @@ export default class UIManager {
    */
   initEditHeaderModal() {
     const modal = $('#edit-header-modal');
+    if (!modal) return;
 
     const symbolInput = document.getElementById('edit-header-symbol-input');
     const unitInput = document.getElementById('edit-header-unit-input');
     const saveButton = document.getElementById('edit-header-save-button');
+    const cancelButton = modal.querySelector('.modal-close-button');
+    const closeButton = modal.querySelector('.delete');
+    const background = modal.querySelector('.modal-background');
     
     let currentCurveOriginalTitle = null;
 
     // Méthode pour ouvrir la modale avec les bonnes données
     this.openEditHeaderModal = (curve) => {
       currentCurveOriginalTitle = curve.title;
-      symbolInput.value = curve.title;
-      unitInput.value = curve.unit || '';
-      modal.classList.add('is-active');
+      if (symbolInput) symbolInput.value = curve.title;
+      if (unitInput) unitInput.value = curve.unit || '';
+      if (this.common && this.common.modalManager) {
+        this.common.modalManager.openModal(modal);
+      } else {
+        modal.classList.add('is-active');
+      }
+      if (symbolInput && typeof symbolInput.focus === 'function') {
+        symbolInput.focus();
+      }
     };
 
     const closeModal = () => {
-      modal.classList.remove('is-active');
+      if (this.common && this.common.modalManager) {
+        this.common.modalManager.closeModal(modal);
+      } else {
+        modal.classList.remove('is-active');
+      }
       currentCurveOriginalTitle = null;
     };
 
-    saveButton.addEventListener('click', () => {
-      const newSymbol = symbolInput.value.trim();
-      const newUnit = unitInput.value.trim();
+    if (saveButton) {
+      saveButton.addEventListener('click', () => {
+        const newSymbol = symbolInput ? symbolInput.value.trim() : '';
+        const newUnit = unitInput ? unitInput.value.trim() : '';
 
-      if (!newSymbol) {
-        showToast("Veuillez entrer un symbole.", "is-danger");
-        return;
-      }
+        if (!newSymbol) {
+          showToast("Veuillez entrer un symbole.", "is-danger");
+          return;
+        }
 
-      if (currentCurveOriginalTitle) {
-        this.app.renameCurve(currentCurveOriginalTitle, newSymbol, newUnit);
-      }
-      
-      closeModal();
-    });
+        if (currentCurveOriginalTitle) {
+          this.app.renameCurve(currentCurveOriginalTitle, newSymbol, newUnit);
+        }
+        
+        closeModal();
+      });
+    }
 
     // Ajout des écouteurs pour fermer la modale
-    /*[cancelButton, closeButton, background].forEach(el => {
-        if (el) el.addEventListener('click', closeModal);
-    });*/
+    [cancelButton, closeButton, background].forEach(el => {
+      if (el) el.addEventListener('click', closeModal);
+    });
   }
 
   /**
