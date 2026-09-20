@@ -1,7 +1,7 @@
 import '../helpers/setup.mjs';
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import MEASUREMENT from '../../tracker/modules/measurement.js';
+import MEASUREMENT, { round } from '../../tracker/modules/measurement.js';
 import { exportToPW, exportToCSV, exportToRW3 } from '../../common/common.js';
 
 describe('Tracker Measurement Module', () => {
@@ -951,5 +951,146 @@ describe('Tracker - Export de données et objets occultés (ppf >= 2)', () => {
     assert.ok(rw3.includes('0.15'));
   });
 });
+
+describe('Tracker - Fonction d\'arrondi sécurisée et absence de pollution du prototype global', () => {
+  it('ne doit pas polluer Number.prototype avec une méthode round', () => {
+    assert.equal(typeof (123).round, 'undefined', 'Number.prototype ne doit pas posséder de méthode round');
+    assert.equal(Object.prototype.hasOwnProperty.call(Number.prototype, 'round'), false);
+    assert.equal('round' in Number.prototype, false);
+  });
+
+  it('doit arrondir correctement des nombres avec la précision demandée et gérer Number.EPSILON', () => {
+    assert.equal(round(1.2345, 2), 1.23);
+    assert.equal(round(1.2355, 2), 1.24);
+    assert.equal(round(0.1 + 0.2, 1), 0.3);
+    assert.equal(round(1.005, 2), 1.01);
+    assert.equal(round(-1.005, 2), -1.01);
+    assert.equal(round(-2.555, 2), -2.56);
+    assert.equal(round(0, 3), 0);
+    assert.equal(round(42), 42);
+    assert.equal(round(42.8), 43);
+  });
+
+  it('ne doit pas lever de TypeError et renvoyer la valeur de repli pour chaîne vide, null ou undefined', () => {
+    assert.equal(round(''), '');
+    assert.equal(round('', 3), '');
+    assert.equal(round('', 3, null), null);
+    assert.equal(round('', 3, 'vide'), 'vide');
+    assert.equal(round(null, 2), '');
+    assert.equal(round(undefined, 2), '');
+    assert.equal(round('   ', 2), '');
+  });
+
+  it('doit protéger contre NaN, Infinity et -Infinity sans les propager', () => {
+    assert.equal(round(NaN, 3), '');
+    assert.equal(round(Infinity, 3), '');
+    assert.equal(round(-Infinity, 3), '');
+    assert.equal(round(NaN, 3, 'fallback'), 'fallback');
+    assert.equal(round(Infinity, 3, 'fallback'), 'fallback');
+    assert.equal(round('abc', 2), '');
+  });
+
+  it('doit supporter les chaînes numériques avec point ou virgule décimale', () => {
+    assert.equal(round('1.2345', 2), 1.23);
+    assert.equal(round('1,2345', 2), 1.23);
+    assert.equal(round('  3,14159  ', 2), 3.14);
+    assert.equal(round('-4,555', 2), -4.56);
+  });
+
+  it('doit gérer les paramètres de décimales n invalides ou non entiers avec sécurité', () => {
+    assert.equal(round(3.14159, -2), 3);
+    assert.equal(round(3.14159, null), 3);
+    assert.equal(round(3.14159, 'abc'), 3);
+    assert.equal(round(3.14159, 2.7), 3);
+  });
+
+  describe('Intégration dans MEASUREMENT (updateRow, updateTable, init)', () => {
+    let measurement;
+    const elementsById = new Map();
+    const originalQSOverride = global.__querySelectorOverride;
+
+    const createMockElement = (id = '') => ({
+      id,
+      innerHTML: '',
+      value: '1',
+      children: [],
+      classList: { add: () => {}, remove: () => {}, toggle: () => {}, contains: () => false },
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      appendChild(child) { this.children.push(child); }
+    });
+
+    beforeEach(() => {
+      elementsById.clear();
+      global.__querySelectorOverride = (sel) => {
+        if (sel.startsWith('#')) {
+          const id = sel.slice(1);
+          if (!elementsById.has(id)) {
+            elementsById.set(id, createMockElement(id));
+          }
+          return elementsById.get(id);
+        }
+        return createMockElement();
+      };
+
+      measurement = new MEASUREMENT();
+      const fakePlayer = { currentFrame: 0, setFrame: () => {} };
+      const mockDecodedVideo = {
+        width: 1000,
+        height: 1000,
+        duration: 1000,
+        frames: [{}, {}, {}],
+        timestamps: [0.0, 0.03333333, 0.06666667]
+      };
+      measurement.init(mockDecodedVideo, fakePlayer);
+    });
+
+    afterEach(() => {
+      global.__querySelectorOverride = originalQSOverride;
+    });
+
+    it('doit formater correctement t, x et y sans crash TypeError lors de updateRow', () => {
+      // Pointage à l'image 1 : x = 0.5, y = 0.4
+      measurement.changeValue(1, 0, 0.5, 0.4);
+      measurement.updateRow(1);
+
+      const tEl = elementsById.get('t1');
+      const xEl = elementsById.get('x11');
+      const yEl = elementsById.get('y11');
+
+      assert.equal(tEl.innerHTML, 0.033);
+      assert.equal(typeof xEl.innerHTML, 'number');
+      assert.equal(typeof yEl.innerHTML, 'number');
+    });
+
+    it('doit laisser les cellules vides pour les points non saisis sans lever TypeError', () => {
+      // Image 0 non pointée
+      measurement.updateRow(0);
+
+      const xEl = elementsById.get('x10');
+      const yEl = elementsById.get('y10');
+
+      assert.equal(xEl.innerHTML, '');
+      assert.equal(yEl.innerHTML, '');
+    });
+
+    it('ne doit pas afficher "NaN" ni "Infinity" dans le tableau en cas de valeur corrompue', () => {
+      // Valeur NaN simulée dans la série temporelle
+      measurement.series[0][1] = NaN;
+      measurement.updateRow(1);
+
+      const tEl = elementsById.get('t1');
+      assert.equal(tEl.innerHTML, '', 'La cellule de temps doit être vide et non "NaN"');
+
+      // Point avec coordonnée produisant NaN
+      measurement.series[1][1] = NaN;
+      measurement.updateRow(1);
+
+      const xEl = elementsById.get('x11');
+      assert.equal(xEl.innerHTML, '', 'La cellule x doit être vide et non "NaN"');
+    });
+  });
+});
+
 
 

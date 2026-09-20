@@ -2,10 +2,38 @@ import {Serie, downloadFile, exportToPW, exportToCSV, exportToRW3, showToast} fr
 
 const $ = document.querySelector.bind(document);
 
-Number.prototype.round = function(n) {
-  const d = Math.pow(10, n);
-  return Math.round((this + Number.EPSILON) * d) / d;
+/**
+ * Arrondit de manière sécurisée une valeur numérique à n décimales.
+ * Ne pollue pas Number.prototype et protège contre NaN, Infinity, null, undefined et "".
+ * @param {number|string} val - Valeur à arrondir.
+ * @param {number} [n=0] - Nombre de décimales.
+ * @param {string|number|null} [fallback=""] - Valeur renvoyée si val est invalide ou vide.
+ * @returns {number|string} Valeur arrondie ou repli.
+ */
+export function round(val, n = 0, fallback = "") {
+  if (val === "" || val === null || val === undefined) {
+    return fallback;
+  }
+  let num;
+  if (typeof val === "number") {
+    num = val;
+  } else if (typeof val === "string") {
+    const s = val.trim().replace(",", ".");
+    if (s === "") return fallback;
+    num = Number(s);
+  } else {
+    num = Number(val);
+  }
+  if (!Number.isFinite(num)) {
+    return fallback;
+  }
+  if (num === 0) return 0;
+  const decimals = Number.isInteger(n) && n >= 0 ? n : 0;
+  const d = Math.pow(10, decimals);
+  const sign = num < 0 ? -1 : 1;
+  return (sign * Math.round((Math.abs(num) + Number.EPSILON) * d)) / d;
 }
+
 
 function isNumber(str) {
   const s = typeof str === "string" ? str.trim().replace(",", ".") : str;
@@ -239,7 +267,7 @@ export default class MEASUREMENT {
       let tcell = document.createElement('td');
       let tlabel = document.createElement('label');
       tlabel.id = "t" + i;
-      tlabel.innerHTML = this.series[0][i].round(3);
+      tlabel.innerHTML = round(this.series[0][i], 3);
       tcell.appendChild(tlabel);
       row.appendChild(tcell)
 
@@ -303,10 +331,10 @@ export default class MEASUREMENT {
         $("#" + "y" + j + i).innerHTML = "";
       } 
     } else{
-      $("#" + "t" + i).innerHTML = (this.series[0][i] - this.series[0][this.originFrame]).round(3);
+      $("#" + "t" + i).innerHTML = round(this.series[0][i] - this.series[0][this.originFrame], 3);
       for(let j = 1; j < ppf + 1; j++){
-        $("#" + "x" + j + i).innerHTML = this.series[((j - 1) * 2) + 1][i] === "" ? "" : this.series[((j - 1) * 2) + 1].get(i, this.scale.origin.x, scaleX).round(this.maxDigits);
-        $("#" + "y" + j + i).innerHTML = this.series[((j - 1) * 2) + 2][i] === "" ? "" : this.series[((j - 1) * 2) + 2].get(i, this.scale.origin.y, scaleY).round(this.maxDigits);
+        $("#" + "x" + j + i).innerHTML = round(this.series[((j - 1) * 2) + 1][i] === "" ? "" : this.series[((j - 1) * 2) + 1].get(i, this.scale.origin.x, scaleX), this.maxDigits);
+        $("#" + "y" + j + i).innerHTML = round(this.series[((j - 1) * 2) + 2][i] === "" ? "" : this.series[((j - 1) * 2) + 2].get(i, this.scale.origin.y, scaleY), this.maxDigits);
       }
     }
   }
@@ -410,7 +438,7 @@ export default class MEASUREMENT {
       if(i < this.originFrame){
         $("#" + "t" + i).innerHTML = "";
       } else{
-        $("#" + "t" + i).innerHTML = (this.series[0][i] - this.series[0][this.originFrame]).round(3);
+        $("#" + "t" + i).innerHTML = round(this.series[0][i] - this.series[0][this.originFrame], 3);
       }
 
       // update x and y values
@@ -424,8 +452,8 @@ export default class MEASUREMENT {
         } 
       } else{
         for(let j = 1; j < ppf + 1; j++){
-          $("#" + "x" + j + i).innerHTML = this.series[((j - 1) * 2) + 1][i] === "" ? "" : this.series[((j - 1) * 2) + 1].get(i, this.scale.origin.x, scaleX).round(this.maxDigits);
-          $("#" + "y" + j + i).innerHTML = this.series[((j - 1) * 2) + 2][i] === "" ? "" : this.series[((j - 1) * 2) + 2].get(i, this.scale.origin.y, scaleY).round(this.maxDigits);
+          $("#" + "x" + j + i).innerHTML = round(this.series[((j - 1) * 2) + 1][i] === "" ? "" : this.series[((j - 1) * 2) + 1].get(i, this.scale.origin.x, scaleX), this.maxDigits);
+          $("#" + "y" + j + i).innerHTML = round(this.series[((j - 1) * 2) + 2][i] === "" ? "" : this.series[((j - 1) * 2) + 2].get(i, this.scale.origin.y, scaleY), this.maxDigits);
         }
       }
     }
