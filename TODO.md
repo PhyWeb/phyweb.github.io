@@ -39,6 +39,8 @@
 
     - ajout d'une indication pour savoir a quel point on se situe au sein d'une frame quand ppf est > à 1
 
+    - on drop des frames pendaant la lecture
+
 # Grapher
     - possibilité d'avoir 2 axes y
 

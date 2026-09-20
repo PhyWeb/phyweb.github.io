@@ -47,7 +47,10 @@ export default class PLAYER {
     this.videoCanvas.addEventListener("mousemove", this.onMouseMove);
     this.videoCanvas.addEventListener("click", this.onClick);
 
-    this.animationFrameRequest;
+    this.playbackStartTime = 0;
+    this.playbackStartFrameTime = 0;
+    this.dateOrigin = 0;
+    this.animationFrameRequest = null;
   }
 
   load(_file, _forceFilesize = false){
@@ -358,13 +361,46 @@ export default class PLAYER {
     this.drawFrame(this.currentFrame);
   }
 
+  getFrameTime(index) {
+    if (!this.decodedVideo) return 0;
+    if (this.decodedVideo.timestamps && this.decodedVideo.timestamps.length > index && typeof this.decodedVideo.timestamps[index] === "number") {
+      return this.decodedVideo.timestamps[index] * 1000;
+    }
+    const frameCount = (this.decodedVideo.frames && this.decodedVideo.frames.length) ? this.decodedVideo.frames.length : 0;
+    if (frameCount > 0 && typeof this.decodedVideo.duration === "number" && this.decodedVideo.duration > 0) {
+      return index * (this.decodedVideo.duration / frameCount);
+    }
+    return index * (1000 / 30);
+  }
+
+  getFrameInterval(index) {
+    return Math.max(0, this.getFrameTime(index + 1) - this.getFrameTime(index));
+  }
+
   play(){
+    if (!this.decodedVideo || !this.decodedVideo.frames || this.decodedVideo.frames.length === 0) {
+      return;
+    }
+
+    if (this.currentFrame >= this.decodedVideo.frames.length - 1) {
+      const startFrame = (this.measurement && typeof this.measurement.originFrame === "number")
+        ? this.measurement.originFrame
+        : 0;
+      this.setFrame(startFrame, false);
+    }
+
     $("#play-button").classList.add("is-hidden");
     $("#pause-button").classList.remove("is-hidden");
 
     this.pauseFlag = false;
-    this.dateOrigin = performance.now();
-    requestAnimationFrame(this.playing);
+    this.playbackStartTime = performance.now();
+    this.playbackStartFrameTime = this.getFrameTime(this.currentFrame);
+    this.dateOrigin = this.playbackStartTime;
+
+    if (this.animationFrameRequest) {
+      cancelAnimationFrame(this.animationFrameRequest);
+    }
+    this.animationFrameRequest = requestAnimationFrame(this.playing);
   }
 
   pause(){
@@ -372,26 +408,40 @@ export default class PLAYER {
     $("#play-button").classList.remove("is-hidden");
 
     this.pauseFlag = true;
+    if (this.animationFrameRequest) {
+      cancelAnimationFrame(this.animationFrameRequest);
+      this.animationFrameRequest = null;
+    }
   }
 
   playing = () => {
-    if(this.currentFrame < this.decodedVideo.frames.length - 1 && this.pauseFlag === false){
-      let elapsedTime = performance.now() - this.dateOrigin;
-      let frameInterval = (this.decodedVideo.timestamps && this.decodedVideo.timestamps.length > this.currentFrame + 1)
-        ? (this.decodedVideo.timestamps[this.currentFrame + 1] - this.decodedVideo.timestamps[this.currentFrame]) * 1000
-        : (this.decodedVideo.duration / this.decodedVideo.frames.length);
+    if (!this.decodedVideo || !this.decodedVideo.frames || this.decodedVideo.frames.length === 0) {
+      this.pause();
+      return;
+    }
 
-      if(elapsedTime > frameInterval){
-        this.dateOrigin = performance.now();
+    if (this.currentFrame < this.decodedVideo.frames.length - 1 && this.pauseFlag === false) {
+      const now = performance.now();
+      const elapsed = now - this.playbackStartTime;
+      const targetVideoTime = this.playbackStartFrameTime + elapsed;
 
-        this.setFrame(this.currentFrame + 1, false);
-        // Update the image label
-        $("#frame-label").innerHTML = "Image n° " + (this.currentFrame + 1) +"/" + this.decodedVideo.frames.length;
-
-        // Update the table
-        this.measurement.selectRow(this.currentFrame);
+      let targetFrame = this.currentFrame;
+      while (
+        targetFrame < this.decodedVideo.frames.length - 1 &&
+        this.getFrameTime(targetFrame + 1) <= targetVideoTime
+      ) {
+        targetFrame++;
       }
-      requestAnimationFrame(this.playing); 
+
+      if (targetFrame !== this.currentFrame) {
+        this.setFrame(targetFrame, false);
+      }
+
+      if (this.currentFrame >= this.decodedVideo.frames.length - 1) {
+        this.pause();
+      } else {
+        this.animationFrameRequest = requestAnimationFrame(this.playing);
+      }
     } else {
       this.pause();
     }
