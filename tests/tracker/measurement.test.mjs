@@ -592,6 +592,51 @@ describe('Tracker Unités & Étalonnage (isCalibrated et synchronisation)', () =
   });
 });
 
+describe('Tracker - Synchronisation de player.currentPoint dans clearRow et clearTable', () => {
+  it('doit réinitialiser player.currentPoint à 0 dans clearRow() pour la ligne active', () => {
+    const measurement = new MEASUREMENT();
+    const fakePlayer = {
+      currentFrame: 0,
+      currentPoint: 1,
+      setFrame: () => {}
+    };
+    const mockDecodedVideo = {
+      width: 100,
+      height: 100,
+      duration: 1000,
+      frames: [{}, {}],
+      timestamps: [0.0, 0.0333]
+    };
+    measurement.init(mockDecodedVideo, fakePlayer);
 
+    measurement.series[1][0] = 0.5;
+    measurement.series[2][0] = 0.5;
 
+    measurement.clearRow(0);
 
+    assert.equal(measurement.series[1][0], '');
+    assert.equal(measurement.series[2][0], '');
+    assert.equal(fakePlayer.currentPoint, 0, 'fakePlayer.currentPoint doit être remis à 0');
+  });
+
+  it('doit réinitialiser player.currentPoint à 0 dans clearTable()', () => {
+    const measurement = new MEASUREMENT();
+    const fakePlayer = {
+      currentFrame: 0,
+      currentPoint: 2,
+      setFrame: () => {}
+    };
+    const mockDecodedVideo = {
+      width: 100,
+      height: 100,
+      duration: 1000,
+      frames: [{}, {}],
+      timestamps: [0.0, 0.0333]
+    };
+    measurement.init(mockDecodedVideo, fakePlayer);
+
+    measurement.clearTable();
+
+    assert.equal(fakePlayer.currentPoint, 0, 'fakePlayer.currentPoint doit être remis à 0');
+  });
+});

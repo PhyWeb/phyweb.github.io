@@ -423,6 +423,7 @@ $("#ppf-input").addEventListener("change", (e)=> {
   if(e.target.value < 1){e.target.value = 1;}
   if(e.target.value > 9){e.target.value = 9;}
   measurement.setPointPerFrame(parseInt(e.target.value), player);
+  player.currentPoint = 0;
   player.drawFrame(player.currentFrame);
 });
 
@@ -436,6 +437,7 @@ $("#clear-table-button").addEventListener("click", ()=> {
       label: "Vider le tableau",
       cb: ()=>{
         measurement.clearTable();
+        player.currentPoint = 0;
         player.drawFrame(player.currentFrame);
       }},
     cancel: "Annuler"
@@ -444,6 +446,7 @@ $("#clear-table-button").addEventListener("click", ()=> {
 
 $("#clear-row").addEventListener("click", ()=> {
   measurement.clearRow(player.currentFrame);
+  player.currentPoint = 0;
   player.drawFrame(player.currentFrame);
 });
 

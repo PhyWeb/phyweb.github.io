@@ -343,6 +343,18 @@ export default class PLAYER {
     this.drawFrame(this.currentFrame);
   }
 
+  resetCurrentPoint(){
+    this.currentPoint = 0;
+  }
+
+  clearRow(index = this.currentFrame){
+    this.measurement.clearRow(index);
+    if(index === this.currentFrame){
+      this.currentPoint = 0;
+    }
+    this.drawFrame(this.currentFrame);
+  }
+
   play(){
     $("#play-button").classList.add("is-hidden");
     $("#pause-button").classList.remove("is-hidden");
@@ -444,6 +456,11 @@ export default class PLAYER {
   }
 
   onClick = (ev) => {
+    const maxPoints = (this.measurement.series.length - 1) / 2;
+    if (this.currentPoint >= maxPoints) {
+      this.currentPoint = 0;
+    }
+
     let rect = this.videoCanvas.getBoundingClientRect();
 		let point = {
       x:

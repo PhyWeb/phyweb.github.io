@@ -21,6 +21,7 @@ export default class MEASUREMENT {
     this.tableHead = $("#table-head");
     this.tableBody = $("#table-body");
     this.series = [];
+    this.player = null;
 
     this.originFrame = 0;
     this.aspectRatio = 1; // Stockage du ratio de la vidéo
@@ -185,6 +186,7 @@ export default class MEASUREMENT {
 
   init(_decodedVideo, player){
     // Inits
+    this.player = player;
     this.series = [];
     
     // Calcul et stockage du ratio d'aspect (Largeur / Hauteur)
@@ -279,6 +281,9 @@ export default class MEASUREMENT {
     for(let i = 1; i < this.series.length; i++){
       this.series[i][index] = "";
     }
+    if(this.player && (this.player.currentFrame === undefined || this.player.currentFrame === index)){
+      this.player.currentPoint = 0;
+    }
     this.updateTable();
   }
 
@@ -310,15 +315,25 @@ export default class MEASUREMENT {
         this.series[j][i] = "";
       }
     }
+    if(this.player){
+      this.player.currentPoint = 0;
+    }
     
     // 2. On met à jour le tableau HTML une seule fois
     this.updateTable();
   }
 
   setPointPerFrame(ppf, player){
+    if(player){
+      this.player = player;
+    }
     let currentPpf = (this.series.length - 1) / 2;
     if(ppf === currentPpf){
       return;
+    }
+
+    if(this.player){
+      this.player.currentPoint = 0;
     }
 
     // create new series if ppf increases
@@ -375,6 +390,8 @@ export default class MEASUREMENT {
     this.scale.update(this.aspectRatio); // Mise à jour avec le ratio
     this.updateUnits();
     this.buildTableHead();
+
+    if(!this.tableBody || !this.tableBody.children) return;
 
     for(let i = 0; i < this.tableBody.children.length; i++){
       // update t values
