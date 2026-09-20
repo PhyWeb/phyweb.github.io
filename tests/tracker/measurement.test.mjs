@@ -906,6 +906,50 @@ describe('Tracker - Export de données et objets occultés (ppf >= 2)', () => {
     const rw3 = exportToRW3(filteredSeries, false, 'Pointage PhyWeb Tracker');
     assert.ok(rw3.includes('0.15'), 'Le RW3 contient la mesure de l\'objet 1');
   });
+
+  it('doit extraire correctement les données via getExportSeries() sans perte de points occultés', () => {
+    const exportSeries = measurement.getExportSeries();
+
+    // Doit contenir 5 séries (t, x1, y1, x2, y2)
+    assert.equal(exportSeries.length, 5);
+    // Doit avoir une longueur de 3 images (frames 0, 1, 2) ; la frame 3 non pointée est exclue
+    assert.equal(exportSeries[0].length, 3);
+    assert.equal(exportSeries[1].length, 3);
+    assert.equal(exportSeries[2].length, 3);
+    assert.equal(exportSeries[3].length, 3);
+    assert.equal(exportSeries[4].length, 3);
+
+    // Objet 1 : présent sur les 3 images
+    assert.deepEqual(Array.from(exportSeries[1]), [0.1, 0.15, 0.2]);
+    assert.deepEqual(Array.from(exportSeries[2]), [0.8, 0.75, 0.7]);
+
+    // Objet 2 : occulté à l'image 1 (valeur vide ''), mais présent aux images 0 et 2
+    assert.equal(exportSeries[3][0], 0.5);
+    assert.equal(exportSeries[3][1], '');
+    assert.equal(exportSeries[3][2], 0.55);
+
+    assert.equal(exportSeries[4][0], 0.4);
+    assert.equal(exportSeries[4][1], '');
+    assert.equal(exportSeries[4][2], 0.35);
+
+    // Export PW sans perte
+    const pwJson = JSON.parse(exportToPW(exportSeries, { rowMustBeComplete: false }, 'Tracker'));
+    assert.equal(pwJson.data.curves[0].values.length, 3);
+    assert.equal(pwJson.data.curves[1].values.length, 3);
+    assert.equal(pwJson.data.curves[3].values.length, 3);
+    assert.equal(pwJson.data.curves[1].values[1], 0.15);
+    assert.equal(pwJson.data.curves[3].values[1], '');
+
+    // Export CSV sans perte
+    const csv = exportToCSV(exportSeries, false);
+    const csvLines = csv.trim().split(/\r?\n/).slice(1);
+    assert.equal(csvLines.length, 3);
+    assert.ok(csvLines[1].includes('0,15'));
+
+    // Export RW3 sans perte
+    const rw3 = exportToRW3(exportSeries, false, 'Pointage PhyWeb Tracker');
+    assert.ok(rw3.includes('0.15'));
+  });
 });
 
 

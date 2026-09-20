@@ -169,7 +169,7 @@ export default class Grapher {
     let step = length > MAX_POINTS ? Math.ceil(length / MAX_POINTS) : 1;
 
     for(let i = 0; i < length; i += step){
-      if(xCurve[i] !== "" && yCurve[i] !== "" && xCurve[i] !== undefined && yCurve[i] !== undefined){
+      if(xCurve[i] !== "" && yCurve[i] !== "" && xCurve[i] !== undefined && yCurve[i] !== undefined && xCurve[i] !== null && yCurve[i] !== null){
         data.push([xCurve[i], yCurve[i]]);
       }
     }

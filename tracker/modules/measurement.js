@@ -466,24 +466,61 @@ export default class MEASUREMENT {
     return series;
   }
 
+  getExportSeries(){
+    const series = this.prepareDownloadData();
+    if(!series || series.length === 0 || !series[0]){
+      return series;
+    }
+
+    // On conserve les images à partir de originFrame où au moins un objet a été pointé
+    const indicesToKeep = [];
+    const numFrames = series[0].length;
+
+    for(let i = 0; i < numFrames; i++){
+      if(i < this.originFrame) continue;
+
+      let hasAtLeastOnePoint = false;
+      for(let j = 1; j < series.length; j++){
+        const val = series[j][i];
+        if(val !== "" && val !== undefined && val !== null){
+          hasAtLeastOnePoint = true;
+          break;
+        }
+      }
+
+      if(hasAtLeastOnePoint){
+        indicesToKeep.push(i);
+      }
+    }
+
+    const filteredSeries = series.map(s => {
+      const newS = structuredClone(s);
+      newS.length = 0;
+      indicesToKeep.forEach(idx => newS.push(s[idx]));
+      return newS;
+    });
+
+    return filteredSeries;
+  }
+
   downloadData(_type, _name){
-    let series = this.prepareDownloadData();
+    let series = this.getExportSeries();
 
     let file;
     if(_type === "pw"){
-      file = exportToPW(series, {rowMustBeComplete : true}, "Tracker", "// Pointage PhyWeb Tracker");
+      file = exportToPW(series, {rowMustBeComplete : false}, "Tracker", "// Pointage PhyWeb Tracker");
     }
     if(_type === "csv"){
-      file = exportToCSV(series, true);
+      file = exportToCSV(series, false);
     }
     if(_type === "rw3"){
-      file = exportToRW3(series, true, "Pointage PhyWeb Tracker");
+      file = exportToRW3(series, false, "Pointage PhyWeb Tracker");
     }
     downloadFile(file, _type, _name)
   }
 
   exportToClipboard() {
-    const csv = exportToCSV(this.prepareDownloadData(), true);
+    const csv = exportToCSV(this.getExportSeries(), false);
     const tsvContent = csv.replace(/;/g, '\t');
 
     navigator.clipboard.writeText(tsvContent).then(() => {

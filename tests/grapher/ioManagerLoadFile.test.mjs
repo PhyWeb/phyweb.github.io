@@ -135,5 +135,59 @@ describe('IOManager - loadFile() et détection du format de fichier', () => {
       );
     });
   });
+
+  describe('Restauration des fichiers PW avec points manquants (_processPWState)', () => {
+    it('doit préserver les valeurs null pour les points occultés et maintenir l\'alignement des courbes', async () => {
+      const makeProxy = () => new Proxy({}, { get: () => () => {} });
+      const mockApp = {
+        resetSession: () => {},
+        data: {
+          curves: [],
+          parameters: {},
+          models: [],
+          annotations: [],
+          getCurveByTitle: (title) => mockApp.data.curves.find(c => c.title === title)
+        },
+        spreadsheet: makeProxy(),
+        uiManager: makeProxy(),
+        editor: makeProxy(),
+        grapher: makeProxy()
+      };
+
+      const io = new IOManager(mockApp);
+      const state = {
+        app: 'Tracker',
+        version: '3.0',
+        data: {
+          curves: [
+            { title: 't', unit: 's', type: 'x', values: [0, 0.0333, 0.0667] },
+            { title: 'x1', unit: 'm', type: 'y', values: [0.1, 0.15, 0.2] },
+            { title: 'x2', unit: 'm', type: 'y', values: [0.5, '', 0.55] }
+          ],
+          models: [],
+          parameters: {},
+          annotations: []
+        },
+        calculations: '',
+        grapher: { xCurve: 't', yCurves: ['x1', 'x2'] }
+      };
+
+      await io._processPWState(state);
+
+      const tCurve = mockApp.data.curves.find(c => c.title === 't');
+      const x1Curve = mockApp.data.curves.find(c => c.title === 'x1');
+      const x2Curve = mockApp.data.curves.find(c => c.title === 'x2');
+
+      // Toutes les courbes doivent avoir la même longueur (3)
+      assert.equal(tCurve.length, 3);
+      assert.equal(x1Curve.length, 3);
+      assert.equal(x2Curve.length, 3);
+
+      // x2[1] doit valoir null (valeur vide à l'image 1)
+      assert.equal(x2Curve[0], 0.5);
+      assert.equal(x2Curve[1], null);
+      assert.equal(x2Curve[2], 0.55);
+    });
+  });
 });
 

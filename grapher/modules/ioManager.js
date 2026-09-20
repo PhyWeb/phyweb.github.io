@@ -428,8 +428,12 @@ generatePW() {
 
       if (Array.isArray(savedCurve.values)) {
         savedCurve.values.forEach(val => {
-          if (typeof val === 'number' && isFinite(val)) { 
+          if (typeof val === 'number' && Number.isFinite(val)) { 
             newCurve.push(val);
+          } else if (typeof val === 'string' && val.trim() !== '' && Number.isFinite(Number(val))) {
+            newCurve.push(Number(val));
+          } else {
+            newCurve.push(null);
           }
         });
       } else {

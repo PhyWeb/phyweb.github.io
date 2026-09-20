@@ -121,8 +121,8 @@ $("#mesures-button").addEventListener("click", ()=>{
 });
 
 $("#send-to-grapher-button").addEventListener("click", async () => {
-  const series = measurement.prepareDownloadData();
-  const pw = exportToPW(series, {rowMustBeComplete : true}, "Tracker", "// Pointage PhyWeb Tracker");
+  const series = measurement.getExportSeries();
+  const pw = exportToPW(series, {rowMustBeComplete : false}, "Tracker", "// Pointage PhyWeb Tracker");
 
   try {
     // Attente de l'enregistrement dans IndexedDB (ou IPC Electron)
