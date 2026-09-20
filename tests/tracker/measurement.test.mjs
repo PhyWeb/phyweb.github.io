@@ -176,6 +176,90 @@ describe('Tracker Scale & Étalonnage (scale.update)', () => {
     assert.equal(Number.isFinite(xVal), true, `xVal (${xVal}) doit être un nombre fini`);
     assert.equal(Number.isFinite(yVal), true, `yVal (${yVal}) doit être un nombre fini`);
   });
+
+  it('doit préserver la valeur d\'échelle étalonnée si scale-input est temporairement vidé', () => {
+    measurement.scale.scaleSegment = { x1: 0, y1: 0, x2: 0.5, y2: 0 };
+    scaleInputElement.value = '2.5';
+    measurement.scale.update(1);
+    assert.equal(measurement.scale.value, 5);
+
+    // Vidage temporaire du champ (ex: suppression de la saisie au clavier)
+    scaleInputElement.value = '';
+    measurement.scale.update(1);
+    assert.equal(measurement.scale.value, 5, 'L\'échelle précédemment étalonnée doit être conservée');
+  });
+
+  it('doit préserver la valeur d\'échelle étalonnée si scale-input contient une valeur invalide (texte, négatif, zéro)', () => {
+    measurement.scale.scaleSegment = { x1: 0, y1: 0, x2: 0.5, y2: 0 };
+    scaleInputElement.value = '2.5';
+    measurement.scale.update(1);
+    assert.equal(measurement.scale.value, 5);
+
+    // Saisie textuelle invalide
+    scaleInputElement.value = 'abc';
+    measurement.scale.update(1);
+    assert.equal(measurement.scale.value, 5, 'L\'échelle doit être conservée en cas de texte invalide');
+
+    // Saisie négative
+    scaleInputElement.value = '-2';
+    measurement.scale.update(1);
+    assert.equal(measurement.scale.value, 5, 'L\'échelle doit être conservée en cas de valeur négative');
+
+    // Saisie zéro
+    scaleInputElement.value = '0';
+    measurement.scale.update(1);
+    assert.equal(measurement.scale.value, 5, 'L\'échelle doit être conservée en cas de valeur nulle');
+  });
+
+  it('doit accepter une virgule comme séparateur décimal (ex: \'1,5\' pour les claviers français)', () => {
+    measurement.scale.scaleSegment = { x1: 0, y1: 0, x2: 0.5, y2: 0 }; // dist = 0.5
+    scaleInputElement.value = '1,5';
+    measurement.scale.update(1);
+
+    // 1.5 / 0.5 = 3.0
+    assert.equal(measurement.scale.value, 3);
+    assert.equal(measurement.scale.getOrientedScaleX(), 3);
+  });
+
+  it('doit accepter une valeur décimale avec espaces et virgule (ex: \'  2,5  \')', () => {
+    measurement.scale.scaleSegment = { x1: 0, y1: 0, x2: 0.5, y2: 0 }; // dist = 0.5
+    scaleInputElement.value = '  2,5  ';
+    measurement.scale.update(1);
+
+    // 2.5 / 0.5 = 5.0
+    assert.equal(measurement.scale.value, 5);
+  });
+
+  it('ne doit pas écraser l\'étalonnage lors de prepareDownloadData() si scale-input est temporairement vide', () => {
+    const fakePlayer = { setFrame: () => {} };
+    const mockDecodedVideo = {
+      width: 1920,
+      height: 1080,
+      duration: 1000,
+      frames: [{}, {}],
+      timestamps: [0.0, 0.0333]
+    };
+    measurement.init(mockDecodedVideo, fakePlayer);
+
+    measurement.series[1][0] = 0.5; // x
+    measurement.series[2][0] = 0.5; // y
+
+    // Étalonnage valide (dist = 0.5, input = 2 -> scale.value = 4)
+    measurement.scale.scaleSegment = { x1: 0, y1: 0, x2: 0.5, y2: 0 };
+    scaleInputElement.value = '2';
+    measurement.scale.update(1);
+    assert.equal(measurement.scale.value, 4);
+
+    // Le champ est vidé
+    scaleInputElement.value = '';
+    const data = measurement.prepareDownloadData();
+
+    // scale.value doit être préservée à 4
+    assert.equal(measurement.scale.value, 4);
+    // Coordonnée x doit être calculée avec scale = 4, pas scale = 1
+    assert.equal(data[1][0], (0.5 - 0) * 4);
+  });
 });
+
 
 

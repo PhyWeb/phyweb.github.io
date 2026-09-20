@@ -8,8 +8,9 @@ Number.prototype.round = function(n) {
 }
 
 function isNumber(str) {
-  return !isNaN(str) && // use type coercion to parse the _entirety_ of the string (`parseFloat` alone does not do this)...
-  !isNaN(parseFloat(str)) // ...and ensure strings of whitespace fail
+  const s = typeof str === "string" ? str.trim().replace(",", ".") : str;
+  return !isNaN(s) && // use type coercion to parse the _entirety_ of the string (`parseFloat` alone does not do this)...
+  !isNaN(parseFloat(s)) // ...and ensure strings of whitespace fail
 }
 
 /*----------------------------------------------------------------------------------------------
@@ -75,37 +76,45 @@ export default class MEASUREMENT {
       },
 
       update(ratio){
-        this.value = 1;
-        if(this.scaleSegment.x1 != null && this.scaleSegment.x2 != null && this.scaleSegment.y1 != null && this.scaleSegment.y2 != null){
-          const safeRatio = Number.isFinite(ratio) && ratio > 0 ? ratio : 1;
-          // Calcul de la distance réelle en tenant compte du ratio d'aspect
-          // On divise la composante Y par le ratio pour ramener les unités à l'échelle de la largeur
-          const dx = this.scaleSegment.x2 - this.scaleSegment.x1;
-          const dy = (this.scaleSegment.y2 - this.scaleSegment.y1) / safeRatio;
-          const dist = Math.hypot(dx, dy);
+        if(this.scaleSegment.x1 == null || this.scaleSegment.x2 == null || this.scaleSegment.y1 == null || this.scaleSegment.y2 == null){
+          this.value = 1;
+          return;
+        }
 
-          // Seuil minimal pour éviter la division par zéro ou une distance quasi-nulle
-          const MIN_DIST = 1e-5;
-          if(dist <= MIN_DIST){
-            // Segment nul ou quasi-nul : invalide, on réinitialise les coordonnées du segment
-            this.scaleSegment.x1 = null;
-            this.scaleSegment.y1 = null;
-            this.scaleSegment.x2 = null;
-            this.scaleSegment.y2 = null;
-            return;
-          }
+        const safeRatio = Number.isFinite(ratio) && ratio > 0 ? ratio : 1;
+        // Calcul de la distance réelle en tenant compte du ratio d'aspect
+        // On divise la composante Y par le ratio pour ramener les unités à l'échelle de la largeur
+        const dx = this.scaleSegment.x2 - this.scaleSegment.x1;
+        const dy = (this.scaleSegment.y2 - this.scaleSegment.y1) / safeRatio;
+        const dist = Math.hypot(dx, dy);
 
-          const scaleInputElement = $("#scale-input");
-          const rawScaleVal = scaleInputElement ? scaleInputElement.value : "";
-          if(isNumber(rawScaleVal)){
-            const scaleInput = parseFloat(rawScaleVal);
-            if(Number.isFinite(scaleInput) && scaleInput > 0){
-              const calculatedValue = scaleInput / dist;
-              if(Number.isFinite(calculatedValue) && calculatedValue > 0){
-                this.value = calculatedValue;
-              }
+        // Seuil minimal pour éviter la division par zéro ou une distance quasi-nulle
+        const MIN_DIST = 1e-5;
+        if(dist <= MIN_DIST){
+          // Segment nul ou quasi-nul : invalide, on réinitialise les coordonnées du segment
+          this.scaleSegment.x1 = null;
+          this.scaleSegment.y1 = null;
+          this.scaleSegment.x2 = null;
+          this.scaleSegment.y2 = null;
+          this.value = 1;
+          return;
+        }
+
+        const scaleInputElement = $("#scale-input");
+        const rawScaleVal = scaleInputElement ? scaleInputElement.value : "";
+        const cleanScaleVal = typeof rawScaleVal === "string" ? rawScaleVal.trim().replace(",", ".") : rawScaleVal;
+        if(isNumber(cleanScaleVal)){
+          const scaleInput = parseFloat(cleanScaleVal);
+          if(Number.isFinite(scaleInput) && scaleInput > 0){
+            const calculatedValue = scaleInput / dist;
+            if(Number.isFinite(calculatedValue) && calculatedValue > 0){
+              this.value = calculatedValue;
             }
           }
+        }
+
+        if(!Number.isFinite(this.value) || this.value <= 0){
+          this.value = 1;
         }
       }
     }

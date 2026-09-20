@@ -3,8 +3,9 @@ import { showToast } from "../../common/common.js";
 const $ = document.querySelector.bind(document);
 
 function isNumber(str) {
-  return !isNaN(str) && // use type coercion to parse the _entirety_ of the string (`parseFloat` alone does not do this)...
-  !isNaN(parseFloat(str)) // ...and ensure strings of whitespace fail
+  const s = typeof str === "string" ? str.trim().replace(",", ".") : str;
+  return !isNaN(s) && // use type coercion to parse the _entirety_ of the string (`parseFloat` alone does not do this)...
+  !isNaN(parseFloat(s)) // ...and ensure strings of whitespace fail
 }
 
 /*----------------------------------------------------------------------------------------------
