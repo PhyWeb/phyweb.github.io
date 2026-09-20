@@ -37,6 +37,8 @@
 
     - fleches pour passer les frames. (haut bas dans le tableau et droite gauxhe sinon ?)
 
+    - ajout d'une indication pour savoir a quel point on se situe au sein d'une frame quand ppf est > à 1
+
 # Grapher
     - possibilité d'avoir 2 axes y
 
