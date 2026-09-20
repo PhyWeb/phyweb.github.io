@@ -259,6 +259,145 @@ describe('Tracker Scale & Étalonnage (scale.update)', () => {
     // Coordonnée x doit être calculée avec scale = 4, pas scale = 1
     assert.equal(data[1][0], (0.5 - 0) * 4);
   });
+
+  describe('Protection contre les valeurs d\'échelle négatives (d <= 0) et non-inversion des axes X et Y', () => {
+    it('ne doit jamais inverser l\'orientation des axes X et Y en cas de saisie d\'une distance négative', () => {
+      // Configuration étalonnage : segment horizontal de longueur 0.5
+      // Origine par défaut : "topright" (X orienté vers la droite, Y orienté vers le haut)
+      measurement.scale.scaleSegment = { x1: 0.1, y1: 0.2, x2: 0.6, y2: 0.2 };
+      measurement.scale.origin.type = 'topright';
+
+      // Saisie d'une distance négative d = -2.5
+      scaleInputElement.value = '-2.5';
+      measurement.scale.update(1);
+
+      // 1. scale.value doit rester strictement positif (valeur par défaut 1 si aucun étalonnage antérieur)
+      assert.ok(measurement.scale.value > 0, `scale.value (${measurement.scale.value}) doit être > 0`);
+      assert.equal(measurement.scale.value, 1);
+
+      // 2. L'axe X physique doit rester positif vers la droite (> 0)
+      const scaleX = measurement.scale.getOrientedScaleX();
+      assert.ok(scaleX > 0, `scaleX (${scaleX}) doit être strictement positif pour 'topright'`);
+
+      // 3. L'axe Y physique doit rester positif vers le haut (négatif en coordonnées canvas car Y descend)
+      const scaleY = measurement.scale.getOrientedScaleY(1);
+      assert.ok(scaleY < 0, `scaleY (${scaleY}) doit être négatif en coordonnées canvas pour 'topright'`);
+    });
+
+    it('ne doit pas inverser l\'orientation des axes physiques pour les 4 quadrants d\'origine en cas de valeur négative', () => {
+      measurement.scale.scaleSegment = { x1: 0, y1: 0, x2: 0.5, y2: 0 }; // dist = 0.5
+      scaleInputElement.value = '2.0'; // Étalonnage initial valide -> scale.value = 4.0
+      measurement.scale.update(1);
+      assert.equal(measurement.scale.value, 4.0);
+
+      // Saisie d'une distance négative
+      scaleInputElement.value = '-5.0';
+      measurement.scale.update(1);
+
+      // La valeur 4.0 doit être conservée, jamais écrasée par une valeur négative
+      assert.equal(measurement.scale.value, 4.0);
+
+      const orientations = [
+        { type: 'topright', expectedXSign: 1, expectedYSign: -1 },
+        { type: 'downright', expectedXSign: 1, expectedYSign: 1 },
+        { type: 'topleft', expectedXSign: -1, expectedYSign: -1 },
+        { type: 'downleft', expectedXSign: -1, expectedYSign: 1 }
+      ];
+
+      for (const { type, expectedXSign, expectedYSign } of orientations) {
+        measurement.scale.origin.type = type;
+        const scaleX = measurement.scale.getOrientedScaleX();
+        const scaleY = measurement.scale.getOrientedScaleY(1);
+
+        assert.equal(Math.sign(scaleX), expectedXSign, `Signe X invalide pour ${type} : attendu ${expectedXSign}, reçu ${Math.sign(scaleX)}`);
+        assert.equal(Math.sign(scaleY), expectedYSign, `Signe Y invalide pour ${type} : attendu ${expectedYSign}, reçu ${Math.sign(scaleY)}`);
+      }
+    });
+
+    it('doit refuser l\'écrasement direct de scale.value par une valeur <= 0 via le setter', () => {
+      // Étalonnage initial valide
+      measurement.scale.value = 3.5;
+      assert.equal(measurement.scale.value, 3.5);
+
+      // Tentative d'assignation négative
+      measurement.scale.value = -10;
+      assert.equal(measurement.scale.value, 3.5, 'La valeur négative ne doit pas modifier scale.value');
+
+      // Tentative d'assignation nulle
+      measurement.scale.value = 0;
+      assert.equal(measurement.scale.value, 3.5, 'La valeur nulle ne doit pas modifier scale.value');
+
+      // Tentative d'assignation non finie
+      measurement.scale.value = -Infinity;
+      assert.equal(measurement.scale.value, 3.5, 'La valeur infinie négative ne doit pas modifier scale.value');
+      measurement.scale.value = NaN;
+      assert.equal(measurement.scale.value, 3.5, 'La valeur NaN ne doit pas modifier scale.value');
+    });
+
+    it('doit supporter le paramètre d dans scale.update(ratio, d) et rejeter les distances <= 0', () => {
+      measurement.scale.scaleSegment = { x1: 0, y1: 0, x2: 0.5, y2: 0 }; // dist = 0.5
+
+      // Appel avec paramètre direct d valide (numérique)
+      measurement.scale.update(1, 2);
+      assert.equal(measurement.scale.value, 4);
+
+      // Appel avec paramètre direct d négatif
+      measurement.scale.update(1, -3);
+      assert.equal(measurement.scale.value, 4, 'scale.value doit conserver sa valeur valide précédente');
+
+      // Appel avec paramètre direct d nul
+      measurement.scale.update(1, 0);
+      assert.equal(measurement.scale.value, 4, 'scale.value doit conserver sa valeur valide précédente');
+
+      // Appel avec paramètre direct sous forme de chaîne avec virgule
+      measurement.scale.update(1, '  1,5  ');
+      assert.equal(measurement.scale.value, 3);
+    });
+
+    it('ne doit pas inverser les coordonnées physiques calculées dans les séries en cas de saisie négative', () => {
+      const fakePlayer = { setFrame: () => {} };
+      const mockDecodedVideo = {
+        width: 1000,
+        height: 1000,
+        duration: 1000,
+        frames: [{}, {}],
+        timestamps: [0.0, 0.0333]
+      };
+      measurement.init(mockDecodedVideo, fakePlayer);
+
+      // Origine au centre (0.5, 0.5), type "topright"
+      measurement.scale.origin.x = 0.5;
+      measurement.scale.origin.y = 0.5;
+      measurement.scale.origin.type = 'topright';
+
+      // Point à droite et au-dessus de l'origine :
+      // Sur le canvas, droite = x > 0.5 (ex: 0.7), haut = y < 0.5 (ex: 0.3)
+      measurement.series[1][0] = 0.7; // canvas x
+      measurement.series[2][0] = 0.3; // canvas y
+
+      // Étalonnage avec segment dist = 0.5 et d = 1.0 m -> scale.value = 2.0
+      measurement.scale.scaleSegment = { x1: 0, y1: 0, x2: 0.5, y2: 0 };
+      scaleInputElement.value = '1.0';
+      measurement.scale.update(1);
+
+      let data = measurement.prepareDownloadData();
+      // x physique = (0.7 - 0.5) * (+2) = +0.4 > 0
+      // y physique = (0.3 - 0.5) * (-2) = +0.4 > 0
+      assert.ok(data[1][0] > 0, `X physique (${data[1][0]}) doit être positif`);
+      assert.ok(data[2][0] > 0, `Y physique (${data[2][0]}) doit être positif`);
+
+      // Maintenant, l'utilisateur tape une distance négative dans scale-input
+      scaleInputElement.value = '-10.0';
+      measurement.scale.update(1);
+
+      data = measurement.prepareDownloadData();
+      // Les coordonnées physiques X et Y ne doivent surtout pas être inversées (devenir négatives)
+      assert.ok(data[1][0] > 0, `X physique (${data[1][0]}) ne doit pas s'inverser avec une saisie négative`);
+      assert.ok(data[2][0] > 0, `Y physique (${data[2][0]}) ne doit pas s'inverser avec une saisie négative`);
+      assert.ok(Math.abs(data[1][0] - 0.4) < 1e-9, `Attendu ~0.4, reçu ${data[1][0]}`);
+      assert.ok(Math.abs(data[2][0] - 0.4) < 1e-9, `Attendu ~0.4, reçu ${data[2][0]}`);
+    });
+  });
 });
 
 

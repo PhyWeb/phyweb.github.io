@@ -28,7 +28,17 @@ export default class MEASUREMENT {
     this.maxDigits = 4;
 
     this.scale = {
-      value : 1,
+      _value : 1,
+
+      get value(){
+        return this._value;
+      },
+
+      set value(v){
+        if(Number.isFinite(v) && v > 0){
+          this._value = v;
+        }
+      },
 
       scaleSegment : {
         x1 : null,
@@ -75,7 +85,7 @@ export default class MEASUREMENT {
         }
       },
 
-      update(ratio){
+      update(ratio, d){
         if(this.scaleSegment.x1 == null || this.scaleSegment.x2 == null || this.scaleSegment.y1 == null || this.scaleSegment.y2 == null){
           this.value = 1;
           return;
@@ -101,10 +111,10 @@ export default class MEASUREMENT {
         }
 
         const scaleInputElement = $("#scale-input");
-        const rawScaleVal = scaleInputElement ? scaleInputElement.value : "";
+        const rawScaleVal = d !== undefined ? d : (scaleInputElement ? scaleInputElement.value : "");
         const cleanScaleVal = typeof rawScaleVal === "string" ? rawScaleVal.trim().replace(",", ".") : rawScaleVal;
         if(isNumber(cleanScaleVal)){
-          const scaleInput = parseFloat(cleanScaleVal);
+          const scaleInput = typeof cleanScaleVal === "number" ? cleanScaleVal : parseFloat(cleanScaleVal);
           if(Number.isFinite(scaleInput) && scaleInput > 0){
             const calculatedValue = scaleInput / dist;
             if(Number.isFinite(calculatedValue) && calculatedValue > 0){
