@@ -22,6 +22,9 @@ export default class PLAYER {
     this.decodedVideo;
 
     this.measurement = _measurement;
+    if(this.measurement){
+      this.measurement.player = this;
+    }
 
     this.segment = {
       x1: null,

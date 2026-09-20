@@ -218,6 +218,7 @@ export default class MEASUREMENT {
   }
 
   buildTable(player){
+    const activePlayer = player || this.player;
     let ppf = (this.series.length - 1) / 2;
     this.buildTableHead();
     this.tableBody.innerHTML="";
@@ -260,7 +261,9 @@ export default class MEASUREMENT {
       row.id = "row" + i;
       row.onclick = (e) =>{
         this.selectRow(e.currentTarget.id.replace("row",""));
-        player.setFrame(parseInt(e.currentTarget.id.replace("row","")));
+        if(activePlayer){
+          activePlayer.setFrame(parseInt(e.currentTarget.id.replace("row","")));
+        }
       }
 
       fragment.appendChild(row);
@@ -327,6 +330,9 @@ export default class MEASUREMENT {
     if(player){
       this.player = player;
     }
+    if(!this.series || this.series.length === 0){
+      return;
+    }
     let currentPpf = (this.series.length - 1) / 2;
     if(ppf === currentPpf){
       return;
@@ -360,7 +366,7 @@ export default class MEASUREMENT {
     }
 
     // update the table
-    this.buildTable(player);
+    this.buildTable(this.player);
     this.updateTable();
   }
 
@@ -375,8 +381,14 @@ export default class MEASUREMENT {
   }
 
   changeValue(frameIndex, pointIndex, x, y){
-    this.series[(pointIndex * 2) + 1][frameIndex] = x;
-    this.series[(pointIndex * 2) + 2][frameIndex] = y;
+    const xIndex = (pointIndex * 2) + 1;
+    const yIndex = (pointIndex * 2) + 2;
+    if(!this.series || !this.series[xIndex] || !this.series[yIndex]){
+      console.warn(`changeValue: index de point ${pointIndex} hors limites pour series.length = ${this.series ? this.series.length : 0}`);
+      return;
+    }
+    this.series[xIndex][frameIndex] = x;
+    this.series[yIndex][frameIndex] = y;
     this.updateRow(frameIndex);
   }
 

@@ -222,5 +222,90 @@ describe('Tracker - Synchronisation de currentPoint (clearRow, clearTable, setPo
     player.resetCurrentPoint();
     assert.equal(player.currentPoint, 0);
   });
+
+  it('doit gérer la réduction de ppf de 4 à 2 avec currentPoint >= 2 sans crash TypeError et pointer le point 1', () => {
+    measurement.setPointPerFrame(4, player);
+    assert.equal((measurement.series.length - 1) / 2, 4);
+
+    // Pointer le point 1 (currentPoint passe à 1)
+    player.onClick({ clientX: 10, clientY: 10 });
+    assert.equal(player.currentPoint, 1);
+
+    // Pointer le point 2 (currentPoint passe à 2)
+    player.onClick({ clientX: 20, clientY: 20 });
+    assert.equal(player.currentPoint, 2);
+    assert.equal(player.currentFrame, 0);
+
+    // Réduction de 4 à 2 points par image
+    // Les séries pour point 3 et 4 sont supprimées par splice(5)
+    measurement.setPointPerFrame(2, player);
+    assert.equal((measurement.series.length - 1) / 2, 2);
+    assert.equal(measurement.series.length, 5); // t, x1, y1, x2, y2
+
+    // currentPoint doit avoir été réajusté à 0 pour éviter de chercher l'index 2 (séries 5 et 6 qui n'existent plus)
+    assert.equal(player.currentPoint, 0, 'currentPoint doit être remis à 0 après réduction du nombre de points');
+
+    // Clic suivant : ne doit PAS planter avec TypeError: Cannot set properties of undefined
+    assert.doesNotThrow(() => {
+      player.onClick({ clientX: 30, clientY: 30 });
+    });
+
+    // Le clic a pointé x1/y1 sur l'image 0
+    assert.equal(player.currentFrame, 0);
+    assert.equal(player.currentPoint, 1, 'currentPoint passe à 1 en attendant le point 2');
+    assert.notEqual(measurement.series[1][0], '');
+    assert.notEqual(measurement.series[2][0], '');
+
+    // Clic sur le point 2 : valide l'image et passe à l'image 1
+    assert.doesNotThrow(() => {
+      player.onClick({ clientX: 40, clientY: 40 });
+    });
+    assert.equal(player.currentPoint, 0);
+    assert.equal(player.currentFrame, 1);
+    assert.notEqual(measurement.series[3][0], '');
+    assert.notEqual(measurement.series[4][0], '');
+  });
+
+  it('doit réinitialiser currentPoint même si player n\'est pas passé en argument à setPointPerFrame()', () => {
+    measurement.setPointPerFrame(4, player);
+
+    // 3 clics pour arriver à currentPoint = 3
+    player.onClick({ clientX: 10, clientY: 10 });
+    player.onClick({ clientX: 20, clientY: 20 });
+    player.onClick({ clientX: 30, clientY: 30 });
+    assert.equal(player.currentPoint, 3);
+
+    // Appel sans passer `player` explicitement
+    measurement.setPointPerFrame(2);
+    assert.equal(player.currentPoint, 0, 'currentPoint doit être réinitialisé via la référence interne this.player');
+
+    // Le clic suivant ne doit pas planter
+    assert.doesNotThrow(() => {
+      player.onClick({ clientX: 50, clientY: 50 });
+    });
+    assert.equal(player.currentPoint, 1);
+    assert.equal(player.currentFrame, 0);
+  });
+
+  it('doit protéger changeValue contre les index de points hors limites sans lever d\'exception', () => {
+    measurement.setPointPerFrame(2, player);
+
+    // Index 5 hors limites (ppf = 2 donc indices valides de points: 0 et 1)
+    assert.doesNotThrow(() => {
+      measurement.changeValue(0, 5, 0.5, 0.5);
+    });
+
+    // Index négatif
+    assert.doesNotThrow(() => {
+      measurement.changeValue(0, -1, 0.5, 0.5);
+    });
+  });
+
+  it('doit gérer setPointPerFrame sans erreur lorsque les séries sont vides', () => {
+    const emptyMeasurement = new MEASUREMENT();
+    assert.doesNotThrow(() => {
+      emptyMeasurement.setPointPerFrame(3);
+    });
+  });
 });
 
