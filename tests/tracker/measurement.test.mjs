@@ -2,6 +2,7 @@ import '../helpers/setup.mjs';
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import MEASUREMENT from '../../tracker/modules/measurement.js';
+import { exportToPW, exportToCSV, exportToRW3 } from '../../common/common.js';
 
 describe('Tracker Measurement Module', () => {
   it('doit utiliser les timestamps réels quand ils sont fournis', () => {
@@ -785,4 +786,126 @@ describe('Tracker - Cohérence de l\'origine temporelle (originFrame) et prepare
     assert.notEqual(data[2][2], '');
   });
 });
+
+describe('Tracker - Export de données et objets occultés (ppf >= 2)', () => {
+  let measurement;
+  let fakePlayer;
+
+  beforeEach(() => {
+    measurement = new MEASUREMENT();
+    fakePlayer = {
+      currentFrame: 0,
+      currentPoint: 0,
+      setFrame: () => {}
+    };
+
+    const mockDecodedVideo = {
+      width: 1000,
+      height: 1000,
+      duration: 1000,
+      frames: [{}, {}, {}, {}],
+      timestamps: [0.0, 0.0333, 0.0667, 0.1000]
+    };
+
+    measurement.init(mockDecodedVideo, fakePlayer);
+    measurement.setPointPerFrame(2, fakePlayer); // 2 objets (x1, y1, x2, y2)
+
+    // Frame 0 : les 2 objets sont pointés
+    measurement.changeValue(0, 0, 0.10, 0.20);
+    measurement.changeValue(0, 1, 0.50, 0.60);
+
+    // Frame 1 : Objet 1 pointé, Objet 2 OCCULTÉ (non pointé)
+    measurement.changeValue(1, 0, 0.15, 0.25);
+
+    // Frame 2 : les 2 objets sont pointés
+    measurement.changeValue(2, 0, 0.20, 0.30);
+    measurement.changeValue(2, 1, 0.55, 0.65);
+
+    // Frame 3 : aucun objet n'est pointé (image non pointée en fin de vidéo)
+  });
+
+  it('confirme le bug : rowMustBeComplete: true supprime la ligne de l\'image 1 où l\'objet 2 est occulté', () => {
+    const series = measurement.prepareDownloadData();
+
+    // 1. Export PW avec rowMustBeComplete: true (comportement actuellement codé en dur)
+    const pwJson = JSON.parse(exportToPW(series, { rowMustBeComplete: true }, 'Tracker'));
+    const tCurve = pwJson.data.curves.find(c => c.title === 't');
+    const x1Curve = pwJson.data.curves.find(c => c.title === 'x1');
+    const x2Curve = pwJson.data.curves.find(c => c.title === 'x2');
+
+    // Le bug supprime complètement l'image 1 : seules 2 images sont exportées au lieu de 3
+    assert.equal(tCurve.values.length, 2, 'Avec rowMustBeComplete: true, la courbe t perd une image');
+    assert.equal(x1Curve.values.length, 2, 'Avec rowMustBeComplete: true, x1 perd sa mesure valide de l\'image 1');
+    assert.deepEqual(tCurve.values, [0, 0.0667], 'L\'horodatage 0.0333 de l\'image 1 a été éliminé');
+    assert.deepEqual(x1Curve.values, [0.1, 0.2], 'La mesure x1=0.15 a été perdue');
+    assert.deepEqual(x2Curve.values, [0.5, 0.55]);
+
+    // 2. Export CSV avec rowMustBeComplete = true
+    const csv = exportToCSV(series, true);
+    const csvLines = csv.trim().split(/\r?\n/).slice(1); // sans les en-têtes
+    assert.equal(csvLines.length, 2, 'Le CSV ne contient que 2 lignes de données au lieu de 3');
+    assert.equal(csv.includes('0,15'), false, 'Le CSV ne contient pas la mesure de l\'objet 1 pour l\'image 1');
+
+    // 3. Export RW3 avec rowMustBeComplete = true
+    const rw3 = exportToRW3(series, true, 'Pointage PhyWeb Tracker');
+    assert.equal(rw3.includes('0.15'), false, 'Le fichier RW3 ne contient pas la mesure de l\'objet 1');
+  });
+
+  it('démontre le comportement attendu : préserver les lignes partiellement pointées tout en ignorant les images non pointées', () => {
+    const series = measurement.prepareDownloadData();
+
+    // Logique de filtrage attendue :
+    // On conserve les lignes à partir de originFrame où AU MOINS UN objet est mesuré
+    const indicesToKeep = [];
+    for (let i = 0; i < series[0].length; i++) {
+      if (i < measurement.originFrame) continue;
+      let hasAtLeastOnePoint = false;
+      for (let j = 1; j < series.length; j++) {
+        if (series[j][i] !== '' && series[j][i] !== undefined && series[j][i] !== null) {
+          hasAtLeastOnePoint = true;
+          break;
+        }
+      }
+      if (hasAtLeastOnePoint) {
+        indicesToKeep.push(i);
+      }
+    }
+
+    // Les images à conserver sont bien les images 0, 1 et 2 (l'image 3 non pointée est écartée)
+    assert.deepEqual(indicesToKeep, [0, 1, 2]);
+
+    const filteredSeries = series.map(s => {
+      const filtered = structuredClone(s);
+      filtered.length = 0;
+      indicesToKeep.forEach(idx => filtered.push(s[idx]));
+      return filtered;
+    });
+
+    // 1. Export PW avec les séries filtrées et rowMustBeComplete: false
+    const pwJson = JSON.parse(exportToPW(filteredSeries, { rowMustBeComplete: false }, 'Tracker'));
+    const tCurve = pwJson.data.curves.find(c => c.title === 't');
+    const x1Curve = pwJson.data.curves.find(c => c.title === 'x1');
+    const x2Curve = pwJson.data.curves.find(c => c.title === 'x2');
+
+    assert.equal(tCurve.values.length, 3, 'Les 3 images pointées sont conservées');
+    assert.equal(x1Curve.values.length, 3, 'x1 conserve ses 3 mesures y compris celle de l\'image 1');
+    assert.deepEqual(x1Curve.values, [0.1, 0.15, 0.2]);
+    // Pour x2, la mesure à l'image 1 est vide/absente (occultée) mais les indices restent alignés
+    assert.equal(x2Curve.values[0], 0.5);
+    assert.equal(x2Curve.values[1], '');
+    assert.equal(x2Curve.values[2], 0.55);
+
+    // 2. Export CSV avec les séries filtrées et rowMustBeComplete = false
+    const csv = exportToCSV(filteredSeries, false);
+    const csvLines = csv.trim().split(/\r?\n/).slice(1);
+    assert.equal(csvLines.length, 3, 'Le CSV contient exactement 3 lignes de données');
+    assert.ok(csvLines[1].includes('0,15'), 'Ligne 1 contient la mesure de l\'objet 1');
+    assert.ok(csvLines[1].endsWith(';;'), 'Ligne 1 contient des champs vides pour l\'objet 2 occulté');
+
+    // 3. Export RW3 avec les séries filtrées et rowMustBeComplete = false
+    const rw3 = exportToRW3(filteredSeries, false, 'Pointage PhyWeb Tracker');
+    assert.ok(rw3.includes('0.15'), 'Le RW3 contient la mesure de l\'objet 1');
+  });
+});
+
 
