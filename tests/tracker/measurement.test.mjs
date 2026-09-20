@@ -640,3 +640,149 @@ describe('Tracker - Synchronisation de player.currentPoint dans clearRow et clea
     assert.equal(fakePlayer.currentPoint, 0, 'fakePlayer.currentPoint doit être remis à 0');
   });
 });
+
+describe('Tracker - Cohérence de l\'origine temporelle (originFrame) et prepareDownloadData', () => {
+  let measurement;
+  let fakePlayer;
+  const originalQSOverride = global.__querySelectorOverride;
+
+  const createMockElement = (tag = 'div') => ({
+    tagName: tag,
+    value: '1',
+    innerHTML: '',
+    children: [],
+    style: {},
+    classList: { add: () => {}, remove: () => {}, toggle: () => {}, contains: () => false },
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    appendChild: () => {}
+  });
+
+  beforeEach(() => {
+    global.__querySelectorOverride = (sel) => createMockElement();
+
+    measurement = new MEASUREMENT();
+    fakePlayer = {
+      currentFrame: 0,
+      currentPoint: 0,
+      setFrame: (id) => {
+        if (id < measurement.originFrame) id = measurement.originFrame;
+        fakePlayer.currentFrame = id;
+      }
+    };
+
+    const mockDecodedVideo = {
+      width: 1000,
+      height: 1000,
+      duration: 1000,
+      frames: [{}, {}, {}, {}, {}],
+      timestamps: [0.0, 0.0333, 0.0667, 0.1000, 0.1333]
+    };
+
+    measurement.init(mockDecodedVideo, fakePlayer);
+  });
+
+  afterEach(() => {
+    global.__querySelectorOverride = originalQSOverride;
+  });
+
+  it('ne doit pas produire de coordonnées x et y orphelines sans t pour i < originFrame dans prepareDownloadData()', () => {
+    // 1. L'utilisateur pointe les images 0, 1, 2 (images 1 à 3 dans l'IHM)
+    measurement.changeValue(0, 0, 0.2, 0.3);
+    measurement.changeValue(1, 0, 0.4, 0.5);
+    measurement.changeValue(2, 0, 0.6, 0.7);
+
+    // Et pointe aussi l'image 3 (image 4 dans l'IHM)
+    measurement.changeValue(3, 0, 0.8, 0.9);
+
+    // 2. L'utilisateur règle l'image d'origine sur 4 (index 3)
+    measurement.setOriginFrame(3);
+
+    // 3. Préparation des données pour le téléchargement / export
+    const data = measurement.prepareDownloadData();
+
+    // Pour toutes les images i < originFrame (0, 1, 2) :
+    // Ni t, ni x, ni y ne doivent contenir de données calculées !
+    for (let i = 0; i < 3; i++) {
+      assert.equal(data[0][i], '', `t pour l'image ${i} (< originFrame) doit être vide`);
+      assert.equal(data[1][i], '', `x pour l'image ${i} (< originFrame) doit être vide (pas de coordonnée orpheline sans t)`);
+      assert.equal(data[2][i], '', `y pour l'image ${i} (< originFrame) doit être vide (pas de coordonnée orpheline sans t)`);
+    }
+
+    // À partir de originFrame (index 3) :
+    // t doit valoir 0 (t3 - t3)
+    assert.equal(data[0][3], 0);
+    // x et y doivent être correctement calculés
+    assert.notEqual(data[1][3], '');
+    assert.notEqual(data[2][3], '');
+    assert.equal(Number.isFinite(data[1][3]), true);
+    assert.equal(Number.isFinite(data[2][3]), true);
+
+    // Pour l'image 4 (non pointée) :
+    // t = 0.1333 - 0.1000 = 0.0333
+    assert.ok(Math.abs(data[0][4] - 0.0333) < 1e-4);
+    assert.equal(data[1][4], '');
+    assert.equal(data[2][4], '');
+  });
+
+  it('doit préserver les données brutes dans this.series lors du changement d\'originFrame (approche non-destructive)', () => {
+    // Pointage sur les images 0 et 1
+    measurement.changeValue(0, 0, 0.2, 0.3);
+    measurement.changeValue(1, 0, 0.4, 0.5);
+
+    // Déplacement de l'origine à 2
+    measurement.setOriginFrame(2);
+
+    // Les données brutes dans this.series sont toujours conservées
+    assert.equal(measurement.series[1][0], 0.2);
+    assert.equal(measurement.series[2][0], 0.3);
+
+    // Mais prepareDownloadData() les masque symétriquement
+    let data = measurement.prepareDownloadData();
+    assert.equal(data[0][0], '');
+    assert.equal(data[1][0], '');
+    assert.equal(data[2][0], '');
+
+    // Si l'utilisateur revient à l'origine 0, les données redeviennent actives et calculées
+    measurement.setOriginFrame(0);
+    data = measurement.prepareDownloadData();
+    assert.equal(data[0][0], 0);
+    assert.notEqual(data[1][0], '');
+    assert.notEqual(data[2][0], '');
+  });
+
+  it('doit vider symétriquement x et y pour tous les points par image (ppf > 1) lorsque i < originFrame', () => {
+    measurement.setPointPerFrame(2, fakePlayer); // 2 points par image (x1, y1, x2, y2)
+
+    // Image 0 : point 1 et point 2
+    measurement.changeValue(0, 0, 0.1, 0.2);
+    measurement.changeValue(0, 1, 0.3, 0.4);
+
+    // Image 1 : point 1 et point 2
+    measurement.changeValue(1, 0, 0.5, 0.6);
+    measurement.changeValue(1, 1, 0.7, 0.8);
+
+    // Image 2 : point 1
+    measurement.changeValue(2, 0, 0.9, 0.95);
+
+    // Origine fixée à l'image 2
+    measurement.setOriginFrame(2);
+
+    const data = measurement.prepareDownloadData();
+
+    // Vérification pour i = 0 et i = 1
+    for (let i = 0; i < 2; i++) {
+      assert.equal(data[0][i], '', `t[${i}] doit être vide`);
+      assert.equal(data[1][i], '', `x1[${i}] doit être vide`);
+      assert.equal(data[2][i], '', `y1[${i}] doit être vide`);
+      assert.equal(data[3][i], '', `x2[${i}] doit être vide`);
+      assert.equal(data[4][i], '', `y2[${i}] doit être vide`);
+    }
+
+    // Vérification pour l'image 2
+    assert.equal(data[0][2], 0);
+    assert.notEqual(data[1][2], '');
+    assert.notEqual(data[2][2], '');
+  });
+});
+

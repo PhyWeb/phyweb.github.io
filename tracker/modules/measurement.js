@@ -447,8 +447,10 @@ export default class MEASUREMENT {
     }
     
     for(let i = 0; i < this.series[0].length; i++){
+      const isBeforeOrigin = i < this.originFrame;
+
       // t values
-      if(i < this.originFrame){
+      if(isBeforeOrigin){
         series[0][i] = "";
       } else{
         series[0][i] = this.series[0][i] - this.series[0][this.originFrame];
@@ -456,8 +458,8 @@ export default class MEASUREMENT {
 
       // x and y values
       for(let j = 1; j < (this.series.length - 1) / 2 + 1; j++){
-        series[((j - 1) * 2) + 1][i] = this.series[((j - 1) * 2) + 1].get(i, this.scale.origin.x, scaleX);
-        series[((j - 1) * 2) + 2][i] = this.series[((j - 1) * 2) + 2].get(i, this.scale.origin.y, scaleY);
+        series[((j - 1) * 2) + 1][i] = isBeforeOrigin ? "" : this.series[((j - 1) * 2) + 1].get(i, this.scale.origin.x, scaleX);
+        series[((j - 1) * 2) + 2][i] = isBeforeOrigin ? "" : this.series[((j - 1) * 2) + 2].get(i, this.scale.origin.y, scaleY);
       }
     }
 
