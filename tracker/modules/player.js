@@ -185,7 +185,10 @@ export default class PLAYER {
   }
 
   drawMagnifier(_frameID) {
-    let img = new VideoFrame(this.videoCanvas, { timestamp: 0 });
+    if (!this.videoCanvas || this.videoCanvas.width <= 0 || this.videoCanvas.height <= 0) {
+      return;
+    }
+
     let magnifierPower = 2;
 
     this.ctx.save();
@@ -208,7 +211,7 @@ export default class PLAYER {
     this.ctx.clip();
 
     this.ctx.drawImage(
-      img,
+      this.videoCanvas,
       -this.videoCanvas.width * (magnifierPower - 1) / 2 +
         (this.videoCanvas.width - this.videoCanvas.width * magnifierPower) * (this.distPoint.x * 1),
       -this.videoCanvas.height * (magnifierPower - 1) / 2 +
@@ -217,7 +220,6 @@ export default class PLAYER {
       this.videoCanvas.height * magnifierPower
     );
 
-    img.close();
     this.ctx.restore();
   }
 
