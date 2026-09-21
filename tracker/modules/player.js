@@ -478,14 +478,35 @@ export default class PLAYER {
     }
   }
 
-  onMouseMove = (ev) => {
-    let rect = this.videoCanvas.getBoundingClientRect();
-		this.point = { x: (ev.clientX/* - 7*/) - rect.left, y: (ev.clientY/* - 7*/) - rect.top };
+  getCanvasCoordinates(ev) {
+    const rect = this.videoCanvas.getBoundingClientRect();
+    const rectWidth = (rect && rect.width > 0) ? rect.width : (this.videoCanvas.width || 1);
+    const rectHeight = (rect && rect.height > 0) ? rect.height : (this.videoCanvas.height || 1);
+    const left = (rect && typeof rect.left === "number") ? rect.left : 0;
+    const top = (rect && typeof rect.top === "number") ? rect.top : 0;
+    const clientX = (ev && typeof ev.clientX === "number") ? ev.clientX : 0;
+    const clientY = (ev && typeof ev.clientY === "number") ? ev.clientY : 0;
 
-    this.distPoint = {
-      x: (this.point.x - this.videoCanvas.width * 0.5) / this.videoCanvas.width,
-      y: (this.point.y - this.videoCanvas.height * 0.5) / this.videoCanvas.height
-    };	
+    const normX = (clientX - left) / rectWidth;
+    const normY = (clientY - top) / rectHeight;
+
+    const point = {
+      x: normX * this.videoCanvas.width,
+      y: normY * this.videoCanvas.height
+    };
+
+    const distPoint = {
+      x: normX - 0.5,
+      y: normY - 0.5
+    };
+
+    return { point, distPoint };
+  }
+
+  onMouseMove = (ev) => {
+    const { point, distPoint } = this.getCanvasCoordinates(ev);
+    this.point = point;
+    this.distPoint = distPoint;
 
     // Update the coordinates label
     const scaleX = this.measurement.scale.getOrientedScaleX();
@@ -516,17 +537,7 @@ export default class PLAYER {
       this.currentPoint = 0;
     }
 
-    let rect = this.videoCanvas.getBoundingClientRect();
-		let point = {
-      x:
-        (ev.clientX/* - 7*/) - rect.left,
-      y: (ev.clientY/* - 7*/) - rect.top
-    };
-
-    let distPoint = {
-      x: (point.x - this.videoCanvas.width * 0.5) / this.videoCanvas.width,
-      y: (point.y - this.videoCanvas.height * 0.5) / this.videoCanvas.height
-    };
+    const { distPoint } = this.getCanvasCoordinates(ev);
 
     this.measurement.changeValue(this.currentFrame, this.currentPoint, distPoint.x + 0.5, distPoint.y + 0.5);
     this.videoCanvas.style.cursor = "crosshair";
@@ -580,16 +591,7 @@ export default class PLAYER {
   }
 
   onOriginClick = (ev) => {
-    let rect = this.videoCanvas.getBoundingClientRect();
-		let point = {
-      x: (ev.clientX/* - 7*/) - rect.left,
-      y: (ev.clientY/* - 7*/) - rect.top
-    };
-
-    let distPoint = {
-      x: (point.x - this.videoCanvas.width * 0.5) / this.videoCanvas.width,
-      y: (point.y - this.videoCanvas.height * 0.5) / this.videoCanvas.height
-    };
+    const { distPoint } = this.getCanvasCoordinates(ev);
 
     console.log(this.measurement.scale.origin.type, this.originFlag);
     this.measurement.scale.origin.type = this.originFlag;
@@ -655,16 +657,7 @@ export default class PLAYER {
   }
 
   onScaleClick = (ev) => {
-    let rect = this.videoCanvas.getBoundingClientRect();
-		let point = {
-      x: (ev.clientX/* - 7*/) - rect.left,
-      y: (ev.clientY/* - 7*/) - rect.top
-    };
-
-    let distPoint = {
-      x: (point.x - this.videoCanvas.width * 0.5) / this.videoCanvas.width,
-      y: (point.y - this.videoCanvas.height * 0.5) / this.videoCanvas.height
-    };
+    const { distPoint } = this.getCanvasCoordinates(ev);
 
     if(this.segment.x1 == null){
       this.segment.x1 = distPoint.x + 0.5;
