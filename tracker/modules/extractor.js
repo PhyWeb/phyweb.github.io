@@ -19,11 +19,69 @@ export default class EXTRACTOR {
     this.sizeThreshold = 512; // 512 Mio
     this._finishTriggered = false;
     this._pendingBitmapsCount = 0;
+    this._canvasPool = [];
+    this._chunkQueue = [];
+    this._isProcessingQueue = false;
+    this._isCanceled = false;
+    this._allSamplesReceived = false;
+    this._receivedSamplesCount = 0;
+    this._pendingDrainResolve = null;
+    this.decodedVideo = {
+      duration: null,
+      width: null,
+      height: null,
+      frames: [],
+      timestamps: []
+    };
+  }
+
+  _decrementPendingBitmaps() {
+    this._pendingBitmapsCount = Math.max(0, this._pendingBitmapsCount - 1);
+    if (this._pendingDrainResolve && this._pendingBitmapsCount <= 15) {
+      const resolve = this._pendingDrainResolve;
+      this._pendingDrainResolve = null;
+      resolve();
+    }
+  }
+
+  _acquireCanvas(width, height) {
+    if (!this._canvasPool) {
+      this._canvasPool = [];
+    }
+    let item = this._canvasPool.pop();
+    if (!item) {
+      const canvas = new OffscreenCanvas(width, height);
+      const ctx = canvas.getContext("2d", { alpha: false });
+      item = { canvas, ctx };
+    }
+    return item;
+  }
+
+  _releaseCanvas(item) {
+    if (this._canvasPool && item) {
+      this._canvasPool.push(item);
+    }
+  }
+
+  _clearCanvasPool() {
+    if (this._canvasPool) {
+      this._canvasPool.length = 0;
+    }
   }
 
   triggerFinish = async (wasCanceled = false) => {
+    if (wasCanceled) {
+      this._isCanceled = true;
+    }
     if (this._finishTriggered) return;
     this._finishTriggered = true;
+
+    if (this._pendingDrainResolve) {
+      const resolve = this._pendingDrainResolve;
+      this._pendingDrainResolve = null;
+      resolve();
+    }
+    this._chunkQueue = [];
 
     try {
       if (this.decoder && this.decoder.state === "configured") {
@@ -37,25 +95,32 @@ export default class EXTRACTOR {
     }
 
     const checkAndFinish = () => {
-      if (this._pendingBitmapsCount <= 0 || wasCanceled) {
+      if (this._pendingBitmapsCount <= 0 || wasCanceled || this._isCanceled) {
         if ($('#extract-loading-modal')) $('#extract-loading-modal').remove();
 
-        if (wasCanceled) {
-          for (const frameImg of this.decodedVideo.frames) {
-            if (frameImg && frameImg.src) {
-              URL.revokeObjectURL(frameImg.src);
+        if (wasCanceled || this._isCanceled) {
+          this._clearCanvasPool();
+          if (this.decodedVideo && this.decodedVideo.frames) {
+            for (const frameImg of this.decodedVideo.frames) {
+              if (frameImg && frameImg.src) {
+                URL.revokeObjectURL(frameImg.src);
+              }
             }
+            this.decodedVideo.frames = [];
+            this.decodedVideo.timestamps = [];
           }
-          this.decodedVideo.frames = [];
-          this.decodedVideo.timestamps = [];
           return;
         }
 
-        if (this.decodedVideo.timestamps.length > 1) {
+        this._clearCanvasPool();
+
+        if (this.decodedVideo && this.decodedVideo.timestamps && this.decodedVideo.timestamps.length > 1) {
           this.decodedVideo.duration = (this.decodedVideo.timestamps[this.decodedVideo.timestamps.length - 1] - this.decodedVideo.timestamps[0]) * 1000;
         }
 
-        this.decodedVideoCB(this.decodedVideo);
+        if (this.decodedVideoCB) {
+          this.decodedVideoCB(this.decodedVideo);
+        }
       } else {
         setTimeout(checkAndFinish, 30);
       }
@@ -238,21 +303,31 @@ export default class EXTRACTOR {
     let canceled = false;
     this._finishTriggered = false;
     this._pendingBitmapsCount = 0;
+    this._clearCanvasPool();
+    this._chunkQueue = [];
+    this._isProcessingQueue = false;
+    this._isCanceled = false;
+    this._allSamplesReceived = false;
+    this._receivedSamplesCount = 0;
+    this._pendingDrainResolve = null;
 
     alertModal({
       title: "Ouverture de la vidéo",
       body: `<p>Décodage de la vidéo:</p><progress class="progress is-primary" id="extract-decode-progress" value="0" max="100"></progress>`,
       width: "42rem",
-      cancel: { type: "danger", label: "Arrêter", cb: ()=>{canceled = true} },
-      id:"extract-loading-modal"
+      cancel: {
+        type: "danger",
+        label: "Arrêter",
+        cb: () => {
+          canceled = true;
+          this.triggerFinish(true);
+        }
+      },
+      id: "extract-loading-modal"
     });
 
     let firstFrameTimestamp = null;
     let isOver = false;
-
-    // Création du canvas hors-champ pour la compression
-    const offscreenCanvas = new OffscreenCanvas(this.decodedVideo.width, this.decodedVideo.height);
-    const offscreenCtx = offscreenCanvas.getContext("2d", { alpha: false }); // alpha: false optimise le rendu JPEG
 
     this.decoder = new VideoDecoder({
       output: (frame) => {
@@ -314,14 +389,19 @@ export default class EXTRACTOR {
         this.decodedVideo.timestamps[currentIndex] = (frame.timestamp - firstFrameTimestamp) / 1e6;
 
         this._pendingBitmapsCount++;
+
+        // Obtenir un canvas dédié depuis le pool pour éviter les courses critiques asynchrones
+        const canvasItem = this._acquireCanvas(this.decodedVideo.width, this.decodedVideo.height);
         
-        // Dessiner la frame sur le canvas
-        offscreenCtx.drawImage(frame, 0, 0, this.decodedVideo.width, this.decodedVideo.height);
+        // Dessiner la frame sur son canvas dédié
+        canvasItem.ctx.drawImage(frame, 0, 0, this.decodedVideo.width, this.decodedVideo.height);
         frame.close(); // On peut fermer la frame immédiatement après l'avoir dessinée
 
         // Convertir le canvas en Blob JPEG avec qualité 0.85
-        offscreenCanvas.convertToBlob({ type: "image/jpeg", quality: 0.85 })
+        canvasItem.canvas.convertToBlob({ type: "image/jpeg", quality: 0.85 })
         .then(async (blob) => {
+          this._releaseCanvas(canvasItem);
+
           // On génère une URL locale pour le Blob pour faciliter son affichage dans le player
           const blobUrl = URL.createObjectURL(blob);
           
@@ -336,10 +416,11 @@ export default class EXTRACTOR {
           
           // On stocke l'élément Image prêt à être dessiné
           this.decodedVideo.frames[currentIndex] = img; 
-          this._pendingBitmapsCount--;
+          this._decrementPendingBitmaps();
         }).catch((e) => {
+          this._releaseCanvas(canvasItem);
           console.error("Erreur de conversion Blob:", e);
-          this._pendingBitmapsCount--;
+          this._decrementPendingBitmaps();
         });
       },
       error: (e) => { console.error(e); },
@@ -355,22 +436,27 @@ export default class EXTRACTOR {
   }
 
   onSamples(samples){
+    if (this._finishTriggered) return;
+
     for (let i = 0; i < samples.length; i++) {
+      if (this._finishTriggered) break;
       const sample = samples[i];
+      this._receivedSamplesCount = (this._receivedSamplesCount || 0) + 1;
+      if (this.nbSamples && ((sample.number !== undefined && sample.number + 1 >= this.nbSamples) || (this._receivedSamplesCount >= this.nbSamples))) {
+        this._allSamplesReceived = true;
+      }
       this.onChunk(new EncodedVideoChunk({
         type: sample.is_sync ? "key" : "delta",
         timestamp: 1e6 * sample.cts / sample.timescale,
         duration: 1e6 * sample.duration / sample.timescale,
         data: sample.data
       }));
-      if (sample.number + 1 >= this.nbSamples) {
-        this.triggerFinish(false);
-      }
     }
+    this._processChunkQueue();
   }
 
   onChunk(chunk){
-    if ($("#duration-size-input").checked) {
+    if ($("#duration-size-input") && $("#duration-size-input").checked) {
       const endTime = parseFloat($("#end-size-input").value);
       const startTime = parseFloat($("#start-size-input").value);
       if ((chunk.timestamp - chunk.duration) / 1e6 > endTime + 0.2) {
@@ -385,13 +471,60 @@ export default class EXTRACTOR {
       }
     }
 
-    // --- SÉCURITÉ RAM : Si le processeur a plus de 15 images de retard en compression ---
-    // On attend un peu avant de décoder la suite pour éviter de saturer la mémoire.
-    if (this._pendingBitmapsCount > 15) {
-      setTimeout(() => this.onChunk(chunk), 50);
+    this._chunkQueue.push(chunk);
+    this._processChunkQueue();
+  }
+
+  async _processChunkQueue() {
+    if (this._isProcessingQueue) return;
+    this._isProcessingQueue = true;
+
+    while (this._chunkQueue.length > 0) {
+      if (this._finishTriggered) {
+        this._chunkQueue = [];
+        break;
+      }
+
+      // --- SÉCURITÉ RAM : Si le processeur a plus de 15 images de retard en compression ---
+      // On attend que la mémoire se libère avant de décoder la suite.
+      if (this._pendingBitmapsCount > 15) {
+        await new Promise((resolve) => {
+          const timer = setTimeout(() => {
+            if (this._pendingDrainResolve === onDrain) {
+              this._pendingDrainResolve = null;
+            }
+            resolve();
+          }, 50);
+          const onDrain = () => {
+            clearTimeout(timer);
+            resolve();
+          };
+          this._pendingDrainResolve = onDrain;
+        });
+        continue;
+      }
+
+      const chunk = this._chunkQueue.shift();
+      try {
+        if (this.decoder && this.decoder.state === "configured") {
+          this.decoder.decode(chunk);
+        }
+      } catch (e) {
+        console.error("Decoder decode error:", e);
+      }
+    }
+
+    this._isProcessingQueue = false;
+
+    // Relancer au cas où de nouveaux chunks ont été ajoutés pendant la transition
+    if (this._chunkQueue.length > 0 && !this._finishTriggered) {
+      this._processChunkQueue();
       return;
     }
 
-    this.decoder.decode(chunk);
+    // Si tous les échantillons du fichier ont été reçus et que la file est vide
+    if (this._allSamplesReceived && this._chunkQueue.length === 0 && !this._finishTriggered) {
+      this.triggerFinish(false);
+    }
   }
 }
