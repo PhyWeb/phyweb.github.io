@@ -296,11 +296,7 @@ $("#magnifier-button").addEventListener("click", ()=>{player.toggleMagnifier();}
 $("#settings-button").addEventListener("click", ()=>{
   $("#max-digits-input").value = measurement.maxDigits;
 
-  if($("#coordinates-labels").classList.contains("is-hidden")){
-    $("#show-coordinates-input").checked = false;
-  } else {
-    $("#show-coordinates-input").checked = true;
-  }
+  $("#show-coordinates-input").checked = $("#toggle-arrow").classList.contains("fa-chevron-left");
 });
 $("#validate-settings-button").addEventListener("click", ()=>{
   common.modalManager.closeAllModals();
