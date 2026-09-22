@@ -3,6 +3,7 @@ import VIDEOLIST from "./modules/videolist.js"
 import EXTRACTOR from "./modules/extractor.js"
 import MEASUREMENT from "./modules/measurement.js"
 import PLAYER from "./modules/player.js"
+import { isSupportedVideoFile } from "./modules/videoValidator.js"
 
 import {Common, setupGlobalShortcuts, alertModal, showToast, NavigationManager, exportToPW, FileDropManager} from "../common/common.js"
 
@@ -90,14 +91,6 @@ navManager.addLink($('#navbar-home-button'), '../index.html');
 navManager.addLink($('#navbar-audio-button'), '../audio/index.html');
 navManager.addLink($('#navbar-grapher-button'), '../grapher/index.html');
 
-// NAV
-$("#etalonnage-button").addEventListener("click", ()=>{
-  $("#etalonnage-button").classList.add("is-active");
-  $("#mesures-button").classList.remove("is-active");
-  $("#etalonnage-panel").classList.remove("is-hidden");
-  $("#mesures-panel").classList.remove("is-flex");
-  $("#mesures-panel").classList.add("is-hidden");
-});
 
 // ELECTRON
 if (window.electronAPI){
@@ -175,13 +168,13 @@ $("#file-input").addEventListener("change", () => {
     return;
   }
   const file = $("#file-input").files[0];
-  if(file.type !== "video/mp4"){
+  if (!isSupportedVideoFile(file)) {
     common.modalManager.closeAllModals();
     alertModal({
       type: "danger",
       title: "Codec video non supporté",
       body: `<div class="content">
-          <p>La vidéo doit être au format mp4 et encodé dans un des formats listé ci-dessous :</p>
+          <p>La vidéo doit être au format mp4 ou m4v et encodée dans un des formats listés ci-dessous :</p>
           <ul>
             <li>H.264</li>
             <li>H.265</li>
@@ -221,12 +214,12 @@ const videoDropManager = new FileDropManager(document.body, async (file) => {
   if (!file) return;
 
   // 1. Vérification du format (exactement comme pour l'input #file-input)
-  if (file.type !== "video/mp4") {
+  if (!isSupportedVideoFile(file)) {
     alertModal({
       type: "danger",
       title: "Codec video non supporté",
       body: `<div class="content">
-          <p>La vidéo doit être au format mp4 et encodé dans un des formats listé ci-dessous :</p>
+          <p>La vidéo doit être au format mp4 ou m4v et encodée dans un des formats listés ci-dessous :</p>
           <ul>
             <li>H.264</li>
             <li>H.265</li>
@@ -543,3 +536,5 @@ document.addEventListener('mouseup', function(e) {
 resize();
 
 });
+
+export { isSupportedVideoFile };

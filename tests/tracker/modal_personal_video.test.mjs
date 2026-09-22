@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import PLAYER from '../../tracker/modules/player.js';
 import EXTRACTOR from '../../tracker/modules/extractor.js';
 import { ModalManager } from '../../common/common.js';
+import { isSupportedVideoFile } from '../../tracker/modules/videoValidator.js';
 
 describe('Tracker - Fermeture des modales lors du chargement d\'une vidéo perso', () => {
   let originalQSOverride;
@@ -230,7 +231,7 @@ describe('Tracker - Fermeture des modales lors du chargement d\'une vidéo perso
     const onFileInputChange = () => {
       if (!mockElements['#file-input'].files || !mockElements['#file-input'].files[0]) return;
       const file = mockElements['#file-input'].files[0];
-      if (file.type !== 'video/mp4') return;
+      if (!isSupportedVideoFile(file)) return;
 
       modalManagerMock.closeAllModals();
 
