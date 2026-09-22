@@ -232,21 +232,25 @@ export default class EXTRACTOR {
     this.info = _info;
     if($("#checksize-loading-modal")) $("#checksize-loading-modal").remove();
 
-    if (!_info || !_info.videoTracks || _info.videoTracks.length === 0) {
-      console.warn("Aucune piste vidéo trouvée");
+    const firstTrack = _info?.videoTracks?.[0];
+    if (!_info || !_info.videoTracks || _info.videoTracks.length === 0 || !firstTrack || !firstTrack.video || !firstTrack.video.height || !firstTrack.video.width) {
+      this.abortFlag = true;
+      console.warn("Aucune piste vidéo valide trouvée");
       showToast("Aucune piste vidéo trouvée dans ce fichier.", "is-danger");
       $("#new-modal")?.classList.add("is-active");
       return;
     }
 
-    this.track = _info.videoTracks[0];
+    this.track = firstTrack;
     this.height = this.track.video.height;
     this.width = this.track.video.width;
-    this.nbSamples = this.track.nb_samples;
-    this.duration = this.track.movie_duration / this.track.movie_timescale;
-    this.fps = this.nbSamples / this.duration;
+    this.nbSamples = this.track.nb_samples || 0;
+    const movieTimescale = this.track.movie_timescale || 1;
+    this.duration = (this.track.movie_duration && movieTimescale > 0) ? (this.track.movie_duration / movieTimescale) : 0;
+    this.fps = (this.duration > 0 && this.nbSamples > 0) ? (this.nbSamples / this.duration) : 30;
 
     let getDescription = (track) => {
+      if (!track || !track.mdia?.minf?.stbl?.stsd?.entries) return undefined;
       for (const entry of track.mdia.minf.stbl.stsd.entries) {
         if (entry.avcC || entry.hvcC || entry.av1C || entry.vpcC) {
           const stream = new MP4Box.DataStream(undefined, 0, true);
@@ -257,13 +261,18 @@ export default class EXTRACTOR {
           return new Uint8Array(stream.buffer, 8);
         }
       }
+      return undefined;
     }
+
+    const trackObj = (this.mp4boxfile && typeof this.mp4boxfile.getTrackById === "function")
+      ? this.mp4boxfile.getTrackById(this.track.id)
+      : null;
 
     this.config = {
       codec: this.track.codec,
-      codedHeight: this.track.video.height,
-      codedWidth: this.track.video.width,
-      description: getDescription(this.mp4boxfile.getTrackById(this.track.id)),
+      codedHeight: this.height,
+      codedWidth: this.width,
+      description: getDescription(trackObj),
     };
 
     $("#def-size-input").checked = false;
@@ -341,7 +350,10 @@ export default class EXTRACTOR {
     const startTime = Math.min(isNaN(rawStart) ? 0 : rawStart, isNaN(rawEnd) ? Infinity : rawEnd);
     const endTime = Math.max(isNaN(rawStart) ? 0 : rawStart, isNaN(rawEnd) ? Infinity : rawEnd);
 
-    this.decodedVideo.duration = durationReduction ? Math.max(0, endTime - startTime) * 1000 : this.track.movie_duration * 1000 / this.track.movie_timescale; 
+    const defaultDuration = (this.duration || 0) * 1000;
+    this.decodedVideo.duration = durationReduction
+      ? Math.max(0, endTime - startTime) * 1000
+      : ((this.track?.movie_duration && this.track?.movie_timescale) ? (this.track.movie_duration * 1000 / this.track.movie_timescale) : defaultDuration); 
     this.decodedVideo.width = defReduction ? this.width / 2 : this.width;
     this.decodedVideo.height = defReduction ? this.height / 2 : this.height;
     this.decodedVideo.frames = [];
@@ -489,7 +501,10 @@ export default class EXTRACTOR {
     });
 
     this.decoder.configure(this.config);
-    this.mp4boxfile.setExtractionOptions(this.info.videoTracks[0].id);
+    const trackId = this.track?.id ?? this.info?.videoTracks?.[0]?.id;
+    if (trackId !== undefined && this.mp4boxfile?.setExtractionOptions) {
+      this.mp4boxfile.setExtractionOptions(trackId);
+    }
     if (durationReduction && startTime > 0) {
       this.mp4boxfile.seek(startTime, true);
     }
