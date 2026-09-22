@@ -171,7 +171,12 @@ $("#open-video").addEventListener("click", ()=>{
 
 // FILEINPUT
 $("#file-input").addEventListener("change", () => {
-  if($("#file-input").files[0].type !== "video/mp4"){
+  if(!$("#file-input").files || !$("#file-input").files[0]){
+    return;
+  }
+  const file = $("#file-input").files[0];
+  if(file.type !== "video/mp4"){
+    common.modalManager.closeAllModals();
     alertModal({
       type: "danger",
       title: "Codec video non supporté",
@@ -183,21 +188,30 @@ $("#file-input").addEventListener("change", () => {
             <li>AV1</li>
           </ul>
         </div>`,
-      confirm: "OK",
+      confirm: {
+        label: "OK",
+        cb: () => {
+          $("#new-modal")?.classList.add("is-active");
+        }
+      },
       width: "45rem"
-    })
+    });
     return;
   }
-  if($("#file-input").files[0] != undefined){
-    navManager.confirmAction(() => {
-      player.load($("#file-input").files[0], $("#force-filesize-modal-input").checked);
-    }, {
-      title: "Ouvrir un fichier",
-      body: "Le chargement d'une nouvelle vidéo remplacera la vidéo actuelle. Les données non sauvegardées seront perdues.",
-      confirmLabel: "Ouvrir"
-    });
-  }
+
+  // Fermer les modales ouvertes (notamment la modale "Ouvrir une vidéo")
+  common.modalManager.closeAllModals();
+
+  navManager.confirmAction(() => {
+    common.modalManager.closeAllModals();
+    player.load(file, $("#force-filesize-modal-input").checked);
+  }, {
+    title: "Ouvrir un fichier",
+    body: "Le chargement d'une nouvelle vidéo remplacera la vidéo actuelle. Les données non sauvegardées seront perdues.",
+    confirmLabel: "Ouvrir"
+  });
 });
+
 $("#file-input").addEventListener("click", () => {
   $("#file-input").value = null; // allow the onchange trigger even if the same file is selected twice
 });

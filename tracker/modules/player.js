@@ -82,6 +82,7 @@ export default class PLAYER {
       if (!_decodedVideo || !_decodedVideo.frames || _decodedVideo.frames.length === 0) {
         console.warn("Aucune image extraite de la vidéo");
         showToast("Aucune image n'a pu être extraite de la vidéo.", "is-danger");
+        $("#new-modal")?.classList.add("is-active");
         return;
       }
       this.decodedVideo = _decodedVideo;
@@ -96,6 +97,11 @@ export default class PLAYER {
       $("#handler-wrapper").classList.remove("is-hidden");
       $(".handler").style.display= "block";
       this.videoCanvas.style.display= "block";
+
+      const openModal = $("#open-modal");
+      if (openModal) openModal.classList.remove("is-active");
+      const newModal = $("#new-modal");
+      if (newModal) newModal.classList.remove("is-active");
 
       this.measurement.init(this.decodedVideo, this);
 

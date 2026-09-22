@@ -1,4 +1,4 @@
-import {alertModal} from "../../common/common.js"
+import {alertModal, showToast} from "../../common/common.js"
 
 import * as MP4Box from "../../common/mp4box/mp4box.all.2.1.2.js";
 
@@ -153,7 +153,10 @@ export default class EXTRACTOR {
       timestamps: []
     }
 
-    $("#open-modal").classList.remove("is-active");
+    const openModal = $("#open-modal");
+    if (openModal) openModal.classList.remove("is-active");
+    const newModal = $("#new-modal");
+    if (newModal) newModal.classList.remove("is-active");
     alertModal({
       title: "Analyse de la vidéo",
       body: `<progress class="progress is-primary" id="checksize-progress" value="0" max="100"></progress>`,
@@ -171,7 +174,12 @@ export default class EXTRACTOR {
       this.mp4boxfile.flush();
     }
     this.mp4boxfile = MP4Box.createFile(true);
-    this.mp4boxfile.onError = (e) => {console.log("MP4Box error: ", e);};
+    this.mp4boxfile.onError = (e) => {
+      console.error("MP4Box error: ", e);
+      if ($("#checksize-loading-modal")) $("#checksize-loading-modal").remove();
+      showToast("Erreur de lecture du fichier vidéo.", "is-danger");
+      $("#new-modal")?.classList.add("is-active");
+    };
     this.mp4boxfile.onReady = (info) => {
       this.onReady(info);
     }
@@ -191,6 +199,9 @@ export default class EXTRACTOR {
         this.mp4boxfile.appendBuffer(buffer);
         offset += evt.target.result.byteLength;
       } else {
+        if ($("#checksize-loading-modal")) $("#checksize-loading-modal").remove();
+        showToast("Erreur lors de la lecture du fichier.", "is-danger");
+        $("#new-modal")?.classList.add("is-active");
         return;
       }
       readBlock(offset, chunksize, _file);
@@ -208,6 +219,13 @@ export default class EXTRACTOR {
   onReady(_info){
     this.info = _info;
     if($("#checksize-loading-modal")) $("#checksize-loading-modal").remove();
+
+    if (!_info || !_info.videoTracks || _info.videoTracks.length === 0) {
+      console.warn("Aucune piste vidéo trouvée");
+      showToast("Aucune piste vidéo trouvée dans ce fichier.", "is-danger");
+      $("#new-modal")?.classList.add("is-active");
+      return;
+    }
 
     this.track = _info.videoTracks[0];
     this.height = this.track.video.height;
@@ -449,7 +467,13 @@ export default class EXTRACTOR {
           this._decrementPendingBitmaps();
         });
       },
-      error: (e) => { console.error(e); },
+      error: (e) => {
+        console.error("VideoDecoder error:", e);
+        if ($("#extract-loading-modal")) $("#extract-loading-modal").remove();
+        showToast("Erreur lors du décodage de la vidéo.", "is-danger");
+        $("#new-modal")?.classList.add("is-active");
+        this.triggerFinish(true);
+      },
     });
 
     this.decoder.configure(this.config);
