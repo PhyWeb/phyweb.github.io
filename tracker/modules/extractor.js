@@ -244,9 +244,14 @@ export default class EXTRACTOR {
       $("#file-size-modal").classList.add('is-active');
       $("#def-size-label").innerHTML = ` ( ${this.width} / ${this.height} => ${this.width / 2} / ${this.height / 2} )`;
       $("#fps-size-label").innerHTML = ` ( ${this.fps.toFixed(2)/1} => ${this.fps.toFixed(2)/2} img/s )`;
-      $("#duration-size-label").innerHTML = this.duration.toFixed(2);
-      $("#file-slider").noUiSlider.updateOptions({ range:{ 'min': 0, 'max': this.duration }, start: [0, this.duration] });
-      $("#file-slider").noUiSlider.set([0, this.duration]);
+      const sliderMax = (this.duration && this.duration > 0) ? this.duration : 0.001;
+      $("#duration-size-label").innerHTML = (this.duration || 0).toFixed(2);
+      $("#file-slider").noUiSlider.updateOptions({
+        range: { 'min': 0, 'max': sliderMax },
+        start: [0, sliderMax],
+        margin: null
+      });
+      $("#file-slider").noUiSlider.set([0, sliderMax]);
 
       this.updateSize();
       $("#def-size-input").addEventListener("click", () => this.updateSize());
@@ -265,7 +270,9 @@ export default class EXTRACTOR {
     let h = $("#def-size-input").checked ? this.height / 2 : this.height;
     let w = $("#def-size-input").checked ? this.width / 2 : this.width;
     let fps = $("#fps-size-input").checked ? this.fps / 2 : this.fps;
-    let duration = $("#duration-size-input").checked ? ($("#end-size-input").value - $("#start-size-input").value) : this.duration;
+    let duration = $("#duration-size-input").checked
+      ? Math.max(0, parseFloat($("#end-size-input").value || 0) - parseFloat($("#start-size-input").value || 0))
+      : (this.duration || 0);
     let nb = duration * fps;
     // ~0.5 octets par pixel compressé au lieu de 4 octets bruts
     let estimatedBytesPerPixel = 0.5;
@@ -292,7 +299,7 @@ export default class EXTRACTOR {
     const startTime = durationReduction ? parseFloat($("#start-size-input").value) : 0;
     const endTime = durationReduction ? parseFloat($("#end-size-input").value) : Infinity;
 
-    this.decodedVideo.duration = durationReduction ? (endTime - startTime) * 1000 : this.track.movie_duration * 1000 / this.track.movie_timescale; 
+    this.decodedVideo.duration = durationReduction ? Math.max(0, endTime - startTime) * 1000 : this.track.movie_duration * 1000 / this.track.movie_timescale; 
     this.decodedVideo.width = defReduction ? this.width / 2 : this.width;
     this.decodedVideo.height = defReduction ? this.height / 2 : this.height;
     this.decodedVideo.frames = [];

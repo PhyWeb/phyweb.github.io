@@ -253,7 +253,6 @@ noUiSlider.create($("#file-slider"), {
     'min': 0,
     'max': 10
   },
-  margin: 1,
   behaviour: 'tap-drag',
   tooltips: false,
   pips: {

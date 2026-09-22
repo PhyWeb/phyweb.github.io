@@ -41,6 +41,8 @@
 
     - on drop des frames pendaant la lecture
 
+    - on peut maintenant garder que 0 secondes de videos. il faudrait au moins extraire une frame
+
 # Grapher
     - possibilité d'avoir 2 axes y
 
