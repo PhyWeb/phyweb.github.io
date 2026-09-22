@@ -34,6 +34,20 @@ export default class EXTRACTOR {
       frames: [],
       timestamps: []
     };
+    this.decoder = null;
+  }
+
+  _closeDecoder() {
+    if (this.decoder) {
+      try {
+        if (this.decoder.state !== "closed" && typeof this.decoder.close === "function") {
+          this.decoder.close();
+        }
+      } catch (e) {
+        console.warn("Erreur lors de la fermeture du VideoDecoder:", e);
+      }
+      this.decoder = null;
+    }
   }
 
   _decrementPendingBitmaps() {
@@ -84,20 +98,32 @@ export default class EXTRACTOR {
     }
     this._chunkQueue = [];
 
-    try {
-      if (this.decoder && this.decoder.state === "configured") {
-        await this.decoder.flush();
+    if (wasCanceled) {
+      this._closeDecoder();
+    } else {
+      try {
+        if (this.decoder && this.decoder.state === "configured") {
+          await this.decoder.flush();
+        }
+      } catch (e) {
+        console.warn("Decoder flush warning:", e);
       }
-      if (this.mp4boxfile) {
+      this._closeDecoder();
+    }
+
+    if (this.mp4boxfile) {
+      try {
         this.mp4boxfile.flush();
+      } catch (e) {
+        console.warn("MP4Box flush warning:", e);
       }
-    } catch (e) {
-      console.warn("Decoder flush warning:", e);
     }
 
     const checkAndFinish = () => {
       if (this._pendingBitmapsCount <= 0 || wasCanceled || this._isCanceled) {
         if ($('#extract-loading-modal')) $('#extract-loading-modal').remove();
+
+        this._closeDecoder();
 
         if (wasCanceled || this._isCanceled) {
           this._clearCanvasPool();
@@ -146,6 +172,7 @@ export default class EXTRACTOR {
   };
 
   checkSize(_file, _checksizeCB, _decodedVideoCB, _forceFilesize = false) {
+    this._closeDecoder();
     this.checksizeCB = _checksizeCB;
     this.decodedVideoCB = _decodedVideoCB;
     this.forceFileSize = _forceFilesize;
@@ -176,7 +203,10 @@ export default class EXTRACTOR {
       cancel: {
         type: "danger",
         label: "Annuler",
-        cb: () => this.abortFlag = true
+        cb: () => {
+          this.abortFlag = true;
+          this._closeDecoder();
+        }
       },
       backgroundNotClickable: true,
       id:"checksize-loading-modal"
@@ -187,6 +217,7 @@ export default class EXTRACTOR {
     }
     this.mp4boxfile = MP4Box.createFile(true);
     this.mp4boxfile.onError = (e) => {
+      this._closeDecoder();
       console.error("MP4Box error: ", e);
       if ($("#checksize-loading-modal")) $("#checksize-loading-modal").remove();
       showToast("Erreur de lecture du fichier vidéo.", "is-danger");
@@ -235,6 +266,7 @@ export default class EXTRACTOR {
     const firstTrack = _info?.videoTracks?.[0];
     if (!_info || !_info.videoTracks || _info.videoTracks.length === 0 || !firstTrack || !firstTrack.video || !firstTrack.video.height || !firstTrack.video.width) {
       this.abortFlag = true;
+      this._closeDecoder();
       console.warn("Aucune piste vidéo valide trouvée");
       showToast("Aucune piste vidéo trouvée dans ce fichier.", "is-danger");
       $("#new-modal")?.classList.add("is-active");
@@ -339,6 +371,7 @@ export default class EXTRACTOR {
   }
 
   extract(){
+    this._closeDecoder();
     this.checksizeCB()
 
     const durationReduction = $("#duration-size-input").checked;
@@ -493,6 +526,7 @@ export default class EXTRACTOR {
       },
       error: (e) => {
         console.error("VideoDecoder error:", e);
+        this._closeDecoder();
         if ($("#extract-loading-modal")) $("#extract-loading-modal").remove();
         showToast("Erreur lors du décodage de la vidéo.", "is-danger");
         $("#new-modal")?.classList.add("is-active");
