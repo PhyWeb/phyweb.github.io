@@ -114,8 +114,12 @@ export default class EXTRACTOR {
 
         this._clearCanvasPool();
 
-        if (this.decodedVideo && this.decodedVideo.timestamps && this.decodedVideo.timestamps.length > 1) {
-          this.decodedVideo.duration = (this.decodedVideo.timestamps[this.decodedVideo.timestamps.length - 1] - this.decodedVideo.timestamps[0]) * 1000;
+        if (this.decodedVideo && this.decodedVideo.timestamps) {
+          if (this.decodedVideo.timestamps.length > 1) {
+            this.decodedVideo.duration = (this.decodedVideo.timestamps[this.decodedVideo.timestamps.length - 1] - this.decodedVideo.timestamps[0]) * 1000;
+          } else if (this.decodedVideo.timestamps.length === 1 && (!this.decodedVideo.duration || this.decodedVideo.duration <= 0)) {
+            this.decodedVideo.duration = 1000 / (this.fps || 30);
+          }
         }
 
         if (this.decodedVideoCB) {
@@ -270,10 +274,15 @@ export default class EXTRACTOR {
     let h = $("#def-size-input").checked ? this.height / 2 : this.height;
     let w = $("#def-size-input").checked ? this.width / 2 : this.width;
     let fps = $("#fps-size-input").checked ? this.fps / 2 : this.fps;
-    let duration = $("#duration-size-input").checked
-      ? Math.max(0, parseFloat($("#end-size-input").value || 0) - parseFloat($("#start-size-input").value || 0))
-      : (this.duration || 0);
-    let nb = duration * fps;
+    let duration = this.duration || 0;
+    if ($("#duration-size-input").checked) {
+      const rawStart = parseFloat($("#start-size-input").value);
+      const rawEnd = parseFloat($("#end-size-input").value);
+      const start = Math.min(isNaN(rawStart) ? 0 : rawStart, isNaN(rawEnd) ? 0 : rawEnd);
+      const end = Math.max(isNaN(rawStart) ? 0 : rawStart, isNaN(rawEnd) ? 0 : rawEnd);
+      duration = Math.max(0, end - start);
+    }
+    let nb = Math.max(1, duration * fps);
     // ~0.5 octets par pixel compressé au lieu de 4 octets bruts
     let estimatedBytesPerPixel = 0.5;
     this.size = Math.ceil(h * w * estimatedBytesPerPixel * nb / (1024*1024));
@@ -296,8 +305,10 @@ export default class EXTRACTOR {
     const fpsReduction = $("#fps-size-input").checked;
     const defReduction = $("#def-size-input").checked;
 
-    const startTime = durationReduction ? parseFloat($("#start-size-input").value) : 0;
-    const endTime = durationReduction ? parseFloat($("#end-size-input").value) : Infinity;
+    const rawStart = durationReduction ? parseFloat($("#start-size-input").value) : 0;
+    const rawEnd = durationReduction ? parseFloat($("#end-size-input").value) : Infinity;
+    const startTime = Math.min(isNaN(rawStart) ? 0 : rawStart, isNaN(rawEnd) ? Infinity : rawEnd);
+    const endTime = Math.max(isNaN(rawStart) ? 0 : rawStart, isNaN(rawEnd) ? Infinity : rawEnd);
 
     this.decodedVideo.duration = durationReduction ? Math.max(0, endTime - startTime) * 1000 : this.track.movie_duration * 1000 / this.track.movie_timescale; 
     this.decodedVideo.width = defReduction ? this.width / 2 : this.width;
@@ -307,6 +318,7 @@ export default class EXTRACTOR {
 
     let candidateFrameCount = 0;
     let savedFrameCount = 0;
+    let decodedFrameCount = 0;
     let canceled = false;
     this._finishTriggered = false;
     this._pendingBitmapsCount = 0;
@@ -347,16 +359,19 @@ export default class EXTRACTOR {
           return;
         }
 
+        decodedFrameCount++;
         const frameTimeSec = frame.timestamp / 1e6;
+        const isLastVideoSample = this.nbSamples && (decodedFrameCount >= this.nbSamples);
 
-        // Frames before start time
-        if (durationReduction && frameTimeSec < startTime) {
+        // Frames before start time (sauf si c'est la toute dernière frame de la vidéo et qu'aucune frame n'a été enregistrée)
+        if (durationReduction && frameTimeSec < startTime && !(isLastVideoSample && savedFrameCount === 0)) {
           frame.close();
           return;
         }
 
         // Frame is after end time: finish extraction immediately
-        if (durationReduction && frameTimeSec > endTime) {
+        // Sécurité : si aucune frame n'a encore été enregistrée, on conserve au moins la première frame disponible >= startTime
+        if (durationReduction && frameTimeSec > endTime && savedFrameCount > 0) {
           isOver = true;
           this.triggerFinish(false);
           frame.close();
@@ -376,7 +391,9 @@ export default class EXTRACTOR {
         }
 
         let progress = durationReduction
-          ? Math.min(100, Math.max(0, ((frame.timestamp - firstFrameTimestamp) / 1e3 + (frame.duration / 1e3)) / this.decodedVideo.duration * 100))
+          ? (this.decodedVideo.duration > 0
+              ? Math.min(100, Math.max(0, ((frame.timestamp - firstFrameTimestamp) / 1e3 + (frame.duration / 1e3)) / this.decodedVideo.duration * 100))
+              : 100)
           : (this.nbSamples ? ((savedFrameCount + 1) / this.nbSamples * 100) : 100);
 
         let progressEl = $("#extract-decode-progress");
@@ -464,8 +481,10 @@ export default class EXTRACTOR {
 
   onChunk(chunk){
     if ($("#duration-size-input") && $("#duration-size-input").checked) {
-      const endTime = parseFloat($("#end-size-input").value);
-      const startTime = parseFloat($("#start-size-input").value);
+      const rawEnd = parseFloat($("#end-size-input").value);
+      const rawStart = parseFloat($("#start-size-input").value);
+      const startTime = Math.min(isNaN(rawStart) ? 0 : rawStart, isNaN(rawEnd) ? Infinity : rawEnd);
+      const endTime = Math.max(isNaN(rawStart) ? 0 : rawStart, isNaN(rawEnd) ? Infinity : rawEnd);
       if ((chunk.timestamp - chunk.duration) / 1e6 > endTime + 0.2) {
         return;
       }

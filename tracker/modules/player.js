@@ -81,6 +81,7 @@ export default class PLAYER {
       console.log("Video decoded", _decodedVideo);
       if (!_decodedVideo || !_decodedVideo.frames || _decodedVideo.frames.length === 0) {
         console.warn("Aucune image extraite de la vidéo");
+        showToast("Aucune image n'a pu être extraite de la vidéo.", "is-danger");
         return;
       }
       this.decodedVideo = _decodedVideo;

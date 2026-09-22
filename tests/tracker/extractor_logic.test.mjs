@@ -12,14 +12,20 @@ describe('Tracker Extractor Logic', () => {
     fpsReduction = false,
     nbSamples = null
   }) {
+    const rawStart = startTime;
+    const rawEnd = endTime;
+    const normStart = Math.min(rawStart, rawEnd);
+    const normEnd = Math.max(rawStart, rawEnd);
+
     const decodedVideo = {
-      duration: durationReduction ? (endTime - startTime) * 1000 : 2000,
+      duration: durationReduction ? Math.max(0, normEnd - normStart) * 1000 : 2000,
       frames: [],
       timestamps: []
     };
 
     let candidateFrameCount = 0;
     let savedFrameCount = 0;
+    let decodedFrameCount = 0;
     let canceled = false;
     let finishTriggered = false;
     let isOver = false;
@@ -34,15 +40,18 @@ describe('Tracker Extractor Logic', () => {
         continue;
       }
 
+      decodedFrameCount++;
       const frameTimeSec = frame.timestamp / 1e6;
+      const isLastVideoSample = nbSamples && (decodedFrameCount >= nbSamples);
 
-      // Frames before start time
-      if (durationReduction && frameTimeSec < startTime) {
+      // Frames before start time (sauf si c'est la toute dernière frame et qu'aucune n'a été enregistrée)
+      if (durationReduction && frameTimeSec < normStart && !(isLastVideoSample && savedFrameCount === 0)) {
         continue;
       }
 
       // Frame is after end time: finish extraction immediately
-      if (durationReduction && frameTimeSec > endTime) {
+      // Sécurité : si aucune frame n'a encore été enregistrée, on conserve au moins la première frame disponible >= startTime
+      if (durationReduction && frameTimeSec > normEnd && savedFrameCount > 0) {
         isOver = true;
         triggerFinish();
         continue;
@@ -75,6 +84,8 @@ describe('Tracker Extractor Logic', () => {
 
     if (decodedVideo.timestamps.length > 1) {
       decodedVideo.duration = (decodedVideo.timestamps[decodedVideo.timestamps.length - 1] - decodedVideo.timestamps[0]) * 1000;
+    } else if (decodedVideo.timestamps.length === 1 && (!decodedVideo.duration || decodedVideo.duration <= 0)) {
+      decodedVideo.duration = 33.333;
     }
 
     return { decodedVideo, finishTriggered };
@@ -177,5 +188,63 @@ describe('Tracker Extractor Logic', () => {
       assert.ok(decodedVideo.timestamps[i] !== undefined);
     }
   });
+
+  it('doit extraire au moins 1 image lorsque la durée demandée est nulle (startTime === endTime)', () => {
+    const mockFrames = generateMockFrames(60, 33.3333); // 0s à 2s
+    const targetTime = 0.52; // Ne tombe pas exactement sur un timestamp de frame (0.500 ou 0.533)
+
+    const { decodedVideo, finishTriggered } = simulateOutputFrames({
+      allFrames: mockFrames,
+      durationReduction: true,
+      startTime: targetTime,
+      endTime: targetTime,
+      fpsReduction: false,
+      nbSamples: 60
+    });
+
+    assert.equal(finishTriggered, true);
+    assert.equal(decodedVideo.frames.length, 1, 'Au moins une frame doit être extraite même pour 0 seconde');
+    assert.equal(decodedVideo.timestamps.length, 1);
+    assert.equal(decodedVideo.timestamps[0], 0);
+    assert.ok(decodedVideo.duration > 0, 'La durée résultante doit être positive');
+  });
+
+  it('doit extraire au moins 1 image si le curseur est placé à la fin exacte de la vidéo', () => {
+    const mockFrames = generateMockFrames(60, 33.3333); // Dernière frame à ~1.9666s
+    const videoEndTime = 2.0; // Supérieur au timestamp de la dernière frame
+
+    const { decodedVideo } = simulateOutputFrames({
+      allFrames: mockFrames,
+      durationReduction: true,
+      startTime: videoEndTime,
+      endTime: videoEndTime,
+      fpsReduction: false,
+      nbSamples: 60
+    });
+
+    assert.equal(decodedVideo.frames.length, 1, 'La dernière frame doit être conservée pour éviter 0 frame');
+    assert.equal(decodedVideo.timestamps.length, 1);
+  });
+
+  it('doit normaliser les bornes et extraire les frames si startTime > endTime', () => {
+    const mockFrames = generateMockFrames(60, 33.3333);
+    const startTime = 1.2;
+    const endTime = 0.5; // Inversé par rapport à start
+
+    const { decodedVideo, finishTriggered } = simulateOutputFrames({
+      allFrames: mockFrames,
+      durationReduction: true,
+      startTime,
+      endTime,
+      fpsReduction: false,
+      nbSamples: 60
+    });
+
+    assert.equal(finishTriggered, true);
+    assert.ok(decodedVideo.frames.length >= 21 && decodedVideo.frames.length <= 22);
+    assert.ok(decodedVideo.duration > 0);
+    assert.equal(decodedVideo.timestamps[0], 0);
+  });
 });
+
 

@@ -41,8 +41,7 @@
 
     - on drop des frames pendaant la lecture
 
-    - on peut maintenant garder que 0 secondes de videos. il faudrait au moins extraire une frame
-
+    - titre de la boite de dialogue de reduction si on l'a choisi nous meme colle pas
 # Grapher
     - possibilité d'avoir 2 axes y
 
