@@ -18,6 +18,7 @@ export default class EXTRACTOR {
     this.size = 0;
     this.sizeThreshold = 512; // 512 Mio
     this._finishTriggered = false;
+    this.keyFrameFound = false;
     this._pendingBitmapsCount = 0;
     this._canvasPool = [];
     this._chunkQueue = [];
@@ -321,6 +322,7 @@ export default class EXTRACTOR {
     let decodedFrameCount = 0;
     let canceled = false;
     this._finishTriggered = false;
+    this.keyFrameFound = false;
     this._pendingBitmapsCount = 0;
     this._clearCanvasPool();
     this._chunkQueue = [];
@@ -452,9 +454,8 @@ export default class EXTRACTOR {
 
     this.decoder.configure(this.config);
     this.mp4boxfile.setExtractionOptions(this.info.videoTracks[0].id);
-    if(durationReduction){
-      let seekTime = startTime - 5;
-      if(seekTime > 0) this.mp4boxfile.seek(seekTime);
+    if (durationReduction && startTime > 0) {
+      this.mp4boxfile.seek(startTime, true);
     }
     this.mp4boxfile.start();
   }
@@ -488,12 +489,9 @@ export default class EXTRACTOR {
       if ((chunk.timestamp - chunk.duration) / 1e6 > endTime + 0.2) {
         return;
       }
-      if (chunk.timestamp / 1e6 < startTime - 5) return;
-      if (chunk.timestamp / 1e6 <= startTime) {
-        if (!this.keyFrameFound) {
-          if (chunk.type !== "key") return;
-          else this.keyFrameFound = true;
-        }
+      if (!this.keyFrameFound) {
+        if (chunk.type !== "key") return;
+        this.keyFrameFound = true;
       }
     }
 

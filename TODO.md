@@ -15,8 +15,6 @@
 
     - Ajouter des toasts quand c'est utilie
 
-    - FOND NOIR QUAND THEME TRES NOIR ???
-
 # ELECTRON
 
 # Home
@@ -42,6 +40,8 @@
     - on drop des frames pendaant la lecture
 
     - titre de la boite de dialogue de reduction si on l'a choisi nous meme colle pas
+
+    - quand je charge une video perso, on retombe sur la modale de debut
 # Grapher
     - possibilité d'avoir 2 axes y
 
