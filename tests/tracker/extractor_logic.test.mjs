@@ -83,7 +83,15 @@ describe('Tracker Extractor Logic', () => {
     }
 
     if (decodedVideo.timestamps.length > 1) {
-      decodedVideo.duration = (decodedVideo.timestamps[decodedVideo.timestamps.length - 1] - decodedVideo.timestamps[0]) * 1000;
+      const last = decodedVideo.timestamps.length - 1;
+      let dt = decodedVideo.timestamps[last] - decodedVideo.timestamps[last - 1];
+      if (dt <= 0) {
+        dt = (decodedVideo.timestamps[last] - decodedVideo.timestamps[0]) / last;
+      }
+      if (dt <= 0) {
+        dt = 1 / 30;
+      }
+      decodedVideo.duration = (decodedVideo.timestamps[last] + dt - decodedVideo.timestamps[0]) * 1000;
     } else if (decodedVideo.timestamps.length === 1 && (!decodedVideo.duration || decodedVideo.duration <= 0)) {
       decodedVideo.duration = 33.333;
     }
@@ -163,6 +171,9 @@ describe('Tracker Extractor Logic', () => {
       const dt = (decodedVideo.timestamps[i] - decodedVideo.timestamps[i - 1]) * 1000;
       assert.ok(Math.abs(dt - 66.667) < 2.0, `Expected dt ~66.7ms, got ${dt}ms at index ${i}`);
     }
+
+    // Durée totale préservée (2000 ms pour 60 images d'origine)
+    assert.ok(Math.abs(decodedVideo.duration - 2000) < 1.0, `Expected ~2000ms, got ${decodedVideo.duration}ms`);
   });
 
   it('doit combiner réduction de durée et réduction de fps proprement', () => {

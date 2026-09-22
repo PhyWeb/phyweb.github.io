@@ -116,9 +116,21 @@ export default class EXTRACTOR {
         this._clearCanvasPool();
 
         if (this.decodedVideo && this.decodedVideo.timestamps) {
-          if (this.decodedVideo.timestamps.length > 1) {
-            this.decodedVideo.duration = (this.decodedVideo.timestamps[this.decodedVideo.timestamps.length - 1] - this.decodedVideo.timestamps[0]) * 1000;
-          } else if (this.decodedVideo.timestamps.length === 1 && (!this.decodedVideo.duration || this.decodedVideo.duration <= 0)) {
+          const timestamps = this.decodedVideo.timestamps;
+          if (timestamps.length > 1) {
+            const last = timestamps.length - 1;
+            let dt = timestamps[last] - timestamps[last - 1];
+            if (dt <= 0) {
+              dt = (timestamps[last] - timestamps[0]) / last;
+            }
+            if (dt <= 0 && this.fps) {
+              dt = 1 / this.fps;
+            }
+            if (dt <= 0) {
+              dt = 1 / 30;
+            }
+            this.decodedVideo.duration = (timestamps[last] + dt - timestamps[0]) * 1000;
+          } else if (timestamps.length === 1 && (!this.decodedVideo.duration || this.decodedVideo.duration <= 0)) {
             this.decodedVideo.duration = 1000 / (this.fps || 30);
           }
         }
