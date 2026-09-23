@@ -164,10 +164,14 @@ document.addEventListener("click", function () {
 
 // VIDEOLIST
 videolist.init("assets/list.json");
-$("#open-video").addEventListener("click", ()=>{
+$("#open-video").addEventListener("click", () => {
+  const selectedPath = videolist.getSelectedPath?.() || $(".video-item.is-active")?.dataset?.path;
+  if (!selectedPath) {
+    return;
+  }
   navManager.confirmAction(() => {
     common.modalManager.closeAllModals();
-    player.load("assets/" + $(".video-item.is-active").dataset.path, $("#force-filesize-modal-input").checked);
+    player.load("assets/" + selectedPath, $("#force-filesize-modal-input")?.checked ?? false);
   }, {
     title: "Charger la vidéo",
     body: "Le chargement d'une nouvelle vidéo remplacera la vidéo actuelle. Les données non sauvegardées seront perdues.",

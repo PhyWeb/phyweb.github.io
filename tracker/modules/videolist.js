@@ -114,4 +114,12 @@ export default class VIDEOLIST {
 
     return li;
   }
+
+  getSelectedPath() {
+    const active = document.querySelector(".video-item.is-active");
+    if (!active || !active.dataset || !active.dataset.path) {
+      return null;
+    }
+    return active.dataset.path;
+  }
 }
