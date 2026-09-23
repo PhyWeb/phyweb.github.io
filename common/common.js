@@ -1119,14 +1119,23 @@ function exportToCSV(_series, _rowMustBeComplete = false) {
   return '\uFEFF' + csvContent;
 }
 
-function exportToRW3(_series, _rowMustBeComplete = false, _title){
+function removeAccents(str) {
+  if (!str) return str || "";
+  return String(str).normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+function exportToRW3(_series = [], _rowMustBeComplete = false, _title = ""){
+  if (!Array.isArray(_series)) {
+    _series = [];
+  }
+
   let rw3 = [];
 
   let dataRows = [];
   let largestSerieLength = 0;
 
   for (let i = 0; i < _series.length; i++) {
-      if (_series[i].length > largestSerieLength) {
+      if (_series[i] && _series[i].length > largestSerieLength) {
           largestSerieLength = _series[i].length;
       }
   }
@@ -1135,12 +1144,12 @@ function exportToRW3(_series, _rowMustBeComplete = false, _title){
       let row = [];
       let rowIsComplete = true;
       for (let j = 0; j < _series.length; j++) {
-          const value = _series[j][i];
+          const value = _series[j] ? _series[j][i] : undefined;
           if (value === undefined || value === null || value === "") {
               row.push('');
               rowIsComplete = false;
           } else {
-              row.push(value);
+              row.push(String(value).replace('.', ','));
           }
       }
 
@@ -1154,7 +1163,7 @@ function exportToRW3(_series, _rowMustBeComplete = false, _title){
   // Names
   rw3.push("£" + _series.length + " NOM VAR");
   for (let i = 0; i < _series.length; i++) {
-    rw3.push(_series[i].title);
+    rw3.push(removeAccents((_series[i] && _series[i].title) || ""));
   }
 
   // Genre ???
@@ -1166,8 +1175,8 @@ function exportToRW3(_series, _rowMustBeComplete = false, _title){
   // Units
   rw3.push("£" + _series.length + " UNITE VAR");
   for(let i = 0; i < _series.length; i++){
-    if(_series[i].unit){
-      rw3.push(_series[i].unit);
+    if(_series[i] && _series[i].unit){
+      rw3.push(removeAccents(_series[i].unit));
     } else{
       rw3.push("");
     }
@@ -1178,37 +1187,44 @@ function exportToRW3(_series, _rowMustBeComplete = false, _title){
   rw3.push("£1 LOG");
   rw3.push("0");
   rw3.push("£1 MEMO GRANDEURS");
-  rw3.push("'"+_title);
+  if (_title) {
+    const cleanTitle = removeAccents(_title);
+    rw3.push(cleanTitle.startsWith("'") ? cleanTitle : "'" + cleanTitle);
+  } else {
+    rw3.push("");
+  }
   rw3.push("£2 ACQUISITION");
   rw3.push("CLAVIER");
   rw3.push("");
   rw3.push("£0 GRAPHE VAR");
-  let xSerie = _series.find(s => s.type === "x");
-  let ySeries = _series.filter(s => s.type === "y");
+  let xSerie = _series.find(s => s && s.type === "x");
+  let ySeries = _series.filter(s => s && s.type === "y");
 
   if(ySeries.length === 0){
-    rw3.push("&1 X")
-    if(xSerie){
-      rw3.push(xSerie.title);
-    } else{
-      rw3.push(_series[0].title);
+    if (_series.length >= 2) {
+      rw3.push("&1 X");
+      rw3.push(removeAccents(xSerie ? xSerie.title : (_series[0]?.title || "")));
+      rw3.push("&1 Y");
+      rw3.push(removeAccents(_series[1]?.title || ""));
+    } else if (_series.length === 1) {
+      const title = removeAccents(_series[0]?.title || "");
+      rw3.push("&1 X");
+      rw3.push(title);
+      rw3.push("&1 Y");
+      rw3.push(title);
+    } else {
+      rw3.push("&0 X");
+      rw3.push("&0 Y");
     }
-    rw3.push("&1 Y")
-    rw3.push(_series[1].title);
   } else{
     rw3.push("&" + ySeries.length + " X");
-    if(xSerie){
-      for(let i = 0; i < ySeries.length; i++){
-        rw3.push(xSerie.title);
-      }
-    } else{
-      for(let i = 0; i < ySeries.length; i++){
-        rw3.push(_series[0].title);
-      }
+    const xTitle = removeAccents(xSerie ? xSerie.title : (_series[0]?.title || ""));
+    for(let i = 0; i < ySeries.length; i++){
+      rw3.push(xTitle);
     }
     rw3.push("&" + ySeries.length + " Y");
     for(let i = 0; i < ySeries.length; i++){
-      rw3.push(ySeries[i].title);
+      rw3.push(removeAccents(ySeries[i]?.title || ""));
     }
   }
   rw3.push("&5 MONDE");
@@ -1502,4 +1518,4 @@ function initApplets(title, basePath = "..", hasDataCallback = () => false) {  /
   return common;
 }
 
-export {Common,initApplets ,setupGlobalShortcuts, ModalManager, alertModal, quitConfirmationModal, TabManager, Serie, exportToPW,exportToCSV, exportToRW3, downloadFile};
+export {Common,initApplets ,setupGlobalShortcuts, ModalManager, alertModal, quitConfirmationModal, TabManager, Serie, exportToPW,exportToCSV, exportToRW3, downloadFile, removeAccents};

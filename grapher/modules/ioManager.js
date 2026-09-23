@@ -1,5 +1,6 @@
 import {Curve, Model, COLOR_LIST} from './data.js';
 import Papa from '../../common/papaparse/papaparse.esm.js';
+import {removeAccents} from '../../common/common.js';
 
 // Fonctions utilitaires
 function splitFlexible(line, delimiter) {
@@ -21,13 +22,6 @@ function isTabularData(text) {
   const firstCount = colCounts[0];
   const sameCount = colCounts.filter(c => c === firstCount).length;
   return sameCount >= lines.length - 1 && firstCount >= 2;
-}
-
-// Fonction utilitaire pour enlever les accents d'une chaîne de caractères
-function removeAccents(str) {
-  if (!str) return str;
-  // Décompose les accents (é -> e + ´) puis supprime les marques diacritiques
-  return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
 /**

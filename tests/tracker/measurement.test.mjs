@@ -848,7 +848,7 @@ describe('Tracker - Export de données et objets occultés (ppf >= 2)', () => {
 
     // 3. Export RW3 avec rowMustBeComplete = true
     const rw3 = exportToRW3(series, true, 'Pointage PhyWeb Tracker');
-    assert.equal(rw3.includes('0.15'), false, 'Le fichier RW3 ne contient pas la mesure de l\'objet 1');
+    assert.equal(rw3.includes('0,15'), false, 'Le fichier RW3 ne contient pas la mesure de l\'objet 1');
   });
 
   it('démontre le comportement attendu : préserver les lignes partiellement pointées tout en ignorant les images non pointées', () => {
@@ -904,7 +904,7 @@ describe('Tracker - Export de données et objets occultés (ppf >= 2)', () => {
 
     // 3. Export RW3 avec les séries filtrées et rowMustBeComplete = false
     const rw3 = exportToRW3(filteredSeries, false, 'Pointage PhyWeb Tracker');
-    assert.ok(rw3.includes('0.15'), 'Le RW3 contient la mesure de l\'objet 1');
+    assert.ok(rw3.includes('0,15'), 'Le RW3 contient la mesure de l\'objet 1');
   });
 
   it('doit extraire correctement les données via getExportSeries() sans perte de points occultés', () => {
@@ -948,7 +948,7 @@ describe('Tracker - Export de données et objets occultés (ppf >= 2)', () => {
 
     // Export RW3 sans perte
     const rw3 = exportToRW3(exportSeries, false, 'Pointage PhyWeb Tracker');
-    assert.ok(rw3.includes('0.15'));
+    assert.ok(rw3.includes('0,15'));
   });
 });
 
@@ -1139,6 +1139,168 @@ describe('Tracker - Export sans vidéo chargée ou sans pointage (Protection con
     assert.doesNotThrow(() => {
       measurement.exportToClipboard();
     });
+  });
+});
+
+describe('Export to RW3 (Regressi) - Robustesse et cas limites', () => {
+  it('doit gérer un tableau vide ([]) sans lever d\'exception TypeError', () => {
+    let rw3;
+    assert.doesNotThrow(() => {
+      rw3 = exportToRW3([], false, 'Test Vide');
+    });
+    assert.ok(rw3.includes('EVARISTE REGRESSI WINDOWS 1.0'));
+    assert.ok(rw3.includes('£0 NOM VAR'));
+    assert.ok(rw3.includes('&0 X'));
+    assert.ok(rw3.includes('&0 Y'));
+    assert.equal(rw3.includes('undefined'), false, 'Le fichier RW3 ne doit pas contenir "undefined"');
+  });
+
+  it('doit gérer series null ou undefined sans lever d\'erreur', () => {
+    assert.doesNotThrow(() => {
+      const rw3Null = exportToRW3(null);
+      assert.ok(rw3Null.includes('EVARISTE REGRESSI WINDOWS 1.0'));
+      assert.equal(rw3Null.includes('undefined'), false);
+    });
+
+    assert.doesNotThrow(() => {
+      const rw3Undef = exportToRW3(undefined);
+      assert.ok(rw3Undef.includes('EVARISTE REGRESSI WINDOWS 1.0'));
+      assert.equal(rw3Undef.includes('undefined'), false);
+    });
+  });
+
+  it('ne doit pas crasher si _series ne contient qu\'une seule série sans type "y"', () => {
+    const singleSerie = {
+      title: 't',
+      type: 'x',
+      unit: 's',
+      length: 2,
+      0: 0,
+      1: 0.5
+    };
+
+    let rw3;
+    assert.doesNotThrow(() => {
+      rw3 = exportToRW3([singleSerie], false, 'Série Unique');
+    });
+
+    assert.ok(rw3.includes('£1 NOM VAR'));
+    assert.ok(rw3.includes('&1 X'));
+    assert.ok(rw3.includes('&1 Y'));
+    assert.ok(rw3.includes('t\n&1 Y\nt'));
+    assert.equal(rw3.includes('undefined'), false, 'Ne doit pas accéder à _series[1].title et crasher');
+  });
+
+  it('doit gérer correctement une seule série avec type "y"', () => {
+    const singleYSerie = {
+      title: 'amplitude',
+      type: 'y',
+      unit: 'V',
+      length: 1,
+      0: 3.3
+    };
+
+    let rw3;
+    assert.doesNotThrow(() => {
+      rw3 = exportToRW3([singleYSerie], false, 'Série Y Unique');
+    });
+
+    assert.ok(rw3.includes('£1 NOM VAR'));
+    assert.ok(rw3.includes('&1 X'));
+    assert.ok(rw3.includes('&1 Y'));
+    assert.ok(rw3.includes('amplitude'));
+    assert.equal(rw3.includes('undefined'), false);
+  });
+
+  it('ne doit pas écrire "\'undefined" dans MEMO GRANDEURS si _title n\'est pas fourni', () => {
+    const series = [
+      { title: 't', type: 'x', length: 1, 0: 0 },
+      { title: 'x', type: 'y', length: 1, 0: 1.5 }
+    ];
+
+    // Appel sans argument de titre
+    const rw3SansTitre = exportToRW3(series, false);
+    assert.equal(rw3SansTitre.includes('undefined'), false, 'Le contenu ne doit jamais inclure le mot "undefined"');
+    assert.ok(rw3SansTitre.includes('£1 MEMO GRANDEURS\n\n£2 ACQUISITION') || rw3SansTitre.includes('£1 MEMO GRANDEURS\r\n\r\n£2 ACQUISITION'));
+
+    // Appel avec titre explicite undefined
+    const rw3TitreUndefined = exportToRW3(series, false, undefined);
+    assert.equal(rw3TitreUndefined.includes('undefined'), false);
+
+    // Appel avec titre renseigné
+    const rw3AvecTitre = exportToRW3(series, false, 'Mon Pointage');
+    assert.ok(rw3AvecTitre.includes("'Mon Pointage"));
+  });
+
+  it('doit mapper la 1ère série sur X et la 2ème sur Y si aucune n\'est explicitement de type "y"', () => {
+    const series = [
+      { title: 'temps', length: 2, 0: 0, 1: 1 },
+      { title: 'position', length: 2, 0: 10, 1: 20 }
+    ];
+
+    const rw3 = exportToRW3(series, false, 'Deux Séries Sans Type');
+    assert.ok(rw3.includes('&1 X\ntemps'));
+    assert.ok(rw3.includes('&1 Y\nposition'));
+  });
+
+  it('doit exporter correctement les données complètes du Tracker sans régression et avec des virgules décimales', () => {
+    const series = [
+      { title: 't', type: 'x', unit: 's', length: 2, 0: 0, 1: 0.1 },
+      { title: 'x1', type: 'y', unit: 'm', length: 2, 0: 1.2, 1: 1.3 },
+      { title: 'y1', type: 'y', unit: 'm', length: 2, 0: 2.4, 1: 2.5 }
+    ];
+
+    const rw3 = exportToRW3(series, false, 'Pointage PhyWeb Tracker');
+    assert.ok(rw3.includes('£3 NOM VAR'));
+    assert.ok(rw3.includes('t\nx1\ny1'));
+    assert.ok(rw3.includes('&2 X\nt\nt'));
+    assert.ok(rw3.includes('&2 Y\nx1\ny1'));
+    assert.ok(rw3.includes("'Pointage PhyWeb Tracker"));
+    assert.equal(rw3.includes('undefined'), false);
+
+    // Vérifie le formatage des décimales avec virgule pour Regressi FR
+    assert.ok(rw3.includes('0\t1,2\t2,4'));
+    assert.ok(rw3.includes('0,1\t1,3\t2,5'));
+    assert.equal(rw3.includes('0.1'), false);
+    assert.equal(rw3.includes('1.2'), false);
+  });
+
+  it('doit retirer les accents des titres, unités, graphes et mémo pour la compatibilité Regressi', () => {
+    const series = [
+      { title: 'Durée', type: 'x', unit: 'µs / mètre', length: 2, 0: 0, 1: 1.5 },
+      { title: 'Énergie', type: 'y', unit: 'mètre', length: 2, 0: 10.25, 1: 20.75 },
+      { title: 'Fréquence', type: 'y', unit: 'hertz (précis)', length: 2, 0: 50.1, 1: 60.2 }
+    ];
+
+    const rw3 = exportToRW3(series, false, 'Expérience de référence');
+
+    // Noms sans accents
+    assert.ok(rw3.includes('Duree'));
+    assert.ok(rw3.includes('Energie'));
+    assert.ok(rw3.includes('Frequence'));
+    assert.equal(rw3.includes('Durée'), false);
+    assert.equal(rw3.includes('Énergie'), false);
+    assert.equal(rw3.includes('Fréquence'), false);
+
+    // Unités sans accents
+    assert.ok(rw3.includes('metre'));
+    assert.ok(rw3.includes('precis'));
+    assert.equal(rw3.includes('mètre'), false);
+    assert.equal(rw3.includes('précis'), false);
+
+    // Graphe VAR sans accents
+    assert.ok(rw3.includes('&2 X\nDuree\nDuree'));
+    assert.ok(rw3.includes('&2 Y\nEnergie\nFrequence'));
+
+    // Mémo grandeur sans accents
+    assert.ok(rw3.includes("'Experience de reference"));
+    assert.equal(rw3.includes('Expérience'), false);
+
+    // Virgules décimales
+    assert.ok(rw3.includes('1,5'));
+    assert.ok(rw3.includes('10,25'));
+    assert.ok(rw3.includes('20,75'));
+    assert.equal(rw3.includes('10.25'), false);
   });
 });
 
