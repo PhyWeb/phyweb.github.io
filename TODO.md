@@ -15,6 +15,8 @@
 
     - Ajouter des toasts quand c'est utilie
 
+    - AJOUTER une fonctionnalité pour ne pas dire données non sauvegardées si on vient effectivement de sauvegarder
+
 # ELECTRON
 
 # Home
