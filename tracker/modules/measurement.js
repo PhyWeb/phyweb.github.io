@@ -225,6 +225,14 @@ export default class MEASUREMENT {
     $("#ppf-input").value = 1;
     $("#scale-input").value = 1;
 
+    const topright = $("#topright");
+    if(topright && topright.classList){
+      topright.classList.add("is-active");
+      $("#topleft")?.classList.remove("is-active");
+      $("#downright")?.classList.remove("is-active");
+      $("#downleft")?.classList.remove("is-active");
+    }
+
     const unit = this.isCalibrated ? "m" : "";
     this.series.push(new Serie("t","s"));
     this.series.push(new Serie("x", unit));
@@ -460,6 +468,10 @@ export default class MEASUREMENT {
   }
 
   prepareDownloadData(){
+    if(!this.series || this.series.length === 0 || !this.series[0]){
+      return [];
+    }
+
     this.scale.update(this.aspectRatio);
     this.updateUnits();
 
@@ -533,6 +545,10 @@ export default class MEASUREMENT {
 
   downloadData(_type, _name){
     let series = this.getExportSeries();
+    if(!series || series.length === 0 || (series[0] && series[0].length === 0)){
+      showToast("Aucune donnée à télécharger.", "is-warning");
+      return;
+    }
 
     let file;
     if(_type === "pw"){
@@ -544,11 +560,17 @@ export default class MEASUREMENT {
     if(_type === "rw3"){
       file = exportToRW3(series, false, "Pointage PhyWeb Tracker");
     }
-    downloadFile(file, _type, _name)
+    downloadFile(file, _type, _name);
   }
 
   exportToClipboard() {
-    const csv = exportToCSV(this.getExportSeries(), false);
+    const series = this.getExportSeries();
+    if(!series || series.length === 0 || (series[0] && series[0].length === 0)){
+      showToast("Aucune donnée à copier.", "is-warning");
+      return;
+    }
+
+    const csv = exportToCSV(series, false);
     const tsvContent = csv.replace(/;/g, '\t');
 
     navigator.clipboard.writeText(tsvContent).then(() => {

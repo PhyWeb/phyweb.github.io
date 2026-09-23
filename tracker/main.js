@@ -113,8 +113,21 @@ $("#mesures-button").addEventListener("click", ()=>{
   $("#etalonnage-panel").classList.add("is-hidden");
 });
 
+$("#save-button").addEventListener("click", () => {
+  const series = measurement.getExportSeries();
+  if (!series || series.length === 0 || (series[0] && series[0].length === 0)) {
+    showToast("Aucune donnée à sauvegarder. Veuillez d'abord charger une vidéo et effectuer un pointage.", "is-warning");
+    return;
+  }
+  common.modalManager.openModal($("#download-modal"));
+});
+
 $("#send-to-grapher-button").addEventListener("click", async () => {
   const series = measurement.getExportSeries();
+  if (!series || series.length === 0 || (series[0] && series[0].length === 0)) {
+    showToast("Aucune donnée à exporter vers Grapher. Veuillez d'abord charger une vidéo et effectuer un pointage.", "is-warning");
+    return;
+  }
   const pw = exportToPW(series, {rowMustBeComplete : false}, "Tracker", "// Pointage PhyWeb Tracker");
 
   try {

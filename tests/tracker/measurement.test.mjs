@@ -1092,5 +1092,55 @@ describe('Tracker - Fonction d\'arrondi sécurisée et absence de pollution du p
   });
 });
 
+describe('Tracker - Export sans vidéo chargée ou sans pointage (Protection contre series vide)', () => {
+  it('prepareDownloadData() ne doit pas lever TypeError si series est vide ([]) et doit retourner []', () => {
+    const measurement = new MEASUREMENT();
+    assert.deepEqual(measurement.series, []);
+    let result;
+    assert.doesNotThrow(() => {
+      result = measurement.prepareDownloadData();
+    });
+    assert.deepEqual(result, []);
+  });
+
+  it('prepareDownloadData() doit gérer series null ou undefined sans planter', () => {
+    const measurement = new MEASUREMENT();
+    measurement.series = null;
+    assert.deepEqual(measurement.prepareDownloadData(), []);
+
+    measurement.series = undefined;
+    assert.deepEqual(measurement.prepareDownloadData(), []);
+
+    measurement.series = [null];
+    assert.deepEqual(measurement.prepareDownloadData(), []);
+  });
+
+  it('getExportSeries() ne doit pas lever d\'erreur si series est vide ([]) et doit retourner []', () => {
+    const measurement = new MEASUREMENT();
+    assert.deepEqual(measurement.series, []);
+    let result;
+    assert.doesNotThrow(() => {
+      result = measurement.getExportSeries();
+    });
+    assert.deepEqual(result, []);
+  });
+
+  it('downloadData() ne doit pas lever d\'exception si series est vide et ne doit pas déclencher de téléchargement', () => {
+    const measurement = new MEASUREMENT();
+    assert.doesNotThrow(() => {
+      measurement.downloadData('pw', 'pointage');
+      measurement.downloadData('csv', 'pointage');
+      measurement.downloadData('rw3', 'pointage');
+    });
+  });
+
+  it('exportToClipboard() ne doit pas lever d\'exception si series est vide', () => {
+    const measurement = new MEASUREMENT();
+    assert.doesNotThrow(() => {
+      measurement.exportToClipboard();
+    });
+  });
+});
+
 
 
