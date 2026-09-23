@@ -408,9 +408,9 @@ $("#origin-frame-input").addEventListener("keyup", (event)=> {
 	}
 });
 $("#origin-frame-input").addEventListener("change", (e)=> {
-  if(e.target.value < 1){$("#origin-frame-input").value = 1;}
+  if(e.target.value < 1){e.target.value = 1;}
   if(e.target.value > measurement.series[0].length){e.target.value = measurement.series[0].length;}
-  player.setOriginFrame(e.target.value - 1);
+  player.setOriginFrame(parseInt(e.target.value) - 1);
 });
 
 // keyboard shortcut
