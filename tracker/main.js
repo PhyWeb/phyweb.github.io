@@ -503,7 +503,9 @@ $("#download-file-button").addEventListener("click", ()=>{
 });
 
 // RESIZE
-window.addEventListener('resize', resize, false);
+window.addEventListener('resize', () => {
+  player.resize();
+}, false);
 
 function resize(column2Size = "285px") {
   $("#right-column").children[0].style.width = column2Size;
