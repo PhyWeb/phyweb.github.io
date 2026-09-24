@@ -977,6 +977,31 @@ describe('Tracker - Export de données et objets occultés (ppf >= 2)', () => {
     assert.equal(linesNone[0].replace('\uFEFF', ''), 't;x1;y1;x2;y2');
     assert.equal(linesNone.length, 4, '1 ligne d\'en-tête + 3 lignes de données');
   });
+
+  it('exportToCSV() doit gérer l\'option includeBOM (true par défaut, false sans BOM)', () => {
+    const exportSeries = measurement.getExportSeries();
+
+    // Par défaut : inclut le BOM pour la compatibilité Excel
+    const csvWithBOMDefault = exportToCSV(exportSeries);
+    assert.equal(csvWithBOMDefault.startsWith('\uFEFF'), true, 'Doit inclure le BOM par défaut');
+    assert.equal(csvWithBOMDefault.charCodeAt(0), 0xFEFF);
+
+    // includeBOM: true explicite
+    const csvWithBOMExplicit = exportToCSV(exportSeries, { includeBOM: true });
+    assert.equal(csvWithBOMExplicit.startsWith('\uFEFF'), true);
+    assert.equal(csvWithBOMExplicit.charCodeAt(0), 0xFEFF);
+
+    // includeBOM: false
+    const csvWithoutBOM = exportToCSV(exportSeries, { includeBOM: false });
+    assert.equal(csvWithoutBOM.startsWith('\uFEFF'), false, 'Ne doit pas inclure le BOM avec includeBOM: false');
+    assert.notEqual(csvWithoutBOM.charCodeAt(0), 0xFEFF);
+    assert.equal(csvWithoutBOM.startsWith('t;'), true);
+
+    // bom: false (alias)
+    const csvWithoutBOMAlias = exportToCSV(exportSeries, { bom: false });
+    assert.equal(csvWithoutBOMAlias.startsWith('\uFEFF'), false, 'Ne doit pas inclure le BOM avec bom: false');
+    assert.notEqual(csvWithoutBOMAlias.charCodeAt(0), 0xFEFF);
+  });
 });
 
 describe('Tracker - Fonction d\'arrondi sécurisée et absence de pollution du prototype global', () => {
@@ -1199,9 +1224,56 @@ describe('Tracker - Export sans vidéo chargée ou sans pointage (Protection con
       measurement.exportToClipboard();
       assert.ok(writtenText, 'Des données ont été écrites dans le presse-papiers');
       const lines = writtenText.trim().split(/\r?\n/);
-      assert.equal(lines[0].replace('\uFEFF', ''), 't\tx\ty');
+      assert.equal(lines[0], 't\tx\ty', 'L\'en-tête ne doit pas contenir de caractère invisible BOM');
       assert.equal(lines[1], 's\tm\tm');
       assert.ok(lines[2].includes('0,1'));
+    } finally {
+      global.navigator.clipboard = originalClipboard;
+    }
+  });
+
+  it('exportToClipboard() ne doit JAMAIS polluer le presse-papiers avec le caractère BOM \\uFEFF', async () => {
+    let writtenText = null;
+    const originalClipboard = global.navigator.clipboard;
+    global.navigator.clipboard = {
+      writeText: async (text) => {
+        writtenText = text;
+      }
+    };
+
+    try {
+      const measurement = new MEASUREMENT();
+      measurement.pointPerFrame = 1;
+      measurement.scale = {
+        update: () => {},
+        isCalibrated: true,
+        origin: { x: 0, y: 0 },
+        getOrientedScaleX: () => 1,
+        getOrientedScaleY: () => 1
+      };
+      measurement.series = [
+        new Serie('t', 's'),
+        new Serie('x', 'm'),
+        new Serie('y', 'm')
+      ];
+      measurement.series[0].push(0);
+      measurement.series[1].push(1.5);
+      measurement.series[2].push(2.5);
+
+      measurement.exportToClipboard();
+
+      assert.ok(writtenText);
+      // Vérification stricte de l'absence du caractère BOM U+FEFF
+      assert.equal(writtenText.startsWith('\uFEFF'), false, 'Le texte ne doit pas commencer par \\uFEFF');
+      assert.equal(writtenText.includes('\uFEFF'), false, 'Le texte ne doit contenir aucun BOM \\uFEFF');
+      assert.notEqual(writtenText.charCodeAt(0), 0xFEFF, 'Le code du premier caractère ne doit pas être 65279 (U+FEFF)');
+      assert.equal(writtenText.charCodeAt(0), 116, 'Le premier caractère doit être "t" (code 116)');
+
+      // Vérification que le premier en-tête de colonne est exactement 't' sans caractère parasite
+      const firstLine = writtenText.split(/\r?\n/)[0];
+      const headers = firstLine.split('\t');
+      assert.equal(headers[0], 't');
+      assert.equal(headers[0].length, 1, 'La longueur du nom de variable "t" doit être exactement 1');
     } finally {
       global.navigator.clipboard = originalClipboard;
     }

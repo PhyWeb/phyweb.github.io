@@ -572,10 +572,11 @@ export default class MEASUREMENT {
       return;
     }
 
-    const csv = exportToCSV(series, { rowMustBeComplete: false, unitFormat: 'row' });
-    const tsvContent = csv.replace(/;/g, '\t');
+    const csv = exportToCSV(series, { rowMustBeComplete: false, unitFormat: 'row', includeBOM: false });
+    const cleanCsv = csv.replace(/^\uFEFF/, '');
+    const tsvContent = cleanCsv.replace(/;/g, '\t');
 
-    navigator.clipboard.writeText(tsvContent).then(() => {
+    return navigator.clipboard.writeText(tsvContent).then(() => {
       showToast("Données copiées dans le presse-papiers !", "is-success");
     }).catch(err => {
       console.error("Erreur lors de la copie : ", err);

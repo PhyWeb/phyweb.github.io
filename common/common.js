@@ -1086,6 +1086,7 @@ function exportToCSV(_series, options = false) {
   let rowMustBeComplete = false;
   let unitFormat = 'none'; // 'none' | 'row' | 'parentheses'
   let delimiter = ';';     // Point-virgule par défaut pour Excel FR
+  let includeBOM = true;
 
   if (typeof options === 'boolean') {
     rowMustBeComplete = options;
@@ -1094,6 +1095,11 @@ function exportToCSV(_series, options = false) {
     unitFormat = options.unitFormat || 'none';
     if (options.delimiter) {
       delimiter = options.delimiter;
+    }
+    if (options.includeBOM !== undefined) {
+      includeBOM = !!options.includeBOM;
+    } else if (options.bom !== undefined) {
+      includeBOM = !!options.bom;
     }
   }
 
@@ -1162,8 +1168,8 @@ function exportToCSV(_series, options = false) {
     });
   }
 
-  // On retourne la chaîne avec le BOM intégré au tout début
-  return '\uFEFF' + csvContent;
+  // On retourne la chaîne avec le BOM intégré au tout début si includeBOM est vrai
+  return (includeBOM ? '\uFEFF' : '') + csvContent;
 }
 
 function removeAccents(str) {
