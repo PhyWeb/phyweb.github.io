@@ -1,5 +1,5 @@
 import FOURIER from "./modules/fourier.js"
-import {PhyAudio, convertFloat32ToInt16} from "./modules/audio.js"
+import {PhyAudio, convertFloat32ToInt16, resampleLinear} from "./modules/audio.js"
 
 import {Common, setupGlobalShortcuts ,alertModal, showToast, TabManager, NavigationManager, downloadFile, exportToPW, exportToCSV, exportToRW3, Serie, FileDropManager} from "../common/common.js"
 
@@ -1586,16 +1586,15 @@ function draw() {
 // TODO probablement passer ca dans audio.js avec tout ce qui touche au samplerate
 
 function audioPlayback(_data, _sr, _callback){
+	if (!_data || _data.length === 0) {
+		if (typeof _callback === "function") _callback();
+		return;
+	}
+
 	// Prepare the datas if the samplerate is not default
-		if(_sr != baseSampleRate){
-			let factor = baseSampleRate / _sr; 
-			let prepData = [];
-			for(let i = 0; i < _data.length; i++){
-				prepData[i * factor] = _data[i];
-				for(let j = 1; j < factor; j++){
-					prepData[i * factor + j] =  (_data[i + 1] - _data[i]) / factor * j + _data[i + 1];
-				}
-			}
+	if(_sr != baseSampleRate){
+		let factor = baseSampleRate / _sr; 
+		let prepData = resampleLinear(_data, factor);
 		
 		// Play the recorded sound
 		audio.play(prepData);
@@ -1606,7 +1605,9 @@ function audioPlayback(_data, _sr, _callback){
 	}
 
 	// New source created everytime = reset event functions
-	audio.playbackSource.onended = function(){_callback()};
+	if (audio.playbackSource) {
+		audio.playbackSource.onended = function(){ if (typeof _callback === "function") _callback(); };
+	}
 }
 
 /*----------------------------------------------------------------------------------------------

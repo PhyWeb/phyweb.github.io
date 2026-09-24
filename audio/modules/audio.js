@@ -278,10 +278,64 @@ function convertInt16ToFloat32(buffer) {
 	let buf = new Float32Array(l);
 
 	while (l--) {
-    s = Math.max(-32768, Math.min(32767, buffer[l]));
+    let s = Math.max(-32768, Math.min(32767, buffer[l]));
     buf[l] = s < 0 ? s / 32768 : s / 32767;
   }
   return buf;
 }
 
-export { PhyAudio, convertFloat32ToInt16 , convertInt16ToFloat32};
+/*----------------------------------------------------------------------------------------------
+-------------------------------------AUDIO RESAMPLING-------------------------------------------
+----------------------------------------------------------------------------------------------*/
+/**
+ * Rééchantillonne des données audio par interpolation linéaire (upsampling / sous-échantillonnage de lecture).
+ * Utilisé pour adapter la fréquence d'échantillonnage d'un enregistrement ou d'une sauvegarde
+ * à la fréquence native (baseSampleRate) de l'AudioContext.
+ *
+ * @param {ArrayLike<number>} data - Données audio sources
+ * @param {number} factor - Facteur de sur-échantillonnage (baseSampleRate / targetSampleRate)
+ * @returns {Float32Array|ArrayLike<number>} Données rééchantillonnées
+ */
+function resampleLinear(data, factor) {
+  if (!data || data.length === 0) {
+    return new Float32Array(0);
+  }
+  if (!factor || factor <= 1) {
+    return data;
+  }
+
+  const len = data.length;
+  const isInt = Math.abs(factor - Math.round(factor)) < 1e-6;
+
+  if (isInt) {
+    const f = Math.round(factor);
+    const prepData = new Float32Array(len * f);
+    for (let i = 0; i < len; i++) {
+      const current = data[i];
+      const next = (i + 1 < len) ? data[i + 1] : current;
+      const step = (next - current) / f;
+      const baseIdx = i * f;
+      prepData[baseIdx] = current;
+      for (let j = 1; j < f; j++) {
+        prepData[baseIdx + j] = current + step * j;
+      }
+    }
+    return prepData;
+  } else {
+    const targetLength = Math.round(len * factor);
+    const prepData = new Float32Array(targetLength);
+    for (let k = 0; k < targetLength; k++) {
+      const t = k / factor;
+      const i = Math.floor(t);
+      const alpha = t - i;
+      if (i + 1 < len) {
+        prepData[k] = data[i] + (data[i + 1] - data[i]) * alpha;
+      } else {
+        prepData[k] = data[Math.min(i, len - 1)];
+      }
+    }
+    return prepData;
+  }
+}
+
+export { PhyAudio, convertFloat32ToInt16, convertInt16ToFloat32, resampleLinear };

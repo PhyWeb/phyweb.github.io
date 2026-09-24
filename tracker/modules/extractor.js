@@ -503,6 +503,11 @@ export default class EXTRACTOR {
         .then(async (blob) => {
           this._releaseCanvas(canvasItem);
 
+          if (canceled || this._isCanceled) {
+            this._decrementPendingBitmaps();
+            return;
+          }
+
           // On génère une URL locale pour le Blob pour faciliter son affichage dans le player
           const blobUrl = URL.createObjectURL(blob);
           
