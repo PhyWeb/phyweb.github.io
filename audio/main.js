@@ -887,6 +887,7 @@ $("#pw-button").addEventListener("click", ()=>{
   $("#pw-button").classList.add('is-link');
   $("#csv-button").classList.remove('is-link');
   $("#rw3-button").classList.remove('is-link');
+  $("#csv-options")?.classList.add('is-hidden');
   $("#file-name-input").placeholder = "enregistrement";
   $("#file-extension-label").textContent = ".pw";
 });
@@ -895,6 +896,7 @@ $("#wav-button").addEventListener("click", ()=>{
   $("#pw-button").classList.remove('is-link');
   $("#csv-button").classList.remove('is-link');
   $("#rw3-button").classList.remove('is-link');
+  $("#csv-options")?.classList.add('is-hidden');
   $("#file-name-input").placeholder = "enregistrement";
   $("#file-extension-label").textContent = ".wav";
 });
@@ -903,6 +905,7 @@ $("#csv-button").addEventListener("click", ()=>{
   $("#pw-button").classList.remove('is-link');
   $("#rw3-button").classList.remove('is-link');
   $("#wav-button").classList.remove('is-link');
+  $("#csv-options")?.classList.remove('is-hidden');
   $("#file-name-input").placeholder = "enregistrement";
   $("#file-extension-label").textContent = ".csv";
 });
@@ -911,6 +914,7 @@ $("#rw3-button").addEventListener("click", ()=>{
   $("#pw-button").classList.remove('is-link');
   $("#csv-button").classList.remove('is-link');
   $("#wav-button").classList.remove('is-link');
+  $("#csv-options")?.classList.add('is-hidden');
   $("#file-name-input").placeholder = "enregistrement";
   $("#file-extension-label").textContent = ".rw3";
 });
@@ -1017,7 +1021,8 @@ $("#download-file-button").addEventListener('click', () => {
     type="pw";
   }
   if($("#csv-button").classList.contains("is-link")){
-    file = exportToCSV(series, false);
+    const unitFormat = $("#csv-unit-format-select") ? $("#csv-unit-format-select").value : 'parentheses';
+    file = exportToCSV(series, { rowMustBeComplete: false, unitFormat });
     type="csv";
   }
   if($("#rw3-button").classList.contains("is-link")){

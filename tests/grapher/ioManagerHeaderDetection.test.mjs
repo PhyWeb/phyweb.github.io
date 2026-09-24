@@ -252,6 +252,42 @@ describe('IOManager - Détection des en-têtes et des unités dans loadData()', 
         assert.deepEqual(Array.from(addedCurves[0]), [10, 20, 30]);
       });
     });
+
+    describe('En-têtes contenant les unités entre parenthèses ou crochets', () => {
+      it('doit extraire proprement le nom et l\'unité entre parenthèses (ex: t (s) et x (m))', () => {
+        const data = 't (s)\tx (m)\n0\t0.1\n1\t0.2';
+        ioManager.loadData(data);
+
+        assert.equal(addedCurves.length, 2);
+        assert.equal(addedCurves[0].title, 't');
+        assert.equal(addedCurves[0].unit, 's');
+        assert.equal(addedCurves[1].title, 'x');
+        assert.equal(addedCurves[1].unit, 'm');
+        assert.deepEqual(Array.from(addedCurves[0]), [0, 1]);
+        assert.deepEqual(Array.from(addedCurves[1]), [0.1, 0.2]);
+      });
+
+      it('doit extraire proprement le nom et l\'unité entre crochets (ex: Angle [°] et v [m/s])', () => {
+        const data = 'Angle [°]\tv [m/s]\n0\t1\n45\t2';
+        ioManager.loadData(data);
+
+        assert.equal(addedCurves.length, 2);
+        assert.equal(addedCurves[0].title, 'Angle');
+        assert.equal(addedCurves[0].unit, '°');
+        assert.equal(addedCurves[1].title, 'v');
+        assert.equal(addedCurves[1].unit, 'm/s');
+      });
+
+      it('doit gérer un en-tête commençant par un chiffre avec unité (ex: 1ère mesure (m))', () => {
+        const data = '1ère mesure (m)\n10\n20';
+        ioManager.loadData(data);
+
+        assert.equal(addedCurves.length, 1);
+        assert.equal(addedCurves[0].title, 'v1èreMesure');
+        assert.equal(addedCurves[0].unit, 'm');
+        assert.deepEqual(Array.from(addedCurves[0]), [10, 20]);
+      });
+    });
   });
 });
 

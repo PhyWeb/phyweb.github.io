@@ -932,6 +932,9 @@ export default class UIManager {
 
       // Met à jour l'extension
       if (fileExtensionLabel) fileExtensionLabel.textContent = `.${newFormat}`;
+
+      // Affiche les options CSV si sélectionné
+      $("#csv-options")?.classList.toggle("is-hidden", newFormat !== 'csv');
     }
 
     // Gère les clics sur les boutons de format

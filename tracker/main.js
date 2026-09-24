@@ -485,6 +485,7 @@ $("#pw-button").addEventListener("click", ()=>{
   $("#pw-button").classList.add('is-link');
   $("#csv-button").classList.remove('is-link');
   $("#rw3-button").classList.remove('is-link');
+  $("#csv-options")?.classList.add('is-hidden');
   $("#file-name-input").placeholder = "pointage";
   $("#file-extension-label").textContent = ".pw";
 });
@@ -492,6 +493,7 @@ $("#csv-button").addEventListener("click", ()=>{
   $("#pw-button").classList.remove('is-link');
   $("#csv-button").classList.add('is-link');
   $("#rw3-button").classList.remove('is-link');
+  $("#csv-options")?.classList.remove('is-hidden');
   $("#file-name-input").placeholder = "pointage";
   $("#file-extension-label").textContent = ".csv";
 });
@@ -499,6 +501,7 @@ $("#rw3-button").addEventListener("click", ()=>{
   $("#pw-button").classList.remove('is-link');
   $("#rw3-button").classList.add('is-link');
   $("#csv-button").classList.remove('is-link');
+  $("#csv-options")?.classList.add('is-hidden');
   $("#file-name-input").placeholder = "pointage";
   $("#file-extension-label").textContent = ".rw3";
 });

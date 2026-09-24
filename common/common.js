@@ -1078,16 +1078,50 @@ function exportToPW(series, options = {}, app, calculations = "") {
   return JSON.stringify(sessionData, null, 2);
 }
 
-function exportToCSV(_series, _rowMustBeComplete = false) {
+function exportToCSV(_series, options = false) {
+  if (!Array.isArray(_series)) {
+    _series = [];
+  }
+
+  let rowMustBeComplete = false;
+  let unitFormat = 'none'; // 'none' | 'row' | 'parentheses'
+  let delimiter = ';';     // Point-virgule par défaut pour Excel FR
+
+  if (typeof options === 'boolean') {
+    rowMustBeComplete = options;
+  } else if (typeof options === 'object' && options !== null) {
+    rowMustBeComplete = !!options.rowMustBeComplete;
+    unitFormat = options.unitFormat || 'none';
+    if (options.delimiter) {
+      delimiter = options.delimiter;
+    }
+  }
+
   let headers = [];
+  let units = [];
   let hasNameFlag = false;
   let largestSerieLength = 0;
 
   for (let i = 0; i < _series.length; i++) {
-    if (_series[i].title) hasNameFlag = true;
-    headers.push(_series[i].title || "");
-    if (_series[i].length > largestSerieLength) {
-      largestSerieLength = _series[i].length;
+    const s = _series[i];
+    const title = (s && s.title) || "";
+    const unit = (s && s.unit) || "";
+
+    if (title || unit) hasNameFlag = true;
+
+    if (unitFormat === 'parentheses') {
+      if (title && unit) {
+        headers.push(`${title} (${unit})`);
+      } else {
+        headers.push(title || unit);
+      }
+    } else {
+      headers.push(title);
+      units.push(unit);
+    }
+
+    if (s && s.length > largestSerieLength) {
+      largestSerieLength = s.length;
     }
   }
 
@@ -1096,24 +1130,37 @@ function exportToCSV(_series, _rowMustBeComplete = false) {
     let row = [];
     let rowIsComplete = true;
     for (let j = 0; j < _series.length; j++) {
-      let val = _series[j][i];
+      let val = _series[j] ? _series[j][i] : undefined;
       if (val === "" || val === undefined || val === null) {
         rowIsComplete = false;
       }
       // On s'assure que les points décimaux sont des virgules pour Excel FR
       row.push(val !== undefined && val !== null ? String(val).replace('.', ',') : val);
     }
-    if (!_rowMustBeComplete || rowIsComplete) {
+    if (!rowMustBeComplete || rowIsComplete) {
       dataRows.push(row);
     }
   }
 
-  const csvContent = Papa.unparse({
-    fields: hasNameFlag ? headers : undefined,
-    data: dataRows
-  }, {
-    delimiter: ";" // Point-virgule pour Excel FR
-  });
+  let csvContent;
+  if (unitFormat === 'row') {
+    const allRows = [];
+    if (hasNameFlag) {
+      allRows.push(headers);
+      allRows.push(units);
+    }
+    allRows.push(...dataRows);
+    csvContent = Papa.unparse(allRows, {
+      delimiter: delimiter
+    });
+  } else {
+    csvContent = Papa.unparse({
+      fields: hasNameFlag ? headers : undefined,
+      data: dataRows
+    }, {
+      delimiter: delimiter
+    });
+  }
 
   // On retourne la chaîne avec le BOM intégré au tout début
   return '\uFEFF' + csvContent;

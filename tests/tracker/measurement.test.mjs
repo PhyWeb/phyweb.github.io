@@ -2,7 +2,7 @@ import '../helpers/setup.mjs';
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import MEASUREMENT, { round } from '../../tracker/modules/measurement.js';
-import { exportToPW, exportToCSV, exportToRW3 } from '../../common/common.js';
+import { exportToPW, exportToCSV, exportToRW3, Serie } from '../../common/common.js';
 
 describe('Tracker Measurement Module', () => {
   it('doit utiliser les timestamps réels quand ils sont fournis', () => {
@@ -950,6 +950,33 @@ describe('Tracker - Export de données et objets occultés (ppf >= 2)', () => {
     const rw3 = exportToRW3(exportSeries, false, 'Pointage PhyWeb Tracker');
     assert.ok(rw3.includes('0,15'));
   });
+
+  it('exportToCSV() doit supporter les différentes options unitFormat (parentheses, row, none)', () => {
+    const exportSeries = measurement.getExportSeries();
+    exportSeries[1].unit = 'm';
+    exportSeries[2].unit = 'm';
+    exportSeries[3].unit = 'm';
+    exportSeries[4].unit = 'm';
+
+    // 1. Format 'parentheses' : les unités sont intégrées dans l'en-tête (t (s);x1 (m)...)
+    const csvParentheses = exportToCSV(exportSeries, { rowMustBeComplete: false, unitFormat: 'parentheses' });
+    const linesParentheses = csvParentheses.trim().split(/\r?\n/);
+    assert.equal(linesParentheses[0].replace('\uFEFF', ''), 't (s);x1 (m);y1 (m);x2 (m);y2 (m)');
+    assert.equal(linesParentheses.length, 4, '1 ligne d\'en-tête + 3 lignes de données');
+
+    // 2. Format 'row' : 2 lignes d'en-têtes (noms puis unités)
+    const csvRow = exportToCSV(exportSeries, { rowMustBeComplete: false, unitFormat: 'row' });
+    const linesRow = csvRow.trim().split(/\r?\n/);
+    assert.equal(linesRow[0].replace('\uFEFF', ''), 't;x1;y1;x2;y2');
+    assert.equal(linesRow[1], 's;m;m;m;m');
+    assert.equal(linesRow.length, 5, '2 lignes d\'en-têtes + 3 lignes de données');
+
+    // 3. Format 'none' (ou par défaut) : 1 seule ligne de noms sans unités
+    const csvNone = exportToCSV(exportSeries, { rowMustBeComplete: false, unitFormat: 'none' });
+    const linesNone = csvNone.trim().split(/\r?\n/);
+    assert.equal(linesNone[0].replace('\uFEFF', ''), 't;x1;y1;x2;y2');
+    assert.equal(linesNone.length, 4, '1 ligne d\'en-tête + 3 lignes de données');
+  });
 });
 
 describe('Tracker - Fonction d\'arrondi sécurisée et absence de pollution du prototype global', () => {
@@ -1139,6 +1166,45 @@ describe('Tracker - Export sans vidéo chargée ou sans pointage (Protection con
     assert.doesNotThrow(() => {
       measurement.exportToClipboard();
     });
+  });
+
+  it('exportToClipboard() doit copier les données avec la ligne d\'unités (format 2 lignes compatible Grapher)', async () => {
+    let writtenText = null;
+    const originalClipboard = global.navigator.clipboard;
+    global.navigator.clipboard = {
+      writeText: async (text) => {
+        writtenText = text;
+      }
+    };
+
+    try {
+      const measurement = new MEASUREMENT();
+      measurement.pointPerFrame = 1;
+      measurement.scale = {
+        update: () => {},
+        isCalibrated: true,
+        origin: { x: 0, y: 0 },
+        getOrientedScaleX: () => 1,
+        getOrientedScaleY: () => 1
+      };
+      measurement.series = [
+        new Serie('t', 's'),
+        new Serie('x', 'm'),
+        new Serie('y', 'm')
+      ];
+      measurement.series[0].push(0, 0.04);
+      measurement.series[1].push(0.1, 0.2);
+      measurement.series[2].push(0.5, 0.6);
+
+      measurement.exportToClipboard();
+      assert.ok(writtenText, 'Des données ont été écrites dans le presse-papiers');
+      const lines = writtenText.trim().split(/\r?\n/);
+      assert.equal(lines[0].replace('\uFEFF', ''), 't\tx\ty');
+      assert.equal(lines[1], 's\tm\tm');
+      assert.ok(lines[2].includes('0,1'));
+    } finally {
+      global.navigator.clipboard = originalClipboard;
+    }
   });
 });
 

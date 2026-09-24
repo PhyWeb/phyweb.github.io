@@ -126,7 +126,9 @@ export default class IOManager {
     const separator = ';';
 
     if (format === 'csv') {
-      content = this.generateCSV(separator);
+      const unitFormatSelect = typeof document !== 'undefined' ? document.querySelector("#csv-unit-format-select") : null;
+      const unitFormat = unitFormatSelect ? unitFormatSelect.value : 'row';
+      content = this.generateCSV(separator, unitFormat);
     } else if (format === 'rw3') {
       content = this.generateRW3();
     } else if (format === 'pw') {
@@ -222,10 +224,10 @@ generatePW() {
    * @param {string} separator - Le séparateur de colonnes.
    * @returns {string} Le contenu du fichier CSV.
    */
-  generateCSV(separator) {
+  generateCSV(separator, unitFormat = 'row') {
     // Préparation des en-têtes et des unités (tableaux simples)
-    const headers = this.app.data.curves.map(c => c.title);
-    const units = this.app.data.curves.map(c => c.unit);
+    const rawHeaders = this.app.data.curves.map(c => c.title);
+    const rawUnits = this.app.data.curves.map(c => c.unit);
     
     // Préparation des données (remplacement des points par des virgules pour le format FR)
     const tableData = this.app.data.getTable();
@@ -233,8 +235,19 @@ generatePW() {
       return row.map(cell => (cell === null || cell === undefined) ? '' : String(cell).replace('.', ','));
     });
 
-    // Fusion de toutes les lignes dans un seul grand tableau 2D
-    const allRows = [headers, units, ...dataRows];
+    let allRows = [];
+    if (unitFormat === 'parentheses') {
+      const headers = rawHeaders.map((h, i) => {
+        const u = rawUnits[i];
+        return (h && u) ? `${h} (${u})` : (h || u || "");
+      });
+      allRows = [headers, ...dataRows];
+    } else if (unitFormat === 'none') {
+      allRows = [rawHeaders, ...dataRows];
+    } else {
+      // 'row' par défaut (format 2 lignes spécifique à Grapher)
+      allRows = [rawHeaders, rawUnits, ...dataRows];
+    }
 
     // Délégation à Papa Parse pour générer le texte sécurisé
     return Papa.unparse(allRows, {
@@ -918,15 +931,27 @@ generatePW() {
         // La ligne d'en-tête existe.
         // On s'assure d'avoir un en-tête pour chaque colonne détectée.
         const rawHeaders = splitFlexible(lines[0], delimiter);
-        headers = [];
+        const extractedTitles = [];
+        const extractedUnits = [];
+
         for (let i = 0; i < numColumns; i++) {
           const h = rawHeaders[i] || ""; // Utilise l'en-tête s'il existe, sinon une chaîne vide
           const trimmedHeader = h.trim();
-          headers.push(trimmedHeader === "" ? `Colonne${i + 1}` : trimmedHeader);
+          if (trimmedHeader === "") {
+            extractedTitles.push(`Colonne${i + 1}`);
+            extractedUnits.push("");
+          } else {
+            // Détection d'unité entre parenthèses ou crochets : ex "t (s)", "x [m]"
+            const unitMatch = trimmedHeader.match(/^(.+?)\s*[\(\[]([^\)\]]+)[\)\]]$/);
+            if (unitMatch) {
+              extractedTitles.push(unitMatch[1].trim());
+              extractedUnits.push(sanitizeUnit(unitMatch[2]));
+            } else {
+              extractedTitles.push(trimmedHeader);
+              extractedUnits.push("");
+            }
+          }
         }
-
-        const existingSymbols = new Set(Object.keys(this.app.data.parameters));
-        headers = headers.map(h => sanitizeSymbol(h, existingSymbols));
 
         // Vérifie si la deuxième ligne correspond aux unités ou aux données
         if (lines.length > 1) {
@@ -934,21 +959,27 @@ generatePW() {
           const isSecondLineNumeric = isLineNumeric(secondLineCells);
 
           if (isSecondLineNumeric) {
-            // La deuxième ligne contient des données, donc pas de ligne d'unités
-            units = Array(numColumns).fill("");
+            // La deuxième ligne contient des données, donc pas de ligne d'unités explicite.
+            // On utilise les unités extraites des en-têtes le cas échéant.
+            units = extractedUnits;
             dataLines = lines.slice(1);
           } else {
             // La deuxième ligne contient les unités. On s'assure d'en avoir pour chaque colonne.
+            // Les unités de la 2e ligne priment, avec repli sur les unités extraites de la 1ère ligne.
             const rawUnits = splitFlexible(lines[1], delimiter);
             units = Array.from({
               length: numColumns
-            }, (_, i) => sanitizeUnit(rawUnits[i]));
+            }, (_, i) => sanitizeUnit(rawUnits[i]) || extractedUnits[i] || "");
             dataLines = lines.slice(2);
           }
         } else {
           // Il n'y a qu'une ligne d'en-tête, pas de données
+          units = extractedUnits;
           dataLines = [];
         }
+
+        const existingSymbols = new Set(Object.keys(this.app.data.parameters));
+        headers = extractedTitles.map(h => sanitizeSymbol(h, existingSymbols));
       }
 
       // Crée les courbes et les remplit

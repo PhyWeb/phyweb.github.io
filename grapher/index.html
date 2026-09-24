@@ -1059,6 +1059,18 @@
           </button>
         </div>
         <p id="save-format-warning" class="help is-danger"></p>
+        <div id="csv-options" class="is-hidden mb-4">
+          <label class="label is-small">Unités dans le fichier CSV :</label>
+          <div class="control">
+            <div class="select is-fullwidth is-small">
+              <select id="csv-unit-format-select">
+                <option value="row" selected>Sur une 2e ligne ex: t / s (format Grapher)</option>
+                <option value="parentheses">Dans l'en-tête ex: t (s), x (m) (recommandé pour tableur)</option>
+                <option value="none">Sans unités ex: t, x (recommandé pour Python / scripts)</option>
+              </select>
+            </div>
+          </div>
+        </div>
         <div class="field">
           <label class="label">Nom du fichier</label>
           <div class="field has-addons">

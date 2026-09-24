@@ -543,7 +543,7 @@ export default class MEASUREMENT {
     return filteredSeries;
   }
 
-  downloadData(_type, _name){
+  downloadData(_type, _name, _options = {}){
     let series = this.getExportSeries();
     if(!series || series.length === 0 || (series[0] && series[0].length === 0)){
       showToast("Aucune donnée à télécharger.", "is-warning");
@@ -555,7 +555,9 @@ export default class MEASUREMENT {
       file = exportToPW(series, {rowMustBeComplete : false}, "Tracker", "// Pointage PhyWeb Tracker");
     }
     if(_type === "csv"){
-      file = exportToCSV(series, false);
+      const unitFormatSelect = typeof document !== 'undefined' ? document.querySelector("#csv-unit-format-select") : null;
+      const unitFormat = _options.unitFormat || (unitFormatSelect ? unitFormatSelect.value : 'parentheses');
+      file = exportToCSV(series, { rowMustBeComplete: false, unitFormat });
     }
     if(_type === "rw3"){
       file = exportToRW3(series, false, "Pointage PhyWeb Tracker");
@@ -570,7 +572,7 @@ export default class MEASUREMENT {
       return;
     }
 
-    const csv = exportToCSV(series, false);
+    const csv = exportToCSV(series, { rowMustBeComplete: false, unitFormat: 'row' });
     const tsvContent = csv.replace(/;/g, '\t');
 
     navigator.clipboard.writeText(tsvContent).then(() => {
