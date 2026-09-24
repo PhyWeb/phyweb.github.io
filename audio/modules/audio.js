@@ -262,12 +262,22 @@ class PhyAudio{
 /*----------------------------------------------------------------------------------------------
 -------------------------------------TYPED ARRAY CONVERTERS-------------------------------------
 ----------------------------------------------------------------------------------------------*/
-function convertFloat32ToInt16(buffer, l = buffer.length, _start = 0) {
-	let buf = new Int16Array(l);
+function convertFloat32ToInt16(buffer, l, _start = 0) {
+  if (!buffer || buffer.length === 0) {
+    return new Int16Array(0);
+  }
+  const startOffset = Math.max(0, _start);
+  const targetLen = (l !== undefined) ? Math.max(0, l) : Math.max(0, buffer.length - startOffset);
+  if (targetLen <= 0) {
+    return new Int16Array(0);
+  }
+
+  const buf = new Int16Array(targetLen);
+  const count = Math.min(targetLen, Math.max(0, buffer.length - startOffset));
   let s;
 
-  for(let i = 0; i < (l + _start); i++){
-    s = Math.max(-1, Math.min(1, buffer[i+_start]));
+  for (let i = 0; i < count; i++) {
+    s = Math.max(-1, Math.min(1, buffer[i + startOffset]));
     buf[i] = s < 0 ? s * 32768 : s * 32767;
   }
   return buf;
