@@ -120,9 +120,10 @@ function enforceIntegerInputs(){
  */
 function setupGlobalShortcuts(actions = {}) {
   document.addEventListener('keydown', (event) => {
-    const isCtrlOrCmd = event.ctrlKey || event.metaKey;
-    const isAlt = event.altKey;
-    const key = event.key.toLowerCase();
+    const isAltGr = Boolean(event.getModifierState && event.getModifierState('AltGraph'));
+    const isCtrlOrCmd = (event.ctrlKey || event.metaKey) && !isAltGr;
+    const isAlt = event.altKey && !isAltGr;
+    const key = event.key ? event.key.toLowerCase() : '';
 
     // Touche Échap (Escape)
     if (key === 'escape') {
@@ -245,7 +246,11 @@ class ModalManager {
   }
 
   closeModal($el) {
-    $el.classList.remove('is-active');
+    if (!$el) return;
+    $el.classList?.remove('is-active');
+    if ($el.classList?.contains('alert-modal') || $el.dataset?.dynamic === 'true' || $el.getAttribute?.('data-dynamic') === 'true') {
+      $el.remove?.();
+    }
   }
 
   closeAllModals() {
@@ -266,11 +271,24 @@ function createElement(_type, _className, _parent){
 }
 
 function closeAlertModal(_e){
-  _e.remove()//classList.remove("is-active");
+  _e.remove?.();
 }
 
 function alertModal(_config){
-  let modal = createElement("div", "modal", document.body);
+  // Évite les collisions d'identifiants si une modale avec le même id existe déjà
+  if(_config.id){
+    const existing = document.getElementById(_config.id);
+    if(existing){
+      existing.remove?.();
+    }
+  }
+
+  let modal = createElement("div", "modal alert-modal", document.body);
+  if (modal.dataset) {
+    modal.dataset.dynamic = "true";
+  } else if (modal.setAttribute) {
+    modal.setAttribute('data-dynamic', 'true');
+  }
   let background = createElement("div", "modal-background", modal);
   let card = createElement("div", "modal-card", modal);
   let head = createElement("header", "modal-card-head", card);
