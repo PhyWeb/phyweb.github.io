@@ -634,7 +634,11 @@ class TabManager {
   }
 
   deleteTab(_id){
+    if(_id < 0 || _id >= this.tabs.length) return;
+
     let confirmDeleteTab = ()=>{
+      if(_id < 0 || _id >= this.tabs.length) return;
+
       this.tabs[_id].button.remove();
 
       // Call the callback
@@ -644,8 +648,17 @@ class TabManager {
   
       this.tabs.splice(_id,1);
   
-      // Active the tab to the left if possible
-      if(this.activeTab === _id){
+      // If no tabs remain
+      if(this.tabs.length === 0){
+        this.activeTab = undefined;
+        return;
+      }
+
+      // If the deleted tab was before the active tab, decrement activeTab
+      if(_id < this.activeTab){
+        this.activeTab--;
+      } else if(this.activeTab === _id){
+        // Activate the tab to the left if possible
         if(this.activeTab > 0){
           this.onTabClicked(this.activeTab - 1);
         } else{
@@ -669,6 +682,7 @@ class TabManager {
   }
 
   onTabClicked(_id){
+    if(!this.tabs[_id]) return;
     this.activeTab = _id;
 
     // Unactivate all buttons
