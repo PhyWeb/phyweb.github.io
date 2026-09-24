@@ -1,5 +1,5 @@
 import FOURIER from "./modules/fourier.js"
-import {PhyAudio, convertFloat32ToInt16, resampleLinear} from "./modules/audio.js"
+import {PhyAudio, convertFloat32ToInt16, resampleLinear, LinearData} from "./modules/audio.js"
 
 import {Common, setupGlobalShortcuts ,alertModal, showToast, TabManager, NavigationManager, downloadFile, exportToPW, exportToCSV, exportToRW3, Serie, FileDropManager} from "../common/common.js"
 
@@ -1191,54 +1191,7 @@ function formatDate(_t) {
 /*----------------------------------------------------------------------------------------------
 --------------------------------------LINEAR DATA Object----------------------------------------
 ----------------------------------------------------------------------------------------------*/
-function LinearData(_data, _step = 1) {
-	this.data = _data;
-	this.step = _step;
-
-	this.getData = function(_downSampling = 1, _length = undefined, stabilize = false){
-		let data
-		if(stabilize == true){
-			data = this.stabilize();
-		} else{
-			data = this.data;
-		}
-		if(_length == undefined){
-			if(_downSampling == 1){
-				return data;
-			} else {
-				let data2 = new Int16Array(data.length / _downSampling); // TODO PAS QUE INT16!!!
-				for(let i = 0; i < data.length; i++){
-					data2[i] = data[i*_downSampling];
-				}
-				return data2;
-			}
-		} else{
-			let data2 = new Int16Array(_length * baseSampleRate / _downSampling); // TODO PAS QUE INT16!!!
-			for(let i = 0; i < _length * baseSampleRate / _downSampling; i++){
-				data2[i] = data[i*_downSampling];
-			}
-			return data2;
-		}
-	}
-
-	this.getDuration = function(){
-		return this.data.length * this.step;
-	}
-
-	this.stabilize = function(){
-		let maximum = 0;
-		let maximumIndex = 0;
-		for(let i = 0; i < this.data.length / 10; i++){
-			if(this.data[i] > maximum){
-				maximum = this.data[i];
-				maximumIndex = i;
-			}
-		}
-		let stabilizedData = new Int16Array(_data.length - maximumIndex)
-		stabilizedData.set(this.data.slice(maximumIndex, _data.length));
-		return stabilizedData;
-	}
-}
+// LinearData est désormais défini et exporté depuis ./modules/audio.js (avec correction du sous-échantillonnage temporel)
 
 /*----------------------------------------------------------------------------------------------
 -----------------------------------------GRAPH SETTINGS-----------------------------------------

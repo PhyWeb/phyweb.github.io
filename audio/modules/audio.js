@@ -348,4 +348,96 @@ function resampleLinear(data, factor) {
   }
 }
 
-export { PhyAudio, convertFloat32ToInt16, convertInt16ToFloat32, resampleLinear };
+/**
+ * Objet / conteneur de données linéaires (séries temporelles audio ou spectrales).
+ * Permet l'extraction sous-échantillonnée, la mesure de durée et la stabilisation du signal.
+ */
+class LinearData {
+  constructor(_data, _step = 1) {
+    this.data = _data;
+    this.step = _step;
+  }
+
+  /**
+   * Retourne les données éventuellement sous-échantillonnées et stabilisées.
+   *
+   * @param {number} _downSampling - Facteur de sous-échantillonnage temporel (défaut: 1)
+   * @param {number|undefined} _length - Durée temporelle en secondes à extraire (optionnel)
+   * @param {boolean} stabilize - Si true, aligne les données sur le premier pic maximal
+   * @param {number|undefined} _sampleRate - Fréquence d'échantillonnage de référence pour _length (optionnel)
+   * @returns {TypedArray|Array} Données sous-échantillonnées
+   */
+  getData(_downSampling = 1, _length = undefined, stabilize = false, _sampleRate = undefined) {
+    let data;
+    if (stabilize === true) {
+      data = this.stabilize();
+    } else {
+      data = this.data;
+    }
+    if (!data || data.length === 0) {
+      return data;
+    }
+
+    if (_length === undefined) {
+      if (_downSampling <= 1) {
+        return data;
+      }
+      const targetLength = Math.floor(data.length / _downSampling);
+      const ArrayConstructor = (data.constructor && typeof data.constructor === 'function' && data.constructor !== Array)
+        ? data.constructor
+        : (Array.isArray(data) ? Array : Int16Array);
+
+      const data2 = new ArrayConstructor(targetLength);
+      for (let i = 0; i < targetLength; i++) {
+        data2[i] = data[Math.floor(i * _downSampling)];
+      }
+      return data2;
+    } else {
+      const effectiveSampleRate = _sampleRate || (this.step && this.step !== 1 ? (1 / this.step) : (typeof baseSampleRate !== 'undefined' ? baseSampleRate : 1));
+      const totalSamples = Math.min(Math.round(_length * effectiveSampleRate), data.length);
+      const effectiveDownSampling = _downSampling > 0 ? _downSampling : 1;
+      const targetLength = Math.floor(totalSamples / effectiveDownSampling);
+
+      const ArrayConstructor = (data.constructor && typeof data.constructor === 'function' && data.constructor !== Array)
+        ? data.constructor
+        : (Array.isArray(data) ? Array : Int16Array);
+
+      const data2 = new ArrayConstructor(targetLength);
+      for (let i = 0; i < targetLength; i++) {
+        data2[i] = data[Math.floor(i * effectiveDownSampling)];
+      }
+      return data2;
+    }
+  }
+
+  /**
+   * Retourne la durée totale du signal en secondes.
+   * @returns {number}
+   */
+  getDuration() {
+    return this.data ? this.data.length * this.step : 0;
+  }
+
+  /**
+   * Recherche le pic maximal dans les 10 premiers pourcents du signal
+   * et retourne une tranche débutant à cet indice.
+   * @returns {TypedArray|Array}
+   */
+  stabilize() {
+    if (!this.data || this.data.length === 0) {
+      return this.data;
+    }
+    let maximum = 0;
+    let maximumIndex = 0;
+    const searchLimit = Math.floor(this.data.length / 10);
+    for (let i = 0; i < searchLimit; i++) {
+      if (this.data[i] > maximum) {
+        maximum = this.data[i];
+        maximumIndex = i;
+      }
+    }
+    return this.data.slice(maximumIndex);
+  }
+}
+
+export { PhyAudio, convertFloat32ToInt16, convertInt16ToFloat32, resampleLinear, LinearData };
