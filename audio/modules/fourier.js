@@ -359,16 +359,26 @@ export default function Fourier(_n) {
         let windowCompensation = 2.0;
 
         if(_zeroPadding == true){
-            for(let i = 0; i < rawFft.real.length; i++){
-                _result.data[i] = (2 * windowCompensation) / rawFft.real.length * Math.sqrt(rawFft.real[i*2+1]*rawFft.real[i*2+1]+rawFft.imag[i*2+1]*rawFft.imag[i*2+1]);
-                _result.step = hzPerSample * 2;
+            let limit = Math.min(_result.data.length, rawFft.real.length);
+            let normFactor = (2 * windowCompensation) / _data.data.length;
+            for(let i = 0; i < limit; i++){
+                _result.data[i] = normFactor * Math.sqrt(rawFft.real[i]*rawFft.real[i] + rawFft.imag[i]*rawFft.imag[i]);
             }
+            for(let i = limit; i < _result.data.length; i++){
+                _result.data[i] = 0;
+            }
+            _result.step = hzPerSample / 2;
         }
         else{
-            for(let i = 0; i <  _result.data.length; i++){
-                _result.data[i] = (2 * windowCompensation) / rawFft.real.length * Math.sqrt(rawFft.real[i]*rawFft.real[i]+rawFft.imag[i]*rawFft.imag[i]);
-                _result.step = hzPerSample;
+            let limit = Math.min(_result.data.length, rawFft.real.length);
+            let normFactor = (2 * windowCompensation) / rawFft.real.length;
+            for(let i = 0; i < limit; i++){
+                _result.data[i] = normFactor * Math.sqrt(rawFft.real[i]*rawFft.real[i] + rawFft.imag[i]*rawFft.imag[i]);
             }
+            for(let i = limit; i < _result.data.length; i++){
+                _result.data[i] = 0;
+            }
+            _result.step = hzPerSample;
         }   
     }
 }
