@@ -149,3 +149,96 @@ describe('Audio - Conversion Float32 vers Int16 (convertFloat32ToInt16)', () => 
     });
   });
 });
+
+describe('Audio - Conversion Int16 vers Float32 (convertInt16ToFloat32)', () => {
+  describe('Vérification et preuve du bug historique de la variable non déclarée s', () => {
+    it('prouve qu\'une variable non déclarée s lève une ReferenceError en mode strict (ES modules)', () => {
+      // Reproduction exacte du code historique non corrigé
+      function buggyConvertInt16ToFloat32(buffer) {
+        'use strict';
+        let l = buffer.length;
+        let buf = new Float32Array(l);
+        while (l--) {
+          // Sans let/const/var, en mode strict (implicite dans les modules ES), l'assignation lève ReferenceError
+          s = Math.max(-32768, Math.min(32767, buffer[l]));
+          buf[l] = s < 0 ? s / 32768 : s / 32767;
+        }
+        return buf;
+      }
+
+      assert.throws(
+        () => buggyConvertInt16ToFloat32(new Int16Array([100])),
+        {
+          name: 'ReferenceError',
+          message: /s is not defined/
+        },
+        'L\'assignation d\'une variable non déclarée s doit lever ReferenceError en mode strict'
+      );
+    });
+
+    it('la fonction exportée convertInt16ToFloat32 s\'exécute sans ReferenceError en mode strict', () => {
+      assert.doesNotThrow(() => {
+        const input = new Int16Array([0, 1000, -2000, 32767, -32768]);
+        const res = convertInt16ToFloat32(input);
+        assert.equal(res.length, 5);
+      });
+    });
+  });
+
+  describe('Conversions et précision mathématique', () => {
+    it('convertit fidèlement les bornes extrêmes et le zéro', () => {
+      const input = new Int16Array([-32768, 0, 32767]);
+      const res = convertInt16ToFloat32(input);
+
+      assert.equal(res.length, 3);
+      assert.equal(res[0], -1.0, '-32768 doit correspondre exactement à -1.0');
+      assert.equal(res[1], 0.0, '0 doit correspondre exactement à 0.0');
+      assert.equal(res[2], 1.0, '32767 doit correspondre exactement à 1.0');
+    });
+
+    it('convertit les valeurs intermédiaires positives et négatives avec la formule asymétrique 32768 / 32767', () => {
+      const input = new Int16Array([-16384, 16383]);
+      const res = convertInt16ToFloat32(input);
+
+      assert.equal(res[0], Math.fround(-16384 / 32768));
+      assert.equal(res[1], Math.fround(16383 / 32767));
+    });
+
+    it('sature (clamp) correctement les valeurs dépassant la plage [-32768, 32767]', () => {
+      // Même si l'entrée est un tableau classique avec des valeurs hors de la plage Int16
+      const input = [-50000, 50000];
+      const res = convertInt16ToFloat32(input);
+
+      assert.equal(res[0], -1.0, 'Les valeurs inférieures à -32768 doivent saturer à -1.0');
+      assert.equal(res[1], 1.0, 'Les valeurs supérieures à 32767 doivent saturer à 1.0');
+    });
+  });
+
+  describe('Gestion des cas limites et robustesse', () => {
+    it('gère un buffer vide sans erreur', () => {
+      const resEmpty = convertInt16ToFloat32(new Int16Array(0));
+      assert.equal(resEmpty.length, 0);
+      assert.ok(resEmpty instanceof Float32Array);
+    });
+
+    it('gère des entrées nulles ou indéfinies sans lever d\'exception', () => {
+      const resNull = convertInt16ToFloat32(null);
+      assert.equal(resNull.length, 0);
+      assert.ok(resNull instanceof Float32Array);
+
+      const resUndef = convertInt16ToFloat32(undefined);
+      assert.equal(resUndef.length, 0);
+      assert.ok(resUndef instanceof Float32Array);
+    });
+
+    it('supporte aussi bien les Array standards que les Int16Array', () => {
+      const arrayInput = [-32768, 0, 32767];
+      const res = convertInt16ToFloat32(arrayInput);
+      assert.equal(res.length, 3);
+      assert.equal(res[0], -1.0);
+      assert.equal(res[1], 0.0);
+      assert.equal(res[2], 1.0);
+    });
+  });
+});
+

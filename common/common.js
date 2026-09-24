@@ -91,7 +91,8 @@ function enforceIntegerInputs(){
   (document.querySelectorAll("input.integer") || []).forEach((input) => {
     input.addEventListener("keydown", (e) => {
       // Allow only digits, backspace, tab, escape, enter, and arrow keys
-      if (e.key === "e" || e.key === "." || e.key === "-" || e.key === "+" || e.key ===",") {
+      const key = e.key ? e.key.toLowerCase() : "";
+      if (key === "e" || key === "." || key === "-" || key === "+" || key === ",") {
         e.preventDefault();
       }
     });
@@ -1603,4 +1604,4 @@ function initApplets(title, basePath = "..", hasDataCallback = () => false) {  /
   return common;
 }
 
-export {Common,initApplets ,setupGlobalShortcuts, ModalManager, alertModal, quitConfirmationModal, TabManager, Serie, exportToPW,exportToCSV, exportToRW3, downloadFile, removeAccents};
+export {Common,initApplets, enforceIntegerInputs, setupGlobalShortcuts, ModalManager, alertModal, quitConfirmationModal, TabManager, Serie, exportToPW,exportToCSV, exportToRW3, downloadFile, removeAccents};

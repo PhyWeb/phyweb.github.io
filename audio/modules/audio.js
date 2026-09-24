@@ -284,11 +284,15 @@ function convertFloat32ToInt16(buffer, l, _start = 0) {
 }
 
 function convertInt16ToFloat32(buffer) {
-  let l = buffer.length;  //Buffer
-	let buf = new Float32Array(l);
+  if (!buffer || buffer.length === 0) {
+    return new Float32Array(0);
+  }
+  let l = buffer.length;
+  const buf = new Float32Array(l);
+  let s;
 
-	while (l--) {
-    let s = Math.max(-32768, Math.min(32767, buffer[l]));
+  while (l--) {
+    s = Math.max(-32768, Math.min(32767, buffer[l]));
     buf[l] = s < 0 ? s / 32768 : s / 32767;
   }
   return buf;
