@@ -38,7 +38,7 @@
         canvas {
             display: block;
         }
-        /* Panneau de contrôle */
+        /* Panneau de contrôle par défaut (grands écrans) */
         .controls-panel {
             background: white;
             padding: 1.25rem; 
@@ -50,11 +50,11 @@
             margin: 0 auto;
         }
         .lens-control-box {
-            border-left: 4px solid #3298dc;
+            border-left: 4px solid #e67e22;
             padding-left: 10px;
             margin-bottom: 12px;
         }
-        .lens-control-box.l2 { border-left-color: #48c774; }
+        .lens-control-box.l2 { border-left-color: #27ae60; }
         h1.title { color: var(--primary-color); }
         input[type="range"] { cursor: pointer; }
         
@@ -63,6 +63,15 @@
             display: flex;
             align-items: center;
             margin-bottom: 0.35rem; 
+        }
+
+        /* Mode compact pour les petits écrans (ex: PC portables ou petit affichage) */
+        @media screen and (max-height: 800px) {
+            .controls-panel { padding: 1rem; }
+            .lens-control-box { margin-bottom: 8px; }
+            .control-row { margin-bottom: 0.2rem; }
+            .controls-panel hr { margin: 4px 0 !important; }
+            .field.mb-0 { margin-bottom: 0 !important; }
         }
         .control-row .label {
             margin-bottom: 0;
@@ -176,20 +185,20 @@
                         </div>
                     </div>
 
-                    <div class="field mb-1">
-                        <label class="checkbox"><input type="checkbox" id="toggleSnap" checked> Magnétisme (snap mm)</label>
+                    <div class="field mb-0">
+                        <label class="checkbox is-size-7"><input type="checkbox" id="toggleSnap" checked> Magnétisme (snap mm)</label>
                     </div>
-                    <div class="field mb-1">
-                        <label class="checkbox"><input type="checkbox" id="toggleObj" checked> Afficher l'objet AB</label>
+                    <div class="field mb-0">
+                        <label class="checkbox is-size-7"><input type="checkbox" id="toggleObj" checked> Afficher l'objet AB</label>
                     </div>
-                    <div class="field mb-1">
-                        <label class="checkbox"><input type="checkbox" id="toggleRays" checked> Tracer les rayons</label>
+                    <div class="field mb-0">
+                        <label class="checkbox is-size-7"><input type="checkbox" id="toggleRays" checked> Tracer les rayons</label>
                     </div>
-                    <div class="field mb-1">
-                        <label class="checkbox"><input type="checkbox" id="toggleImages" checked> Afficher les images</label>
+                    <div class="field mb-0">
+                        <label class="checkbox is-size-7"><input type="checkbox" id="toggleImages" checked> Afficher les images</label>
                     </div>
-                    <div class="field mb-3">
-                        <label class="checkbox"><input type="checkbox" id="toggleFocals" checked> Afficher les foyers</label>
+                    <div class="field mb-2">
+                        <label class="checkbox is-size-7"><input type="checkbox" id="toggleFocals" checked> Afficher les foyers</label>
                     </div>
 
                     <hr class="my-2">
@@ -535,8 +544,8 @@
         const idx1 = state.l2.active ? "₁" : ""; 
         const idx2 = "₂";
         
-        drawLensGeometry(state.l1, idx1);
-        if (state.l2.active) drawLensGeometry(state.l2, idx2);
+        drawLensGeometry(state.l1, idx1, "#e67e22");
+        if (state.l2.active) drawLensGeometry(state.l2, idx2, "#27ae60");
 
         if (state.showObj) {
             if (state.obj.isInfObject) {
@@ -559,7 +568,7 @@
             let img2 = calculateImage(img1, state.l2);
             if (state.showRays) {
                 traceRays(state.obj, img1, state.l1, true, state.l2.x);
-                traceRays(img1, img2, state.l2, false, null);
+                traceRays(img1, img2, state.l2, false, null, state.l1.x);
             }
             if (state.showImages) {
                 drawObject(img1, "A₁", "B₁", "rgba(52, 152, 219, 0.7)", img1.x < state.l2.x); 
@@ -601,41 +610,41 @@
         return img;
     }
 
-    function drawLensGeometry(lens, indexStr) {
+    function drawLensGeometry(lens, indexStr, color="#2980b9") {
         const pxX = toPxX(lens.x);
         const pxTop = toPxY(lens.r);
         const pxBot = toPxY(-lens.r);
         
-        drawLine(pxX, pxTop, pxX, pxBot, "#2980b9", 2);
+        drawLine(pxX, pxTop, pxX, pxBot, color, 2);
         
         const size = 10;
         if (lens.f > 0) {
-            drawLine(pxX, pxTop, pxX-size, pxTop+size, "#2980b9", 2);
-            drawLine(pxX, pxTop, pxX+size, pxTop+size, "#2980b9", 2);
-            drawLine(pxX, pxBot, pxX-size, pxBot-size, "#2980b9", 2);
-            drawLine(pxX, pxBot, pxX+size, pxBot-size, "#2980b9", 2);
+            drawLine(pxX, pxTop, pxX-size, pxTop+size, color, 2);
+            drawLine(pxX, pxTop, pxX+size, pxTop+size, color, 2);
+            drawLine(pxX, pxBot, pxX-size, pxBot-size, color, 2);
+            drawLine(pxX, pxBot, pxX+size, pxBot-size, color, 2);
         } else {
-            drawLine(pxX-size, pxTop, pxX, pxTop-size, "#2980b9", 2);
-            drawLine(pxX+size, pxTop, pxX, pxTop-size, "#2980b9", 2);
-            drawLine(pxX-size, pxBot, pxX, pxBot+size, "#2980b9", 2);
-            drawLine(pxX+size, pxBot, pxX, pxBot+size, "#2980b9", 2);
+            drawLine(pxX-size, pxTop, pxX, pxTop-size, color, 2);
+            drawLine(pxX+size, pxTop, pxX, pxTop-size, color, 2);
+            drawLine(pxX-size, pxBot, pxX, pxBot+size, color, 2);
+            drawLine(pxX+size, pxBot, pxX, pxBot+size, color, 2);
         }
 
         const f = lens.f;
-        drawPoint(lens.x, 0, `O${indexStr}`);
+        drawPoint(lens.x, 0, `O${indexStr}`, color);
 
         if (state.showFocals) {
-            drawPoint(lens.x - f, 0, `F${indexStr}`);
-            drawPoint(lens.x + f, 0, `F'${indexStr}`);
+            drawPoint(lens.x - f, 0, `F${indexStr}`, color);
+            drawPoint(lens.x + f, 0, `F'${indexStr}`, color);
         }
     }
 
-    function drawPoint(cmX, cmY, label) {
+    function drawPoint(cmX, cmY, label, color="#2980b9") {
         const pxX = toPxX(cmX);
         const pxY = toPxY(cmY);
         ctx.beginPath();
         ctx.arc(pxX, pxY, 3, 0, Math.PI * 2);
-        ctx.fillStyle = "#2980b9";
+        ctx.fillStyle = color;
         ctx.fill();
 
         let isPrime = label.includes("'");
@@ -643,7 +652,7 @@
         let offsetX = isPrime ? 8 : -8;
         if (label.startsWith("O")) { align = "right"; offsetX = -8; }
 
-        drawText(label, pxX + offsetX, pxY + 15, "#2980b9", "bold 15px Arial", align);
+        drawText(label, pxX + offsetX, pxY + 15, color, "bold 15px Arial", align);
     }
 
 function drawObject(obj, nameA, nameB, color, isReal) {
@@ -672,7 +681,7 @@ function drawObject(obj, nameA, nameB, color, isReal) {
         drawText(nameB, pxX + offsetX, pxY - 10 * dir, color, "bold italic 15px Arial", align);
     }
 
-    function traceRays(obj, img, lens, limitToNextLens, nextLensX) {
+    function traceRays(obj, img, lens, limitToNextLens, nextLensX, minSolidX = null) {
         const pxLensX = toPxX(lens.x);
         const endX_real = limitToNextLens ? toPxX(nextLensX) : logicalWidth + 100;
         const endX_virt = -100;
@@ -682,10 +691,10 @@ function drawObject(obj, nameA, nameB, color, isReal) {
             let slope = obj.isInfObject ? Math.tan(obj.angle * Math.PI / 180) : obj.slope;
             
             let drawRayInf = (y_hit_cm) => {
-                let startX_cm = obj.isInfObject ? toCmX(0) : state.l1.x; 
+                let startX_cm = obj.isInfObject ? toCmX(0) : minSolidX !== null ? minSolidX : state.l1.x; 
                 let pxStartX = toPxX(startX_cm);
                 let startY_cm = y_hit_cm + slope * (startX_cm - lens.x);
-                drawFullRay(pxStartX, toPxY(startY_cm), pxLensX, toPxY(y_hit_cm), img, endX_real, endX_virt, col);
+                drawFullRay(pxStartX, toPxY(startY_cm), pxLensX, toPxY(y_hit_cm), img, endX_real, endX_virt, col, minSolidX);
             };
 
             if (Math.abs(slope) < 0.001) {
@@ -701,33 +710,49 @@ function drawObject(obj, nameA, nameB, color, isReal) {
             const pxObjX = toPxX(obj.x);
             const pxObjY = toPxY(obj.y);
             
-            if (lens.r >= 0) drawFullRay(pxObjX, pxObjY, pxLensX, ORIGIN_Y, img, endX_real, endX_virt, col);
-            if (Math.abs(obj.y) <= lens.r + 0.01) drawFullRay(pxObjX, pxObjY, pxLensX, pxObjY, img, endX_real, endX_virt, col);
+            if (lens.r >= 0) drawFullRay(pxObjX, pxObjY, pxLensX, ORIGIN_Y, img, endX_real, endX_virt, col, minSolidX);
+            if (Math.abs(obj.y) <= lens.r + 0.01) drawFullRay(pxObjX, pxObjY, pxLensX, pxObjY, img, endX_real, endX_virt, col, minSolidX);
             
             if(Math.abs(obj.x - (lens.x - lens.f)) > 0.01) {
                 let interceptY_cm = -obj.y * lens.f / (lens.x - lens.f - obj.x);
                 if (Math.abs(interceptY_cm) <= lens.r + 0.01) {
                     let interceptY_px = toPxY(interceptY_cm);
-                    drawFullRay(pxObjX, pxObjY, pxLensX, interceptY_px, img, endX_real, endX_virt, col);
+                    drawFullRay(pxObjX, pxObjY, pxLensX, interceptY_px, img, endX_real, endX_virt, col, minSolidX);
                 }
             }
         }
     }
 
-    function drawFullRay(startX, startY, lensX, lensY, img, endX, virtX, color) {
+    function drawFullRay(startX, startY, lensX, lensY, img, endX, virtX, color, minSolidX = null) {
+        // Trace incident ray
         if (startX > lensX) { 
-            drawRay(0, startY - (startY-lensY)*lensX/(startX-lensX), lensX, lensY, color);
-            drawLine(lensX, lensY, startX, startY, color, 1.5, [5,5]); 
+            // Virtual object
+            let pxMinSolid = minSolidX !== null ? toPxX(minSolidX) : 0;
+            let slopePx = (startY - lensY) / (startX - lensX);
+            let yAtMin = lensY + slopePx * (pxMinSolid - lensX);
+            drawRay(pxMinSolid, yAtMin, lensX, lensY, color);
+            drawLine(lensX, lensY, startX, startY, color, 1.5, [5, 5]); 
         } else {
-            drawRay(startX, startY, lensX, lensY, color);
+            // Real object (or virtual image from previous lens acting as real object)
+            let pxMinSolid = minSolidX !== null ? toPxX(minSolidX) : -Infinity;
+            if (startX < pxMinSolid) {
+                // Ray comes from a virtual image to the left of the previous lens
+                let slopePx = (lensY - startY) / (lensX - startX);
+                let yAtMin = startY + slopePx * (pxMinSolid - startX);
+                drawLine(startX, startY, pxMinSolid, yAtMin, color, 1.5, [5, 5]);
+                drawRay(pxMinSolid, yAtMin, lensX, lensY, color);
+            } else {
+                drawRay(startX, startY, lensX, lensY, color);
+            }
         }
 
+        // Trace emergent ray
         if (img.isInf) {
             let slope_px = -img.slope; 
             let yEnd = lensY + slope_px * (endX - lensX);
             drawRay(lensX, lensY, endX, yEnd, color);
             let yVirt = lensY + slope_px * (virtX - lensX);
-            drawLine(lensX, lensY, virtX, yVirt, color, 1.5, [5,5]);
+            drawLine(lensX, lensY, virtX, yVirt, color, 1.5, [5, 5]);
         } else {
             const pxImgX = toPxX(img.x);
             const pxImgY = toPxY(img.y);
@@ -737,7 +762,7 @@ function drawObject(obj, nameA, nameB, color, isReal) {
                 let extrapY = pxImgY + (pxImgY - lensY) * (endX - pxImgX) / (pxImgX - lensX);
                 drawLine(pxImgX, pxImgY, endX, extrapY, color, 1.5);
             } else { 
-                drawLine(pxImgX, pxImgY, lensX, lensY, color, 1.5, [5,5]);
+                drawLine(pxImgX, pxImgY, lensX, lensY, color, 1.5, [5, 5]);
                 let extrapY = lensY + (lensY - pxImgY) * (endX - lensX) / (lensX - pxImgX);
                 drawRay(lensX, lensY, endX, extrapY, color);
             }
