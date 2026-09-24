@@ -107,6 +107,7 @@ function handleCardDrop(ev) {
     if (targetZone.id === 'pool' || targetZone.classList.contains('card-pool') || targetZone.id === 'test-box') { targetZone.appendChild(draggedCard); return; }
     if (targetZone.children.length > 0) {
         const existingCard = targetZone.children[0]; if (existingCard === draggedCard) return;
+        if (existingCard.draggable === false || existingCard.classList.contains('locked')) return;
         const pool = document.getElementById('pool') || document.getElementById('card-pool');
         if (pool) pool.appendChild(existingCard);
     }
@@ -343,6 +344,8 @@ const STRUCTURE_TP = {
         }
     ],
     partie2: (function() {
+        const cleanConf = (val) => val.replace(/[\s\^,]+/g, '').replace(/²/g, '2').replace(/⁶/g, '6').replace(/¹/g, '1').replace(/⁴/g, '4').replace(/⁵/g, '5').replace(/³/g, '3').toLowerCase();
+
         const renderModernSimplifiedGrid = (container, mode) => {
             container.innerHTML = ""; container.className = "periodic-grid";
             
@@ -353,6 +356,19 @@ const STRUCTURE_TP = {
                 container.style.gridTemplateColumns = "repeat(8, 60px)"; container.style.gap = "8px";
             }
             container.style.justifyContent = "center";
+
+            // Ajout de la numérotation des colonnes 1 à 8
+            const headers = ["1", "2", "3", "4", "5", "6", "7", "8"];
+            headers.forEach(h => {
+                let div = document.createElement('div');
+                div.textContent = h;
+                div.style.textAlign = "center";
+                div.style.fontWeight = "bold";
+                div.style.color = "#888";
+                div.style.fontSize = "0.9em";
+                div.style.paddingBottom = "5px";
+                container.appendChild(div);
+            });
 
             const r1 = ["H", null, null, null, null, null, null, "He"];
             const r2 = ["Li", "Be", "B", "C", "N", "O", "F", "Ne"];
@@ -493,11 +509,10 @@ const STRUCTURE_TP = {
                     </section>`,
                 onLoad: () => { renderModernSimplifiedGrid(document.getElementById('grid-container'), 'col1'); },
                 validate: () => {
-                    const clean = (val) => val.replace(/\s+/g, '').replace(/²/g, '2').replace(/⁶/g, '6').replace(/¹/g, '1').toLowerCase();
                     let err = 0;
                     const check = (id, expected) => {
                         const el = document.getElementById(id);
-                        if(clean(el.value) === expected) { el.classList.add('is-success'); el.classList.remove('is-danger'); }
+                        if(cleanConf(el.value) === expected) { el.classList.add('is-success'); el.classList.remove('is-danger'); }
                         else { el.classList.add('is-danger'); el.classList.remove('is-success'); err++; }
                     };
                     check('conf-h', '1s1'); check('conf-li', '1s22s1'); check('conf-na', '1s22s22p63s1');
@@ -509,10 +524,10 @@ const STRUCTURE_TP = {
                 }
             },
             {
-                type: "game", title: "Structures électroniques (Colonne 14)",
+                type: "game", title: "Structures électroniques (Colonne 4)",
                 html: `<section class="game-area box has-background-light" style="height: 100%;">
                         <div class="box content consigne-box">
-                            <p>Suite des structures électroniques : éléments de la <strong>colonne 14</strong> (Carbone et Silicium).</p>
+                            <p>Suite des structures électroniques : éléments de la <strong>colonne 4</strong> (Carbone et Silicium).</p>
                         </div>
                         <div id="grid-container" class="mt-4 mx-auto" style="margin-bottom: 30px;"></div>
                         
@@ -529,26 +544,25 @@ const STRUCTURE_TP = {
                     </section>`,
                 onLoad: () => { renderModernSimplifiedGrid(document.getElementById('grid-container'), 'col14'); },
                 validate: () => {
-                    const clean = (val) => val.replace(/\s+/g, '').replace(/²/g, '2').replace(/⁶/g, '6').replace(/⁴/g, '4').toLowerCase();
                     let err = 0;
                     const check = (id, expected) => {
                         const el = document.getElementById(id);
-                        if(clean(el.value) === expected) { el.classList.add('is-success'); el.classList.remove('is-danger'); }
+                        if(cleanConf(el.value) === expected) { el.classList.add('is-success'); el.classList.remove('is-danger'); }
                         else { el.classList.add('is-danger'); el.classList.remove('is-success'); err++; }
                     };
                     check('conf-c', '1s22s22p2'); check('conf-si', '1s22s22p63s23p2');
                     if (err === 0) {
                         ['conf-c','conf-si'].forEach(id => document.getElementById(id).disabled = true);
-                        return { success: true, msg: "Bravo, toujours aussi fort ! Vous pouvez passer aux éléments de la colonne 17." };
+                        return { success: true, msg: "Bravo, toujours aussi fort ! Vous pouvez passer aux éléments de la colonne 7." };
                     }
                     return { success: false, msg: "Attention ! Comptez bien le total des électrons pour arriver à Z." };
                 }
             },
             {
-                type: "game", title: "Structures électroniques (Colonne 17)",
+                type: "game", title: "Structures électroniques (Colonne 7)",
                 html: `<section class="game-area box has-background-light" style="height: 100%;">
                         <div class="box content consigne-box">
-                            <p>Dernière vérification des structures électroniques : éléments de la <strong>colonne 17</strong> (famille des halogènes).</p>
+                            <p>Dernière vérification des structures électroniques : éléments de la <strong>colonne 7</strong> (famille des halogènes).</p>
                         </div>
                         <div id="grid-container" class="mt-4 mx-auto" style="margin-bottom: 30px;"></div>
                         
@@ -565,11 +579,10 @@ const STRUCTURE_TP = {
                     </section>`,
                 onLoad: () => { renderModernSimplifiedGrid(document.getElementById('grid-container'), 'col17'); },
                 validate: () => {
-                    const clean = (val) => val.replace(/\s+/g, '').replace(/²/g, '2').replace(/⁶/g, '6').replace(/⁵/g, '5').toLowerCase();
                     let err = 0;
                     const check = (id, expected) => {
                         const el = document.getElementById(id);
-                        if(clean(el.value) === expected) { el.classList.add('is-success'); el.classList.remove('is-danger'); }
+                        if(cleanConf(el.value) === expected) { el.classList.add('is-success'); el.classList.remove('is-danger'); }
                         else { el.classList.add('is-danger'); el.classList.remove('is-success'); err++; }
                     };
                     check('conf-f', '1s22s22p5'); check('conf-cl', '1s22s22p63s23p5');

@@ -228,7 +228,7 @@ export default class EXTRACTOR {
     }
     this.mp4boxfile.onSamples = (track_id, ref, samples) => this.onSamples(samples);
 
-    var onBlockRead = (evt) => {
+    var onBlockRead = async (evt) => {
       if(this.abortFlag) return;
       if (offset >= fileSize) {
         this.mp4boxfile.flush(); 
@@ -247,6 +247,12 @@ export default class EXTRACTOR {
         $("#new-modal")?.classList.add("is-active");
         return;
       }
+
+      while (this._chunkQueue && this._chunkQueue.length > 1000) {
+        await new Promise(r => setTimeout(r, 50));
+        if (this.abortFlag) return;
+      }
+
       readBlock(offset, chunksize, _file);
     }
 
@@ -600,8 +606,9 @@ export default class EXTRACTOR {
       }
 
       // --- SÉCURITÉ RAM : Si le processeur a plus de 15 images de retard en compression ---
+      // ou si le décodeur a trop d'images en attente.
       // On attend que la mémoire se libère avant de décoder la suite.
-      if (this._pendingBitmapsCount > 15) {
+      if (this._pendingBitmapsCount > 15 || (this.decoder && this.decoder.decodeQueueSize > 60)) {
         await new Promise((resolve) => {
           const timer = setTimeout(() => {
             if (this._pendingDrainResolve === onDrain) {

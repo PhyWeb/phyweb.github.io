@@ -323,7 +323,7 @@ export default class MEASUREMENT {
     if(this.player && (this.player.currentFrame === undefined || this.player.currentFrame === index)){
       this.player.currentPoint = 0;
     }
-    this.updateTable();
+    this.updateRow(index);
   }
 
   // Méthode pour ne mettre à jour qu'une seule ligne
@@ -498,8 +498,19 @@ export default class MEASUREMENT {
 
       // x and y values
       for(let j = 1; j < (this.series.length - 1) / 2 + 1; j++){
-        series[((j - 1) * 2) + 1][i] = isBeforeOrigin ? "" : this.series[((j - 1) * 2) + 1].get(i, this.scale.origin.x, scaleX);
-        series[((j - 1) * 2) + 2][i] = isBeforeOrigin ? "" : this.series[((j - 1) * 2) + 2].get(i, this.scale.origin.y, scaleY);
+        const xIndex = ((j - 1) * 2) + 1;
+        const yIndex = ((j - 1) * 2) + 2;
+        
+        const xVal = this.series[xIndex][i];
+        const yVal = this.series[yIndex][i];
+
+        series[xIndex][i] = (isBeforeOrigin || xVal === "" || xVal === undefined || xVal === null) 
+          ? "" 
+          : this.series[xIndex].get(i, this.scale.origin.x, scaleX);
+          
+        series[yIndex][i] = (isBeforeOrigin || yVal === "" || yVal === undefined || yVal === null) 
+          ? "" 
+          : this.series[yIndex].get(i, this.scale.origin.y, scaleY);
       }
     }
 

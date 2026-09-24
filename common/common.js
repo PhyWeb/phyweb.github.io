@@ -655,17 +655,20 @@ class TabManager {
   deleteTab(_id){
     if(_id < 0 || _id >= this.tabs.length) return;
 
-    let confirmDeleteTab = ()=>{
-      if(_id < 0 || _id >= this.tabs.length) return;
+    const tabToDelete = this.tabs[_id];
 
-      this.tabs[_id].button.remove();
+    let confirmDeleteTab = ()=>{
+      const currentIndex = this.tabs.indexOf(tabToDelete);
+      if(currentIndex < 0) return;
+
+      this.tabs[currentIndex].button.remove();
 
       // Call the callback
-      if(this.tabs[_id].deleteCB){
-        this.tabs[_id].deleteCB(_id);
+      if(this.tabs[currentIndex].deleteCB){
+        this.tabs[currentIndex].deleteCB(currentIndex);
       }
   
-      this.tabs.splice(_id,1);
+      this.tabs.splice(currentIndex,1);
   
       // If no tabs remain
       if(this.tabs.length === 0){
@@ -674,9 +677,9 @@ class TabManager {
       }
 
       // If the deleted tab was before the active tab, decrement activeTab
-      if(_id < this.activeTab){
+      if(currentIndex < this.activeTab){
         this.activeTab--;
-      } else if(this.activeTab === _id){
+      } else if(this.activeTab === currentIndex){
         // Activate the tab to the left if possible
         if(this.activeTab > 0){
           this.onTabClicked(this.activeTab - 1);
@@ -689,7 +692,7 @@ class TabManager {
     alertModal({
       type: "warning",
       title: "Fermer un onglet",
-      body: "Etes-vous sur de vouloir fermer l'onglet : <strong>" + this.tabs[_id].name + "</strong>",
+      body: "Etes-vous sur de vouloir fermer l'onglet : <strong>" + tabToDelete.name + "</strong>",
       confirm: {
         label: "Fermer l'onglet",
         type: "danger",

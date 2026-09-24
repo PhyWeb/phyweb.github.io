@@ -553,8 +553,13 @@ export default class PLAYER {
     if(this.currentPoint < ((this.measurement.series.length - 1) / 2) - 1){
       this.currentPoint++;
       this.drawFrame(this.currentFrame);
-    } else{
-      this.nextFrame();
+    } else {
+      if(this.currentFrame < this.decodedVideo.frames.length - 1){
+        this.nextFrame();
+      } else {
+        this.currentPoint = 0;
+        this.drawFrame(this.currentFrame);
+      }
     }
 
   }

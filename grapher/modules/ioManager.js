@@ -1,6 +1,6 @@
 import {Curve, Model, COLOR_LIST} from './data.js';
 import Papa from '../../common/papaparse/papaparse.esm.js';
-import {removeAccents} from '../../common/common.js';
+import {removeAccents, showToast} from '../../common/common.js';
 
 // Fonctions utilitaires
 function splitFlexible(line, delimiter) {
@@ -657,7 +657,8 @@ generatePW() {
 
       let i = 0;
 
-      let loadedVarValues = false
+      let loadedVarValues = false;
+      let hasWarnedTruncation = false;
 
       // Lecture d'un bloc "£<n> <KEY>" -> n lignes
       const readBlock = (key, target, parser = s => s.trim()) => {
@@ -739,6 +740,14 @@ generatePW() {
                 // Remplit avec 'null' si la ligne est plus courte que prévu
                 while (cols.length < mCount) {
                   cols.push(null);
+                }
+                
+                if (cols.length > mCount) {
+                  if (!hasWarnedTruncation) {
+                    console.warn("Des colonnes excédentaires ont été ignorées car il manque des en-têtes.");
+                    showToast("Certaines colonnes de données ont été ignorées (aucun en-tête correspondant).", "is-warning");
+                    hasWarnedTruncation = true;
+                  }
                 }
                 
                 // Tronque la ligne si elle est plus longue et l'ajouter aux résultats

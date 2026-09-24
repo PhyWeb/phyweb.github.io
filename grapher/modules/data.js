@@ -465,6 +465,10 @@ class Model {
   // Méthode fit() mise à jour pour le Post & Terminate
   fit() {
     return new Promise((resolve, reject) => {
+      if (this.activeWorker) {
+        this.stopFit();
+      }
+
       const data = this._buildData();
       if (data.length < 2) {
         return reject(new Error("Pas assez de données valides."));
@@ -554,6 +558,7 @@ class Model {
 
   getHighResData(minX, maxX, points = DEFAULT_MODEL_RESOLUTION){
     const data = [];
+    points = Math.max(2, points);
     const step = (maxX - minX) / (points - 1);
 
     switch(this.type){
@@ -719,7 +724,7 @@ class Model {
     // Calculer le R²
     let rSquaredValue;
     if (totalSumOfSquares === 0) {
-      rSquaredValue = 1; // Si toutes les valeurs y sont identiques, R² est 1
+      rSquaredValue = residualSumOfSquares === 0 ? 1 : 0;
     } else {
       rSquaredValue = 1 - (residualSumOfSquares / totalSumOfSquares);
     }

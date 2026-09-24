@@ -348,7 +348,7 @@ evaluateBlock(formulas, initialScope) {
   const maxIterations = pendingCalculations.length;
   let iteration = 0;
 
-  while (pendingCalculations.length > 0 && progressMade && iteration < maxIterations) {
+  while (pendingCalculations.length > 0 && progressMade && iteration <= maxIterations) {
     progressMade = false;
     iteration++;
     

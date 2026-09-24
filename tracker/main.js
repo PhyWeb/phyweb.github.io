@@ -76,8 +76,8 @@ function hasUnsavedData() {
   let empty = true;
   for(let i = measurement.originFrame; i < measurement.series[0].length; i++){
     for(let j = 0; j < (measurement.series.length - 1) / 2; j++){
-      if(measurement.series[(j * 2) + 1][i] !== ""){
-        empty = false
+      if(measurement.series[(j * 2) + 1][i] !== "" || measurement.series[(j * 2) + 2][i] !== ""){
+        empty = false;
       }
     }
   }
