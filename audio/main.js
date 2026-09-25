@@ -676,6 +676,7 @@ $("#file-length-modal .modal-background").addEventListener("click", stopPreviewI
 
 // --- FONCTION DE MISE À JOUR VISUELLE ---
 function updatePreviewVisuals(start, end) {
+  stopPreviewIfPlaying();
   if (!filePreviewChart) return;
   filePreviewChart.xAxis[0].update({
     plotLines: [
@@ -687,6 +688,30 @@ function updatePreviewVisuals(start, end) {
     ]
   }, true);
 }
+
+$("#start-length-input").addEventListener('change', () => {
+  let start = parseFloat($("#start-length-input").value) || 0;
+  let end = parseFloat($("#end-length-input").value) || 0;
+  if (start >= end) {
+    start = end - 0.001;
+    $("#start-length-input").value = start.toFixed(3);
+  }
+  updatePreviewVisuals(start, end);
+});
+
+$("#end-length-input").addEventListener('change', () => {
+  let start = parseFloat($("#start-length-input").value) || 0;
+  let end = parseFloat($("#end-length-input").value) || 0;
+  if (end <= start) {
+    end = start + 0.001;
+    $("#end-length-input").value = end.toFixed(3);
+  }
+  if (filePreviewChart && end > filePreviewChart.xAxis[0].max) {
+    end = filePreviewChart.xAxis[0].max;
+    $("#end-length-input").value = end.toFixed(3);
+  }
+  updatePreviewVisuals(start, end);
+});
 
 // --- LOGIQUE DE GLISSER-DÉPOSER (DRAG & DROP) ---
 let isDraggingPreview = false;
