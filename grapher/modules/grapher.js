@@ -170,7 +170,11 @@ export default class Grapher {
 
     for(let i = 0; i < length; i += step){
       if(xCurve && yCurve && xCurve[i] !== "" && yCurve[i] !== "" && xCurve[i] !== undefined && yCurve[i] !== undefined && xCurve[i] !== null && yCurve[i] !== null){
-        data.push([xCurve[i], yCurve[i]]);
+        let xVal = Number(xCurve[i]);
+        let yVal = Number(yCurve[i]);
+        if (!isNaN(xVal) && !isNaN(yVal)) {
+          data.push([xVal, yVal]);
+        }
       }
     }
     return data;

@@ -67,7 +67,11 @@ if ("VideoDecoder" in window) {
 }
 
 // NAVIGATION MANAGER
-// Fonction qui vérifie s'il y a des données non sauvegardées
+let lastSavedHash = null;
+function markAsSaved() {
+  lastSavedHash = JSON.stringify(measurement.getExportSeries());
+}
+
 function hasUnsavedData() {
   if(!measurement.series[0]){
     return false;
@@ -81,7 +85,11 @@ function hasUnsavedData() {
       }
     }
   }
-  return !empty;
+  
+  if (empty) return false;
+  
+  const currentHash = JSON.stringify(measurement.getExportSeries());
+  return lastSavedHash !== currentHash;
 }
 
 const navManager = new NavigationManager(hasUnsavedData);
@@ -519,6 +527,7 @@ $("#download-file-button").addEventListener("click", ()=>{
     measurement.downloadData("rw3", filename);
   }
 
+  markAsSaved();
   common.modalManager.closeAllModals();
 });
 

@@ -1222,6 +1222,7 @@ function exportToRW3(_series = [], _rowMustBeComplete = false, _title = ""){
 
   let dataRows = [];
   let largestSerieLength = 0;
+  let hasIncompleteRows = false;
 
   for (let i = 0; i < _series.length; i++) {
       if (_series[i] && _series[i].length > largestSerieLength) {
@@ -1245,6 +1246,13 @@ function exportToRW3(_series = [], _rowMustBeComplete = false, _title = ""){
       if (!_rowMustBeComplete || rowIsComplete) {
           dataRows.push(row.join('\t'));
       }
+      if (!rowIsComplete && !_rowMustBeComplete) {
+          hasIncompleteRows = true;
+      }
+  }
+
+  if (hasIncompleteRows) {
+      showToast("Le fichier généré contient des lignes incomplètes. Le logiciel Regressi risque de ne pas pouvoir le lire correctement.", "is-warning", 6000);
   }
 
   rw3.push("EVARISTE REGRESSI WINDOWS 1.0");

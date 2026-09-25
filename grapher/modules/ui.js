@@ -485,10 +485,18 @@ export default class UIManager {
    * Initialise la navbar avec les boutons et leurs événements.
    */
   initNavbar() {
+    let lastSavedHash = null;
+    this.markAsSaved = () => {
+      lastSavedHash = JSON.stringify({ curves: this.data.curves, annotations: this.data.annotations, script: this.editor.getValue() });
+    };
+
     // Définit la condition pour vérifier la présence de données
     const hasUnsavedData = () => {
-      // Vrai s'il y a au moins une courbe ou une annotation
-      return this.data.curves.length > 0 || this.data.annotations.length > 0 || this.editor.getValue().trim() !== '';
+      if (this.data.curves.length === 0 && this.data.annotations.length === 0 && this.editor.getValue().trim() === '') {
+        return false;
+      }
+      const currentHash = JSON.stringify({ curves: this.data.curves, annotations: this.data.annotations, script: this.editor.getValue() });
+      return lastSavedHash !== currentHash;
     };
     this.navManager = new NavigationManager(hasUnsavedData);
 
@@ -956,6 +964,7 @@ export default class UIManager {
       const fileName = `${baseName}.${selectedFormat}`;
 
       this.app.ioManager.saveFile(fileName, selectedFormat);
+      this.markAsSaved();
       this.common.modalManager.closeAllModals();
     });
   }

@@ -564,7 +564,8 @@ function onAudioDecodeEnd(_rawData){
   $("#file-progress-bar").classList.add("is-hidden");
 
   let length = _rawData.duration * baseSampleRate;
-  if(_rawData.duration > 30){
+  let forceSelection = document.getElementById('force-file-selection-input') && document.getElementById('force-file-selection-input').checked;
+  if(_rawData.duration > 30 || forceSelection){
     // Création de l'aperçu visuel sous-échantillonné
     let channelData = _rawData.getChannelData(0);
     let step = Math.ceil(channelData.length / 500); // 500 blocs = 1000 points
@@ -620,10 +621,58 @@ $("#open-resized-file").addEventListener("click",()=>{
   let length = parseInt((end - start) * baseSampleRate);
   let startSample = parseInt(start * baseSampleRate);
 
+  if (previewAudioSource) {
+    previewAudioSource.stop();
+    previewAudioSource = null;
+    $("#play-file-preview-button").innerHTML = '<span class="icon"><i class="fas fa-play"></i></span><span>Ecouter</span>';
+  }
+
   drawDecodedAudio(onAudioDecodeEndedBuffer, length, startSample);
 
   $("#file-length-modal").classList.remove("is-active");
 });
+
+let previewAudioSource = null;
+$("#play-file-preview-button").addEventListener("click", () => {
+  if (!onAudioDecodeEndedBuffer) return;
+  if (!audio.audioCtx) return;
+  
+  if (previewAudioSource) {
+    previewAudioSource.stop();
+    previewAudioSource = null;
+    $("#play-file-preview-button").innerHTML = '<span class="icon"><i class="fas fa-play"></i></span><span>Ecouter</span>';
+    return;
+  }
+
+  let start = parseFloat($("#start-length-input").value);
+  let end = parseFloat($("#end-length-input").value);
+  
+  if (audio.audioCtx.state === 'suspended') {
+    audio.audioCtx.resume();
+  }
+
+  previewAudioSource = audio.audioCtx.createBufferSource();
+  previewAudioSource.buffer = onAudioDecodeEndedBuffer;
+  previewAudioSource.connect(audio.audioCtx.destination);
+  previewAudioSource.start(0, start, end - start);
+  
+  $("#play-file-preview-button").innerHTML = '<span class="icon"><i class="fas fa-stop"></i></span><span>Arrêter</span>';
+  
+  previewAudioSource.onended = () => {
+    previewAudioSource = null;
+    $("#play-file-preview-button").innerHTML = '<span class="icon"><i class="fas fa-play"></i></span><span>Ecouter</span>';
+  };
+});
+
+const stopPreviewIfPlaying = () => {
+  if (previewAudioSource) {
+    previewAudioSource.stop();
+    previewAudioSource = null;
+    $("#play-file-preview-button").innerHTML = '<span class="icon"><i class="fas fa-play"></i></span><span>Ecouter</span>';
+  }
+};
+$("#file-length-modal .delete").addEventListener("click", stopPreviewIfPlaying);
+$("#file-length-modal .modal-background").addEventListener("click", stopPreviewIfPlaying);
 
 // --- FONCTION DE MISE À JOUR VISUELLE ---
 function updatePreviewVisuals(start, end) {

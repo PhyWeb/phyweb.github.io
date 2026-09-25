@@ -295,6 +295,12 @@
               </label>
               <progress class="progress is-large is-hidden is-primary mt-2" id="file-progress-bar" max="100"></progress>
             </div>
+            <div class="field mt-3 has-text-centered" id="force-file-selection-field">
+              <label class="checkbox">
+                <input type="checkbox" id="force-file-selection-input">
+                Toujours sélectionner une portion de l'audio
+              </label>
+            </div>
           </div>
         </div>
       </div>
@@ -638,6 +644,10 @@
         </article>
       </section>
       <footer class="modal-card-foot">
+        <button class="button" id="play-file-preview-button">
+          <span class="icon"><i class="fas fa-play"></i></span>
+          <span>Ecouter</span>
+        </button>
         <button class="button is-primary" id="open-resized-file">Charger</button>
       </footer>
     </div>

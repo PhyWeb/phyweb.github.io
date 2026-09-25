@@ -140,15 +140,15 @@ export default class Calculation {
         const yArr = toArr(y);
         const xArr = toArr(x);
 
-        const n = yArr.length;
-        if (n !== xArr.length) {
-            throw new Error('Les tableaux pour la dérivation (diff) doivent avoir la même longueur.');
-        }
-        if (n < points) {
+        const nMin = Math.min(yArr.length, xArr.length);
+        const nMax = Math.max(yArr.length, xArr.length);
+
+        if (nMin < points) {
             throw new Error(`Pas assez de points pour une dérivation à ${points} points. Il en faut au moins ${points}.`);
         }
 
-        const result = new Array(n).fill(null);
+        const result = new Array(nMax).fill(null);
+        const n = nMin;
         const offset = Math.floor(points / 2);
 
         // Helper pour vérifier si le sous-ensemble de points possède un pas régulier (tolérance aux arrondis flottants)
