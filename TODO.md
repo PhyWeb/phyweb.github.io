@@ -11,11 +11,7 @@
 
     - Deplacer le a propos dans le menu ?
 
-    - REGRESSI ne lit que les lignes completes. Il faut un disclaimer quand on genere un rw3 incomplet
-
     - Ajouter des toasts quand c'est utilie
-
-    - AJOUTER une fonctionnalité pour ne pas dire données non sauvegardées si on vient effectivement de sauvegarder
 
 # ELECTRON
 
@@ -23,8 +19,6 @@
     - package linux et macos
 
 # Audio
-    - permettre de cocher une case ou qq chose pour forcer l'ouverture de la selection d'une portion quand on charge un fichier.
-    - play the selected part of the audio when downloading
 
 # Tracker
     - bug or feature ? : frame is downloaded only if all points are set
@@ -49,13 +43,9 @@
 
     - Vérifier que les guess initiaux sont plus performants que des 1 1 1 1 1
 
-    - erreur silencieuse highcharts quand on met des lettres dans le table
-
     VERIFICATION on peut changer les parametres par defaut dans un appx ?
     
     Tweaker encore un peu l'interface de l'export
-
-    calcul de diff impose des tableaux de meme taille mais ca semble prendre en compte les cellules vides. amis de toute facon on peut peutre etre quand meme faire ce qui est possible
 
     SQRT est pas reconnu sqrt oui. ca devrait
 
