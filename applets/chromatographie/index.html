@@ -174,7 +174,10 @@
                     
                     <div class="control-row mt-3 mb-4">
                         <label class="label" style="width:140px;">Hauteur éluant (px)</label>
-                        <div class="control"><input class="input is-small" style="width:75px;" type="number" id="solventH" step="10" value="360"></div>
+                        <div class="is-flex is-align-items-center" style="gap: 8px; width: 100%;">
+                            <input class="input is-small" style="width:65px;" type="number" id="solventHNumber" step="10" value="360">
+                            <input type="range" id="solventHRange" min="50" max="1000" step="1" value="360" style="width: 100%;">
+                        </div>
                     </div>
 
                     <hr class="my-2">
@@ -216,7 +219,7 @@
     let logicalWidth = 0;
     let logicalHeight = 0;
 
-    let state = {
+    const DEFAULT_STATE = {
         showLabels: false,
         showTank: false,
         solventH: 360,
@@ -227,6 +230,8 @@
             { active: false, name: "M", showName: true, spots: [ { rf: 0.5, color: "#3498db", size: 8, shape: 'oval' }, { rf: 0.7, color: "#3498db", size: 8, shape: 'oval' } ] }
         ]
     };
+
+    let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
 
     let draggedSpot = null;
     let hoveredSpot = null;
@@ -442,18 +447,34 @@
 
 
     // --- Logique globale de l'Applet ---
-    document.getElementById('solventH').addEventListener('input', (e) => {
-        let val = parseFloat(e.target.value);
+    const solventHNumber = document.getElementById('solventHNumber');
+    const solventHRange = document.getElementById('solventHRange');
+
+    function updateSolventH(val) {
         if(!isNaN(val)) {
             state.solventH = Math.min(1000, Math.max(50, val));
+            solventHNumber.value = state.solventH;
+            solventHRange.value = state.solventH;
+            updateCanvasDimensions();
+            render();
+        }
+    }
+
+    solventHNumber.addEventListener('input', (e) => {
+        let val = parseFloat(e.target.value);
+        if(!isNaN(val)) {
+            // Ne pas clamper pendant la saisie pour permettre d'effacer et retaper
+            state.solventH = val;
+            solventHRange.value = val;
             updateCanvasDimensions();
             render();
         }
     });
-    
-    document.getElementById('solventH').addEventListener('blur', (e) => {
-        e.target.value = state.solventH; // Force le retour à une valeur valide
-    });
+
+    solventHNumber.addEventListener('blur', (e) => updateSolventH(parseFloat(e.target.value)));
+    solventHNumber.addEventListener('change', (e) => updateSolventH(parseFloat(e.target.value)));
+
+    solventHRange.addEventListener('input', (e) => updateSolventH(parseFloat(e.target.value)));
 
     document.getElementById('toggleLabels').addEventListener('change', (e) => { 
         state.showLabels = e.target.checked;
@@ -487,16 +508,19 @@
     }
 
     function copyToClipboard() {
+        let dataUrl;
         withHDExport(() => {
-            canvas.toBlob(function(blob) {
-                const item = new ClipboardItem({ "image/png": blob });
-                navigator.clipboard.write([item]).then(function() {
-                    showToast("Chromatogramme HD copié !");
-                }).catch(function() {
-                    showToast("Erreur lors de la copie.");
-                });
-            });
+            dataUrl = canvas.toDataURL("image/png");
         });
+        
+        fetch(dataUrl)
+            .then(res => res.blob())
+            .then(blob => {
+                const item = new ClipboardItem({ "image/png": blob });
+                return navigator.clipboard.write([item]);
+            })
+            .then(() => showToast("Chromatogramme HD copié !"))
+            .catch(() => showToast("Erreur lors de la copie."));
     }
 
     function copyEmptyGrid() {
@@ -559,17 +583,19 @@
     }
 
     function drawSpot(pxX, pxY, color, size, shape, isHighlighted = false) {
-        let w, h;
-        if (shape === 'circle') {
-            w = size; h = size;
-        } else if (shape === 'line') {
-            w = size * 1.5; h = 2;
-        } else {
-            w = size; h = size * 1.5;
-        }
-        
         ctx.beginPath();
-        ctx.ellipse(pxX, pxY, w, h, 0, 0, 2 * Math.PI);
+        if (shape === 'line') {
+            const w = size * 1.5;
+            const h = 4;
+            // Draw a rounded rectangle for the line
+            ctx.roundRect(pxX - w, pxY - h/2, w * 2, h, h/2);
+        } else {
+            let w = size, h = size;
+            if (shape === 'oval') {
+                h = size * 1.5;
+            }
+            ctx.ellipse(pxX, pxY, w, h, 0, 0, 2 * Math.PI);
+        }
         ctx.fillStyle = color + "cc"; 
         ctx.fill();
         
@@ -593,21 +619,12 @@
     }
 
     function resetApplet() {
-        state = {
-            showLabels: false,
-            showTank: false,
-            solventH: 360,
-            lanes: [
-                { active: true, name: "A", showName: true, spots: [ { rf: 0.4, color: "#3498db", size: 8, shape: 'oval' } ] },
-                { active: true, name: "B", showName: true, spots: [ { rf: 0.8, color: "#3498db", size: 8, shape: 'oval' } ] },
-                { active: true, name: "C", showName: true, spots: [ { rf: 0.4, color: "#3498db", size: 8, shape: 'oval' }, { rf: 0.8, color: "#3498db", size: 8, shape: 'oval' } ] },
-                { active: false, name: "M", showName: true, spots: [ { rf: 0.5, color: "#3498db", size: 8, shape: 'oval' }, { rf: 0.7, color: "#3498db", size: 8, shape: 'oval' } ] }
-            ]
-        };
+        state = JSON.parse(JSON.stringify(DEFAULT_STATE));
 
-        document.getElementById('toggleLabels').checked = false;
-        document.getElementById('toggleTank').checked = false;
-        document.getElementById('solventH').value = 360;
+        document.getElementById('toggleLabels').checked = state.showLabels;
+        document.getElementById('toggleTank').checked = state.showTank;
+        document.getElementById('solventHNumber').value = state.solventH;
+        document.getElementById('solventHRange').value = state.solventH;
         buildLanesUI();
         updateCanvasDimensions();
         render();
@@ -675,33 +692,27 @@ function render() {
     // --- 4. Lignes de dépôt et de front ---
     drawLine(geom.plateX, geom.baselineY, geom.plateX + geom.plateW, geom.baselineY, "#7f8c8d", 1.5);
     if (state.showLabels) {
-        // Remplacement de 'geom.plateX - 10' par 'textX'
         drawText("Ligne de dépôt", textX, geom.baselineY, "#7f8c8d", "italic 13px Arial", "right");
     }
 
-    drawLine(geom.plateX, geom.solventY, geom.plateX + geom.plateW, geom.solventY, "#7f8c8d", 1.5);
+    drawLine(geom.plateX, geom.solventY, geom.plateX + geom.plateW, geom.solventY, "#7f8c8d", 1.5, [5, 5]);
     if (state.showLabels) {
-        // Remplacement de 'geom.plateX - 10' par 'textX'
         drawText("Front de l'éluant", textX, geom.solventY, "#7f8c8d", "italic 13px Arial", "right");
     }
 
-    if (isExportingEmptyGrid) {
-        flushTexts();
-        return;
-    }
+    state.lanes.forEach((lane, laneIdx) => {
+        if (!lane.active) return;
+        
+        const pxX = geom.lanePositions[laneIdx];
+        
+        drawLine(pxX - 5, geom.baselineY - 5, pxX + 5, geom.baselineY + 5, "#95a5a6", 1);
+        drawLine(pxX - 5, geom.baselineY + 5, pxX + 5, geom.baselineY - 5, "#95a5a6", 1);
+        
+        if (lane.showName && lane.name) {
+            drawText(lane.name, pxX, geom.baselineY + 24, "#2c3e50", "bold 22px Arial", "center", "top");
+        }
 
-        state.lanes.forEach((lane, laneIdx) => {
-            if (!lane.active) return;
-            
-            const pxX = geom.lanePositions[laneIdx];
-            
-            drawLine(pxX - 5, geom.baselineY - 5, pxX + 5, geom.baselineY + 5, "#95a5a6", 1);
-            drawLine(pxX - 5, geom.baselineY + 5, pxX + 5, geom.baselineY - 5, "#95a5a6", 1);
-            
-            if (lane.showName && lane.name) {
-                drawText(lane.name, pxX, geom.baselineY + 24, "#2c3e50", "bold 22px Arial", "center", "top");
-            }
-
+        if (!isExportingEmptyGrid) {
             lane.spots.forEach((spot, spotIdx) => {
                 const pxY = geom.baselineY - (spot.rf * state.solventH);
 
@@ -710,13 +721,13 @@ function render() {
                     (draggedSpot && draggedSpot.laneIndex === laneIdx && draggedSpot.spotIndex === spotIdx) ||
                     (!draggedSpot && hoveredSpot && hoveredSpot.laneIndex === laneIdx && hoveredSpot.spotIndex === spotIdx);
 
-                // Ajout de "isHighlighted" à la fin de l'appel
                 drawSpot(pxX, pxY, spot.color, spot.size, spot.shape, isHighlighted);
             });
-        });
+        }
+    });
 
-        flushTexts();
-    }
+    flushTexts();
+}
 
     function getHoveredSpot(mouseX, mouseY) {
         const geom = getPlateGeometry();
