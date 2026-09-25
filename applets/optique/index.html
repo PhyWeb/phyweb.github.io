@@ -90,31 +90,6 @@
             width: 100%;
         }
 
-        /* Système de notification (Toast) */
-        #toast {
-            visibility: hidden;
-            min-width: 250px;
-            background-color: #3298dc;
-            color: #fff;
-            text-align: center;
-            border-radius: 30px;
-            padding: 12px 24px;
-            position: fixed;
-            z-index: 1000;
-            left: 50%;
-            bottom: 30px;
-            transform: translateX(-50%);
-            opacity: 0;
-            transition: opacity 0.4s, bottom 0.4s;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            font-weight: bold;
-        }
-        #toast.show {
-            visibility: visible;
-            opacity: 1;
-            bottom: 50px;
-        }
-        
         .type-badge {
             width: 45px;
             justify-content: center;
@@ -271,10 +246,9 @@
     </div>
 </section>
 
-<div id="toast">Message</div>
-
 <script type="module">
-    import { initApplets } from '../../common/common.js';
+    import { initApplets, showToast } from '../../common/common.js';
+    window.showToast = showToast;
     const common = initApplets("Générateur de Schémas d'Optique", "../..");
 </script>
 
@@ -336,14 +310,6 @@
         else if (val === "16") { setCanvasSize(640, 480); }
     });
 
-    // --- Gestion du Toast ---
-    function showToast(message) {
-        const toast = document.getElementById("toast");
-        toast.textContent = message;
-        toast.className = "show";
-        setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
-    }
-
     function withHDExport(exportAction) {
         const savedScale = currentScale; 
         currentScale = EXPORT_SCALE;     
@@ -358,9 +324,9 @@
             canvas.toBlob(function(blob) {
                 const item = new ClipboardItem({ "image/png": blob });
                 navigator.clipboard.write([item]).then(function() {
-                    showToast("Schéma HD copié (prêt à être collé) !");
+                    showToast("Schéma HD copié (prêt à être collé) !", "is-success");
                 }).catch(function(error) {
-                    showToast("Erreur lors de la copie.");
+                    showToast("Erreur lors de la copie.", "is-danger");
                 });
             });
         });

@@ -1471,15 +1471,26 @@ export function showToast(message, type = 'is-info', duration = 4000) {
     document.body.appendChild(container);
   }
 
+  const icons = {
+    'is-success': 'fa-solid fa-circle-check',
+    'is-warning': 'fa-solid fa-triangle-exclamation',
+    'is-danger': 'fa-solid fa-circle-xmark',
+    'is-info': 'fa-solid fa-circle-info',
+    'is-primary': 'fa-solid fa-circle-info'
+  };
+  const iconClass = icons[type] || 'fa-solid fa-circle-info';
+
   const toast = document.createElement('div');
   toast.className = `notification ${type} is-light`; 
-  toast.innerHTML = message; // On met directement le texte
+  toast.innerHTML = `<span class="icon"><i class="${iconClass}"></i></span><span>${message}</span>`;
 
+  let timerId = null;
   // Fonction pour faire disparaître le toast en douceur
   const dismissToast = () => {
     if (!toast.parentElement) return; 
-    toast.style.animation = 'fadeOut 0.3s ease forwards'; 
-    setTimeout(() => toast.remove(), 300); 
+    if (timerId) clearTimeout(timerId);
+    toast.style.animation = 'toastFadeOut 0.25s ease forwards'; 
+    setTimeout(() => toast.remove(), 250); 
   };
 
   // Fermeture manuelle au clic n'importe où sur le toast
@@ -1488,7 +1499,11 @@ export function showToast(message, type = 'is-info', duration = 4000) {
   container.appendChild(toast);
 
   // Fermeture automatique après X secondes
-  setTimeout(dismissToast, duration);
+  timerId = setTimeout(dismissToast, duration);
+}
+
+if (typeof window !== 'undefined') {
+  window.showToast = showToast;
 }
 
 
@@ -1610,6 +1625,10 @@ function initApplets(title, basePath = "..", hasDataCallback = () => false) {  /
 
   // Activer le gestionnaire de navigation (qui va lier le bouton fermer d'Electron)
   new NavigationManager(hasDataCallback);
+
+  if (typeof window !== 'undefined') {
+    window.showToast = showToast;
+  }
 
   // Initialiser la classe Common pour activer l'application (Boutons Electron, Logos SVGs, Dropdowns, etc.)
   return common;
