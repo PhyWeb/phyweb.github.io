@@ -173,10 +173,16 @@ class PhyAudio{
   /*----------------------------------------------------------------------------------------------
   ----------------------------------------DECODE FUNCTION-----------------------------------------
   ----------------------------------------------------------------------------------------------*/
-  decode = (_data, _callback) => {
+  decode = (_data, _callback, _errorCallback) => {
     this.audioCtx.decodeAudioData(_data).then(function(decodedData) {
       _callback(decodedData);
-     });
+    }).catch(function(err) {
+      if (typeof _errorCallback === 'function') {
+        _errorCallback(err);
+      } else {
+        console.error("Erreur de décodage audio:", err);
+      }
+    });
   }
 
   /*----------------------------------------------------------------------------------------------

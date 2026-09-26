@@ -1,4 +1,4 @@
-import {Common, alertModal} from "../common/common.js";
+import {Common, alertModal, showToast} from "../common/common.js";
 import ExchangeManager from "../common/modules/ExchangeManager.js";
 
 import App from "./modules/app.js";
@@ -69,10 +69,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // Si le chargement est un succès, on affiche l'interface principale et on ferme les modales.
         uiManager.showTabsAndPanels();
         uiManager.common.modalManager.closeAllModals();
+        showToast("Données importées avec succès !", "is-success");
       } catch (e) {
         console.error("Échec du chargement des données inter-applications:", e);
-        // En cas d'erreur, on affiche une alerte.
-        alertModal({ type: 'warning', title: 'Erreur de chargement', body: e.message, confirm: 'OK' });
+        // En cas d'erreur, on affiche un toast.
+        showToast(`Erreur lors du chargement des données : ${e.message}`, "is-danger");
       } finally {
         // Note : sessionStorage.removeItem est déjà géré par ExchangeManager
         

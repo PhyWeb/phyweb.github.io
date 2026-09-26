@@ -591,6 +591,7 @@ export default class MEASUREMENT {
       showToast("Données copiées dans le presse-papiers !", "is-success");
     }).catch(err => {
       console.error("Erreur lors de la copie : ", err);
+      showToast("Erreur lors de la copie.", "is-danger");
     });
   }
 }

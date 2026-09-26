@@ -556,8 +556,15 @@ fileReader.addEventListener("loadend", ()=>{
   //clear the input
   $("#file-input").value = "";
 	// Decode the audio in the file
-	audio.decode(fileReader.result, onAudioDecodeEnd);
+	audio.decode(fileReader.result, onAudioDecodeEnd, onAudioDecodeError);
 });
+
+function onAudioDecodeError(err) {
+  console.error("Erreur de décodage audio:", err);
+  $("#file-label").classList.remove("is-hidden");
+  $("#file-progress-bar").classList.add("is-hidden");
+  showToast("Impossible de lire ce fichier audio.", "is-danger");
+}
 
 function onAudioDecodeEnd(_rawData){
   $("#file-label").classList.remove("is-hidden");
@@ -1220,12 +1227,7 @@ $('#confirm-send-to-grapher-button').addEventListener('click', async () => {
     $('#send-to-grapher-modal').classList.remove('is-active');
   } catch(e) {
     console.error(e);
-    alertModal({
-      type: 'error',
-      title: 'Erreur lors de l\'envoi à Grapher',
-      body: 'Une erreur est survenue lors de l\'envoi des données à Grapher. Veuillez réessayer.',
-      confirm: 'OK'
-    });
+    showToast("Une erreur est survenue lors de l'envoi des données à Grapher.", "is-danger");
   }
 });
 

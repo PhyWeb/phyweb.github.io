@@ -650,14 +650,10 @@ export default class UIManager {
           // Si c'est un succès, on ferme la modale et on affiche l'ui
           this.showTabsAndPanels();
           this.common.modalManager.closeAllModals();
+          showToast("Données collées depuis le presse-papier !", "is-success");
         } catch (error) {
           // Si le clipboard est vide, non autorisé, ou si les données sont invalides
-          alertModal({
-            type: 'warning',
-            title: 'Erreur de collage',
-            body: error.message,
-            confirm: 'OK'
-          });
+          showToast(`Erreur de collage : ${error.message}`, "is-warning");
         } finally {
           // Cache le spinner de chargement
           this.setModalLoading(false);
@@ -743,6 +739,9 @@ export default class UIManager {
       // Si l'interrupteur est coché, sauvegarder dans le localStorage
       if (savePermanentlySwitch.checked) {
         saveSettings(newSettings);
+        showToast("Paramètres enregistrés.", "is-success", 2500);
+      } else {
+        showToast("Paramètres appliqués.", "is-info", 2500);
       }
       
       // Fermer la modale
@@ -770,6 +769,7 @@ export default class UIManager {
             
             // Appliquer immédiatement ces défauts à l'application
             this.applySettingsToApp(defaults);
+            showToast("Paramètres par défaut restaurés.", "is-info", 2500);
           }
         },
         cancel: 'Annuler'
@@ -1205,17 +1205,13 @@ export default class UIManager {
           unit = processUnit(calcCurveUnitInput);
           const formula = calcCurveFormulaInput.value.trim();
           if (!symbol || !formula) {
-            alertModal({
-              title: "Symbole ou formule manquant",
-              body: "Veuillez remplir le symbole et la formule.",
-              confirm: "OK"
-            });
+            showToast("Veuillez remplir le symbole et la formule.", "is-warning");
             return null;
           }
           // --- VALIDATION CENTRALISÉE ---
           const validationResult = this.app.symbolValidator.validate(symbol);
           if (!validationResult.isValid) {
-            alertModal({ title: 'Validation échouée', body: validationResult.message, confirm: 'OK' });
+            showToast(validationResult.message, "is-danger");
             return null;
           }
 
@@ -1230,17 +1226,13 @@ export default class UIManager {
           const denominator = derivateDenominatorSelect.value;
 
           if (!symbol || numerator.startsWith('Choisir') || denominator.startsWith('Choisir')) {
-            alertModal({
-              title: "Symbole ou grandeurs manquants",
-              body: "Veuillez remplir le symbole et choisir les deux grandeurs à dériver.",
-              confirm: "OK"
-            });
+            showToast("Veuillez remplir le symbole et choisir les deux grandeurs à dériver.", "is-warning");
             return null;
           }
           // --- VALIDATION CENTRALISÉE ---
           const validationResult = this.app.symbolValidator.validate(symbol);
           if (!validationResult.isValid) {
-            alertModal({ title: 'Validation échouée', body: validationResult.message, confirm: 'OK' });
+            showToast(validationResult.message, "is-danger");
             return null;
           }
           
@@ -1256,17 +1248,13 @@ export default class UIManager {
           unit = processUnit(parameterUnitInput);
           const value = parameterValueInput.value.trim();
           if (!symbol || !value) {
-            alertModal({
-              title: "Symbole ou valeur manquants",
-              body: "Veuillez remplir le symbole et la valeur.",
-              confirm: "OK"
-            });
+            showToast("Veuillez remplir le symbole et la valeur.", "is-warning");
             return null;
           }
           // --- VALIDATION CENTRALISÉE ---
           const validationResult = this.app.symbolValidator.validate(symbol);
           if (!validationResult.isValid) {
-            alertModal({ title: 'Validation échouée', body: validationResult.message, confirm: 'OK' });
+            showToast(validationResult.message, "is-danger");
             return null;
           }
           formulaLine = `${buildVarWithUnit(symbol, unit)} = ${value}`;
@@ -1277,17 +1265,13 @@ export default class UIManager {
           symbol = emptyCurveSymbolInput.value.trim();
           unit = processUnit(emptyCurveUnitInput);
           if (!symbol) {
-            alertModal({
-              title: "Symbole manquant",
-              body: "Veuillez entrer un symbole.",
-              confirm: "OK"
-            });
+            showToast("Veuillez entrer un symbole.", "is-warning");
             return null;
           }
           // --- VALIDATION CENTRALISÉE ---
           const validationResult = this.app.symbolValidator.validate(symbol);
           if (!validationResult.isValid) {
-            alertModal({ title: 'Validation échouée', body: validationResult.message, confirm: 'OK' });
+            showToast(validationResult.message, "is-danger");
             return null;
           }
           return { type: 'empty-curve', symbol, unit };
@@ -2205,23 +2189,33 @@ export default class UIManager {
 
       try {
         // Appelle la méthode principale pour lancer les calculs
-        await this.app.recalculateAllModels();
+        const { successful, failed } = await this.app.recalculateAllModels();
 
-        // Met à jour tous les panneaux de modèles après le succès
-        this.data.models.forEach(model => this.updateModelPanel(model));
+        // Met à jour les panneaux des modèles qui ont réussi
+        successful.forEach(model => this.updateModelPanel(model));
         
-        // Met également à jour la section "Calcul" car les paramètres ont changé
-        this.updateCalculationUI(); 
-        
-        // Redessine le graphique pour afficher les modèles mis à jour
-        this.grapher.chart.redraw();
+        if (successful.length > 0) {
+          // Met également à jour la section "Calcul" car les paramètres ont changé
+          this.updateCalculationUI(); 
+          
+          // Redessine le graphique pour afficher les modèles mis à jour
+          this.grapher.chart.redraw();
+        }
+
+        // Notification adaptée selon les résultats
+        if (failed.length > 0) {
+          const names = failed.map(f => {
+            const modelName = typeof f.model.getModelName === 'function' ? f.model.getModelName() : f.model.type;
+            const yName = (f.model.y && f.model.y.title) || '';
+            return yName ? `${modelName} (${yName})` : modelName;
+          }).join(', ');
+          showToast(`Impossible de recalculer : ${names} (${failed[0].error?.message || 'données insuffisantes'}).`, 'is-warning');
+        } else if (successful.length > 0) {
+          showToast("Modèles recalculés avec succès.", "is-success", 2500);
+        }
       } catch (error) {
         console.error("Erreur lors du recalcul des modèles :", error);
-        alertModal({
-            title: 'Erreur de Calcul',
-            body: `Un ou plusieurs modèles n'ont pas pu être recalculés :<br><br><i>${error.message}</i>`,
-            confirm: 'OK'
-        });
+        showToast(`Erreur lors du recalcul des modèles : ${error.message}`, "is-danger");
       } finally {
         // Réactive le bouton et retire l'indicateur local
         recalculateButton.disabled = false;
@@ -2439,11 +2433,7 @@ export default class UIManager {
         }).length;
 
         if (pointsDansIntervalle < 2) {
-          alertModal({
-            title: "Données insuffisantes",
-            body: `L'intervalle de calcul sélectionné ne contient pas assez de points pour réaliser une modélisation.`,
-            confirm: "OK"
-          });
+          showToast("L'intervalle de calcul sélectionné ne contient pas assez de points pour réaliser une modélisation.", "is-warning");
           return; // On arrête la sauvegarde
         }
         
@@ -2462,11 +2452,7 @@ export default class UIManager {
         for (const input of inputs) {
           const newName = input.value.trim();
           if (newNamesSet.has(newName)) {
-            alertModal({
-              title: 'Nom de paramètre en double',
-              body: `Le nom "${newName}" est utilisé plusieurs fois dans ce modèle.`,
-              confirm: 'OK'
-            });
+            showToast(`Le nom "${newName}" est utilisé plusieurs fois dans ce modèle.`, "is-warning");
             return; // Arrête tout
           }
           newNamesSet.add(newName);
@@ -2484,7 +2470,7 @@ export default class UIManager {
           const validationResult = this.app.symbolValidator.validate(newName, { ignoreList });
           
           if (!validationResult.isValid) {
-            alertModal({ title: 'Nom de paramètre invalide', body: validationResult.message, confirm: 'OK' });
+            showToast(validationResult.message, "is-danger");
             return; // Arrête tout
           }
           
@@ -2535,11 +2521,7 @@ export default class UIManager {
 
       } catch (error) {
         console.error("Erreur lors de la mise à jour du modèle :", error);
-        alertModal({
-          title: 'Erreur de Calcul',
-          body: `La mise à jour du modèle a échoué :<br><br><i>${error.message}</i>`,
-          confirm: 'OK'
-        });
+        showToast(`La mise à jour du modèle a échoué : ${error.message}`, "is-warning");
       } finally {
         // 5. Masque l'indicateur de chargement, que l'opération ait réussi ou non
         this.grapher.hideLoading();
@@ -2741,11 +2723,7 @@ export default class UIManager {
 
         } catch (error) {
           console.error("Échec de la modélisation :", error);
-          alertModal({
-            title: 'Erreur de Modélisation',
-            body: `Le calcul n'a pas pu aboutir :<br><br><i>${error.message}</i>`,
-            confirm: 'OK'
-          });
+          showToast(`Le calcul n'a pas pu aboutir : ${error.message}`, "is-warning");
         } finally {
           // Dans tous les cas, on masque l'indicateur de chargement du graphique
           this.grapher.hideLoading();
@@ -3083,11 +3061,7 @@ export default class UIManager {
       }
 
       if (hasError) {
-        alertModal({
-          title: 'Validation échouée',
-          body: errorMessage,
-          confirm: 'OK'
-        });
+        showToast(errorMessage, "is-danger");
         return; 
       }
 
@@ -3248,7 +3222,7 @@ export default class UIManager {
         const includeCalc = $('#export-check-calc').checked;
 
         if (!includeGraph && !includeTable && !includeCalc) {
-            alertModal({ type: 'warning', title: 'Erreur', body: 'Veuillez sélectionner au moins un élément.', confirm: 'OK' });
+            showToast("Veuillez sélectionner au moins un élément.", "is-warning");
             return;
         }
 

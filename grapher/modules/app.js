@@ -220,11 +220,23 @@ export default class App {
    */
   async recalculateAllModels() {
       if (this.data.models.length === 0) {
-          return; 
+          return { successful: [], failed: [] }; 
       }
 
-      const recalculationPromises = this.data.models.map(model => model.fit());
-      await Promise.all(recalculationPromises);
+      const results = await Promise.allSettled(this.data.models.map(model => model.fit()));
+      const successful = [];
+      const failed = [];
+
+      results.forEach((res, index) => {
+        const model = this.data.models[index];
+        if (res.status === 'fulfilled') {
+          successful.push(model);
+        } else {
+          failed.push({ model, error: res.reason });
+        }
+      });
+
+      return { successful, failed };
   }
 
   deleteModel(modelID) {
@@ -325,7 +337,7 @@ export default class App {
       // --- VALIDATION CENTRALISÉE ---
       // 1. Conflit avec les paramètres de modèle (non redéfinissables)
       if (modelParameterNames.includes(variableName)) {
-        alertModal({ title: 'Conflit de nom', body: `Le symbole "${variableName}" est un paramètre de modèle et ne peut pas être redéfini.`, confirm: 'OK' });
+        showToast(`Le symbole "${variableName}" est un paramètre de modèle et ne peut pas être redéfini.`, "is-danger");
         return;
       }
 
@@ -333,13 +345,13 @@ export default class App {
       const validationResult = this.symbolValidator.validate(variableName);
       // On ignore l'erreur d'unicité car on va redéfinir la variable
       if (!validationResult.isValid && !validationResult.message.includes('déjà utilisé')) {
-          alertModal({ title: 'Symbole invalide', body: validationResult.message, confirm: 'OK' });
-          return;
+        showToast(validationResult.message, "is-danger");
+        return;
       }
 
       // 3. Duplication dans le bloc de calcul lui-même
       if (definedInBlock.has(variableName)) {
-        alertModal({ title: 'Symbole dupliqué', body: `Le symbole "${variableName}" est défini plusieurs fois dans ce bloc de calcul.`, confirm: 'OK' });
+        showToast(`Le symbole "${variableName}" est défini plusieurs fois dans ce bloc de calcul.`, "is-danger");
         return;
       }
       definedInBlock.add(variableName);

@@ -1,3 +1,5 @@
+import { showToast } from '../common.js';
+
 /**
  * Module responsable de l'échange de données entre les applications (Tracker/Audio -> Grapher).
  * Il abstrait la différence entre l'environnement Web (IndexedDB) et Electron (IPC).
@@ -59,7 +61,7 @@ export default class ExchangeManager {
         window.open(relativePathToGrapher, '_blank');
       } catch (e) {
         console.error("Erreur lors de l'écriture dans IndexedDB", e);
-        alert("Impossible de transférer les données : le stockage local est inaccessible.");
+        showToast("Impossible de transférer les données : le stockage local est inaccessible.", "is-danger");
       }
     }
   }
