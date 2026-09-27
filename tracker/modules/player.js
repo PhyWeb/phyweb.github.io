@@ -564,6 +564,93 @@ export default class PLAYER {
 
   }
 
+  handleKeydown = (e) => {
+    if (!e) return;
+
+    // Ne rien faire si aucune vidéo n'est chargée
+    if (!this.decodedVideo || !this.decodedVideo.frames || this.decodedVideo.frames.length === 0) {
+      return;
+    }
+
+    // Ne rien faire si l'utilisateur est en train d'écrire dans un champ
+    const activeElement = document.activeElement;
+    const activeTagName = activeElement ? activeElement.tagName.toLowerCase() : '';
+    const isTyping = activeTagName === 'input' || 
+                     activeTagName === 'textarea' || 
+                     activeTagName === 'select' || 
+                     (activeElement && activeElement.isContentEditable);
+    if (isTyping) return;
+
+    // Ne rien faire si une modale est actuellement ouverte
+    if (document.querySelector && document.querySelector('.modal.is-active')) return;
+
+    // Ignorer si un mode de sélection d'origine ou d'étalonnage est en cours
+    if (this.originFlag !== "none" || (this.segment && this.segment.x1 != null)) return;
+
+    // Ignorer les combinaisons avec Ctrl, Alt ou Meta
+    if (e.ctrlKey || e.altKey || e.metaKey) return;
+
+    switch (e.key) {
+      case 'ArrowRight':
+      case 'ArrowDown':
+        e.preventDefault();
+        if (e.shiftKey) {
+          const target = Math.min(this.decodedVideo.frames.length - 1, this.currentFrame + 10);
+          this.setFrame(target);
+        } else {
+          this.nextFrame();
+        }
+        break;
+
+      case 'ArrowLeft':
+      case 'ArrowUp':
+        e.preventDefault();
+        if (e.shiftKey) {
+          const origin = (this.measurement && typeof this.measurement.originFrame === 'number')
+            ? this.measurement.originFrame
+            : 0;
+          const target = Math.max(origin, this.currentFrame - 10);
+          this.setFrame(target);
+        } else {
+          this.previousFrame();
+        }
+        break;
+
+      case 'PageDown':
+        e.preventDefault();
+        this.setFrame(Math.min(this.decodedVideo.frames.length - 1, this.currentFrame + 10));
+        break;
+
+      case 'PageUp': {
+        e.preventDefault();
+        const origin = (this.measurement && typeof this.measurement.originFrame === 'number')
+          ? this.measurement.originFrame
+          : 0;
+        this.setFrame(Math.max(origin, this.currentFrame - 10));
+        break;
+      }
+
+      case 'Home':
+        e.preventDefault();
+        this.firstFrame();
+        break;
+
+      case 'End':
+        e.preventDefault();
+        this.lastFrame();
+        break;
+
+      case ' ': // Espace (Lecture / Pause)
+        e.preventDefault();
+        if (this.pauseFlag) {
+          this.play();
+        } else {
+          this.pause();
+        }
+        break;
+    }
+  }
+
   // Escape shortcut callback (originMode)
   originModeKeyboardShortcut = (event) => {
     if (event.key === "Escape") {

@@ -27,7 +27,6 @@
 
     - typos dans les options de réduction de poids et centrage des checkboxes (seulement sur petit ecran ?)
 
-    - fleches pour passer les frames. (haut bas dans le tableau et droite gauxhe sinon ?)
 
     - ajout d'une indication pour savoir a quel point on se situe au sein d'une frame quand ppf est > à 1
 
@@ -42,6 +41,7 @@
     Tweaker encore un peu l'interface de l'export
 
 # Mendeleiev
+    - le logo phyweb est pas le meme que sur les autres apps
 # Optique
 # Chromato
 

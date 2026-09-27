@@ -313,7 +313,13 @@ export default class MEASUREMENT {
       previouslySelectedRow.classList.remove("is-selected");
     }
 
-    $("#row"+index).classList.add("is-selected");
+    const row = $("#row" + index);
+    if (row) {
+      row.classList.add("is-selected");
+      if (typeof row.scrollIntoView === "function") {
+        row.scrollIntoView({ block: "nearest" });
+      }
+    }
   }
 
   clearRow(index){

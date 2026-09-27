@@ -379,6 +379,11 @@ $("#previous-button").addEventListener("click", ()=>{player.previousFrame();});
 $("#next-button").addEventListener("click", ()=>{player.nextFrame();});
 $("#last-button").addEventListener("click", ()=>{player.lastFrame();});
 
+// RACCOURCIS CLAVIER DU LECTEUR
+document.addEventListener('keydown', (e) => {
+  player.handleKeydown(e);
+});
+
 // ORIGIN
 $("#topright").addEventListener("click", ()=> {
   player.enterOriginMode("topright");
