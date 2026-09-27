@@ -11,8 +11,6 @@
 
     - Deplacer le a propos dans le menu ?
 
-    - Ajouter des toasts quand c'est utilie
-
 # ELECTRON
 
 # Home
