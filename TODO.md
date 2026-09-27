@@ -41,8 +41,6 @@
     
     Tweaker encore un peu l'interface de l'export
 
-    SQRT est pas reconnu sqrt oui. ca devrait
-
     BUG si x est une grandeur, on peut quand meme le définir comme un parametre dans le bloc de calcul !!
 
 # Mendeleiev
