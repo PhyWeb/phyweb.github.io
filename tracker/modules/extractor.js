@@ -364,16 +364,19 @@ export default class EXTRACTOR {
     // ~0.5 octets par pixel compressé au lieu de 4 octets bruts
     let estimatedBytesPerPixel = 0.5;
     this.size = Math.ceil(h * w * estimatedBytesPerPixel * nb / (1024*1024));
+    const warningEl = $("#file-size-warning");
     if(this.size < this.sizeThreshold) {
       $("#size-label").className = "has-text-success";
       $("#open-resized-video").className = "button is-success";
       $("#open-resized-video").innerHTML = "Ouvrir la vidéo";
+      if (warningEl) warningEl.classList.add("is-hidden");
     } else {
       $("#size-label").className = "has-text-danger";
       $("#open-resized-video").className = "button is-danger";
       $("#open-resized-video").innerHTML = "Ouvrir la vidéo malgré sa taille";
+      if (warningEl) warningEl.classList.remove("is-hidden");
     }
-    $("#size-label").innerHTML = this.size + " Mio"
+    $("#size-label").innerHTML = this.size + " Mio";
   }
 
   extract(){

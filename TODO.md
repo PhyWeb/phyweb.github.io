@@ -32,9 +32,6 @@
     - ajout d'une indication pour savoir a quel point on se situe au sein d'une frame quand ppf est > à 1
 
     - on drop des frames pendaant la lecture
-
-    - titre de la boite de dialogue de reduction si on l'a choisi nous meme colle pas
-    
 # Grapher
     - possibilité d'avoir 2 axes y
 

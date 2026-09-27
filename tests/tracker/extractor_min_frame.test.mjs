@@ -90,4 +90,39 @@ describe('Tracker - Garantie d\'extraction minimale d\'une image et sécurité t
       global.VideoDecoder = prevVideoDecoder;
     }
   });
+
+  it('updateSize doit masquer #file-size-warning si size < sizeThreshold et l\'afficher si size >= sizeThreshold', () => {
+    let isHidden = true;
+    domElements['#file-size-warning'] = {
+      classList: {
+        add: (cls) => { if (cls === 'is-hidden') isHidden = true; },
+        remove: (cls) => { if (cls === 'is-hidden') isHidden = false; }
+      }
+    };
+
+    const extractor = new EXTRACTOR();
+    extractor.width = 1920;
+    extractor.height = 1080;
+    extractor.fps = 30;
+    extractor.duration = 10;
+    domElements['#start-size-input'].value = '0';
+    domElements['#end-size-input'].value = '10';
+
+    extractor.updateSize();
+    assert.equal(extractor.size < extractor.sizeThreshold, true);
+    assert.equal(isHidden, true, '#file-size-warning doit être masqué quand la taille est sous le seuil');
+
+    // Cas vidéo volumineuse : 4K 60fps 60s
+    extractor.width = 3840;
+    extractor.height = 2160;
+    extractor.fps = 60;
+    extractor.duration = 60;
+    domElements['#end-size-input'].value = '60';
+
+    extractor.updateSize();
+    assert.equal(extractor.size >= extractor.sizeThreshold, true);
+    assert.equal(isHidden, false, '#file-size-warning doit être visible quand la taille dépasse le seuil');
+    assert.equal(domElements['#size-label'].className, 'has-text-danger');
+    assert.equal(domElements['#open-resized-video'].className, 'button is-danger');
+  });
 });

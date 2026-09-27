@@ -455,15 +455,23 @@
     <div class="modal-background"></div>
     <div class="modal-card" id="file-size-modal-card">
       <header class="modal-card-head">
-        <p class="modal-card-title is-size-4">Video très volumineuse</p>
+        <p class="modal-card-title is-size-4">Options d'importation de la vidéo</p>
         <button class="delete" aria-label="close"></button>
       </header>
       <section class="modal-card-body">
+        <article id="file-size-warning" class="message is-warning mb-4 is-hidden">
+          <div class="message-body">
+            <p class="has-text-weight-bold">
+              <span class="icon mr-1"><i class="fa-solid fa-triangle-exclamation"></i></span>
+              <span>Vidéo volumineuse</span>
+            </p>
+            <p class="mt-1">
+              Cette vidéo dépasse la limite recommandée (512 Mio). Il est conseillé de réduire sa définition, sa fréquence d'images ou sa durée pour éviter les ralentissements.
+            </p>
+          </div>
+        </article>
         <p class="block">
-          La vidéo occupe <span class="has-text-danger has-text-weight-bold" id="size-label">xx Mio</span> de mémoire vidéo.
-        </p>
-        <p class="block">
-          Il est recommandé de ne pas dépasser <span class="has-text-weight-bold">512 Mio</span>.
+          Mémoire vidéo estimée : <span class="has-text-weight-bold"><span class="has-text-danger" id="size-label">xx Mio</span></span> (limite conseillée : 512 Mio).
         </p>
         <p class="block">
           Choisissez quelle(s) modification(s) vous souhaitez appliquer :
