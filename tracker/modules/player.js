@@ -788,6 +788,14 @@ export default class PLAYER {
 
       this.drawFrame(this.currentFrame);
       this.exitScaleMode();
+
+      const scaleInput = $("#scale-input");
+      if (scaleInput) {
+        scaleInput.focus();
+        try {
+          scaleInput.select();
+        } catch (e) {}
+      }
     }
   }
 
