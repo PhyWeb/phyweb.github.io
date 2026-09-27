@@ -341,7 +341,13 @@ export default class App {
         return;
       }
 
-      // 2. Format et unicité par rapport aux courbes/paramètres existants
+      // 2. Conflit avec les grandeurs existantes du tableau (non redéfinissables)
+      if (rawCurveTitles.includes(variableName)) {
+        showToast(`Le symbole "${variableName}" est une grandeur existante et ne peut pas être redéfini.`, "is-danger");
+        return;
+      }
+
+      // 3. Format et unicité par rapport aux courbes/paramètres existants
       const validationResult = this.symbolValidator.validate(variableName);
       // On ignore l'erreur d'unicité car on va redéfinir la variable
       if (!validationResult.isValid && !validationResult.message.includes('déjà utilisé')) {
@@ -349,7 +355,7 @@ export default class App {
         return;
       }
 
-      // 3. Duplication dans le bloc de calcul lui-même
+      // 4. Duplication dans le bloc de calcul lui-même
       if (definedInBlock.has(variableName)) {
         showToast(`Le symbole "${variableName}" est défini plusieurs fois dans ce bloc de calcul.`, "is-danger");
         return;
