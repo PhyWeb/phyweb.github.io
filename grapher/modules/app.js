@@ -89,7 +89,7 @@ export default class App {
     // Validation du symbole via le SymbolValidator
     const validationResult = this.symbolValidator.validate(newTitle, { ignoreList: [oldTitle] });
     if (!validationResult.isValid) {
-      alertModal({ title: 'Symbole invalide', body: validationResult.message, confirm: 'OK' });
+      showToast(validationResult.message, "is-danger");
       return;
     }
 
