@@ -84,6 +84,7 @@ body, html {
 ----------------------------------------------------------------------------------------------*/
 .navbar{
   -webkit-app-region: drag;
+  font-family: "Inter", sans-serif;
 }
 .navbar-end, .navbar-start, .navbar-brand{
   -webkit-app-region: no-drag;

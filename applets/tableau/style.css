@@ -13,7 +13,6 @@
 }
 
 body {
-    font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     color: var(--text-color);
     min-height: 100vh;
     box-sizing: border-box; /* Crucial pour que le padding n'ajoute pas de hauteur */

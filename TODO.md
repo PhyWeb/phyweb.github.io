@@ -41,7 +41,6 @@
     Tweaker encore un peu l'interface de l'export
 
 # Mendeleiev
-    - le logo phyweb est pas le meme que sur les autres apps
 # Optique
 # Chromato
 
@@ -51,7 +50,6 @@
 
 
 # Idées
-    - Générateur de chromatogrammes
     - salsaJ ?
     - animation titrage
     - animation RVB
