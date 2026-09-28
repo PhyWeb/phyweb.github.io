@@ -153,23 +153,6 @@ export default class PLAYER {
   }
 
   drawCrosses() {
-    for (let i = 0; i < (this.measurement.series.length - 1) / 2; i++) {
-      for (let j = this.measurement.originFrame; j < this.measurement.series[0].length; j++) {
-        const xCoord = this.measurement.series[(i * 2) + 1][j];
-        const yCoord = this.measurement.series[(i * 2) + 2][j];
-
-        // On ne dessine que si les coordonnées ne sont pas des chaînes vides
-        if (xCoord !== "" && yCoord !== "") {
-          this.drawCross(xCoord, yCoord);
-        }
-      }
-    }
-  }
-
-  drawCross(_x, _y) {
-    const x = this.videoCanvas.width * _x;
-    const y = this.videoCanvas.height * _y;
-
     this.ctx.save();
     
     // Configuration du "dégradé" d'ombre noire
@@ -180,11 +163,26 @@ export default class PLAYER {
     
     this.ctx.beginPath();
     this.ctx.lineWidth = 2;
-    this.ctx.moveTo(x - 5, y);
-    this.ctx.lineTo(x + 5, y);
-    this.ctx.moveTo(x, y - 5);
-    this.ctx.lineTo(x, y + 5);
     this.ctx.strokeStyle = "white";
+
+    for (let i = 0; i < (this.measurement.series.length - 1) / 2; i++) {
+      for (let j = this.measurement.originFrame; j < this.measurement.series[0].length; j++) {
+        const xCoord = this.measurement.series[(i * 2) + 1][j];
+        const yCoord = this.measurement.series[(i * 2) + 2][j];
+
+        // On ne dessine que si les coordonnées ne sont pas des chaînes vides
+        if (xCoord !== "" && yCoord !== "") {
+          const x = this.videoCanvas.width * xCoord;
+          const y = this.videoCanvas.height * yCoord;
+
+          this.ctx.moveTo(x - 5, y);
+          this.ctx.lineTo(x + 5, y);
+          this.ctx.moveTo(x, y - 5);
+          this.ctx.lineTo(x, y + 5);
+        }
+      }
+    }
+
     this.ctx.stroke();
     this.ctx.closePath();
     
@@ -353,7 +351,7 @@ export default class PLAYER {
     $("#frame-label").innerHTML = "Image n° " + (this.currentFrame + 1) +"/" + this.decodedVideo.frames.length;
 
     // Update the table
-    this.measurement.selectRow(this.currentFrame);
+    this.measurement.selectRow(this.currentFrame, _pause);
 
     this.drawFrame(this.currentFrame);
   }

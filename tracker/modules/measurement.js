@@ -307,7 +307,7 @@ export default class MEASUREMENT {
     this.tableBody.appendChild(fragment);
   }
 
-  selectRow(index){
+  selectRow(index, scroll = true){
     const previouslySelectedRow = $("tr.is-selected");
     if (previouslySelectedRow) {
       previouslySelectedRow.classList.remove("is-selected");
@@ -316,7 +316,7 @@ export default class MEASUREMENT {
     const row = $("#row" + index);
     if (row) {
       row.classList.add("is-selected");
-      if (typeof row.scrollIntoView === "function") {
+      if (scroll && typeof row.scrollIntoView === "function") {
         row.scrollIntoView({ block: "nearest" });
       }
     }
