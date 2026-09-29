@@ -98,6 +98,6 @@
 /* Force container to fullhd size starting from 1364px width */
 @media screen and (min-width: 1364px) {
   .container {
-    max-width: 1324px !important;
+    max-width: 1290px !important;
   }
 }
