@@ -482,8 +482,8 @@ body {
 
 }
 
-/* Force container to fullhd size starting from 1370px width */
-@media screen and (min-width: 1370px) {
+/* Force container to fullhd size starting from 1364px width */
+@media screen and (min-width: 1364px) {
   .container, #global-controls {
     max-width: 1324px !important;
   }
