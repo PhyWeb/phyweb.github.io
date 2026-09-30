@@ -8,6 +8,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   isMaximized: () => ipcRenderer.invoke('isMaximized'),
   onMaximized: (callback) => ipcRenderer.on('window-maximized', callback),
   onUnmaximized: (callback) => ipcRenderer.on('window-unmaximized', callback),
+  setFullscreen: (val) => ipcRenderer.send('setFullscreen', val),
+  isFullscreen: () => ipcRenderer.invoke('isFullscreen'),
+  onEnterFullscreen: (callback) => ipcRenderer.on('window-enter-full-screen', callback),
+  onLeaveFullscreen: (callback) => ipcRenderer.on('window-leave-full-screen', callback),
 
   // Envoi de données (depuis Tracker/Audio vers Grapher)
   openGrapherWindow: (data) => ipcRenderer.send('openGrapherWindow', data),

@@ -101,6 +101,8 @@ const createWindow = (winPath) => {
   // Écouter le redimensionnement natif pour vos icônes UI
   win.on('maximize', () => win.webContents.send('window-maximized'));
   win.on('unmaximize', () => win.webContents.send('window-unmaximized'));
+  win.on('enter-full-screen', () => win.webContents.send('window-enter-full-screen'));
+  win.on('leave-full-screen', () => win.webContents.send('window-leave-full-screen'));
 
   return win;
 }
@@ -173,6 +175,17 @@ app.whenReady().then(() => {
   ipcMain.handle('isMaximized', (event) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     if (win) return win.isMaximized();
+    return false;
+  });
+
+  ipcMain.on('setFullscreen', (event, val) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win) win.setFullScreen(val);
+  });
+
+  ipcMain.handle('isFullscreen', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win) return win.isFullScreen();
     return false;
   });
 

@@ -15,7 +15,7 @@ class Common {
     this.app = _app;
 
     this.navbarSetup();
-    if($("#expand-button")){
+    if($("#expand-button") || $("#compress-button")){
       this.FullscreenManager = new FullscreenManager($("#expand-button"),$("#compress-button"));
     }
 
@@ -739,24 +739,70 @@ class FullscreenManager {
     this.expandButton = _expandButton;
     this.compressButton = _compressButton;
 
-    this.expandButton.addEventListener("click", ()=>{
-      document.documentElement.requestFullscreen();
+    if (window.electronAPI && window.electronAPI.setFullscreen) {
+      this.initElectron();
+    } else {
+      this.initWeb();
+    }
+	}
+
+  async initElectron() {
+    if (this.expandButton) {
+      this.expandButton.addEventListener("click", ()=>{
+        window.electronAPI.setFullscreen(true);
+      });
+    }
+
+    if (this.compressButton) {
+      this.compressButton.addEventListener("click", ()=>{
+        window.electronAPI.setFullscreen(false);
+      });
+    }
+
+    window.electronAPI.onEnterFullscreen(() => {
+      this.expandButton?.classList.add("is-hidden");
+      this.compressButton?.classList.remove("is-hidden");
     });
 
-    this.compressButton.addEventListener("click", ()=>{
-      document.exitFullscreen();
+    window.electronAPI.onLeaveFullscreen(() => {
+      this.expandButton?.classList.remove("is-hidden");
+      this.compressButton?.classList.add("is-hidden");
     });
+
+    // Check initial state
+    const isFull = await window.electronAPI.isFullscreen();
+    if (isFull) {
+      this.expandButton?.classList.add("is-hidden");
+      this.compressButton?.classList.remove("is-hidden");
+    } else {
+      this.expandButton?.classList.remove("is-hidden");
+      this.compressButton?.classList.add("is-hidden");
+    }
+  }
+
+  initWeb() {
+    if (this.expandButton) {
+      this.expandButton.addEventListener("click", ()=>{
+        document.documentElement.requestFullscreen();
+      });
+    }
+
+    if (this.compressButton) {
+      this.compressButton.addEventListener("click", ()=>{
+        document.exitFullscreen();
+      });
+    }
 
     document.documentElement.addEventListener("fullscreenchange", ()=>{
       if (document.fullscreenElement) {
-        this.expandButton.classList.add("is-hidden");
-        this.compressButton.classList.remove("is-hidden");
+        this.expandButton?.classList.add("is-hidden");
+        this.compressButton?.classList.remove("is-hidden");
       } else {
-        this.expandButton.classList.remove("is-hidden");
-        this.compressButton.classList.add("is-hidden");
+        this.expandButton?.classList.remove("is-hidden");
+        this.compressButton?.classList.add("is-hidden");
       }
     });
-	}
+  }
 }
 
 /**
