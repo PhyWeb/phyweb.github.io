@@ -449,41 +449,40 @@ function aboutModal(_app){
   let description;
   switch (_app) {
     case "":
-      description = `<p>PhyWeb est une collection d’applications destinées à l’enseignement de la physique et de la chimie.</p> 
-      <p>Toutes les applications sont disponibles en ligne directement dans le navigateur. Il est néanmoins possible de télécharger un fichier exécutable pour avoir accès aux applications hors-ligne.</p>
+      description = `<p>PhyWeb est une suite d'outils numériques interactifs conçus pour l'enseignement des sciences physiques.</p> 
+      <p>Accessible directement depuis le navigateur, la suite est également téléchargeable pour une utilisation hors connexion.</p>
       `
       break;
     case "Tracker":
-      description = "Application de pointage permettant d'étudier le mouvement d'objets dans une vidéo. Une <a href='../assets/notices/tracker/index.html'>notice d'utilisation</a> à imprimer est disponible."
+      description = "Outil de pointage et d'analyse vidéo pour l'étude cinématique du mouvement. Idéal pour extraire et modéliser des trajectoires à partir de vidéos. Une <a href='../assets/notices/tracker/index.html'>notice d'utilisation</a> à imprimer est disponible."
       break;
     case "Audio":
       description = `<div class="content">
-        <p>Application permettant de visualiser des ondes sonores et de réaliser des analyses spectrales (Analyses de Fourier)</p>
-        <p>Les données peuvent être obtenues de deux manière :</p>
+        <p>Oscilloscope et analyseur de spectre sonore en temps réel.</p>
+        <p>Visualisez et étudiez la composition des signaux acoustiques grâce à l'analyse de Fourier, de deux manières :</p>
         <ul>
-          <li>A l'aide d'un micro, en temps réel, ou en choisissant une durée d'acquisition;</li>
-          <li>A l'aide d'un fichier audio. (La plupart des codecs sont supportés)</li>
+          <li>Via le microphone (en continu ou sur une durée fixe) ;</li>
+          <li>En important vos propres fichiers audio.</li>
         </ul>
       </div>`
       break;
     case "Grapher":
       description = `<div class="content">
         <p>
-          <strong>PhyWeb Grapher</strong> est une application web conçue pour l'analyse et la visualisation de données, directement dans le navigateur.
-          Elle permet d'importer des fichiers (CSV, .rw3), de modifier les mesures dans un tableur, et de représenter les données sur un graphique 2D entièrement personnalisable.
+          <strong>PhyWeb Grapher</strong> est une solution complète d'analyse et de visualisation de données expérimentales.
         </p>
         <ul>
           <li>
-            <strong>Tableur interactif</strong> : Saisissez, collez et modifiez vos séries de mesures.
+            <strong>Tableur intégré</strong> : Saisissez, importez et gérez vos séries de mesures.
           </li>
           <li>
-            <strong>Grapheur personnalisable</strong> : Générez des graphiques 2D et contrôlez l'affichage de chaque courbe (couleurs, marqueurs, styles).
+            <strong>Grapheur avancé</strong> : Tracez des graphiques 2D entièrement personnalisables.
           </li>
           <li>
-            <strong>Moteur de calcul</strong> : Créez de nouvelles grandeurs à partir de vos données via des formules mathématiques, incluant la dérivation numérique.
+            <strong>Moteur de calcul</strong> : Générez de nouvelles grandeurs via des formules mathématiques (dérivation, modélisation).
           </li>
           <li>
-            <strong>Import et Export</strong> : Ouvrez vos fichiers CSV et Regressi (.rw3), et sauvegardez votre session de travail complète au format .pw.
+            <strong>Import et Export</strong> : Ouvrez et exportez vos données aux formats CSV et Regressi (.rw3), ou sauvegardez votre session complète au format .pw.
           </li>
         </ul>
       </div>`

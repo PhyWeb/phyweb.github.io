@@ -1,5 +1,4 @@
 # Common
-    - modal à propos: improve descriptions
     - tester sur petit ecran (et faire les adaptations nécessaires)
     - vérifier que tous les focus automatiques sont ok
     - continuer d'ajouter des raccourcis clavier
