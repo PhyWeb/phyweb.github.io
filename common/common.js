@@ -1688,4 +1688,4 @@ function initApplets(title, basePath = "..", hasDataCallback = () => false) {  /
   return common;
 }
 
-export {Common,initApplets, enforceIntegerInputs, setupGlobalShortcuts, ModalManager, alertModal, quitConfirmationModal, TabManager, Serie, exportToPW,exportToCSV, exportToRW3, downloadFile, removeAccents, isNumber};
+export {Common,initApplets, enforceIntegerInputs, setupGlobalShortcuts, ModalManager, alertModal, quitConfirmationModal, TabManager, Serie, exportToPW,exportToCSV, exportToRW3, downloadFile, removeAccents};
