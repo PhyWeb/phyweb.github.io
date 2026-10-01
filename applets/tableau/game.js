@@ -907,8 +907,8 @@ function renderHome() {
                 <div class="box content is-medium" style="min-height: 100%;">
                     <img src="assets/portrait.jpg" alt="Portrait de Mendeleiev" class="box p-1" style="max-width: 140px; float: left; margin: 0 20px 10px 0;">
                     <p>Vous connaissez tous les classifications périodiques qui ornent les murs de tous les laboratoires de chimie.</p>
-                    <p> Dans ce grand tableau sont rangés tous les éléments chimiques, qu'ils existent dans la nature ou qu'ils aient été synthétisés dans les accélérateurs de particules.</p>
-                    <p class="has-text-weight-bold has-text-primary has-text-centered mt-4">Comment ce tableau a-t-il été initialement conçu ?</p>
+                    <p class="mb-5"> Dans ce grand tableau sont rangés tous les éléments chimiques, qu'ils existent dans la nature ou qu'ils aient été synthétisés dans les accélérateurs de particules.</p>
+                    <p class="has-text-weight-bold has-text-primary has-text-centered mt-4" style="clear: both;">Comment ce tableau a-t-il été initialement conçu ?</p>
                     <p class="has-text-weight-bold has-text-primary has-text-centered mt-4">Comment est-il construit aujourd'hui ?</p>
                     <p>Le TP qui suit va vous permettre de répondre à ces questions en reconstruisant la démarche historique de son créateur.</p>
                 </div>
