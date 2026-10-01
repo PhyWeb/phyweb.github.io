@@ -351,11 +351,10 @@ const STRUCTURE_TP = {
             
             // Élargissement des cases pour le mode d'affichage des configurations complètes
             if (mode === 'all-configs') {
-                container.style.gridTemplateColumns = "repeat(8, 140px)"; container.style.gap = "6px";
+                container.classList.add('grid-all-configs');
             } else {
-                container.style.gridTemplateColumns = "repeat(8, 60px)"; container.style.gap = "8px";
+                container.classList.add('grid-compact');
             }
-            container.style.justifyContent = "center";
 
             // Ajout de la numérotation des colonnes 1 à 8
             const headers = ["1", "2", "3", "4", "5", "6", "7", "8"];
@@ -398,10 +397,10 @@ const STRUCTURE_TP = {
 
                 // Formatage spécifique avec white-space: nowrap pour forcer l'affichage sur une ligne
                 if (mode === 'all-configs') {
-                    card.style.width = "140px"; card.style.height = "auto"; card.style.padding = "6px 2px";
+                    card.style.width = "140px"; card.style.height = "auto"; card.style.padding = "6px 0px";
                     let confDiv = document.createElement('div');
                     confDiv.innerHTML = fullConfigs[id];
-                    confDiv.style.fontSize = "0.75em"; confDiv.style.color = "#495057"; confDiv.style.marginTop = "4px"; 
+                    confDiv.style.fontSize = "0.68em"; confDiv.style.color = "#495057"; confDiv.style.marginTop = "4px"; 
                     confDiv.style.textAlign = "center"; confDiv.style.whiteSpace = "nowrap"; 
                     card.appendChild(confDiv);
                 }
@@ -469,7 +468,7 @@ const STRUCTURE_TP = {
                         <label class="radio is-block mb-2"><input type="radio" name="q_ligne" value="annee" class="mr-2"> Les éléments sont classés suivant leur année de découverte</label>
                     </div>
                 </div>
-                <div class="box has-background-light">
+                <div class="box has-background-light px-2">
                     <div id="grid-container" class="mx-auto" style="overflow-x: auto;"></div>
                 </div>`,
                 onLoad: () => { renderModernSimplifiedGrid(document.getElementById('grid-container'), 'show-z'); },
@@ -604,7 +603,7 @@ const STRUCTURE_TP = {
                         <label class="radio is-block mb-2"><input type="radio" name="q_periode" value="internes" class="mr-2"> L'absence d'électrons dans les couches internes</label>
                     </div>
                 </div>
-                <div class="box has-background-light">
+                <div class="box has-background-light px-2">
                     <div id="grid-container" class="mx-auto" style="overflow-x: auto;"></div>
                 </div>`,
                 onLoad: () => { renderModernSimplifiedGrid(document.getElementById('grid-container'), 'all-configs'); },
@@ -630,7 +629,7 @@ const STRUCTURE_TP = {
                         <label class="radio is-block"><input type="radio" name="q_col" value="valence" class="mr-2"> Ils ont tous le même nombre d'électrons sur leur couche externe (électrons de valence)</label>
                     </div>
                 </div>
-                <div class="box has-background-light">
+                <div class="box has-background-light px-2">
                     <div id="grid-container" class="mx-auto" style="overflow-x: auto;"></div>
                 </div>`,
                 onLoad: () => { renderModernSimplifiedGrid(document.getElementById('grid-container'), 'all-configs'); },
@@ -908,8 +907,8 @@ function renderHome() {
                 <div class="box content is-medium" style="min-height: 100%;">
                     <img src="assets/portrait.jpg" alt="Portrait de Mendeleiev" class="box p-1" style="max-width: 140px; float: left; margin: 0 20px 10px 0;">
                     <p>Vous connaissez tous les classifications périodiques qui ornent les murs de tous les laboratoires de chimie.</p>
-                    <p> Dans ce grand tableau sont rangés tous les éléments chimiques, qu'ils existent dans la nature ou qu'ils aient été synthétisés dans les accélérateurs de particules.</p>
-                    <p class="has-text-weight-bold has-text-primary has-text-centered mt-4">Comment ce tableau a-t-il été initialement conçu ?</p>
+                    <p class="mb-5"> Dans ce grand tableau sont rangés tous les éléments chimiques, qu'ils existent dans la nature ou qu'ils aient été synthétisés dans les accélérateurs de particules.</p>
+                    <p class="has-text-weight-bold has-text-primary has-text-centered mt-4" style="clear: both;">Comment ce tableau a-t-il été initialement conçu ?</p>
                     <p class="has-text-weight-bold has-text-primary has-text-centered mt-4">Comment est-il construit aujourd'hui ?</p>
                     <p>Le TP qui suit va vous permettre de répondre à ces questions en reconstruisant la démarche historique de son créateur.</p>
                 </div>
@@ -1002,6 +1001,11 @@ function executeValidation() {
     msgBox.innerHTML = res.msg; 
     msgBox.className = res.success ? "notification is-success is-light py-2 px-4 m-0" : "notification is-danger is-light py-2 px-4 m-0";
     
+    // Animation de feedback
+    msgBox.classList.remove('feedback-anim');
+    void msgBox.offsetWidth; // trigger reflow
+    msgBox.classList.add('feedback-anim');
+
     if (res.success) { 
         const btnNext = document.getElementById('global-btn-next');
         btnNext.style.display = 'inline-flex'; 
@@ -1018,12 +1022,22 @@ window.onload = () => { renderHome(); };
 // ECOUTEURS GLOBAUX (RACCOURCIS CLAVIER)
 // ==========================================
 document.addEventListener('keydown', (event) => {
-    // Force le passage à la suite (pour les professeurs / débuggage) avec "Ctrl + Flèche Droite"
+    // Navigation rapide (pour les professeurs / débuggage) avec "Ctrl + Flèches"
     if (event.ctrlKey && event.key === 'ArrowRight') {
         event.preventDefault(); // Empêche un comportement par défaut indésirable
         if (currentPart !== "") {
             if (currentStepIndex < STRUCTURE_TP[currentPart].length - 1) {
                 currentStepIndex++;
+                renderStep();
+            } else {
+                renderHome();
+            }
+        }
+    } else if (event.ctrlKey && event.key === 'ArrowLeft') {
+        event.preventDefault();
+        if (currentPart !== "") {
+            if (currentStepIndex > 0) {
+                currentStepIndex--;
                 renderStep();
             } else {
                 renderHome();
