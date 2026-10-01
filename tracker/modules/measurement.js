@@ -1,4 +1,4 @@
-import {Serie, downloadFile, exportToPW, exportToCSV, exportToRW3, showToast} from "../../common/common.js"
+import {Serie, downloadFile, exportToPW, exportToCSV, exportToRW3, showToast, isNumber} from "../../common/common.js"
 
 const $ = document.querySelector.bind(document);
 
@@ -32,13 +32,6 @@ export function round(val, n = 0, fallback = "") {
   const d = Math.pow(10, decimals);
   const sign = num < 0 ? -1 : 1;
   return (sign * Math.round((Math.abs(num) + Number.EPSILON) * d)) / d;
-}
-
-
-function isNumber(str) {
-  const s = typeof str === "string" ? str.trim().replace(",", ".") : str;
-  return !isNaN(s) && // use type coercion to parse the _entirety_ of the string (`parseFloat` alone does not do this)...
-  !isNaN(parseFloat(s)) // ...and ensure strings of whitespace fail
 }
 
 /*----------------------------------------------------------------------------------------------
@@ -196,6 +189,19 @@ export default class MEASUREMENT {
     cell2.classList.add("has-text-centered");
     titleRow.appendChild(cell2);
 
+    const POINT_COLORS = [
+      "#f14668", // Red
+      "#3e8ed0", // Blue
+      "#48c774", // Green
+      "#e6b800", // Yellow
+      "#b86bff", // Purple
+      "#ff8c00", // Orange
+      "#ff69b4", // Pink
+      "#00ced1", // Cyan
+      "#8b4513", // Brown
+      "#99cc00"  // Lime
+    ];
+
     for(let i = 1; i < ppf + 1; i++){
       let cellx = document.createElement('th');
       cellx.classList.add("has-text-centered");
@@ -204,6 +210,12 @@ export default class MEASUREMENT {
       let celly = document.createElement('th');
       celly.classList.add("has-text-centered");
       celly.innerHTML = ppf > 1 ? "y" + i + unitSuffix : "y" + unitSuffix;
+
+      if (ppf > 1) {
+        const color = POINT_COLORS[(i - 1) % POINT_COLORS.length];
+        cellx.style.color = color;
+        celly.style.color = color;
+      }
 
       titleRow.appendChild(cellx);
       titleRow.appendChild(celly);

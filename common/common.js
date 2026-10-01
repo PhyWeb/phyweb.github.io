@@ -45,12 +45,11 @@ class Common {
       })
     }
   }
+}
 
-  isNumber(str) {
-    const s = typeof str === "string" ? str.trim().replace(",", ".") : str;
-    return !isNaN(s) && // use type coercion to parse the _entirety_ of the string (`parseFloat` alone does not do this)...
-    !isNaN(parseFloat(s)) // ...and ensure strings of whitespace fail
-  }
+export function isNumber(str) {
+  const s = typeof str === "string" ? str.trim().replace(",", ".") : str;
+  return !isNaN(s) && !isNaN(parseFloat(s));
 }
 
 async function electronSetup(){
@@ -1689,4 +1688,4 @@ function initApplets(title, basePath = "..", hasDataCallback = () => false) {  /
   return common;
 }
 
-export {Common,initApplets, enforceIntegerInputs, setupGlobalShortcuts, ModalManager, alertModal, quitConfirmationModal, TabManager, Serie, exportToPW,exportToCSV, exportToRW3, downloadFile, removeAccents};
+export {Common,initApplets, enforceIntegerInputs, setupGlobalShortcuts, ModalManager, alertModal, quitConfirmationModal, TabManager, Serie, exportToPW,exportToCSV, exportToRW3, downloadFile, removeAccents, isNumber};

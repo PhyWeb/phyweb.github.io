@@ -38,7 +38,10 @@
 }
 
 #frame-label{
-  width:14rem;
+  width: max-content;
+  white-space: nowrap;
+  display: inline-flex !important;
+  align-items: center;
 }
 
 
