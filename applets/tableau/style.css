@@ -488,3 +488,25 @@ body {
     max-width: 1324px !important;
   }
 }
+
+/* --- Améliorations --- */
+@keyframes feedback-pop {
+    0% { transform: scale(0.98); opacity: 0.5; }
+    50% { transform: scale(1.02); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+}
+.feedback-anim {
+    animation: feedback-pop 0.3s ease-out;
+}
+
+/* Modificateurs de grille (remplace le JS inline) */
+.grid-all-configs {
+    grid-template-columns: repeat(8, 140px) !important;
+    gap: 6px !important;
+}
+
+.grid-compact {
+    grid-template-columns: repeat(8, 60px) !important;
+    gap: 8px !important;
+}
+
