@@ -259,15 +259,19 @@ export default class MEASUREMENT {
     this.buildTableHead();
     this.tableBody.innerHTML="";
 
+    // Cache the labels to speed up table updates
+    this.labelsCache = [];
+
     const fragment = document.createDocumentFragment();
 
     this.series[0].forEach((value,i) => {
       let row = document.createElement('tr');
+      this.labelsCache[i] = { t: null, x: [], y: [] };
 
       // image index column
       let cell = document.createElement('td');
       let label = document.createElement('label');
-      label.innerHTML = i + 1;
+      label.textContent = i + 1;
       cell.appendChild(label);
       row.appendChild(cell);
 
@@ -275,7 +279,8 @@ export default class MEASUREMENT {
       let tcell = document.createElement('td');
       let tlabel = document.createElement('label');
       tlabel.id = "t" + i;
-      tlabel.innerHTML = round(this.series[0][i], 3);
+      tlabel.textContent = round(this.series[0][i], 3);
+      this.labelsCache[i].t = tlabel;
       tcell.appendChild(tlabel);
       row.appendChild(tcell)
 
@@ -284,12 +289,14 @@ export default class MEASUREMENT {
         let xcell = document.createElement('td');
         let xlabel = document.createElement('label');
         xlabel.id = "x" + j + i;
+        this.labelsCache[i].x[j] = xlabel;
         xcell.appendChild(xlabel);
         row.appendChild(xcell)
 
         let ycell = document.createElement('td');
         let ylabel = document.createElement('label');
         ylabel.id = "y" + j + i;
+        this.labelsCache[i].y[j] = ylabel;
         ycell.appendChild(ylabel);
         row.appendChild(ycell);
       }
@@ -338,17 +345,19 @@ export default class MEASUREMENT {
     const scaleX = this.scale.getOrientedScaleX();
     const scaleY = this.scale.getOrientedScaleY(this.aspectRatio);
 
+    if(!this.labelsCache || !this.labelsCache[i]) return;
+
     if(i < this.originFrame){
-      $("#" + "t" + i).innerHTML = "";
+      this.labelsCache[i].t.textContent = "";
       for(let j = 1; j < ppf + 1; j++){
-        $("#" + "x" + j + i).innerHTML = "";
-        $("#" + "y" + j + i).innerHTML = "";
+        this.labelsCache[i].x[j].textContent = "";
+        this.labelsCache[i].y[j].textContent = "";
       } 
     } else{
-      $("#" + "t" + i).innerHTML = round(this.series[0][i] - this.series[0][this.originFrame], 3);
+      this.labelsCache[i].t.textContent = round(this.series[0][i] - this.series[0][this.originFrame], 3);
       for(let j = 1; j < ppf + 1; j++){
-        $("#" + "x" + j + i).innerHTML = round(this.series[((j - 1) * 2) + 1][i] === "" ? "" : this.series[((j - 1) * 2) + 1].get(i, this.scale.origin.x, scaleX), this.maxDigits);
-        $("#" + "y" + j + i).innerHTML = round(this.series[((j - 1) * 2) + 2][i] === "" ? "" : this.series[((j - 1) * 2) + 2].get(i, this.scale.origin.y, scaleY), this.maxDigits);
+        this.labelsCache[i].x[j].textContent = round(this.series[((j - 1) * 2) + 1][i] === "" ? "" : this.series[((j - 1) * 2) + 1].get(i, this.scale.origin.x, scaleX), this.maxDigits);
+        this.labelsCache[i].y[j].textContent = round(this.series[((j - 1) * 2) + 2][i] === "" ? "" : this.series[((j - 1) * 2) + 2].get(i, this.scale.origin.y, scaleY), this.maxDigits);
       }
     }
   }
@@ -445,14 +454,16 @@ export default class MEASUREMENT {
     this.updateUnits();
     this.buildTableHead();
 
-    if(!this.tableBody || !this.tableBody.children) return;
+    if(!this.tableBody || !this.tableBody.children || !this.labelsCache) return;
 
     for(let i = 0; i < this.tableBody.children.length; i++){
+      if(!this.labelsCache[i]) continue;
+      
       // update t values
       if(i < this.originFrame){
-        $("#" + "t" + i).innerHTML = "";
+        this.labelsCache[i].t.textContent = "";
       } else{
-        $("#" + "t" + i).innerHTML = round(this.series[0][i] - this.series[0][this.originFrame], 3);
+        this.labelsCache[i].t.textContent = round(this.series[0][i] - this.series[0][this.originFrame], 3);
       }
 
       // update x and y values
@@ -461,13 +472,13 @@ export default class MEASUREMENT {
 
       if(i < this.originFrame){
         for(let j = 1; j < ppf + 1; j++){
-          $("#" + "x" + j + i).innerHTML = "";
-          $("#" + "y" + j + i).innerHTML = "";
+          this.labelsCache[i].x[j].textContent = "";
+          this.labelsCache[i].y[j].textContent = "";
         } 
       } else{
         for(let j = 1; j < ppf + 1; j++){
-          $("#" + "x" + j + i).innerHTML = round(this.series[((j - 1) * 2) + 1][i] === "" ? "" : this.series[((j - 1) * 2) + 1].get(i, this.scale.origin.x, scaleX), this.maxDigits);
-          $("#" + "y" + j + i).innerHTML = round(this.series[((j - 1) * 2) + 2][i] === "" ? "" : this.series[((j - 1) * 2) + 2].get(i, this.scale.origin.y, scaleY), this.maxDigits);
+          this.labelsCache[i].x[j].textContent = round(this.series[((j - 1) * 2) + 1][i] === "" ? "" : this.series[((j - 1) * 2) + 1].get(i, this.scale.origin.x, scaleX), this.maxDigits);
+          this.labelsCache[i].y[j].textContent = round(this.series[((j - 1) * 2) + 2][i] === "" ? "" : this.series[((j - 1) * 2) + 2].get(i, this.scale.origin.y, scaleY), this.maxDigits);
         }
       }
     }
