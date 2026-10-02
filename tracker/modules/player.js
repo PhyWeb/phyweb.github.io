@@ -1,12 +1,6 @@
-import { showToast } from "../../common/common.js";
+import { showToast, isNumber } from "../../common/common.js";
 
 const $ = document.querySelector.bind(document);
-
-function isNumber(str) {
-  const s = typeof str === "string" ? str.trim().replace(",", ".") : str;
-  return !isNaN(s) && // use type coercion to parse the _entirety_ of the string (`parseFloat` alone does not do this)...
-  !isNaN(parseFloat(s)) // ...and ensure strings of whitespace fail
-}
 
 /*----------------------------------------------------------------------------------------------
 ----------------------------------------------PLAYER--------------------------------------------
@@ -150,6 +144,29 @@ export default class PLAYER {
     if(this.magnifier === true){
       this.drawMagnifier(_frameID);
     }
+
+    // Update the image label
+    if (this.decodedVideo && this.decodedVideo.frames) {
+      const maxPoints = (this.measurement.series.length - 1) / 2;
+      if (maxPoints > 1) {
+        const POINT_COLORS = [
+          "#f14668", // Red
+          "#3e8ed0", // Blue
+          "#48c774", // Green
+          "#e6b800", // Yellow
+          "#b86bff", // Purple
+          "#ff8c00", // Orange
+          "#ff69b4", // Pink
+          "#00ced1", // Cyan
+          "#8b4513", // Brown
+          "#99cc00"  // Lime
+        ];
+        const color = POINT_COLORS[this.currentPoint % POINT_COLORS.length];
+        $("#frame-label").innerHTML = "Image n° " + (this.currentFrame + 1) +"/" + this.decodedVideo.frames.length + `<span class="tag is-normal" style="background-color: ${color}; color: white; font-weight: bold; margin-left: 0.5rem; vertical-align: middle; min-width: 4.5rem; justify-content: center;">Point ${this.currentPoint + 1}</span>`;
+      } else {
+        $("#frame-label").innerHTML = "Image n° " + (this.currentFrame + 1) +"/" + this.decodedVideo.frames.length;
+      }
+    }
   }
 
   drawCrosses() {
@@ -160,12 +177,32 @@ export default class PLAYER {
     this.ctx.shadowBlur = 3;      // Intensité du dégradé (halo)
     this.ctx.shadowOffsetX = 0;
     this.ctx.shadowOffsetY = 0;
-    
-    this.ctx.beginPath();
     this.ctx.lineWidth = 2;
-    this.ctx.strokeStyle = "white";
 
-    for (let i = 0; i < (this.measurement.series.length - 1) / 2; i++) {
+    // Couleurs très pastels pour un contraste maximal avec l'ombre sur la vidéo
+    const CROSS_COLORS = [
+      "#ffb3b3", // Light Red
+      "#b3d4ff", // Light Blue
+      "#b3ffcc", // Light Green
+      "#ffebb3", // Light Yellow
+      "#e6ccff", // Light Purple
+      "#ffccb3", // Light Orange
+      "#ffb6c1", // Light Pink
+      "#e0ffff", // Light Cyan
+      "#deb887", // Light Brown
+      "#e6ff99"  // Light Lime
+    ];
+    const maxPoints = (this.measurement.series.length - 1) / 2;
+
+    for (let i = 0; i < maxPoints; i++) {
+      this.ctx.beginPath();
+      
+      if (maxPoints === 1) {
+        this.ctx.strokeStyle = "white"; // Historique: croix blanche si 1 seul point
+      } else {
+        this.ctx.strokeStyle = CROSS_COLORS[i % CROSS_COLORS.length];
+      }
+
       for (let j = this.measurement.originFrame; j < this.measurement.series[0].length; j++) {
         const xCoord = this.measurement.series[(i * 2) + 1][j];
         const yCoord = this.measurement.series[(i * 2) + 2][j];
@@ -181,10 +218,9 @@ export default class PLAYER {
           this.ctx.lineTo(x, y + 5);
         }
       }
+      this.ctx.stroke();
+      this.ctx.closePath();
     }
-
-    this.ctx.stroke();
-    this.ctx.closePath();
     
     this.ctx.restore();
   }
@@ -346,9 +382,6 @@ export default class PLAYER {
     }
     this.currentFrame = id;
     this.currentPoint = 0;
-
-    // Update the image label
-    $("#frame-label").innerHTML = "Image n° " + (this.currentFrame + 1) +"/" + this.decodedVideo.frames.length;
 
     // Update the table
     this.measurement.selectRow(this.currentFrame, _pause);

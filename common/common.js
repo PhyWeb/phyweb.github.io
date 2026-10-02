@@ -45,12 +45,11 @@ class Common {
       })
     }
   }
+}
 
-  isNumber(str) {
-    const s = typeof str === "string" ? str.trim().replace(",", ".") : str;
-    return !isNaN(s) && // use type coercion to parse the _entirety_ of the string (`parseFloat` alone does not do this)...
-    !isNaN(parseFloat(s)) // ...and ensure strings of whitespace fail
-  }
+export function isNumber(str) {
+  const s = typeof str === "string" ? str.trim().replace(",", ".") : str;
+  return !isNaN(s) && !isNaN(parseFloat(s));
 }
 
 async function electronSetup(){
@@ -404,7 +403,7 @@ function aboutModal(_app){
   let platformInfo = "";
 
   if(window.electronAPI){
-    version = "v0.3.6";
+    version = "v0.3.7";
     // Affichage spécifique à l'application Electron
     platformInfo = `
         <div class="field is-horizontal">

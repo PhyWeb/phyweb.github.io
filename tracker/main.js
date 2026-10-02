@@ -5,7 +5,7 @@ import MEASUREMENT from "./modules/measurement.js"
 import PLAYER from "./modules/player.js"
 import { isSupportedVideoFile } from "./modules/videoValidator.js"
 
-import {Common, setupGlobalShortcuts, alertModal, showToast, NavigationManager, exportToPW, FileDropManager} from "../common/common.js"
+import {Common, setupGlobalShortcuts, alertModal, showToast, NavigationManager, exportToPW, FileDropManager, isNumber} from "../common/common.js"
 
 import ExchangeManager from '../common/modules/ExchangeManager.js';
 
@@ -422,7 +422,7 @@ $("#scale-input").addEventListener("input", ()=> {
   const rawVal = $("#scale-input").value;
   const cleanVal = typeof rawVal === "string" ? rawVal.trim().replace(",", ".") : rawVal;
   const val = parseFloat(cleanVal);
-  if(!common.isNumber(cleanVal) || !Number.isFinite(val) || val <= 0){
+  if(!isNumber(cleanVal) || !Number.isFinite(val) || val <= 0){
     $("#scale-input").classList.add("has-background-danger");
   } else {
     $("#scale-input").classList.remove("has-background-danger");
