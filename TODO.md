@@ -28,18 +28,15 @@
 
     - typos dans les options de réduction de poids et centrage des checkboxes (seulement sur petit ecran ?)
 
-
-    - ajout d'une indication pour savoir a quel point on se situe au sein d'une frame quand ppf est > à 1
-
-    - on drop des frames pendaant la lecture
+    - on drop des frames pendaant la lecture ???
 # Grapher
     - possibilité d'avoir 2 axes y
 
     - Vérifier que les guess initiaux sont plus performants que des 1 1 1 1 1
 
-    VERIFICATION on peut changer les parametres par defaut dans un appx ?
+    - VERIFICATION on peut changer les parametres par defaut dans un appx ?
     
-    Tweaker encore un peu l'interface de l'export
+    - Tweaker encore un peu l'interface de l'export
 
 # Mendeleiev
 # Optique
