@@ -1,6 +1,5 @@
 # Common
     - tester sur petit ecran (et faire les adaptations nécessaires)
-    - vérifier que tous les focus automatiques sont ok
     - continuer d'ajouter des raccourcis clavier
 
     - mettre une icone en grand (dans le background) de chaque app pour visuellement rapidement voir ou on est.
