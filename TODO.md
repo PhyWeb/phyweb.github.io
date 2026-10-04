@@ -2,8 +2,6 @@
     - tester sur petit ecran (et faire les adaptations nécessaires)
     - continuer d'ajouter des raccourcis clavier
 
-    - ajouter les licences des libs qui n'en ont pas
-
     - Deplacer le a propos dans le menu ?
 
     - Toujours un carré foncé quand la barre win 11 est claire ?

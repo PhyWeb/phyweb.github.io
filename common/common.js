@@ -559,6 +559,16 @@ function aboutModal(_app){
                   <p class="block has-text-justified">THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</p>
                 </div>
               </article>
+              <article class="message is-info mt-3">
+                <div class="message-header" id="third-party-header" style="border-radius:6px; cursor:pointer;">
+                  <a>Licences tierces (Third-party)</a>
+                </div>
+                <div class="message-body is-hidden p-0" id="third-party-body">
+                  <div id="third-party-content" style="max-height: 250px; overflow-y: auto; padding: 1.25em;">
+                    <i>Chargement des licences...</i>
+                  </div>
+                </div>
+              </article>
             </div>
           </div>
         </div>`,
@@ -567,6 +577,31 @@ function aboutModal(_app){
   // LICENCE
   $("#licence-header").addEventListener("click", ()=>{
     $("#licence-body").classList.toggle("is-hidden");
+  });
+
+  // THIRD PARTY LICENCES
+  $("#third-party-header").addEventListener("click", async ()=>{
+    const body = $("#third-party-body");
+    const content = $("#third-party-content");
+    body.classList.toggle("is-hidden");
+    
+    if(!body.classList.contains("is-hidden") && content.innerHTML.includes("Chargement")) {
+      try {
+        const licensesUrl = new URL('./licenses.json', import.meta.url).href;
+        const res = await fetch(licensesUrl);
+        const data = await res.json();
+        content.innerHTML = "";
+        data.forEach(lib => {
+          const div = document.createElement("div");
+          div.className = "box mb-3";
+          div.innerHTML = `<strong>${lib.name}</strong> - <em>${lib.author}</em><br><span class="tag is-light mb-2">${lib.license}</span><p class="is-size-7" style="white-space: pre-wrap;">${lib.text}</p>`;
+          content.appendChild(div);
+        });
+      } catch (e) {
+        content.innerHTML = "<span class='has-text-danger'>Erreur lors du chargement des licences tierces.</span>";
+        console.error(e);
+      }
+    }
   });
 
 }
