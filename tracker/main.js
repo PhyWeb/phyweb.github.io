@@ -199,12 +199,7 @@ $("#file-input").addEventListener("change", () => {
       type: "danger",
       title: "Codec video non supporté",
       body: `<div class="content">
-          <p>La vidéo doit être au format mp4 ou m4v et encodée dans un des formats listés ci-dessous :</p>
-          <ul>
-            <li>H.264</li>
-            <li>H.265</li>
-            <li>AV1</li>
-          </ul>
+          <p>La vidéo doit être dans l'un des formats supportés (mp4, webm, mkv, avi, mov, flv) et encodée de manière lisible (ex: H.264, H.265, AV1, VP8, VP9).</p>
         </div>`,
       confirm: {
         label: "OK",
@@ -244,12 +239,7 @@ const videoDropManager = new FileDropManager(document.body, async (file) => {
       type: "danger",
       title: "Codec video non supporté",
       body: `<div class="content">
-          <p>La vidéo doit être au format mp4 ou m4v et encodée dans un des formats listés ci-dessous :</p>
-          <ul>
-            <li>H.264</li>
-            <li>H.265</li>
-            <li>AV1</li>
-          </ul>
+          <p>La vidéo doit être dans l'un des formats supportés (mp4, webm, mkv, avi, mov, flv) et encodée de manière lisible (ex: H.264, H.265, AV1, VP8, VP9).</p>
         </div>`,
       confirm: "OK",
       width: "45rem"

@@ -20,6 +20,7 @@ Ce document liste l'ensemble des bibliothèques et composants tiers utilisés da
 ## 3. Mathématiques & Vidéo
 * **Math.js** (Apache 2.0) - Jos de Jong
 * **mp4box.js** (BSD 3-Clause) - Telecom ParisTech
+* **web-demuxer** (MIT) - ForeverSc
 * **Alglib** (GPL / Commercial) - ALGLIB Project
 
 ## 4. Composants Avancés (Graphiques et Tableaux)
