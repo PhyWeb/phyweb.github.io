@@ -21,8 +21,6 @@
     - passer a ffmpeg.wasm
 
     - typos dans les options de réduction de poids et centrage des checkboxes (seulement sur petit ecran ?)
-
-    - on drop des frames pendaant la lecture ???
 # Grapher
     - possibilité d'avoir 2 axes y
 
