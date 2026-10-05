@@ -24,8 +24,6 @@
 # Grapher
     - possibilité d'avoir 2 axes y
 
-    - Vérifier que les guess initiaux sont plus performants que des 1 1 1 1 1
-
     - VERIFICATION on peut changer les parametres par defaut dans un appx ?
     
     - Tweaker encore un peu l'interface de l'export
