@@ -3131,6 +3131,7 @@ export default class UIManager {
         copyBtn.classList.remove('is-hidden');
         iframeContainer.classList.remove('has-background-grey-lighter');
         iframeContainer.classList.add('has-background-white');
+        if (titleInput.closest('.field')) titleInput.closest('.field').classList.add('is-hidden');
         
         iframe.srcdoc = this.generateImagePreviewHTML(title, dims.w, dims.h, factor);
       } else {
@@ -3140,6 +3141,7 @@ export default class UIManager {
         copyBtn.classList.add('is-hidden');
         iframeContainer.classList.add('has-background-grey-lighter');
         iframeContainer.classList.remove('has-background-white');
+        if (titleInput.closest('.field')) titleInput.closest('.field').classList.remove('is-hidden');
 
         const includeGraph = $('#export-check-graph').checked;
         const includeTable = $('#export-check-table').checked;
@@ -3315,7 +3317,7 @@ export default class UIManager {
     const svg = this.grapher.chart.getSVG(exportChartOptions);
     
     let html = `
-      <body style="background-color: white; font-family: sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; box-sizing: border-box;">;
+      <body style="background-color: white; font-family: sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; box-sizing: border-box;">
       <div style="flex-grow: 1; display: flex; justify-content: center; align-items: center; width: 100%; min-height: 0;">
         ${svg}
       </div>
