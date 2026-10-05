@@ -7,6 +7,7 @@
     - Toujours un carré foncé quand la barre win 11 est claire ?
 
 # ELECTRON
+    -retirer le fullscreen quand on drag et quand on fait minimiser/maximiser
 
 # Home
     - package linux et macos
