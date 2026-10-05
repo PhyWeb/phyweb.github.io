@@ -739,7 +739,7 @@ export default class UIManager {
       // Si l'interrupteur est coché, sauvegarder dans le localStorage
       if (savePermanentlySwitch.checked) {
         saveSettings(newSettings);
-        showToast("Paramètres enregistrés.", "is-success", 2500);
+        showToast("Réglages mémorisés.", "is-success", 2500);
       } else {
         showToast("Paramètres appliqués.", "is-info", 2500);
       }

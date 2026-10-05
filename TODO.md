@@ -25,8 +25,6 @@
 # Grapher
     - possibilité d'avoir 2 axes y
 
-    - VERIFICATION on peut changer les parametres par defaut dans un appx ?
-
 # Mendeleiev
 # Optique
 # Chromato
