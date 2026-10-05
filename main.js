@@ -99,10 +99,23 @@ const createWindow = (winPath) => {
   });
 
   // Écouter le redimensionnement natif pour vos icônes UI
-  win.on('maximize', () => win.webContents.send('window-maximized'));
-  win.on('unmaximize', () => win.webContents.send('window-unmaximized'));
+  win.on('maximize', () => {
+    if (win.isFullScreen()) win.setFullScreen(false);
+    win.webContents.send('window-maximized');
+  });
+  win.on('unmaximize', () => {
+    if (win.isFullScreen()) win.setFullScreen(false);
+    win.webContents.send('window-unmaximized');
+  });
   win.on('enter-full-screen', () => win.webContents.send('window-enter-full-screen'));
   win.on('leave-full-screen', () => win.webContents.send('window-leave-full-screen'));
+
+  // Sortir du plein écran si on tente de déplacer la fenêtre
+  win.on('will-move', () => {
+    if (win.isFullScreen()) {
+      win.setFullScreen(false);
+    }
+  });
 
   return win;
 }
@@ -159,17 +172,26 @@ app.whenReady().then(() => {
 
   ipcMain.on('minimize', (event) => {
     const win = BrowserWindow.fromWebContents(event.sender);
-    if (win) win.minimize();
+    if (win) {
+      if (win.isFullScreen()) win.setFullScreen(false);
+      win.minimize();
+    }
   })
 
   ipcMain.on('restore', (event) => {
     const win = BrowserWindow.fromWebContents(event.sender);
-    if (win) win.restore();
+    if (win) {
+      if (win.isFullScreen()) win.setFullScreen(false);
+      win.restore();
+    }
   })
 
   ipcMain.on('maximize', (event) => {
     const win = BrowserWindow.fromWebContents(event.sender);
-    if (win) win.maximize();
+    if (win) {
+      if (win.isFullScreen()) win.setFullScreen(false);
+      win.maximize();
+    }
   })
 
   ipcMain.handle('isMaximized', (event) => {
