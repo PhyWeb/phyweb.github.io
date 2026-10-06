@@ -6,6 +6,8 @@
 
     - Toujours un carré foncé quand la barre win 11 est claire ?
 
+    - On defullscreen pas quand on essai de drag la fenetre
+
 # ELECTRON
 
 # Home
@@ -14,12 +16,11 @@
 # Audio
 
 # Tracker
-    - bug or feature ? : frame is downloaded only if all points are set
     - Add vidéos
     - pan and zoom
     - add a button to stop the decode and still exploit the already decoded frames
     - passer a ffmpeg.wasm
-    
+
 # Grapher
     - possibilité d'avoir 2 axes y
 
