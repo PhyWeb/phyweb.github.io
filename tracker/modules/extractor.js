@@ -453,8 +453,8 @@ export default class EXTRACTOR {
       this.extract();
     } else{
       $("#file-size-modal").classList.add('is-active');
-      $("#def-size-label").innerHTML = ` ( ${this.width} / ${this.height} => ${this.width / 2} / ${this.height / 2} )`;
-      $("#fps-size-label").innerHTML = ` ( ${this.fps.toFixed(2)/1} => ${this.fps.toFixed(2)/2} img/s )`;
+      $("#def-size-label").innerHTML = `&nbsp;(${this.width} / ${this.height} => ${Math.round(this.width / 2)} / ${Math.round(this.height / 2)})`;
+      $("#fps-size-label").innerHTML = `&nbsp;(${parseFloat(this.fps.toFixed(2))} => ${parseFloat((this.fps / 2).toFixed(2))}&nbsp;img/s)`;
       const sliderMax = (this.duration && this.duration > 0) ? this.duration : 0.001;
       $("#duration-size-label").innerHTML = (this.duration || 0).toFixed(2);
       $("#file-slider").noUiSlider.updateOptions({

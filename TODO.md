@@ -19,8 +19,7 @@
     - pan and zoom
     - add a button to stop the decode and still exploit the already decoded frames
     - passer a ffmpeg.wasm
-
-    - typos dans les options de réduction de poids et centrage des checkboxes (seulement sur petit ecran ?)
+    
 # Grapher
     - possibilité d'avoir 2 axes y
 

@@ -148,6 +148,11 @@ export default class PLAYER {
     // Update the image label
     if (this.decodedVideo && this.decodedVideo.frames) {
       const maxPoints = (this.measurement.series.length - 1) / 2;
+      const totalFrames = this.decodedVideo.frames.length;
+      const maxDigits = totalFrames.toString().length;
+      const fractionWidth = maxDigits * 2 + 1;
+      const fractionStr = `<span style="display: inline-block; width: ${fractionWidth}ch; text-align: left;">${this.currentFrame + 1}/${totalFrames}</span>`;
+
       if (maxPoints > 1) {
         const POINT_COLORS = [
           "#f14668", // Red
@@ -162,9 +167,9 @@ export default class PLAYER {
           "#99cc00"  // Lime
         ];
         const color = POINT_COLORS[this.currentPoint % POINT_COLORS.length];
-        $("#frame-label").innerHTML = "Image n° " + (this.currentFrame + 1) +"/" + this.decodedVideo.frames.length + `<span class="tag is-normal" style="background-color: ${color}; color: white; font-weight: bold; margin-left: 0.5rem; vertical-align: middle; min-width: 4.5rem; justify-content: center;">Point ${this.currentPoint + 1}</span>`;
+        $("#frame-label").innerHTML = `Image n° ${fractionStr}<span class="tag is-normal" style="background-color: ${color}; color: white; font-weight: bold; margin-left: 0.5rem; vertical-align: middle; min-width: 4.5rem; justify-content: center;">Point ${this.currentPoint + 1}</span>`;
       } else {
-        $("#frame-label").innerHTML = "Image n° " + (this.currentFrame + 1) +"/" + this.decodedVideo.frames.length;
+        $("#frame-label").innerHTML = `Image n° ${fractionStr}`;
       }
     }
   }
