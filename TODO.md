@@ -21,8 +21,6 @@
     - passer a ffmpeg.wasm
 
     - typos dans les options de réduction de poids et centrage des checkboxes (seulement sur petit ecran ?)
-
-    - problemes dans le decodage des videos verticales (tester un mp4 ET un mkv)
 # Grapher
     - possibilité d'avoir 2 axes y
 
