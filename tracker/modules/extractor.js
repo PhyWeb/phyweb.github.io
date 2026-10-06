@@ -300,8 +300,24 @@ export default class EXTRACTOR {
     }
 
     this.track = firstTrack;
-    this.height = this.track.video.height;
-    this.width = this.track.video.width;
+
+    this.rotation = 0;
+    if (this.track.matrix) {
+      let angle = Math.round(Math.atan2(this.track.matrix[1], this.track.matrix[0]) * (180 / Math.PI));
+      if (angle < 0) angle += 360;
+      if (angle === 90 || angle === 180 || angle === 270) {
+        this.rotation = angle;
+      }
+    }
+
+    if (this.rotation === 90 || this.rotation === 270) {
+      this.width = Math.min(this.track.video.width, this.track.video.height);
+      this.height = Math.max(this.track.video.width, this.track.video.height);
+    } else {
+      this.width = this.track.video.width;
+      this.height = this.track.video.height;
+    }
+
     this.nbSamples = this.track.nb_samples || 0;
     const movieTimescale = this.track.movie_timescale || 1;
     this.duration = (this.track.movie_duration && movieTimescale > 0) ? (this.track.movie_duration / movieTimescale) : 0;
@@ -328,8 +344,8 @@ export default class EXTRACTOR {
 
     this.config = {
       codec: this.track.codec,
-      codedHeight: this.height,
-      codedWidth: this.width,
+      codedHeight: this.track.video.height,
+      codedWidth: this.track.video.width,
       description: getDescription(trackObj),
     };
 
@@ -378,8 +394,29 @@ export default class EXTRACTOR {
         throw new Error("Aucune piste vidéo valide trouvée");
       }
 
-      this.height = videoStream.height;
-      this.width = videoStream.width;
+      this.rotation = 0;
+      if (videoStream.tags) {
+        const rotateKey = Object.keys(videoStream.tags).find(k => k.toLowerCase() === 'rotate');
+        if (rotateKey) {
+          this.rotation = parseInt(videoStream.tags[rotateKey], 10) || 0;
+        }
+      }
+      if (!this.rotation && videoStream.side_data_list) {
+        const displayMatrix = videoStream.side_data_list.find(sd => sd.side_data_type === 'Display Matrix');
+        if (displayMatrix && displayMatrix.rotation) {
+          this.rotation = parseInt(displayMatrix.rotation, 10) || 0;
+        }
+      }
+      this.rotation = (this.rotation % 360 + 360) % 360;
+
+      if (this.rotation === 90 || this.rotation === 270) {
+        this.width = Math.min(videoStream.width, videoStream.height);
+        this.height = Math.max(videoStream.width, videoStream.height);
+      } else {
+        this.width = videoStream.width;
+        this.height = videoStream.height;
+      }
+
       this.nbSamples = parseInt(videoStream.nb_frames) || 0;
       this.duration = videoStream.duration > 0 ? videoStream.duration : info.duration; 
       this.fps = (this.duration > 0 && this.nbSamples > 0) ? (this.nbSamples / this.duration) : 30;
@@ -594,7 +631,54 @@ export default class EXTRACTOR {
         this._pendingBitmapsCount++;
 
         const canvasItem = this._acquireCanvas(this.decodedVideo.width, this.decodedVideo.height);
-        canvasItem.ctx.drawImage(frame, 0, 0, this.decodedVideo.width, this.decodedVideo.height);
+        
+        let actualRotation = this.rotation;
+        
+        // If we expect a 90/270 rotation, check if the decoder already applied it
+        // by comparing the frame's orientation to the intended canvas orientation.
+        if (actualRotation === 90 || actualRotation === 270) {
+            let canvasIsPortrait = this.decodedVideo.width < this.decodedVideo.height;
+            let frameIsPortrait = frame.displayWidth < frame.displayHeight;
+            if (canvasIsPortrait === frameIsPortrait) {
+                actualRotation = 0; // Prevent double rotation
+            }
+        }
+
+        canvasItem.ctx.save();
+        if (actualRotation === 90) {
+            canvasItem.ctx.translate(this.decodedVideo.width, 0);
+            canvasItem.ctx.rotate(Math.PI / 2);
+        } else if (actualRotation === 180) {
+            canvasItem.ctx.translate(this.decodedVideo.width, this.decodedVideo.height);
+            canvasItem.ctx.rotate(Math.PI);
+        } else if (actualRotation === 270) {
+            canvasItem.ctx.translate(0, this.decodedVideo.height);
+            canvasItem.ctx.rotate(3 * Math.PI / 2);
+        }
+
+        const isRotated = (actualRotation === 90 || actualRotation === 270);
+        
+        // Use frame's native display dimensions to avoid deformation
+        let fw = frame.displayWidth;
+        let fh = frame.displayHeight;
+        
+        // Calculate the scale to fit the canvas while preserving aspect ratio
+        let scale = Math.min(
+            this.decodedVideo.width / (isRotated ? fh : fw),
+            this.decodedVideo.height / (isRotated ? fw : fh)
+        );
+
+        let drawW = fw * scale;
+        let drawH = fh * scale;
+        
+        // Center the frame inside the canvas bounds
+        // In the rotated context, X and Y correspond to different canvas dimensions
+        let dx = (isRotated ? this.decodedVideo.height - drawW : this.decodedVideo.width - drawW) / 2;
+        let dy = (isRotated ? this.decodedVideo.width - drawH : this.decodedVideo.height - drawH) / 2;
+
+        canvasItem.ctx.drawImage(frame, dx, dy, drawW, drawH);
+        canvasItem.ctx.restore();
+        
         frame.close();
 
         canvasItem.canvas.convertToBlob({ type: "image/jpeg", quality: 0.85 })
