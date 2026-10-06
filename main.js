@@ -100,11 +100,9 @@ const createWindow = (winPath) => {
 
   // Écouter le redimensionnement natif pour vos icônes UI
   win.on('maximize', () => {
-    if (win.isFullScreen()) win.setFullScreen(false);
     win.webContents.send('window-maximized');
   });
   win.on('unmaximize', () => {
-    if (win.isFullScreen()) win.setFullScreen(false);
     win.webContents.send('window-unmaximized');
   });
   win.on('enter-full-screen', () => win.webContents.send('window-enter-full-screen'));
@@ -203,6 +201,28 @@ app.whenReady().then(() => {
   ipcMain.on('setFullscreen', (event, val) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     if (win) win.setFullScreen(val);
+  });
+
+  ipcMain.handle('restore-and-drag', (event, screenX, screenY, clickRatioX) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win) {
+      win.setFullScreen(false);
+      const bounds = win.getBounds();
+      const offsetX = Math.round(bounds.width * clickRatioX);
+      const offsetY = 15;
+      const newX = Math.round(screenX - offsetX);
+      const newY = Math.round(screenY - offsetY);
+      win.setBounds({ x: newX, y: newY, width: bounds.width, height: bounds.height });
+      return offsetX;
+    }
+    return 0;
+  });
+
+  ipcMain.on('move-window-to', (event, x, y) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win) {
+      win.setPosition(Math.round(x), Math.round(y));
+    }
   });
 
   ipcMain.handle('isFullscreen', (event) => {

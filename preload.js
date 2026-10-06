@@ -12,6 +12,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   isFullscreen: () => ipcRenderer.invoke('isFullscreen'),
   onEnterFullscreen: (callback) => ipcRenderer.on('window-enter-full-screen', callback),
   onLeaveFullscreen: (callback) => ipcRenderer.on('window-leave-full-screen', callback),
+  restoreAndDrag: (screenX, screenY, clickRatioX) => ipcRenderer.invoke('restore-and-drag', screenX, screenY, clickRatioX),
+  moveWindowTo: (x, y) => ipcRenderer.send('move-window-to', x, y),
 
   // Envoi de données (depuis Tracker/Audio vers Grapher)
   openGrapherWindow: (data) => ipcRenderer.send('openGrapherWindow', data),

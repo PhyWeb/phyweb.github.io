@@ -74,9 +74,99 @@ async function electronSetup(){
         $("#window-restore-button").parentNode.classList.remove("is-hidden");
       });
 
-      window.electronAPI.onUnmaximized(() => {
-        $("#window-maximize-button").parentNode.classList.remove("is-hidden");
-        $("#window-restore-button").parentNode.classList.add("is-hidden");
+      window.electronAPI.onUnmaximized(async () => {
+        const isFullscreen = await window.electronAPI.isFullscreen();
+        if (!isFullscreen) {
+          $("#window-maximize-button").parentNode.classList.remove("is-hidden");
+          $("#window-restore-button").parentNode.classList.add("is-hidden");
+        }
+      });
+    }
+
+    if (window.electronAPI.onEnterFullscreen && window.electronAPI.onLeaveFullscreen) {
+      let isDraggingFullscreen = false;
+      let isManualDragging = false;
+      let startX = 0, startY = 0;
+      let dragOffsetX = null;
+      let dragOffsetY = 15; // approximate titlebar Y offset
+
+      const handleFullscreenDragStart = (e) => {
+        // Ignore clicks on buttons/links
+        if (e.target.closest('a, button, .navbar-item.window-control, .navbar-brand')) return;
+        startX = e.screenX;
+        startY = e.screenY;
+        isDraggingFullscreen = true;
+      };
+
+      const handleFullscreenDragMove = async (e) => {
+        if (isDraggingFullscreen) {
+          if (Math.abs(e.screenX - startX) > 5 || Math.abs(e.screenY - startY) > 5) {
+            isDraggingFullscreen = false;
+            isManualDragging = true;
+            const clickRatioX = e.clientX / window.innerWidth;
+            dragOffsetX = await window.electronAPI.restoreAndDrag(e.screenX, e.screenY, clickRatioX);
+          }
+        }
+        if (isManualDragging && dragOffsetX !== null) {
+          window.electronAPI.moveWindowTo(e.screenX - dragOffsetX, e.screenY - dragOffsetY);
+        }
+      };
+
+      const handleFullscreenDragEnd = async () => {
+        isDraggingFullscreen = false;
+        if (isManualDragging) {
+          isManualDragging = false;
+          dragOffsetX = null;
+          
+          const isFull = await window.electronAPI.isFullscreen();
+          if (!isFull) {
+            const navbar = document.querySelector(".navbar");
+            if (navbar) {
+              navbar.style.webkitAppRegion = "drag";
+              window.removeEventListener("mousemove", handleFullscreenDragMove);
+              window.removeEventListener("mouseup", handleFullscreenDragEnd);
+            }
+          }
+        }
+      };
+
+      const handleFullscreenDoubleClick = (e) => {
+        if (e.target.closest('a, button, .navbar-item.window-control, .navbar-brand')) return;
+        window.electronAPI.setFullscreen(false);
+      };
+
+      window.electronAPI.onEnterFullscreen(() => {
+        $("#window-maximize-button").parentNode.classList.add("is-hidden");
+        $("#window-restore-button").parentNode.classList.remove("is-hidden");
+        const navbar = document.querySelector(".navbar");
+        if (navbar) {
+          navbar.style.webkitAppRegion = "no-drag";
+          navbar.addEventListener("mousedown", handleFullscreenDragStart);
+          navbar.addEventListener("dblclick", handleFullscreenDoubleClick);
+          window.addEventListener("mousemove", handleFullscreenDragMove);
+          window.addEventListener("mouseup", handleFullscreenDragEnd);
+        }
+      });
+
+      window.electronAPI.onLeaveFullscreen(async () => {
+        const isMax = await window.electronAPI.isMaximized();
+        if (isMax) {
+          $("#window-maximize-button").parentNode.classList.add("is-hidden");
+          $("#window-restore-button").parentNode.classList.remove("is-hidden");
+        } else {
+          $("#window-maximize-button").parentNode.classList.remove("is-hidden");
+          $("#window-restore-button").parentNode.classList.add("is-hidden");
+        }
+        const navbar = document.querySelector(".navbar");
+        if (navbar) {
+          navbar.removeEventListener("mousedown", handleFullscreenDragStart);
+          navbar.removeEventListener("dblclick", handleFullscreenDoubleClick);
+          if (!isManualDragging) {
+            navbar.style.webkitAppRegion = "drag";
+            window.removeEventListener("mousemove", handleFullscreenDragMove);
+            window.removeEventListener("mouseup", handleFullscreenDragEnd);
+          }
+        }
       });
     }
   }
