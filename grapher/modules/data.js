@@ -701,15 +701,23 @@ class Model {
 
     const f = this._getFunction();
 
+    // Filtrer les points pour s'assurer qu'il n'y a pas de valeurs nulles ou indéfinies
+    const validPoints = points.filter(p => p[0] !== null && p[1] !== null && isFinite(p[0]) && isFinite(p[1]));
+
+    if (validPoints.length < 2) {
+      this.rSquared = 0;
+      return;
+    }
+
     // 1. Calculer la moyenne des valeurs y réelles
-    const meanY = points.reduce((sum, point) => sum + point[1], 0) / points.length;
+    const meanY = validPoints.reduce((sum, point) => sum + point[1], 0) / validPoints.length;
 
     let totalSumOfSquares = 0;
     let residualSumOfSquares = 0;
 
-    for (let i = 0; i < points.length; i++) {
-      const xVal = points[i][0];
-      const yVal = points[i][1];
+    for (let i = 0; i < validPoints.length; i++) {
+      const xVal = validPoints[i][0];
+      const yVal = validPoints[i][1];
       
       // Valeur prédite par le modèle
       const predictedY = f(this.parameters.map(p => p.value), xVal);
