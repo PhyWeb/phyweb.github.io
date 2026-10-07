@@ -4,8 +4,6 @@
 
     - Deplacer le a propos dans le menu ?
 
-    - Toujours un carré foncé quand la barre win 11 est claire ?
-
     - On defullscreen pas quand on essai de drag la fenetre
 
 # ELECTRON
