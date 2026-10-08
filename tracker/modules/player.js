@@ -575,6 +575,11 @@ export default class PLAYER {
   }
 
   onClick = (ev) => {
+    // Ne pas autoriser le pointage pendant la lecture
+    if (this.pauseFlag === false) {
+      return;
+    }
+
     const maxPoints = (this.measurement.series.length - 1) / 2;
     if (this.currentPoint >= maxPoints) {
       this.currentPoint = 0;
