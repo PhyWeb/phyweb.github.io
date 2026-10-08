@@ -485,8 +485,10 @@ export default class EXTRACTOR {
     if ($("#duration-size-input").checked) {
       const rawStart = parseFloat($("#start-size-input").value);
       const rawEnd = parseFloat($("#end-size-input").value);
-      const start = Math.min(isNaN(rawStart) ? 0 : rawStart, isNaN(rawEnd) ? 0 : rawEnd);
-      const end = Math.max(isNaN(rawStart) ? 0 : rawStart, isNaN(rawEnd) ? 0 : rawEnd);
+      const s = isNaN(rawStart) ? 0 : rawStart;
+      const e = isNaN(rawEnd) ? (this.duration || 0) : rawEnd;
+      const start = Math.min(s, e);
+      const end = Math.max(s, e);
       duration = Math.max(0, end - start);
     }
     let nb = Math.max(1, duration * fps);
@@ -517,8 +519,10 @@ export default class EXTRACTOR {
 
     const rawStart = durationReduction ? parseFloat($("#start-size-input").value) : 0;
     const rawEnd = durationReduction ? parseFloat($("#end-size-input").value) : Infinity;
-    const startTime = Math.min(isNaN(rawStart) ? 0 : rawStart, isNaN(rawEnd) ? Infinity : rawEnd);
-    const endTime = Math.max(isNaN(rawStart) ? 0 : rawStart, isNaN(rawEnd) ? Infinity : rawEnd);
+    const s = isNaN(rawStart) ? 0 : rawStart;
+    const e = isNaN(rawEnd) ? (this.duration || Infinity) : rawEnd;
+    const startTime = Math.min(s, e);
+    const endTime = Math.max(s, e);
 
     const defaultDuration = (this.duration || 0) * 1000;
     if (this.demuxerType === 'mp4box' && this.track?.movie_duration && this.track?.movie_timescale) {
