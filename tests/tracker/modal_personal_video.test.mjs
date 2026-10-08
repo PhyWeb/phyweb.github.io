@@ -282,7 +282,7 @@ describe('Tracker - Fermeture des modales lors du chargement d\'une vidéo perso
     const extractor = new EXTRACTOR();
     mockElements['#new-modal'].classList.remove('is-active');
 
-    extractor.onReady({ videoTracks: [] });
+    extractor._onReadyMP4Box({ videoTracks: [] });
 
     assert.equal(mockElements['#new-modal'].classList.contains('is-active'), true, '#new-modal doit être réouvert si aucune piste vidéo');
   });

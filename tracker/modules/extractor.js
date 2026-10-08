@@ -311,8 +311,8 @@ export default class EXTRACTOR {
     }
 
     if (this.rotation === 90 || this.rotation === 270) {
-      this.width = Math.min(this.track.video.width, this.track.video.height);
-      this.height = Math.max(this.track.video.width, this.track.video.height);
+      this.width = this.track.video.height;
+      this.height = this.track.video.width;
     } else {
       this.width = this.track.video.width;
       this.height = this.track.video.height;
@@ -410,8 +410,8 @@ export default class EXTRACTOR {
       this.rotation = (this.rotation % 360 + 360) % 360;
 
       if (this.rotation === 90 || this.rotation === 270) {
-        this.width = Math.min(videoStream.width, videoStream.height);
-        this.height = Math.max(videoStream.width, videoStream.height);
+        this.width = videoStream.height;
+        this.height = videoStream.width;
       } else {
         this.width = videoStream.width;
         this.height = videoStream.height;

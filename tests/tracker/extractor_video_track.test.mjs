@@ -74,7 +74,7 @@ describe('Tracker - Robustesse de la détection de piste vidéo dans EXTRACTOR.o
     mockElements['#new-modal'].classList.remove('is-active');
 
     assert.doesNotThrow(() => {
-      extractor.onReady(null);
+      extractor._onReadyMP4Box(null);
     });
 
     assert.equal(extractor.abortFlag, true, 'abortFlag doit être activé pour stopper readBlock');
@@ -88,7 +88,7 @@ describe('Tracker - Robustesse de la détection de piste vidéo dans EXTRACTOR.o
     mockElements['#new-modal'].classList.remove('is-active');
 
     assert.doesNotThrow(() => {
-      extractor.onReady({ videoTracks: [] });
+      extractor._onReadyMP4Box({ videoTracks: [] });
     });
 
     assert.equal(extractor.abortFlag, true, 'abortFlag doit être activé');
@@ -113,7 +113,7 @@ describe('Tracker - Robustesse de la détection de piste vidéo dans EXTRACTOR.o
     };
 
     assert.doesNotThrow(() => {
-      extractor.onReady(corruptedInfo);
+      extractor._onReadyMP4Box(corruptedInfo);
     });
 
     assert.equal(extractor.abortFlag, true, 'abortFlag doit être positionné à true');
@@ -135,7 +135,7 @@ describe('Tracker - Robustesse de la détection de piste vidéo dans EXTRACTOR.o
     };
 
     assert.doesNotThrow(() => {
-      extractor.onReady(invalidDimensionsInfo);
+      extractor._onReadyMP4Box(invalidDimensionsInfo);
     });
 
     assert.equal(extractor.abortFlag, true, 'abortFlag doit être activé en cas de dimensions nulles');
@@ -165,7 +165,7 @@ describe('Tracker - Robustesse de la détection de piste vidéo dans EXTRACTOR.o
     };
 
     assert.doesNotThrow(() => {
-      extractor.onReady(validVideoCorruptedTimescale);
+      extractor._onReadyMP4Box(validVideoCorruptedTimescale);
     });
 
     assert.equal(extractor.height, 480);
@@ -207,7 +207,7 @@ describe('Tracker - Robustesse de la détection de piste vidéo dans EXTRACTOR.o
       ]
     };
 
-    extractor.onReady(nominalInfo);
+    extractor._onReadyMP4Box(nominalInfo);
 
     assert.equal(extractor.height, 1080);
     assert.equal(extractor.width, 1920);
@@ -217,5 +217,38 @@ describe('Tracker - Robustesse de la détection de piste vidéo dans EXTRACTOR.o
     assert.equal(extractor.config.codedHeight, 1080);
     assert.equal(extractor.config.codedWidth, 1920);
     assert.equal(extractCalled, true, 'extract doit être appelé si la taille est inférieure au seuil');
+  });
+  it('doit inverser width et height si la rotation est de 90', () => {
+    const extractor = new EXTRACTOR();
+    extractor.extract = () => {};
+    extractor.mp4boxfile = { getTrackById: () => ({ mdia: { minf: { stbl: { stsd: { entries: [] } } } } }) };
+    const info = {
+      videoTracks: [{
+        id: 1, codec: 'avc1', nb_samples: 60, movie_duration: 2000, movie_timescale: 1000,
+        video: { width: 1920, height: 1080 },
+        matrix: [0, 1, 0, 0, 0, 0, 0, 0, 0] // 90 degrees
+      }]
+    };
+    extractor._onReadyMP4Box(info);
+    assert.equal(extractor.rotation, 90);
+    assert.equal(extractor.width, 1080);
+    assert.equal(extractor.height, 1920);
+  });
+
+  it('doit inverser width et height si la rotation est de 270 avec une vidéo au format portrait à l origine', () => {
+    const extractor = new EXTRACTOR();
+    extractor.extract = () => {};
+    extractor.mp4boxfile = { getTrackById: () => ({ mdia: { minf: { stbl: { stsd: { entries: [] } } } } }) };
+    const info = {
+      videoTracks: [{
+        id: 1, codec: 'avc1', nb_samples: 60, movie_duration: 2000, movie_timescale: 1000,
+        video: { width: 1080, height: 1920 }, // Portrait
+        matrix: [0, -1, 0, 0, 0, 0, 0, 0, 0] // 270 degrees
+      }]
+    };
+    extractor._onReadyMP4Box(info);
+    assert.equal(extractor.rotation, 270);
+    assert.equal(extractor.width, 1920, 'La largeur cible doit devenir 1920 (ancienne hauteur)');
+    assert.equal(extractor.height, 1080, 'La hauteur cible doit devenir 1080 (ancienne largeur)');
   });
 });
