@@ -138,7 +138,10 @@ export default class App {
     this.data.models.forEach(model => this.uiManager.updateModelPanel(model));
     
     // Avertir si le nom est utilisé dans les calculs
-    if (this.editor.getValue().includes(oldTitle)) {
+    // Utilisation d'une RegExp avec limites de mots (\b) pour éviter les faux positifs (ex: "x" dans "exp")
+    const escapedOldTitle = oldTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`\\b${escapedOldTitle}\\b`);
+    if (regex.test(this.editor.getValue())) {
       showToast(`Attention : "${oldTitle}" est utilisé dans l'éditeur de calculs. Mettez à jour vos formules.`, "is-warning", 6000);
     }
   }
