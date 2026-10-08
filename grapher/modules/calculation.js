@@ -114,7 +114,12 @@ export default class Calculation {
 
       // Signature pour le cas: Array ^ Nombre
       'Array | Matrix, any': function(base, exponent) {
-        return mathInstance.map(base, (b) => (b === null) ? null : originalPow(b, exponent));
+        return mathInstance.map(base, (b) => {
+          if (b === null) return null;
+          // Gère le cas des bases négatives avec exposants non-entiers qui donnerait un résultat complexe
+          if (b < 0 && exponent % 1 !== 0) return null;
+          return originalPow(b, exponent);
+        });
       },
       
       // Signature de base pour le cas: Nombre ^ Nombre

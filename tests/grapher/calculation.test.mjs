@@ -237,6 +237,35 @@ describe('Calculation Module', () => {
       assert.equal(result[3], 3);
     });
   });
+
+  describe('Opérations mathématiques (puissances, racines, null-safety)', () => {
+    it('doit renvoyer null pour les élévations aux puissances fractionnaires sur des valeurs négatives (Array ^ scalaire)', () => {
+      // Vérifie que x^0.5 ou x^0.2 retourne null pour x < 0 et non un objet complexe
+      const initialScope = {
+        x: [-4, -1, 0, 1, 4]
+      };
+      
+      const formulas = [
+        { variableName: 'y', expression: 'x^0.5', unit: '' },
+        { variableName: 'z', expression: 'x^0.2', unit: '' }
+      ];
+
+      const { results, errors } = calc.evaluateBlock(formulas, initialScope);
+      assert.equal(errors.length, 0);
+      assert.equal(results.length, 2);
+
+      const byName = Object.fromEntries(results.map(r => [r.variableName, r.data]));
+      
+      // y = [-4^0.5, -1^0.5, 0^0.5, 1^0.5, 4^0.5] -> [null, null, 0, 1, 2]
+      assert.deepEqual(byName.y, [null, null, 0, 1, 2]);
+      
+      // z = [-4^0.2, -1^0.2, 0^0.2, 1^0.2, 4^0.2]
+      assert.equal(byName.z[0], null);
+      assert.equal(byName.z[1], null);
+      assert.equal(byName.z[2], 0);
+      assert.equal(byName.z[3], 1);
+    });
+  });
 });
 
 
