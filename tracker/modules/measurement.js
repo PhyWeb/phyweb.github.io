@@ -315,9 +315,12 @@ export default class MEASUREMENT {
 
       row.id = "row" + i;
       row.onclick = (e) =>{
-        this.selectRow(e.currentTarget.id.replace("row",""));
+        const rowIndex = parseInt(e.currentTarget.id.replace("row",""));
+        if (rowIndex < this.originFrame) return;
+
+        this.selectRow(rowIndex);
         if(activePlayer){
-          activePlayer.setFrame(parseInt(e.currentTarget.id.replace("row","")));
+          activePlayer.setFrame(rowIndex);
         }
       }
 
