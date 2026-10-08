@@ -119,6 +119,36 @@ describe('Calculation Module', () => {
       assert.match(errors[0].error, /La variable "FONCTION_INCONNUE" n'est pas définie/);
       assert.match(errors[1].error, /La variable "variableInconnue" n'est pas définie/);
     });
+
+    it('doit évaluer un paramètre scalaire correctement (ex: m = 42)', () => {
+      const { results, errors } = calc.evaluateBlock([{ variableName: 'p', expression: '42', unit: 'm' }], {});
+      assert.equal(errors.length, 0);
+      assert.equal(results.length, 1);
+      assert.equal(results[0].type, 'parameter');
+      assert.equal(results[0].data.value, 42);
+    });
+
+    it('doit évaluer une courbe valide depuis un tableau ou une matrice', () => {
+      const { results, errors } = calc.evaluateBlock([{ variableName: 'c', expression: '[1, 2, 3]', unit: 's' }], {});
+      assert.equal(errors.length, 0);
+      assert.equal(results[0].type, 'curve');
+      assert.deepEqual(results[0].data, [1, 2, 3]);
+    });
+
+    it('doit rejeter les chaînes de caractères et les considérer comme erreurs d\'évaluation (ex: c = "hello")', () => {
+      const { results, errors } = calc.evaluateBlock([{ variableName: 's', expression: '"hello"', unit: '' }], {});
+      assert.equal(results.length, 0);
+      assert.equal(errors.length, 1);
+      assert.equal(errors[0].variableName, 's');
+      assert.match(errors[0].error, /mathématique valide/);
+    });
+
+    it('doit gérer proprement une formule renvoyant un paramètre null (ex: racine carrée d\'un nombre négatif)', () => {
+      const { results, errors } = calc.evaluateBlock([{ variableName: 'n', expression: 'sqrt(-1)', unit: '' }], {});
+      assert.equal(errors.length, 0);
+      assert.equal(results[0].type, 'parameter');
+      assert.equal(results[0].data.value, null);
+    });
   });
 
   describe('diff() & numericalDerivative() - Robustesse, pas variable et constantes', () => {

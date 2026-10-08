@@ -377,7 +377,12 @@ evaluateBlock(formulas, initialScope) {
 
         const resultData = this.evaluate(cleanExpression, scope);
         
-        const isParameter = typeof resultData === 'number';
+        const isParameter = typeof resultData === 'number' || resultData === null;
+        const isCurve = Array.isArray(resultData) || (resultData !== null && typeof resultData.toArray === 'function');
+        
+        if (!isParameter && !isCurve) {
+          throw new Error(`Le résultat n'est pas d'un type mathématique valide (texte ou objet non pris en charge).`);
+        }
         
         if (isParameter) {
           scope[calc.variableName] = resultData;
