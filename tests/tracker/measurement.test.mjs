@@ -425,6 +425,7 @@ describe('Tracker Unités & Étalonnage (isCalibrated et synchronisation)', () =
   const createMockElement = (tag = 'div') => ({
     tagName: tag,
     innerHTML: '',
+    style: {},
     children: [],
     classList: { add: () => {}, remove: () => {} },
     appendChild(child) {
@@ -1106,24 +1107,24 @@ describe('Tracker - Fonction d\'arrondi sécurisée et absence de pollution du p
       measurement.changeValue(1, 0, 0.5, 0.4);
       measurement.updateRow(1);
 
-      const tEl = elementsById.get('t1');
-      const xEl = elementsById.get('x11');
-      const yEl = elementsById.get('y11');
+      const tEl = measurement.labelsCache[1].t;
+      const xEl = measurement.labelsCache[1].x[1];
+      const yEl = measurement.labelsCache[1].y[1];
 
-      assert.equal(tEl.innerHTML, 0.033);
-      assert.equal(typeof xEl.innerHTML, 'number');
-      assert.equal(typeof yEl.innerHTML, 'number');
+      assert.equal(tEl.textContent, 0.033);
+      assert.equal(typeof xEl.textContent, 'number');
+      assert.equal(typeof yEl.textContent, 'number');
     });
 
     it('doit laisser les cellules vides pour les points non saisis sans lever TypeError', () => {
       // Image 0 non pointée
       measurement.updateRow(0);
 
-      const xEl = elementsById.get('x10');
-      const yEl = elementsById.get('y10');
+      const xEl = measurement.labelsCache[0].x[1];
+      const yEl = measurement.labelsCache[0].y[1];
 
-      assert.equal(xEl.innerHTML, '');
-      assert.equal(yEl.innerHTML, '');
+      assert.equal(xEl.textContent, '');
+      assert.equal(yEl.textContent, '');
     });
 
     it('ne doit pas afficher "NaN" ni "Infinity" dans le tableau en cas de valeur corrompue', () => {
@@ -1131,15 +1132,15 @@ describe('Tracker - Fonction d\'arrondi sécurisée et absence de pollution du p
       measurement.series[0][1] = NaN;
       measurement.updateRow(1);
 
-      const tEl = elementsById.get('t1');
-      assert.equal(tEl.innerHTML, '', 'La cellule de temps doit être vide et non "NaN"');
+      const tEl = measurement.labelsCache[1].t;
+      assert.equal(tEl.textContent, '', 'La cellule de temps doit être vide et non "NaN"');
 
       // Point avec coordonnée produisant NaN
       measurement.series[1][1] = NaN;
       measurement.updateRow(1);
 
-      const xEl = elementsById.get('x11');
-      assert.equal(xEl.innerHTML, '', 'La cellule x doit être vide et non "NaN"');
+      const xEl = measurement.labelsCache[1].x[1];
+      assert.equal(xEl.textContent, '', 'La cellule x doit être vide et non "NaN"');
     });
   });
 });
@@ -1442,5 +1443,126 @@ describe('Export to RW3 (Regressi) - Robustesse et cas limites', () => {
   });
 });
 
+describe('Tracker - setPointPerFrame (Réduction destructive)', () => {
+  let measurement;
+  let fakePlayer;
+  const originalQSOverride = global.__querySelectorOverride;
+  const originalCreateElement = global.document.createElement;
 
+  let modalConfirmCallback = null;
+  let modalCancelCallback = null;
+  let modalCreated = false;
 
+  const createMockElement = () => ({
+    value: '1',
+    innerHTML: '',
+    style: {},
+    children: [],
+    classList: { add: () => {}, remove: () => {} },
+    appendChild: function(child) { this.children.push(child); },
+    addEventListener: function(type, cb) {
+      if (!this.listeners) this.listeners = {};
+      if (!this.listeners[type]) this.listeners[type] = [];
+      this.listeners[type].push(cb);
+    },
+    click: function() {
+      if (this.listeners && this.listeners['click']) {
+        this.listeners['click'].forEach(cb => cb());
+      }
+    }
+  });
+
+  beforeEach(() => {
+    measurement = new MEASUREMENT();
+    fakePlayer = { setFrame: () => {} };
+    modalConfirmCallback = null;
+    modalCancelCallback = null;
+    modalCreated = false;
+
+    global.__querySelectorOverride = () => createMockElement();
+    
+    // Intercept document.createElement to capture modal buttons
+    global.document.createElement = (tag) => {
+      const el = createMockElement();
+      el.tagName = tag;
+      
+      // Override className setter to detect buttons
+      Object.defineProperty(el, 'className', {
+        set: function(val) {
+          this._className = val;
+          if (val.includes('alert-modal')) {
+            modalCreated = true;
+          }
+          if (val.includes('button is-danger') || val === 'button is-primary') { // Confirm button
+            // Hook into click
+            const origAddEventListener = this.addEventListener.bind(this);
+            this.addEventListener = (type, cb) => {
+              if (type === 'click') modalConfirmCallback = cb;
+              origAddEventListener(type, cb);
+            };
+          }
+          if (val === 'button' && !val.includes('is-')) { // Cancel button
+            const origAddEventListener = this.addEventListener.bind(this);
+            this.addEventListener = (type, cb) => {
+              if (type === 'click') modalCancelCallback = cb;
+              origAddEventListener(type, cb);
+            };
+          }
+        },
+        get: function() {
+          return this._className;
+        }
+      });
+      return el;
+    };
+
+    const mockDecodedVideo = {
+      width: 1000, height: 1000, duration: 1000,
+      frames: [{}, {}], timestamps: [0.0, 0.033]
+    };
+    measurement.init(mockDecodedVideo, fakePlayer);
+  });
+
+  afterEach(() => {
+    global.document.createElement = originalCreateElement;
+    global.__querySelectorOverride = originalQSOverride;
+  });
+
+  it("doit demander confirmation avant de supprimer un pointage s'il contient des données et ne pas amputer si annulé", () => {
+    measurement.setPointPerFrame(2, fakePlayer);
+    measurement.changeValue(0, 1, 0.5, 0.5); // Donnée sur le 2ème objet (index 1)
+
+    measurement.setPointPerFrame(1, fakePlayer);
+    
+    assert.equal(modalCreated, true);
+    
+    // Simulate clicking cancel
+    if (modalCancelCallback) modalCancelCallback();
+    
+    assert.equal(measurement.series.length, 5, "La série ne doit pas être amputée si l'utilisateur annule");
+  });
+
+  it('ne doit pas demander confirmation si le pointage supprimé est vide et doit amputer', () => {
+    measurement.setPointPerFrame(2, fakePlayer);
+    // Aucune donnée ajoutée sur le 2ème objet
+
+    measurement.setPointPerFrame(1, fakePlayer);
+    
+    assert.equal(modalCreated, false);
+    assert.equal(measurement.series.length, 3, "La série doit être amputée directement");
+  });
+
+  it("doit amputer si l'utilisateur confirme la suppression de données existantes", () => {
+    measurement.setPointPerFrame(2, fakePlayer);
+    measurement.changeValue(0, 1, 0.5, 0.5); // Donnée sur le 2ème objet
+    
+    measurement.setPointPerFrame(1, fakePlayer);
+    
+    assert.equal(modalCreated, true);
+
+    // Simulate clicking confirm
+    if (modalConfirmCallback) modalConfirmCallback();
+    
+    assert.equal(measurement.series.length, 3, "La série doit être amputée après confirmation");
+  });
+});

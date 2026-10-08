@@ -1,4 +1,4 @@
-import {Serie, downloadFile, exportToPW, exportToCSV, exportToRW3, showToast, isNumber} from "../../common/common.js"
+import {Serie, downloadFile, exportToPW, exportToCSV, exportToRW3, showToast, isNumber, alertModal} from "../../common/common.js"
 
 const $ = document.querySelector.bind(document);
 
@@ -417,20 +417,61 @@ export default class MEASUREMENT {
         this.series.push(ySerie);
       }
     }
+    const applyPpfChange = () => {
+      if(ppf < currentPpf){
+        this.series.splice(ppf * 2 + 1);
+      }
+      
+      // Rename series
+      for(let i = 1; i < ppf + 1; i++){
+        this.series[(i-1)*2+1].title = this.series.length > 3 ? "x" + i : "x";
+        this.series[(i-1)*2+2].title = this.series.length > 3 ? "y" + i: "y";
+      }
+
+      // update the table
+      this.buildTable(this.player);
+      this.updateTable();
+    };
+
     // shrink the data if ppf decreases
     if(ppf < currentPpf){
-      this.series.splice(ppf * 2 + 1);
+      let hasData = false;
+      for(let i = ppf * 2 + 1; i < this.series.length; i++){
+        for(let j = 0; j < this.series[i].length; j++){
+          const val = this.series[i][j];
+          if(val !== "" && val !== null && val !== undefined){
+            hasData = true;
+            break;
+          }
+        }
+        if(hasData) break;
+      }
+
+      if(hasData){
+        alertModal({
+          type: "danger",
+          title: "Réduction des points",
+          body: "Vous allez réduire le nombre de points par image, ce qui effacera définitivement les données des objets excédentaires. Voulez-vous continuer ?",
+          confirm: {
+            label: "Continuer",
+            type: "danger",
+            cb: applyPpfChange
+          },
+          cancel: {
+            label: "Annuler",
+            cb: () => {
+              const ppfInput = document.querySelector("#ppf-input");
+              if(ppfInput){
+                ppfInput.value = currentPpf;
+              }
+            }
+          }
+        });
+        return;
+      }
     }
 
-    // Rename series
-    for(let i = 1; i < ppf + 1; i++){
-      this.series[(i-1)*2+1].title = this.series.length > 3 ? "x" + i : "x";
-      this.series[(i-1)*2+2].title = this.series.length > 3 ? "y" + i: "y";
-    }
-
-    // update the table
-    this.buildTable(this.player);
-    this.updateTable();
+    applyPpfChange();
   }
 
   setMaxDigits(_digits){
