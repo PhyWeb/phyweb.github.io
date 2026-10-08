@@ -17,7 +17,6 @@
     - Add vidéos
     - pan and zoom
     - add a button to stop the decode and still exploit the already decoded frames
-    - passer a ffmpeg.wasm
 
 # Grapher
     - possibilité d'avoir 2 axes y
