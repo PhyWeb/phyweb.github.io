@@ -20,7 +20,18 @@ function showInfo(id) {
         }
     }
     
-    setHTML('info-formule', data.formule); setHTML('info-propPhy', data.propPhy);
+    setHTML('info-formule', data.formule);
+    const ionContainer = document.getElementById('info-ion-container');
+    if (ionContainer) {
+        if (data.ion) {
+            ionContainer.style.display = "inline-block";
+            setHTML('info-ion', data.ion);
+        } else {
+            ionContainer.style.display = "none";
+            setHTML('info-ion', "");
+        }
+    }
+    setHTML('info-propPhy', data.propPhy);
     setHTML('info-propChi', data.propChi); setHTML('info-composes', data.composes);
 }
 
@@ -123,7 +134,10 @@ const infoPanelTemplate = `
             </div>
             <div id="info-z-container" class="info-item mb-2" style="display: none;"><span class="has-text-weight-bold is-size-7 mr-2">Nb. protons (Numéro atomique) :</span><span id="info-z" class="is-size-6 has-text-danger has-text-weight-bold"></span></div>
             <div class="info-item mb-2"><span class="has-text-weight-bold is-size-7 mr-2">Masse atomique (H=1) :</span><span id="info-masse" class="is-size-7"></span></div>
-            <div class="info-item mb-2"><span class="has-text-weight-bold is-size-7 mr-2">Formule corps simple :</span><span id="info-formule" class="has-text-info has-text-weight-bold is-size-7"></span></div>
+            <div class="info-item mb-2 is-flex is-justify-content-space-between is-align-items-baseline">
+                <div><span class="has-text-weight-bold is-size-7 mr-1">Formule :</span><span id="info-formule" class="has-text-info has-text-weight-bold is-size-7"></span></div>
+                <div id="info-ion-container" style="display: none;"><span class="has-text-weight-bold is-size-7 mr-1">Ion formé :</span><span id="info-ion" class="has-text-danger has-text-weight-bold is-size-7"></span></div>
+            </div>
             <div class="info-item mb-2"><span class="has-text-weight-bold is-size-7 is-block">Propriétés Physiques :</span><span id="info-propPhy" class="is-size-7 is-block pl-2"></span></div>
             <div class="info-item mb-2"><span class="has-text-weight-bold is-size-7 is-block">Propriétés Chimiques :</span><span id="info-propChi" class="is-size-7 is-block pl-2"></span></div>
             <div class="info-item"><span class="has-text-weight-bold is-size-7 is-block">Composés :</span><span id="info-composes" class="is-size-7 is-block pl-2"></span></div>
@@ -212,7 +226,7 @@ const STRUCTURE_TP = {
             type: "game", title: "Recherche des familles",
             html: `<div class="box content consigne-box">
                 <p>Vous devez maintenant étudier attentivement les fiches pour essayer de constituer des familles d'éléments à partir de leurs ressemblances :</p>
-                <ul><li>Observez les propriétés physiques et chimiques.</li><li>Observez les formules des corps simples et composés.</li></ul>
+                <ul><li>Observez les propriétés physiques et chimiques.</li><li>Observez les formules des corps simples, des composés et les ions formés.</li></ul>
             </div>
             <div class="columns">
                 <div class="column">
@@ -763,9 +777,9 @@ const STRUCTURE_TP = {
                 const pool = document.getElementById('card-pool');
                 const updates = [
                     { id: "Sb", nom: "ANTIMOINE", masse: "122", formule: "Sb", propPhy: "* Solide cassant", propChi: "* Dérivés toxiques", composes: "SbH<sub>3</sub>&nbsp;&nbsp;Sb<sub>2</sub>O<sub>5</sub>" },
-                    { id: "Te", nom: "TELLURE", masse: "128", formule: "Te", propPhy: "* Solide cristallin", propChi: "* Brûle dans le dioxygène", composes: "H<sub>2</sub>Te&nbsp;&nbsp;TeO<sub>2</sub>" },
-                    { id: "I", nom: "IODE", masse: "127", formule: "I<sub>2</sub>", propPhy: "* Vapeurs violettes", propChi: "* Réagit avec les métaux", composes: "NaI&nbsp;&nbsp;HI" },
-                    { id: "Se", nom: "SELENIUM", masse: "79,0", formule: "Se", propPhy: "* Photoconducteur", propChi: "* Dérivés très toxiques", composes: "H<sub>2</sub>Se&nbsp;&nbsp;SeO<sub>2</sub>" }
+                    { id: "Te", nom: "TELLURE", masse: "128", formule: "Te", ion: "Te<sup>2-</sup>", propPhy: "* Solide cristallin", propChi: "* Brûle dans le dioxygène", composes: "H<sub>2</sub>Te&nbsp;&nbsp;TeO<sub>2</sub>" },
+                    { id: "I", nom: "IODE", masse: "127", formule: "I<sub>2</sub>", ion: "I<sup>-</sup>", propPhy: "* Vapeurs violettes", propChi: "* Réagit avec les métaux", composes: "NaI&nbsp;&nbsp;HI" },
+                    { id: "Se", nom: "SELENIUM", masse: "79,0", formule: "Se", ion: "Se<sup>2-</sup>", propPhy: "* Photoconducteur", propChi: "* Dérivés très toxiques", composes: "H<sub>2</sub>Se&nbsp;&nbsp;SeO<sub>2</sub>" }
                 ];
                 updates.forEach(u => { const idx = elementsData.findIndex(e=>e.id===u.id); if(idx!==-1) elementsData[idx]=u; else elementsData.push(u); });
                 ['As', 'Se', 'Br'].forEach(id => { const s = document.getElementById('slot-'+id); const d = elementsData.find(e=>e.id===id); if(d&&s){ const c = createCard(d, false); c.style.margin="0"; s.appendChild(c); }});

@@ -123,6 +123,20 @@ h2 { margin: 10px 0; font-size: 1.5rem; }
 /* Couleurs spécifiques demandées pour les propriétés */
 #info-propPhy { color: var(--prop-phy-color); }
 #info-propChi { color: var(--prop-chi-color); }
+#info-ion { color: var(--prop-chi-color); }
+
+/* Normalisation sup/sub pour préserver la hauteur de ligne */
+sup, sub {
+    line-height: 0;
+    vertical-align: baseline;
+    position: relative;
+}
+sup {
+    top: -0.4em;
+}
+sub {
+    bottom: -0.25em;
+}
 
 /* --- ZONES DE JEU --- */
 .game-area { flex: 1; min-width: 350px; display: flex; flex-direction: column;}
@@ -489,7 +503,7 @@ body {
   }
 }
 
-/* --- Am�liorations --- */
+/* --- Améliorations --- */
 @keyframes feedback-pop {
     0% { transform: scale(0.98); opacity: 0.5; }
     50% { transform: scale(1.02); opacity: 1; }

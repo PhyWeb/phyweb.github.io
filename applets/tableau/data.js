@@ -4,7 +4,7 @@ const elementsData = [
     // --- Éléments existants ---
     { 
         id: "Al", nom: "ALUMINIUM", masse: "27,0", famille: "3", pos: 18,
-        formule: "Al", 
+        formule: "Al", ion: "Al<sup>3+</sup>",
         composes: "AlCl<sub>3</sub>&nbsp;&nbsp;&nbsp;&nbsp;Al<sub>2</sub>O<sub>3</sub>", 
         propPhy: "* Métal blanc<br/>* Bon conducteur de la chaleur et de l'électricité", 
         propChi: "* S'oxyde à l'air<br/>* Réagit avec le dichlore" 
@@ -25,14 +25,14 @@ const elementsData = [
     },
     { 
         id: "Be", nom: "BERYLLIUM", masse: "9,0", famille: "2", pos: 9,
-        formule: "Be", 
+        formule: "Be", ion: "Be<sup>2+</sup>",
         composes: "BeO&nbsp;&nbsp;&nbsp;&nbsp;BeCl<sub>2</sub>", 
         propPhy: "* Métal blanc brillant<br/>* Peu dense", 
         propChi: "* Brûle dans l'air avec un phénomène lumineux intense" 
     },
     { 
         id: "Br", nom: "BROME", masse: "79,9", famille: "7", pos: 30,
-        formule: "Br<sub>2</sub>", 
+        formule: "Br<sub>2</sub>", ion: "Br<sup>-</sup>",
         composes: "NaBr&nbsp;&nbsp;&nbsp;&nbsp;HBr", 
         propPhy: "* Liquide volatil de couleur rouge sombre", 
         propChi: "* Réagit avec le dihydrogène<br/>* Réagit vivement avec Na, Ca, Al..." 
@@ -46,49 +46,49 @@ const elementsData = [
     },
     { 
         id: "Ca", nom: "CALCIUM", masse: "40,1", famille: "2", pos: 25,
-        formule: "Ca", 
+        formule: "Ca", ion: "Ca<sup>2+</sup>",
         composes: "CaO&nbsp;&nbsp;&nbsp;&nbsp;CaCl<sub>2</sub>", 
         propPhy: "* Métal blanc brillant<br/>* Peu dense", 
         propChi: "* A chaud, s'enflamme dans le dioxygène<br/>* Réagit avec le dichlore" 
     },
     { 
         id: "Cl", nom: "CHLORE", masse: "35,5", famille: "7", pos: 22,
-        formule: "Cl<sub>2</sub>", 
+        formule: "Cl<sub>2</sub>", ion: "Cl<sup>-</sup>",
         composes: "NaCl&nbsp;&nbsp;&nbsp;&nbsp;HCl", 
         propPhy: "* Gaz verdâtre, peu soluble dans l'eau", 
         propChi: "* Réagit violemment avec le dihydrogène<br/>* Réagit vivement avec les métaux Na, Ca, Al..." 
     },
     { 
         id: "F",  nom: "FLUOR", masse: "19,0", famille: "7", pos: 14,
-        formule: "F<sub>2</sub>", 
+        formule: "F<sub>2</sub>", ion: "F<sup>-</sup>",
         composes: "NaF&nbsp;&nbsp;&nbsp;&nbsp;HF", 
         propPhy: "* Gaz jaune moins dense que l'air", 
         propChi: "* Réagit avec le dihydrogène<br/>* Réagit avec tous les métaux sauf l'or et le platine" 
     },
     { 
         id: "H",  nom: "HYDROGENE", masse: "1,0", famille: "1", pos: 0,
-        formule: "H<sub>2</sub>", 
+        formule: "H<sub>2</sub>", ion: "H<sup>+</sup>",
         composes: "HCl&nbsp;&nbsp;&nbsp;&nbsp;H<sub>2</sub>O", 
         propPhy: "* Le plus léger des gaz, incolore et inodore", 
         propChi: "* Peut réagir de façon explosive avec le dioxygène<br/>* Réagit avec le dichlore, le soufre, le carbone..." 
     },
     { 
         id: "K",  nom: "POTASSIUM", masse: "39,1", famille: "1", pos: 24,
-        formule: "K", 
+        formule: "K", ion: "K<sup>+</sup>",
         composes: "KCl&nbsp;&nbsp;&nbsp;&nbsp;K<sub>2</sub>O", 
         propPhy: "* Métal argenté mou comme la cire à température ambiante<br/>* Peu dense", 
         propChi: "* S'oxyde rapidement à l'air<br/>* Réagit violemment avec l'eau" 
     },
     { 
         id: "Li", nom: "LITHIUM", masse: "6,9", famille: "1", pos: 8,
-        formule: "Li", 
+        formule: "Li", ion: "Li<sup>+</sup>",
         composes: "LiCl&nbsp;&nbsp;&nbsp;&nbsp;Li<sub>2</sub>O", 
         propPhy: "* Métal blanc argenté mou comme le beurre<br/>* Peu dense", 
         propChi: "* Réagit violemment avec l'eau<br/>* Réagit avec le dichlore" 
     },
     { 
         id: "Mg", nom: "MAGNESIUM", masse: "24,3", famille: "2", pos: 17,
-        formule: "Mg", 
+        formule: "Mg", ion: "Mg<sup>2+</sup>",
         composes: "MgO&nbsp;&nbsp;&nbsp;&nbsp;MgCl<sub>2</sub>", 
         propPhy: "* Métal blanc argenté, malléable et ductile", 
         propChi: "* Brûle dans le dioxygène avec un vif éclat<br/>* Réagit avec le dichlore" 
@@ -102,14 +102,14 @@ const elementsData = [
     },
     { 
         id: "Na", nom: "SODIUM", masse: "23,0", famille: "1", pos: 16,
-        formule: "Na", 
+        formule: "Na", ion: "Na<sup>+</sup>",
         composes: "NaCl&nbsp;&nbsp;&nbsp;&nbsp;Na<sub>2</sub>O", 
         propPhy: "* Métal blanc argenté, mou <br/>* Peu dense", 
         propChi: "* S'oxyde rapidement à l'air<br/>* Réagit violemment avec l'eau<br/>* Réagit avec le dichlore" 
     },
     { 
         id: "O",  nom: "OXYGENE", masse: "16,0", famille: "6", pos: 13,
-        formule: "O<sub>2</sub>", 
+        formule: "O<sub>2</sub>", ion: "O<sup>2-</sup>",
         composes: "H<sub>2</sub>O&nbsp;&nbsp;&nbsp;&nbsp;CaO", 
         propPhy: "* Gaz incolore et inodore<br/>* Peu soluble dans l'eau<br/>* Plus dense que l'air", 
         propChi: "* Se combine avec la plupart des corps simples pour former les \"oxydes\"" 
@@ -123,7 +123,7 @@ const elementsData = [
     },
     { 
         id: "S",  nom: "SOUFRE", masse: "32,1", famille: "6", pos: 21,
-        formule: "S<sub>8</sub>", 
+        formule: "S<sub>8</sub>", ion: "S<sup>2-</sup>",
         composes: "H<sub>2</sub>S&nbsp;&nbsp;&nbsp;&nbsp;SO<sub>2</sub>", 
         propPhy: "* Solide jaune, isolant électrique", 
         propChi: "* S'enflamme dans le dihydrogène (odeur d'oeuf pourri)<br/>* Brûle dans le dioxygène (gaz d'odeur piquante)" 
@@ -144,19 +144,19 @@ const elementsData = [
         composes: "TiO<sub>2</sub>&nbsp;&nbsp;&nbsp;&nbsp;TiH<sub>2</sub>&nbsp;&nbsp;&nbsp;&nbsp;TiCl<sub>3</sub>"
     },
     {
-        id: "Cu", nom: "CUIVRE", masse: "63,5", formule: "Cu",
+        id: "Cu", nom: "CUIVRE", masse: "63,5", formule: "Cu", ion: "Cu<sup>2+</sup>",
         propPhy: "* Métal de couleur caractéristique (rouge)<br/>* Malléable, ductile<br/>* Point de fusion peu élevé",
         propChi: "* Nombreux composés d'intérêt ",
         composes: "CuO&nbsp;&nbsp;&nbsp;&nbsp;CuS&nbsp;&nbsp;&nbsp;&nbsp;CuSO<sub>4</sub>"
     },
     {
-        id: "Zn", nom: "ZINC", masse: "65,4", formule: "Zn",
+        id: "Zn", nom: "ZINC", masse: "65,4", formule: "Zn", ion: "Zn<sup>2+</sup>",
         propPhy: "* Métal gris<br/>* Nombreux alliages intéressants",
         propChi: "* Nombreux composés d'intérêt ",
         composes: "ZnO&nbsp;&nbsp;&nbsp;&nbsp;ZnS&nbsp;&nbsp;&nbsp;&nbsp;ZnCO<sub>3</sub>"
     },
     {
-        id: "Se", nom: "SELENIUM", masse: "79,0", formule: "Se",
+        id: "Se", nom: "SELENIUM", masse: "79,0", formule: "Se", ion: "Se<sup>2-</sup>",
         propPhy: "* Photoconducteur (rendu conducteur sous un éclairage)",
         propChi: "* Dérivés très toxiques",
         composes: "H<sub>2</sub>Se&nbsp;&nbsp;&nbsp;&nbsp;SeO<sub>2</sub>"

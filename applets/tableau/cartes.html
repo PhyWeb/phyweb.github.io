@@ -73,6 +73,17 @@
         .info-content {
             padding-left: 3px;
         }
+        sup, sub {
+            line-height: 0;
+            vertical-align: baseline;
+            position: relative;
+        }
+        sup {
+            top: -0.4em;
+        }
+        sub {
+            bottom: -0.25em;
+        }
         
         @media print {
             @page {
@@ -97,24 +108,24 @@
 
     <script>
         const elementsData = [
-            { id: "Al", nom: "ALUMINIUM", masse: "27,0", formule: "Al", composes: "AlCl<sub>3</sub>&nbsp;&nbsp;Al<sub>2</sub>O<sub>3</sub>", propPhy: "Métal blanc<br/>Bon conducteur thermique", propChi: "S'oxyde à l'air<br/>Réagit avec le dichlore" },
+            { id: "Al", nom: "ALUMINIUM", masse: "27,0", formule: "Al", ion: "Al<sup>3+</sup>", composes: "AlCl<sub>3</sub>&nbsp;&nbsp;Al<sub>2</sub>O<sub>3</sub>", propPhy: "Métal blanc<br/>Bon conducteur thermique", propChi: "S'oxyde à l'air<br/>Réagit avec le dichlore" },
             { id: "As", nom: "ARSENIC", masse: "74,9", formule: "As", composes: "AsH<sub>3</sub>&nbsp;&nbsp;As<sub>2</sub>O<sub>5</sub>", propPhy: "Gris métallique, cassant", propChi: "Réagit avec le dichlore<br/>Poisons violents" },
             { id: "B",  nom: "BORE", masse: "10,8", formule: "B", composes: "BCl<sub>3</sub>&nbsp;&nbsp;B<sub>2</sub>O<sub>3</sub>", propPhy: "Solide noir, dur<br/>Semi-conducteur", propChi: "Brûle dans l'air à haute température" },
-            { id: "Be", nom: "BERYLLIUM", masse: "9,0", formule: "Be", composes: "BeO&nbsp;&nbsp;BeCl<sub>2</sub>", propPhy: "Métal blanc brillant<br/>Peu dense", propChi: "Brûle dans l'air (lumière intense)" },
-            { id: "Br", nom: "BROME", masse: "79,9", formule: "Br<sub>2</sub>", composes: "NaBr&nbsp;&nbsp;HBr", propPhy: "Liquide volatil rouge", propChi: "Réagit avec H<sub>2</sub> et vivement avec Na, Ca, Al..." },
+            { id: "Be", nom: "BERYLLIUM", masse: "9,0", formule: "Be", ion: "Be<sup>2+</sup>", composes: "BeO&nbsp;&nbsp;BeCl<sub>2</sub>", propPhy: "Métal blanc brillant<br/>Peu dense", propChi: "Brûle dans l'air (lumière intense)" },
+            { id: "Br", nom: "BROME", masse: "79,9", formule: "Br<sub>2</sub>", ion: "Br<sup>-</sup>", composes: "NaBr&nbsp;&nbsp;HBr", propPhy: "Liquide volatil rouge", propChi: "Réagit avec H<sub>2</sub> et vivement avec Na, Ca, Al..." },
             { id: "C",  nom: "CARBONE", masse: "12,0", formule: "C", composes: "CO<sub>2</sub>&nbsp;&nbsp;CH<sub>4</sub>", propPhy: "Graphite (noir)<br/>Diamant (dur)", propChi: "Brûle dans l'air pour donner CO ou CO<sub>2</sub>" },
-            { id: "Ca", nom: "CALCIUM", masse: "40,1", formule: "Ca", composes: "CaO&nbsp;&nbsp;CaCl<sub>2</sub>", propPhy: "Métal blanc brillant<br/>Peu dense", propChi: "S'enflamme à chaud dans O<sub>2</sub><br/>Réagit avec Cl<sub>2</sub>" },
-            { id: "Cl", nom: "CHLORE", masse: "35,5", formule: "Cl<sub>2</sub>", composes: "NaCl&nbsp;&nbsp;HCl", propPhy: "Gaz verdâtre, peu soluble", propChi: "Violemment réactif avec H<sub>2</sub> et métaux" },
-            { id: "F",  nom: "FLUOR", masse: "19,0", formule: "F<sub>2</sub>", composes: "NaF&nbsp;&nbsp;HF", propPhy: "Gaz jaune moins dense", propChi: "Réagit avec H<sub>2</sub> et la plupart des métaux" },
-            { id: "H",  nom: "HYDROGENE", masse: "1,0", formule: "H<sub>2</sub>", composes: "HCl&nbsp;&nbsp;H<sub>2</sub>O", propPhy: "Gaz incolore, inodore, léger", propChi: "Explosif avec O<sub>2</sub><br/>Réagit avec S, C, Cl<sub>2</sub>" },
-            { id: "K",  nom: "POTASSIUM", masse: "39,1", formule: "K", composes: "KCl&nbsp;&nbsp;K<sub>2</sub>O", propPhy: "Métal argenté mou<br/>Peu dense", propChi: "S'oxyde à l'air<br/>Réagit violemment avec l'eau" },
-            { id: "Li", nom: "LITHIUM", masse: "6,9", formule: "Li", composes: "LiCl&nbsp;&nbsp;Li<sub>2</sub>O", propPhy: "Métal blanc mou<br/>Peu dense", propChi: "Réagit violemment avec eau et Cl<sub>2</sub>" },
-            { id: "Mg", nom: "MAGNESIUM", masse: "24,3", formule: "Mg", composes: "MgO&nbsp;&nbsp;MgCl<sub>2</sub>", propPhy: "Métal blanc argenté, malléable", propChi: "Brûle dans O<sub>2</sub> avec un vif éclat" },
+            { id: "Ca", nom: "CALCIUM", masse: "40,1", formule: "Ca", ion: "Ca<sup>2+</sup>", composes: "CaO&nbsp;&nbsp;CaCl<sub>2</sub>", propPhy: "Métal blanc brillant<br/>Peu dense", propChi: "S'enflamme à chaud dans O<sub>2</sub><br/>Réagit avec Cl<sub>2</sub>" },
+            { id: "Cl", nom: "CHLORE", masse: "35,5", formule: "Cl<sub>2</sub>", ion: "Cl<sup>-</sup>", composes: "NaCl&nbsp;&nbsp;HCl", propPhy: "Gaz verdâtre, peu soluble", propChi: "Violemment réactif avec H<sub>2</sub> et métaux" },
+            { id: "F",  nom: "FLUOR", masse: "19,0", formule: "F<sub>2</sub>", ion: "F<sup>-</sup>", composes: "NaF&nbsp;&nbsp;HF", propPhy: "Gaz jaune moins dense", propChi: "Réagit avec H<sub>2</sub> et la plupart des métaux" },
+            { id: "H",  nom: "HYDROGENE", masse: "1,0", formule: "H<sub>2</sub>", ion: "H<sup>+</sup>", composes: "HCl&nbsp;&nbsp;H<sub>2</sub>O", propPhy: "Gaz incolore, inodore, léger", propChi: "Explosif avec O<sub>2</sub><br/>Réagit avec S, C, Cl<sub>2</sub>" },
+            { id: "K",  nom: "POTASSIUM", masse: "39,1", formule: "K", ion: "K<sup>+</sup>", composes: "KCl&nbsp;&nbsp;K<sub>2</sub>O", propPhy: "Métal argenté mou<br/>Peu dense", propChi: "S'oxyde à l'air<br/>Réagit violemment avec l'eau" },
+            { id: "Li", nom: "LITHIUM", masse: "6,9", formule: "Li", ion: "Li<sup>+</sup>", composes: "LiCl&nbsp;&nbsp;Li<sub>2</sub>O", propPhy: "Métal blanc mou<br/>Peu dense", propChi: "Réagit violemment avec eau et Cl<sub>2</sub>" },
+            { id: "Mg", nom: "MAGNESIUM", masse: "24,3", formule: "Mg", ion: "Mg<sup>2+</sup>", composes: "MgO&nbsp;&nbsp;MgCl<sub>2</sub>", propPhy: "Métal blanc argenté, malléable", propChi: "Brûle dans O<sub>2</sub> avec un vif éclat" },
             { id: "N",  nom: "AZOTE", masse: "14,0", formule: "N<sub>2</sub>", composes: "NH<sub>3</sub>&nbsp;&nbsp;NO<sub>2</sub>", propPhy: "Gaz incolore, inodore<br/>Moins dense que l'air", propChi: "Se combine avec O<sub>2</sub> à très haute T°" },
-            { id: "Na", nom: "SODIUM", masse: "23,0", formule: "Na", composes: "NaCl&nbsp;&nbsp;Na<sub>2</sub>O", propPhy: "Métal blanc mou, peu dense", propChi: "S'oxyde à l'air<br/>Réagit violemment avec l'eau" },
-            { id: "O",  nom: "OXYGENE", masse: "16,0", formule: "O<sub>2</sub>", composes: "H<sub>2</sub>O&nbsp;&nbsp;CaO", propPhy: "Gaz incolore, inodore<br/>Plus dense que l'air", propChi: "Forme des oxydes avec corps simples" },
+            { id: "Na", nom: "SODIUM", masse: "23,0", formule: "Na", ion: "Na<sup>+</sup>", composes: "NaCl&nbsp;&nbsp;Na<sub>2</sub>O", propPhy: "Métal blanc mou, peu dense", propChi: "S'oxyde à l'air<br/>Réagit violemment avec l'eau" },
+            { id: "O",  nom: "OXYGENE", masse: "16,0", formule: "O<sub>2</sub>", ion: "O<sup>2-</sup>", composes: "H<sub>2</sub>O&nbsp;&nbsp;CaO", propPhy: "Gaz incolore, inodore<br/>Plus dense que l'air", propChi: "Forme des oxydes avec corps simples" },
             { id: "P",  nom: "PHOSPHORE", masse: "31,0", formule: "P", composes: "PH<sub>3</sub>&nbsp;&nbsp;P<sub>2</sub>O<sub>5</sub>", propPhy: "Plusieurs variétés (blanc, rouge)", propChi: "S'enflamme à l'air (variété blanche)" },
-            { id: "S",  nom: "SOUFRE", masse: "32,1", formule: "S<sub>8</sub>", composes: "H<sub>2</sub>S&nbsp;&nbsp;SO<sub>2</sub>", propPhy: "Solide jaune, isolant", propChi: "Brûle dans O<sub>2</sub> (gaz piquant)<br/>S'enflamme dans H<sub>2</sub>" },
+            { id: "S",  nom: "SOUFRE", masse: "32,1", formule: "S<sub>8</sub>", ion: "S<sup>2-</sup>", composes: "H<sub>2</sub>S&nbsp;&nbsp;SO<sub>2</sub>", propPhy: "Solide jaune, isolant", propChi: "Brûle dans O<sub>2</sub> (gaz piquant)<br/>S'enflamme dans H<sub>2</sub>" },
             { id: "Si", nom: "SILICIUM", masse: "28,1", formule: "Si", composes: "SiO<sub>2</sub>&nbsp;&nbsp;SiH<sub>4</sub>", propPhy: "Solide bleu acier<br/>Semi-conducteur", propChi: "Chauffé à blanc, brûle avec incandescence" }
         ];
 
@@ -127,9 +138,9 @@
                     </div>
                     <div class="name">${el.nom}</div>
                     
-                    <div class="info-section">
-                        <span class="info-title">Formule :</span> 
-                        <span class="info-content">${el.formule}</span>
+                    <div class="info-section" style="display: flex; justify-content: space-between; align-items: baseline;">
+                        <span><span class="info-title">Formule :</span> <span class="info-content">${el.formule}</span></span>
+                        ${el.ion ? `<span><span class="info-title">Ion formé :</span> <span class="info-content" style="color: #d64a18; font-weight: bold;">${el.ion}</span></span>` : ''}
                     </div>
                     
                     <div class="info-section">
