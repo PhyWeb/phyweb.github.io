@@ -139,10 +139,12 @@ app.whenReady().then(() => {
 
     grapherWin.webContents.once('did-finish-load', () => {
       try {
-        // Lire le contenu du fichier
-        const fileContent = fs.readFileSync(fileToLoad, 'utf-8');
+        // Lire le contenu du fichier et supprimer un éventuel BOM UTF-8
+        let fileContent = fs.readFileSync(fileToLoad, 'utf-8');
+        if (fileContent.charCodeAt(0) === 0xFEFF) {
+          fileContent = fileContent.slice(1);
+        }
         // Envoyer les données au grapher
-        // Remarque : Si "import-data" attend du JSON parsé, utilisez JSON.parse(fileContent)
         grapherWin.webContents.send('import-data', fileContent);
       } catch (error) {
         console.error("Erreur lors de la lecture du fichier .pw :", error);

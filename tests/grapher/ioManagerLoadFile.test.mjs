@@ -189,5 +189,132 @@ describe('IOManager - loadFile() et détection du format de fichier', () => {
       assert.equal(x2Curve[2], 0.55);
     });
   });
+
+  describe('Gestion du BOM UTF-8 (\\uFEFF)', () => {
+    it('doit charger une chaîne JSON avec BOM UTF-8 dans loadPWFromString sans lever d\'erreur', async () => {
+      let processedState = null;
+      let resetCalled = false;
+      const mockApp = {
+        resetSession: () => { resetCalled = true; }
+      };
+
+      const io = new IOManager(mockApp);
+      io._processPWState = async (state) => {
+        processedState = state;
+      };
+
+      const pwJsonWithBOM = '\uFEFF' + JSON.stringify({
+        version: "3.0",
+        data: { curves: [{ title: "C", unit: "mol/L", values: [1, 2, 3] }] }
+      });
+
+      await io.loadPWFromString(pwJsonWithBOM);
+
+      assert.equal(resetCalled, true);
+      assert.ok(processedState);
+      assert.equal(processedState.version, "3.0");
+      assert.equal(processedState.data.curves[0].title, "C");
+    });
+
+    it('doit charger une chaîne JSON avec BOM UTF-8 et espaces dans loadPWFromString', async () => {
+      let processedState = null;
+      const mockApp = {
+        resetSession: () => {}
+      };
+
+      const io = new IOManager(mockApp);
+      io._processPWState = async (state) => {
+        processedState = state;
+      };
+
+      const pwJson = '  \uFEFF\n  ' + JSON.stringify({ version: "3.0", data: { curves: [] } }) + '\n ';
+      await io.loadPWFromString(pwJson);
+
+      assert.ok(processedState);
+      assert.equal(processedState.version, "3.0");
+    });
+
+    it('doit accepter un objet JavaScript direct dans loadPWFromString', async () => {
+      let processedState = null;
+      const mockApp = {
+        resetSession: () => {}
+      };
+
+      const io = new IOManager(mockApp);
+      io._processPWState = async (state) => {
+        processedState = state;
+      };
+
+      const stateObj = { version: "3.0", data: { curves: [] } };
+      await io.loadPWFromString(stateObj);
+
+      assert.equal(processedState, stateObj);
+    });
+
+    it('doit charger un fichier avec BOM UTF-8 dans loadPWFile', async () => {
+      let processedState = null;
+      const mockApp = {};
+      const io = new IOManager(mockApp);
+      io._processPWState = async (state) => {
+        processedState = state;
+      };
+
+      // Mock FileReader
+      const originalFileReader = globalThis.FileReader;
+      class MockFileReader {
+        readAsText(file) {
+          setTimeout(() => {
+            this.target = { result: '\uFEFF' + JSON.stringify({ version: "3.0", data: { curves: [] } }) };
+            if (this.onload) this.onload({ target: this.target });
+          }, 0);
+        }
+      }
+      globalThis.FileReader = MockFileReader;
+
+      try {
+        await io.loadPWFile({ name: 'test.pw' });
+        assert.ok(processedState);
+        assert.equal(processedState.version, "3.0");
+      } finally {
+        globalThis.FileReader = originalFileReader;
+      }
+    });
+
+    it('ne doit pas inclure de BOM UTF-8 lors de l\'export PW mais doit l\'inclure pour CSV', () => {
+      let downloadedBlob = null;
+      let downloadedName = null;
+      const mockApp = {
+        data: {
+          curves: [],
+          parameters: {},
+          models: [],
+          annotations: []
+        },
+        grapher: {
+          currentXCurve: null,
+          chart: null
+        },
+        editor: {
+          getValue: () => ""
+        }
+      };
+
+      const io = new IOManager(mockApp);
+      io.triggerDownload = (content, fileName, mimeType) => {
+        downloadedName = fileName;
+        const isCsv = fileName.toLowerCase().endsWith('.csv');
+        const blobParts = isCsv ? ['\uFEFF', content] : [content];
+        downloadedBlob = new Blob(blobParts, { type: mimeType });
+      };
+
+      // Export PW
+      io.saveFile('test.pw', 'pw');
+      assert.equal(downloadedName, 'test.pw');
+      // Pour PW, le premier octet ne doit pas être le BOM (0xFEFF)
+      const pwText = io.generatePW();
+      assert.ok(!pwText.startsWith('\uFEFF'));
+    });
+  });
 });
+
 

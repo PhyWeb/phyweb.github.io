@@ -125,20 +125,25 @@ export default class IOManager {
     let content = '';
     const separator = ';';
 
+    let mimeType = 'text/plain;charset=utf-8';
+
     if (format === 'csv') {
       const unitFormatSelect = typeof document !== 'undefined' ? document.querySelector("#csv-unit-format-select") : null;
       const unitFormat = unitFormatSelect ? unitFormatSelect.value : 'row';
       content = this.generateCSV(separator, unitFormat);
+      mimeType = 'text/csv;charset=utf-8';
     } else if (format === 'rw3') {
       content = this.generateRW3();
+      mimeType = 'text/plain;charset=utf-8';
     } else if (format === 'pw') {
       content = this.generatePW(); // Nouvelle méthode
+      mimeType = 'application/json;charset=utf-8';
     } else {
       console.error("Format de fichier non supporté:", format);
       return;
     }
 
-    this.triggerDownload(content, fileName);
+    this.triggerDownload(content, fileName, mimeType);
   }
 
 /**
@@ -185,9 +190,11 @@ generatePW() {
   };
 
   // 2. Sauvegarder l'état de l'interface
-  const yCurves = this.app.grapher.chart.series
-    .filter(s => !s.options?.id?.startsWith('model-') && s.visible !== false)
-    .map(s => s.name);
+  const yCurves = this.app.grapher?.chart?.series
+    ? this.app.grapher.chart.series
+        .filter(s => !s.options?.id?.startsWith('model-') && s.visible !== false)
+        .map(s => s.name)
+    : [];
 
   // 3. Sauvegarde de l'état de zoom
   let zoomState = null;
@@ -348,9 +355,14 @@ generatePW() {
    * Crée un lien de téléchargement et le clique pour télécharger le contenu.
    * @param {string} content - Le contenu du fichier.
    * @param {string} fileName - Le nom du fichier.
+   * @param {string} [mimeType='text/plain;charset=utf-8'] - Le type MIME du fichier.
    */
-  triggerDownload(content, fileName) {
-    const blob = new Blob(['\uFEFF', content], { type: 'text/csv;charset=utf-8' });
+  triggerDownload(content, fileName, mimeType = 'text/plain;charset=utf-8') {
+    // Le BOM UTF-8 (\uFEFF) n'est nécessaire que pour les fichiers CSV afin qu'Excel sous Windows reconnaisse l'encodage UTF-8.
+    // Pour les fichiers JSON (.pw), le BOM est interdit par la RFC 8259 et cause des SyntaxError lors de JSON.parse.
+    const isCsv = fileName.toLowerCase().endsWith('.csv');
+    const blobParts = isCsv ? ['\uFEFF', content] : [content];
+    const blob = new Blob(blobParts, { type: mimeType });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
     
@@ -555,7 +567,11 @@ generatePW() {
       const reader = new FileReader();
       reader.onload = async (event) => {
         try {
-          const state = JSON.parse(event.target.result);
+          let text = event.target.result;
+          if (typeof text === 'string') {
+            text = text.replace(/^\uFEFF/, '').trim();
+          }
+          const state = JSON.parse(text);
           await this._processPWState(state);
           resolve();
         } catch (e) {
@@ -578,7 +594,12 @@ generatePW() {
   async loadPWFromString(pwDataString) {
     this.app.resetSession();
     try {
-      const state = JSON.parse(pwDataString);
+      const cleanData = typeof pwDataString === 'string'
+        ? pwDataString.replace(/^\uFEFF/, '').trim()
+        : pwDataString;
+      const state = typeof cleanData === 'object' && cleanData !== null
+        ? cleanData
+        : JSON.parse(cleanData);
       await this._processPWState(state);
     } catch (e) {
       console.error("Erreur lors du chargement des données PW depuis la chaîne de caractères :", e);
