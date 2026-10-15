@@ -62,13 +62,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     console.log("Données importées depuis une autre application.");
 
-    setTimeout(() => {
+    setTimeout(async () => {
       try {
-        app.ioManager.loadPWFromString(importedPW);
+        await app.ioManager.loadPWFromString(importedPW);
 
         // Si le chargement est un succès, on affiche l'interface principale et on ferme les modales.
         uiManager.showTabsAndPanels();
         uiManager.common.modalManager.closeAllModals();
+        uiManager.markAsSaved();
         showToast("Données importées avec succès !", "is-success");
       } catch (e) {
         console.error("Échec du chargement des données inter-applications:", e);

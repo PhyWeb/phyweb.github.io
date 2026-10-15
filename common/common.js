@@ -951,7 +951,7 @@ export class NavigationManager {
    */
   setupBeforeUnloadListener() {
     const localHosts = ['localhost', '127.0.0.1'];
-    if (localHosts.includes(window.location.hostname)) {
+    if (typeof window !== 'undefined' && window.location && localHosts.includes(window.location.hostname)) {
       return;
     }
 

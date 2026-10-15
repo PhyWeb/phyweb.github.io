@@ -46,6 +46,9 @@ if (!global.document) {
 if (!global.window) {
   global.window = global;
 }
+if (!global.window.location) {
+  global.window.location = { hostname: 'localhost', href: '' };
+}
 
 // Mock minimal pour Highcharts (génération de clés uniques pour Model et chargement de Grapher)
 if (!global.Highcharts) {

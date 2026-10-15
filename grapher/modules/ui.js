@@ -485,19 +485,51 @@ export default class UIManager {
    * Initialise la navbar avec les boutons et leurs événements.
    */
   initNavbar() {
+    const computeCurrentHash = () => {
+      const curves = (this.data?.curves || []).map(curve => ({
+        title: curve.title,
+        unit: curve.unit,
+        color: curve.color,
+        line: curve.line,
+        markers: curve.markers,
+        values: Array.from(curve)
+      }));
+      const annotations = this.data?.annotations || [];
+      const parameters = this.data?.parameters || {};
+      const models = this.data?.models ? this.data.models.map(m => ({
+        id: m.id,
+        type: m.type,
+        x: m.x?.title,
+        y: m.y?.title,
+        parameters: m.parameters
+      })) : [];
+      const script = typeof this.editor?.getValue === 'function' ? this.editor.getValue() : '';
+
+      return JSON.stringify({ curves, annotations, parameters, models, script });
+    };
+
     let lastSavedHash = null;
     this.markAsSaved = () => {
-      lastSavedHash = JSON.stringify({ curves: this.data.curves, annotations: this.data.annotations, script: this.editor.getValue() });
+      lastSavedHash = computeCurrentHash();
+    };
+
+    this.resetSavedState = () => {
+      lastSavedHash = null;
     };
 
     // Définit la condition pour vérifier la présence de données
     const hasUnsavedData = () => {
-      if (this.data.curves.length === 0 && this.data.annotations.length === 0 && this.editor.getValue().trim() === '') {
+      const curvesEmpty = !this.data?.curves || this.data.curves.length === 0;
+      const annotationsEmpty = !this.data?.annotations || this.data.annotations.length === 0;
+      const modelsEmpty = !this.data?.models || this.data.models.length === 0;
+      const scriptEmpty = !this.editor?.getValue || this.editor.getValue().trim() === '';
+
+      if (curvesEmpty && annotationsEmpty && modelsEmpty && scriptEmpty) {
         return false;
       }
-      const currentHash = JSON.stringify({ curves: this.data.curves, annotations: this.data.annotations, script: this.editor.getValue() });
-      return lastSavedHash !== currentHash;
+      return lastSavedHash !== computeCurrentHash();
     };
+    this.hasUnsavedData = hasUnsavedData;
     this.navManager = new NavigationManager(hasUnsavedData);
 
     this.navManager.addLink($('#navbar-home-button'), '../index.html');
@@ -617,6 +649,7 @@ export default class UIManager {
           // Si aucune erreur n'est levée, on ferme la modale et affiche l'ui
           this.showTabsAndPanels();
           this.common.modalManager.closeAllModals();
+          this.markAsSaved();
         } catch (error) {
           // Si une erreur est levée par ioManager, on affiche une alerte
           // et la modale reste ouverte.
@@ -683,6 +716,7 @@ export default class UIManager {
           // Si aucune erreur, on affiche l'interface et ferme la modale
           this.showTabsAndPanels();
           this.common.modalManager.closeAllModals();
+          this.markAsSaved();
         } catch (error) {
           console.error("Échec du chargement du fichier par Drag&Drop:", error);
           alertModal({

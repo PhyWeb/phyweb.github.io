@@ -185,6 +185,11 @@ export default class App {
 
     // Update the X axis selector
     this.uiManager.updateXAxisSelector();
+
+    // Reset saved state
+    if (this.uiManager && typeof this.uiManager.resetSavedState === 'function') {
+      this.uiManager.resetSavedState();
+    }
   }
 
   deleteRow(startRow, amount) {
