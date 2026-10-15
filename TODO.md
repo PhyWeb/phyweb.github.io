@@ -23,6 +23,8 @@
     - bug : creer un modele. supprimer les données d'une ligne du tableau. recalculer le modele. ca change pas
     supprimer/recreer le modele : ca change
 
+    - bug : plus bonne modale quand on previent quil y a des données non sauvegardées
+
 # Mendeleiev
 # Optique
 # Chromato

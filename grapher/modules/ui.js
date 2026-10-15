@@ -1871,10 +1871,13 @@ export default class UIManager {
     }
 
     // Ouvre et ferme le menu déroulant
-    toolsDropdown.addEventListener("click", (event) => {
-      event.stopPropagation();
-      toolsDropdown.classList.toggle("is-active");
-    });
+    const toolsTrigger = toolsDropdown.querySelector(".dropdown-trigger");
+    if (toolsTrigger) {
+      toolsTrigger.addEventListener("click", (event) => {
+        event.stopPropagation();
+        toolsDropdown.classList.toggle("is-active");
+      });
+    }
 
     // Ferme le menu si on clique ailleurs
     document.addEventListener("click", () => {
