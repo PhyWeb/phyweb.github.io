@@ -1542,8 +1542,13 @@ export default class UIManager {
         }
         
         // Redessine le graphe et on masque le chargement manuellement au cas où
-        if (this.grapher && this.grapher.chart) {
-          this.grapher.chart.redraw();
+        if (this.grapher) {
+          if (typeof this.grapher.updateModels === 'function') {
+            this.grapher.updateModels();
+          } else {
+            this.grapher.redrawAllModels?.();
+            this.grapher.chart?.redraw?.();
+          }
           this.grapher.hideLoading();
         }
       }
@@ -2236,7 +2241,12 @@ export default class UIManager {
           this.updateCalculationUI(); 
           
           // Redessine le graphique pour afficher les modèles mis à jour
-          this.grapher.chart.redraw();
+          if (typeof this.grapher?.updateModels === 'function') {
+            this.grapher.updateModels();
+          } else {
+            this.grapher?.redrawAllModels?.();
+            this.grapher?.chart?.redraw?.();
+          }
         }
 
         // Notification adaptée selon les résultats
@@ -2554,7 +2564,12 @@ export default class UIManager {
         this.updateModelPanel(model);
         this.updateCalculationUI();
         this.grapher.updateModelVisibility();
-        this.grapher.chart.redraw();
+        if (typeof this.grapher?.updateModels === 'function') {
+          this.grapher.updateModels();
+        } else {
+          this.grapher?.redrawAllModels?.();
+          this.grapher?.chart?.redraw?.();
+        }
 
       } catch (error) {
         console.error("Erreur lors de la mise à jour du modèle :", error);

@@ -20,9 +20,6 @@
 # Grapher
     - possibilité d'avoir 2 axes y
 
-    - bug : creer un modele. supprimer les données d'une ligne du tableau. recalculer le modele. ca change pas
-    supprimer/recreer le modele : ca change
-
     - le inclure l'origin dans les parametres est pas pris en compte au premier affichage du graphe
 
 

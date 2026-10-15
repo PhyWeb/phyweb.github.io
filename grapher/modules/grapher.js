@@ -1133,10 +1133,23 @@ setDisableScientificNotation(disabled) {
   }
 
   /**
+   * Met à jour les données de tous les modèles et redessine le graphique.
+   */
+  updateModels() {
+    if (!this.chart) return;
+    this.suppressModelAutoUpdate = true;
+    this.redrawAllModels();
+    this.chart.redraw();
+    this.suppressModelAutoUpdate = false;
+  }
+
+  /**
    * Met à jour les données de TOUS les modèles visibles sur le graphique.
    * Cette fonction est appelée par l'événement 'redraw' (zoom, déplacement).
    */
   redrawAllModels(viewMin, viewMax) {
+    if (!this.chart || !this.chart.xAxis || !this.chart.xAxis[0]) return;
+
     // determine range to use
     let min, max;
     if (typeof viewMin === 'number' && typeof viewMax === 'number') {
@@ -1144,8 +1157,12 @@ setDisableScientificNotation(disabled) {
       max = viewMax;
     } else {
       const ex = this.chart.xAxis[0].getExtremes();
-      min = ex.min; 
-      max = ex.max;
+      min = (ex.min !== undefined && ex.min !== null) ? ex.min : ex.dataMin; 
+      max = (ex.max !== undefined && ex.max !== null) ? ex.max : ex.dataMax;
+    }
+
+    if (typeof min !== 'number' || typeof max !== 'number' || !isFinite(min) || !isFinite(max)) {
+      return;
     }
 
     this.data.models.forEach(model => {
@@ -1672,16 +1689,7 @@ setDisableScientificNotation(disabled) {
 
         // 2. Relance le calcul mathématique Alglib via le Worker
         this.editingModel.fit().then(() => {
-          const ex = this.chart.xAxis[0].getExtremes();
-          this.suppressModelAutoUpdate = true;
-          
-          // On met à jour les points en mémoire
-          this.redrawAllModels(ex.min, ex.max);
-          
-          // On force Highcharts à redessiner le graphique !
-          this.chart.redraw(); 
-          
-          this.suppressModelAutoUpdate = false;
+          this.updateModels();
           
           if (this.uiManager) {
             this.uiManager.updateModelPanel(this.editingModel);
