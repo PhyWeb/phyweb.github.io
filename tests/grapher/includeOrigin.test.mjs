@@ -106,26 +106,30 @@ describe('Grapher - Prise en compte de "inclure l\'origine" lors du premier trac
     assert.ok(xAxis.calls.length > 0, 'xAxis.setExtremes doit avoir été appelé');
     assert.ok(yAxis.calls.length > 0, 'yAxis.setExtremes doit avoir été appelé');
 
-    // Les bornes doivent englober 0 sur X et Y
-    // Pour t: min=10, max=30 -> finalMin <= 0, finalMax >= 30
-    assert.ok(xAxis.min <= 0, `xAxis.min (${xAxis.min}) doit être <= 0 pour inclure l'origine`);
+    // Les bornes doivent commencer exactement à 0 sur X et Y (données positives)
+    // Pour t: min=10, max=30 -> finalMin === 0, finalMax >= 30
+    assert.equal(xAxis.min, 0, `xAxis.min (${xAxis.min}) doit commencer exactement à 0`);
     assert.ok(xAxis.max >= 30, `xAxis.max (${xAxis.max}) doit être >= 30`);
 
-    // Pour U: min=5, max=25 -> finalMin <= 0, finalMax >= 25
-    assert.ok(yAxis.min <= 0, `yAxis.min (${yAxis.min}) doit être <= 0 pour inclure l'origine`);
+    // Pour U: min=5, max=25 -> finalMin === 0, finalMax >= 25
+    assert.equal(yAxis.min, 0, `yAxis.min (${yAxis.min}) doit commencer exactement à 0`);
     assert.ok(yAxis.max >= 25, `yAxis.max (${yAxis.max}) doit être >= 25`);
   });
 
-  it('ne doit pas forcer l\'origine sur updateChart() si includeOriginOnAutoZoom est false', () => {
+  it('ne doit pas forcer l\'origine sur updateChart() si includeOriginOnAutoZoom est false mais doit appliquer une petite marge', () => {
     grapher.includeOriginOnAutoZoom = false;
 
     grapher.updateChart();
 
-    // Lorsque l'option est désactivée, proceed est appelé avec null, null (reset par défaut de Highcharts)
-    assert.equal(xAxis.min, null, 'xAxis.min doit être null si includeOriginOnAutoZoom est désactivé');
-    assert.equal(xAxis.max, null, 'xAxis.max doit être null si includeOriginOnAutoZoom est désactivé');
-    assert.equal(yAxis.min, null, 'yAxis.min doit être null si includeOriginOnAutoZoom est désactivé');
-    assert.equal(yAxis.max, null, 'yAxis.max doit être null si includeOriginOnAutoZoom est désactivé');
+    // Lorsque l'option est désactivée, l'origine n'est pas forcée (min > 0 pour des données strictement positives)
+    // Mais une petite marge (2%) est appliquée pour éviter que les points extrêmes ne touchent les bords
+    assert.ok(xAxis.min > 0, `xAxis.min (${xAxis.min}) ne doit pas inclure 0`);
+    assert.ok(xAxis.min < 10, `xAxis.min (${xAxis.min}) doit être < 10 pour laisser une marge au premier point`);
+    assert.ok(xAxis.max > 30, `xAxis.max (${xAxis.max}) doit être > 30 pour laisser une marge au dernier point`);
+
+    assert.ok(yAxis.min > 0, `yAxis.min (${yAxis.min}) ne doit pas inclure 0`);
+    assert.ok(yAxis.min < 5, `yAxis.min (${yAxis.min}) doit être < 5 pour laisser une marge au premier point`);
+    assert.ok(yAxis.max > 25, `yAxis.max (${yAxis.max}) doit être > 25 pour laisser une marge au dernier point`);
   });
 
   it('doit inclure 0 au niveau supérieur si toutes les valeurs sont négatives', () => {
@@ -147,19 +151,19 @@ describe('Grapher - Prise en compte de "inclure l\'origine" lors du premier trac
 
     negGrapher.updateChart();
 
-    // Pour x négatif (-30 à -10), finalMax doit inclure 0 (finalMax >= 0)
-    assert.ok(negChart.xAxis[0].max >= 0, `xAxis.max (${negChart.xAxis[0].max}) doit être >= 0`);
+    // Pour x négatif (-30 à -10), finalMax doit être exactement 0
+    assert.equal(negChart.xAxis[0].max, 0, `xAxis.max (${negChart.xAxis[0].max}) doit être exactement 0`);
     assert.ok(negChart.xAxis[0].min <= -30, `xAxis.min (${negChart.xAxis[0].min}) doit être <= -30`);
 
-    // Pour y négatif (-25 à -5), finalMax doit inclure 0 (finalMax >= 0)
-    assert.ok(negChart.yAxis[0].max >= 0, `yAxis.max (${negChart.yAxis[0].max}) doit être >= 0`);
+    // Pour y négatif (-25 à -5), finalMax doit être exactement 0
+    assert.equal(negChart.yAxis[0].max, 0, `yAxis.max (${negChart.yAxis[0].max}) doit être exactement 0`);
     assert.ok(negChart.yAxis[0].min <= -25, `yAxis.min (${negChart.yAxis[0].min}) doit être <= -25`);
   });
 
   it('doit préserver le zoom utilisateur si hasUserZoom est true lors d\'un updateChart()', () => {
     // Premier tracé auto-zoom avec origine
     grapher.updateChart();
-    assert.ok(xAxis.min <= 0);
+    assert.equal(xAxis.min, 0);
 
     // L'utilisateur zoome manuellement sur une plage spécifique [15, 25]
     grapher.hasUserZoom = true;
@@ -190,25 +194,27 @@ describe('Grapher - Prise en compte de "inclure l\'origine" lors du premier trac
     grapher.resetZoom();
 
     assert.equal(grapher.hasUserZoom, false, 'hasUserZoom doit être réinitialisé à false');
-    assert.ok(xAxis.min <= 0, 'xAxis.min doit de nouveau inclure 0');
+    assert.equal(xAxis.min, 0, 'xAxis.min doit de nouveau commencer exactement à 0');
     assert.ok(xAxis.max >= 30, 'xAxis.max doit couvrir les données');
-    assert.ok(yAxis.min <= 0, 'yAxis.min doit de nouveau inclure 0');
+    assert.equal(yAxis.min, 0, 'yAxis.min doit de nouveau commencer exactement à 0');
     assert.ok(yAxis.max >= 25, 'yAxis.max doit couvrir les données');
   });
 
   it('setIncludeOriginOnAutoZoom() doit mettre à jour l\'option et déclencher un resetZoom()', () => {
     grapher.updateChart();
-    assert.ok(xAxis.min <= 0);
+    assert.equal(xAxis.min, 0);
 
     // Désactivation de l'option
     grapher.setIncludeOriginOnAutoZoom(false);
     assert.equal(grapher.includeOriginOnAutoZoom, false);
-    assert.equal(xAxis.min, null, 'Les bornes doivent être réinitialisées par défaut (null)');
+    assert.ok(xAxis.min > 0, 'L\'origine ne doit plus être incluse');
+    assert.ok(xAxis.min < 10, 'Une marge doit exister avant le premier point');
+    assert.ok(xAxis.max > 30, 'Une marge doit exister après le dernier point');
 
     // Réactivation de l'option
     grapher.setIncludeOriginOnAutoZoom(true);
     assert.equal(grapher.includeOriginOnAutoZoom, true);
-    assert.ok(xAxis.min <= 0, 'L\'origine doit être de nouveau incluse');
+    assert.equal(xAxis.min, 0, 'L\'origine doit être de nouveau incluse exactement à 0');
   });
 
   it('setXCurve() et deleteAllCurves() doivent réinitialiser hasUserZoom à false', () => {

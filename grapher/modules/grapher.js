@@ -11,9 +11,11 @@ const PADDING = 0.02; // 2% de padding pour le zoom auto
   H.wrap(H.Axis.prototype, 'setExtremes', function (proceed, newMin, newMax, redraw, animation, eventArgs) {
     const chart = this.chart;
     
-    // Vérifie si c'est un reset zoom (newMin et newMax null ou undefined) et option activée
+    // Vérifie si c'est un reset zoom (newMin et newMax null ou undefined)
     const isResetZoom = (newMin === null || newMin === undefined) && (newMax === null || newMax === undefined);
-    if (isResetZoom && chart?.options?.customGrapherInstance?.includeOriginOnAutoZoom){
+    if (isResetZoom && chart?.options?.customGrapherInstance){
+      const includeOrigin = !!chart.options.customGrapherInstance.includeOriginOnAutoZoom;
+
       // Calcule manuellement les extrêmes globaux pour cet axe
       let globalDataMin = Infinity;
       let globalDataMax = -Infinity;
@@ -54,16 +56,36 @@ const PADDING = 0.02; // 2% de padding pour le zoom auto
       });
       const hasData = globalDataMin !== Infinity && globalDataMax !== -Infinity;
       if (hasData) {
-        let finalMin = Math.min(globalDataMin, 0);
-        let finalMax = Math.max(globalDataMax, 0);
-        
-        const range = finalMax - finalMin;
-        if (range > 0) {
-          finalMin -= range * PADDING;
-          finalMax += range * PADDING;
+        let finalMin;
+        let finalMax;
+
+        if (includeOrigin) {
+          if (globalDataMin >= 0) {
+            // Toutes les données sont positives ou nulles : l'axe commence exactement à 0
+            finalMin = 0;
+            const range = globalDataMax - 0;
+            finalMax = range > 0 ? globalDataMax + range * PADDING : 1;
+          } else if (globalDataMax <= 0) {
+            // Toutes les données sont négatives ou nulles : l'axe se termine exactement à 0
+            finalMax = 0;
+            const range = 0 - globalDataMin;
+            finalMin = range > 0 ? globalDataMin - range * PADDING : -1;
+          } else {
+            // Les données traversent zéro : 0 est déjà inclus, on applique la marge des deux côtés
+            const range = globalDataMax - globalDataMin;
+            finalMin = globalDataMin - range * PADDING;
+            finalMax = globalDataMax + range * PADDING;
+          }
         } else {
-          finalMin -= 1;
-          finalMax += 1;
+          // Sans l'origine : marge des deux côtés pour éviter que les points extrêmes ne touchent les bords
+          const range = globalDataMax - globalDataMin;
+          if (range > 0) {
+            finalMin = globalDataMin - range * PADDING;
+            finalMax = globalDataMax + range * PADDING;
+          } else {
+            finalMin = globalDataMin - 1;
+            finalMax = globalDataMax + 1;
+          }
         }
         
         // Appel original avec bornes calculées
