@@ -909,10 +909,7 @@ export default class UIManager {
     }
 
     if (this.grapher.includeOriginOnAutoZoom !== settings.includeOriginOnAutoZoom) {
-      this.grapher.includeOriginOnAutoZoom = settings.includeOriginOnAutoZoom;
-      // On déclenche un zoom auto pour que le changement soit visible immédiatement
-      this.grapher.chart.xAxis[0].setExtremes(null, null);
-      this.grapher.chart.yAxis[0].setExtremes(null, null);
+      this.grapher.setIncludeOriginOnAutoZoom(settings.includeOriginOnAutoZoom);
     }
     
     // Appliquer aux calculs

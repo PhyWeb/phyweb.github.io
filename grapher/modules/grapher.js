@@ -11,8 +11,9 @@ const PADDING = 0.02; // 2% de padding pour le zoom auto
   H.wrap(H.Axis.prototype, 'setExtremes', function (proceed, newMin, newMax, redraw, animation, eventArgs) {
     const chart = this.chart;
     
-    // Vérifie si c'est un reset zoom (newMin et newMax null) et option activée
-    if (newMin === null && newMax === null && chart.options.customGrapherInstance?.includeOriginOnAutoZoom){
+    // Vérifie si c'est un reset zoom (newMin et newMax null ou undefined) et option activée
+    const isResetZoom = (newMin === null || newMin === undefined) && (newMax === null || newMax === undefined);
+    if (isResetZoom && chart?.options?.customGrapherInstance?.includeOriginOnAutoZoom){
       // Calcule manuellement les extrêmes globaux pour cet axe
       let globalDataMin = Infinity;
       let globalDataMax = -Infinity;
@@ -60,6 +61,9 @@ const PADDING = 0.02; // 2% de padding pour le zoom auto
         if (range > 0) {
           finalMin -= range * PADDING;
           finalMax += range * PADDING;
+        } else {
+          finalMin -= 1;
+          finalMax += 1;
         }
         
         // Appel original avec bornes calculées
@@ -130,7 +134,8 @@ export default class Grapher {
     this.grid = initialSettings.grapherGrid; // Default value for grid visibility
     this.minorGrid = initialSettings.minorGrid || false;
     this.disableScientificNotation = initialSettings.disableScientificNotation || false;
-    this.includeOriginOnAutoZoom = initialSettings.includeOriginOnAutoZoom;
+    this.includeOriginOnAutoZoom = initialSettings.includeOriginOnAutoZoom ?? true;
+    this.hasUserZoom = false;
 
     this.currentXCurve = null;
 
@@ -188,6 +193,7 @@ export default class Grapher {
     this.handleMouseUp = this.handleMouseUp.bind(this);
 
     this.chart = Highcharts.chart("chart", {
+      customGrapherInstance: this,
       animation: ANIMATION_FLAG,
       boost: {
         useGPUTranslations: true
@@ -286,6 +292,8 @@ export default class Grapher {
           selection: (e) => {
             // 1. On empêche le zoom par défaut.
             e.preventDefault();
+
+            this.hasUserZoom = true;
 
             // 2. On applique les nouvelles limites SANS redessiner le graphique immédiatement.
             this.chart.xAxis[0].setExtremes(e.xAxis[0].min, e.xAxis[0].max, false);
@@ -683,6 +691,7 @@ setVisibilityFromList(titles) {
 
   setXCurve(title, redraw = true){
     this.currentXCurve = title;
+    this.hasUserZoom = false;
     this.updateModelVisibility();
 
     if(redraw){
@@ -704,7 +713,10 @@ setVisibilityFromList(titles) {
         this.setXCurve(this.data.curves[0].title);
       } else{
         this.currentXCurve = null;
+        this.hasUserZoom = false;
       }
+    } else if (this.data.curves.length === 0) {
+      this.hasUserZoom = false;
     }
   }
 
@@ -714,6 +726,7 @@ setVisibilityFromList(titles) {
     }
     this.chart.redraw(); // Un seul redessin à la fin
     this.currentXCurve = null;
+    this.hasUserZoom = false;
   }
 
   /**
@@ -851,9 +864,22 @@ updateChart(yCurveTitles, redraw = true) {
       }
     }
 
+    // Si l'utilisateur n'a pas effectué de zoom manuel, appliquer le zoom automatique (qui inclut l'origine si activé)
+    if (!this.hasUserZoom && this.chart?.xAxis?.[0] && this.chart?.yAxis?.[0]) {
+      this.chart.xAxis[0].setExtremes(null, null, false);
+      this.chart.yAxis[0].setExtremes(null, null, false);
+    }
+
     // 4. Réordonner la légende en fonction de la visibilité des séries
     this.reorderLegendByVisibility(redraw);
 }
+
+  setIncludeOriginOnAutoZoom(included) {
+    this.includeOriginOnAutoZoom = included;
+    if (this.chart) {
+      this.resetZoom();
+    }
+  }
 
   setGridVisibility(visible) {
     this.grid = visible;
@@ -1103,6 +1129,8 @@ setDisableScientificNotation(disabled) {
     const newMinY = centerY - newRangeY / 2;
     const newMaxY = centerY + newRangeY / 2;
 
+    this.hasUserZoom = true;
+
     // Appliquer les nouvelles limites sans redessiner immédiatement
     this.chart.xAxis[0].setExtremes(newMinX, newMaxX, false);
     this.chart.yAxis[0].setExtremes(newMinY, newMaxY, false);
@@ -1119,12 +1147,15 @@ setDisableScientificNotation(disabled) {
    * et met à jour l'interface utilisateur correspondante.
    */
   resetZoom(redraw = true) {
+    this.hasUserZoom = false;
     // Réinitialise les extrêmes des axes de Highcharts
-    this.chart.xAxis[0].setExtremes(null, null, false);
-    this.chart.yAxis[0].setExtremes(null, null, false);
+    if (this.chart?.xAxis?.[0] && this.chart?.yAxis?.[0]) {
+      this.chart.xAxis[0].setExtremes(null, null, false);
+      this.chart.yAxis[0].setExtremes(null, null, false);
+    }
 
     // Un seul redraw final pour les deux axes
-    if (redraw) {
+    if (redraw && this.chart) {
       this.chart.redraw();
     }
     

@@ -201,11 +201,12 @@ generatePW() {
   if (this.app.grapher.chart) {
     const xEx = this.app.grapher.chart.xAxis[0].getExtremes();
     const yEx = this.app.grapher.chart.yAxis[0].getExtremes();
+    const hasUserZoom = this.app.grapher.hasUserZoom;
     zoomState = {
-      xUserMin: xEx.userMin !== undefined ? xEx.userMin : null,
-      xUserMax: xEx.userMax !== undefined ? xEx.userMax : null,
-      yUserMin: yEx.userMin !== undefined ? yEx.userMin : null,
-      yUserMax: yEx.userMax !== undefined ? yEx.userMax : null
+      xUserMin: hasUserZoom && xEx.userMin !== undefined ? xEx.userMin : null,
+      xUserMax: hasUserZoom && xEx.userMax !== undefined ? xEx.userMax : null,
+      yUserMin: hasUserZoom && yEx.userMin !== undefined ? yEx.userMin : null,
+      yUserMax: hasUserZoom && yEx.userMax !== undefined ? yEx.userMax : null
     };
   }
 
@@ -544,8 +545,10 @@ generatePW() {
       
       // Affiche ou masque le bouton "Zoom Auto" en fonction de l'état
       if (z.xUserMin !== null || z.yUserMin !== null) {
+          this.app.grapher.hasUserZoom = true;
           document.querySelector("#auto-zoom-button").classList.remove("is-hidden");
       } else {
+          this.app.grapher.hasUserZoom = false;
           this.app.uiManager.resetZoomUI();
       }
       this.app.grapher.chart.redraw(); // Redessine une seule fois avec le bon zoom

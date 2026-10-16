@@ -64,7 +64,14 @@ if (!global.Highcharts) {
     },
     SVGRenderer: function() {}
   };
-  global.Highcharts.Axis.prototype = { setExtremes: () => {} };
+  global.Highcharts.Axis.prototype = {
+    setExtremes: function(min, max) {
+      this.min = min;
+      this.max = max;
+      this.userMin = min;
+      this.userMax = max;
+    }
+  };
   global.Highcharts.SVGRenderer.prototype = { symbols: {} };
 } else {
   if (!global.Highcharts.getOptions) {
@@ -72,7 +79,14 @@ if (!global.Highcharts) {
   }
   if (!global.Highcharts.Axis) {
     global.Highcharts.Axis = function() {};
-    global.Highcharts.Axis.prototype = { setExtremes: () => {} };
+    global.Highcharts.Axis.prototype = {
+      setExtremes: function(min, max) {
+        this.min = min;
+        this.max = max;
+        this.userMin = min;
+        this.userMax = max;
+      }
+    };
   }
   if (!global.Highcharts.wrap) {
     global.Highcharts.wrap = function(obj, method, func) {
