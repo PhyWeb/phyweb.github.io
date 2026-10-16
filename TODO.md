@@ -20,8 +20,6 @@
 # Grapher
     - possibilité d'avoir 2 axes y
 
-    - le inclure l'origin dans les parametres est pas pris en compte au premier affichage du graphe
-
     - Il y a eu beaucoup de modifs. verifier que tout ce qui doit etre sauvegardé dans les pw l'est réellement (je pense qu'on a des nouveaux flags nottament.)
 
     - quand on a pas l'option inclure l'origine, les premiers et deuxieme points sont TOUT AU BORD DANS LES COINS. c'est bof. faudrait une marge
