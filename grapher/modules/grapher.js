@@ -1262,9 +1262,9 @@ setDisableScientificNotation(disabled) {
         xAxis: 1, // Utilise l'axe X secondaire (invisible)
         yAxis: 1, // Utilise l'axe Y secondaire (invisible)
         type: 'line',
-        color: model.y.color,
-        dashStyle: 'Dash',
-        lineWidth: 2,
+        color: model.color || model.y.color,
+        dashStyle: model.lineStyle || 'Dash',
+        lineWidth: model.lineWidth ? parseInt(model.lineWidth, 10) : 2,
         marker: { enabled: false },
         enableMouseTracking: false,
         zIndex: 1,

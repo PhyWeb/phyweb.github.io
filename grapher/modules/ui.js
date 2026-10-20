@@ -386,7 +386,8 @@ export default class UIManager {
   updateSortUI() {
     const select = $('#sort-variable-select');
 
-    const selectedValue = select.value;
+    if (!select) return;
+    const selectedValue = this.data.lastSortVariable || select.value;
     select.innerHTML = ''; // Vide les options
 
     const defaultOption = document.createElement('option');

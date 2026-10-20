@@ -557,18 +557,22 @@ class Model {
   }
 
   getHighResData(minX, maxX, points = DEFAULT_MODEL_RESOLUTION){
+    if (!Array.isArray(this.parameters) || this.parameters.length === 0) {
+      return [];
+    }
     const data = [];
     points = Math.max(2, points);
     const step = (maxX - minX) / (points - 1);
 
-    switch(this.type){
-      case "linear":
-        for (let i = 0; i < points; i++) {
-          const x = minX + i * step;
-          const y = this.parameters[0].value * x;
-          data.push([x, y]);
-        }
-        break;
+    try {
+      switch(this.type){
+        case "linear":
+          for (let i = 0; i < points; i++) {
+            const x = minX + i * step;
+            const y = this.parameters[0].value * x;
+            data.push([x, y]);
+          }
+          break;
         case "affine":
           for (let i = 0; i < points; i++) {
             const x = minX + i * step;
@@ -576,89 +580,91 @@ class Model {
             data.push([x, y]);
           }
           break;
-      case "quadratic":
-        for (let i = 0; i < points; i++) {
-          const x = minX + i * step;
-          const y = this.parameters[0].value * Math.pow(x, 2) + this.parameters[1].value * x + this.parameters[2].value;
-          data.push([x, y]);
-        }
-        break;
-      case "cubic":
-        for (let i = 0; i < points; i++) {
-          const x = minX + i * step;
-          const y = this.parameters[3].value * Math.pow(x, 3) + this.parameters[2].value * Math.pow(x, 2) + this.parameters[1].value * x + this.parameters[0].value;
-          data.push([x, y]);
-        }
-        break;
-      case "power":
-        for (let i = 0; i < points; i++) {
-          const x = minX + i * step;
-          const y = this.parameters[0].value * Math.pow(x, this.parameters[1].value);
-          data.push([x, y]);
-        }
-        break;
-      case "exp1":
-        for (let i = 0; i < points; i++) {
-          const x = minX + i * step;
-          const y = this.parameters[0].value * Math.exp(-x / this.parameters[1].value);
-          data.push([x, y]);
-        }
-        break;
-      case "exp2":
-        for (let i = 0; i < points; i++) {
-          const x = minX + i * step;
-          const y = this.parameters[0].value * (1 - Math.exp(-x / this.parameters[1].value));
-          data.push([x, y]);
-        }
-        break;
-      case "ln":
-        for (let i = 0; i < points; i++) {
-          const x = minX + i * step;
-          const y = this.parameters[0].value * Math.log(x) + this.parameters[1].value;
-          data.push([x, y]);
-        }
-        break;
-      case "log":
-        for (let i = 0; i < points; i++) {
-          const x = minX + i * step;
-          const y = this.parameters[0].value * Math.log10(x) + this.parameters[1].value;
-          data.push([x, y]);
-        }
-        break;
-      case "sin":
-        for (let i = 0; i < points; i++) {
-          const x = minX + i * step;
-          const y = this.parameters[0].value * Math.sin(this.parameters[1].value * x + this.parameters[2].value) + this.parameters[3].value;
-          data.push([x, y]);
-        }
-        break;
-      case "cos":
-        for (let i = 0; i < points; i++) {
-          const x = minX + i * step;
-          const y = this.parameters[0].value * Math.cos(this.parameters[1].value * x + this.parameters[2].value) + this.parameters[3].value;
-          data.push([x, y]);
-        }
-        break;
-      case "dampedsin":
-        for (let i = 0; i < points; i++) {
-          const x = minX + i * step;
-          const y = this.parameters[0].value * Math.sin(this.parameters[1].value * x + this.parameters[2].value) * Math.exp(-x / this.parameters[3].value) + this.parameters[4].value;
-          data.push([x, y]);
-        }
-        break;
-      case "dampedcos":
-        for (let i = 0; i < points; i++) {
-          const x = minX + i * step;
-          const y = this.parameters[0].value * Math.cos(this.parameters[1].value * x + this.parameters[2].value) * Math.exp(-x / this.parameters[3].value) + this.parameters[4].value;
-          data.push([x, y]);
-        }
-        break;
-      default:
-        console.error("Modèle non pris en charge pour la génération de données haute résolution.");
-        break;
+        case "quadratic":
+          for (let i = 0; i < points; i++) {
+            const x = minX + i * step;
+            const y = this.parameters[0].value * Math.pow(x, 2) + this.parameters[1].value * x + this.parameters[2].value;
+            data.push([x, y]);
+          }
+          break;
+        case "cubic":
+          for (let i = 0; i < points; i++) {
+            const x = minX + i * step;
+            const y = this.parameters[3].value * Math.pow(x, 3) + this.parameters[2].value * Math.pow(x, 2) + this.parameters[1].value * x + this.parameters[0].value;
+            data.push([x, y]);
+          }
+          break;
+        case "power":
+          for (let i = 0; i < points; i++) {
+            const x = minX + i * step;
+            const y = this.parameters[0].value * Math.pow(x, this.parameters[1].value);
+            data.push([x, y]);
+          }
+          break;
+        case "exp1":
+          for (let i = 0; i < points; i++) {
+            const x = minX + i * step;
+            const y = this.parameters[0].value * Math.exp(-x / this.parameters[1].value);
+            data.push([x, y]);
+          }
+          break;
+        case "exp2":
+          for (let i = 0; i < points; i++) {
+            const x = minX + i * step;
+            const y = this.parameters[0].value * (1 - Math.exp(-x / this.parameters[1].value));
+            data.push([x, y]);
+          }
+          break;
+        case "ln":
+          for (let i = 0; i < points; i++) {
+            const x = minX + i * step;
+            const y = this.parameters[0].value * Math.log(x) + this.parameters[1].value;
+            data.push([x, y]);
+          }
+          break;
+        case "log":
+          for (let i = 0; i < points; i++) {
+            const x = minX + i * step;
+            const y = this.parameters[0].value * Math.log10(x) + this.parameters[1].value;
+            data.push([x, y]);
+          }
+          break;
+        case "sin":
+          for (let i = 0; i < points; i++) {
+            const x = minX + i * step;
+            const y = this.parameters[0].value * Math.sin(this.parameters[1].value * x + this.parameters[2].value) + this.parameters[3].value;
+            data.push([x, y]);
+          }
+          break;
+        case "cos":
+          for (let i = 0; i < points; i++) {
+            const x = minX + i * step;
+            const y = this.parameters[0].value * Math.cos(this.parameters[1].value * x + this.parameters[2].value) + this.parameters[3].value;
+            data.push([x, y]);
+          }
+          break;
+        case "dampedsin":
+          for (let i = 0; i < points; i++) {
+            const x = minX + i * step;
+            const y = this.parameters[0].value * Math.sin(this.parameters[1].value * x + this.parameters[2].value) * Math.exp(-x / this.parameters[3].value) + this.parameters[4].value;
+            data.push([x, y]);
+          }
+          break;
+        case "dampedcos":
+          for (let i = 0; i < points; i++) {
+            const x = minX + i * step;
+            const y = this.parameters[0].value * Math.cos(this.parameters[1].value * x + this.parameters[2].value) * Math.exp(-x / this.parameters[3].value) + this.parameters[4].value;
+            data.push([x, y]);
+          }
+          break;
+        default:
+          console.error("Modèle non pris en charge pour la génération de données haute résolution.");
+          break;
+      }
+      return data;
+    } catch {
+      return [];
     }
-    
-    return data;
   }
 
   calculateRMSE(data) {

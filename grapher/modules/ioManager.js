@@ -459,6 +459,7 @@ generatePW() {
       } else {
         console.error('Invalid values array:', savedCurve.values);
       }
+      delete newCurve.values;
 
       // Assignation de couleur si default ou absente (comme addCurve)
       if (!newCurve.color || newCurve.color === '#000000') {
@@ -501,6 +502,19 @@ generatePW() {
         const model = new Model(xCurve, yCurve, savedModel.type, this.app.data);
         
         Object.assign(model, savedModel);
+        model.minX = savedModel.minX ?? savedModel.bornedebut ?? null;
+        model.maxX = savedModel.maxX ?? savedModel.bornefin ?? null;
+
+        // Synchroniser les paramètres du modèle avec nameMap et les enregistrer dans data.parameters
+        if (Array.isArray(savedModel.parameters)) {
+          model.parameters = savedModel.parameters.map(p => {
+            const pName = nameMap[p.name] || p.name;
+            if (!this.app.data.parameters[pName]) {
+              this.app.data.parameters[pName] = { value: p.value, unit: '', type: 'model' };
+            }
+            return { name: pName, value: p.value };
+          });
+        }
         
         this.app.data.models.push(model);
         this.app.grapher.addModelSeries(model);
@@ -512,17 +526,26 @@ generatePW() {
     let calculationsText = state.calculations ?? "";
     calculationsText = updateFormulasReferences(calculationsText, nameMap);
     this.app.editor.setValue(calculationsText);
-    this.app.data.annotations = state.data.annotations ?? [];
+    this.app.data.annotations = (state.data.annotations ?? []).map(ann => {
+      if (ann && ann.type === 'tangent-method' && ann.seriesName && nameMap[ann.seriesName]) {
+        return { ...ann, seriesName: nameMap[ann.seriesName] };
+      }
+      return ann;
+    });
     this.app.uiManager.updateClearAnnotationsButtonVisibility();
     
     if (state.grapher) {
-      this.app.grapher.setXCurve(state.grapher.xCurve, false);
+      const mappedXCurve = nameMap[state.grapher.xCurve] || state.grapher.xCurve;
+      this.app.grapher.setXCurve(mappedXCurve, false);
       this.app.grapher.updateChart();
-      this.app.grapher.setVisibilityFromList(state.grapher.yCurves);
+      const mappedYCurves = Array.isArray(state.grapher.yCurves)
+        ? state.grapher.yCurves.map(y => nameMap[y] || y)
+        : [];
+      this.app.grapher.setVisibilityFromList(mappedYCurves);
     }
 
     if (state.sort && state.sort.lastSortVariable) {
-      this.app.data.lastSortVariable = state.sort.lastSortVariable;
+      this.app.data.lastSortVariable = nameMap[state.sort.lastSortVariable] || state.sort.lastSortVariable;
     }
 
     // 5. Finaliser la mise à jour de l'UI
@@ -537,24 +560,27 @@ generatePW() {
     this.app.grapher.reorderLegendByVisibility();
     
     // Restauration de l'état de Zoom
+    const autoZoomBtn = typeof document !== 'undefined' ? document.querySelector("#auto-zoom-button") : null;
     if (state.grapher && state.grapher.zoom) {
       const z = state.grapher.zoom;
       // Applique les extrêmes (bornes) sauvegardées, sans forcer un redessin immédiat (false)
       this.app.grapher.chart.xAxis[0].setExtremes(z.xUserMin ?? null, z.xUserMax ?? null, false);
       this.app.grapher.chart.yAxis[0].setExtremes(z.yUserMin ?? null, z.yUserMax ?? null, false);
       
-      // Affiche ou masque le bouton "Zoom Auto" en fonction de l'état
-      if (z.xUserMin !== null || z.yUserMin !== null) {
-          this.app.grapher.hasUserZoom = true;
-          document.querySelector("#auto-zoom-button").classList.remove("is-hidden");
+      const hasManualZoom = z.xUserMin !== null || z.xUserMax !== null || z.yUserMin !== null || z.yUserMax !== null;
+      if (hasManualZoom) {
+        this.app.grapher.hasUserZoom = true;
+        if (autoZoomBtn) autoZoomBtn.classList.remove("is-hidden");
       } else {
-          this.app.grapher.hasUserZoom = false;
-          this.app.uiManager.resetZoomUI();
+        this.app.grapher.hasUserZoom = false;
+        if (autoZoomBtn) autoZoomBtn.classList.add("is-hidden");
+        this.app.uiManager.resetZoomUI();
       }
       this.app.grapher.chart.redraw(); // Redessine une seule fois avec le bon zoom
     } else {
       // Comportement par défaut (anciens fichiers)
       this.app.grapher.resetZoom();
+      if (autoZoomBtn) autoZoomBtn.classList.add("is-hidden");
     }
 
     console.log("Session .pw (v3.0) restaurée avec succès.");
@@ -654,7 +680,7 @@ generatePW() {
       // 1) Essai UTF-8
       const utf8Text = new TextDecoder('utf-8', { fatal: false }).decode(buf);
 
-      // 2) Si “�” (U+FFFD) est présent, ou si on voit “Â£” issu d'un mauvais décodage, on bascule en Windows-1252 immédiatement.
+      // 2) Si “” (U+FFFD) est présent, ou si on voit “Â£” issu d'un mauvais décodage, on bascule en Windows-1252 immédiatement.
       const needsCp1252 =
         utf8Text.includes('\uFFFD') || /Â£/.test(utf8Text);
 
