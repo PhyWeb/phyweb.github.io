@@ -168,3 +168,40 @@ describe('Grapher - updateChart() et exclusion de la courbe d\'abscisse X des sÃ
   });
 });
 
+describe('Grapher - formatData() et robustesse face aux virgules et cellules vides', () => {
+  let grapher;
+
+  beforeEach(() => {
+    const data = new Data({ significantDigits: 4 });
+    grapher = new Grapher(data, {
+      grapherGrid: true,
+      minorGrid: false,
+      includeOriginOnAutoZoom: false
+    });
+  });
+
+  it('doit convertir les chaÃ®nes avec virgule ("12,5") en nombres et ne pas perdre de points', () => {
+    const xCurve = [0, '12,5', 25];
+    const yCurve = [0, '4,2', 8.4];
+
+    const formatted = grapher.formatData(xCurve, yCurve);
+
+    assert.deepEqual(formatted, [
+      [0, 0],
+      [12.5, 4.2],
+      [25, 8.4]
+    ]);
+  });
+
+  it('doit ignorer les cellules vides, null, undefined et valeurs non finies', () => {
+    const xCurve = [1, '', null, undefined, 'abc', 6];
+    const yCurve = [10, 20, 30, 40, 'def', 60];
+
+    const formatted = grapher.formatData(xCurve, yCurve);
+
+    assert.deepEqual(formatted, [
+      [1, 10],
+      [6, 60]
+    ]);
+  });
+});

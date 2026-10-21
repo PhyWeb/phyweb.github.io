@@ -288,5 +288,87 @@ describe('Spreadsheet - handleAfterChange() et correction du bug de pagination',
       assert.equal(loadedData.length, 0);
     });
   });
-});
 
+  describe('Stockage numérique et conversion des entrées (nombres, virgules, cellules vides)', () => {
+    it('doit convertir une saisie avec virgule ("12,5") en nombre (12.5) dans la courbe', () => {
+      const { curveX, spreadsheet } = createTestContext(25, 10, 0);
+
+      spreadsheet.handleAfterChange([[0, 0, 0, "12,5"]], 'edit');
+
+      assert.equal(curveX[0], 12.5);
+      assert.equal(typeof curveX[0], 'number');
+    });
+
+    it('doit convertir une saisie avec point ("12.5") en nombre (12.5) dans la courbe', () => {
+      const { curveX, spreadsheet } = createTestContext(25, 10, 0);
+
+      spreadsheet.handleAfterChange([[0, 0, 0, "12.5"]], 'edit');
+
+      assert.equal(curveX[0], 12.5);
+      assert.equal(typeof curveX[0], 'number');
+    });
+
+    it('doit gérer les espaces et les nombres négatifs (" -3,14 ")', () => {
+      const { curveX, spreadsheet } = createTestContext(25, 10, 0);
+
+      spreadsheet.handleAfterChange([[1, 0, 1, " -3,14 "]], 'edit');
+
+      assert.equal(curveX[1], -3.14);
+      assert.equal(typeof curveX[1], 'number');
+    });
+
+    it('doit convertir une saisie en notation scientifique avec virgule ("1,5e-2") en nombre (0.015)', () => {
+      const { curveX, spreadsheet } = createTestContext(25, 10, 0);
+
+      spreadsheet.handleAfterChange([[2, 0, 2, "1,5e-2"]], 'edit');
+
+      assert.equal(curveX[2], 0.015);
+      assert.equal(typeof curveX[2], 'number');
+    });
+
+    it('doit stocker null lorsqu\'une cellule est effacée (chaîne vide "")', () => {
+      const { curveX, spreadsheet } = createTestContext(25, 10, 0);
+
+      spreadsheet.handleAfterChange([[3, 0, 3, ""]], 'edit');
+
+      assert.equal(curveX[3], null);
+    });
+
+    it('doit stocker null lorsqu\'une cellule ne contient que des espaces ("   ")', () => {
+      const { curveX, spreadsheet } = createTestContext(25, 10, 0);
+
+      spreadsheet.handleAfterChange([[4, 0, 4, "   "]], 'edit');
+
+      assert.equal(curveX[4], null);
+    });
+
+    it('doit stocker null si une chaîne non numérique invalide est saisie ("abc")', () => {
+      const { curveX, spreadsheet } = createTestContext(25, 10, 0);
+
+      spreadsheet.handleAfterChange([[5, 0, 5, "abc"]], 'edit');
+
+      assert.equal(curveX[5], null);
+    });
+
+    it('doit convertir correctement lors d\'un copier-coller par lot avec virgules et cellules vides', () => {
+      const { curveX, curveY, spreadsheet } = createTestContext(25, 10, 0);
+
+      const batch = [
+        [0, 0, 0, "10,5"],
+        [0, 1, 0, "20,25"],
+        [1, 0, 1, ""],
+        [1, 1, 10, "0,0"]
+      ];
+
+      spreadsheet.handleAfterChange(batch, 'CopyPaste.paste');
+
+      assert.equal(curveX[0], 10.5);
+      assert.equal(typeof curveX[0], 'number');
+      assert.equal(curveY[0], 20.25);
+      assert.equal(typeof curveY[0], 'number');
+      assert.equal(curveX[1], null);
+      assert.equal(curveY[1], 0);
+      assert.equal(typeof curveY[1], 'number');
+    });
+  });
+});

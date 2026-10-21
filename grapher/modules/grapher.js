@@ -197,9 +197,13 @@ export default class Grapher {
 
     for(let i = 0; i < length; i += step){
       if(xCurve && yCurve && xCurve[i] !== "" && yCurve[i] !== "" && xCurve[i] !== undefined && yCurve[i] !== undefined && xCurve[i] !== null && yCurve[i] !== null){
-        let xVal = Number(xCurve[i]);
-        let yVal = Number(yCurve[i]);
-        if (!isNaN(xVal) && !isNaN(yVal)) {
+        let rawX = xCurve[i];
+        let rawY = yCurve[i];
+        let xVal = typeof rawX === 'number' ? rawX : (typeof rawX === 'string' ? Number(rawX.trim().replace(',', '.')) : Number(rawX));
+        let yVal = typeof rawY === 'number' ? rawY : (typeof rawY === 'string' ? Number(rawY.trim().replace(',', '.')) : Number(rawY));
+        if (Number.isFinite(xVal) && Number.isFinite(yVal)) {
+
+
           data.push([xVal, yVal]);
         }
       }

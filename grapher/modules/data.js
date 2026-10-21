@@ -10,6 +10,31 @@ const DEFAULT_LINE_WIDTH = 2;
 
 const DEFAULT_MODEL_RESOLUTION = 400; // Number of points to generate for the model curve
 
+/**
+ * Convertit une valeur de cellule ou de point de mesure en nombre ou null.
+ * Gère les nombres existants, les virgules décimales (format FR), les espaces,
+ * les notations scientifiques, ainsi que les chaînes vides et valeurs invalides.
+ * @param {*} value - La valeur à parser.
+ * @returns {number|null} Le nombre fini ou null si vide ou invalide.
+ */
+function parseCellValue(value) {
+  if (value === null || value === undefined) {
+    return null;
+  }
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : null;
+  }
+  if (typeof value === 'string') {
+    const cleaned = value.replace(/\s+/g, '').replace(',', '.');
+    if (cleaned === '') {
+      return null;
+    }
+    const num = Number(cleaned);
+    return Number.isFinite(num) ? num : null;
+  }
+  return null;
+}
+
 /*----------------------------------------------------------------------------------------------
 -----------------------------------------------Curve--------------------------------------------
 ----------------------------------------------------------------------------------------------*/
@@ -183,20 +208,22 @@ class Model {
   _buildData(){
     let data = [];
     for(let i = 0; i < this.x.length; i++){
-      const xVal = this.x[i];
-      const yVal = this.y[i];
+      const numX = parseCellValue(this.x[i]);
+      const numY = parseCellValue(this.y[i]);
+
+      if (numX === null || numY === null) {
+        continue;
+      }
 
       // On ne prend en compte que les points dans les bornes définies
-      if (this.minX !== null && xVal < this.minX) {
+      if (this.minX !== null && numX < this.minX) {
         continue;
       }
-      if (this.maxX !== null && xVal > this.maxX) {
+      if (this.maxX !== null && numX > this.maxX) {
         continue;
       }
 
-      if (xVal !== null && yVal !== null && xVal !== '' && yVal !== '' && isFinite(xVal) && isFinite(yVal)) {
-        data.push([xVal, yVal]);
-      }
+      data.push([numX, numY]);
     }
     return data;
   }
@@ -876,7 +903,10 @@ export default class Data {
   }
 
   setValue(curveIndex, index, value){
-    this.curves[curveIndex][index] = value;
+    if (!this.curves[curveIndex]) return null;
+    const parsedValue = parseCellValue(value);
+    this.curves[curveIndex][index] = parsedValue;
+    return parsedValue;
   }
 
   getCurveByTitle(title){
@@ -920,15 +950,18 @@ export default class Data {
       const valA = sortColumn[indexA];
       const valB = sortColumn[indexB];
 
-      const aIsNull = valA === null || valA === undefined;
-      const bIsNull = valB === null || valB === undefined;
+      const aIsNull = valA === null || valA === undefined || valA === '';
+      const bIsNull = valB === null || valB === undefined || valB === '';
 
       if (aIsNull && bIsNull) return 0;
       if (aIsNull) return 1; // Mettre les nuls à la fin
       if (bIsNull) return -1;
 
-      if (typeof valA === 'number' && typeof valB === 'number') {
-        return valA - valB; // Tri numérique
+      const numA = parseCellValue(valA);
+      const numB = parseCellValue(valB);
+
+      if (numA !== null && numB !== null) {
+        return numA - numB; // Tri numérique
       }
 
       console.warn(`Comparaison non numérique entre "${valA}" et "${valB}". Utilisation du tri lexicographique.`);
@@ -958,4 +991,4 @@ export default class Data {
   
 }
 
-export {COLOR_LIST, Data, Curve, Model};
+export {COLOR_LIST, Data, Curve, Model, parseCellValue};

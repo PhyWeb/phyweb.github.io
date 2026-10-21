@@ -1,7 +1,7 @@
 import '../helpers/setup.mjs';
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import Data, { Model } from '../../grapher/modules/data.js';
+import Data, { Model, parseCellValue } from '../../grapher/modules/data.js';
 
 describe('Model - calculateRMSE() et gestion des bornes', () => {
   const createMockData = () => ({
@@ -361,6 +361,125 @@ describe('Data - sortDataBy()', () => {
     assert.deepEqual([...data.curves[0]], ['ananas', 'banane', 'cerise']);
     assert.deepEqual([...data.curves[1]], [1, 2, 3]);
   });
+
+  it('doit effectuer un tri numérique même si des données étaient sous forme de chaînes ("10" et "2", "12,5")', () => {
+    const data = createTestData();
+    const curveA = data.addCurve('A', 'm');
+    curveA.push('10', '2', '12,5', '1');
+    const curveB = data.addCurve('B', 's');
+    curveB.push(100, 20, 125, 10);
+
+    data.sortDataBy('A');
+
+    // Sans la correction, le tri lexicographique donnait : ['1', '10', '12,5', '2']
+    // Avec la correction numérique : ['1', '2', '10', '12,5']
+    assert.deepEqual([...data.curves[0]], ['1', '2', '10', '12,5']);
+    assert.deepEqual([...data.curves[1]], [10, 20, 100, 125]);
+  });
+
+  it('doit placer les chaînes vides "" à la fin du tri comme les valeurs null', () => {
+    const data = createTestData();
+    const curveA = data.addCurve('A', 'm');
+    curveA.push(3, '', 1, null, 2);
+    const curveB = data.addCurve('B', 's');
+    curveB.push(30, 99, 10, 88, 20);
+
+    data.sortDataBy('A');
+
+    assert.deepEqual([...data.curves[0]], [1, 2, 3, '', null]);
+    assert.deepEqual([...data.curves[1]], [10, 20, 30, 99, 88]);
+  });
 });
 
+describe('Model - _buildData() et robustesse face aux chaînes et virgules', () => {
+  const createMockData = () => ({
+    parameters: {},
+    curves: []
+  });
 
+  it('doit convertir les chaînes numériques avec virgule ("12,5") en nombres finis (12.5)', () => {
+    const x = ['0', '12,5', '25,0'];
+    const y = ['0,0', '2,5', '5,0'];
+    const model = new Model(x, y, 'linear', createMockData());
+
+    const data = model._buildData();
+
+    assert.deepEqual(data, [[0, 0], [12.5, 2.5], [25, 5]]);
+    data.forEach(([px, py]) => {
+      assert.equal(typeof px, 'number');
+      assert.equal(typeof py, 'number');
+      assert.ok(Number.isFinite(px));
+      assert.ok(Number.isFinite(py));
+    });
+  });
+
+  it('doit filtrer correctement selon minX et maxX même avec des chaînes', () => {
+    const x = ['0,0', '5,0', '10,0', '15,0', '20,0'];
+    const y = ['0', '10', '20', '30', '40'];
+    const model = new Model(x, y, 'linear', createMockData());
+    model.minX = 5;
+    model.maxX = 15;
+
+    const data = model._buildData();
+
+    assert.deepEqual(data, [[5, 10], [10, 20], [15, 30]]);
+  });
+
+  it('doit exclure les chaînes vides, null, undefined et chaînes invalides', () => {
+    const x = [0, '', null, undefined, 'abc', 10];
+    const y = [0, 5, 10, 15, 'def', 20];
+    const model = new Model(x, y, 'linear', createMockData());
+
+    const data = model._buildData();
+
+    assert.deepEqual(data, [[0, 0], [10, 20]]);
+  });
+});
+
+describe('Data - setValue() et parseCellValue()', () => {
+  describe('parseCellValue()', () => {
+    it('doit convertir les nombres et les chaînes avec virgule ou point', () => {
+      assert.equal(parseCellValue(12.5), 12.5);
+      assert.equal(parseCellValue('12,5'), 12.5);
+      assert.equal(parseCellValue(' 12.5 '), 12.5);
+      assert.equal(parseCellValue('-3,14'), -3.14);
+      assert.equal(parseCellValue('0'), 0);
+      assert.equal(parseCellValue('0,0'), 0);
+      assert.equal(parseCellValue('1,5e-2'), 0.015);
+    });
+
+    it('doit retourner null pour les valeurs vides ou non finies', () => {
+      assert.equal(parseCellValue(''), null);
+      assert.equal(parseCellValue('   '), null);
+      assert.equal(parseCellValue(null), null);
+      assert.equal(parseCellValue(undefined), null);
+      assert.equal(parseCellValue(NaN), null);
+      assert.equal(parseCellValue(Infinity), null);
+      assert.equal(parseCellValue('-Infinity'), null);
+      assert.equal(parseCellValue('abc'), null);
+    });
+  });
+
+  describe('Data.setValue()', () => {
+    it('doit stocker un nombre lors de la saisie d\'une chaîne avec virgule', () => {
+      const data = new Data({ significantDigits: 4 });
+      const curve = data.addCurve('x', 'm');
+      curve.push(0, 1);
+
+      data.setValue(0, 1, '12,5');
+
+      assert.equal(curve[1], 12.5);
+      assert.equal(typeof curve[1], 'number');
+    });
+
+    it('doit stocker null lors de l\'effacement d\'une cellule ("")', () => {
+      const data = new Data({ significantDigits: 4 });
+      const curve = data.addCurve('x', 'm');
+      curve.push(0, 42);
+
+      data.setValue(0, 1, '');
+
+      assert.equal(curve[1], null);
+    });
+  });
+});
