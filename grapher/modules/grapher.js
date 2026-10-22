@@ -1607,13 +1607,23 @@ setDisableScientificNotation(disabled) {
             if (Math.max(pA.x, pB.x) < minSearchX || Math.min(pA.x, pB.x) > maxSearchX) {
               continue;
             }
-            const mSeg = (pB.y - pA.y) / (pB.x - pA.x);
-            if (mSeg !== slope) {
-              const xInt = (pA.y - mSeg * pA.x - bMed) / (slope - mSeg);
-              // Vérifie si l'intersection tombe bien entre les deux points du segment
-              if (xInt >= Math.min(pA.x, pB.x) && xInt <= Math.max(pA.x, pB.x)) {
-                eqPoint = { x: xInt, y: slope * xInt + bMed };
+            if (pB.x === pA.x) {
+              const xInt = pA.x;
+              const yInt = slope * xInt + bMed;
+              if (yInt >= Math.min(pA.y, pB.y) && yInt <= Math.max(pA.y, pB.y)) {
+                eqPoint = { x: xInt, y: yInt };
                 break;
+              }
+            } else {
+              const mSeg = (pB.y - pA.y) / (pB.x - pA.x);
+              if (mSeg !== slope) {
+                const xInt = (pA.y - mSeg * pA.x - bMed) / (slope - mSeg);
+                // Vérifie si l'intersection tombe bien entre les deux points du segment
+                if (xInt >= Math.min(pA.x, pB.x) && xInt <= Math.max(pA.x, pB.x)) {
+                  eqPoint = { x: xInt, y: slope * xInt + bMed };
+                  break;
+                }
+
               }
             }
           }
@@ -2005,15 +2015,18 @@ setDisableScientificNotation(disabled) {
         const p_plus_1 = getPointObject(i < n - 1 ? data[i + 1] : null);
         let s = null;
         if (p_minus_1 && p_plus_1) {
-            s = (p_plus_1.y - p_minus_1.y) / (p_plus_1.x - p_minus_1.x);
+            const dx = p_plus_1.x - p_minus_1.x;
+            s = dx !== 0 ? (p_plus_1.y - p_minus_1.y) / dx : null;
         } else if (p_plus_1) {
-            s = (p_plus_1.y - p.y) / (p_plus_1.x - p.x);
+            const dx = p_plus_1.x - p.x;
+            s = dx !== 0 ? (p_plus_1.y - p.y) / dx : null;
         } else if (p_minus_1) {
-            s = (p.y - p_minus_1.y) / (p.x - p_minus_1.x);
+            const dx = p.x - p_minus_1.x;
+            s = dx !== 0 ? (p.y - p_minus_1.y) / dx : null;
         }
         slopes.push(s);
 
-        if (s !== null && Math.abs(s) > maxSlope) {
+        if (s !== null && Number.isFinite(s) && Math.abs(s) > maxSlope) {
             maxSlope = Math.abs(s);
             jumpIndex = i;
         }
@@ -2029,7 +2042,7 @@ setDisableScientificNotation(disabled) {
     const searchEnd = p1Index < jumpIndex ? n : jumpIndex;
 
     for (let i = searchStart; i < searchEnd; i++) {
-        if (slopes[i] !== null) {
+        if (slopes[i] !== null && Number.isFinite(slopes[i])) {
             const diff = Math.abs(slopes[i] - slope1);
             if (diff < minDiff) {
                 minDiff = diff;
