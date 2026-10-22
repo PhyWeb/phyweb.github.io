@@ -53,7 +53,7 @@ export default class Calculation {
                 return null;
               }
               // Pour le log, 0 n'est pas défini non plus.
-              if (name.includes('log') && val === 0) {
+              if ((name === 'log' || name === 'ln') && val === 0) {
                 return null;
               }
               return originalFn(val);
@@ -61,7 +61,7 @@ export default class Calculation {
           },
           'any': function(x) {
             if (x === null || x < 0) return null;
-            if (name.includes('log') && x === 0) return null;
+            if ((name === 'log' || name === 'ln') && x === 0) return null;
             return originalFn(x);
           }
         });
