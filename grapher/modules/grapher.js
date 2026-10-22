@@ -631,12 +631,12 @@ export default class Grapher {
         const dataSeries = this.chart.series.filter(s => !s.options.id?.startsWith('model-'));
         const point = this.chart.pointer.findNearestKDPoint(dataSeries, true, this.mouseDownInfo);
         if (point) {
-          this.mouseDownInfo.snappedPoint = { x: point.x, y: point.y };
+          this.mouseDownInfo.snappedPoint = { x: point.x, y: point.y, unit: point.series?.userOptions?.unit || '' };
         }
       } else if (this.crosshairMode === 'model') { // <-- AJOUTEZ CE BLOC
         const point = this._findNearestModelPoint(this.mouseDownInfo);
         if (point) {
-            this.mouseDownInfo.snappedPoint = { x: point.x, y: point.y };
+            this.mouseDownInfo.snappedPoint = { x: point.x, y: point.y, unit: point.unit || '' };
         }
       }
 
@@ -1352,6 +1352,7 @@ setDisableScientificNotation(disabled) {
         best = {
           x: closest.x,
           y: closest.y,
+          unit: model.y?.unit || '',
           plotX: pixelX - chart.plotLeft,
           plotY: pixelY - chart.plotTop,
           dist2: dist2
@@ -1490,7 +1491,10 @@ setDisableScientificNotation(disabled) {
         const xCurveObj = this.data.getCurveByTitle(this.currentXCurve);
         const firstYSeries = chart.series.find(s => s.visible && s.yAxis.index === 0);
         const xUnit = xCurveObj?.unit ? ` ${xCurveObj.unit}` : '';
-        const yUnit = firstYSeries?.userOptions.unit ? ` ${firstYSeries.userOptions.unit}` : '';
+        const rawYUnit = annotation.yUnit !== undefined
+          ? annotation.yUnit
+          : (firstYSeries?.userOptions?.unit || '');
+        const yUnit = rawYUnit ? ` ${rawYUnit}` : '';
 
         const dxText = `Δx = ${formatNumber(p2.x - p1.x, significantDigits)}${xUnit}`;
         const dyText = `Δy = ${formatNumber(p2.y - p1.y, significantDigits)}${yUnit}`;
@@ -1899,8 +1903,22 @@ setDisableScientificNotation(disabled) {
       }
 
       if (p1 && p2) {
+        let yUnit = '';
+        if (this.crosshairMode === 'data' || this.crosshairMode === 'model') {
+          yUnit = startSnappedPoint?.unit || '';
+        } else if (this.crosshairMode === 'free') {
+          const visibleDataSeries = chart.series.filter(s => s.visible && !s.options.id?.startsWith('model-'));
+          if (visibleDataSeries.length > 0) {
+            const firstUnit = visibleDataSeries[0].userOptions?.unit || '';
+            const allSame = visibleDataSeries.every(s => (s.userOptions?.unit || '') === firstUnit);
+            yUnit = allSame ? firstUnit : '';
+          }
+        }
         this.data.annotations.push({
-          id: Highcharts.uniqueKey(), type: 'segment', points: [p1, p2]
+          id: Highcharts.uniqueKey(),
+          type: 'segment',
+          points: [p1, p2],
+          yUnit: yUnit
         });
       }
     }

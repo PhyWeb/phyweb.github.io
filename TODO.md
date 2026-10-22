@@ -22,6 +22,8 @@
 
     - changer le style des points selectionnés dans grapher
 
+    - BUG au moins en reticule modele, on peut selectionner des points
+
 # Mendeleiev
 # Optique
 # Chromato
