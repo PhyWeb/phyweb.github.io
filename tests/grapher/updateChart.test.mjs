@@ -4,35 +4,35 @@ import assert from 'node:assert/strict';
 import Data from '../../grapher/modules/data.js';
 import Grapher from '../../grapher/modules/grapher.js';
 
+let mockSeries;
+const createMockChart = () => {
+  mockSeries = [];
+  return {
+    series: mockSeries,
+    addSeries(options, redraw) {
+      const serie = {
+        name: options.name,
+        options: options,
+        data: options.data,
+        visible: options.visible,
+        setData(d, r) { this.data = d; },
+        setVisible(v, r) { this.visible = v; },
+        remove(r) {
+          const idx = mockSeries.indexOf(this);
+          if (idx !== -1) mockSeries.splice(idx, 1);
+        },
+        update(opt, r) { Object.assign(this.options, opt); }
+      };
+      mockSeries.push(serie);
+      return serie;
+    },
+    redraw() {}
+  };
+};
+
 describe('Grapher - updateChart() et exclusion de la courbe d\'abscisse X des séries Y', () => {
   let data;
   let grapher;
-  let mockSeries;
-
-  const createMockChart = () => {
-    mockSeries = [];
-    return {
-      series: mockSeries,
-      addSeries(options, redraw) {
-        const serie = {
-          name: options.name,
-          options: options,
-          data: options.data,
-          visible: options.visible,
-          setData(d, r) { this.data = d; },
-          setVisible(v, r) { this.visible = v; },
-          remove(r) {
-            const idx = mockSeries.indexOf(this);
-            if (idx !== -1) mockSeries.splice(idx, 1);
-          },
-          update(opt, r) { Object.assign(this.options, opt); }
-        };
-        mockSeries.push(serie);
-        return serie;
-      },
-      redraw() {}
-    };
-  };
 
   beforeEach(() => {
     data = new Data({ significantDigits: 4 });
@@ -203,5 +203,47 @@ describe('Grapher - formatData() et robustesse face aux virgules et cellules vid
       [1, 10],
       [6, 60]
     ]);
+    assert.deepEqual(formatted.rowIndices, [0, 5]);
+  });
+
+  it('doit conserver la correspondance avec les indices de lignes (rowIndices) même avec des cellules vides', () => {
+    const xCurve = [1, '', 3, null, 5];
+    const yCurve = [10, 20, 30, 40, 50];
+
+    const formatted = grapher.formatData(xCurve, yCurve);
+
+    assert.deepEqual(formatted, [
+      [1, 10],
+      [3, 30],
+      [5, 50]
+    ]);
+    assert.deepEqual(formatted.rowIndices, [0, 2, 4]);
+  });
+
+  it('doit stocker customRowIndices lors de l\'ajout et de la mise à jour des séries dans updateChart()', () => {
+    const dataObj = new Data({ significantDigits: 4 });
+    const x = dataObj.addCurve('x', 'm');
+    const y = dataObj.addCurve('y', 's');
+    x.push(0, '', 2, 3);
+    y.push(0, 10, 20, 30);
+
+    grapher = new Grapher(dataObj, {
+      grapherGrid: true,
+      minorGrid: false,
+      includeOriginOnAutoZoom: false
+    });
+    grapher.chart = createMockChart();
+    grapher.currentXCurve = 'x';
+
+    // 1. Initial addSeries
+    grapher.updateChart();
+    const ySerie = grapher.chart.series.find(s => s.name === 'y');
+    assert.deepEqual(ySerie.options.customRowIndices, [0, 2, 3]);
+
+    // 2. Update existing series
+    x.push(4);
+    y.push(40);
+    grapher.updateChart();
+    assert.deepEqual(ySerie.options.customRowIndices, [0, 2, 3, 4]);
   });
 });

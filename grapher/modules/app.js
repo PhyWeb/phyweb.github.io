@@ -193,15 +193,16 @@ export default class App {
   }
 
   deleteRow(startRow, amount) {
-    // On vérifie que les arguments sont valides
     if (typeof startRow === 'undefined' || typeof amount === 'undefined' || amount < 1 || startRow < 0) {
       return;
     }
-    
     this.data.deleteRow(startRow, amount);
-
-    this.spreadsheet.update();
-    this.grapher.updateChart();
+    if (this.editor && typeof this.editor.getValue === 'function' && this.editor.getValue().trim() !== '') {
+      this.applyCalculation(this.editor.getValue());
+    } else {
+      this.spreadsheet.update();
+      this.grapher.updateChart();
+    }
   }
 
   async addModel(x, y, type) {
@@ -267,25 +268,6 @@ export default class App {
   }
 
   applyCalculation(text) {
-    // Fonction pour capturer l'état des données calculées
-    const getCalculatedState = () => {
-      const calculatedCurves = this.data.curves.filter(curve => curve.type === "calculation");
-      const calculatedParams = {};
-      for (const key in this.data.parameters) {
-        if (Object.prototype.hasOwnProperty.call(this.data.parameters, key)) {
-          const param = this.data.parameters[key];
-          if (param && param.type !== 'model') {
-            calculatedParams[key] = param;
-          }
-        }
-      }
-      // On utilise JSON.stringify pour une comparaison simple et efficace
-      return JSON.stringify({ curves: calculatedCurves, params: calculatedParams });
-    };
-
-    // On capture l'état initial AVANT toute modification
-    const initialStateJSON = getCalculatedState();
-
     // --- Phase 1: Analyse et Validation ---
     const formulasToEvaluate = [];
     const parsingWarnings = [];
@@ -304,13 +286,10 @@ export default class App {
       }
       this.data.parameters = parametersToKeep;
 
-      const finalStateJSON = getCalculatedState();
-      if (initialStateJSON !== finalStateJSON) {
-        this.spreadsheet.update();
-        this.grapher.updateChart();
-        this.uiManager.updateCalculationUI();
-      }
-      return;
+      this.spreadsheet.update();
+      this.grapher.updateChart();
+      this.uiManager.updateCalculationUI();
+      return true;
     }
 
     const lines = text.trim().split('\n');
@@ -472,27 +451,12 @@ export default class App {
       }
     }
 
-    // On capture le nouvel état
-    const finalStateJSON = getCalculatedState();
-
-    // On compare et on met à jour l'UI uniquement si nécessaire
-    if (initialStateJSON !== finalStateJSON) {
-      // Si un tri était actif avant le recalcul, on le réapplique
-      if (this.data.lastSortVariable) {
-        if (this.data.getCurveByTitle(this.data.lastSortVariable)) {
-          this.data.sortDataBy(this.data.lastSortVariable);
-        } else {
-          this.data.clearSort();
-        }
-      }
-
-      // Met à jour le tableur, le graphique et l'UI
-      this.spreadsheet.update();
-      this.grapher.updateChart();
-      this.uiManager.updateCalculationUI();
-      this.uiManager.updateSortUI();
-      this.uiManager.updateXAxisSelector();
-    }
+    // Met à jour le tableur, le graphique et l'UI avec les données remplies
+    this.spreadsheet.update();
+    this.grapher.updateChart();
+    this.uiManager.updateCalculationUI();
+    this.uiManager.updateSortUI();
+    this.uiManager.updateXAxisSelector();
 
     // Si un RW3 a été chargé juste avant, on ajoute les courbes demandées
     if (this.pendingRW3 && Array.isArray(this.pendingRW3.y)) {
@@ -506,7 +470,6 @@ export default class App {
       this.pendingRW3 = null;
     }
 
-    // retourne si il y a eu des erreurs ou non
     return allErrors.length === 0;
   }
 

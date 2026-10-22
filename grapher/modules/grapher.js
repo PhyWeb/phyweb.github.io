@@ -190,6 +190,7 @@ export default class Grapher {
   formatData(xCurve, yCurve){
     let length = lengthOfTheLongestTable([xCurve, yCurve]);
     let data = [];
+    const rowIndices = [];
     
     // Optimisation : on limite le nombre maximum de points envoyés au graphique
     const MAX_POINTS = 100000; 
@@ -205,9 +206,16 @@ export default class Grapher {
 
 
           data.push([xVal, yVal]);
+          rowIndices.push(i);
         }
       }
     }
+    Object.defineProperty(data, 'rowIndices', {
+      value: rowIndices,
+      writable: true,
+      configurable: true,
+      enumerable: false
+    });
     return data;
   }
 
@@ -316,6 +324,7 @@ export default class Grapher {
 
           },
           selection: (e) => {
+            if (!e.xAxis || !e.yAxis) return;
             // 1. On empêche le zoom par défaut.
             e.preventDefault();
 
@@ -841,9 +850,11 @@ updateChart(yCurveTitles, redraw = true) {
       const seriesExists = this.chart.series.some(s => s.name === curve.title);
       if (!seriesExists) {
         const shouldBeVisible = curvesToShow.has(curve.title);
+        const formatted = this.formatData(this.data.getCurveByTitle(this.currentXCurve), curve);
         this.chart.addSeries({
           name: curve.title,
-          data: this.formatData(this.data.getCurveByTitle(this.currentXCurve), curve),
+          data: formatted,
+          customRowIndices: formatted.rowIndices,
           color: curve.color,
           lineWidth: curve.line ? curve.lineWidth : 0,
           dashStyle: curve.lineStyle,
@@ -869,7 +880,9 @@ updateChart(yCurveTitles, redraw = true) {
       const xCurveData = this.data.getCurveByTitle(this.currentXCurve);
 
       if (curveData && xCurveData) {
-        serie.setData(this.formatData(xCurveData, curveData), false);
+        const formatted = this.formatData(xCurveData, curveData);
+        serie.options.customRowIndices = formatted.rowIndices;
+        serie.setData(formatted, false);
 
         const shouldBeVisible = curvesToShow.has(serie.name);
         if (serie.visible !== shouldBeVisible) {
@@ -955,7 +968,7 @@ setDisableScientificNotation(disabled) {
   setCrosshairMode(mode) {
     this.crosshairMode = mode;
 
-    const needsMouseTracking = (mode === 'data' || mode === 'model' || mode === 'tangent' || mode === 'tangent-method');
+
     const needsStickyTracking = (mode === 'data' || mode === 'tangent' || mode === 'tangent-method');
 
     this.hideFreeCrosshair();
@@ -979,7 +992,7 @@ setDisableScientificNotation(disabled) {
       plotOptions: {
         series: {
           stickyTracking: needsStickyTracking,
-          enableMouseTracking: needsMouseTracking,
+          enableMouseTracking: true,
           states: { hover: { enabled: false } }
         }
       }

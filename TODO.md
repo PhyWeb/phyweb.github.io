@@ -20,7 +20,7 @@
 # Grapher
     - possibilité d'avoir 2 axes y
 
-    - Il y a eu beaucoup de modifs. verifier que tout ce qui doit etre sauvegardé dans les pw l'est réellement (je pense qu'on a des nouveaux flags nottament.)
+    - changer le style des points selectionnés dans grapher
 
 # Mendeleiev
 # Optique

@@ -152,4 +152,53 @@ describe('App - applyCalculation() et interdiction de redéfinir les grandeurs e
                                   t.innerHTML.includes('Le symbole "a" est un paramètre de modèle et ne peut pas être redéfini.')));
     assert.equal(data.parameters['a'].value, 1);
   });
+
+  it('doit appeler spreadsheet.update() et grapher.updateChart() même si les valeurs calculées sont inchangées', () => {
+    let spreadsheetUpdates = 0;
+    let chartUpdates = 0;
+    app.spreadsheet.update = () => { spreadsheetUpdates++; };
+    app.grapher.updateChart = () => { chartUpdates++; };
+
+    // Premier calcul
+    app.applyCalculation('y = 2 * x');
+    assert.equal(spreadsheetUpdates, 2); // 1 dans addCurve, 1 à la fin de applyCalculation
+    assert.equal(chartUpdates, 1);
+
+    // Deuxième calcul identique
+    app.applyCalculation('y = 2 * x');
+    // Le tableur et le graphique doivent toujours être mis à jour à la fin
+    assert.equal(spreadsheetUpdates, 4);
+    assert.equal(chartUpdates, 2);
+  });
+
+  it('deleteRow doit recalculer les grandeurs calculées via applyCalculation si l\'éditeur contient du code', () => {
+    app.editor.getValue = () => 'y = 2 * x';
+    app.applyCalculation('y = 2 * x');
+
+    const curveY = data.getCurveByTitle('y');
+    assert.equal(curveY.length, 5);
+    assert.deepEqual([...curveY], [0, 4, 8, 12, 16]);
+
+    // Suppression de la ligne 2 (x=4, y=8)
+    app.deleteRow(2, 1);
+
+    // Les données brutes et calculées doivent avoir 4 éléments
+    assert.equal(data.getCurveByTitle('x').length, 4);
+    assert.equal(curveY.length, 4);
+    assert.deepEqual([...curveY], [0, 4, 12, 16]);
+  });
+
+  it('deleteRow doit mettre à jour le tableur et le graphique si l\'éditeur est vide', () => {
+    app.editor.getValue = () => '   ';
+    let spreadsheetUpdates = 0;
+    let chartUpdates = 0;
+    app.spreadsheet.update = () => { spreadsheetUpdates++; };
+    app.grapher.updateChart = () => { chartUpdates++; };
+
+    app.deleteRow(1, 1);
+
+    assert.equal(data.getCurveByTitle('x').length, 4);
+    assert.equal(spreadsheetUpdates, 1);
+    assert.equal(chartUpdates, 1);
+  });
 });
