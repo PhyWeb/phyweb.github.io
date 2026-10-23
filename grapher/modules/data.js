@@ -823,7 +823,7 @@ export default class Data {
     this.lastSortVariable = null; // Dernière variable utilisée pour le tri
   }
 
-  addCurve(title, unit, size, fill, line, markers){
+  addCurve(title, unit, size, fill, line, markers, type){
     // Check if the title is already used TODO: modal
     if(this.curves.find(curve => curve.title === title)){
       return null;
@@ -839,6 +839,9 @@ export default class Data {
 
     // Create the curve
     let curve = new Curve(title, unit, color, line, markers);
+    if (type) {
+      curve.type = type;
+    }
 
     if (size !== undefined) {
       curve.init(size, fill);
@@ -933,9 +936,10 @@ export default class Data {
   }
 
   setValue(curveIndex, index, value){
-    if (!this.curves[curveIndex]) return null;
+    const curve = this.curves[curveIndex];
+    if (!curve || curve.type === 'calculation') return null;
     const parsedValue = parseCellValue(value);
-    this.curves[curveIndex][index] = parsedValue;
+    curve[index] = parsedValue;
     return parsedValue;
   }
 

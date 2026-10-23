@@ -22,8 +22,8 @@ export default class App {
     this.ioManager = new IOManager(this);
   }
 
-  addCurve(title, unit,line, markers){
-    let curve = this.spreadsheet.addCurve(title, unit, undefined, undefined, line, markers);
+  addCurve(title, unit, line, markers, type){
+    let curve = this.spreadsheet.addCurve(title, unit, undefined, undefined, line, markers, type);
 
     if(this.data.curves.length === 1){
       this.grapher.setXCurve(title);
@@ -416,7 +416,7 @@ export default class App {
       if (result.type === 'parameter') {
         this.data.parameters[result.variableName] = result.data;
       } else {
-        const newCurve = this.addCurve(result.variableName, result.unit);
+        const newCurve = this.addCurve(result.variableName, result.unit, undefined, undefined, 'calculation');
         newCurve.type = "calculation";
         newCurve.length = 0;
         const dataToAdd = result.data;

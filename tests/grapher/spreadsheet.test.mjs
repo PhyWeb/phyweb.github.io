@@ -439,4 +439,135 @@ describe('Spreadsheet - handleAfterChange() et correction du bug de pagination',
       assert.equal(spreadsheet.formatCache.size, 0);
     });
   });
+
+  describe('Protection des colonnes calculées (readOnly: true)', () => {
+    it('doit configurer readOnly: true pour les grandeurs de type calculation dans build()', () => {
+      const data = new Data({ significantDigits: 4 });
+      const curveX = data.addCurve('x', 'm');
+      const calcCurve = data.addCurve('v', 'm/s');
+      calcCurve.type = 'calculation';
+
+      const spreadsheet = new Spreadsheet(data);
+      let capturedOptions = null;
+      global.Handsontable = class MockHandsontable {
+        constructor(container, options) {
+          capturedOptions = options;
+        }
+      };
+
+      spreadsheet.build({ openEditHeaderModal: () => {} });
+
+      assert.ok(capturedOptions && capturedOptions.columns, 'Handsontable doit recevoir les options de colonnes');
+      assert.equal(capturedOptions.columns.length, 2);
+      assert.equal(capturedOptions.columns[0].readOnly, false, 'La colonne standard ne doit pas être en lecture seule');
+      assert.equal(capturedOptions.columns[1].readOnly, true, 'La colonne calculée doit être marquée readOnly: true');
+    });
+
+    it('doit mettre à jour les colonnes avec readOnly: true pour les grandeurs de type calculation dans update()', () => {
+      const data = new Data({ significantDigits: 4 });
+      const curveX = data.addCurve('x', 'm');
+      const spreadsheet = new Spreadsheet(data);
+
+      let updatedSettings = null;
+      spreadsheet.hot = {
+        getColHeader: () => ['x (m)'], // Simule un ancien en-tête avant l'ajout de la colonne calculée
+        updateSettings: (settings) => {
+          updatedSettings = settings;
+        }
+      };
+
+      // Ajout d'une grandeur calculée
+      const calcCurve = data.addCurve('v', 'm/s');
+      calcCurve.type = 'calculation';
+
+      spreadsheet.update();
+
+      assert.ok(updatedSettings && updatedSettings.columns, 'updateSettings doit être appelé avec columns');
+      assert.equal(updatedSettings.columns.length, 2);
+      assert.equal(updatedSettings.columns[0].readOnly, false);
+      assert.equal(updatedSettings.columns[1].readOnly, true);
+    });
+
+    it('doit déclencher updateSettings via columnsChanged même si getColHeader() est identique', () => {
+      const data = new Data({ significantDigits: 4 });
+      const curveX = data.addCurve('x', 'm');
+      const curveY = data.addCurve('y', '');
+
+      const spreadsheet = new Spreadsheet(data);
+      let updatedSettings = null;
+      spreadsheet.hot = {
+        getColHeader: () => ['x (m)', 'y'],
+        getSettings: () => ({
+          columns: [
+            { type: 'numeric', readOnly: false },
+            { type: 'numeric', readOnly: false }
+          ]
+        }),
+        updateSettings: (settings) => {
+          updatedSettings = settings;
+        }
+      };
+
+      // y devient une grandeur calculée après coup sans changer le nom
+      curveY.type = 'calculation';
+
+      spreadsheet.update();
+
+      assert.ok(updatedSettings, 'updateSettings doit être appelé car le type de courbe a changé');
+      assert.equal(updatedSettings.columns[1].readOnly, true);
+      assert.equal(updatedSettings.columns[1].editor, false);
+    });
+
+    it('doit fournir un callback cells() dynamique verrouillant les colonnes calculées', () => {
+      const data = new Data({ significantDigits: 4 });
+      data.addCurve('x', 'm');
+      const calcCurve = data.addCurve('v', 'm/s');
+      calcCurve.type = 'calculation';
+
+      const spreadsheet = new Spreadsheet(data);
+      let capturedOptions = null;
+      global.Handsontable = class MockHandsontable {
+        constructor(container, options) {
+          capturedOptions = options;
+        }
+      };
+
+      spreadsheet.build({ openEditHeaderModal: () => {} });
+
+      assert.equal(typeof capturedOptions.cells, 'function');
+      const cellPropStandard = capturedOptions.cells(0, 0);
+      assert.equal(cellPropStandard.readOnly, undefined);
+
+      const cellPropCalc = capturedOptions.cells(0, 1);
+      assert.equal(cellPropCalc.readOnly, true);
+      assert.equal(cellPropCalc.editor, false);
+    });
+
+    it('handleAfterChange doit refuser toute modification sur une colonne de type calculation', () => {
+      const data = new Data({ significantDigits: 4 });
+      const curveX = data.addCurve('x', 'm');
+      const calcCurve = data.addCurve('v', 'm/s');
+      calcCurve.type = 'calculation';
+
+      curveX.push(10);
+      calcCurve.push(20);
+
+      const spreadsheet = new Spreadsheet(data);
+      // Tentative d'édition sur la colonne calculée (colonne 1)
+      spreadsheet.handleAfterChange([[0, 1, 20, 999]], 'edit');
+
+      assert.equal(calcCurve[0], 20, 'La valeur de la colonne calculée ne doit pas être écrasée');
+    });
+
+    it('data.setValue doit refuser toute modification directe sur une colonne de type calculation', () => {
+      const data = new Data({ significantDigits: 4 });
+      const calcCurve = data.addCurve('v', 'm/s');
+      calcCurve.type = 'calculation';
+      calcCurve.push(42);
+
+      const res = data.setValue(0, 0, 999);
+      assert.equal(res, null);
+      assert.equal(calcCurve[0], 42);
+    });
+  });
 });

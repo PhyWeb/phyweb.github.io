@@ -100,9 +100,9 @@ class Spreadsheet {
     }
   }
 
-  addCurve(title, unit, size, fill, line, markers){
+  addCurve(title, unit, size, fill, line, markers, type){
 
-    let curve = this.data.addCurve(title, unit, size, fill, line, markers);
+    let curve = this.data.addCurve(title, unit, size, fill, line, markers, type);
 
     this.update();
 
@@ -114,6 +114,17 @@ class Spreadsheet {
     const currentHeaders = this.hot ? this.hot.getColHeader() : null; 
     
     const headersChanged = !currentHeaders || headers.length !== currentHeaders.length || headers.some((h, i) => h !== currentHeaders[i]);
+
+    let columnsChanged = false;
+    if (typeof this.hot?.getSettings === 'function') {
+      const currentColumns = this.hot.getSettings()?.columns;
+      if (Array.isArray(currentColumns)) {
+        columnsChanged = currentColumns.length !== this.data.curves.length || 
+          this.data.curves.some((curve, i) => (curve.type === 'calculation') !== Boolean(currentColumns[i]?.readOnly));
+      }
+    }
+
+    const needsSettingsUpdate = headersChanged || columnsChanged;
 
     const fullTableData = this.data.getTable();
     const totalRows = fullTableData.length;
@@ -135,11 +146,13 @@ class Spreadsheet {
     this.updatePaginationUI(totalRows, startIdx, endIdx);
 
     if (this.hot) {
-      if (!headersChanged) {
+      if (!needsSettingsUpdate) {
         this.hot.loadData(displayData);
       } else {
-        const columnsConfig = headers.map(() => ({ 
+        const columnsConfig = this.data.curves.map((curve) => ({ 
           type: 'numeric',
+          readOnly: curve.type === 'calculation',
+          editor: curve.type === 'calculation' ? false : 'numeric',
           renderer: (instance, td, row, col, prop, value, cellProperties) => 
             this.customCellRenderer(instance, td, row, col, prop, value, cellProperties)
         }));
@@ -148,6 +161,15 @@ class Spreadsheet {
           data: displayData,
           colHeaders: headers,
           columns: columnsConfig,
+          cells: (row, col) => {
+            const cellProperties = {};
+            const curve = this.data.getCurveByIndex(col);
+            if (curve && curve.type === 'calculation') {
+              cellProperties.readOnly = true;
+              cellProperties.editor = false;
+            }
+            return cellProperties;
+          },
           colWidths: (index) => this.calculateColWidth(index),
           // Fonction dynamique pour calculer le bon numéro de ligne (à cause de la pagination)
           rowHeaders: (index) => {
@@ -206,6 +228,10 @@ class Spreadsheet {
 
     change.forEach(element => {
       const [visualRow, col, oldVal, newVal] = element;
+      const curve = this.data.getCurveByIndex(col);
+      if (curve && curve.type === 'calculation') {
+        return; // Interdiction absolue de modifier une grandeur calculée dans le tableur
+      }
       const actualRow = pageOffset + visualRow;
       const parsed = this.data.setValue(col, actualRow, newVal);
       // Si la valeur saisie (ex: "12,5" ou "abc") a été transformée ou nettoyée en null,
@@ -268,6 +294,14 @@ class Spreadsheet {
     const displayData = fullTableData.slice(startIdx, endIdx);
 
     // --- CRÉATION DU TABLEAU ---
+    const columnsConfig = this.data.curves.map((curve) => ({ 
+      type: 'numeric',
+      readOnly: curve.type === 'calculation',
+      editor: curve.type === 'calculation' ? false : 'numeric',
+      renderer: (instance, td, row, col, prop, value, cellProperties) => 
+        this.customCellRenderer(instance, td, row, col, prop, value, cellProperties)
+    }));
+
     this.hot = new Handsontable(container, {
       data: displayData, // On ne charge que la première page
       type: 'numeric',
@@ -277,11 +311,16 @@ class Spreadsheet {
         return (this.currentPage * this.pageSize) + index + 1;
       },
       colHeaders: this.data.getHeaders(),
-      columns: this.data.getHeaders().map(() => ({ 
-        type: 'numeric',
-        renderer: (instance, td, row, col, prop, value, cellProperties) => 
-          this.customCellRenderer(instance, td, row, col, prop, value, cellProperties)
-      })),
+      columns: columnsConfig,
+      cells: (row, col) => {
+        const cellProperties = {};
+        const curve = this.data.getCurveByIndex(col);
+        if (curve && curve.type === 'calculation') {
+          cellProperties.readOnly = true;
+          cellProperties.editor = false;
+        }
+        return cellProperties;
+      },
       afterOnCellMouseDown: afterOnCellMouseDown,
       afterGetColHeader: afterGetColHeader,
       autoColumnSize: false,
@@ -309,7 +348,7 @@ class Spreadsheet {
     this.formatCache.clear();
   }
 
-focusFirstCell(editMode = false) {
+  focusFirstCell(editMode = false) {
     if (!this.hot) return;
 
     // On s'abonne au prochain rendu naturel du tableau
