@@ -186,8 +186,14 @@ class Spreadsheet {
     const pageOffset = this.getPageOffset();
 
     change.forEach(element => {
-      const actualRow = pageOffset + element[0];
-      this.data.setValue(element[1], actualRow, element[3]);
+      const [visualRow, col, oldVal, newVal] = element;
+      const actualRow = pageOffset + visualRow;
+      const parsed = this.data.setValue(col, actualRow, newVal);
+      // Si la valeur saisie (ex: "12,5" ou "abc") a été transformée ou nettoyée en null,
+      // on met à jour la cellule Handsontable silencieusement ("updateData" est ignoré par handleAfterChange)
+      if (newVal !== parsed && !(newVal === '' && parsed === null)) {
+        this.hot.setDataAtCell(visualRow, col, parsed, 'updateData');
+      }
     });
 
     if (typeof this.cb === 'function') {

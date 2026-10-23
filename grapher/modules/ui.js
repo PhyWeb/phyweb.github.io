@@ -140,11 +140,11 @@ export default class UIManager {
             
             // S'assurer qu'on ne supprime pas un point d'un modèle mathématique
             if (!point.series.options.id?.startsWith('model-')) {
-              // On utilise la méthode de votre app qui gère déjà la suppression complète !
               const rowIndices = point.series.options.customRowIndices;
               const actualRow = Array.isArray(rowIndices) && rowIndices[point.index] !== undefined
                 ? rowIndices[point.index]
                 : point.index;
+              point.select(false, false); // <-- Nettoie l'état de sélection Highcharts avant suppression
               this.app.deleteRow(actualRow, 1);
             }
           }
