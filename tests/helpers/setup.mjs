@@ -50,6 +50,17 @@ if (!global.window.location) {
   global.window.location = { hostname: 'localhost', href: '' };
 }
 
+// Mock minimal pour localStorage
+if (!global.localStorage || typeof global.localStorage.clear !== 'function') {
+  let store = {};
+  global.localStorage = {
+    getItem: (key) => (store[key] !== undefined ? store[key] : null),
+    setItem: (key, value) => { store[key] = String(value); },
+    removeItem: (key) => { delete store[key]; },
+    clear: () => { store = {}; }
+  };
+}
+
 // Mock minimal pour Highcharts (génération de clés uniques pour Model et chargement de Grapher)
 if (!global.Highcharts) {
   global.Highcharts = {

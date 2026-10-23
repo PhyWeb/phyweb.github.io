@@ -411,7 +411,7 @@ export default class Grapher {
           const grapher = chart.options.customGrapherInstance; 
           if (!grapher) return '';
 
-          const significantDigits = grapher.data.settings.significantDigits ?? 4;
+          const significantDigits = grapher?.data?.settings?.significantDigits ?? 4;
 
           const xCurve = grapher.currentXCurve;
           const xCurveObj = grapher.data.getCurveByTitle(xCurve);
@@ -1374,7 +1374,7 @@ setDisableScientificNotation(disabled) {
   _drawStyledCrosshair(pixelX, pixelY, valueX, valueY) {
     const chart = this.chart;
     const renderer = chart.renderer;
-    const significantDigits = this.data.settings.significantDigits;
+    const significantDigits = this.data?.settings?.significantDigits ?? 4;
     const { plotLeft, plotTop, plotWidth, plotHeight } = chart;
 
     const elements = {};
@@ -1452,7 +1452,7 @@ setDisableScientificNotation(disabled) {
     const chart = this.chart;
     const xAxis = chart.xAxis[0];
     const yAxis = chart.yAxis[0];
-    const significantDigits = this.data.settings.significantDigits;
+    const significantDigits = this.data?.settings?.significantDigits ?? 4;
 
     // Nettoyer les anciennes annotations
     this.renderedAnnotations.forEach(rendered => {
@@ -2205,7 +2205,7 @@ drawTangent(event) {
 
     // 4. DESSIN CONDITIONNEL DU LABEL DE PENTE (uniquement pour l'outil classique)
     if (this.crosshairMode !== 'tangent-method') {
-        const slopeText = `pente = ${formatNumber(slope, this.data.settings.significantDigits)}`;
+        const slopeText = `pente = ${formatNumber(slope, this.data?.settings?.significantDigits ?? 4)}`;
         const slopeLabel = chart.renderer.label(slopeText, 0, 0, 'callout')
           .attr({ fill: 'white', stroke: '#dbdbdb', 'stroke-width': 1, r: 6, padding: 8, zIndex: 6 })
           .css({ color: 'black', fontSize: '14px' })

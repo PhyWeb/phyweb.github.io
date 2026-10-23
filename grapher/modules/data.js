@@ -809,7 +809,7 @@ class Model {
 ------------------------------------------------Data--------------------------------------------
 ----------------------------------------------------------------------------------------------*/
 export default class Data {
-  constructor(initialSettings) {
+  constructor(initialSettings = {}) {
     this.curves = [];
     this.parameters = {}; // For storing parameters (e.g. constants)
 
@@ -817,7 +817,7 @@ export default class Data {
     this.annotations = [];
 
     this.settings = {
-      significantDigits: initialSettings.significantDigits,
+      significantDigits: initialSettings?.significantDigits ?? 4,
     };
 
     this.lastSortVariable = null; // Dernière variable utilisée pour le tri

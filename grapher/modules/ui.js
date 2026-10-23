@@ -235,7 +235,7 @@ export default class UIManager {
         ul.className = 'menu-list';
 
         if (isParameter) {
-          const significantDigits = this.data.settings.significantDigits;
+          const significantDigits = this.data?.settings?.significantDigits ?? 4;
           for (const [key, param] of Object.entries(items)) {
             const li = document.createElement('li');
             const a = document.createElement('a');
@@ -331,7 +331,7 @@ export default class UIManager {
    * @param {Object} model - L'objet modèle à mettre à jour.
    */
   updateModelPanel(model) {
-    const significantDigits = this.data.settings.significantDigits;
+    const significantDigits = this.data?.settings?.significantDigits ?? 4;
     const panel = $(`#model-list article[data-model-id="${model.id}"]`);
 
     // Mise a jour des couleurs et du style du panneau
@@ -844,7 +844,7 @@ export default class UIManager {
    */
   readCurrentAppSettings() {
     return {
-      significantDigits: this.data.settings.significantDigits,
+      significantDigits: this.data?.settings?.significantDigits ?? 4,
       grapherGrid: this.grapher.grid,
       minorGrid: this.grapher.minorGrid,
       disableScientificNotation: this.grapher.disableScientificNotation,
@@ -860,7 +860,7 @@ export default class UIManager {
    * @param {object} settings - L'objet de paramètres à charger.
    */
   loadSettingsIntoModalUI(settings) {
-    $('#significant-digits-select').value = settings.significantDigits;
+    $('#significant-digits-select').value = settings?.significantDigits ?? 4;
     $('#graph-grid-switch').checked = settings.grapherGrid;
     $('#graph-grid-minor-switch').checked = settings.minorGrid || false;
     $('#graph-disable-scientific-switch').checked = settings.disableScientificNotation || false;
@@ -877,7 +877,7 @@ export default class UIManager {
    */
   readSettingsFromModal() {
     return {
-      significantDigits: parseInt(document.getElementById('significant-digits-select').value),
+      significantDigits: parseInt(document.getElementById('significant-digits-select').value) || 4,
       grapherGrid: document.getElementById('graph-grid-switch').checked,
       minorGrid: document.getElementById('graph-grid-minor-switch').checked,
       disableScientificNotation: document.getElementById('graph-disable-scientific-switch').checked,
@@ -2303,7 +2303,7 @@ export default class UIManager {
       const xValue = parseFloat(xInput.value);
       if (!isNaN(xValue)) {
         const yValue = model.calculate(xValue);
-        yOutput.value = formatNumber(yValue, this.data.settings.significantDigits);
+        yOutput.value = formatNumber(yValue, this.data?.settings?.significantDigits ?? 4);
       } else {
         yOutput.value = 'Entrée invalide';
       }
@@ -2386,7 +2386,7 @@ export default class UIManager {
           </div>
           <div class="field">
             <div class="control">
-              <input class="input" type="text" value="${formatNumber(param.value, this.data.settings.significantDigits)}" disabled />
+              <input class="input" type="text" value="${formatNumber(param.value, this.data?.settings?.significantDigits ?? 4)}" disabled />
             </div>
           </div>
         </div>
@@ -2848,7 +2848,7 @@ export default class UIManager {
     // Remplir la liste des paramètres
     const parametersList = panelClone.querySelector('.parameters-list');
     parametersList.innerHTML = ''; // Vider au cas où
-    const significantDigits = this.data.settings.significantDigits;
+    const significantDigits = this.data?.settings?.significantDigits ?? 4;
     model.parameters.forEach(param => {
       const li = document.createElement('li');
       li.innerHTML = `${param.name} = ${formatNumber(param.value, significantDigits)}`;
@@ -3395,7 +3395,7 @@ export default class UIManager {
    * Retourne une composition HTML propre pour l'impression / export PDF
    */
   generatePrintHTML(includeGraph, includeTable, includeCalc, margin, title, width, height, factor) {
-    const sigDigits = (this.data && this.data.settings && this.data.settings.significantDigits) ? this.data.settings.significantDigits : 4; 
+    const sigDigits = this.data?.settings?.significantDigits ?? 4; 
 
     let html = `
       <!DOCTYPE html>

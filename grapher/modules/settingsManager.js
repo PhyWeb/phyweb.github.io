@@ -1,5 +1,5 @@
 export const DEFAULT_SETTINGS = {
-  significantDigits: 3,
+  significantDigits: 4,
   grapherGrid: true,
   minorGrid: false,
   disableScientificNotation: false,

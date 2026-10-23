@@ -58,7 +58,7 @@ class Spreadsheet {
 
   // Fonction de rendu personnalisé pour formater les nombres avec le nombre de chiffres significatifs actuel
   customCellRenderer(instance, td, row, col, prop, value, cellProperties) {
-    const currentSignificantDigits = this.data.settings.significantDigits;
+    const currentSignificantDigits = this.data?.settings?.significantDigits ?? 4;
     const cacheKey = `${value}_${currentSignificantDigits}`;
 
     let formattedValue;
@@ -214,7 +214,7 @@ class Spreadsheet {
     }
 
     const container = document.querySelector('#table');
-    const significantDigits = this.data.settings.significantDigits;
+    const significantDigits = this.data?.settings?.significantDigits ?? 4;
 
     const afterChange = (change, source) => {
       this.handleAfterChange(change, source);

@@ -7,7 +7,7 @@
  * @param {boolean} [options.useScientificNotation=true] Indique s'il faut utiliser la notation scientifique.
  * @returns {string} La valeur formatée.
  */
-export function formatNumber(value, significantDigits, options = {}) {
+export function formatNumber(value, significantDigits = 4, options = {}) {
   const { useScientificNotation = true } = options;
   // Pour les cellules vides (null, undefined), retourner une chaîne vide.
   if (value === null || typeof value === 'undefined') {
