@@ -978,8 +978,13 @@ setDisableScientificNotation(disabled) {
       this.editingModel = null;
     }
 
+    // Désélectionner immédiatement les éventuels points sélectionnés lors de l'activation d'un outil
+    if (mode !== null && typeof this.chart?.getSelectedPoints === 'function') {
+      this.chart.getSelectedPoints().forEach(p => p.select(false));
+    }
+
     // Application de la classe CSS pour forcer le curseur
-    if (mode === 'free' || mode === 'model' || mode === 'data') {
+    if (mode === 'free' || mode === 'model' || mode === 'data' || mode === 'tangent' || mode === 'tangent-method') {
       this.chart.container.classList.add('chart-free-crosshair');
     } else {
       this.chart.container.classList.remove('chart-free-crosshair');
@@ -991,6 +996,7 @@ setDisableScientificNotation(disabled) {
       tooltip: { enabled: false},
       plotOptions: {
         series: {
+          allowPointSelect: mode === null,
           stickyTracking: needsStickyTracking,
           enableMouseTracking: true,
           states: { hover: { enabled: false } }
@@ -1375,9 +1381,9 @@ setDisableScientificNotation(disabled) {
 
     // Lignes
     elements.xLine = renderer.path(['M', pixelX, plotTop, 'L', pixelX, plotTop + plotHeight])
-        .attr({ 'stroke-width': 1, stroke: 'dimgray', dashstyle: 'shortdot', zIndex: 5 }).add();
+        .attr({ 'stroke-width': 1, stroke: '#555555', dashstyle: 'Dash', zIndex: 5 }).add();
     elements.yLine = renderer.path(['M', plotLeft, pixelY, 'L', plotLeft + plotWidth, pixelY])
-        .attr({ 'stroke-width': 1, stroke: 'dimgray', dashstyle: 'shortdot', zIndex: 5 }).add();
+        .attr({ 'stroke-width': 1, stroke: '#555555', dashstyle: 'Dash', zIndex: 5 }).add();
 
     // Labels avec le style d'origine
     const labelAttr = { fill: 'white', stroke: '#dbdbdb', 'stroke-width': 1, r: 6, padding: 8, zIndex: 6 };
@@ -1514,6 +1520,7 @@ setDisableScientificNotation(disabled) {
         this.renderedAnnotations.push(segmentElements);
       } else if (annotation.type === 'tangent') {
         const { point, slope } = annotation;
+        if (!Number.isFinite(slope)) return;
         const pixelX = xAxis.toPixels(point.x);
         const pixelY = yAxis.toPixels(point.y);
 
@@ -1837,7 +1844,7 @@ setDisableScientificNotation(disabled) {
         const point = this._findNearestPoint({ chartX: endX, chartY: endY });
         if (point) {
           const slope = this._calculateSlope(point);
-          if (slope !== null) {
+          if (slope !== null && Number.isFinite(slope)) {
             // Cette partie est correcte et crée UNIQUEMENT la tangente
             this.data.annotations.push({
               id: Highcharts.uniqueKey(),
@@ -1851,7 +1858,7 @@ setDisableScientificNotation(disabled) {
         const point = this._findNearestPoint({ chartX: endX, chartY: endY });
         if (point) {
           const slope1 = this._calculateSlope(point);
-          if (slope1 !== null) {
+          if (slope1 !== null && Number.isFinite(slope1)) {
             const result = this._findTangentMethodPoints(point, slope1);
             if (result) {
 
@@ -1938,7 +1945,7 @@ setDisableScientificNotation(disabled) {
   _findNearestPoint(event) {
     const chart = this.chart;
     // On cherche dans toutes les séries visibles qui ne sont pas des annotations
-    const searchableSeries = chart.series.filter(s => s.visible && s.type !== 'spline');
+    const searchableSeries = chart.series.filter(s => s.visible && !s.options.id?.startsWith('model-') && s.type !== 'spline');
     
     // Utilise la méthode Highcharts pour trouver le point le plus proche
     const point = chart.pointer.findNearestKDPoint(searchableSeries, false, event);
@@ -1950,7 +1957,84 @@ setDisableScientificNotation(disabled) {
    * Calcule la pente (dérivée) en un point d'une série.
    * @private
    */
+  _extractPoint(p) {
+    if (!p) return null;
+    let x, y;
+    if (Array.isArray(p)) {
+      x = p[0];
+      y = p[1];
+    } else if (typeof p === 'object') {
+      x = p.x ?? p[0];
+      y = p.y ?? p[1];
+    }
+    x = typeof x === 'number' ? x : Number(x);
+    y = typeof y === 'number' ? y : Number(y);
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+    return { x, y };
+  }
+
   _calculateSlope(point) {
+    if (!point || !point.series) return null;
+    const series = point.series;
+    const data = (series.points && series.points.length > 0) ? series.points : series.options?.data;
+    if (!Array.isArray(data) || data.length < 2) return null;
+    const n = data.length;
+
+    // 1. Détermination de l'index du point
+    let index = -1;
+    if (typeof point.index === 'number' && point.index >= 0 && point.index < n) {
+      const candidate = this._extractPoint(data[point.index]);
+      if (candidate && Math.abs(candidate.x - point.x) < 1e-9 && Math.abs(candidate.y - point.y) < 1e-9) {
+        index = point.index;
+      }
+    }
+
+    if (index === -1) {
+      index = data.findIndex(p => {
+        const pt = this._extractPoint(p);
+        return pt && Math.abs(pt.x - point.x) < 1e-9 && Math.abs(pt.y - point.y) < 1e-9;
+      });
+    }
+
+    if (index === -1) return null;
+
+    const current_point = this._extractPoint(data[index]);
+    if (!current_point) return null;
+
+    const p_minus_1 = index > 0 ? this._extractPoint(data[index - 1]) : null;
+    const p_plus_1 = index < n - 1 ? this._extractPoint(data[index + 1]) : null;
+
+    // 1. Différence centrale (plus précis)
+    if (p_minus_1 && p_plus_1) {
+      const dx = p_plus_1.x - p_minus_1.x;
+      if (dx !== 0 && Number.isFinite(dx)) {
+        const slope = (p_plus_1.y - p_minus_1.y) / dx;
+        if (Number.isFinite(slope)) return slope;
+      }
+    }
+
+    // 2. Différence avant (pour le premier point ou si la différence centrale a dx === 0)
+    if (p_plus_1) {
+      const dx = p_plus_1.x - current_point.x;
+      if (dx !== 0 && Number.isFinite(dx)) {
+        const slope = (p_plus_1.y - current_point.y) / dx;
+        if (Number.isFinite(slope)) return slope;
+      }
+    }
+
+    // 3. Différence arrière (pour le dernier point ou si la différence avant a dx === 0)
+    if (p_minus_1) {
+      const dx = current_point.x - p_minus_1.x;
+      if (dx !== 0 && Number.isFinite(dx)) {
+        const slope = (current_point.y - p_minus_1.y) / dx;
+        if (Number.isFinite(slope)) return slope;
+      }
+    }
+
+    return null;
+  }
+
+  _calculateSlopeLegacy(point) {
     const series = point.series;
     // On utilise series.options.data qui contient TOUJOURS les données originales
     const data = series.options.data; 
@@ -2089,7 +2173,7 @@ drawTangent(event) {
     if (!point) return;
 
     const slope = this._calculateSlope(point);
-    if (slope === null) return;
+    if (slope === null || !Number.isFinite(slope)) return;
 
     const pixelX = point.plotX + chart.plotLeft;
     const pixelY = point.plotY + chart.plotTop;

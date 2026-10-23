@@ -128,6 +128,9 @@ export default class UIManager {
         const isGrapherTabActive = document.querySelector('#grapheur-tab').classList.contains('is-active');
         if (!isGrapherTabActive) return;
 
+        // SÉCURITÉ 4 : Ne rien faire si un outil de réticule ou de mesure est actif
+        if (this.grapher?.crosshairMode !== null) return;
+
         // Vérifie qu'on a bien un graphe avec des points sélectionnés
         if (this.grapher && this.grapher.chart) {
           const selectedPoints = this.grapher.chart.getSelectedPoints();

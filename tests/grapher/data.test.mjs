@@ -483,3 +483,124 @@ describe('Data - setValue() et parseCellValue()', () => {
     });
   });
 });
+
+describe('Model - _estimateInitialGuess() pour sin, cos et amortis', () => {
+  const createMockData = () => ({
+    parameters: {},
+    curves: []
+  });
+
+  it('doit estimer c ≈ 0 pour un cosinus en phase (y = cos(2*pi*t))', () => {
+    const data = [];
+    for (let i = 0; i < 40; i++) {
+      const t = (i / 39) * 2;
+      data.push([t, Math.cos(2 * Math.PI * t)]);
+    }
+    const model = new Model([], [], 'cos', createMockData());
+    const guess = model._estimateInitialGuess(data);
+
+    assert.ok(guess);
+    assert.equal(guess.length, 4); // [a, b, c, d]
+    assert.ok(Math.abs(guess[0] - 1.0) < 0.05, `Amplitude proche de 1 (reçu: ${guess[0]})`);
+    assert.ok(Math.abs(guess[1] - 2 * Math.PI) < 0.2, `Pulsation b proche de 2*pi (reçu: ${guess[1]})`);
+    assert.ok(Math.abs(guess[2]) < 0.15, `Phase c proche de 0 (reçu: ${guess[2]})`);
+    assert.ok(Math.abs(guess[3]) < 0.05, `Offset d proche de 0 (reçu: ${guess[3]})`);
+  });
+
+  it('doit estimer c ≈ ±pi pour un cosinus en opposition de phase (y = -cos(2*pi*t))', () => {
+    const data = [];
+    for (let i = 0; i < 40; i++) {
+      const t = (i / 39) * 2;
+      data.push([t, -Math.cos(2 * Math.PI * t)]);
+    }
+    const model = new Model([], [], 'cos', createMockData());
+    const guess = model._estimateInitialGuess(data);
+
+    assert.ok(guess);
+    assert.equal(guess.length, 4);
+    assert.ok(Math.abs(guess[0] - 1.0) < 0.05, `Amplitude positive ~1 (reçu: ${guess[0]})`);
+    assert.ok(Math.abs(guess[1] - 2 * Math.PI) < 0.2, `Pulsation b ~2*pi (reçu: ${guess[1]})`);
+    // c doit valoir ~pi ou ~-pi (opposition de phase)
+    const phaseError = Math.min(Math.abs(guess[2] - Math.PI), Math.abs(guess[2] + Math.PI));
+    assert.ok(phaseError < 0.2, `Phase c en opposition de phase ~pi (reçu: ${guess[2]})`);
+  });
+
+  it('doit estimer c ≈ 0 pour un sinus standard croissant en t=0 (y = sin(2*pi*t))', () => {
+    const data = [];
+    for (let i = 0; i < 40; i++) {
+      const t = (i / 39) * 2;
+      data.push([t, Math.sin(2 * Math.PI * t)]);
+    }
+    const model = new Model([], [], 'sin', createMockData());
+    const guess = model._estimateInitialGuess(data);
+
+    assert.ok(guess);
+    assert.equal(guess.length, 4);
+    assert.ok(Math.abs(guess[0] - 1.0) < 0.05, `Amplitude ~1 (reçu: ${guess[0]})`);
+    assert.ok(Math.abs(guess[2]) < 0.2, `Phase c ~0 (reçu: ${guess[2]})`);
+  });
+
+  it('doit estimer c ≈ ±pi pour un sinus en opposition de phase décroissant en t=0 (y = -sin(2*pi*t))', () => {
+    const data = [];
+    for (let i = 0; i < 40; i++) {
+      const t = (i / 39) * 2;
+      data.push([t, -Math.sin(2 * Math.PI * t)]);
+    }
+    const model = new Model([], [], 'sin', createMockData());
+    const guess = model._estimateInitialGuess(data);
+
+    assert.ok(guess);
+    assert.equal(guess.length, 4);
+    assert.ok(Math.abs(guess[0] - 1.0) < 0.05, `Amplitude ~1 (reçu: ${guess[0]})`);
+    const phaseError = Math.min(Math.abs(guess[2] - Math.PI), Math.abs(guess[2] + Math.PI));
+    assert.ok(phaseError < 0.2, `Phase c ~pi en opposition (reçu: ${guess[2]})`);
+  });
+
+  it('doit compenser un décalage d\'abscisse initiale x0 != 0 pour c', () => {
+    const data = [];
+    const x0 = 10;
+    const omega = 4;
+    for (let i = 0; i < 50; i++) {
+      const t = x0 + (i / 49) * 3;
+      data.push([t, Math.cos(omega * (t - x0))]); // cosinus pur partant de 1 en t = x0
+    }
+    const model = new Model([], [], 'cos', createMockData());
+    const guess = model._estimateInitialGuess(data);
+
+    assert.ok(guess);
+    // Au point initial x0, le modèle évalué avec (b*x0 + c) doit être un maximum (cos ≈ 1, angle ≈ 0 mod 2*pi)
+    const initialArg = guess[1] * x0 + guess[2];
+    const normalizedArg = ((initialArg % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+    const distToZero = Math.min(normalizedArg, 2 * Math.PI - normalizedArg);
+    assert.ok(distToZero < 0.25, `b*x0 + c doit être proche de 0 mod 2*pi (reçu arg=${initialArg}, dist=${distToZero})`);
+  });
+
+  it('doit estimer 5 paramètres et la bonne phase pour dampedcos en opposition', () => {
+    const data = [];
+    for (let i = 0; i < 60; i++) {
+      const t = (i / 59) * 1.5;
+      data.push([t, -3 * Math.cos(10 * t) * Math.exp(-t / 0.5)]);
+    }
+    const model = new Model([], [], 'dampedcos', createMockData());
+    const guess = model._estimateInitialGuess(data);
+
+    assert.ok(guess);
+    assert.equal(guess.length, 5); // [a, b, c, decay, d]
+    assert.ok(guess[0] > 0, 'Amplitude doit être positive');
+    const phaseError = Math.min(Math.abs(guess[2] - Math.PI), Math.abs(guess[2] + Math.PI));
+    assert.ok(phaseError < 0.2, `Phase c ~pi en opposition pour dampedcos (reçu: ${guess[2]})`);
+    assert.ok(guess[3] > 0, 'Decay initial doit être positif');
+  });
+
+  it('ne doit pas produire de NaN ni division par zéro si minY === maxY (données constantes)', () => {
+    const data = [[0, 5], [1, 5], [2, 5], [3, 5]];
+    const model = new Model([], [], 'cos', createMockData());
+    const guess = model._estimateInitialGuess(data);
+
+    assert.ok(guess);
+    assert.equal(guess.length, 4);
+    guess.forEach((val) => {
+      assert.ok(Number.isFinite(val), `Chaque paramètre doit être fini (reçu: ${val})`);
+    });
+  });
+});

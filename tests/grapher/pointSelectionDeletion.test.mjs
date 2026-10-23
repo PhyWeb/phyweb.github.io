@@ -45,6 +45,7 @@ describe('Grapher - setCrosshairMode et enableMouseTracking', () => {
     const lastUpdate = chartUpdateCalls[0];
     assert.equal(lastUpdate.plotOptions.series.enableMouseTracking, true);
     assert.equal(lastUpdate.plotOptions.series.stickyTracking, false);
+    assert.equal(lastUpdate.plotOptions.series.allowPointSelect, true);
   });
 
   it('doit conserver enableMouseTracking: true lorsque des outils de réticule sont activés', () => {
@@ -54,6 +55,20 @@ describe('Grapher - setCrosshairMode et enableMouseTracking', () => {
     const lastUpdate = chartUpdateCalls[0];
     assert.equal(lastUpdate.plotOptions.series.enableMouseTracking, true);
     assert.equal(lastUpdate.plotOptions.series.stickyTracking, true);
+    assert.equal(lastUpdate.plotOptions.series.allowPointSelect, false);
+  });
+
+  it('doit désélectionner les points déjà sélectionnés lors de l\'activation d\'un mode réticule', () => {
+    let unselectedCount = 0;
+    const selectedPoints = [
+      { select: (state) => { if (state === false) unselectedCount++; } },
+      { select: (state) => { if (state === false) unselectedCount++; } }
+    ];
+    grapher.chart.getSelectedPoints = () => selectedPoints;
+
+    grapher.setCrosshairMode('data');
+
+    assert.equal(unselectedCount, 2);
   });
 });
 
@@ -239,6 +254,24 @@ describe('UIManager - keydown Delete / Backspace pour suppression de point', () 
   it('ne doit rien faire si l\'onglet grapheur n\'est pas actif', () => {
     createUIManager();
     isGrapherTabActive = false;
+
+    mockChart.selectedPoints = [{
+      index: 0,
+      series: {
+        options: {
+          customRowIndices: [0]
+        }
+      }
+    }];
+
+    dispatchKeydown('Delete');
+
+    assert.equal(appCalls.deleteRow.length, 0);
+  });
+
+  it('ne doit rien faire si un outil de réticule est actif (crosshairMode !== null)', () => {
+    createUIManager();
+    mockGrapher.crosshairMode = 'data';
 
     mockChart.selectedPoints = [{
       index: 0,

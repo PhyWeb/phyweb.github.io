@@ -121,5 +121,70 @@ describe('Méthode des tangentes - Vérification de la résolution des bugs', ()
       assert.ok(result.p2.x >= 14, 'Le second point p2 doit se trouver après le saut');
     });
   });
+
+  describe('Bug résolu : _calculateSlope robuste face aux formats mixtes, dx===0 et absence de NaN', () => {
+    it('doit calculer correctement la pente même si les données contiennent des objets {x, y}', () => {
+      const seriesData = [
+        [0, 0],
+        { x: 1, y: 2 },
+        [2, 4]
+      ];
+      const mockPoint = {
+        series: { options: { data: seriesData } },
+        x: 1,
+        y: 2,
+        index: 1
+      };
+      const slope = grapher._calculateSlope(mockPoint);
+      assert.notEqual(slope, null);
+      assert.equal(Number.isFinite(slope), true);
+      assert.equal(slope, 2);
+    });
+
+    it('doit utiliser la différence avant/arrière si la différence centrale donne dx === 0 au lieu de renvoyer null', () => {
+      const seriesData = [
+        [1, 1],
+        [2, 3],
+        [1, 5] // p_minus_1.x (1) === p_plus_1.x (1) -> dx central = 0
+      ];
+      const mockPoint = {
+        series: { options: { data: seriesData } },
+        x: 2,
+        y: 3,
+        index: 1
+      };
+      const slope = grapher._calculateSlope(mockPoint);
+      assert.notEqual(slope, null);
+      assert.equal(Number.isFinite(slope), true);
+    });
+
+    it('doit retrouver le point avec tolérance flottante au lieu de le rater', () => {
+      const seriesData = [
+        [0.1 + 0.2, 1.0], // 0.30000000000000004
+        [0.4, 2.0],
+        [0.5, 3.0]
+      ];
+      const mockPoint = {
+        series: { options: { data: seriesData } },
+        x: 0.3, // valeur arrondie
+        y: 1.0
+      };
+      const slope = grapher._calculateSlope(mockPoint);
+      assert.notEqual(slope, null);
+      assert.equal(Number.isFinite(slope), true);
+    });
+
+    it('ne doit jamais renvoyer NaN et ne pas planter drawAnnotations si slope est NaN', () => {
+      grapher.chart = createMockChart();
+      grapher.data.annotations = [{
+        id: 'bad-tangent',
+        type: 'tangent',
+        point: { x: 1, y: 1 },
+        slope: NaN
+      }];
+      assert.doesNotThrow(() => grapher.drawAnnotations());
+      assert.equal(grapher.renderedAnnotations.length, 0);
+    });
+  });
 });
 

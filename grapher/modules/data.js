@@ -407,12 +407,15 @@ class Model {
       case 'dampedsin': // y = a*sin(bx+c)*exp(-x/d) + e
       case 'dampedcos': // y = a*cos(bx+c)*exp(-x/d) + e
         {
-            const d = meanY; // offset
-            const a = (maxY - minY) / 2; // amplitude
+            const a = (maxY - minY) / 2 || 1; // amplitude
+            const d = (maxY + minY) / 2; // offset basé sur le centre crête-à-crête
+            
+            // On s'assure que les points sont ordonnés selon x pour analyser la séquence temporelle
+            const pts = [...data].sort((p1, p2) => p1[0] - p2[0]);
             
             let crossings = 0;
             for(let i=1; i<n; i++) {
-                if ((data[i][1] - d) * (data[i-1][1] - d) < 0) {
+                if ((pts[i][1] - d) * (pts[i-1][1] - d) < 0) {
                     crossings++;
                 }
             }
@@ -424,7 +427,34 @@ class Model {
                 b = Math.PI / (maxX - minX);
             }
             
-            const c = 0; // phase
+            // Estimation robuste de la phase initiale au premier point x0
+            const x0 = pts[0][0];
+            const y0 = pts[0][1];
+            const normalizedY0 = Math.max(-1, Math.min(1, (y0 - d) / a));
+            
+            // Détection de la tendance (croissante ou décroissante) sur les premiers points
+            const sampleCount = Math.min(n - 1, 3);
+            let slopeSum = 0;
+            for (let j = 1; j <= sampleCount; j++) {
+                const dx = pts[j][0] - x0;
+                if (dx > 0) {
+                    slopeSum += (pts[j][1] - y0) / dx;
+                }
+            }
+            const isIncreasing = slopeSum >= 0;
+            
+            let phi0 = 0;
+            if (this.type === 'cos' || this.type === 'dampedcos') {
+                const theta = Math.acos(normalizedY0);
+                phi0 = isIncreasing ? -theta : theta;
+            } else {
+                const theta = Math.asin(normalizedY0);
+                phi0 = isIncreasing ? theta : (Math.PI - theta);
+            }
+            
+            let c = phi0 - b * x0;
+            // Normalisation de la phase dans l'intervalle [-PI, PI]
+            c = ((c + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI;
 
             if (this.type.includes('damped')) {
                 const decay = (maxX - minX) || 1;
