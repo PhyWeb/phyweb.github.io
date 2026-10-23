@@ -119,3 +119,20 @@ if (!global.math) {
   global.math = mathModule.default || mathModule;
 }
 
+// Mock minimal pour Handsontable (renderers)
+if (!global.Handsontable) {
+  global.Handsontable = {
+    renderers: {
+      getRenderer: () => (instance, td, row, col, prop, value, cellProperties) => {
+        if (td) td.textContent = value;
+      }
+    }
+  };
+} else if (!global.Handsontable.renderers) {
+  global.Handsontable.renderers = {
+    getRenderer: () => (instance, td, row, col, prop, value, cellProperties) => {
+      if (td) td.textContent = value;
+    }
+  };
+}
+

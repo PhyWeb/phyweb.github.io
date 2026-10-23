@@ -17,6 +17,8 @@ class Spreadsheet {
 
 
     this.formatCache = new Map();
+    this.maxFormatCacheSize = 20000;
+    this.lastSignificantDigits = null;
   }
 
   // Retourne le décalage absolu de ligne pour la page courante
@@ -59,6 +61,12 @@ class Spreadsheet {
   // Fonction de rendu personnalisé pour formater les nombres avec le nombre de chiffres significatifs actuel
   customCellRenderer(instance, td, row, col, prop, value, cellProperties) {
     const currentSignificantDigits = this.data?.settings?.significantDigits ?? 4;
+
+    // Purge du cache si le nombre de chiffres significatifs a changé
+    if (this.lastSignificantDigits !== currentSignificantDigits) {
+      this.formatCache.clear();
+      this.lastSignificantDigits = currentSignificantDigits;
+    }
     const cacheKey = `${value}_${currentSignificantDigits}`;
 
     let formattedValue;
@@ -75,10 +83,21 @@ class Spreadsheet {
       if (parsedValue !== null && parsedValue !== undefined && !isNaN(parsedValue) && value !== '') {
         formattedValue = formatNumber(parsedValue, currentSignificantDigits);
       }
+      // Limite la taille du cache pour éviter une consommation mémoire excessive sur de gros volumes
+      if (this.formatCache.size >= this.maxFormatCacheSize) {
+        this.formatCache.clear();
+      }
       this.formatCache.set(cacheKey, formattedValue);
     }
 
-    Handsontable.renderers.getRenderer('text')(instance, td, row, col, prop, formattedValue, cellProperties);
+    const renderer = (typeof Handsontable !== 'undefined' && Handsontable?.renderers?.getRenderer)
+      ? Handsontable.renderers.getRenderer('text')
+      : null;
+    if (renderer) {
+      renderer(instance, td, row, col, prop, formattedValue, cellProperties);
+    } else if (td) {
+      td.textContent = formattedValue;
+    }
   }
 
   addCurve(title, unit, size, fill, line, markers){
@@ -125,7 +144,7 @@ class Spreadsheet {
             this.customCellRenderer(instance, td, row, col, prop, value, cellProperties)
         }));
 
-        this.hot.updateSettings({
+        this.hot?.updateSettings({
           data: displayData,
           colHeaders: headers,
           columns: columnsConfig,
@@ -192,7 +211,7 @@ class Spreadsheet {
       // Si la valeur saisie (ex: "12,5" ou "abc") a été transformée ou nettoyée en null,
       // on met à jour la cellule Handsontable silencieusement ("updateData" est ignoré par handleAfterChange)
       if (newVal !== parsed && !(newVal === '' && parsed === null)) {
-        this.hot.setDataAtCell(visualRow, col, parsed, 'updateData');
+        this.hot?.setDataAtCell(visualRow, col, parsed, 'updateData');
       }
     });
 
@@ -281,7 +300,7 @@ class Spreadsheet {
 
   clear() {
     // Vide les données et réinitialise les en-têtes/colonnes
-    this.hot.updateSettings({
+    this.hot?.updateSettings({
       data: [],
       colHeaders: true,
       columns: null

@@ -371,4 +371,72 @@ describe('Spreadsheet - handleAfterChange() et correction du bug de pagination',
       assert.equal(typeof curveY[1], 'number');
     });
   });
+
+  describe('Gestion du cache de formatage (formatCache) et limitation de mémoire', () => {
+    it('doit mettre en cache les valeurs formatées lors du premier rendu', () => {
+      const { spreadsheet } = createTestContext(5, 5, 0);
+      const mockTd = { textContent: '' };
+
+      assert.equal(spreadsheet.formatCache.size, 0);
+
+      spreadsheet.customCellRenderer(null, mockTd, 0, 0, null, 12.34567, {});
+      assert.equal(spreadsheet.formatCache.size, 1);
+      assert.equal(spreadsheet.formatCache.get('12.34567_4'), '12,35');
+
+      // Second appel avec la même valeur -> utilise le cache
+      spreadsheet.customCellRenderer(null, mockTd, 0, 0, null, 12.34567, {});
+      assert.equal(spreadsheet.formatCache.size, 1);
+    });
+
+    it('doit vider le cache lorsque significantDigits change pour éviter une fuite mémoire', () => {
+      const { data, spreadsheet } = createTestContext(5, 5, 0);
+      const mockTd = { textContent: '' };
+
+      // Rendu avec 4 chiffres significatifs
+      data.settings.significantDigits = 4;
+      spreadsheet.customCellRenderer(null, mockTd, 0, 0, null, 12.3456, {});
+      spreadsheet.customCellRenderer(null, mockTd, 1, 0, null, 98.7654, {});
+      assert.equal(spreadsheet.formatCache.size, 2);
+      assert.ok(spreadsheet.formatCache.has('12.3456_4'));
+
+      // Modification des réglages : 2 chiffres significatifs
+      data.settings.significantDigits = 2;
+      spreadsheet.customCellRenderer(null, mockTd, 0, 0, null, 12.3456, {});
+
+      // L'ancien cache de précision 4 doit avoir été vidé et remplacé par la nouvelle précision 2
+      assert.ok(!spreadsheet.formatCache.has('12.3456_4'), 'L\'ancienne clé à 4 chiffres significatifs doit être purgée');
+      assert.ok(spreadsheet.formatCache.has('12.3456_2'), 'La nouvelle clé à 2 chiffres significatifs doit être présente');
+      assert.equal(spreadsheet.formatCache.size, 1);
+      assert.equal(mockTd.textContent, '12');
+    });
+
+    it('doit réinitialiser le cache s\'il atteint maxFormatCacheSize pour borner la mémoire', () => {
+      const { spreadsheet } = createTestContext(5, 5, 0);
+      const mockTd = { textContent: '' };
+
+      // On abaisse la limite pour le test à 3 éléments
+      spreadsheet.maxFormatCacheSize = 3;
+
+      spreadsheet.customCellRenderer(null, mockTd, 0, 0, null, 1, {});
+      spreadsheet.customCellRenderer(null, mockTd, 1, 0, null, 2, {});
+      spreadsheet.customCellRenderer(null, mockTd, 2, 0, null, 3, {});
+      assert.equal(spreadsheet.formatCache.size, 3);
+
+      // Le 4ème élément dépasse maxFormatCacheSize -> le cache est vidé avant d'insérer le nouveau
+      spreadsheet.customCellRenderer(null, mockTd, 3, 0, null, 4, {});
+      assert.equal(spreadsheet.formatCache.size, 1);
+      assert.ok(spreadsheet.formatCache.has('4_4'));
+    });
+
+    it('clear() doit vider formatCache', () => {
+      const { spreadsheet } = createTestContext(5, 5, 0);
+      const mockTd = { textContent: '' };
+
+      spreadsheet.customCellRenderer(null, mockTd, 0, 0, null, 42, {});
+      assert.equal(spreadsheet.formatCache.size, 1);
+
+      spreadsheet.clear();
+      assert.equal(spreadsheet.formatCache.size, 0);
+    });
+  });
 });
