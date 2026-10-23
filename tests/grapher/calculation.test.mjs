@@ -236,6 +236,43 @@ describe('Calculation Module', () => {
 
       assert.equal(result[3], 3);
     });
+
+    it('doit lever une erreur si la variable de dérivation contient deux valeurs identiques consécutives', () => {
+      const t = [0, 1, 1, 2, 3];
+      const y = [0, 2, 4, 6, 8];
+      assert.throws(
+        () => calc.evaluate('diff(y, t)', { y, t }),
+        /la grandeur de dérivation contient deux valeurs identiques consécutives\./
+      );
+    });
+
+    it('doit lever une erreur si la variable de dérivation n\'est pas triée (non monotone)', () => {
+      const t = [0, 1, 3, 2, 4];
+      const y = [0, 2, 4, 6, 8];
+      assert.throws(
+        () => calc.evaluate('diff(y, t)', { y, t }),
+        /la grandeur de dérivation n'est pas triée\. Veuillez trier vos données dans le tableur\./
+      );
+    });
+
+    it('doit fonctionner correctement si la variable de dérivation est strictement décroissante', () => {
+      const t = [4, 3, 2, 1, 0];
+      const y = [8, 6, 4, 2, 0];
+      const result = calc.evaluate('diff(y, t)', { y, t });
+      assert.equal(result.length, 5);
+      for (let i = 0; i < result.length; i++) {
+        assert.equal(result[i], 2);
+      }
+    });
+
+    it('doit ignorer les valeurs nulles ou non finies lors de la vérification de monotonie', () => {
+      const t = [0, null, 2, 3, 4];
+      const y = [0, null, 4, 6, 8];
+      const result = calc.evaluate('diff(y, t)', { y, t });
+      assert.equal(result.length, 5);
+      assert.equal(result[1], null);
+      assert.equal(result[3], 2);
+    });
   });
 
   describe('Opérations mathématiques (puissances, racines, null-safety)', () => {

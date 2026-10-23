@@ -1,5 +1,5 @@
 import IOManager from './ioManager.js';
-import { alertModal, showToast } from '../../common/common.js';
+import { showToast } from '../../common/common.js';
 import SymbolValidator from './symbolValidator.js'; 
 
 const $ = document.querySelector.bind(document);
@@ -435,10 +435,8 @@ export default class App {
 
     if (allErrors.length > 0) {
       console.error("Erreurs de calcul:", allErrors);
-      alertModal({
-        title: "Erreurs de calcul",
-        body: allErrors.join('\n'),
-        confirm: "OK"
+      allErrors.forEach(errMsg => {
+        showToast(errMsg, "is-danger", 6000);
       });
     }
 

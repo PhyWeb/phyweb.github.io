@@ -201,4 +201,32 @@ describe('App - applyCalculation() et interdiction de redéfinir les grandeurs e
     assert.equal(spreadsheetUpdates, 1);
     assert.equal(chartUpdates, 1);
   });
+
+  it('doit afficher les erreurs d\'évaluation (ex: dérivée non triée) via des toasts is-danger', () => {
+    const curveT = data.getCurveByTitle('t');
+    curveT.length = 0;
+    curveT.push(0, 1, 3, 2, 4);
+
+    const success = app.applyCalculation('v = diff(x, t)');
+
+    assert.equal(success, false);
+    assert.equal(toastLog.length > 0, true);
+    const errorToast = toastLog.find(t => t.innerHTML.includes('la grandeur de dérivation n\'est pas triée'));
+    assert.ok(errorToast, 'Un toast d\'erreur de dérivation non triée doit être affiché');
+    assert.ok(errorToast.className.includes('is-danger'));
+  });
+
+  it('doit afficher les erreurs de valeurs identiques consécutives via des toasts is-danger', () => {
+    const curveT = data.getCurveByTitle('t');
+    curveT.length = 0;
+    curveT.push(0, 1, 1, 2, 3);
+
+    const success = app.applyCalculation('v = diff(x, t)');
+
+    assert.equal(success, false);
+    assert.equal(toastLog.length > 0, true);
+    const errorToast = toastLog.find(t => t.innerHTML.includes('la grandeur de dérivation contient deux valeurs identiques consécutives'));
+    assert.ok(errorToast, 'Un toast d\'erreur de valeurs identiques consécutives doit être affiché');
+    assert.ok(errorToast.className.includes('is-danger'));
+  });
 });

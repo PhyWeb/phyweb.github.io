@@ -152,8 +152,30 @@ export default class Calculation {
             throw new Error(`Pas assez de points pour une dérivation à ${points} points. Il en faut au moins ${points}.`);
         }
 
-        const result = new Array(nMax).fill(null);
+
         const n = nMin;
+        let direction = 0; // 1 pour croissant, -1 pour décroissant
+        let prevX = null;
+        for (let i = 0; i < n; i++) {
+          const currentX = xArr[i];
+          if (currentX === null || currentX === undefined || !isFinite(currentX)) continue;
+          if (prevX !== null) {
+            const diffX = currentX - prevX;
+            if (diffX === 0) {
+              throw new Error("la grandeur de dérivation contient deux valeurs identiques consécutives.");
+            }
+            const stepDir = Math.sign(diffX);
+            if (direction === 0) {
+              direction = stepDir;
+            } else if (stepDir !== direction) {
+              throw new Error("la grandeur de dérivation n'est pas triée. Veuillez trier vos données dans le tableur.");
+            }
+          }
+          prevX = currentX;
+        }
+
+        const result = new Array(nMax).fill(null);
+
         const offset = Math.floor(points / 2);
 
         // Helper pour vérifier si le sous-ensemble de points possède un pas régulier (tolérance aux arrondis flottants)
