@@ -496,6 +496,8 @@ export default class Grapher {
                     this.exponent = Math.floor(power / 3) * 3;
                   }
                 }
+  
+
               }
             }
             
@@ -556,6 +558,8 @@ export default class Grapher {
                     this.exponent = Math.floor(power / 3) * 3;
                   }
                 }
+  
+
               }
             }
             
@@ -1608,6 +1612,8 @@ setDisableScientificNotation(disabled) {
           // Limiter la zone de recherche strictement entre les deux points de tangence
           const minSearchX = Math.min(point1.x, point2.x);
           const maxSearchX = Math.max(point1.x, point2.x);
+          const xMid = (point1.x + point2.x) / 2;
+          const candidates = [];
           
           // Cherche l'intersection entre le segment de la courbe et la médiane
           for(let i = 0; i < data.length - 1; i++) {
@@ -1622,21 +1628,55 @@ setDisableScientificNotation(disabled) {
               const xInt = pA.x;
               const yInt = slope * xInt + bMed;
               if (yInt >= Math.min(pA.y, pB.y) && yInt <= Math.max(pA.y, pB.y)) {
-                eqPoint = { x: xInt, y: yInt };
-                break;
+                candidates.push({
+                  pt: { x: xInt, y: yInt },
+                  absSlope: Infinity,
+                  distToMid: Math.abs(xInt - xMid)
+                });
               }
             } else {
               const mSeg = (pB.y - pA.y) / (pB.x - pA.x);
               if (mSeg !== slope) {
                 const xInt = (pA.y - mSeg * pA.x - bMed) / (slope - mSeg);
-                // Vérifie si l'intersection tombe bien entre les deux points du segment
-                if (xInt >= Math.min(pA.x, pB.x) && xInt <= Math.max(pA.x, pB.x)) {
-                  eqPoint = { x: xInt, y: slope * xInt + bMed };
-                  break;
+                // Vérifie si l'intersection tombe bien entre les deux points du segment (avec tolérance flottante)
+                const segMinX = Math.min(pA.x, pB.x);
+                const segMaxX = Math.max(pA.x, pB.x);
+                if (xInt >= segMinX - 1e-9 && xInt <= segMaxX + 1e-9) {
+                  const clampedX = Math.max(segMinX, Math.min(segMaxX, xInt));
+                  const yInt = slope * clampedX + bMed;
+                  candidates.push({
+                    pt: { x: clampedX, y: yInt },
+                    absSlope: Math.abs(mSeg),
+                    distToMid: Math.abs(clampedX - xMid)
+                  });
                 }
+
+
+
+
+
 
               }
             }
+          }
+
+          if (candidates.length > 0) {
+            // Sélectionne l'intersection la plus pertinente :
+            // 1. Privilégie la pente la plus forte |mSeg| (le vrai saut d'équivalence)
+            // 2. En cas de pentes comparables, privilégie le point le plus proche du milieu entre point1 et point2
+            candidates.sort((a, b) => {
+              if (!Number.isFinite(b.absSlope) && Number.isFinite(a.absSlope)) return 1;
+              if (!Number.isFinite(a.absSlope) && Number.isFinite(b.absSlope)) return -1;
+              if (!Number.isFinite(a.absSlope) && !Number.isFinite(b.absSlope)) {
+                return a.distToMid - b.distToMid;
+              }
+              const maxS = Math.max(a.absSlope, b.absSlope);
+              if (maxS > 0 && Math.abs(a.absSlope - b.absSlope) / maxS > 0.25) {
+                return b.absSlope - a.absSlope;
+              }
+              return a.distToMid - b.distToMid;
+            });
+            eqPoint = candidates[0].pt;
           }
 
           // 5. Affichage du Point d'équivalence
@@ -2103,6 +2143,13 @@ setDisableScientificNotation(disabled) {
         return { x: p.x, y: p.y };
     };
 
+    const pFirst = getPointObject(data[0]);
+    const pLast = getPointObject(data[n - 1]);
+    const globalDeltaX = (pLast && pFirst) ? pLast.x - pFirst.x : 0;
+    const globalDeltaY = (pLast && pFirst) ? pLast.y - pFirst.y : 0;
+    const globalSlope = globalDeltaX !== 0 ? globalDeltaY / globalDeltaX : globalDeltaY;
+    const globalSign = Math.sign(globalSlope);
+
     const slopes = [];
     let maxSlope = -Infinity;
     let jumpIndex = -1;
@@ -2111,7 +2158,7 @@ setDisableScientificNotation(disabled) {
     // 1. Calculer toutes les pentes locales pour trouver le saut (dérivée max)
     for (let i = 0; i < n; i++) {
         const p = getPointObject(data[i]);
-        if (p.x === point.x && p.y === point.y) p1Index = i;
+        if ((p.x === point.x || Math.abs(p.x - point.x) < 1e-9) && (p.y === point.y || Math.abs(p.y - point.y) < 1e-9)) p1Index = i;
 
         const p_minus_1 = getPointObject(i > 0 ? data[i - 1] : null);
         const p_plus_1 = getPointObject(i < n - 1 ? data[i + 1] : null);
@@ -2128,9 +2175,21 @@ setDisableScientificNotation(disabled) {
         }
         slopes.push(s);
 
-        if (s !== null && Number.isFinite(s) && Math.abs(s) > maxSlope) {
+        const matchesGlobalSign = globalSign === 0 || (s !== null && Math.sign(s) === globalSign);
+        if (s !== null && Number.isFinite(s) && matchesGlobalSign && Math.abs(s) > maxSlope) {
             maxSlope = Math.abs(s);
             jumpIndex = i;
+        }
+    }
+
+    // Repli : si aucune pente ne correspondait au signe global, chercher le max absolu sans contrainte
+    if (jumpIndex === -1) {
+        for (let i = 0; i < n; i++) {
+            const s = slopes[i];
+            if (s !== null && Number.isFinite(s) && Math.abs(s) > maxSlope) {
+                maxSlope = Math.abs(s);
+                jumpIndex = i;
+            }
         }
     }
 
