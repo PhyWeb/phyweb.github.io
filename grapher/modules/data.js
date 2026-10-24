@@ -317,46 +317,72 @@ class Model {
 
       case 'exp1': // y = a*e^(-x/b)
         {
+            const defaultTau = (maxX > minX) ? (maxX - minX) / 3 : 1;
+            const isNegative = (minY < 0 && Math.abs(minY) > Math.abs(maxY));
+            const sign = isNegative ? -1 : 1;
+            const defaultA = isNegative ? (minY !== 0 ? minY : -1) : (maxY !== 0 ? maxY : 1);
+
             let sX = 0, sLnY = 0, sXLnY = 0, sXX_exp = 0;
             let count = 0;
-            for(let i=0; i<n; i++) {
-                if(data[i][1] > 0) {
+            for (let i = 0; i < n; i++) {
+                const val = sign * data[i][1];
+                if (val > 0) {
                     const x = data[i][0];
-                    const ly = Math.log(data[i][1]);
+                    const ly = Math.log(val);
                     sX += x; sLnY += ly;
                     sXLnY += x * ly; sXX_exp += x * x;
                     count++;
                 }
             }
-            if(count < 2) return [1, 1];
+            if (count < 2) return [defaultA, defaultTau];
             const denomExp = (count * sXX_exp - sX * sX);
-            if (Math.abs(denomExp) < 1e-9) return [1, 1];
+            if (Math.abs(denomExp) < 1e-9) return [defaultA, defaultTau];
             const m = (count * sXLnY - sX * sLnY) / denomExp; // m = -1/b
-            const interceptExp = (sLnY - m * sX) / count; // ln(a)
-            const a = Math.exp(interceptExp);
-            const b = Math.abs(m) > 1e-9 ? -1.0 / m : 1;
+            const b = Math.abs(m) > 1e-9 ? -1.0 / m : defaultTau;
+            const interceptExp = (sLnY - m * sX) / count; // ln(|a|)
+
+            // Protection contre l'overflow (décalage temporel x0 >> tau)
+            let a;
+            if (interceptExp > 700) {
+                a = defaultA;
+            } else if (interceptExp < -700) {
+                a = 0;
+            } else {
+                a = sign * Math.exp(interceptExp);
+            }
+
+            if (!Number.isFinite(a)) a = defaultA;
+            if (!Number.isFinite(b) || b === 0) b = defaultTau;
+
             return [a, b];
         }
         
       case 'exp2': // y = a*(1 - e^(-x/b))
         {
-            const a = maxY > 0 ? maxY * 1.05 : 1;
+            const defaultTau = (maxX > minX) ? (maxX - minX) / 3 : 1;
+            const isNegative = (minY < 0 && Math.abs(minY) > Math.abs(maxY));
+            const a = isNegative
+                ? (minY !== 0 ? minY * 1.05 : -1)
+                : (maxY > 0 ? maxY * 1.05 : 1);
+
             let sX = 0, sLnDiff = 0, sXLnDiff = 0, sXX_exp2 = 0;
             let count = 0;
-            for(let i=0; i<n; i++) {
-                if(a - data[i][1] > 0) {
+            for (let i = 0; i < n; i++) {
+                const diff = isNegative ? (data[i][1] - a) : (a - data[i][1]);
+                if (diff > 0) {
                     const x = data[i][0];
-                    const ldiff = Math.log(a - data[i][1]);
+                    const ldiff = Math.log(diff);
                     sX += x; sLnDiff += ldiff;
                     sXLnDiff += x * ldiff; sXX_exp2 += x * x;
                     count++;
                 }
             }
-            if(count < 2) return [a, 1];
+            if (count < 2) return [a, defaultTau];
             const denomExp2 = (count * sXX_exp2 - sX * sX);
-            if (Math.abs(denomExp2) < 1e-9) return [a, 1];
+            if (Math.abs(denomExp2) < 1e-9) return [a, defaultTau];
             const m = (count * sXLnDiff - sX * sLnDiff) / denomExp2; // m = -1/b
-            const b = Math.abs(m) > 1e-9 ? -1.0 / m : 1;
+            // Pour une relaxation physique, ln(diff) décroît avec x => m < 0 et b = -1/m > 0
+            const b = (m < -1e-9) ? -1.0 / m : defaultTau;
             return [a, b];
         }
 

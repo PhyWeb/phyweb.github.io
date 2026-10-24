@@ -604,3 +604,91 @@ describe('Model - _estimateInitialGuess() pour sin, cos et amortis', () => {
     });
   });
 });
+
+describe('Model - _estimateInitialGuess() pour exp1 et exp2', () => {
+  const createMockData = () => ({
+    parameters: {},
+    curves: []
+  });
+
+  describe('Modèle exp2 (y = a*(1 - e^(-x/b)))', () => {
+    it('doit estimer un paramètre a négatif pour des données négatives (a < 0)', () => {
+      const data = [];
+      for (let i = 0; i < 30; i++) {
+        const t = (i / 29) * 0.5;
+        data.push([t, -5 * (1 - Math.exp(-t / 0.1))]);
+      }
+      const model = new Model([], [], 'exp2', createMockData());
+      const guess = model._estimateInitialGuess(data);
+
+      assert.ok(guess);
+      assert.equal(guess.length, 2);
+      assert.ok(guess[0] < 0, `a doit être négatif (reçu: ${guess[0]})`);
+      assert.ok(guess[1] > 0, `b doit être positif (reçu: ${guess[1]})`);
+    });
+
+    it('doit utiliser defaultTau = (maxX - minX) / 3 en cas d\'échec de régression au lieu de 1 s', () => {
+      const minX = 0;
+      const maxX = 0.003;
+      const expectedTau = 0.001;
+      const data = [[minX, 4.0], [maxX, 4.0]];
+
+      const model = new Model([], [], 'exp2', createMockData());
+      const guess = model._estimateInitialGuess(data);
+
+      assert.ok(guess);
+      assert.ok(Math.abs(guess[1] - expectedTau) < 1e-6, `b doit valoir (maxX - minX)/3 (reçu: ${guess[1]})`);
+    });
+
+    it('doit basculer sur defaultTau si m >= 0 (pente inversée)', () => {
+      const data = [[0, 2], [1, 1], [2, 0.5]];
+      const model = new Model([], [], 'exp2', createMockData());
+      const guess = model._estimateInitialGuess(data);
+
+      assert.ok(guess);
+      assert.ok(guess[1] > 0, `b doit être positif (reçu: ${guess[1]})`);
+      assert.ok(Math.abs(guess[1] - (2 / 3)) < 1e-6);
+    });
+  });
+
+  describe('Modèle exp1 (y = a*e^(-x/b))', () => {
+    it('doit estimer a négatif et b positif pour des données négatives', () => {
+      const data = [];
+      for (let i = 0; i < 20; i++) {
+        const t = (i / 19) * 0.5;
+        data.push([t, -4 * Math.exp(-t / 0.1)]);
+      }
+      const model = new Model([], [], 'exp1', createMockData());
+      const guess = model._estimateInitialGuess(data);
+
+      assert.ok(guess);
+      assert.equal(guess.length, 2);
+      assert.ok(guess[0] < 0, `a doit être négatif (reçu: ${guess[0]})`);
+      assert.ok(guess[1] > 0, `b doit être positif (reçu: ${guess[1]})`);
+      assert.ok(Math.abs(guess[0] - (-4.0)) < 0.1);
+    });
+
+    it('doit utiliser defaultTau = (maxX - minX) / 3 en cas de points insuffisants', () => {
+      const data = [[0, 2], [0.003, 2]];
+      const model = new Model([], [], 'exp1', createMockData());
+      const guess = model._estimateInitialGuess(data);
+
+      assert.ok(guess);
+      assert.ok(Math.abs(guess[1] - 0.001) < 1e-6);
+    });
+
+    it('ne doit pas produire d\'Infinity en présence de décalage temporel x0 >> tau', () => {
+      const data = [];
+      for (let i = 0; i < 25; i++) {
+        const t = 10 + (i / 24) * 0.005;
+        data.push([t, 5 * Math.exp(-(t - 10) / 0.001)]);
+      }
+      const model = new Model([], [], 'exp1', createMockData());
+      const guess = model._estimateInitialGuess(data);
+
+      assert.ok(guess);
+      assert.ok(Number.isFinite(guess[0]), `a doit être fini (reçu: ${guess[0]})`);
+      assert.ok(Number.isFinite(guess[1]), `b doit être fini (reçu: ${guess[1]})`);
+    });
+  });
+});
