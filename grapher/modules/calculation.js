@@ -176,10 +176,16 @@ export default class Calculation {
 
         const result = new Array(nMax).fill(null);
 
-        const offset = Math.floor(points / 2);
+
 
         // Helper pour vérifier si le sous-ensemble de points possède un pas régulier (tolérance aux arrondis flottants)
         const isUniformSpacing = (coords, startIdx, count) => {
+            if (startIdx < 0 || startIdx + count > coords.length) return false;
+            for (let k = 0; k < count; k++) {
+                if (coords[startIdx + k] === null || coords[startIdx + k] === undefined || !Number.isFinite(coords[startIdx + k])) {
+                    return false;
+                }
+            }
             const firstStep = coords[startIdx + 1] - coords[startIdx];
             if (firstStep === 0) return false;
             const tol = 1e-3 * Math.abs(firstStep);
@@ -192,6 +198,22 @@ export default class Calculation {
             return true;
         };
 
+        // Détermine si le point i est un bord devant être masqué lorsque calculateEdges est false.
+        // Un point n'est considéré comme bord pour un stencil 5 ou 7 points que si ce stencil d'ordre supérieur
+        // est effectivement applicable sur les données avoisinantes.
+        const isEdgePoint = (i) => {
+            if (i === 0 || i === n - 1) return true;
+            if (points >= 7) {
+                if ((i === 1 || i === 2) && isUniformSpacing(xArr, 0, 7)) return true;
+                if ((i === n - 2 || i === n - 3) && isUniformSpacing(xArr, n - 7, 7)) return true;
+            }
+            if (points >= 5) {
+                if (i === 1 && isUniformSpacing(xArr, 0, 5)) return true;
+                if (i === n - 2 && isUniformSpacing(xArr, n - 5, 5)) return true;
+            }
+            return false;
+        };
+
         let warnedNonUniform = false;
 
         for (let i = 0; i < n; i++) {
@@ -199,9 +221,9 @@ export default class Calculation {
                 continue;
             }
 
-            const isEdgeForRequestedStencil = (i < offset || i >= n - offset);
+            const isEdge = isEdgePoint(i);
 
-            if (isEdgeForRequestedStencil && !calculateEdges) {
+            if (isEdge && !calculateEdges) {
                 continue;
             }
 

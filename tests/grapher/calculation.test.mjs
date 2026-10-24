@@ -228,6 +228,43 @@ describe('Calculation Module', () => {
       assert.equal(result[4], null);
     });
 
+    it('ne doit pas masquer les indices 1 et n - 2 sur données à pas variable quand derivateEdges: false (stencil 5 points)', () => {
+      const calcNoEdges = new Calculation({ derivatePoints: 5, derivateEdges: false });
+      // Pas variable non-uniforme (dt = 1, 2, 3, 4, 5), x = 2 * t (dx/dt = 2)
+      const t = [0, 1, 3, 6, 10, 15];
+      const x = [0, 2, 6, 12, 20, 30];
+      const result = calcNoEdges.evaluate('diff(x, t)', { x, t });
+
+      // Sur pas variable, le stencil 5 points n'est pas applicable et l'algorithme bascule sur Lagrange 3 points.
+      // Seuls les bords stricts (i = 0 et i = 5) ne peuvent pas utiliser le stencil 3 points.
+      // Les indices 1 et 4 (n - 2) ne doivent PAS être null car ils disposent de leurs voisins pour Lagrange 3 points.
+      assert.equal(result[0], null, 'Index 0 doit être null');
+      assert.equal(result[1], 2, 'Index 1 ne doit pas être null (Lagrange 3 points applicable)');
+      assert.equal(result[2], 2, 'Index 2 calculé');
+      assert.equal(result[3], 2, 'Index 3 calculé');
+      assert.equal(result[4], 2, 'Index 4 (n-2) ne doit pas être null (Lagrange 3 points applicable)');
+      assert.equal(result[5], null, 'Index 5 doit être null');
+    });
+
+    it('ne doit pas masquer les indices 1, 2 et n - 3, n - 2 sur données à pas variable quand derivateEdges: false (stencil 7 points)', () => {
+      const calcNoEdges7 = new Calculation({ derivatePoints: 7, derivateEdges: false });
+      // Pas variable non-uniforme (dt = 1, 2, 3, 4, 5, 6, 7), x = 2 * t (dx/dt = 2)
+      const t = [0, 1, 3, 6, 10, 15, 21, 28];
+      const x = [0, 2, 6, 12, 20, 30, 42, 56];
+      const result = calcNoEdges7.evaluate('diff(x, t)', { x, t });
+
+      // Sur pas variable, le stencil 7 points (et 5 points) n'est pas applicable.
+      // Seuls les bords stricts (i = 0 et i = 7) ne peuvent pas utiliser le stencil 3 points.
+      assert.equal(result[0], null, 'Index 0 doit être null');
+      assert.equal(result[1], 2, 'Index 1 ne doit pas être null');
+      assert.equal(result[2], 2, 'Index 2 ne doit pas être null');
+      assert.equal(result[3], 2, 'Index 3 calculé');
+      assert.equal(result[4], 2, 'Index 4 calculé');
+      assert.equal(result[5], 2, 'Index 5 ne doit pas être null');
+      assert.equal(result[6], 2, 'Index 6 (n-2) ne doit pas être null');
+      assert.equal(result[7], null, 'Index 7 doit être null');
+    });
+
     it('doit utiliser le stencil uniforme à 7 points avec haute précision', () => {
       const calc7 = new Calculation({ derivatePoints: 7, derivateEdges: true });
       const t = [0, 1, 2, 3, 4, 5, 6];
