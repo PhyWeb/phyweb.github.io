@@ -83,12 +83,17 @@ self.onmessage = async function (e) {
         });
       }
 
-      // Calcul classique
+      // Calcul des moindres carrés avec protection contre les singularités et divisions par zéro
       let sum = 0;
       for (let i = 0; i < data.length; i++) {
-        sum += Math.pow(data[i][1] - f(a, data[i][0]), 2);
+        const val = f(a, data[i][0]);
+        if (!Number.isFinite(val)) return 1e30; // Pénalité forte si le paramètre sort du domaine
+        const diff = data[i][1] - val;
+        sum += diff * diff;
       }
-      return Math.sqrt(sum);
+      const norm = Math.sqrt(sum);
+      if (!Number.isFinite(norm)) return 1e30;
+      return norm;
     };
 
     let solver = new Alglib();
@@ -97,7 +102,17 @@ self.onmessage = async function (e) {
 
     solver.solve('min', initialGuess);
     let params = solver.get_results();
+    const termType = solver.termType;
     solver.remove();
+
+    if (termType === -8 || (Array.isArray(params) && params.some(p => !Number.isFinite(p)))) {
+      self.postMessage({
+        type: 'error',
+        success: false,
+        error: "L'ajustement a échoué : divergence numérique dans Alglib."
+      });
+      return;
+    }
 
     // Renvoyer le résultat FINAL
     self.postMessage({ type: 'final_result', success: true, params: params });
