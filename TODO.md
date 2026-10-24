@@ -24,6 +24,9 @@
 
     - BUG au moins en reticule modele, on peut selectionner des points
 
+    Observation : Les paramètres de modélisation ($a, b, c...$) sont créés avec une unité vide (unit: '').
+    -> assignation auto quand possible et possibilité de renseigner l'unité dans la modale d'edition de modèles.
+
 # Mendeleiev
 # Optique
 # Chromato
