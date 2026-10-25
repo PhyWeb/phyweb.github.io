@@ -332,8 +332,196 @@ export default class Calculation {
   }
 
   /**
+   * Traite les virgules dans une expression pour concilier la notation décimale française
+   * (ex: 0,5 * m) et les séparateurs d'arguments ou d'éléments (ex: pow(2,3), [1,2,3], pow(x1,2)) :
+   * - Remplace les points-virgules ';' utilisés comme séparateurs par des virgules
+   * - Préserve les virgules comme séparateurs dans les tableaux [1,2,3]
+   * - Préserve les virgules comme séparateurs d'arguments dans les fonctions multi-arguments (pow(2,3), min(2,3), atan2(1,2)...)
+   * - Préserve les virgules après une variable se terminant par un chiffre (ex: pow(x1,2))
+   * - Convertit les virgules décimales en points (ex: 1,5 * a -> 1.5 * a, sin(0,5) -> sin(0.5))
+   * @param {string} expression - L'expression à traiter.
+   * @returns {string} - L'expression avec les virgules traitées.
+   */
+  preprocessDecimalCommas(expression) {
+    if (!expression || typeof expression !== 'string') return expression;
+
+    // Normalise le point-virgule (séparateur usuel en notation française quand la virgule est décimale)
+    let expr = expression.replace(/;\s*/g, ', ');
+
+    const multiArgFunctions = new Set([
+      'pow', 'diff', 'atan2', 'min', 'max', 'hypot', 'gcd', 'lcm', 'nthroot', 'mod'
+    ]);
+
+    // Trouve l'indice de la parenthèse fermante correspondante
+    const findMatchingCloseParen = (str, openIndex) => {
+      let depth = 0;
+      for (let k = openIndex; k < str.length; k++) {
+        if (str[k] === '(') depth++;
+        else if (str[k] === ')') {
+          depth--;
+          if (depth === 0) return k;
+        }
+      }
+      return -1;
+    };
+
+    // Compte le nombre de virgules au niveau 0 (hors sous-parenthèses/crochets) entre deux indices
+    const countTopLevelCommas = (str, start, end) => {
+      let count = 0;
+      let pDepth = 0;
+      let bDepth = 0;
+      for (let k = start; k < end; k++) {
+        const c = str[k];
+        if (c === '(') pDepth++;
+        else if (c === ')') pDepth--;
+        else if (c === '[') bDepth++;
+        else if (c === ']') bDepth--;
+        else if (c === ',' && pDepth === 0 && bDepth === 0) {
+          count++;
+        }
+      }
+      return count;
+    };
+
+    const stack = [];
+    let result = '';
+    const len = expr.length;
+    let i = 0;
+
+    while (i < len) {
+      const char = expr[i];
+
+      // Parenthèse ouvrante
+      if (char === '(') {
+        let j = result.length - 1;
+        while (j >= 0 && /\s/.test(result[j])) j--;
+        const identEnd = j + 1;
+        while (j >= 0 && /[a-zA-ZÀ-ÖØ-öø-ÿ0-9_]/.test(result[j])) j--;
+        const ident = result.slice(j + 1, identEnd).toLowerCase();
+
+        const closeIndex = findMatchingCloseParen(expr, i);
+        const topLevelCommas = closeIndex !== -1 ? countTopLevelCommas(expr, i + 1, closeIndex) : 0;
+
+        if (ident && multiArgFunctions.has(ident)) {
+          stack.push({ type: 'multiArgCall', name: ident, topLevelCommas });
+        } else if (ident) {
+          stack.push({ type: 'singleArgCall', name: ident, topLevelCommas });
+        } else {
+          stack.push({ type: 'paren', topLevelCommas });
+        }
+
+        result += char;
+        i++;
+        continue;
+      }
+
+      // Parenthèse fermante
+      if (char === ')') {
+        if (stack.length > 0 && stack[stack.length - 1].type !== 'bracket') {
+          stack.pop();
+        }
+        result += char;
+        i++;
+        continue;
+      }
+
+      // Crochet ouvrant (tableau)
+      if (char === '[') {
+        stack.push({ type: 'bracket' });
+        result += char;
+        i++;
+        continue;
+      }
+
+      // Crochet fermant
+      if (char === ']') {
+        if (stack.length > 0 && stack[stack.length - 1].type === 'bracket') {
+          stack.pop();
+        }
+        result += char;
+        i++;
+        continue;
+      }
+
+      // Virgule
+      if (char === ',') {
+        const prevChar = i > 0 ? expr[i - 1] : '';
+        const nextChar = i + 1 < len ? expr[i + 1] : '';
+
+        // Une virgule décimale est nécessairement collée entre deux chiffres
+        const isBetweenDigits = /\d/.test(prevChar) && /\d/.test(nextChar);
+
+        // Vérifier si le chiffre avant la virgule fait partie d'un identifiant (ex: pow(x1,2))
+        let isPartOfIdentifier = false;
+        if (isBetweenDigits) {
+          let k = result.length - 1;
+          while (k >= 0 && /\d/.test(result[k])) k--;
+          if (k >= 0 && /[a-zA-ZÀ-ÖØ-öø-ÿ_]/.test(result[k])) {
+            isPartOfIdentifier = true;
+          }
+        }
+
+        const currentContext = stack.length > 0 ? stack[stack.length - 1] : null;
+
+        if (isBetweenDigits && isPartOfIdentifier) {
+          result += ', ';
+          i++;
+          continue;
+        }
+
+        if (isBetweenDigits && !isPartOfIdentifier) {
+          // Dans un tableau [1,2,3], la virgule sépare des éléments
+          if (currentContext && currentContext.type === 'bracket') {
+            result += ', ';
+            i++;
+            continue;
+          }
+
+          // Dans une fonction multi-arguments :
+          // Si la fonction ne comporte qu'une seule virgule à son niveau principal (ex: pow(2,3), min(2,3), atan2(1,2)),
+          // cette virgule est obligatoirement le séparateur d'arguments.
+          if (currentContext && currentContext.type === 'multiArgCall' && currentContext.topLevelCommas === 1) {
+            result += ', ';
+            i++;
+            continue;
+          }
+
+          // Pour les fonctions variadiques à plusieurs entiers sans espace (ex: min(2,3,4))
+          if (currentContext && ['min', 'max', 'hypot', 'gcd', 'lcm'].includes(currentContext.name)) {
+            let p = i - 1;
+            while (p >= 0 && /\d/.test(expr[p])) p--;
+            let q = i + 1;
+            while (q < len && /\d/.test(expr[q])) q++;
+            const atStartOrAfterComma = p < 0 || expr[p] === '(' || expr[p] === ',' || expr[p] === ' ';
+            const atEndOrBeforeComma = q >= len || expr[q] === ')' || expr[q] === ',' || expr[q] === ' ';
+            if (atStartOrAfterComma && atEndOrBeforeComma && currentContext.topLevelCommas > 1) {
+              result += ', ';
+              i++;
+              continue;
+            }
+          }
+
+          // Sinon, c'est une virgule décimale (ex: 0,5 * m, sin(0,5), pow(0,5, 2))
+          result += '.';
+          i++;
+          continue;
+        }
+
+        result += ',';
+        i++;
+        continue;
+      }
+
+      result += char;
+      i++;
+    }
+
+    return result;
+  }
+
+  /**
    * Prétraite une formule pour la normaliser avant analyse syntaxique et évaluation :
-   * - Remplace les virgules décimales par des points
+   * - Remplace les virgules décimales par des points tout en préservant les séparateurs d'arguments
    * - Remplace les caractères spéciaux (ex: '²' -> '^2')
    * - Normalise la casse des fonctions connues (ex: SQRT -> sqrt)
    * @param {string} expression - L'expression à traiter.
@@ -341,7 +529,7 @@ export default class Calculation {
    */
   preprocessExpression(expression) {
     if (!expression || typeof expression !== 'string') return expression;
-    let clean = expression.replace(/(\d),(\d)/g, '$1.$2');
+    let clean = this.preprocessDecimalCommas(expression);
     clean = this.preprocessSpecialCharacters(clean);
     clean = this._normalizeFunctionCases(clean);
     return clean;

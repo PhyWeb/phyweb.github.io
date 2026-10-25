@@ -340,6 +340,77 @@ describe('Calculation Module', () => {
       assert.equal(byName.z[3], 1);
     });
   });
+
+  describe('Prétraitement des virgules (preprocessDecimalCommas & preprocessExpression)', () => {
+    it('doit supporter pow(2,3) sans espace et évaluer correctement', () => {
+      const clean = calc.preprocessExpression('pow(2,3)');
+      assert.equal(clean, 'pow(2, 3)');
+      assert.equal(calc.evaluate('pow(2,3)', {}), 8);
+    });
+
+    it('doit supporter pow(x1,2) sans espace quand la variable se termine par un chiffre', () => {
+      const scope = { x1: 4 };
+      const clean = calc.preprocessExpression('pow(x1,2)');
+      assert.equal(clean, 'pow(x1, 2)');
+      assert.equal(calc.evaluate('pow(x1,2)', scope), 16);
+    });
+
+    it('doit évaluer correctement min(2,3) et max(1,2) sans espace', () => {
+      assert.equal(calc.preprocessExpression('min(2,3)'), 'min(2, 3)');
+      assert.equal(calc.evaluate('min(2,3)', {}), 2);
+
+      assert.equal(calc.preprocessExpression('max(1,2)'), 'max(1, 2)');
+      assert.equal(calc.evaluate('max(1,2)', {}), 2);
+    });
+
+    it('doit évaluer correctement atan2(1,2) et hypot(3,4) sans espace', () => {
+      assert.equal(calc.preprocessExpression('atan2(1,2)'), 'atan2(1, 2)');
+      assert.equal(calc.evaluate('atan2(1,2)', {}), Math.atan2(1, 2));
+
+      assert.equal(calc.preprocessExpression('hypot(3,4)'), 'hypot(3, 4)');
+      assert.equal(calc.evaluate('hypot(3,4)', {}), 5);
+    });
+
+    it('doit supporter les tableaux de nombres [1,2,3] sans espace', () => {
+      assert.equal(calc.preprocessExpression('[1,2,3]'), '[1, 2, 3]');
+      assert.deepEqual(calc.evaluate('[1,2,3]', {}).toArray(), [1, 2, 3]);
+    });
+
+    it('doit convertir les nombres décimaux usuels en notation française (0,5 * m, 1,5 + 2,3)', () => {
+      assert.equal(calc.preprocessExpression('0,5 * m'), '0.5 * m');
+      assert.equal(calc.evaluate('0,5 * m', { m: 2 }), 1);
+
+      assert.equal(calc.preprocessExpression('1,5 + 2,3'), '1.5 + 2.3');
+      assert.equal(calc.evaluate('1,5 + 2,3', {}), 3.8);
+    });
+
+    it('doit convertir les décimaux dans les fonctions à un seul argument (sin(0,5 * t), sqrt(2,5), round(2,5))', () => {
+      assert.equal(calc.preprocessExpression('sin(0,5 * t)'), 'sin(0.5 * t)');
+      assert.equal(calc.preprocessExpression('sqrt(2,5)'), 'sqrt(2.5)');
+      assert.equal(calc.evaluate('sqrt(2,5)', {}), Math.sqrt(2.5));
+      assert.equal(calc.preprocessExpression('round(2,5)'), 'round(2.5)');
+      assert.equal(calc.evaluate('round(2,5)', {}), 3);
+    });
+
+    it('doit supporter le point-virgule comme séparateur d\'arguments français (pow(2; 3), pow(0,5; 2))', () => {
+      assert.equal(calc.preprocessExpression('pow(2; 3)'), 'pow(2, 3)');
+      assert.equal(calc.evaluate('pow(2; 3)', {}), 8);
+
+      assert.equal(calc.preprocessExpression('pow(0,5; 2)'), 'pow(0.5, 2)');
+      assert.equal(calc.evaluate('pow(0,5; 2)', {}), 0.25);
+    });
+
+    it('doit supporter nthRoot(8,3) et mod(10,3) sans espace', () => {
+      assert.equal(calc.preprocessExpression('nthRoot(8,3)'), 'nthRoot(8, 3)');
+      assert.equal(calc.evaluate('nthRoot(8,3)', {}), 2);
+
+      assert.equal(calc.preprocessExpression('mod(10,3)'), 'mod(10, 3)');
+      assert.equal(calc.evaluate('mod(10,3)', {}), 1);
+    });
+
+    it('doit supporter pow(0,5, 2) avec premier argument décimal', () => {
+      assert.equal(calc.preprocessExpression('pow(0,5, 2)'), 'pow(0.5, 2)');
+      assert.equal(calc.evaluate('pow(0,5, 2)', {}), 0.25);
+    });
+  });
 });
-
-
