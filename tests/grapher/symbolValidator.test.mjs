@@ -94,6 +94,7 @@ describe('SymbolValidator', () => {
 
     it('doit refuser les fonctions personnalisées comme diff', () => {
       assert.equal(validator.validate('diff').isValid, false);
+      assert.equal(validator.validate('integrate').isValid, false);
     });
 
     it('doit être insensible à la casse pour les mots réservés (ex: Sin, COS, Diff, Pi, SQRT)', () => {

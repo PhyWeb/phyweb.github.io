@@ -312,6 +312,111 @@ describe('Calculation Module', () => {
     });
   });
 
+  describe('integrate() & numericalIntegration() - Primitive par trapèzes cumulés', () => {
+    it('doit inclure integrate dans getAvailableFunctions()', () => {
+      const fns = calc.getAvailableFunctions();
+      assert.ok(fns.includes('integrate'));
+    });
+
+    it('doit calculer la primitive exacte d\'une fonction affine y = 2*t', () => {
+      const t = [0, 1, 2, 3, 4];
+      const v = [0, 2, 4, 6, 8];
+      const result = calc.evaluate('integrate(v, t)', { v, t });
+
+      assert.equal(result.length, 5);
+      assert.deepEqual(result, [0, 1, 4, 9, 16]);
+    });
+
+    it('doit prendre en compte la valeur initiale y0 (3ème argument)', () => {
+      const t = [0, 1, 2, 3, 4];
+      const v = [0, 2, 4, 6, 8];
+      const result = calc.evaluate('integrate(v, t, 10)', { v, t });
+
+      assert.equal(result.length, 5);
+      assert.deepEqual(result, [10, 11, 14, 19, 26]);
+    });
+
+    it('doit intégrer une constante par rapport à un tableau (number, Array)', () => {
+      const t = [0, 1, 2, 3];
+      const result = calc.evaluate('integrate(3, t)', { t });
+
+      assert.deepEqual(result, [0, 3, 6, 9]);
+
+      const resultWithY0 = calc.evaluate('integrate(3, t, 5)', { t });
+      assert.deepEqual(resultWithY0, [5, 8, 11, 14]);
+    });
+
+    it('doit lever une erreur si nMin < 2', () => {
+      assert.throws(
+        () => calc.evaluate('integrate(v, t)', { v: [1], t: [0] }),
+        /Pas assez de points pour calculer une primitive\. Il en faut au moins 2\./
+      );
+    });
+
+    it('doit lever une erreur si la variable d\'intégration n\'est pas monotone', () => {
+      const t = [0, 2, 1, 3];
+      const v = [0, 2, 4, 6];
+      assert.throws(
+        () => calc.evaluate('integrate(v, t)', { v, t }),
+        /la grandeur d'intégration n'est pas triée\. Veuillez trier vos données dans le tableur\./
+      );
+    });
+
+    it('doit lever une erreur si la variable d\'intégration contient deux valeurs identiques consécutives', () => {
+      const t = [0, 1, 1, 2];
+      const v = [0, 2, 4, 6];
+      assert.throws(
+        () => calc.evaluate('integrate(v, t)', { v, t }),
+        /la grandeur d'intégration contient deux valeurs identiques consécutives\./
+      );
+    });
+
+    it('doit lever une erreur lors d\'une intégration par rapport à une constante', () => {
+      assert.throws(
+        () => calc.evaluate('integrate(v, 2)', { v: [1, 2, 3] }),
+        /Impossible d'intégrer par rapport à une constante\./
+      );
+      assert.throws(
+        () => calc.evaluate('integrate(5, 2)', {}),
+        /Impossible d'intégrer par rapport à une constante\./
+      );
+    });
+
+    it('doit fonctionner sur une variable strictement décroissante', () => {
+      const t = [3, 2, 1, 0];
+      const v = [2, 2, 2, 2];
+      const result = calc.evaluate('integrate(v, t)', { v, t });
+      assert.deepEqual(result, [0, -2, -4, -6]);
+    });
+
+    it('doit gérer les valeurs null sans corrompre les points valides', () => {
+      const t = [0, null, 2, 3];
+      const v = [0, null, 4, 6];
+      const result = calc.evaluate('integrate(v, t)', { v, t });
+      assert.equal(result.length, 4);
+      assert.equal(result[0], 0);
+      assert.equal(result[1], null);
+      assert.equal(result[2], 4);
+      assert.equal(result[3], 9);
+    });
+
+    it('doit fonctionner dans evaluateBlock avec notation décimale française et normalisation de casse', () => {
+      const initialScope = {
+        t: [0, 1, 2, 3, 4],
+        v: [0, 2, 4, 6, 8]
+      };
+      const formulas = [
+        { variableName: 'x1', expression: 'INTEGRATE(v, t)', unit: 'm' },
+        { variableName: 'x2', expression: 'integrate(v, t, 1,5)', unit: 'm' }
+      ];
+      const { results, errors } = calc.evaluateBlock(formulas, initialScope);
+      assert.equal(errors.length, 0);
+      assert.equal(results.length, 2);
+      assert.deepEqual(results[0].data, [0, 1, 4, 9, 16]);
+      assert.deepEqual(results[1].data, [1.5, 2.5, 5.5, 10.5, 17.5]);
+    });
+  });
+
   describe('Opérations mathématiques (puissances, racines, null-safety)', () => {
     it('doit renvoyer null pour les élévations aux puissances fractionnaires sur des valeurs négatives (Array ^ scalaire)', () => {
       // Vérifie que x^0.5 ou x^0.2 retourne null pour x < 0 et non un objet complexe

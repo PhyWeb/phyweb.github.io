@@ -1,0 +1,417 @@
+import '../helpers/setup.mjs';
+import fs from 'node:fs';
+import { describe, it, beforeEach } from 'node:test';
+import assert from 'node:assert/strict';
+import UIManager from '../../grapher/modules/ui.js';
+import SymbolValidator from '../../grapher/modules/symbolValidator.js';
+
+describe('AddCurveModal - Grandeur Intégrée (integrate-curve)', () => {
+  describe('Conformité HTML dans grapher/index.html', () => {
+    const htmlContent = fs.readFileSync('grapher/index.html', 'utf8');
+
+    it('doit contenir le bouton radio integrate-curve', () => {
+      assert.match(
+        htmlContent,
+        /<input\s+type="radio"\s+name="creation-type"\s+value="integrate-curve"\s*\/?>\s*Grandeur intégrée/
+      );
+    });
+
+    it('doit contenir le panneau #integrate-curve-panel avec tous les champs requis', () => {
+      assert.match(htmlContent, /id="integrate-curve-panel"/);
+      assert.match(htmlContent, /id="integrate-curve-symbol-input"/);
+      assert.match(htmlContent, /id="integrate-curve-unit-input"/);
+      assert.match(htmlContent, /id="integrate-operand-select"/);
+      assert.match(htmlContent, /id="integrate-variable-select"/);
+      assert.match(htmlContent, /id="integrate-initial-value-input"/);
+      assert.match(htmlContent, /point courant/);
+      assert.match(htmlContent, /∫/);
+    });
+  });
+
+  describe('UIManager - initAddCurveModal() et comportement fonctionnel', () => {
+    let elements;
+    let ui;
+    let toasts;
+    let appliedCalculations;
+
+    const createMockDOMElement = (tag = 'div') => {
+      const listeners = {};
+      const classes = new Set(['is-hidden']);
+      const children = [];
+      return {
+        tagName: tag.toUpperCase(),
+        value: '',
+        innerHTML: '',
+        listeners,
+        children,
+        appendChild: function(c) { children.push(c); return c; },
+        classList: {
+          add: (c) => classes.add(c),
+          remove: (c) => classes.delete(c),
+          contains: (c) => classes.has(c),
+          _classes: classes
+        },
+        addEventListener: (type, fn) => {
+          if (!listeners[type]) listeners[type] = [];
+          listeners[type].push(fn);
+        },
+        dispatchEvent: function(event) {
+          const type = event?.type || 'input';
+          if (listeners[type]) {
+            listeners[type].forEach(fn => fn(event || { target: this }));
+          }
+        },
+        click: function() {
+          if (listeners['click']) {
+            listeners['click'].forEach(fn => fn({ preventDefault: () => {} }));
+          }
+          if (listeners['change']) {
+            listeners['change'].forEach(fn => fn({ target: this }));
+          }
+        },
+        focus: function() {}
+      };
+    };
+
+    beforeEach(() => {
+      toasts = [];
+      appliedCalculations = [];
+
+      global.showToast = (msg, type) => {
+        toasts.push({ msg, type });
+      };
+
+      const emptyCurvePanel = createMockDOMElement();
+      const calcCurvePanel = createMockDOMElement();
+      const derivateCurvePanel = createMockDOMElement();
+      const integrateCurvePanel = createMockDOMElement();
+      const parameterPanel = createMockDOMElement();
+
+      const emptyCurveSymbolInput = createMockDOMElement('input');
+      const emptyCurveUnitInput = createMockDOMElement('input');
+      const calcCurveSymbolInput = createMockDOMElement('input');
+      const calcCurveUnitInput = createMockDOMElement('input');
+      const calcCurveFormulaInput = createMockDOMElement('input');
+      const derivateCurveSymbolInput = createMockDOMElement('input');
+      const derivateCurveUnitInput = createMockDOMElement('input');
+      const derivateNumeratorSelect = createMockDOMElement('select');
+      const derivateDenominatorSelect = createMockDOMElement('select');
+
+      const integrateCurveSymbolInput = createMockDOMElement('input');
+      const integrateCurveUnitInput = createMockDOMElement('input');
+      const integrateOperandSelect = createMockDOMElement('select');
+      const integrateVariableSelect = createMockDOMElement('select');
+      const integrateInitialValueInput = createMockDOMElement('input');
+      integrateInitialValueInput.value = '0';
+
+      const parameterSymbolInput = createMockDOMElement('input');
+      const parameterUnitInput = createMockDOMElement('input');
+      const parameterValueInput = createMockDOMElement('input');
+
+      const addCurveConfirmButton = createMockDOMElement('button');
+      const addCurveButton = createMockDOMElement('button');
+      const addCurveCalculationButton = createMockDOMElement('button');
+
+      let currentRadio = 'empty-curve';
+      const radioButtons = [
+        { value: 'empty-curve', listeners: {}, addEventListener: function(e, fn) { (this.listeners[e] = this.listeners[e] || []).push(fn); } },
+        { value: 'calc-curve', listeners: {}, addEventListener: function(e, fn) { (this.listeners[e] = this.listeners[e] || []).push(fn); } },
+        { value: 'derivate-curve', listeners: {}, addEventListener: function(e, fn) { (this.listeners[e] = this.listeners[e] || []).push(fn); } },
+        { value: 'integrate-curve', listeners: {}, addEventListener: function(e, fn) { (this.listeners[e] = this.listeners[e] || []).push(fn); } },
+        { value: 'parameter', listeners: {}, addEventListener: function(e, fn) { (this.listeners[e] = this.listeners[e] || []).push(fn); } }
+      ];
+
+      const addCurveModal = createMockDOMElement();
+      addCurveModal.querySelectorAll = (sel) => {
+        if (sel === 'input[name="creation-type"]') return radioButtons;
+        return [];
+      };
+      addCurveModal.querySelector = (sel) => {
+        if (sel === 'input[name="creation-type"]:checked') {
+          return { value: currentRadio };
+        }
+        if (sel === 'input[value="empty-curve"]') {
+          return { click: () => { currentRadio = 'empty-curve'; } };
+        }
+        if (sel === 'input[value="calc-curve"]') {
+          return { click: () => { currentRadio = 'calc-curve'; } };
+        }
+        return null;
+      };
+
+      elements = {
+        addCurveModal,
+        emptyCurvePanel,
+        calcCurvePanel,
+        derivateCurvePanel,
+        integrateCurvePanel,
+        parameterPanel,
+        emptyCurveSymbolInput,
+        emptyCurveUnitInput,
+        calcCurveSymbolInput,
+        calcCurveUnitInput,
+        calcCurveFormulaInput,
+        derivateCurveSymbolInput,
+        derivateCurveUnitInput,
+        derivateNumeratorSelect,
+        derivateDenominatorSelect,
+        integrateCurveSymbolInput,
+        integrateCurveUnitInput,
+        integrateOperandSelect,
+        integrateVariableSelect,
+        integrateInitialValueInput,
+        parameterSymbolInput,
+        parameterUnitInput,
+        parameterValueInput,
+        addCurveConfirmButton,
+        addCurveButton,
+        addCurveCalculationButton,
+        radioButtons,
+        setRadio: (val) => {
+          currentRadio = val;
+          radioButtons.forEach(r => {
+            if (r.listeners['change']) r.listeners['change'].forEach(fn => fn());
+          });
+        }
+      };
+
+      const toastContainer = createMockDOMElement();
+      toastContainer.appendChild = (child) => {
+        toastContainer.children.push(child);
+        toasts.push({
+          className: child.className || '',
+          innerHTML: child.innerHTML || ''
+        });
+        return child;
+      };
+
+      global.__createElementOverride = (tag) => {
+        const el = createMockDOMElement(tag);
+        return el;
+      };
+
+      global.__querySelectorOverride = (sel) => {
+        if (sel === '.toast-container') return toastContainer;
+        switch (sel) {
+          case '#add-curve-modal': return addCurveModal;
+          case '#add-curve-confirm-button': return addCurveConfirmButton;
+          case '#empty-curve-panel': return emptyCurvePanel;
+          case '#calc-curve-panel': return calcCurvePanel;
+          case '#derivate-curve-panel': return derivateCurvePanel;
+          case '#integrate-curve-panel': return integrateCurvePanel;
+          case '#parameter-panel': return parameterPanel;
+          case '#empty-curve-symbol-input': return emptyCurveSymbolInput;
+          case '#empty-curve-unit-input': return emptyCurveUnitInput;
+          case '#calc-curve-symbol-input': return calcCurveSymbolInput;
+          case '#calc-curve-unit-input': return calcCurveUnitInput;
+          case '#calc-curve-formula-input': return calcCurveFormulaInput;
+          case '#derivate-curve-symbol-input': return derivateCurveSymbolInput;
+          case '#derivate-curve-unit-input': return derivateCurveUnitInput;
+          case '#derivate-numerator-select': return derivateNumeratorSelect;
+          case '#derivate-denominator-select': return derivateDenominatorSelect;
+          case '#integrate-curve-symbol-input': return integrateCurveSymbolInput;
+          case '#integrate-curve-unit-input': return integrateCurveUnitInput;
+          case '#integrate-operand-select': return integrateOperandSelect;
+          case '#integrate-variable-select': return integrateVariableSelect;
+          case '#integrate-initial-value-input': return integrateInitialValueInput;
+          case '#parameter-symbol-input': return parameterSymbolInput;
+          case '#parameter-unit-input': return parameterUnitInput;
+          case '#parameter-value-input': return parameterValueInput;
+          case '#add-curve-button': return addCurveButton;
+          case '#add-curve-calculation-button': return addCurveCalculationButton;
+          default: return null;
+        }
+      };
+
+      global.__getElementByIdOverride = global.__querySelectorOverride;
+
+      ui = Object.create(UIManager.prototype);
+      ui.data = {
+        curves: [{ title: 't', unit: 's' }, { title: 'v', unit: 'm/s' }],
+        parameters: {}
+      };
+      ui.app = {
+        symbolValidator: new SymbolValidator(ui.data),
+        addCurve: () => {},
+        applyCalculation: (code) => { appliedCalculations.push(code); return true; }
+      };
+      ui.common = {
+        modalManager: {
+          openModal: () => {},
+          closeAllModals: () => {}
+        }
+      };
+      let editorContent = '';
+      ui.editor = {
+        getValue: () => editorContent,
+        setValue: (val) => { editorContent = val; }
+      };
+    });
+
+    it('doit basculer vers integrate-curve-panel lorsque le radio est coché', () => {
+      ui.initAddCurveModal();
+
+      elements.setRadio('integrate-curve');
+      assert.strictEqual(elements.integrateCurvePanel.classList.contains('is-hidden'), false);
+      assert.strictEqual(elements.emptyCurvePanel.classList.contains('is-hidden'), true);
+      assert.strictEqual(elements.derivateCurvePanel.classList.contains('is-hidden'), true);
+    });
+
+    it('doit synchroniser les symboles et unités entre integrate-curve et les autres panneaux', () => {
+      ui.initAddCurveModal();
+
+      elements.emptyCurveSymbolInput.value = 'x';
+      elements.emptyCurveSymbolInput.dispatchEvent({ type: 'input', target: elements.emptyCurveSymbolInput });
+      assert.strictEqual(elements.integrateCurveSymbolInput.value, 'x');
+
+      elements.integrateCurveUnitInput.value = 'm';
+      elements.integrateCurveUnitInput.dispatchEvent({ type: 'input', target: elements.integrateCurveUnitInput });
+      assert.strictEqual(elements.emptyCurveUnitInput.value, 'm');
+    });
+
+    it('doit peupler et pré-sélectionner integrate-operand-select et integrate-variable-select lors de l\'ouverture', () => {
+      ui.initAddCurveModal();
+
+      // Clic sur add-curve-button déclenche resetAddCurveModal()
+      elements.addCurveButton.click();
+
+      assert.strictEqual(elements.integrateOperandSelect.children.length, 2);
+      assert.strictEqual(elements.integrateOperandSelect.children[0].value, 't');
+      assert.strictEqual(elements.integrateOperandSelect.children[1].value, 'v');
+
+      assert.strictEqual(elements.integrateVariableSelect.children.length, 2);
+      assert.strictEqual(elements.integrateVariableSelect.children[0].value, 't');
+      assert.strictEqual(elements.integrateVariableSelect.children[1].value, 'v');
+
+      // Pré-sélection de la 2e colonne (v) et 1re colonne (t)
+      assert.strictEqual(elements.integrateOperandSelect.value, 'v');
+      assert.strictEqual(elements.integrateVariableSelect.value, 't');
+      assert.strictEqual(elements.integrateInitialValueInput.value, '0');
+    });
+
+    it('doit gérer le cas où il n\'y a aucune grandeur disponible', () => {
+      ui.data.curves = [];
+      ui.initAddCurveModal();
+
+      elements.addCurveButton.click();
+      elements.setRadio('integrate-curve');
+
+      assert.strictEqual(elements.integrateOperandSelect.disabled, true);
+      assert.strictEqual(elements.integrateVariableSelect.disabled, true);
+      assert.strictEqual(elements.integrateOperandSelect.children[0].textContent, 'Aucune grandeur');
+
+      elements.integrateCurveSymbolInput.value = 'x';
+      elements.addCurveConfirmButton.click();
+
+      assert.strictEqual(toasts.length, 1);
+      assert.ok(toasts[0].className.includes('is-warning'));
+      assert.match(toasts[0].innerHTML, /Aucune grandeur/);
+    });
+
+    it('doit gérer le cas où il n\'y a qu\'une seule grandeur (pas assez de grandeurs)', () => {
+      ui.data.curves = [{ title: 't', unit: 's' }];
+      ui.initAddCurveModal();
+
+      elements.addCurveButton.click();
+      elements.setRadio('integrate-curve');
+
+      assert.strictEqual(elements.integrateOperandSelect.disabled, true);
+      assert.strictEqual(elements.integrateVariableSelect.disabled, true);
+      assert.strictEqual(elements.integrateOperandSelect.children[0].textContent, '2 grandeurs requises');
+
+      elements.integrateCurveSymbolInput.value = 'x';
+      elements.addCurveConfirmButton.click();
+
+      assert.strictEqual(toasts.length, 1);
+      assert.ok(toasts[0].className.includes('is-warning'));
+      assert.match(toasts[0].innerHTML, /au moins 2 grandeurs/);
+    });
+
+    it('doit rejeter avec un toast d\'avertissement si le symbole est manquant', () => {
+      ui.initAddCurveModal();
+      elements.setRadio('integrate-curve');
+
+      // Pas de symbole renseigné
+      elements.integrateCurveSymbolInput.value = '';
+      elements.addCurveConfirmButton.click();
+      assert.strictEqual(toasts.length, 1);
+      assert.ok(toasts[0].className.includes('is-warning'));
+    });
+
+    it('doit rejeter si la grandeur et la variable choisies sont identiques', () => {
+      ui.initAddCurveModal();
+      elements.setRadio('integrate-curve');
+
+      elements.integrateCurveSymbolInput.value = 'x';
+      elements.integrateOperandSelect.value = 't';
+      elements.integrateVariableSelect.value = 't';
+      elements.addCurveConfirmButton.click();
+
+      assert.strictEqual(toasts.length, 1);
+      assert.ok(toasts[0].className.includes('is-warning'));
+      assert.match(toasts[0].innerHTML, /distinctes/);
+    });
+
+    it('doit rejeter avec un toast is-danger si le symbole est un mot réservé', () => {
+      ui.initAddCurveModal();
+      elements.setRadio('integrate-curve');
+
+      elements.integrateCurveSymbolInput.value = 'integrate';
+      elements.integrateOperandSelect.value = 'v';
+      elements.integrateVariableSelect.value = 't';
+      elements.addCurveConfirmButton.click();
+
+      assert.strictEqual(toasts.length, 1);
+      assert.ok(toasts[0].className.includes('is-danger'));
+      assert.match(toasts[0].innerHTML, /mot réservé/);
+    });
+
+    it('doit générer integrate(v, t) sans initialValue si initialValue vaut 0', () => {
+      ui.initAddCurveModal();
+      elements.setRadio('integrate-curve');
+
+      elements.integrateCurveSymbolInput.value = 'x';
+      elements.integrateCurveUnitInput.value = 'm';
+      elements.integrateOperandSelect.value = 'v';
+      elements.integrateVariableSelect.value = 't';
+      elements.integrateInitialValueInput.value = '0';
+
+      elements.addCurveConfirmButton.click();
+
+      assert.strictEqual(appliedCalculations.length, 1);
+      assert.strictEqual(appliedCalculations[0], 'x_m = integrate(v, t)');
+    });
+
+    it('doit générer integrate(v, t, 12.5) si une valeur initiale non-nulle est saisie', () => {
+      ui.initAddCurveModal();
+      elements.setRadio('integrate-curve');
+
+      elements.integrateCurveSymbolInput.value = 'x';
+      elements.integrateCurveUnitInput.value = 'm';
+      elements.integrateOperandSelect.value = 'v';
+      elements.integrateVariableSelect.value = 't';
+      elements.integrateInitialValueInput.value = '12,5';
+
+      elements.addCurveConfirmButton.click();
+
+      assert.strictEqual(appliedCalculations.length, 1);
+      assert.strictEqual(appliedCalculations[0], 'x_m = integrate(v, t, 12.5)');
+    });
+
+    it('doit générer integrate(v, t, -3.4) avec une valeur initiale négative', () => {
+      ui.initAddCurveModal();
+      elements.setRadio('integrate-curve');
+
+      elements.integrateCurveSymbolInput.value = 'x';
+      elements.integrateCurveUnitInput.value = 'm';
+      elements.integrateOperandSelect.value = 'v';
+      elements.integrateVariableSelect.value = 't';
+      elements.integrateInitialValueInput.value = '-3,4';
+
+      elements.addCurveConfirmButton.click();
+
+      assert.strictEqual(appliedCalculations.length, 1);
+      assert.strictEqual(appliedCalculations[0], 'x_m = integrate(v, t, -3.4)');
+    });
+  });
+});

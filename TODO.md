@@ -29,6 +29,8 @@
 
     des fonctions non prévues existent (pow, min etc de math.js)
 
+    parametre? pour angles en degrés
+
 # Mendeleiev
 # Optique
 # Chromato

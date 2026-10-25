@@ -311,13 +311,20 @@
 
 /* Masquer les flèches des inputs number (Chrome, Safari, Edge, Opera) */
 #page-input::-webkit-outer-spin-button,
-#page-input::-webkit-inner-spin-button {
+#page-input::-webkit-inner-spin-button,
+#integrate-initial-value-input::-webkit-outer-spin-button,
+#integrate-initial-value-input::-webkit-inner-spin-button,
+.no-spinners::-webkit-outer-spin-button,
+.no-spinners::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
 /* Masquer pour Firefox */
-#page-input[type=number] {
+#page-input[type=number],
+#integrate-initial-value-input[type=number],
+.no-spinners[type=number] {
   -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 /* Remplacer le "sens interdit" par la flèche classique sur les boutons inactifs */

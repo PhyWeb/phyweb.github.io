@@ -259,6 +259,7 @@ export default class UIManager {
           title: 'Analyse & Arrondis',
           functions: [
             { name: 'diff', desc: 'Dérivée : diff(y, x)', tagClass: 'is-warning is-light' },
+            { name: 'integrate', desc: 'Primitive : integrate(y, x)', tagClass: 'is-warning is-light' },
             { name: 'round', desc: 'Arrondi au plus proche' },
             { name: 'floor', desc: 'Arrondi inférieur' },
             { name: 'ceil', desc: 'Arrondi supérieur' }
@@ -1159,8 +1160,9 @@ export default class UIManager {
     const emptyCurvePanel = $('#empty-curve-panel');
     const calcCurvePanel = $('#calc-curve-panel');
     const derivateCurvePanel = $('#derivate-curve-panel');
+    const integrateCurvePanel = $('#integrate-curve-panel');
     const parameterPanel = $('#parameter-panel');
-    const allPanels = [emptyCurvePanel, calcCurvePanel, derivateCurvePanel, parameterPanel];
+    const allPanels = [emptyCurvePanel, calcCurvePanel, derivateCurvePanel, integrateCurvePanel, parameterPanel];
 
     // Références aux champs de saisie pour chaque panneau
     const emptyCurveSymbolInput = $('#empty-curve-symbol-input');
@@ -1175,12 +1177,18 @@ export default class UIManager {
     const derivateNumeratorSelect = $('#derivate-numerator-select');
     const derivateDenominatorSelect = $('#derivate-denominator-select');
 
+    const integrateCurveSymbolInput = $('#integrate-curve-symbol-input');
+    const integrateCurveUnitInput = $('#integrate-curve-unit-input');
+    const integrateOperandSelect = $('#integrate-operand-select');
+    const integrateVariableSelect = $('#integrate-variable-select');
+    const integrateInitialValueInput = $('#integrate-initial-value-input');
+
     const parameterSymbolInput = $('#parameter-symbol-input');
     const parameterUnitInput = $('#parameter-unit-input');
     const parameterValueInput = $('#parameter-value-input');
 
-    const allSymbolInputs = [emptyCurveSymbolInput, calcCurveSymbolInput, derivateCurveSymbolInput, parameterSymbolInput];
-    const allUnitInputs = [emptyCurveUnitInput, calcCurveUnitInput, derivateCurveUnitInput, parameterUnitInput];
+    const allSymbolInputs = [emptyCurveSymbolInput, calcCurveSymbolInput, derivateCurveSymbolInput, integrateCurveSymbolInput, parameterSymbolInput];
+    const allUnitInputs = [emptyCurveUnitInput, calcCurveUnitInput, derivateCurveUnitInput, integrateCurveUnitInput, parameterUnitInput];
 
     // Synchronise le symbole entre tous les panneaux
     allSymbolInputs.forEach(input => {
@@ -1225,6 +1233,9 @@ export default class UIManager {
         case 'derivate-curve':
           derivateCurvePanel.classList.remove('is-hidden');
           break;
+        case 'integrate-curve':
+          integrateCurvePanel.classList.remove('is-hidden');
+          break;
         case 'parameter':
           parameterPanel.classList.remove('is-hidden');
           break;
@@ -1250,6 +1261,67 @@ export default class UIManager {
         optionDenom.textContent = name;
         derivateDenominatorSelect.appendChild(optionDenom);
       });
+
+      // Peuple les menus déroulants pour la grandeur intégrée
+      if (integrateOperandSelect && integrateVariableSelect) {
+        integrateOperandSelect.innerHTML = '';
+        integrateVariableSelect.innerHTML = '';
+
+        if (!curveNames || curveNames.length === 0) {
+          const optNoneOp = document.createElement('option');
+          optNoneOp.value = '';
+          optNoneOp.textContent = 'Aucune grandeur';
+          optNoneOp.disabled = true;
+          optNoneOp.selected = true;
+          integrateOperandSelect.appendChild(optNoneOp);
+
+          const optNoneVar = document.createElement('option');
+          optNoneVar.value = '';
+          optNoneVar.textContent = 'Aucune grandeur';
+          optNoneVar.disabled = true;
+          optNoneVar.selected = true;
+          integrateVariableSelect.appendChild(optNoneVar);
+
+          integrateOperandSelect.disabled = true;
+          integrateVariableSelect.disabled = true;
+        } else if (curveNames.length === 1) {
+          const optReqOp = document.createElement('option');
+          optReqOp.value = '';
+          optReqOp.textContent = '2 grandeurs requises';
+          optReqOp.disabled = true;
+          optReqOp.selected = true;
+          integrateOperandSelect.appendChild(optReqOp);
+
+          const optReqVar = document.createElement('option');
+          optReqVar.value = '';
+          optReqVar.textContent = '2 grandeurs requises';
+          optReqVar.disabled = true;
+          optReqVar.selected = true;
+          integrateVariableSelect.appendChild(optReqVar);
+
+          integrateOperandSelect.disabled = true;
+          integrateVariableSelect.disabled = true;
+        } else {
+          integrateOperandSelect.disabled = false;
+          integrateVariableSelect.disabled = false;
+
+          curveNames.forEach(name => {
+            const optionOp = document.createElement('option');
+            optionOp.value = name;
+            optionOp.textContent = name;
+            integrateOperandSelect.appendChild(optionOp);
+
+            const optionVar = document.createElement('option');
+            optionVar.value = name;
+            optionVar.textContent = name;
+            integrateVariableSelect.appendChild(optionVar);
+          });
+
+          // Pré-sélectionne la 2ème colonne dans le 1er dropdown et la 1ère colonne après le 'd'
+          integrateOperandSelect.value = curveNames[1];
+          integrateVariableSelect.value = curveNames[0];
+        }
+      }
     }
 
     /**
@@ -1263,6 +1335,9 @@ export default class UIManager {
       calcCurveFormulaInput.value = "";
       derivateCurveSymbolInput.value = "";
       derivateCurveUnitInput.value = "";
+      if (integrateCurveSymbolInput) integrateCurveSymbolInput.value = "";
+      if (integrateCurveUnitInput) integrateCurveUnitInput.value = "";
+      if (integrateInitialValueInput) integrateInitialValueInput.value = "0";
       parameterSymbolInput.value = "";
       parameterUnitInput.value = "";
       parameterValueInput.value = "";
@@ -1329,6 +1404,49 @@ export default class UIManager {
           const formula = `diff(${numerator}, ${denominator})`;
           formulaLine = `${buildVarWithUnit(symbol, unit)} = ${formula}`;
 
+          return { type: 'formula', formulaLine };
+        }
+
+        case 'integrate-curve': {
+          symbol = integrateCurveSymbolInput.value.trim();
+          unit = processUnit(integrateCurveUnitInput);
+          const operand = integrateOperandSelect ? integrateOperandSelect.value : '';
+          const variable = integrateVariableSelect ? integrateVariableSelect.value : '';
+
+          const curveCount = this.data?.curves?.length || 0;
+          if (curveCount === 0) {
+            showToast("Aucune grandeur n'est disponible pour calculer une primitive.", "is-warning");
+            return null;
+          }
+          if (curveCount < 2) {
+            showToast("Il faut au moins 2 grandeurs pour calculer une primitive.", "is-warning");
+            return null;
+          }
+
+          if (!symbol || !operand || !variable || operand.startsWith('Choisir') || variable.startsWith('Choisir')) {
+            showToast("Veuillez remplir le symbole et choisir la grandeur et la variable d'intégration.", "is-warning");
+            return null;
+          }
+
+          if (operand === variable) {
+            showToast("La grandeur à intégrer et la variable d'intégration doivent être distinctes.", "is-warning");
+            return null;
+          }
+
+          // --- VALIDATION CENTRALISÉE ---
+          const validationResult = this.app.symbolValidator.validate(symbol);
+          if (!validationResult.isValid) {
+            showToast(validationResult.message, "is-danger");
+            return null;
+          }
+
+          const initValStr = integrateInitialValueInput ? integrateInitialValueInput.value.trim().replace(',', '.') : '0';
+          const initVal = initValStr !== '' ? Number(initValStr) : 0;
+          const formula = (Number.isFinite(initVal) && initVal !== 0)
+            ? `integrate(${operand}, ${variable}, ${initVal})`
+            : `integrate(${operand}, ${variable})`;
+
+          formulaLine = `${buildVarWithUnit(symbol, unit)} = ${formula}`;
           return { type: 'formula', formulaLine };
         }
 
@@ -2972,7 +3090,10 @@ export default class UIManager {
       let cursorOffset = textToInsert.length;
 
       if (textToInsert.endsWith('()')) {
-        finalInsert = textToInsert === 'diff()' ? 'diff(,)' : textToInsert.slice(0, -1);
+        const twoArgFunctions = ['diff()', 'integrate()'];
+        finalInsert = twoArgFunctions.includes(textToInsert)
+          ? `${textToInsert.slice(0, -2)}(,)`
+          : textToInsert.slice(0, -1);
         cursorOffset = finalInsert.indexOf(',') !== -1 ? finalInsert.indexOf(',') : finalInsert.length;
       }
 

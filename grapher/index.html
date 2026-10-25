@@ -529,6 +529,10 @@
                 <input type="radio" name="creation-type" value="derivate-curve"/>
                 Grandeur dérivée
               </label>
+              <label class="radio block" style="display:block">
+                <input type="radio" name="creation-type" value="integrate-curve"/>
+                Grandeur intégrée
+              </label>
               <label class="radio block">
                 <input type="radio" name="creation-type" value="parameter"/>
                 Paramètre vierge
@@ -670,6 +674,81 @@
                         </select>
                       </span>
                     </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Panneau pour Grandeur Intégrée -->
+          <div class="column is-hidden" id="integrate-curve-panel">
+            <div class="field is-horizontal">
+              <div class="field-label is-normal">
+                <label class="label">Symbole</label>
+              </div>
+              <div class="field-body">
+                <div class="field">
+                  <div class="control">
+                    <input class="input" type="text" id="integrate-curve-symbol-input" placeholder="Ex: x">
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="field is-horizontal">
+              <div class="field-label is-normal">
+                <label class="label">Unité</label>
+              </div>
+              <div class="field-body">
+                <div class="field">
+                  <div class="control">
+                    <input class="input" type="text" id="integrate-curve-unit-input" placeholder="Ex: m">
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="field is-horizontal mt-4">
+              <div class="field-label is-normal">
+                <label class="label">Primitive</label>
+              </div>
+              <div class="field-body">
+                <div class="field is-flex-grow-1">
+                  <div style="display: grid; grid-template-columns: auto 1fr; column-gap: 0.75rem; align-items: center;">
+                    
+                    <!-- Borne supérieure : Point courant (au-dessus du Sigma) -->
+                    <div style="grid-column: 1; grid-row: 1; justify-self: center; margin-bottom: 2px;">
+                      <span class="has-text-grey is-size-7 has-text-weight-semibold" style="line-height: 1; white-space: nowrap;">point courant</span>
+                    </div>
+
+                    <!-- Symbole Intégrale (centre optique) -->
+                    <div style="grid-column: 1; grid-row: 2; justify-self: center; display: flex; align-items: center; justify-content: center; min-width: 80px;">
+                      <span style="font-size: 3.2rem; line-height: 1; font-family: 'Times New Roman', serif; user-select: none;">∫</span>
+                    </div>
+
+                    <!-- Ligne d'inputs : opérande, d, variable (parfaitement alignée à l'intégrale) -->
+                    <div style="grid-column: 2; grid-row: 2; display: flex; align-items: center; gap: 0.75rem; width: 100%;">
+                      <!-- Grandeur à intégrer -->
+                      <div class="control is-expanded" style="flex: 1;">
+                        <div class="select is-fullwidth">
+                          <select id="integrate-operand-select"></select>
+                        </div>
+                      </div>
+
+                      <!-- Différentielle d -->
+                      <span class="has-text-weight-semibold is-size-4 has-text-grey-dark" style="user-select: none; padding: 0 4px;">d</span>
+
+                      <!-- Grandeur d'intégration -->
+                      <div class="control is-expanded" style="flex: 1;">
+                        <div class="select is-fullwidth">
+                          <select id="integrate-variable-select"></select>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Borne inférieure : Borne du début (input nombre sans flèches sous l'intégrale) -->
+                    <div style="grid-column: 1; grid-row: 3; justify-self: center; margin-top: 6px;">
+                      <input class="input is-small has-text-centered no-spinners" type="number" step="any" id="integrate-initial-value-input" value="0" placeholder="0" style="width: 65px;">
+                    </div>
+
                   </div>
                 </div>
               </div>

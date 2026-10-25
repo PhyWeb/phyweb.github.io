@@ -305,6 +305,101 @@ export default class Calculation {
     });
     mathInstance.import({ diff: typedDiff }, { override: true });
 
+    // --- Ajout de la fonction d'intégration numérique (primitive par trapèzes cumulés) ---
+
+    /**
+     * Calcule la primitive numérique de y par rapport à x via la méthode des trapèzes cumulés.
+     * @param {Array<number|null>} y Le tableau des valeurs de la fonction à intégrer.
+     * @param {Array<number|null>} x Le tableau des points de la variable d'intégration.
+     * @param {number} [initialValue=0] La valeur initiale de la primitive au premier point.
+     * @returns {Array<number|null>} La primitive numérique cumulée.
+     */
+    const numericalIntegration = (y, x, initialValue = 0) => {
+      const toArr = (v) => (v && v.toArray ? v.toArray() : v);
+      const yArr = toArr(y);
+      const xArr = toArr(x);
+
+      const nMin = Math.min(yArr.length, xArr.length);
+      const nMax = Math.max(yArr.length, xArr.length);
+
+      if (nMin < 2) {
+        throw new Error("Pas assez de points pour calculer une primitive. Il en faut au moins 2.");
+      }
+
+      let direction = 0; // 1 pour croissant, -1 pour décroissant
+      let prevX = null;
+      for (let i = 0; i < nMin; i++) {
+        const currentX = xArr[i];
+        if (currentX === null || currentX === undefined || !Number.isFinite(currentX)) continue;
+        if (prevX !== null) {
+          const diffX = currentX - prevX;
+          if (diffX === 0) {
+            throw new Error("la grandeur d'intégration contient deux valeurs identiques consécutives.");
+          }
+          const stepDir = Math.sign(diffX);
+          if (direction === 0) {
+            direction = stepDir;
+          } else if (stepDir !== direction) {
+            throw new Error("la grandeur d'intégration n'est pas triée. Veuillez trier vos données dans le tableur.");
+          }
+        }
+        prevX = currentX;
+      }
+
+      const result = new Array(nMax).fill(null);
+      let cumulativeSum = Number(initialValue) || 0;
+      let prevValidIdx = -1;
+
+      for (let i = 0; i < nMin; i++) {
+        const xVal = xArr[i];
+        const yVal = yArr[i];
+        const isValid = xVal !== null && xVal !== undefined && Number.isFinite(xVal) &&
+                        yVal !== null && yVal !== undefined && Number.isFinite(yVal);
+
+        if (!isValid) {
+          continue;
+        }
+
+        if (prevValidIdx === -1) {
+          result[i] = cumulativeSum;
+          prevValidIdx = i;
+        } else {
+          const dx = xVal - xArr[prevValidIdx];
+          cumulativeSum += 0.5 * (yArr[prevValidIdx] + yVal) * dx;
+          result[i] = cumulativeSum;
+          prevValidIdx = i;
+        }
+      }
+
+      return result;
+    };
+
+    const typedIntegrate = mathInstance.typed('integrate', {
+      'Array | Matrix, Array | Matrix': (y, x) => numericalIntegration(y, x, 0),
+      'Array | Matrix, Array | Matrix, number': (y, x, y0) => numericalIntegration(y, x, y0),
+      'number, Array | Matrix': (y, x) => {
+        const xArr = x && x.toArray ? x.toArray() : x;
+        return numericalIntegration(new Array(xArr.length).fill(y), xArr, 0);
+      },
+      'number, Array | Matrix, number': (y, x, y0) => {
+        const xArr = x && x.toArray ? x.toArray() : x;
+        return numericalIntegration(new Array(xArr.length).fill(y), xArr, y0);
+      },
+      'Array | Matrix, number': () => {
+        throw new Error("Impossible d'intégrer par rapport à une constante.");
+      },
+      'number, number': () => {
+        throw new Error("Impossible d'intégrer par rapport à une constante.");
+      },
+      'Array | Matrix, number, number': () => {
+        throw new Error("Impossible d'intégrer par rapport à une constante.");
+      },
+      'number, number, number': () => {
+        throw new Error("Impossible d'intégrer par rapport à une constante.");
+      }
+    });
+    mathInstance.import({ integrate: typedIntegrate }, { override: true });
+
     return mathInstance;
   }
 
@@ -349,7 +444,7 @@ export default class Calculation {
     let expr = expression.replace(/;\s*/g, ', ');
 
     const multiArgFunctions = new Set([
-      'pow', 'diff', 'atan2', 'min', 'max', 'hypot', 'gcd', 'lcm', 'nthroot', 'mod'
+      'pow', 'diff', 'integrate', 'atan2', 'min', 'max', 'hypot', 'gcd', 'lcm', 'nthroot', 'mod'
     ]);
 
     // Trouve l'indice de la parenthèse fermante correspondante
@@ -664,7 +759,7 @@ evaluateBlock(formulas, initialScope) {
   getAvailableFunctions() {
     // Retourne les fonctions scalaires de base plus les fonctions personnalisées.
     // Le tri assure un affichage alphabétique propre dans la barre latérale.
-    const allFunctions = [...this.scalarFunctions, 'diff'];
+    const allFunctions = [...this.scalarFunctions, 'diff', 'integrate'];
     return allFunctions;
   }
 }

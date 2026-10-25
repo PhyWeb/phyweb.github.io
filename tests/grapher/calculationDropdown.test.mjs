@@ -178,17 +178,23 @@ describe('Contrôle Mega-Dropdown des Fonctions dans l\'onglet Calculs', () => {
       assert.strictEqual(cat4.children[0].innerHTML.includes('fa-'), false, 'Pas d\'icône fa dans Catégorie 4');
     });
 
-    it('diff doit avoir le tag is-warning is-light et les autres fonctions is-link is-light', () => {
+    it('diff et integrate doivent avoir le tag is-warning is-light et les autres fonctions is-link is-light', () => {
       ui.updateCalculationUI();
 
       const allLinks = functionsContentElement.querySelectorAll('a');
-      assert.ok(allLinks.length >= 22, `Devrait contenir au moins 22 fonctions, trouvé: ${allLinks.length}`);
+      assert.ok(allLinks.length >= 23, `Devrait contenir au moins 23 fonctions, trouvé: ${allLinks.length}`);
 
       const diffLink = allLinks.find(a => a.dataset.value === 'diff()');
       assert.ok(diffLink, 'diff() doit être présent');
       assert.ok(diffLink.innerHTML.includes('tag is-warning is-light'), 'diff doit avoir is-warning is-light');
       assert.ok(diffLink.innerHTML.includes('>diff</span>'), 'diff doit être affiché sans parenthèses dans le tag');
       assert.ok(diffLink.innerHTML.includes('Dérivée : diff(y, x)'), 'diff doit afficher sa description');
+
+      const integrateLink = allLinks.find(a => a.dataset.value === 'integrate()');
+      assert.ok(integrateLink, 'integrate() doit être présent');
+      assert.ok(integrateLink.innerHTML.includes('tag is-warning is-light'), 'integrate doit avoir is-warning is-light');
+      assert.ok(integrateLink.innerHTML.includes('>integrate</span>'), 'integrate doit être affiché sans parenthèses dans le tag');
+      assert.ok(integrateLink.innerHTML.includes('Primitive : integrate(y, x)'), 'integrate doit afficher sa description');
 
       const sqrtLink = allLinks.find(a => a.dataset.value === 'sqrt()');
       assert.ok(sqrtLink, 'sqrt() doit être présent');
@@ -367,6 +373,28 @@ describe('Contrôle Mega-Dropdown des Fonctions dans l\'onglet Calculs', () => {
       functionsContentListener(fakeEvent);
 
       assert.strictEqual(insertedTexts[0], 'diff(,)');
+      assert.strictEqual(functionsDropdownClasses.has('is-active'), false);
+    });
+
+    it('insère integrate(,) avec la virgule au clic sur integrate()', () => {
+      ui.initCalculationControls();
+      functionsDropdownClasses.add('is-active');
+
+      const fakeEvent = {
+        preventDefault: () => {},
+        target: {
+          closest: (sel) => {
+            if (sel === 'a[data-value]') {
+              return { dataset: { value: 'integrate()' } };
+            }
+            return null;
+          }
+        }
+      };
+
+      functionsContentListener(fakeEvent);
+
+      assert.strictEqual(insertedTexts[0], 'integrate(,)');
       assert.strictEqual(functionsDropdownClasses.has('is-active'), false);
     });
 
