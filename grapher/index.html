@@ -411,13 +411,29 @@
   >
     <!-- Top bar -->
     <nav class="level">
-      <div class="level-left">
+      <div class="level-left" style="gap: 0.5rem;">
         <button class="button" id="add-curve-calculation-button">
           <span class="icon">
             <i class="fa-solid fa-plus"></i>
           </span>
           <span>Ajouter grandeur</span>
         </button>
+        <div class="dropdown" id="functions-dropdown">
+          <div class="dropdown-trigger">
+            <button class="button is-link is-light" aria-haspopup="true" aria-controls="functions-dropdown-menu">
+              <span class="icon">
+                <i class="fa-solid fa-square-root-variable"></i>
+              </span>
+              <span>Insérer une fonction</span>
+              <span class="icon is-small">
+                <i class="fas fa-angle-down" aria-hidden="true"></i>
+              </span>
+            </button>
+          </div>
+          <div class="dropdown-menu" id="functions-dropdown-menu" role="menu" style="min-width: 540px;">
+            <div class="dropdown-content p-4" id="calculation-functions-content"></div>
+          </div>
+        </div>
       </div>
     </nav>
     <div class="columns" style="flex-grow: 1; min-height: 0;">
@@ -429,9 +445,6 @@
             
             <p class="menu-label">Paramètres</p>
             <ul class="menu-list" id="calculation-sidebar-params"></ul>
-            
-            <p class="menu-label">Fonctions</p>
-            <div id="calculation-sidebar-functions"></div>
           </aside>
         </div>
 

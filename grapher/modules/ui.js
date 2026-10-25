@@ -86,6 +86,11 @@ export default class UIManager {
         if (document.activeElement) {
           document.activeElement.blur();
         }
+        // Ferme le dropdown des fonctions s'il est ouvert
+        const functionsDropdown = document.getElementById('functions-dropdown');
+        if (functionsDropdown) {
+          functionsDropdown.classList.remove('is-active');
+        }
         // Ferme toutes les modales
         this.common.modalManager.closeAllModals();
         // Désactive les outils du grapheur (réticule, etc.)
@@ -174,116 +179,145 @@ export default class UIManager {
    * Met à jour l'interface utilisateur de la section Calcul en fonction des courbes, paramètres et fonctions disponibles.
    */
   updateCalculationUI() {
-    // Tooltips
-    const functionTooltips = {
-      sqrt: 'Racine carrée',
-      cbrt: 'Racine cubique',
-      abs: 'Valeur absolue',
-      exp: 'Exponentielle (e^x)',
-      log: 'Logarithme en base 10',
-      ln: 'Logarithme népérien',
-      round: 'Arrondi à l\'entier le plus proche',
-      floor: 'Partie entière (arrondi inférieur)',
-      ceil: 'Arrondi supérieur',
-      sin: 'Sinus (en radians)',
-      cos: 'Cosinus (en radians)',
-      tan: 'Tangente (en radians)',
-      asin: 'Arc sinus',
-      acos: 'Arc cosinus',
-      atan: 'Arc tangente',
-      sinh: 'Sinus hyperbolique',
-      cosh: 'Cosinus hyperbolique',
-      tanh: 'Tangente hyperbolique',
-      asinh: 'Arc sinus hyperbolique',
-      acosh: 'Arc cosinus hyperbolique',
-      atanh: 'Arc tangente hyperbolique',
-      diff: 'Dérivée numérique ex: diff(y,t)'
-    };
-
     /**
      * Remplit une liste dans la barre latérale.
      * @param {string} containerId - L'ID de l'élément conteneur.
      * @param {string[]|object} items - Le tableau de chaînes ou l'objet de paramètres.
      * @param {object} options - Options d'affichage.
-     * @param {boolean} options.isFunction - Si true, ajoute des parenthèses et utilise une grille.
      * @param {boolean} options.isParameter - Si true, traite `items` comme un objet et affiche les valeurs.
      */
     let populateList = (containerId, items, options = {}) => {
-      const { isFunction = false, isParameter = false } = options;
+      const { isParameter = false } = options;
       const containerElement = document.getElementById(containerId);
       if (!containerElement) return;
       containerElement.innerHTML = ''; // Vide le conteneur
 
-
       const colors = {
-        function: '#544fc5',
         variable: '#008000',
         parameter: '#d568fb'
       };
 
-      if (isFunction) {
-        // Créer une grille à 3 colonnes pour les fonctions
-        for (let i = 0; i < items.length; i += 3) {
-          const columnsDiv = document.createElement('div');
-          columnsDiv.className = 'columns is-mobile is-gapless';
+      // Créer une liste simple pour les courbes et paramètres
+      const ul = document.createElement('ul');
+      ul.className = 'menu-list';
+
+      if (isParameter) {
+        const significantDigits = this.data?.settings?.significantDigits ?? 4;
+        for (const [key, param] of Object.entries(items)) {
+          const li = document.createElement('li');
+          const a = document.createElement('a');
           
-          for (let j = i; j < i + 3 && j < items.length; j++) {
-            const columnDiv = document.createElement('div');
-            columnDiv.className = 'column';
-            
-            const item = items[j];
-            const a = document.createElement('a');
-            a.textContent = `${item}()`;
-            a.dataset.value = `${item}()`;
-            a.style.color = colors.function;
-            // Add a tooltip if it exists
-            if (functionTooltips[item]) {
-              a.setAttribute('title', functionTooltips[item]);
-            }
-            columnDiv.appendChild(a);
-            columnsDiv.appendChild(columnDiv);
-          }
-          containerElement.appendChild(columnsDiv);
-        }
-      } else {
-        // Créer une liste simple pour les courbes et paramètres
-        const ul = document.createElement('ul');
-        ul.className = 'menu-list';
+          const unitText = param.unit ? ` ${param.unit}` : '';
+          const displayValue = formatNumber(param.value, significantDigits);
 
-        if (isParameter) {
-          const significantDigits = this.data?.settings?.significantDigits ?? 4;
-          for (const [key, param] of Object.entries(items)) {
-            const li = document.createElement('li');
-            const a = document.createElement('a');
-            
-            const unitText = param.unit ? ` ${param.unit}` : '';
-            const displayValue = formatNumber(param.value, significantDigits);
-
-            a.innerHTML = `<span style="color: ${colors.parameter}; font-weight: bold;">${key}</span> = ${displayValue}<span style="color: #7a7a7a;">${unitText}</span>`;
-            a.dataset.value = key;
-            li.appendChild(a);
-            ul.appendChild(li);
-          }
-        } else { // C'est une grandeur
-          items.forEach(curve => {
-            const li = document.createElement('li');
-            const a = document.createElement('a');
-            
-            const unitText = curve.unit ? ` (${curve.unit})` : '';
-            
-            a.innerHTML = `<span style="color: ${colors.variable}; font-weight: bold;">${curve.title}</span><span style="color: #7a7a7a;">${unitText}</span>`;
-            a.dataset.value = curve.title; // On insère toujours juste le nom
-            li.appendChild(a);
-            ul.appendChild(li);
-          });
+          a.innerHTML = `<span style="color: ${colors.parameter}; font-weight: bold;">${key}</span> = ${displayValue}<span style="color: #7a7a7a;">${unitText}</span>`;
+          a.dataset.value = key;
+          li.appendChild(a);
+          ul.appendChild(li);
         }
-        containerElement.appendChild(ul);
+      } else { // C'est une grandeur
+        items.forEach(curve => {
+          const li = document.createElement('li');
+          const a = document.createElement('a');
+          
+          const unitText = curve.unit ? ` (${curve.unit})` : '';
+          
+          a.innerHTML = `<span style="color: ${colors.variable}; font-weight: bold;">${curve.title}</span><span style="color: #7a7a7a;">${unitText}</span>`;
+          a.dataset.value = curve.title; // On insère toujours juste le nom
+          li.appendChild(a);
+          ul.appendChild(li);
+        });
       }
-    }
+      containerElement.appendChild(ul);
+    };
 
     populateList('calculation-sidebar-curves', this.data.curves);
     populateList('calculation-sidebar-params', this.data.parameters, { isParameter: true });
-    populateList('calculation-sidebar-functions', this.calculation.getAvailableFunctions(), { isFunction: true });
+
+    // Génère le contenu du méga-dropdown des fonctions s'il est vide
+    const functionsContent = document.getElementById('calculation-functions-content');
+    const hasChildren = functionsContent && (
+      (functionsContent.children && functionsContent.children.length > 0) ||
+      (functionsContent.childNodes && functionsContent.childNodes.length > 0) ||
+      functionsContent._initialized
+    );
+    if (functionsContent && !hasChildren) {
+      functionsContent._initialized = true;
+      const categories = [
+        {
+          title: 'Usuelles & Puissances',
+          functions: [
+            { name: 'sqrt', desc: 'Racine carrée' },
+            { name: 'cbrt', desc: 'Racine cubique' },
+            { name: 'abs', desc: 'Valeur absolue' },
+            { name: 'exp', desc: 'Exponentielle e^x' },
+            { name: 'ln', desc: 'Logarithme népérien' },
+            { name: 'log', desc: 'Logarithme base 10' }
+          ]
+        },
+        {
+          title: 'Analyse & Arrondis',
+          functions: [
+            { name: 'diff', desc: 'Dérivée : diff(y, x)', tagClass: 'is-warning is-light' },
+            { name: 'round', desc: 'Arrondi au plus proche' },
+            { name: 'floor', desc: 'Arrondi inférieur' },
+            { name: 'ceil', desc: 'Arrondi supérieur' }
+          ]
+        },
+        {
+          title: 'Trigonométrie (rad)',
+          functions: [
+            { name: 'sin', desc: 'Sinus' },
+            { name: 'cos', desc: 'Cosinus' },
+            { name: 'tan', desc: 'Tangente' },
+            { name: 'asin', desc: 'Arc sinus' },
+            { name: 'acos', desc: 'Arc cosinus' },
+            { name: 'atan', desc: 'Arc tangente' }
+          ]
+        },
+        {
+          title: 'Hyperboliques',
+          functions: [
+            { name: 'sinh', desc: 'Sinus hyp.' },
+            { name: 'cosh', desc: 'Cosinus hyp.' },
+            { name: 'tanh', desc: 'Tangente hyp.' },
+            { name: 'asinh', desc: 'Arc sinus hyp.' },
+            { name: 'acosh', desc: 'Arc cosinus hyp.' },
+            { name: 'atanh', desc: 'Arc tangente hyp.' }
+          ]
+        }
+      ];
+
+      const columnsDiv = document.createElement('div');
+      columnsDiv.className = 'columns is-multiline is-variable is-3';
+
+      categories.forEach(category => {
+        const col = document.createElement('div');
+        col.className = 'column is-6';
+
+        const label = document.createElement('p');
+        label.className = 'menu-label mb-2';
+        label.textContent = category.title;
+        col.appendChild(label);
+
+        category.functions.forEach(fn => {
+          const a = document.createElement('a');
+          a.className = 'dropdown-item p-1 is-flex is-align-items-center is-justify-content-space-between';
+          if (!a.dataset) a.dataset = {};
+          a.dataset.value = `${fn.name}()`;
+          if (a.setAttribute) a.setAttribute('data-value', `${fn.name}()`);
+          a.style.borderRadius = '4px';
+
+          const tagClass = fn.tagClass || 'is-link is-light';
+          a.innerHTML = `<span class="tag ${tagClass} has-text-weight-bold" style="font-family: monospace;">${fn.name}</span><span class="is-size-7 has-text-grey ml-2">${fn.desc}</span>`;
+          col.appendChild(a);
+        });
+
+        columnsDiv.appendChild(col);
+      });
+
+      functionsContent.appendChild(columnsDiv);
+    }
 
     const curveNames = this.data.curves.map(c => c.title);
     const parameterNames = Object.keys(this.data.parameters);
@@ -2983,6 +3017,43 @@ export default class UIManager {
         }
       }
     });
+
+    // Gestion de l'ouverture/fermeture du dropdown des fonctions
+    const functionsDropdown = document.getElementById('functions-dropdown');
+    if (functionsDropdown) {
+      const trigger = functionsDropdown.querySelector?.('.dropdown-trigger');
+      if (trigger) {
+        trigger.addEventListener('click', (event) => {
+          event.stopPropagation();
+          functionsDropdown.classList.toggle('is-active');
+        });
+      }
+
+      // Ferme le dropdown lors d'un clic ailleurs sur document
+      document.addEventListener('click', (event) => {
+        if (!functionsDropdown.contains || !functionsDropdown.contains(event.target)) {
+          functionsDropdown.classList.remove('is-active');
+        }
+      });
+    }
+
+    // Écouteur de clic (event delegation) sur le méga-dropdown des fonctions
+    const functionsContent = document.getElementById('calculation-functions-content');
+    if (functionsContent) {
+      functionsContent.addEventListener('click', (e) => {
+        const link = e.target?.closest ? e.target.closest('a[data-value]') : null;
+        if (link) {
+          e.preventDefault();
+          const value = link.dataset?.value || link.getAttribute?.('data-value');
+          if (value) {
+            insertTextInEditor(value);
+          }
+          if (functionsDropdown) {
+            functionsDropdown.classList.remove('is-active');
+          }
+        }
+      });
+    }
   }
 
 /**
