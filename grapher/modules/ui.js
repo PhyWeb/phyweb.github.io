@@ -6,6 +6,22 @@ const $ = document.querySelector.bind(document);
 
 export const MAX_PRINT_TABLE_POINTS = 500;
 
+/**
+ * Échappe les caractères HTML spéciaux pour prévenir les injections XSS
+ * et les balises cassées lors de l'interpolation dans un template HTML.
+ * @param {string} str
+ * @returns {string}
+ */
+export function escapeHTML(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 export default class UIManager {
   constructor(common, data, grapher, calculation, editor, spreadsheet) {
     this.common = common;
@@ -3463,7 +3479,8 @@ export default class UIManager {
       <body>
     `;
 
-    html += `<h1 id="preview-title" style="text-align: center; color: #333; margin-top: 0; margin-bottom: 20px; font-size: 18px; display: ${title ? 'block' : 'none'};">${title}</h1>`;
+    const safeTitle = escapeHTML(title);
+    html += `<h1 id="preview-title" style="text-align: center; color: #333; margin-top: 0; margin-bottom: 20px; font-size: 18px; display: ${safeTitle ? 'block' : 'none'};">${safeTitle}</h1>`;
 
     if (includeGraph && this.grapher.chart) {
       const exportChartOptions = this.getExportChartOptions(width, height, factor);
@@ -3479,7 +3496,7 @@ export default class UIManager {
       
       if (headers.length > 0 && totalPoints > 0) {
         html += `<div class="flex-table"><div class="flex-col header-col"><div class="flex-cell row-header">Point #</div>`;
-        headers.forEach(h => html += `<div class="flex-cell row-header">${h}</div>`);
+        headers.forEach(h => html += `<div class="flex-cell row-header">${escapeHTML(h)}</div>`);
         html += `</div>`;
 
         for (let j = 0; j < numPoints; j++) {
@@ -3506,8 +3523,9 @@ export default class UIManager {
     }
 
     if (includeCalc && this.editor) {
-      const calcText = this.editor.getValue() || '';
-      html += `<pre>${calcText.trim() ? calcText : 'Aucun calcul enregistré.'}</pre>`;
+      const rawCalcText = this.editor.getValue() || '';
+      const safeCalcText = escapeHTML(rawCalcText);
+      html += `<pre>${safeCalcText.trim() ? safeCalcText : 'Aucun calcul enregistré.'}</pre>`;
     }
 
     html += `</body></html>`;
@@ -3516,3 +3534,4 @@ export default class UIManager {
 }
 
 UIManager.MAX_PRINT_TABLE_POINTS = MAX_PRINT_TABLE_POINTS;
+UIManager.escapeHTML = escapeHTML;
