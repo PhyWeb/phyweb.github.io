@@ -143,7 +143,7 @@ describe('UIManager - openEditModelModal & préservation/renommage des paramètr
     data.parameters['pente'] = { value: 2, unit: 'N/m', type: 'model' };
     data.models.push(model);
 
-    return { data, model, ui };
+    return { data, model, ui, mockApp };
   };
 
   it('doit préserver le nom personnalisé du paramètre lors de la modification des bornes dans la modale', async () => {
@@ -222,5 +222,107 @@ describe('UIManager - openEditModelModal & préservation/renommage des paramètr
     assert.equal(data.parameters['raideur'].unit, 'N/m', 'L\'unité doit être préservée');
     assert.equal(data.parameters['pente'], undefined, 'L\'ancien nom doit être supprimé');
     assert.equal(data.parameters['a'], undefined);
+  });
+
+  it('ne doit pas fermer la modale ni modifier le modèle si les bornes contiennent moins de 2 points', async () => {
+    const { data, model, ui } = setupEnv();
+    ui.openEditModelModal(model);
+
+    // L'utilisateur change la couleur, l'épaisseur et le style dans l'interface
+    elementsMap['#model-edit-color-picker'].value = '#00ff00';
+    elementsMap['#model-edit-linewidth-select'].value = '4';
+    elementsMap['#model-edit-linestyle-select'].value = 'Dash';
+
+    // Et saisit un intervalle de bornes ne contenant aucun point (ex: 50 à 100 alors que x est entre 0 et 9)
+    elementsMap['#model-edit-borne-tout-checkbox'].checked = false;
+    elementsMap['#model-edit-borne-debut-input'].value = '50';
+    elementsMap['#model-edit-borne-fin-input'].value = '100';
+
+    const container = elementsMap['#model-edit-parameters-container'];
+    container.children = [{ inputs: [{ value: 'pente', dataset: { oldName: 'pente' } }] }];
+
+    assert.ok(currentSaveButton && currentSaveButton.onclick);
+    await currentSaveButton.onclick();
+
+    // Vérifications du comportement attendu :
+    // 1. La modale NE doit PAS avoir été fermée
+    assert.equal(closedModals, false, 'La modale ne doit pas se fermer en cas d\'erreur de bornes');
+    // 2. Le modèle NE doit PAS avoir été muté (couleur, épaisseur, style, bornes)
+    assert.equal(model.color, '#ff0000', 'La couleur ne doit pas avoir été modifiée');
+    assert.equal(model.lineWidth, 2, 'L\'épaisseur de ligne ne doit pas avoir été modifiée');
+    assert.equal(model.lineStyle, 'Solid', 'Le style de ligne ne doit pas avoir été modifié');
+    assert.equal(model.minX, null, 'minX ne doit pas avoir été modifié');
+    assert.equal(model.maxX, null, 'maxX ne doit pas avoir été modifié');
+  });
+
+  it('ne doit pas fermer la modale ni modifier le modèle si un nom de paramètre est dupliqué', async () => {
+    const { data, model, ui } = setupEnv();
+    model.parameters = [
+      { name: 'pente', value: 2 },
+      { name: 'b', value: 1 }
+    ];
+    data.parameters['pente'] = { value: 2, unit: 'N/m', type: 'model' };
+    data.parameters['b'] = { value: 1, unit: 'N', type: 'model' };
+
+    ui.openEditModelModal(model);
+
+    // L'utilisateur change la couleur et les bornes
+    elementsMap['#model-edit-color-picker'].value = '#00ff00';
+    elementsMap['#model-edit-borne-tout-checkbox'].checked = false;
+    elementsMap['#model-edit-borne-debut-input'].value = '2';
+    elementsMap['#model-edit-borne-fin-input'].value = '8';
+
+    // Mais saisit deux fois le même nom de paramètre 'pente'
+    const container = elementsMap['#model-edit-parameters-container'];
+    container.children = [
+      { inputs: [{ value: 'pente', dataset: { oldName: 'pente' } }] },
+      { inputs: [{ value: 'pente', dataset: { oldName: 'b' } }] }
+    ];
+
+    assert.ok(currentSaveButton && currentSaveButton.onclick);
+    await currentSaveButton.onclick();
+
+    // Vérifications du comportement attendu :
+    // 1. La modale NE doit PAS avoir été fermée
+    assert.equal(closedModals, false, 'La modale ne doit pas se fermer en cas de doublon de nom');
+    // 2. Le modèle NE doit PAS avoir été muté
+    assert.equal(model.color, '#ff0000', 'La couleur ne doit pas avoir été modifiée');
+    assert.equal(model.minX, null, 'minX ne doit pas avoir été modifié avant la validation');
+    assert.equal(model.maxX, null, 'maxX ne doit pas avoir été modifié avant la validation');
+  });
+
+  it('ne doit pas fermer la modale ni modifier le modèle si un nom de paramètre est rejeté par symbolValidator', async () => {
+    const { data, model, ui, mockApp } = setupEnv();
+    mockApp.symbolValidator = {
+      validate: (name) => {
+        if (name === 'nom_invalide') {
+          return { isValid: false, message: 'Symbole invalide' };
+        }
+        return { isValid: true };
+      }
+    };
+
+    ui.openEditModelModal(model);
+
+    // L'utilisateur change la couleur et les bornes
+    elementsMap['#model-edit-color-picker'].value = '#00ff00';
+    elementsMap['#model-edit-borne-tout-checkbox'].checked = false;
+    elementsMap['#model-edit-borne-debut-input'].value = '2';
+    elementsMap['#model-edit-borne-fin-input'].value = '8';
+
+    // Et saisit un nom invalide
+    const container = elementsMap['#model-edit-parameters-container'];
+    container.children = [{ inputs: [{ value: 'nom_invalide', dataset: { oldName: 'pente' } }] }];
+
+    assert.ok(currentSaveButton && currentSaveButton.onclick);
+    await currentSaveButton.onclick();
+
+    // Vérifications du comportement attendu :
+    // 1. La modale NE doit PAS avoir été fermée
+    assert.equal(closedModals, false, 'La modale ne doit pas se fermer en cas de nom rejeté par le validateur');
+    // 2. Le modèle NE doit PAS avoir été muté
+    assert.equal(model.color, '#ff0000', 'La couleur ne doit pas avoir été modifiée');
+    assert.equal(model.minX, null, 'minX ne doit pas avoir été modifié avant la validation');
+    assert.equal(model.maxX, null, 'maxX ne doit pas avoir été modifié avant la validation');
   });
 });

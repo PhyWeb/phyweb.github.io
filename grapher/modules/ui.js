@@ -144,7 +144,7 @@ export default class UIManager {
               const actualRow = Array.isArray(rowIndices) && rowIndices[point.index] !== undefined
                 ? rowIndices[point.index]
                 : point.index;
-              point.select(false, false); // <-- Nettoie l'état de sélection Highcharts avant suppression
+              point.select?.(false, false); // <-- Nettoie l'état de sélection Highcharts avant suppression
               this.app.deleteRow(actualRow, 1);
             }
           }
@@ -2453,85 +2453,88 @@ export default class UIManager {
     const newSaveButton = saveButton.cloneNode(true);
     saveButton.parentNode.replaceChild(newSaveButton, saveButton);
     
-    newSaveButton.onclick = async () => {      
-      // 1. Ferme la modale immédiatement pour une sensation de réactivité
+    newSaveButton.onclick = async () => {
+      const newColor = colorPicker.value;
+      const newLineWidth = lineWidthSelect.value;
+      const newLineStyle = $('#model-edit-linestyle-select').value;
+
+      let newBorneDebut = null;
+      let newBorneFin = null;
+
+      // Si la case "Tout" n'est PAS cochée, on lit les valeurs des champs
+      if (!borneToutCheckbox.checked) {
+        const newBorneDebutStr = borneDebutInput.value.trim();
+        const newBorneFinStr = borneFinInput.value.trim();
+        newBorneDebut = newBorneDebutStr === '' ? null : parseFloat(newBorneDebutStr.replace(',', '.'));
+        newBorneFin = newBorneFinStr === '' ? null : parseFloat(newBorneFinStr.replace(',', '.'));
+      }
+
+      // Validation : s'il y a des bornes, on vérifie qu'il y a au moins 2 points dans l'intervalle
+      const pointsDansIntervalle = model.x.filter(val => {
+        if (val === null || !isFinite(val)) return false;
+        const estApresDebut = (newBorneDebut === null) || (val >= newBorneDebut);
+        const estAvantFin = (newBorneFin === null) || (val <= newBorneFin);
+        return estApresDebut && estAvantFin;
+      }).length;
+
+      if (pointsDansIntervalle < 2) {
+        showToast("L'intervalle de calcul sélectionné ne contient pas assez de points pour réaliser une modélisation.", "is-warning");
+        return; // On arrête la sauvegarde sans fermer la modale ni muter le modèle
+      }
+
+      const inputs = parametersContainer.querySelectorAll('input[data-old-name]');
+
+      // Collecte tous les nouveaux noms et vérifie les doublons internes
+      const newNamesSet = new Set();
+      for (const input of inputs) {
+        const newName = input.value.trim();
+        if (newNamesSet.has(newName)) {
+          showToast(`Le nom "${newName}" est utilisé plusieurs fois dans ce modèle.`, "is-warning");
+          return; // Arrête la sauvegarde
+        }
+        newNamesSet.add(newName);
+      }
+
+      // Valide chaque nouveau nom avec le SymbolValidator
+      // La liste d'ignorance contient les noms originaux des paramètres qu'on édite.
+      const ignoreList = model.parameters.map(p => p.name);
+      let namesHaveChanged = false;
+      const newParamNames = {}; // Fait correspondre les anciens noms aux nouveaux
+
+      for (const input of inputs) {
+        const oldName = input.dataset.oldName;
+        const newName = input.value.trim();
+
+        // On passe la liste des anciens noms pour permettre le renommage
+        const validationResult = this.app.symbolValidator.validate(newName, { ignoreList });
+
+        if (!validationResult.isValid) {
+          showToast(validationResult.message, "is-danger");
+          return; // Arrête la sauvegarde
+        }
+
+        if (oldName !== newName) {
+          namesHaveChanged = true;
+        }
+        newParamNames[oldName] = newName;
+      }
+
+      // 1. Toutes les validations ont réussi : fermer la modale
       this.common.modalManager.closeAllModals();
 
       // 2. Affiche l'indicateur de chargement global sur le graphique
       this.grapher.showLoading('Mise à jour du modèle...', 500, true);
 
       try {
-        model.color = colorPicker.value;
-        model.lineWidth = lineWidthSelect.value;
-        model.lineStyle = $('#model-edit-linestyle-select').value;
-        
-        let newBorneDebut = null;
-        let newBorneFin = null;
+        model.color = newColor;
+        model.lineWidth = newLineWidth;
+        model.lineStyle = newLineStyle;
 
-        // Si la case "Tout" n'est PAS cochée, on lit les valeurs des champs
-        if (!borneToutCheckbox.checked) {
-          const newBorneDebutStr = borneDebutInput.value.trim();
-          const newBorneFinStr = borneFinInput.value.trim();
-          newBorneDebut = newBorneDebutStr === '' ? null : parseFloat(newBorneDebutStr.replace(',', '.'));
-          newBorneFin = newBorneFinStr === '' ? null : parseFloat(newBorneFinStr.replace(',', '.'));
-        }
-
-        // Validation : s'il y a des bornes, on vérifie qu'il y a au moins 2 points dans l'intervalle
-        const pointsDansIntervalle = model.x.filter(val => {
-          if (val === null || !isFinite(val)) return false;
-          const estApresDebut = (newBorneDebut === null) || (val >= newBorneDebut);
-          const estAvantFin = (newBorneFin === null) || (val <= newBorneFin);
-          return estApresDebut && estAvantFin;
-        }).length;
-
-        if (pointsDansIntervalle < 2) {
-          showToast("L'intervalle de calcul sélectionné ne contient pas assez de points pour réaliser une modélisation.", "is-warning");
-          return; // On arrête la sauvegarde
-        }
-        
         const boundsChanged = model.minX !== newBorneDebut || model.maxX !== newBorneFin;
-        
+
         model.minX = newBorneDebut;
         model.maxX = newBorneFin;
-        
-        let namesHaveChanged = false;
-        let hasConflict = false;
-        const newParamNames = {}; // Fait correspondre les anciens noms aux nouveaux
-        const inputs = parametersContainer.querySelectorAll('input[data-old-name]');
 
-        // Collecte tous les nouveaux noms et vérifier les doublons internes
-        const newNamesSet = new Set();
-        for (const input of inputs) {
-          const newName = input.value.trim();
-          if (newNamesSet.has(newName)) {
-            showToast(`Le nom "${newName}" est utilisé plusieurs fois dans ce modèle.`, "is-warning");
-            return; // Arrête tout
-          }
-          newNamesSet.add(newName);
-        }
-
-        // Valide chaque nouveau nom avec le SymbolValidator
-        // La liste d'ignorance contient les noms originaux des paramètres qu'on édite.
-        const ignoreList = model.parameters.map(p => p.name);
-
-        for (const input of inputs) {
-          const oldName = input.dataset.oldName;
-          const newName = input.value.trim();
-
-          // On passe la liste des anciens noms pour permettre le renommage
-          const validationResult = this.app.symbolValidator.validate(newName, { ignoreList });
-          
-          if (!validationResult.isValid) {
-            showToast(validationResult.message, "is-danger");
-            return; // Arrête tout
-          }
-          
-          if (oldName !== newName) {
-            namesHaveChanged = true;
-          }
-          newParamNames[oldName] = newName;
-        }
-        
         if (namesHaveChanged) {
           const updatedParams = {};
           const units = {};
@@ -2555,7 +2558,7 @@ export default class UIManager {
         if (boundsChanged) {
           await model.fit();
         }
-        
+
         const series = this.grapher.chart.get(`model-${model.id}`);
         if(series) {
           series.update({
@@ -2565,7 +2568,7 @@ export default class UIManager {
           },
           false // Ne pas redessiner immédiatement
         );}
-        
+
         this.updateModelPanel(model);
         this.updateCalculationUI();
         this.grapher.updateModelVisibility();
@@ -2580,7 +2583,7 @@ export default class UIManager {
         console.error("Erreur lors de la mise à jour du modèle :", error);
         showToast(`La mise à jour du modèle a échoué : ${error.message}`, "is-warning");
       } finally {
-        // 5. Masque l'indicateur de chargement, que l'opération ait réussi ou non
+        // Masque l'indicateur de chargement, que l'opération ait réussi ou non
         this.grapher.hideLoading();
       }
     };
