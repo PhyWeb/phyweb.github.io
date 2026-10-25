@@ -27,6 +27,8 @@
     Observation : Les paramètres de modélisation ($a, b, c...$) sont créés avec une unité vide (unit: '').
     -> assignation auto quand possible et possibilité de renseigner l'unité dans la modale d'edition de modèles.
 
+    des fonctions non prévues existent (pow, min etc de math.js)
+
 # Mendeleiev
 # Optique
 # Chromato
