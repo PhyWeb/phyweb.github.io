@@ -196,6 +196,12 @@ describe('Contrôle Mega-Dropdown des Fonctions dans l\'onglet Calculs', () => {
       assert.ok(integrateLink.innerHTML.includes('>integrate</span>'), 'integrate doit être affiché sans parenthèses dans le tag');
       assert.ok(integrateLink.innerHTML.includes('Primitive : integrate(y, x)'), 'integrate doit afficher sa description');
 
+      const smoothLink = allLinks.find(a => a.dataset.value === 'smooth()');
+      assert.ok(smoothLink, 'smooth() doit être présent');
+      assert.ok(smoothLink.innerHTML.includes('tag is-warning is-light'), 'smooth doit avoir is-warning is-light');
+      assert.ok(smoothLink.innerHTML.includes('>smooth</span>'), 'smooth doit être affiché sans parenthèses dans le tag');
+      assert.ok(smoothLink.innerHTML.includes('Lissage : smooth(y, n)'), 'smooth doit afficher sa description');
+
       const sqrtLink = allLinks.find(a => a.dataset.value === 'sqrt()');
       assert.ok(sqrtLink, 'sqrt() doit être présent');
       assert.ok(sqrtLink.innerHTML.includes('tag is-link is-light'), 'sqrt doit avoir is-link is-light');
@@ -395,6 +401,28 @@ describe('Contrôle Mega-Dropdown des Fonctions dans l\'onglet Calculs', () => {
       functionsContentListener(fakeEvent);
 
       assert.strictEqual(insertedTexts[0], 'integrate(,)');
+      assert.strictEqual(functionsDropdownClasses.has('is-active'), false);
+    });
+
+    it('insère smooth(,) avec la virgule au clic sur smooth()', () => {
+      ui.initCalculationControls();
+      functionsDropdownClasses.add('is-active');
+
+      const fakeEvent = {
+        preventDefault: () => {},
+        target: {
+          closest: (sel) => {
+            if (sel === 'a[data-value]') {
+              return { dataset: { value: 'smooth()' } };
+            }
+            return null;
+          }
+        }
+      };
+
+      functionsContentListener(fakeEvent);
+
+      assert.strictEqual(insertedTexts[0], 'smooth(,)');
       assert.strictEqual(functionsDropdownClasses.has('is-active'), false);
     });
 

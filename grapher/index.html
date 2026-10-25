@@ -533,6 +533,10 @@
                 <input type="radio" name="creation-type" value="integrate-curve"/>
                 Grandeur intégrée
               </label>
+              <label class="radio block" style="display:block">
+                <input type="radio" name="creation-type" value="smooth-curve"/>
+                Grandeur lissée
+              </label>
               <label class="radio block">
                 <input type="radio" name="creation-type" value="parameter"/>
                 Paramètre vierge
@@ -651,9 +655,7 @@
                     </p>
                     <p class="control is-expanded">
                       <span class="select is-fullwidth">
-                        <select id="derivate-numerator-select">
-                          <option>Choisir numérateur</option>
-                        </select>
+                        <select id="derivate-numerator-select"></select>
                       </span>
                     </p>
                   </div>
@@ -669,9 +671,7 @@
                     </p>
                     <p class="control is-expanded">
                       <span class="select is-fullwidth">
-                        <select id="derivate-denominator-select">
-                          <option>Choisir dénominateur</option>
-                        </select>
+                        <select id="derivate-denominator-select"></select>
                       </span>
                     </p>
                   </div>
@@ -755,6 +755,69 @@
             </div>
           </div>
           
+          <!-- Panneau pour Grandeur Lissée -->
+          <div class="column is-hidden" id="smooth-curve-panel">
+            <div class="field is-horizontal">
+              <div class="field-label is-normal">
+                <label class="label">Symbole</label>
+              </div>
+              <div class="field-body">
+                <div class="field">
+                  <div class="control">
+                    <input class="input" type="text" id="smooth-curve-symbol-input" placeholder="Ex: yLisse">
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="field is-horizontal">
+              <div class="field-label is-normal">
+                <label class="label">Unité</label>
+              </div>
+              <div class="field-body">
+                <div class="field">
+                  <div class="control">
+                    <input class="input" type="text" id="smooth-curve-unit-input" placeholder="Ex: m">
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="field is-horizontal mt-4">
+              <div class="field-label is-normal">
+                <label class="label">Grandeur</label>
+              </div>
+              <div class="field-body">
+                <div class="field">
+                  <div class="control is-expanded">
+                    <div class="select is-fullwidth">
+                      <select id="smooth-operand-select">
+                        <option>Choisir grandeur</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="field is-horizontal mt-3">
+              <div class="field-label is-normal">
+                <label class="label">Points</label>
+              </div>
+              <div class="field-body">
+                <div class="field">
+                  <div class="control is-expanded">
+                    <div class="select is-fullwidth">
+                      <select id="smooth-points-select">
+                        <option value="3">3 points (léger)</option>
+                        <option value="5" selected>5 points (standard)</option>
+                        <option value="7">7 points (fort)</option>
+                        <option value="9">9 points (très fort)</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Panneau pour Paramètre Vierge -->
           <div class="column is-hidden" id="parameter-panel">
             <div class="field is-horizontal">

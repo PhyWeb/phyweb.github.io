@@ -260,6 +260,7 @@ export default class UIManager {
           functions: [
             { name: 'diff', desc: 'Dérivée : diff(y, x)', tagClass: 'is-warning is-light' },
             { name: 'integrate', desc: 'Primitive : integrate(y, x)', tagClass: 'is-warning is-light' },
+            { name: 'smooth', desc: 'Lissage : smooth(y, n)', tagClass: 'is-warning is-light' },
             { name: 'round', desc: 'Arrondi au plus proche' },
             { name: 'floor', desc: 'Arrondi inférieur' },
             { name: 'ceil', desc: 'Arrondi supérieur' }
@@ -1161,8 +1162,9 @@ export default class UIManager {
     const calcCurvePanel = $('#calc-curve-panel');
     const derivateCurvePanel = $('#derivate-curve-panel');
     const integrateCurvePanel = $('#integrate-curve-panel');
+    const smoothCurvePanel = $('#smooth-curve-panel');
     const parameterPanel = $('#parameter-panel');
-    const allPanels = [emptyCurvePanel, calcCurvePanel, derivateCurvePanel, integrateCurvePanel, parameterPanel];
+    const allPanels = [emptyCurvePanel, calcCurvePanel, derivateCurvePanel, integrateCurvePanel, smoothCurvePanel, parameterPanel].filter(Boolean);
 
     // Références aux champs de saisie pour chaque panneau
     const emptyCurveSymbolInput = $('#empty-curve-symbol-input');
@@ -1183,20 +1185,26 @@ export default class UIManager {
     const integrateVariableSelect = $('#integrate-variable-select');
     const integrateInitialValueInput = $('#integrate-initial-value-input');
 
+    const smoothCurveSymbolInput = $('#smooth-curve-symbol-input');
+    const smoothCurveUnitInput = $('#smooth-curve-unit-input');
+    const smoothOperandSelect = $('#smooth-operand-select');
+    const smoothPointsSelect = $('#smooth-points-select');
+
     const parameterSymbolInput = $('#parameter-symbol-input');
     const parameterUnitInput = $('#parameter-unit-input');
     const parameterValueInput = $('#parameter-value-input');
 
-    const allSymbolInputs = [emptyCurveSymbolInput, calcCurveSymbolInput, derivateCurveSymbolInput, integrateCurveSymbolInput, parameterSymbolInput];
-    const allUnitInputs = [emptyCurveUnitInput, calcCurveUnitInput, derivateCurveUnitInput, integrateCurveUnitInput, parameterUnitInput];
+    const allSymbolInputs = [emptyCurveSymbolInput, calcCurveSymbolInput, derivateCurveSymbolInput, integrateCurveSymbolInput, smoothCurveSymbolInput, parameterSymbolInput].filter(Boolean);
+    const allUnitInputs = [emptyCurveUnitInput, calcCurveUnitInput, derivateCurveUnitInput, integrateCurveUnitInput, smoothCurveUnitInput, parameterUnitInput].filter(Boolean);
 
     // Synchronise le symbole entre tous les panneaux
     allSymbolInputs.forEach(input => {
       if (input) {
         input.addEventListener('input', (e) => {
+          const val = (e && e.target && e.target.value !== undefined) ? e.target.value : input.value;
           allSymbolInputs.forEach(otherInput => {
             if (otherInput !== input && otherInput) {
-              otherInput.value = e.target.value;
+              otherInput.value = val;
             }
           });
         });
@@ -1207,14 +1215,32 @@ export default class UIManager {
     allUnitInputs.forEach(input => {
       if (input) {
         input.addEventListener('input', (e) => {
+          const val = (e && e.target && e.target.value !== undefined) ? e.target.value : input.value;
           allUnitInputs.forEach(otherInput => {
             if (otherInput !== input && otherInput) {
-              otherInput.value = e.target.value;
+              otherInput.value = val;
             }
           });
         });
       }
     });
+
+    // Bonus ergonomique : pré-remplissage de l'unité lors du choix d'une grandeur à lisser
+    if (smoothOperandSelect) {
+      smoothOperandSelect.addEventListener('change', () => {
+        if (smoothCurveUnitInput && !smoothCurveUnitInput.value.trim() && smoothOperandSelect.value && !smoothOperandSelect.value.startsWith('Choisir')) {
+          const selectedCurve = (typeof this.data?.getCurveByTitle === 'function')
+            ? this.data.getCurveByTitle(smoothOperandSelect.value)
+            : this.data?.curves?.find(c => c.title === smoothOperandSelect.value);
+          if (selectedCurve && selectedCurve.unit) {
+            smoothCurveUnitInput.value = selectedCurve.unit;
+            allUnitInputs.forEach(otherInput => {
+              if (otherInput) otherInput.value = selectedCurve.unit;
+            });
+          }
+        }
+      });
+    }
 
     /**
      * Met à jour le panneau visible en fonction du bouton radio sélectionné.
@@ -1225,19 +1251,22 @@ export default class UIManager {
 
       switch (selectedValue) {
         case 'empty-curve':
-          emptyCurvePanel.classList.remove('is-hidden');
+          if (emptyCurvePanel) emptyCurvePanel.classList.remove('is-hidden');
           break;
         case 'calc-curve':
-          calcCurvePanel.classList.remove('is-hidden');
+          if (calcCurvePanel) calcCurvePanel.classList.remove('is-hidden');
           break;
         case 'derivate-curve':
-          derivateCurvePanel.classList.remove('is-hidden');
+          if (derivateCurvePanel) derivateCurvePanel.classList.remove('is-hidden');
           break;
         case 'integrate-curve':
-          integrateCurvePanel.classList.remove('is-hidden');
+          if (integrateCurvePanel) integrateCurvePanel.classList.remove('is-hidden');
+          break;
+        case 'smooth-curve':
+          if (smoothCurvePanel) smoothCurvePanel.classList.remove('is-hidden');
           break;
         case 'parameter':
-          parameterPanel.classList.remove('is-hidden');
+          if (parameterPanel) parameterPanel.classList.remove('is-hidden');
           break;
       }
     }
@@ -1247,20 +1276,66 @@ export default class UIManager {
      * @param {string[]} curveNames - Un tableau des noms des courbes (ex: ['t', 'x', 'y']).
      */
     function populateDerivativeSelects(curveNames) {
-      derivateNumeratorSelect.innerHTML = '<option>Choisir numérateur</option>';
-      derivateDenominatorSelect.innerHTML = '<option>Choisir dénominateur</option>';
+      // Peuple les menus déroulants pour la grandeur dérivée
+      if (derivateNumeratorSelect && derivateDenominatorSelect) {
+        derivateNumeratorSelect.innerHTML = '';
+        derivateDenominatorSelect.innerHTML = '';
 
-      curveNames.forEach(name => {
-        const optionNum = document.createElement('option');
-        optionNum.value = name;
-        optionNum.textContent = name;
-        derivateNumeratorSelect.appendChild(optionNum);
+        if (!curveNames || curveNames.length === 0) {
+          const optNoneNum = document.createElement('option');
+          optNoneNum.value = '';
+          optNoneNum.textContent = 'Aucune grandeur';
+          optNoneNum.disabled = true;
+          optNoneNum.selected = true;
+          derivateNumeratorSelect.appendChild(optNoneNum);
 
-        const optionDenom = document.createElement('option');
-        optionDenom.value = name;
-        optionDenom.textContent = name;
-        derivateDenominatorSelect.appendChild(optionDenom);
-      });
+          const optNoneDenom = document.createElement('option');
+          optNoneDenom.value = '';
+          optNoneDenom.textContent = 'Aucune grandeur';
+          optNoneDenom.disabled = true;
+          optNoneDenom.selected = true;
+          derivateDenominatorSelect.appendChild(optNoneDenom);
+
+          derivateNumeratorSelect.disabled = true;
+          derivateDenominatorSelect.disabled = true;
+        } else if (curveNames.length === 1) {
+          const optReqNum = document.createElement('option');
+          optReqNum.value = '';
+          optReqNum.textContent = '2 grandeurs requises';
+          optReqNum.disabled = true;
+          optReqNum.selected = true;
+          derivateNumeratorSelect.appendChild(optReqNum);
+
+          const optReqDenom = document.createElement('option');
+          optReqDenom.value = '';
+          optReqDenom.textContent = '2 grandeurs requises';
+          optReqDenom.disabled = true;
+          optReqDenom.selected = true;
+          derivateDenominatorSelect.appendChild(optReqDenom);
+
+          derivateNumeratorSelect.disabled = true;
+          derivateDenominatorSelect.disabled = true;
+        } else {
+          derivateNumeratorSelect.disabled = false;
+          derivateDenominatorSelect.disabled = false;
+
+          curveNames.forEach(name => {
+            const optionNum = document.createElement('option');
+            optionNum.value = name;
+            optionNum.textContent = name;
+            derivateNumeratorSelect.appendChild(optionNum);
+
+            const optionDenom = document.createElement('option');
+            optionDenom.value = name;
+            optionDenom.textContent = name;
+            derivateDenominatorSelect.appendChild(optionDenom);
+          });
+
+          // Pré-sélectionne la 2ème colonne au numérateur et la 1ère colonne au dénominateur (ex: dx/dt ou dv/dt)
+          derivateNumeratorSelect.value = curveNames[1];
+          derivateDenominatorSelect.value = curveNames[0];
+        }
+      }
 
       // Peuple les menus déroulants pour la grandeur intégrée
       if (integrateOperandSelect && integrateVariableSelect) {
@@ -1270,40 +1345,54 @@ export default class UIManager {
         if (!curveNames || curveNames.length === 0) {
           const optNoneOp = document.createElement('option');
           optNoneOp.value = '';
-          optNoneOp.textContent = 'Aucune grandeur';
+          optNoneOp.textContent = '';
           optNoneOp.disabled = true;
           optNoneOp.selected = true;
           integrateOperandSelect.appendChild(optNoneOp);
 
           const optNoneVar = document.createElement('option');
           optNoneVar.value = '';
-          optNoneVar.textContent = 'Aucune grandeur';
+          optNoneVar.textContent = '';
           optNoneVar.disabled = true;
           optNoneVar.selected = true;
           integrateVariableSelect.appendChild(optNoneVar);
 
           integrateOperandSelect.disabled = true;
           integrateVariableSelect.disabled = true;
+          const tooltip = "Aucune grandeur disponible";
+          integrateOperandSelect.title = tooltip;
+          integrateVariableSelect.title = tooltip;
+          if (integrateOperandSelect.parentElement) integrateOperandSelect.parentElement.title = tooltip;
+          if (integrateVariableSelect.parentElement) integrateVariableSelect.parentElement.title = tooltip;
         } else if (curveNames.length === 1) {
           const optReqOp = document.createElement('option');
           optReqOp.value = '';
-          optReqOp.textContent = '2 grandeurs requises';
+          optReqOp.textContent = '';
           optReqOp.disabled = true;
           optReqOp.selected = true;
           integrateOperandSelect.appendChild(optReqOp);
 
           const optReqVar = document.createElement('option');
           optReqVar.value = '';
-          optReqVar.textContent = '2 grandeurs requises';
+          optReqVar.textContent = '';
           optReqVar.disabled = true;
           optReqVar.selected = true;
           integrateVariableSelect.appendChild(optReqVar);
 
           integrateOperandSelect.disabled = true;
           integrateVariableSelect.disabled = true;
+          const tooltip = "2 grandeurs nécessaires";
+          integrateOperandSelect.title = tooltip;
+          integrateVariableSelect.title = tooltip;
+          if (integrateOperandSelect.parentElement) integrateOperandSelect.parentElement.title = tooltip;
+          if (integrateVariableSelect.parentElement) integrateVariableSelect.parentElement.title = tooltip;
         } else {
           integrateOperandSelect.disabled = false;
           integrateVariableSelect.disabled = false;
+          integrateOperandSelect.title = '';
+          integrateVariableSelect.title = '';
+          if (integrateOperandSelect.parentElement) integrateOperandSelect.parentElement.title = '';
+          if (integrateVariableSelect.parentElement) integrateVariableSelect.parentElement.title = '';
 
           curveNames.forEach(name => {
             const optionOp = document.createElement('option');
@@ -1338,12 +1427,31 @@ export default class UIManager {
       if (integrateCurveSymbolInput) integrateCurveSymbolInput.value = "";
       if (integrateCurveUnitInput) integrateCurveUnitInput.value = "";
       if (integrateInitialValueInput) integrateInitialValueInput.value = "0";
+      if (smoothCurveSymbolInput) smoothCurveSymbolInput.value = "";
+      if (smoothCurveUnitInput) smoothCurveUnitInput.value = "";
+      if (smoothPointsSelect) smoothPointsSelect.value = "5";
       parameterSymbolInput.value = "";
       parameterUnitInput.value = "";
       parameterValueInput.value = "";
 
       const curveNames = this.data.curves.map(c => c.title);
       populateDerivativeSelects(curveNames);
+
+      if (smoothOperandSelect) {
+        smoothOperandSelect.innerHTML = '';
+        const optDefault = document.createElement('option');
+        optDefault.value = 'Choisir grandeur';
+        optDefault.textContent = 'Choisir grandeur';
+        smoothOperandSelect.appendChild(optDefault);
+
+        curveNames.forEach(name => {
+          const option = document.createElement('option');
+          option.value = name;
+          option.textContent = name;
+          smoothOperandSelect.appendChild(option);
+        });
+        smoothOperandSelect.value = 'Choisir grandeur';
+      }
     }
 
     /**
@@ -1386,13 +1494,29 @@ export default class UIManager {
         case 'derivate-curve': {
           symbol = derivateCurveSymbolInput.value.trim();
           unit = processUnit(derivateCurveUnitInput);
-          const numerator = derivateNumeratorSelect.value;
-          const denominator = derivateDenominatorSelect.value;
+          const numerator = derivateNumeratorSelect ? derivateNumeratorSelect.value : '';
+          const denominator = derivateDenominatorSelect ? derivateDenominatorSelect.value : '';
 
-          if (!symbol || numerator.startsWith('Choisir') || denominator.startsWith('Choisir')) {
+          const curveCount = this.data?.curves?.length || 0;
+          if (curveCount === 0) {
+            showToast("Aucune grandeur n'est disponible pour calculer une dérivée.", "is-warning");
+            return null;
+          }
+          if (curveCount < 2) {
+            showToast("Il faut au moins 2 grandeurs pour calculer une dérivée.", "is-warning");
+            return null;
+          }
+
+          if (!symbol || !numerator || !denominator || numerator.startsWith('Choisir') || denominator.startsWith('Choisir')) {
             showToast("Veuillez remplir le symbole et choisir les deux grandeurs à dériver.", "is-warning");
             return null;
           }
+
+          if (numerator === denominator) {
+            showToast("Les deux grandeurs à dériver doivent être distinctes.", "is-warning");
+            return null;
+          }
+
           // --- VALIDATION CENTRALISÉE ---
           const validationResult = this.app.symbolValidator.validate(symbol);
           if (!validationResult.isValid) {
@@ -1445,6 +1569,32 @@ export default class UIManager {
           const formula = (Number.isFinite(initVal) && initVal !== 0)
             ? `integrate(${operand}, ${variable}, ${initVal})`
             : `integrate(${operand}, ${variable})`;
+
+          formulaLine = `${buildVarWithUnit(symbol, unit)} = ${formula}`;
+          return { type: 'formula', formulaLine };
+        }
+
+        case 'smooth-curve': {
+          symbol = smoothCurveSymbolInput ? smoothCurveSymbolInput.value.trim() : '';
+          unit = smoothCurveUnitInput ? processUnit(smoothCurveUnitInput) : '';
+          const operand = smoothOperandSelect ? smoothOperandSelect.value : '';
+
+          if (!symbol || !operand || operand.startsWith('Choisir')) {
+            showToast("Veuillez remplir le symbole et choisir la grandeur à lisser.", "is-warning");
+            return null;
+          }
+
+          // --- VALIDATION CENTRALISÉE ---
+          const validationResult = this.app.symbolValidator.validate(symbol);
+          if (!validationResult.isValid) {
+            showToast(validationResult.message, "is-danger");
+            return null;
+          }
+
+          const pts = (smoothPointsSelect && parseInt(smoothPointsSelect.value, 10)) || 5;
+          const formula = (pts && pts !== 5)
+            ? `smooth(${operand}, ${pts})`
+            : `smooth(${operand})`;
 
           formulaLine = `${buildVarWithUnit(symbol, unit)} = ${formula}`;
           return { type: 'formula', formulaLine };
@@ -3090,7 +3240,7 @@ export default class UIManager {
       let cursorOffset = textToInsert.length;
 
       if (textToInsert.endsWith('()')) {
-        const twoArgFunctions = ['diff()', 'integrate()'];
+        const twoArgFunctions = ['diff()', 'integrate()', 'smooth()'];
         finalInsert = twoArgFunctions.includes(textToInsert)
           ? `${textToInsert.slice(0, -2)}(,)`
           : textToInsert.slice(0, -1);

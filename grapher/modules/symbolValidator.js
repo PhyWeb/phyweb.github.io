@@ -21,7 +21,7 @@ export default class SymbolValidator {
     'sech', 'csch', 'coth', 'asech', 'acsch', 'acoth',
 
     // Fonction personnalisée de dérivation
-    'diff', 'integrate',
+    'diff', 'integrate', 'smooth',
 
     // Autres fonctions et opérateurs math.js
     'log10', 'log2', 'pow', 'mod',

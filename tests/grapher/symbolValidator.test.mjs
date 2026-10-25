@@ -118,6 +118,7 @@ describe('SymbolValidator', () => {
     it('doit refuser un mot réservé même si présent dans ignoreList', () => {
       assert.equal(validator.validate('sin', { ignoreList: ['sin'] }).isValid, false);
       assert.equal(validator.validate('diff', { ignoreList: ['diff'] }).isValid, false);
+      assert.equal(validator.validate('smooth', { ignoreList: ['smooth'] }).isValid, false);
     });
 
     it('doit renvoyer un message d\'erreur explicite pour les mots réservés', () => {
@@ -128,6 +129,10 @@ describe('SymbolValidator', () => {
       const resDiff = validator.validate('diff');
       assert.equal(resDiff.isValid, false);
       assert.match(resDiff.message, /mot réservé/i);
+
+      const resSmooth = validator.validate('smooth');
+      assert.equal(resSmooth.isValid, false);
+      assert.match(resSmooth.message, /mot réservé/i);
     });
   });
 });

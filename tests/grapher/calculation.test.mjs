@@ -417,6 +417,91 @@ describe('Calculation Module', () => {
     });
   });
 
+  describe('smooth() & movingAverageSmooth() - Lissage par moyenne mobile centrée', () => {
+    it('doit inclure smooth dans getAvailableFunctions()', () => {
+      const fns = calc.getAvailableFunctions();
+      assert.ok(fns.includes('smooth'));
+    });
+
+    it('doit calculer le lissage par défaut sur 5 points avec réduction symétrique aux bords', () => {
+      const y = [10, 20, 30, 40, 50];
+      const result = calc.evaluate('smooth(y)', { y });
+      assert.equal(result.length, 5);
+      assert.deepEqual(result, [10, 20, 30, 40, 50]);
+
+      const yNoisy = [0, 10, 0, 10, 0];
+      const resultNoisy = calc.evaluate('smooth(y)', { y: yNoisy });
+      assert.equal(resultNoisy.length, 5);
+      assert.equal(resultNoisy[0], 0);
+      assert.equal(resultNoisy[1], 10 / 3);
+      assert.equal(resultNoisy[2], 4);
+      assert.equal(resultNoisy[3], 10 / 3);
+      assert.equal(resultNoisy[4], 0);
+    });
+
+    it('doit respecter la taille de fenêtre personnalisée (ex: 3 points)', () => {
+      const yNoisy = [0, 10, 0, 10, 0];
+      const result = calc.evaluate('smooth(y, 3)', { y: yNoisy });
+      assert.equal(result.length, 5);
+      assert.equal(result[0], 0);
+      assert.equal(result[1], 10 / 3);
+      assert.equal(result[2], 20 / 3);
+      assert.equal(result[3], 10 / 3);
+      assert.equal(result[4], 0);
+    });
+
+    it('doit préserver les valeurs null et calculer la moyenne sur les points valides', () => {
+      const y = [10, null, 30, 40, 50];
+      const result = calc.evaluate('smooth(y, 5)', { y });
+      assert.equal(result.length, 5);
+      assert.equal(result[0], 10);
+      assert.equal(result[1], null);
+      assert.equal(result[2], (10 + 30 + 40 + 50) / 4); // 32.5
+      assert.equal(result[3], (30 + 40 + 50) / 3); // 40
+      assert.equal(result[4], 50);
+    });
+
+    it('doit lever une erreur si windowSize < 3 ou non finie', () => {
+      assert.throws(
+        () => calc.evaluate('smooth(y, 2)', { y: [1, 2, 3, 4, 5] }),
+        /La fenêtre de lissage doit être un entier supérieur ou égal à 3\./
+      );
+      assert.throws(
+        () => calc.evaluate('smooth(y, 0)', { y: [1, 2, 3, 4, 5] }),
+        /La fenêtre de lissage doit être un entier supérieur ou égal à 3\./
+      );
+    });
+
+    it('doit lever une erreur si yArr.length < windowSize', () => {
+      assert.throws(
+        () => calc.evaluate('smooth(y, 5)', { y: [1, 2, 3] }),
+        /Pas assez de points pour un lissage sur 5 points\./
+      );
+      assert.throws(
+        () => calc.evaluate('smooth(y)', { y: [1, 2, 3] }),
+        /Pas assez de points pour un lissage sur 5 points\./
+      );
+    });
+
+    it('doit supporter smooth sur une constante', () => {
+      assert.equal(calc.evaluate('smooth(42)', {}), 42);
+      assert.equal(calc.evaluate('smooth(42, 5)', {}), 42);
+    });
+
+    it('doit fonctionner dans evaluateBlock avec normalisation et notation décimale', () => {
+      const initialScope = {
+        y: [10, 20, 30, 40, 50]
+      };
+      const formulas = [
+        { variableName: 'yLisse', expression: 'SMOOTH(y, 3)', unit: 'm' }
+      ];
+      const { results, errors } = calc.evaluateBlock(formulas, initialScope);
+      assert.equal(errors.length, 0);
+      assert.equal(results.length, 1);
+      assert.deepEqual(results[0].data, [10, 20, 30, 40, 50]);
+    });
+  });
+
   describe('Opérations mathématiques (puissances, racines, null-safety)', () => {
     it('doit renvoyer null pour les élévations aux puissances fractionnaires sur des valeurs négatives (Array ^ scalaire)', () => {
       // Vérifie que x^0.5 ou x^0.2 retourne null pour x < 0 et non un objet complexe

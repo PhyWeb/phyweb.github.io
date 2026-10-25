@@ -400,6 +400,64 @@ export default class Calculation {
     });
     mathInstance.import({ integrate: typedIntegrate }, { override: true });
 
+    // --- Ajout de la fonction de lissage par moyenne mobile centrée ---
+
+    /**
+     * Calcule la moyenne mobile centrée d'un tableau y.
+     * @param {Array<number|null>} y Le tableau des valeurs à lisser.
+     * @param {number} [windowSize=5] La taille de la fenêtre de lissage (entier >= 3).
+     * @returns {Array<number|null>} Les valeurs lissées.
+     */
+    const movingAverageSmooth = (y, windowSize = 5) => {
+      const toArr = (v) => (v && v.toArray ? v.toArray() : v);
+      const yArr = toArr(y);
+
+      const w = Math.round(Number(windowSize));
+      if (!Number.isFinite(w) || w < 3) {
+        throw new Error("La fenêtre de lissage doit être un entier supérieur ou égal à 3.");
+      }
+
+      const half = Math.floor((w - 1) / 2);
+
+      if (!yArr || yArr.length < w) {
+        throw new Error(`Pas assez de points pour un lissage sur ${w} points.`);
+      }
+
+      const result = new Array(yArr.length).fill(null);
+
+      for (let i = 0; i < yArr.length; i++) {
+        const valI = yArr[i];
+        if (valI === null || valI === undefined || !Number.isFinite(valI)) {
+          result[i] = null;
+          continue;
+        }
+
+        const maxHalf = Math.min(half, i, yArr.length - 1 - i);
+        let sum = 0;
+        let count = 0;
+
+        for (let j = i - maxHalf; j <= i + maxHalf; j++) {
+          const val = yArr[j];
+          if (val !== null && val !== undefined && Number.isFinite(val)) {
+            sum += val;
+            count++;
+          }
+        }
+
+        result[i] = count > 0 ? sum / count : null;
+      }
+
+      return result;
+    };
+
+    const typedSmooth = mathInstance.typed('smooth', {
+      'Array | Matrix': (y) => movingAverageSmooth(y, 5),
+      'Array | Matrix, number': (y, n) => movingAverageSmooth(y, n),
+      'number': (y) => y,
+      'number, number': (y) => y
+    });
+    mathInstance.import({ smooth: typedSmooth }, { override: true });
+
     return mathInstance;
   }
 
@@ -444,7 +502,7 @@ export default class Calculation {
     let expr = expression.replace(/;\s*/g, ', ');
 
     const multiArgFunctions = new Set([
-      'pow', 'diff', 'integrate', 'atan2', 'min', 'max', 'hypot', 'gcd', 'lcm', 'nthroot', 'mod'
+      'pow', 'diff', 'integrate', 'smooth', 'atan2', 'min', 'max', 'hypot', 'gcd', 'lcm', 'nthroot', 'mod'
     ]);
 
     // Trouve l'indice de la parenthèse fermante correspondante
@@ -759,7 +817,7 @@ evaluateBlock(formulas, initialScope) {
   getAvailableFunctions() {
     // Retourne les fonctions scalaires de base plus les fonctions personnalisées.
     // Le tri assure un affichage alphabétique propre dans la barre latérale.
-    const allFunctions = [...this.scalarFunctions, 'diff', 'integrate'];
+    const allFunctions = [...this.scalarFunctions, 'diff', 'integrate', 'smooth'];
     return allFunctions;
   }
 }
