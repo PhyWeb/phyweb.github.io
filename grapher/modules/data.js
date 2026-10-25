@@ -600,7 +600,6 @@ class Model {
       let guessSize = 2;
       if (this.type === 'linear') guessSize = 1;
       if (this.type === 'quadratic') guessSize = 3;
-      if (this.type === 'cubic') guessSize = 4;
       if (this.type === 'sin' || this.type === 'cos') guessSize = 4;
       if (this.type === 'dampedsin' || this.type === 'dampedcos') guessSize = 5;
       
@@ -667,13 +666,6 @@ class Model {
           for (let i = 0; i < points; i++) {
             const x = minX + i * step;
             const y = this.parameters[0].value * Math.pow(x, 2) + this.parameters[1].value * x + this.parameters[2].value;
-            data.push([x, y]);
-          }
-          break;
-        case "cubic":
-          for (let i = 0; i < points; i++) {
-            const x = minX + i * step;
-            const y = this.parameters[3].value * Math.pow(x, 3) + this.parameters[2].value * Math.pow(x, 2) + this.parameters[1].value * x + this.parameters[0].value;
             data.push([x, y]);
           }
           break;
