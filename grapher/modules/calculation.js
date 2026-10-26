@@ -38,6 +38,9 @@ export default class Calculation {
     // Redéfinir 'log' pour qu'il soit le logarithme en base 10
     mathInstance.import({ log: mathInstance.log10 }, { override: true });
 
+    // Garantir la reconnaissance de pi insensible à la casse dans le scope
+    mathInstance.import({ Pi: mathInstance.pi }, { override: false });
+
     // Redéfinir les fonctions scalaires pour qu'elles fonctionnent sur les tableaux
     this.scalarFunctions.forEach(name => {
       const originalFn = mathInstance[name];

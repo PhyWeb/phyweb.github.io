@@ -91,6 +91,11 @@ export default class UIManager {
         if (functionsDropdown) {
           functionsDropdown.classList.remove('is-active');
         }
+        // Ferme le dropdown des constantes s'il est ouvert
+        const constantsDropdown = document.getElementById('constants-dropdown');
+        if (constantsDropdown) {
+          constantsDropdown.classList.remove('is-active');
+        }
         // Ferme toutes les modales
         this.common.modalManager.closeAllModals();
         // Désactive les outils du grapheur (réticule, etc.)
@@ -194,7 +199,7 @@ export default class UIManager {
 
       const colors = {
         variable: '#008000',
-        parameter: '#d568fb'
+        parameter: '#7b1fa2'
       };
 
       // Créer une liste simple pour les courbes et paramètres
@@ -208,7 +213,7 @@ export default class UIManager {
           const a = document.createElement('a');
           
           const unitText = param.unit ? ` ${param.unit}` : '';
-          const displayValue = formatNumber(param.value, significantDigits);
+          const displayValue = formatNumber(param.value, significantDigits, { html: true });
 
           a.innerHTML = `<span style="color: ${colors.parameter}; font-weight: bold;">${key}</span> = ${displayValue}<span style="color: #7a7a7a;">${unitText}</span>`;
           a.dataset.value = key;
@@ -321,6 +326,86 @@ export default class UIManager {
       functionsContent.appendChild(columnsDiv);
     }
 
+    // Génère le contenu du méga-dropdown des constantes s'il est vide
+    const constantsContent = document.getElementById('calculation-constants-content');
+    const hasConstantsChildren = constantsContent && (
+      (constantsContent.children && constantsContent.children.length > 0) ||
+      (constantsContent.childNodes && constantsContent.childNodes.length > 0) ||
+      constantsContent._initialized
+    );
+    if (constantsContent && !hasConstantsChildren) {
+      constantsContent._initialized = true;
+      const constantCategories = [
+        {
+          title: 'Mécanique & Gravitation',
+          constants: [
+            { symbol: 'g', value: '9.81', unit: 'N/kg', desc: 'Intensité de la pesanteur (9,81 N/kg)' },
+            { symbol: 'G', value: '6.674e-11', unit: 'N.m²/kg²', desc: 'Constante gravitationnelle (6,674×10<sup>-11</sup> N·m<sup>2</sup>·kg<sup>-2</sup>)' }
+          ]
+        },
+        {
+          title: 'Ondes, Optique & Quantique',
+          constants: [
+            { symbol: 'c', value: '2.998e8', unit: 'm/s', desc: 'Célérité de la lumière (2,998×10<sup>8</sup> m/s)' },
+            { symbol: 'h', value: '6.626e-34', unit: 'J.s', desc: 'Constante de Planck (6,626×10<sup>-34</sup> J·s)' },
+            { symbol: 'qe', label: 'q<sub>e</sub>', value: '1.602e-19', unit: 'C', desc: 'Charge élémentaire (1,602×10<sup>-19</sup> C)' }
+          ]
+        },
+        {
+          title: 'Thermodynamique & Chimie',
+          constants: [
+            { symbol: 'NA', label: 'N<sub>A</sub>', value: '6.022e23', unit: 'mol^-1', desc: "Constante d'Avogadro (6,022×10<sup>23</sup> mol<sup>-1</sup>)" },
+            { symbol: 'R', value: '8.314', unit: 'J/(mol.K)', desc: 'Constante des gaz parfaits (8,314 J·mol<sup>-1</sup>·K<sup>-1</sup>)' },
+            { symbol: 'kB', label: 'k<sub>B</sub>', value: '1.381e-23', unit: 'J/K', desc: 'Constante de Boltzmann (1,381×10<sup>-23</sup> J/K)' },
+            { symbol: 'F', value: '9.649e4', unit: 'C/mol', desc: 'Constante de Faraday (9,649×10<sup>4</sup> C/mol)' }
+          ]
+        },
+        {
+          title: 'Mathématiques',
+          constants: [
+            { symbol: 'pi', isNative: true, desc: 'Nombre π (3,14159...)' }
+          ]
+        }
+      ];
+
+      const columnsDiv = document.createElement('div');
+      columnsDiv.className = 'columns is-multiline is-variable is-3';
+
+      constantCategories.forEach(category => {
+        const col = document.createElement('div');
+        col.className = 'column is-6';
+
+        const label = document.createElement('p');
+        label.className = 'menu-label mb-2';
+        label.textContent = category.title;
+        col.appendChild(label);
+
+        category.constants.forEach(item => {
+          const a = document.createElement('a');
+          a.className = 'dropdown-item p-1 is-flex is-align-items-center is-justify-content-space-between';
+          if (!a.dataset) a.dataset = {};
+          a.dataset.symbol = item.symbol;
+          a.dataset.value = item.value || '';
+          a.dataset.unit = item.unit || '';
+          a.dataset.native = item.isNative ? 'true' : 'false';
+          if (a.setAttribute) {
+            a.setAttribute('data-symbol', item.symbol);
+            a.setAttribute('data-value', item.value || '');
+            a.setAttribute('data-unit', item.unit || '');
+            a.setAttribute('data-native', item.isNative ? 'true' : 'false');
+          }
+          a.style.borderRadius = '4px';
+
+          a.innerHTML = `<span class="tag is-purple-light has-text-weight-bold" style="font-family: monospace; flex-shrink: 0;"><span style="display: inline-block; line-height: normal;">${item.label || item.symbol}</span></span><span class="is-size-7 has-text-grey ml-2" style="white-space: nowrap;">${item.desc}</span>`;
+          col.appendChild(a);
+        });
+
+        columnsDiv.appendChild(col);
+      });
+
+      constantsContent.appendChild(columnsDiv);
+    }
+
     const curveNames = this.data.curves.map(c => c.title);
     const parameterNames = Object.keys(this.data.parameters);
     const functionNames = this.calculation.getAvailableFunctions();
@@ -330,11 +415,32 @@ export default class UIManager {
         token: function(stream) {
           if (stream.eatSpace()) return null;
 
-          // Regex qui capture un "mot" (variable + unité complexe) jusqu'à un séparateur.
-          // Un séparateur est un espace, une virgule, ou un opérateur mathématique principal.
-          if (stream.match(/^[a-zA-ZÀ-ÿ_][^=+\-*(),\s]*/)) {
+          // --- Commentaires ---
+          if (stream.match(/^#.*/) || stream.match(/^\/\/.*/) || stream.match(/^'.*/)) return "comment";
+
+          // Détection de la position par rapport au signe '=' (membre de gauche vs membre de droite)
+          const line = typeof stream.string === 'string' ? stream.string : '';
+          const eqIndex = line.indexOf('=');
+          const pos = typeof stream.pos === 'number' ? stream.pos : 0;
+          const isLHS = eqIndex === -1 || pos < eqIndex;
+
+          // Regex qui capture un mot / grandeur / paramètre / fonction :
+          // Sur le membre de gauche (LHS, déclaration variable_unité) :
+          // l'unité peut être complexe et comporter des parenthèses, puissances, tirets, etc.
+          // (ex: v_m.s^-1, R_J/(mol.K), NA_mol^-1, sigma_W/(m^2.K^4), E_(kW.h)).
+          // Sur le membre de droite (RHS, expression mathématique) :
+          // on ne capture que l'identifiant (sans absorber les opérateurs +, -, *, /, ^, etc.).
+          const wordRegex = isLHS
+            ? /^[a-zA-ZÀ-ÿ_][a-zA-Z0-9À-ÿ]*(?:_[^=\s,#;]+)?/
+            : /^[a-zA-ZÀ-ÿ_][a-zA-Z0-9À-ÿ]*(?:_[a-zA-Z0-9À-ÿ]+)?/;
+
+          if (stream.match(wordRegex)) {
             const word = stream.current();
             
+            if (['diff', 'integrate', 'smooth'].includes(word)) {
+              return "phyweb-function-warning";
+            }
+
             if (functionNames.includes(word)) {
               return "phyweb-function";
             }
@@ -343,7 +449,7 @@ export default class UIManager {
             if (curveNames.includes(baseName)) {
               return "variable-2";
             }
-            if (parameterNames.includes(baseName)) {
+            if (parameterNames.includes(baseName) || word.toLowerCase() === 'pi' || baseName.toLowerCase() === 'pi') {
               return "def";
             }
             
@@ -353,8 +459,7 @@ export default class UIManager {
 
           // --- Si ce n'est pas un mot, on cherche le reste ---
 
-          if (stream.match(/^#.*/) || stream.match(/^\/\/.*/) || stream.match(/^'.*/)) return "comment";
-          if (stream.match(/^[0-9]+([,.][0-9]+)?/)) return "number"; // Gère les nombres avec . ou ,
+          if (stream.match(/^[0-9]+([,.][0-9]+)?([eE][+-]?[0-9]+)?/)) return "number"; // Gère entiers, décimaux et notation scientifique
           if (stream.match(/^[=+\-*/^(),]/)) return "operator";
 
           // Fallback pour ne jamais bloquer
@@ -400,7 +505,7 @@ export default class UIManager {
     
     model.parameters.forEach(param => {
       const li = document.createElement('li');
-      const displayValue = formatNumber(param.value, significantDigits);
+      const displayValue = formatNumber(param.value, significantDigits, { html: true });
       li.innerHTML = `${param.name} = ${displayValue}`;
       ul.appendChild(li);
     });
@@ -420,12 +525,12 @@ export default class UIManager {
       
       // Ajout de l'écart-type
       const liRmse = document.createElement('li');
-      liRmse.innerHTML = `Écart-type = ${model.rmse !== null ? formatNumber(model.rmse, significantDigits) : 'Indéfini'}`;
+      liRmse.innerHTML = `Écart-type = ${model.rmse !== null ? formatNumber(model.rmse, significantDigits, { html: true }) : 'Indéfini'}`;
       ul2.appendChild(liRmse);
       
       // Ajout du R²
       const liRSquared = document.createElement('li');
-      liRSquared.innerHTML = `Corrélation R² = ${model.rSquared !== null ? formatNumber(model.rSquared, 5) : 'Indéfini'}`;
+      liRSquared.innerHTML = `Corrélation R² = ${model.rSquared !== null ? formatNumber(model.rSquared, 5, { html: true }) : 'Indéfini'}`;
       ul2.appendChild(liRSquared);
     }
   }
@@ -3172,7 +3277,7 @@ export default class UIManager {
     const significantDigits = this.data?.settings?.significantDigits ?? 4;
     model.parameters.forEach(param => {
       const li = document.createElement('li');
-      li.innerHTML = `${param.name} = ${formatNumber(param.value, significantDigits)}`;
+      li.innerHTML = `${param.name} = ${formatNumber(param.value, significantDigits, { html: true })}`;
       parametersList.appendChild(li);
     });
     
@@ -3180,11 +3285,11 @@ export default class UIManager {
     const qualityList = panelClone.querySelector('.quality-list');
     qualityList.innerHTML = ''; // Vider au cas où
     const liRmse = document.createElement('li');
-    liRmse.innerHTML = `Écart-type = ${model.rmse != null ? formatNumber(model.rmse, significantDigits) : 'Indéfini'}`;
+    liRmse.innerHTML = `Écart-type = ${model.rmse != null ? formatNumber(model.rmse, significantDigits, { html: true }) : 'Indéfini'}`;
     qualityList.appendChild(liRmse);
     
     const liRSquared = document.createElement('li');
-    liRSquared.innerHTML = `Corrélation R² = ${model.rSquared != null ? formatNumber(model.rSquared, 5) : 'Indéfini'}`;
+    liRSquared.innerHTML = `Corrélation R² = ${model.rSquared != null ? formatNumber(model.rSquared, 5, { html: true }) : 'Indéfini'}`;
     qualityList.appendChild(liRSquared);
 
     // Ajouter le panneau entièrement construit au DOM
@@ -3291,11 +3396,16 @@ export default class UIManager {
 
     // Gestion de l'ouverture/fermeture du dropdown des fonctions
     const functionsDropdown = document.getElementById('functions-dropdown');
+    const constantsDropdown = document.getElementById('constants-dropdown');
+
     if (functionsDropdown) {
       const trigger = functionsDropdown.querySelector?.('.dropdown-trigger');
       if (trigger) {
         trigger.addEventListener('click', (event) => {
           event.stopPropagation();
+          if (constantsDropdown) {
+            constantsDropdown.classList.remove('is-active');
+          }
           functionsDropdown.classList.toggle('is-active');
         });
       }
@@ -3304,6 +3414,27 @@ export default class UIManager {
       document.addEventListener('click', (event) => {
         if (!functionsDropdown.contains || !functionsDropdown.contains(event.target)) {
           functionsDropdown.classList.remove('is-active');
+        }
+      });
+    }
+
+    // Gestion de l'ouverture/fermeture du dropdown des constantes
+    if (constantsDropdown) {
+      const trigger = constantsDropdown.querySelector?.('.dropdown-trigger');
+      if (trigger) {
+        trigger.addEventListener('click', (event) => {
+          event.stopPropagation();
+          if (functionsDropdown) {
+            functionsDropdown.classList.remove('is-active');
+          }
+          constantsDropdown.classList.toggle('is-active');
+        });
+      }
+
+      // Ferme le dropdown lors d'un clic ailleurs sur document
+      document.addEventListener('click', (event) => {
+        if (!constantsDropdown.contains || !constantsDropdown.contains(event.target)) {
+          constantsDropdown.classList.remove('is-active');
         }
       });
     }
@@ -3323,6 +3454,66 @@ export default class UIManager {
             functionsDropdown.classList.remove('is-active');
           }
         }
+      });
+    }
+
+    // Écouteur de clic (event delegation) sur le méga-dropdown des constantes
+    const constantsContent = document.getElementById('calculation-constants-content');
+    if (constantsContent) {
+      constantsContent.addEventListener('click', (e) => {
+        const link = e.target?.closest ? e.target.closest('a[data-symbol]') : null;
+        if (!link) return;
+        e.preventDefault();
+
+        const symbol = link.dataset?.symbol || link.getAttribute?.('data-symbol');
+        const value = link.dataset?.value || link.getAttribute?.('data-value') || '';
+        const unit = link.dataset?.unit || link.getAttribute?.('data-unit') || '';
+        const isNative = (link.dataset?.native || link.getAttribute?.('data-native')) === 'true';
+
+        if (!symbol) return;
+
+        if (isNative) {
+          insertTextInEditor(symbol);
+          if (constantsDropdown) {
+            constantsDropdown.classList.remove('is-active');
+          }
+          return;
+        }
+
+        // Cas d'une constante physique (g, c, NA...)
+        // Vérifie si le symbole est déjà utilisé par une grandeur mesurée
+        const isUsedBySpreadsheet = this.data.curves.some(c => c.title === symbol && c.type !== 'calculation');
+        if (isUsedBySpreadsheet) {
+          showToast(`Le symbole "${symbol}" est déjà utilisé par une grandeur du tableur.`, "is-warning");
+          return;
+        }
+
+        // Vérifie si une ligne déclarant ce symbole existe déjà dans l'éditeur
+        const editorText = this.editor.getValue();
+        const declRegex = new RegExp(`^\\s*${symbol}(?:_[^=\\s]+)?\\s*=`, 'm');
+        const alreadyDeclared = declRegex.test(editorText);
+
+        // Si la ligne courante où se trouve le curseur contient un '=' à gauche du curseur
+        const cursor = this.editor.getCursor();
+        const currentLineText = this.editor.getLine(cursor.line) || '';
+        const textBeforeCursor = currentLineText.slice(0, cursor.ch);
+        const isWritingRightHandSide = textBeforeCursor.includes('=');
+
+        if (isWritingRightHandSide) {
+          insertTextInEditor(symbol);
+        }
+
+        // Si la constante n'était pas encore déclarée dans l'éditeur
+        if (!alreadyDeclared) {
+          const defLine = `${unit ? symbol + '_' + unit : symbol} = ${value}\n`;
+          this.editor.replaceRange(defLine, { line: 0, ch: 0 });
+          this.app?.applyCalculation?.(this.editor.getValue());
+        }
+
+        if (constantsDropdown) {
+          constantsDropdown.classList.remove('is-active');
+        }
+        this.editor.focus();
       });
     }
   }
@@ -3846,7 +4037,7 @@ export default class UIManager {
           headers.forEach((h, colIndex) => {
             let val = data[j] ? data[j][colIndex] : undefined;
             let displayVal = (val !== null && val !== undefined && !isNaN(val) && val !== '') 
-                             ? formatNumber(val, sigDigits) : '';
+                             ? formatNumber(val, sigDigits, { html: true }) : '';
             html += `<div class="flex-cell">${displayVal}</div>`;
           });
           html += `</div>`;

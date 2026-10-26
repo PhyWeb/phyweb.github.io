@@ -63,6 +63,16 @@ describe('Harmonisation des chiffres significatifs par défaut (4)', () => {
       const result = formatNumber(123456);
       assert.strictEqual(result, '1,235·10⁵');
     });
+
+    it('doit formater avec balise <sup> en notation scientifique si options.html est true', () => {
+      // 6.626e-34 avec 4 chiffres significatifs -> 6,626·10<sup>-34</sup>
+      const resultSmall = formatNumber(6.626e-34, 4, { html: true });
+      assert.strictEqual(resultSmall, '6,626·10<sup>-34</sup>');
+
+      // 6.022e23 avec 4 chiffres significatifs -> 6,022·10<sup>23</sup>
+      const resultLarge = formatNumber(6.022e23, 4, { html: true });
+      assert.strictEqual(resultLarge, '6,022·10<sup>23</sup>');
+    });
   });
 });
 

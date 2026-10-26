@@ -8,7 +8,7 @@
  * @returns {string} La valeur formatée.
  */
 export function formatNumber(value, significantDigits = 4, options = {}) {
-  const { useScientificNotation = true } = options;
+  const { useScientificNotation = true, html = false } = options;
   // Pour les cellules vides (null, undefined), retourner une chaîne vide.
   if (value === null || typeof value === 'undefined') {
     return '';
@@ -39,8 +39,14 @@ export function formatNumber(value, significantDigits = 4, options = {}) {
     // Formate la mantisse avec une virgule.
     const formattedMantissa = mantissa.replace('.', ',');
 
-    // Formate l'exposant avec des caractères en exposant.
+    // Formate l'exposant
     const exponent = parseInt(exponentStr, 10);
+
+    if (html) {
+      return `${formattedMantissa}·10<sup>${exponent}</sup>`;
+    }
+
+    // Formate l'exposant avec des caractères en exposant.
     const superscriptExponent = exponent
       .toString()
       .split('')

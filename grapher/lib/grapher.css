@@ -113,6 +113,64 @@
 }
 
 
+/* Style violet pour les constantes et paramètres (harmonisé avec l'éditeur et le dropdown) */
+.button.is-purple-light {
+  background-color: #f3e8ff;
+  color: #7b1fa2;
+  border-color: transparent;
+}
+.button.is-purple-light:hover,
+.button.is-purple-light.is-hovered {
+  background-color: #ebd5ff;
+  color: #6a1b9a;
+}
+.button.is-purple-light:active,
+.button.is-purple-light.is-active {
+  background-color: #e2c0ff;
+  color: #581682;
+}
+
+#constants-dropdown .button .icon {
+  height: 1.5rem;
+  max-height: 1.5rem;
+  overflow: hidden;
+  line-height: 1;
+}
+
+.tag.is-purple-light {
+  background-color: #f3e8ff;
+  color: #7b1fa2;
+}
+
+/* Normalisation sup et sub pour des exposants et indices bien alignés sans distorsion de ligne */
+sup, sub {
+  font-size: 75%;
+  line-height: 0;
+  position: relative;
+  vertical-align: baseline;
+}
+sup {
+  top: -0.45em;
+}
+sub {
+  bottom: -0.25em;
+}
+
+/* Prise en charge des indices et exposants dans les tags Bulma (flexbox) */
+.tag sub,
+.tag sup {
+  font-size: 75%;
+  line-height: 0;
+  position: relative;
+  vertical-align: baseline;
+}
+.tag sub {
+  bottom: -0.3em;
+}
+.tag sup {
+  top: -0.45em;
+}
+
 /* Style personnalisé pour les fonctions dans l'éditeur CodeMirror */
 /* Thème de base pour la cohérence avec Bulma */
 #calculs-panel .CodeMirror {
@@ -144,14 +202,18 @@
 
 /* 4. Palette de couleurs (inchangée) */
 .cm-phyweb-function {
-  color: #544fc5; 
+  color: #485fc7; 
+  font-weight: 500;
+}
+.cm-phyweb-function-warning {
+  color: #c27803;
   font-weight: 500;
 }
 .cm-variable-2 {
   color: #008000;
 }
 .cm-def {
-  color: #d568fb;
+  color: #7b1fa2;
 }
 .cm-number {
   color: #fe6a35;
