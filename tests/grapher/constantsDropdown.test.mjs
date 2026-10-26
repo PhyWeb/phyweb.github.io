@@ -517,6 +517,10 @@ describe('Contrôle Mega-Dropdown des Constantes dans l\'onglet Calculs', () => 
         },
         replaceRange: (text, pos) => {
           replaceRangeCalls.push({ text, pos });
+          const addedLines = text.split('\n').length - 1;
+          if (pos && (pos.line < cursorPosition.line || (pos.line === cursorPosition.line && pos.ch < cursorPosition.ch)) && addedLines > 0) {
+            cursorPosition.line += addedLines;
+          }
           const fullText = editorLines.join('\n');
           const newFullText = text + fullText;
           editorLines = newFullText.split('\n');
@@ -697,8 +701,51 @@ describe('Contrôle Mega-Dropdown des Constantes dans l\'onglet Calculs', () => 
       // Définition en haut
       assert.strictEqual(replaceRangeCalls.length, 1);
       assert.strictEqual(replaceRangeCalls[0].text, 'c_m/s = 2.998e8\n');
+      assert.deepStrictEqual(cursorPosition, { line: 1, ch: 0 }, 'Le curseur doit avoir été déplacé sur la ligne 1');
       assert.strictEqual(appliedCalculations.length, 1);
       assert.strictEqual(constantsDropdownClasses.has('is-active'), false);
+    });
+
+    it('refuse d\'insérer une constante si le symbole est déjà utilisé par un paramètre de modèle', () => {
+      ui.initCalculationControls();
+      ui.data.parameters['g'] = { value: 9.81, unit: 'N/kg', type: 'model' };
+
+      const fakeLink = {
+        dataset: { symbol: 'g', value: '9.81', unit: 'N/kg', native: 'false' },
+        getAttribute: (k) => fakeLink.dataset[k.replace('data-', '')]
+      };
+
+      constantsContentListener({
+        preventDefault: () => {},
+        target: { closest: (sel) => (sel === 'a[data-symbol]' ? fakeLink : null) }
+      });
+
+      assert.strictEqual(insertedTexts.length, 0);
+      assert.strictEqual(replaceRangeCalls.length, 0);
+      assert.strictEqual(appliedCalculations.length, 0);
+    });
+
+    it('refuse d\'insérer une constante si le symbole est déjà défini dans l\'éditeur avec une autre valeur ou formule', () => {
+      ui.initCalculationControls();
+      constantsDropdownClasses.add('is-active');
+
+      // 'g' est déjà défini comme une variable différente
+      editorLines = ['g = 5'];
+      cursorPosition = { line: 0, ch: 5 };
+
+      const fakeLink = {
+        dataset: { symbol: 'g', value: '9.81', unit: 'N/kg', native: 'false' },
+        getAttribute: (k) => fakeLink.dataset[k.replace('data-', '')]
+      };
+
+      constantsContentListener({
+        preventDefault: () => {},
+        target: { closest: (sel) => (sel === 'a[data-symbol]' ? fakeLink : null) }
+      });
+
+      assert.strictEqual(insertedTexts.length, 0);
+      assert.strictEqual(replaceRangeCalls.length, 0);
+      assert.strictEqual(appliedCalculations.length, 0);
     });
   });
 });

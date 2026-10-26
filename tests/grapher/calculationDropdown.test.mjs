@@ -404,7 +404,7 @@ describe('Contrôle Mega-Dropdown des Fonctions dans l\'onglet Calculs', () => {
       assert.strictEqual(functionsDropdownClasses.has('is-active'), false);
     });
 
-    it('insère smooth(,) avec la virgule au clic sur smooth()', () => {
+    it('insère smooth( sans virgule au clic sur smooth()', () => {
       ui.initCalculationControls();
       functionsDropdownClasses.add('is-active');
 
@@ -422,7 +422,7 @@ describe('Contrôle Mega-Dropdown des Fonctions dans l\'onglet Calculs', () => {
 
       functionsContentListener(fakeEvent);
 
-      assert.strictEqual(insertedTexts[0], 'smooth(,)');
+      assert.strictEqual(insertedTexts[0], 'smooth(');
       assert.strictEqual(functionsDropdownClasses.has('is-active'), false);
     });
 

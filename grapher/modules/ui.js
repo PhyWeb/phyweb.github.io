@@ -3345,7 +3345,7 @@ export default class UIManager {
       let cursorOffset = textToInsert.length;
 
       if (textToInsert.endsWith('()')) {
-        const twoArgFunctions = ['diff()', 'integrate()', 'smooth()'];
+        const twoArgFunctions = ['diff()', 'integrate()'];
         finalInsert = twoArgFunctions.includes(textToInsert)
           ? `${textToInsert.slice(0, -2)}(,)`
           : textToInsert.slice(0, -1);
@@ -3483,15 +3483,28 @@ export default class UIManager {
         // Cas d'une constante physique (g, c, NA...)
         // Vérifie si le symbole est déjà utilisé par une grandeur mesurée
         const isUsedBySpreadsheet = this.data.curves.some(c => c.title === symbol && c.type !== 'calculation');
-        if (isUsedBySpreadsheet) {
-          showToast(`Le symbole "${symbol}" est déjà utilisé par une grandeur du tableur.`, "is-warning");
+        const isUsedByModel = this.data.parameters?.[symbol]?.type === 'model';
+        if (isUsedBySpreadsheet || isUsedByModel) {
+          const source = isUsedBySpreadsheet ? "une grandeur du tableur" : "un paramètre de modèle";
+          showToast(`Le symbole "${symbol}" est déjà utilisé par ${source}.`, "is-warning");
           return;
         }
 
         // Vérifie si une ligne déclarant ce symbole existe déjà dans l'éditeur
         const editorText = this.editor.getValue();
-        const declRegex = new RegExp(`^\\s*${symbol}(?:_[^=\\s]+)?\\s*=`, 'm');
-        const alreadyDeclared = declRegex.test(editorText);
+        const declRegex = new RegExp(`^\\s*${symbol}(?:_[^=\\s]+)?\\s*=\\s*(.*)$`, 'm');
+        const declMatch = editorText.match(declRegex);
+        let alreadyDeclared = false;
+        if (declMatch) {
+          const rhs = declMatch[1].trim();
+          const cleanRhs = rhs.split(/(?:#|\/\/|')/)[0].trim();
+          const isSame = cleanRhs === value || (!isNaN(Number(cleanRhs)) && !isNaN(Number(value)) && Number(cleanRhs) === Number(value));
+          if (!isSame) {
+            showToast(`Le symbole "${symbol}" est déjà défini dans l'éditeur avec une autre valeur.`, "is-warning");
+            return;
+          }
+          alreadyDeclared = true;
+        }
 
         // Si la ligne courante où se trouve le curseur contient un '=' à gauche du curseur
         const cursor = this.editor.getCursor();
@@ -3499,15 +3512,21 @@ export default class UIManager {
         const textBeforeCursor = currentLineText.slice(0, cursor.ch);
         const isWritingRightHandSide = textBeforeCursor.includes('=');
 
-        if (isWritingRightHandSide) {
-          insertTextInEditor(symbol);
-        }
-
-        // Si la constante n'était pas encore déclarée dans l'éditeur
+        // Placement propre de la déclaration et du curseur
         if (!alreadyDeclared) {
           const defLine = `${unit ? symbol + '_' + unit : symbol} = ${value}\n`;
           this.editor.replaceRange(defLine, { line: 0, ch: 0 });
+
+          if (isWritingRightHandSide) {
+            insertTextInEditor(symbol);
+          } else if (cursor.line === 0 && cursor.ch === 0) {
+            this.editor.setCursor({ line: 1, ch: 0 });
+          }
           this.app?.applyCalculation?.(this.editor.getValue());
+        } else {
+          if (isWritingRightHandSide) {
+            insertTextInEditor(symbol);
+          }
         }
 
         if (constantsDropdown) {
