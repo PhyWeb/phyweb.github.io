@@ -319,10 +319,15 @@ export default function Fourier(_n) {
             }
             FFTreal.set(_data.data,0);
 
-            // Application de la fenêtre de Hann classique
-            if (_data.data.length === this.nayuki.n) {
-                for(let i = 0; i < _data.data.length; i++) {
+            // Application de la fenêtre de Hann (précalculée si taille == n, sinon calculée à la volée)
+            const dataLen = _data.data.length;
+            if (dataLen === this.nayuki.n) {
+                for (let i = 0; i < dataLen; i++) {
                     FFTreal[i] *= this.windowTable[i];
+                }
+            } else if (dataLen > 1) {
+                for (let i = 0; i < dataLen; i++) {
+                    FFTreal[i] *= 0.5 * (1 - Math.cos((2 * Math.PI * i) / (dataLen - 1)));
                 }
             }
 

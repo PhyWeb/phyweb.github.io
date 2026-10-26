@@ -200,5 +200,82 @@ describe('Audio - Fourier Transform & Zero Padding (audio/modules/fourier.js)', 
       assert.equal(result.step, sampleRate / (N * 2));
     });
   });
+
+  describe('Fenêtrage et normalisation sur portions de signal plus courtes (data.length < nayuki.n)', () => {
+    it('applique la fenêtre de Hann à la volée et préserve l\'amplitude normalisée ~ 1.0 pour différentes tailles', () => {
+      const defaultN = 4096;
+      const fourier = new Fourier(defaultN);
+      const sampleRate = 44100;
+      const testSizes = [256, 512, 1024, 2048];
+
+      for (const size of testSizes) {
+        // Onde cosinus pure à 16 cycles
+        const signal = new Float32Array(size);
+        for (let i = 0; i < size; i++) {
+          signal[i] = Math.cos((2 * Math.PI * 16 * i) / size);
+        }
+
+        const result = { data: new Float32Array(size / 2), step: 0 };
+        fourier.computeNormalizedFft({ data: signal }, result, sampleRate, false);
+
+        // Recherche du pic spectral
+        let maxVal = -1;
+        let maxIdx = -1;
+        for (let i = 0; i < result.data.length; i++) {
+          if (result.data[i] > maxVal) {
+            maxVal = result.data[i];
+            maxIdx = i;
+          }
+        }
+
+        assert.equal(maxIdx, 16, `Le pic doit être à l'indice 16 pour size = ${size}`);
+        // Sans fenêtrage de Hann avec windowCompensation = 2.0, l'amplitude serait ~ 2.0
+        // Avec la fenêtre de Hann calculée à la volée, l'amplitude est correctement compensée à ~ 1.0
+        assert.ok(
+          maxVal >= 0.95 && maxVal <= 1.05,
+          `Amplitude attendue proche de 1.0 pour size = ${size}, obtenu: ${maxVal}`
+        );
+      }
+    });
+
+    it('applique également le fenêtrage à la volée avec zero-padding activé pour data.length < nayuki.n', () => {
+      const fourier = new Fourier(4096);
+      const sampleRate = 44100;
+      const size = 512;
+
+      const signal = new Float32Array(size);
+      for (let i = 0; i < size; i++) {
+        signal[i] = Math.cos((2 * Math.PI * 8 * i) / size);
+      }
+
+      const result = { data: new Float32Array(size), step: 0 };
+      fourier.computeNormalizedFft({ data: signal }, result, sampleRate, true);
+
+      let maxVal = -1;
+      let maxIdx = -1;
+      for (let i = 0; i < result.data.length; i++) {
+        if (result.data[i] > maxVal) {
+          maxVal = result.data[i];
+          maxIdx = i;
+        }
+      }
+
+      // Avec zero-padding x2, l'indice du pic est doublé (8 -> 16)
+      assert.equal(maxIdx, 16);
+      assert.ok(
+        maxVal >= 0.95 && maxVal <= 1.05,
+        `Amplitude attendue proche de 1.0 avec zero-padding, obtenu: ${maxVal}`
+      );
+    });
+
+    it('ne produit pas d\'erreur de division par zéro si data.length === 1', () => {
+      const fourier = new Fourier(4096);
+      const signal = new Float32Array([1.0]);
+      const rawFft = fourier.computeFft({ data: signal }, false);
+
+      assert.equal(rawFft.real.length, 1);
+      assert.ok(!Number.isNaN(rawFft.real[0]));
+    });
+  });
 });
 

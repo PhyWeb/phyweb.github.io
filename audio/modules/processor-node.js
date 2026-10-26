@@ -5,6 +5,15 @@ class ProcessorNode extends AudioWorkletProcessor {
       this.bufferSize = 2048;
       this.buffer = new Float32Array(this.bufferSize);
       this.initBuffer();
+
+      this.port.onmessage = (e) => {
+        if (e.data.eventType === 'flush') {
+          if (!this.isBufferEmpty()) {
+            this.flush();
+          }
+          this.recordingStopped();
+        }
+      };
     }
 
     initBuffer() {
@@ -49,6 +58,8 @@ class ProcessorNode extends AudioWorkletProcessor {
     }
 
     process(inputs, outputs, parameters) {
+      if (!inputs[0] || !inputs[0][0]) return true;
+
       //const isRecordingValues = parameters.isRecording;
       for(let i = 0; i < inputs[0][0].length; i++){
         this.appendToBuffer(inputs[0][0][i]);

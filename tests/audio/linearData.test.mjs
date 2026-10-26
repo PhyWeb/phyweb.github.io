@@ -231,17 +231,60 @@ describe('Audio - Sous-échantillonnage temporel (LinearData.getData)', () => {
       assert.equal(empty.getDuration(), 0);
     });
 
-    it('stabilize trouve le maximum dans les premiers 10% et décale les données', () => {
-      // 100 points : les 10 premiers % sont les indices 0 à 9
+    it('stabilize déclenche au passage par zéro montant après armement (Schmitt trigger)', () => {
+      const data = new Int16Array(100);
+      data[2] = 200; // Pas encore armé
+      data[5] = -300; // Armement : -300 < armThreshold (-150)
+      data[10] = -50;
+      data[11] = 0;   // data[11] <= 0
+      data[12] = 120; // data[12] > 0 -> déclenchement sur front montant à l'index 12 !
+      data[25] = 1000; // Pic maximal dans searchLimit (50)
+
+      const linear = new LinearData(data, 1);
+      const stabilized = linear.stabilize();
+
+      assert.equal(stabilized.length, 88); // 100 - 12
+      assert.equal(stabilized[0], 120, 'Le signal stabilisé doit débuter au premier échantillon strictement positif après armement');
+    });
+
+    it('stabilize retourne les données sans décalage si le signal est sous le seuil de bruit (maxAmp < 150)', () => {
+      const noise = new Int16Array(100);
+      noise[5] = 100;
+      noise[10] = -120;
+
+      const linear = new LinearData(noise, 1);
+      const result = linear.stabilize();
+
+      assert.strictEqual(result, noise, 'En cas de quasi-silence, retourne le buffer intact');
+    });
+
+    it('stabilize fait un fallback sur le pic maximal si aucun front montant avec armement n\'est trouvé', () => {
       const data = new Int16Array(100);
       data[4] = 1000; // Pic maximal à l'index 4
-      data[20] = 5000; // Pic encore plus haut mais APRÈS les 10% (doit être ignoré)
+      data[30] = 500;
 
       const linear = new LinearData(data, 1);
       const stabilized = linear.stabilize();
 
       assert.equal(stabilized.length, 96);
-      assert.equal(stabilized[0], 1000, 'Le signal stabilisé doit débuter au pic maximal de la première tranche');
+      assert.equal(stabilized[0], 1000, 'Fallback sur le pic maximal trouvé dans la première moitié');
+    });
+
+    it('stabilize privilégie subarray pour éviter les allocations à 60 Hz et supporte les tableaux Array via slice', () => {
+      const typed = new Int16Array(100);
+      typed[5] = -250;
+      typed[6] = 300;
+      const linearTyped = new LinearData(typed, 1);
+      const sub = linearTyped.stabilize();
+      assert.equal(sub.buffer, typed.buffer, 'Doit réutiliser le même buffer mémoire sous-jacent (subarray)');
+
+      const arr = new Array(100).fill(0);
+      arr[5] = -250;
+      arr[6] = 300;
+      const linearArr = new LinearData(arr, 1);
+      const sliced = linearArr.stabilize();
+      assert.equal(Array.isArray(sliced), true, 'Doit retourner un Array classique pour un Array source');
+      assert.equal(sliced[0], 300);
     });
 
     it('getData avec stabilize = true combine la stabilisation et le sous-échantillonnage', () => {

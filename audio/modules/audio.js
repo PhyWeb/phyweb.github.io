@@ -18,7 +18,16 @@ class PhyAudio{
   /*----------------------------------------------------------------------------------------------
   --------------------------------------RT & REC FUNCTIONS----------------------------------------
   ----------------------------------------------------------------------------------------------*/
+  stopMediaStream = () => {
+    if (this.mediaStream) {
+      this.mediaStream.getTracks().forEach(track => track.stop());
+      this.mediaStream = null;
+    }
+  };
+
   startAudio = async (_mode) => {
+    this.stopMediaStream();
+
     // Create a new audio context
     if(this.audioCtx){
       this.audioCtx.close();
@@ -26,7 +35,7 @@ class PhyAudio{
     this.audioCtx = new AudioContext();
 
     // load the record processor node
-    if (!this.isModuleLoaded) {
+    if (_mode === "REC") {
       await this.audioCtx.audioWorklet.addModule('modules/processor-node.js');
     }
     
@@ -80,7 +89,10 @@ class PhyAudio{
           }
         }
         if (e.data.eventType === 'stop') {
-          // recording has stopped TODO probably not usefull
+          if (this.recording && this.data.length > 0) {
+            this.availableData = true;
+            this.recording = false;
+          }
         }
       };
 
@@ -99,17 +111,17 @@ class PhyAudio{
     return false;
   }
 
-  getRecord = () =>{
-    let a = new Int16Array(this.data.length * this.data[0].length);
-
-    // concat all remaining chunks together
-    for(let i = 0; i  < this.data.length; i++){
-      a.set(this.data[i], i * this.data[0].length);
+  getRecord = () => {
+    let totalLength = this.data.reduce((acc, chunk) => acc + chunk.length, 0);
+    let a = new Int16Array(totalLength);
+    let offset = 0;
+    for (let i = 0; i < this.data.length; i++) {
+      a.set(this.data[i], offset);
+      offset += this.data[i].length;
     }
     this.availableData = false;
     this.delay = -1;
-
-    return a.slice(0, this.recordLength * this.audioCtx.sampleRate);
+    return a.slice(0, Math.round(this.recordLength * this.audioCtx.sampleRate));
   }
 
   startRecording = (_length) =>{
@@ -119,8 +131,11 @@ class PhyAudio{
     this.recordLength = _length;
   }
 
-  stopRecording = () =>{
+  stopRecording = () => {
     this.recordLength = (performance.now() - this.startTime) / 1000;
+    if (this.processorNode) {
+      this.processorNode.port.postMessage({ eventType: 'flush' });
+    }
   }
 
   getSampleRate = () => {
@@ -143,7 +158,10 @@ class PhyAudio{
   }
 
   close = ()=>{
-    this.audioCtx.close();
+    this.stopMediaStream();
+    if(this.audioCtx){
+      this.audioCtx.close();
+    }
     this.isModuleLoaded = undefined;
   }
 
@@ -429,24 +447,50 @@ class LinearData {
   }
 
   /**
-   * Recherche le pic maximal dans les 10 premiers pourcents du signal
-   * et retourne une tranche débutant à cet indice.
+   * Stabilise le signal par déclenchement type oscilloscope (Trigger à front montant avec hystérésis / Schmitt trigger).
+   * Aligne la tranche sur le premier passage par zéro montant après armement sous un seuil négatif.
    * @returns {TypedArray|Array}
    */
   stabilize() {
     if (!this.data || this.data.length === 0) {
       return this.data;
     }
-    let maximum = 0;
-    let maximumIndex = 0;
-    const searchLimit = Math.floor(this.data.length / 10);
+
+    const searchLimit = Math.floor(this.data.length / 2);
+    let maxAmp = 0;
+    let maxIndex = 0;
+
     for (let i = 0; i < searchLimit; i++) {
-      if (this.data[i] > maximum) {
-        maximum = this.data[i];
-        maximumIndex = i;
+      if (this.data[i] > maxAmp) {
+        maxAmp = this.data[i];
+        maxIndex = i;
       }
     }
-    return this.data.slice(maximumIndex);
+
+    // En dessous d'un seuil minimal (silence / bruit de fond), pas de trigger
+    if (maxAmp < 150) {
+      return this.data;
+    }
+
+    // Seuil d'hystérésis négatif (15% de l'amplitude max) pour éviter les faux déclenchements sur le bruit ou les harmoniques hautes
+    const armThreshold = -Math.max(100, maxAmp * 0.15);
+    let armed = false;
+
+    for (let i = 1; i < searchLimit; i++) {
+      if (!armed) {
+        if (this.data[i] < armThreshold) {
+          armed = true;
+        }
+      } else {
+        // Déclenchement au passage par zéro sur front montant
+        if (this.data[i - 1] <= 0 && this.data[i] > 0) {
+          return this.data.subarray ? this.data.subarray(i) : this.data.slice(i);
+        }
+      }
+    }
+
+    // Fallback sur le premier pic maximal si aucun passage par zéro franc n'est trouvé
+    return this.data.subarray ? this.data.subarray(maxIndex) : this.data.slice(maxIndex);
   }
 }
 
