@@ -1012,7 +1012,8 @@ function prepareSeriesForDownload(saveData, startTime, endTime, effectiveSampleR
 
   const series = [];
 
-  const slicedWaveArray = Array.from(originalWaveData.data.slice(startSample, endSample));
+  const subsampledData = originalWaveData.getData(saveData.displaySampleRateLvl);
+  const slicedWaveArray = Array.from(subsampledData.slice(startSample, endSample));
 
 	// Colonne Temps
   const timeSerie = new Serie('Temps', 's');
@@ -1032,8 +1033,8 @@ function prepareSeriesForDownload(saveData, startTime, endTime, effectiveSampleR
   // Recalcule Fourier pour la portion sélectionnée et ajouter les séries
   // Uniquement si on a une durée valide pour le calcul
   if (saveData.fLinearData && (endTime - startTime) > 0.001) {
-    const waveForFourier = new LinearData(originalWaveData.data); // Utiliser les données complètes
-    const fourierData = computeFourier(waveForFourier, effectiveSampleRate, [startTime, endTime]);
+    
+    const fourierData = computeFourier(originalWaveData, effectiveSampleRate, [startTime, endTime]);
 
     if (fourierData && fourierData.data.length > 0) {
       // Colonne Fréquence
