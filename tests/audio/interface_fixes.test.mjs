@@ -109,4 +109,56 @@ describe('Audio - Correctifs d\'interface, de configuration et de typage', () =>
       'L\'ancien commentaire PhyWeb Tracker doit être retiré'
     );
   });
+
+  it('audio/index.html et audio.css gèrent correctement les ombres de la navbar et de la barre d\'onglets sans double ombre', () => {
+    const htmlPath = path.resolve(__dirname, '../../audio/index.html');
+    const html = fs.readFileSync(htmlPath, 'utf8');
+
+    // Le conteneur parent ne doit pas avoir has-box-shadow (sinon double ombre quand tab-bar est masqué)
+    assert.match(
+      html,
+      /<div class="p-0 has-background-white">\s*<nav class="navbar has-box-shadow/,
+      'Le conteneur ne doit pas avoir has-box-shadow, mais la navbar doit l\'avoir'
+    );
+
+    // #tab-bar doit avoir has-box-shadow pour projeter l'ombre inférieure sous les onglets
+    assert.match(
+      html,
+      /<div class="[^"]*has-box-shadow[^"]*" id="tab-bar"/,
+      '#tab-bar doit avoir has-box-shadow'
+    );
+
+    // audio.css doit définir z-index < 30 pour que l'ombre de la navbar passe par-dessus tab-bar
+    const cssPath = path.resolve(__dirname, '../../audio/lib/audio.css');
+    const css = fs.readFileSync(cssPath, 'utf8');
+    assert.match(
+      css,
+      /#tab-bar\s*\{[^}]*position:\s*relative;[^}]*z-index:\s*10;/,
+      '#tab-bar doit être position: relative avec z-index: 10 dans audio.css'
+    );
+
+    // Retrait du petit trait à la jonction entre navbar et tab-bar (pas de bordure ni d'anneau 1px de box-shadow)
+    assert.match(
+      css,
+      /\.navbar\s*\{[^}]*border-bottom:\s*none[^}]*box-shadow:\s*rgba\(9,\s*10,\s*12,\s*0\.1\)\s*0px\s*8px\s*16px\s*-2px/,
+      'La navbar doit avoir border-bottom: none et une ombre sans anneau 1px'
+    );
+    assert.match(
+      css,
+      /#tab-bar\s*\{[^}]*border-top:\s*none[^}]*box-shadow:\s*rgba\(9,\s*10,\s*12,\s*0\.1\)\s*0px\s*8px\s*16px\s*-2px/,
+      '#tab-bar doit avoir border-top: none et une ombre sans anneau 1px'
+    );
+
+    // #save-tabs vide ne doit pas avoir de border-bottom (qui remonterait en haut à y=0 et créerait un trait entre les barres)
+    assert.match(
+      css,
+      /#save-tabs:empty[^{]*\{[^}]*border-bottom:\s*none/s,
+      '#save-tabs:empty doit supprimer border-bottom'
+    );
+    assert.match(
+      html,
+      /<ul id="save-tabs"><\/ul>/,
+      '#save-tabs doit être strictement vide dans le HTML initial'
+    );
+  });
 });

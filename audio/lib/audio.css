@@ -1,6 +1,24 @@
 .navbar{
   padding:0;
-  border-radius:0.75rem 0.75rem 0rem 0rem
+  border-radius:0.75rem 0.75rem 0rem 0rem;
+  border-bottom: none !important;
+  box-shadow: rgba(9, 10, 12, 0.1) 0px 8px 16px -2px !important;
+}
+
+#tab-bar {
+  position: relative;
+  z-index: 10;
+  border-top: none !important;
+  box-shadow: rgba(9, 10, 12, 0.1) 0px 8px 16px -2px !important;
+}
+
+#save-tabs {
+  height: 100%;
+}
+
+#save-tabs:empty,
+#save-tabs:not(:has(li)) {
+  border-bottom: none !important;
 }
 
 .wrap-button-text {
