@@ -17,6 +17,8 @@
     - Add vidéos
     - pan and zoom
 
+    - améliorer la qualité des croix
+
 # Grapher
     - possibilité d'avoir 2 axes y
 
