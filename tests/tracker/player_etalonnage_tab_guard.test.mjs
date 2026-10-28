@@ -183,5 +183,25 @@ describe('Tracker - Guard onglet Étalonnage dans player.onClick', () => {
     player.drawOrigin();
     assert.equal(player.ctx.globalAlpha, 0.65, 'globalAlpha doit être à 0.65 hors de l\'onglet Étalonnage');
   });
+
+  it('redessine la frame courante lors du clic sur les onglets si une vidéo est décodée', () => {
+    let drawnFrames = [];
+    player.drawFrame = (frame) => {
+      drawnFrames.push(frame);
+    };
+    player.currentFrame = 2;
+
+    // Simuler le comportement des écouteurs de clics des boutons d'onglets
+    const onTabClick = () => {
+      if (player.decodedVideo) player.drawFrame(player.currentFrame);
+    };
+
+    onTabClick();
+    assert.deepEqual(drawnFrames, [2]);
+
+    player.decodedVideo = null;
+    onTabClick();
+    assert.deepEqual(drawnFrames, [2], 'Ne doit pas redessiner si aucune vidéo n\'est décodée');
+  });
 });
 

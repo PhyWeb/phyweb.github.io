@@ -35,6 +35,7 @@ export default class PLAYER {
 
     this.currentFrame = 0;
     this.currentPoint = 0;
+    this.frameStep = 1;
 
     this.magnifier = false;
 
@@ -48,6 +49,7 @@ export default class PLAYER {
   }
 
   load(_file, _forceFilesize = false){
+    this.frameStep = 1;
     // Pause if the video is playing
     this.pause();
     
@@ -82,6 +84,7 @@ export default class PLAYER {
       this.decodedVideo = _decodedVideo;
       this.currentFrame = 0;
       this.currentPoint = 0;
+      this.frameStep = 1;
 
       // Display UI
       $("#empty-state-container").classList.add("is-hidden");
@@ -174,59 +177,137 @@ export default class PLAYER {
     }
   }
 
-  drawCrosses() {
-    this.ctx.save();
-    
-    // Configuration du "dégradé" d'ombre noire
-    this.ctx.shadowColor = "black";
-    this.ctx.shadowBlur = 3;      // Intensité du dégradé (halo)
-    this.ctx.shadowOffsetX = 0;
-    this.ctx.shadowOffsetY = 0;
-    this.ctx.lineWidth = 2;
+  drawCrosses(scale = 1) {
+    if (!this.measurement || !this.measurement.series || !this.measurement.series[0]) {
+      return;
+    }
 
-    // Couleurs très pastels pour un contraste maximal avec l'ombre sur la vidéo
+    this.ctx.save();
+    this.ctx.lineCap = "round";
+
     const CROSS_COLORS = [
-      "#ffb3b3", // Light Red
-      "#b3d4ff", // Light Blue
-      "#b3ffcc", // Light Green
-      "#ffebb3", // Light Yellow
-      "#e6ccff", // Light Purple
-      "#ffccb3", // Light Orange
-      "#ffb6c1", // Light Pink
-      "#e0ffff", // Light Cyan
-      "#deb887", // Light Brown
-      "#e6ff99"  // Light Lime
+      "#ff4d4d",
+      "#4da6ff",
+      "#4dff88",
+      "#ffd94d",
+      "#c44dff",
+      "#ff944d",
+      "#ff66b3",
+      "#33ffff",
+      "#d28c46",
+      "#a6ff4d"
     ];
     const maxPoints = (this.measurement.series.length - 1) / 2;
+    const originFrame = this.measurement.originFrame ?? 0;
+    const currentFrame = this.currentFrame ?? 0;
 
     for (let i = 0; i < maxPoints; i++) {
-      this.ctx.beginPath();
-      
-      if (maxPoints === 1) {
-        this.ctx.strokeStyle = "white"; // Historique: croix blanche si 1 seul point
-      } else {
-        this.ctx.strokeStyle = CROSS_COLORS[i % CROSS_COLORS.length];
+      const seriesX = this.measurement.series[(i * 2) + 1];
+      const seriesY = this.measurement.series[(i * 2) + 2];
+      if (!seriesX || !seriesY) {
+        continue;
       }
 
-      for (let j = this.measurement.originFrame; j < this.measurement.series[0].length; j++) {
-        const xCoord = this.measurement.series[(i * 2) + 1][j];
-        const yCoord = this.measurement.series[(i * 2) + 2][j];
+      // 1. Détermine quel indice d'image highlightFrame doit être mis en évidence :
+      // - Si l'image courante possède des coordonnées valides (xCoord !== "" && yCoord !== "")
+      //   pour cette série i, alors highlightFrame = currentFrame.
+      // - Sinon, cherche en reculant à partir de currentFrame - 1 jusqu'à originFrame
+      //   la première image f qui possède des coordonnées valides pour cette série i,
+      //   et définis highlightFrame = f (ou -1 si aucun point n'existe encore).
+      let highlightFrame = -1;
+      const currentX = seriesX[currentFrame];
+      const currentY = seriesY[currentFrame];
 
-        // On ne dessine que si les coordonnées ne sont pas des chaînes vides
-        if (xCoord !== "" && yCoord !== "") {
-          const x = this.videoCanvas.width * xCoord;
-          const y = this.videoCanvas.height * yCoord;
-
-          this.ctx.moveTo(x - 5, y);
-          this.ctx.lineTo(x + 5, y);
-          this.ctx.moveTo(x, y - 5);
-          this.ctx.lineTo(x, y + 5);
+      if (currentX !== "" && currentY !== "" && currentX != null && currentY != null) {
+        highlightFrame = currentFrame;
+      } else {
+        const startF = Math.min(currentFrame - 1, this.measurement.series[0].length - 1);
+        for (let f = startF; f >= originFrame; f--) {
+          const x = seriesX[f];
+          const y = seriesY[f];
+          if (x !== "" && y !== "" && x != null && y != null) {
+            highlightFrame = f;
+            break;
+          }
         }
       }
-      this.ctx.stroke();
+
+      // Passe 1 : Les croix normales (j !== highlightFrame)
+      this.ctx.globalAlpha = 0.65;
+      const normalSize = 4 / scale;
+      this.ctx.beginPath();
+      let hasNormalCrosses = false;
+
+      for (let j = originFrame; j < this.measurement.series[0].length; j++) {
+        if (j === highlightFrame) {
+          continue;
+        }
+        const xCoord = seriesX[j];
+        const yCoord = seriesY[j];
+
+        if (xCoord !== "" && yCoord !== "" && xCoord != null && yCoord != null) {
+          const x = Math.round(this.videoCanvas.width * xCoord) + 0.5;
+          const y = Math.round(this.videoCanvas.height * yCoord) + 0.5;
+
+          this.ctx.moveTo(x - normalSize, y);
+          this.ctx.lineTo(x + normalSize, y);
+          this.ctx.moveTo(x, y - normalSize);
+          this.ctx.lineTo(x, y + normalSize);
+          hasNormalCrosses = true;
+        }
+      }
+
+      if (hasNormalCrosses) {
+        // Contour noir
+        this.ctx.strokeStyle = "rgba(0, 0, 0, 0.85)";
+        this.ctx.lineWidth = 3 / scale;
+        this.ctx.stroke();
+
+        // Cœur de la couleur de la série
+        this.ctx.strokeStyle = (maxPoints === 1) ? "#ffffff" : CROSS_COLORS[i % CROSS_COLORS.length];
+        this.ctx.lineWidth = 1.5 / scale;
+        this.ctx.stroke();
+      }
       this.ctx.closePath();
+
+      // Passe 2 : La croix mise en évidence (j === highlightFrame, si highlightFrame !== -1)
+      if (highlightFrame !== -1) {
+        const hxCoord = seriesX[highlightFrame];
+        const hyCoord = seriesY[highlightFrame];
+
+        if (hxCoord !== "" && hyCoord !== "" && hxCoord != null && hyCoord != null) {
+          this.ctx.globalAlpha = 1.0;
+          const activeSize = 7 / scale;
+          const gap = 2 / scale;
+          const x = Math.round(this.videoCanvas.width * hxCoord) + 0.5;
+          const y = Math.round(this.videoCanvas.height * hyCoord) + 0.5;
+
+          this.ctx.beginPath();
+          // 4 segments laissant le centre exact dégagé
+          this.ctx.moveTo(x - activeSize, y);
+          this.ctx.lineTo(x - gap, y);
+          this.ctx.moveTo(x + gap, y);
+          this.ctx.lineTo(x + activeSize, y);
+          this.ctx.moveTo(x, y - activeSize);
+          this.ctx.lineTo(x, y - gap);
+          this.ctx.moveTo(x, y + gap);
+          this.ctx.lineTo(x, y + activeSize);
+
+          // Contour noir plus franc
+          this.ctx.strokeStyle = "rgba(0, 0, 0, 0.95)";
+          this.ctx.lineWidth = 4 / scale;
+          this.ctx.stroke();
+
+          // Cœur coloré
+          this.ctx.strokeStyle = (maxPoints === 1) ? "#00ffcc" : CROSS_COLORS[i % CROSS_COLORS.length];
+          this.ctx.lineWidth = 2 / scale;
+          this.ctx.stroke();
+
+          this.ctx.closePath();
+        }
+      }
     }
-    
+
     this.ctx.restore();
   }
 
@@ -256,15 +337,22 @@ export default class PLAYER {
 
     this.ctx.clip();
 
-    this.ctx.drawImage(
-      this.videoCanvas,
-      -this.videoCanvas.width * (magnifierPower - 1) / 2 +
-        (this.videoCanvas.width - this.videoCanvas.width * magnifierPower) * (this.distPoint.x * 1),
-      -this.videoCanvas.height * (magnifierPower - 1) / 2 +
-        (this.videoCanvas.height - this.videoCanvas.height * magnifierPower) * (this.distPoint.y * 1),
-      this.videoCanvas.width * magnifierPower,
-      this.videoCanvas.height * magnifierPower
-    );
+    const tx = -this.videoCanvas.width * (magnifierPower - 1) / 2 + (this.videoCanvas.width - this.videoCanvas.width * magnifierPower) * this.distPoint.x;
+    const ty = -this.videoCanvas.height * (magnifierPower - 1) / 2 + (this.videoCanvas.height - this.videoCanvas.height * magnifierPower) * this.distPoint.y;
+    this.ctx.translate(tx, ty);
+    this.ctx.scale(magnifierPower, magnifierPower);
+
+    if (this.decodedVideo && this.decodedVideo.frames && this.decodedVideo.frames[_frameID]) {
+      this.ctx.drawImage(this.decodedVideo.frames[_frameID], 0, 0, this.videoCanvas.width, this.videoCanvas.height);
+    }
+
+    this.drawOrigin();
+
+    if ($("#etalonnage-button")?.classList.contains("is-active") && (this.measurement?.scale?.scaleSegment?.x1 != null || this.segment?.x1 != null)) {
+      this.drawSegment();
+    }
+
+    this.drawCrosses(magnifierPower);
 
     this.ctx.restore();
   }
@@ -406,6 +494,64 @@ export default class PLAYER {
       this.currentPoint = 0;
     }
     this.drawFrame(this.currentFrame);
+  }
+
+  undoLastPoint() {
+    if (!this.measurement || !this.measurement.series || this.measurement.series.length < 3) return;
+
+    const origin = (typeof this.measurement.originFrame === 'number')
+      ? this.measurement.originFrame
+      : 0;
+    const maxPoints = (this.measurement.series.length - 1) / 2;
+
+    // Vérifie si l'image courante possède au moins un point saisi
+    let lastPointIndex = -1;
+    for (let p = maxPoints - 1; p >= 0; p--) {
+      const val = this.measurement.series[(p * 2) + 1]?.[this.currentFrame];
+      if (val !== "" && val !== null && val !== undefined) {
+        lastPointIndex = p;
+        break;
+      }
+    }
+
+    if (lastPointIndex >= 0) {
+      if (lastPointIndex === 0) {
+        this.clearRow(this.currentFrame);
+      } else {
+        this.measurement.series[(lastPointIndex * 2) + 1][this.currentFrame] = "";
+        this.measurement.series[(lastPointIndex * 2) + 2][this.currentFrame] = "";
+        this.measurement.updateRow(this.currentFrame);
+        this.currentPoint = lastPointIndex;
+        this.drawFrame(this.currentFrame);
+      }
+      return;
+    }
+
+    // Si l'image courante n'a aucun point saisi, cherche en reculant
+    for (let f = this.currentFrame - 1; f >= origin; f--) {
+      let lastP = -1;
+      for (let p = maxPoints - 1; p >= 0; p--) {
+        const val = this.measurement.series[(p * 2) + 1]?.[f];
+        if (val !== "" && val !== null && val !== undefined) {
+          lastP = p;
+          break;
+        }
+      }
+
+      if (lastP >= 0) {
+        this.setFrame(f);
+        if (lastP === 0) {
+          this.clearRow(f);
+        } else {
+          this.measurement.series[(lastP * 2) + 1][f] = "";
+          this.measurement.series[(lastP * 2) + 2][f] = "";
+          this.measurement.updateRow(f);
+          this.currentPoint = lastP;
+          this.drawFrame(f);
+        }
+        break;
+      }
+    }
   }
 
   getFrameTime(index) {
@@ -602,8 +748,9 @@ export default class PLAYER {
       this.currentPoint++;
       this.drawFrame(this.currentFrame);
     } else {
-      if(this.currentFrame < this.decodedVideo.frames.length - 1){
-        this.nextFrame();
+      const nextTarget = this.currentFrame + (this.frameStep || 1);
+      if (nextTarget < this.decodedVideo.frames.length) {
+        this.setFrame(nextTarget);
       } else {
         this.currentPoint = 0;
         this.drawFrame(this.currentFrame);
@@ -635,10 +782,22 @@ export default class PLAYER {
     // Ignorer si un mode de sélection d'origine ou d'étalonnage est en cours
     if (this.originFlag !== "none" || (this.segment && this.segment.x1 != null)) return;
 
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'z') {
+      e.preventDefault();
+      this.undoLastPoint();
+      return;
+    }
+
     // Ignorer les combinaisons avec Ctrl, Alt ou Meta
     if (e.ctrlKey || e.altKey || e.metaKey) return;
 
     switch (e.key) {
+      case 'Delete':
+      case 'Backspace':
+        e.preventDefault();
+        this.clearRow(this.currentFrame);
+        break;
+
       case 'ArrowRight':
       case 'ArrowDown':
         e.preventDefault();
@@ -686,6 +845,14 @@ export default class PLAYER {
       case 'End':
         e.preventDefault();
         this.lastFrame();
+        break;
+
+      case 'l':
+      case 'L':
+      case 'm':
+      case 'M':
+        e.preventDefault();
+        this.toggleMagnifier();
         break;
 
       case ' ': // Espace (Lecture / Pause)

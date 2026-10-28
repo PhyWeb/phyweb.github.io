@@ -236,6 +236,7 @@ export default class MEASUREMENT {
     
     $("#ppf-input").value = 1;
     $("#scale-input").value = 1;
+    if ($("#frame-step-input")) $("#frame-step-input").value = 1;
 
     const topright = $("#topright");
     if(topright && topright.classList){

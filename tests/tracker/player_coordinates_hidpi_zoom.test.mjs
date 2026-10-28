@@ -46,7 +46,9 @@ describe('Tracker - Précision des coordonnées sur écrans HiDPI et Zoom naviga
     moveTo: () => {},
     lineTo: () => {},
     stroke: () => {},
-    fill: () => {}
+    fill: () => {},
+    translate: () => {},
+    scale: () => {}
   };
 
   beforeEach(() => {

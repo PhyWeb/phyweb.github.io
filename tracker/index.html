@@ -79,7 +79,7 @@
         </div>
       </div>
       <div class="navbar-end">
-        <div class="navbar-item is-hidden pr-0" id="magnifier-button" title="Activer la loupe">
+        <div class="navbar-item is-hidden pr-0" id="magnifier-button" title="Activer la loupe (L)">
           <button class="button is-white">
             <span class="icon is-medium"><i class="fas fa-magnifying-glass"></i></span>
           </button>
@@ -292,6 +292,16 @@
               <div class="column">
                 <p class="control">
                   <input class="input integer" type="number" min="1" value="1" step="1" id="origin-frame-input"/>
+                </p>
+              </div>
+            </div>
+            <div class="columns is-vcentered mb-0">
+              <div class="column is-narrow pr-0">
+                <label class="label">Pas (images) :</label>
+              </div>
+              <div class="column">
+                <p class="control">
+                  <input class="input integer" type="number" min="1" max="50" step="1" value="1" id="frame-step-input" title="Nombre d'images à avancer après chaque pointage"/>
                 </p>
               </div>
             </div>

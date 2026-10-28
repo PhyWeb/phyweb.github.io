@@ -126,6 +126,7 @@ $("#etalonnage-button").addEventListener("click", ()=>{
   $("#etalonnage-panel").classList.remove("is-hidden");
   $("#mesures-panel").classList.remove("is-flex");
   $("#mesures-panel").classList.add("is-hidden");
+  if (player.decodedVideo) player.drawFrame(player.currentFrame);
 });
 $("#mesures-button").addEventListener("click", ()=>{
   $("#mesures-button").classList.add("is-active");
@@ -133,6 +134,7 @@ $("#mesures-button").addEventListener("click", ()=>{
   $("#mesures-panel").classList.remove("is-hidden");
   $("#mesures-panel").classList.add("is-flex");
   $("#etalonnage-panel").classList.add("is-hidden");
+  if (player.decodedVideo) player.drawFrame(player.currentFrame);
 });
 
 $("#save-button").addEventListener("click", () => {
@@ -445,6 +447,26 @@ $("#origin-frame-input").addEventListener("change", (e)=> {
   if(e.target.value < 1){e.target.value = 1;}
   if(e.target.value > measurement.series[0].length){e.target.value = measurement.series[0].length;}
   player.setOriginFrame(parseInt(e.target.value) - 1);
+});
+
+// keyboard shortcut
+$("#frame-step-input").addEventListener("keyup", (event) => {
+	if (event.key === "Enter") {
+		event.preventDefault();
+		$("#frame-step-input").blur();
+	}
+});
+
+$("#frame-step-input").addEventListener("change", (e) => {
+  const maxStep = Math.max(1, (measurement.series[0]?.length || 50) - 1);
+  let val = parseInt(e.target.value, 10);
+  if (isNaN(val) || val < 1) {
+    val = 1;
+  } else if (val > maxStep) {
+    val = maxStep;
+  }
+  e.target.value = val;
+  player.frameStep = parseInt(e.target.value, 10) || 1;
 });
 
 // keyboard shortcut
