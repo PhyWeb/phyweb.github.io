@@ -16,6 +16,7 @@ export default class EXTRACTOR {
     this.duration = null;
     this.size = 0;
     this.sizeThreshold = 512;
+    this._listenersAttached = false;
     this._finishTriggered = false;
     this.keyFrameFound = false;
     this._pendingBitmapsCount = 0;
@@ -138,6 +139,19 @@ export default class EXTRACTOR {
         }
 
         this._clearCanvasPool();
+
+        if (this.decodedVideo && this.decodedVideo.frames && this.decodedVideo.timestamps) {
+          const { frames, timestamps } = this.decodedVideo;
+          if (frames.length > 1 && frames.length === timestamps.length) {
+            const pairs = frames.map((frame, index) => ({ frame, timestamp: timestamps[index] }));
+            pairs.sort((a, b) => a.timestamp - b.timestamp);
+            const firstTimestamp = pairs[0].timestamp;
+            for (let i = 0; i < pairs.length; i++) {
+              frames[i] = pairs[i].frame;
+              timestamps[i] = pairs[i].timestamp - firstTimestamp;
+            }
+          }
+        }
 
         if (this.decodedVideo && this.decodedVideo.timestamps) {
           const timestamps = this.decodedVideo.timestamps;
@@ -465,15 +479,18 @@ export default class EXTRACTOR {
       $("#file-slider").noUiSlider.set([0, sliderMax]);
 
       this.updateSize();
-      $("#def-size-input").addEventListener("click", () => this.updateSize());
-      $("#fps-size-input").addEventListener("click", () => this.updateSize());
-      $("#duration-size-input").addEventListener("click", ()=>{
-        if($("#duration-size-input").checked) $("#duration-size-inputs").classList.remove("is-hidden");
-        else $("#duration-size-inputs").classList.add("is-hidden");
-        this.updateSize();
-      });
-      $("#start-size-input").addEventListener("change", () => this.updateSize());
-      $("#end-size-input").addEventListener("change", () => this.updateSize());
+      if (!this._listenersAttached) {
+        this._listenersAttached = true;
+        $("#def-size-input").addEventListener("change", () => this.updateSize());
+        $("#fps-size-input").addEventListener("change", () => this.updateSize());
+        $("#duration-size-input").addEventListener("change", () => {
+          if ($("#duration-size-input").checked) $("#duration-size-inputs").classList.remove("is-hidden");
+          else $("#duration-size-inputs").classList.add("is-hidden");
+          this.updateSize();
+        });
+        $("#start-size-input").addEventListener("change", () => this.updateSize());
+        $("#end-size-input").addEventListener("change", () => this.updateSize());
+      }
     }
   }
 
@@ -520,7 +537,7 @@ export default class EXTRACTOR {
     const rawStart = durationReduction ? parseFloat($("#start-size-input").value) : 0;
     const rawEnd = durationReduction ? parseFloat($("#end-size-input").value) : Infinity;
     const s = isNaN(rawStart) ? 0 : rawStart;
-    const e = isNaN(rawEnd) ? (this.duration || Infinity) : rawEnd;
+    const e = isNaN(rawEnd) ? (this.duration || 0) : (this.duration ? Math.min(rawEnd, this.duration) : rawEnd);
     const startTime = Math.min(s, e);
     const endTime = Math.max(s, e);
 

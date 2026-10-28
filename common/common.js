@@ -1546,6 +1546,7 @@ async function downloadFile(_file, _type,_name){
   a.href = url;
   a.download = _name+"."+_type;
   a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 /*----------------------------------------------------------------------------------------------

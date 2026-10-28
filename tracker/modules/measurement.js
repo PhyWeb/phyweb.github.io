@@ -512,6 +512,9 @@ export default class MEASUREMENT {
 
     if(!this.tableBody || !this.tableBody.children || !this.labelsCache) return;
 
+    const scaleX = this.scale.getOrientedScaleX();
+    const scaleY = this.scale.getOrientedScaleY(this.aspectRatio);
+
     for(let i = 0; i < this.tableBody.children.length; i++){
       if(!this.labelsCache[i]) continue;
       
@@ -523,8 +526,8 @@ export default class MEASUREMENT {
       }
 
       // update x and y values
-      const scaleX = this.scale.getOrientedScaleX();
-      const scaleY = this.scale.getOrientedScaleY(this.aspectRatio); // Utilisation du ratio
+
+
 
       if(i < this.originFrame){
         for(let j = 1; j < ppf + 1; j++){

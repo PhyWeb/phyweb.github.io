@@ -127,10 +127,10 @@ export default class PLAYER {
       this.ctx.drawImage(this.decodedVideo.frames[_frameID]/*e.target*/, 0, 0 ,this.videoCanvas.width, this.videoCanvas.height);
     }
     
-    if($("#etalonnage-button").classList.contains("is-active")){
-      // Draw the origin
-      this.drawOrigin();
+    // Draw the origin
+    this.drawOrigin();
 
+    if($("#etalonnage-button").classList.contains("is-active")){
       // Draw the scale segment
       if(this.measurement.scale.scaleSegment.x1 != null || this.segment.x1 != null){
         this.drawSegment();
@@ -284,6 +284,8 @@ export default class PLAYER {
     }
 
     this.ctx.save();
+
+    this.ctx.globalAlpha = $("#etalonnage-button").classList.contains("is-active") ? 1.0 : 0.65;
 
     // Configuration de l'ombre (le halo noir)
     this.ctx.shadowColor = "black";
@@ -580,6 +582,11 @@ export default class PLAYER {
       return;
     }
 
+    if ($("#etalonnage-button")?.classList.contains("is-active")) {
+      showToast("Passez dans l'onglet « Mesures » pour pointer les positions.", "is-info", 2500);
+      return;
+    }
+
     const maxPoints = (this.measurement.series.length - 1) / 2;
     if (this.currentPoint >= maxPoints) {
       this.currentPoint = 0;
@@ -710,7 +717,7 @@ export default class PLAYER {
     this.videoCanvas.addEventListener("click", this.onOriginClick);
 
     // Keyboard shortcut
-    document.addEventListener("keyup", this.originModeKeyboardShortcut);
+    document.addEventListener("keydown", this.originModeKeyboardShortcut);
   }
 
   exitOriginMode = () => {
@@ -726,7 +733,7 @@ export default class PLAYER {
     this.originFlag = "none";
 
     // Remove keyboard shortcut
-    document.removeEventListener("keyup", this.originModeKeyboardShortcut);
+    document.removeEventListener("keydown", this.originModeKeyboardShortcut);
     this.drawFrame(this.currentFrame);
   }
 
@@ -772,7 +779,7 @@ export default class PLAYER {
     this.videoCanvas.addEventListener("click", this.onScaleClick);
 
     // Keyboard shortcut
-    document.addEventListener("keyup", this.scaleModeKeyboardShortcut);
+    document.addEventListener("keydown", this.scaleModeKeyboardShortcut);
   }
 
   exitScaleMode = () => {
@@ -792,7 +799,7 @@ export default class PLAYER {
     this.segment.y2 = null;
 
     // Remove keyboard shortcut
-    document.removeEventListener("keyup", this.scaleModeKeyboardShortcut);
+    document.removeEventListener("keydown", this.scaleModeKeyboardShortcut);
     this.drawFrame(this.currentFrame);
   }
 

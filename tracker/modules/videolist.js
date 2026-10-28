@@ -13,6 +13,9 @@ export default class VIDEOLIST {
     xhr.onload = function () {
       _callback(this.response);
     };
+    xhr.onerror = function (e) {
+      console.error(`Erreur lors du chargement de ${_url}:`, e);
+    };
     xhr.responseType = _type;
     xhr.open('GET', _url);
     xhr.send(null);
@@ -21,7 +24,16 @@ export default class VIDEOLIST {
   init(_url){
     this.loadXHR(_url, "text", _response => {
       // Parse JSON
-      this.list = JSON.parse(_response);
+      try {
+        this.list = JSON.parse(_response);
+      } catch (e) {
+        console.error(`Erreur lors de la lecture de ${_url}:`, e);
+        return;
+      }
+
+      if (!this.list || !this.list.videos) {
+        return;
+      }
       //console.log("videolist loaded", this.list);
 
       // Create DOM elements

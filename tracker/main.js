@@ -4,6 +4,7 @@ import EXTRACTOR from "./modules/extractor.js"
 import MEASUREMENT from "./modules/measurement.js"
 import PLAYER from "./modules/player.js"
 import { isSupportedVideoFile } from "./modules/videoValidator.js"
+import { computeColumnWidth, applyResize } from "./modules/layoutResizer.js"
 
 import {Common, setupGlobalShortcuts, alertModal, showToast, NavigationManager, exportToPW, FileDropManager, isNumber} from "../common/common.js"
 
@@ -24,17 +25,30 @@ document.addEventListener('DOMContentLoaded', () => {
 let common = new Common("Tracker");
 
 // Initialisation des raccourcis clavier globaux
+const isCalibrating = () => player.originFlag !== "none" || (player.segment && player.segment.x1 !== null);
+
 setupGlobalShortcuts({
   onSave: () => {
+    if (isCalibrating()) return;
     $("#save-button").click();
-    },
+  },
   onNew: () => {
+    if (isCalibrating()) return;
     $("#open-video-button").click();
   },
   onOpen: () => {
+    if (isCalibrating()) return;
     $("#open-video-button").click();
   },
   onEscape: () => {
+    if (player.originFlag !== "none") {
+      player.exitOriginMode();
+      return;
+    }
+    if (player.segment && player.segment.x1 !== null) {
+      player.exitScaleMode();
+      return;
+    }
     // Ferme toutes les modales
     common.modalManager.closeAllModals();
   },
@@ -531,10 +545,8 @@ window.addEventListener('resize', () => {
   player.resize();
 }, false);
 
-function resize(column2Size = "285px") {
-  $("#right-column").children[0].style.width = column2Size;
-  $("#right-column").children[0].style.flexGrow = 0;
-  player.resize();
+function resize(column2Size) {
+  applyResize($("#right-column"), column2Size, player);
 }
 
 // HANDLER
@@ -547,7 +559,8 @@ document.addEventListener('mousemove', (e) => {
     return false;
   }
 
-  resize(Math.min($("#handler-wrapper").offsetWidth - 520, (Math.max(285, $("#handler-wrapper").offsetWidth - e.clientX - 26))) + "px");
+  const column2Size = computeColumnWidth($("#handler-wrapper").offsetWidth, e.clientX);
+  applyResize($("#right-column"), column2Size, player);
 });
 
 document.addEventListener('mouseup', function(e) {
