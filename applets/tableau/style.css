@@ -14,9 +14,7 @@
 
 body {
     color: var(--text-color);
-    min-height: 100vh;
     box-sizing: border-box; /* Crucial pour que le padding n'ajoute pas de hauteur */
-    overflow-x: hidden;     /* Empêche le scroll horizontal parasite */
 }
 
 h1, h2, h3 { color: var(--primary-color); text-align: center; }
@@ -430,8 +428,8 @@ sub {
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); /* Belle ombre pour l'effet flottant */
 }
 
-/* On garde le padding sur le body pour que les dernières cartes ne soient pas cachées */
-body {
+/* On garde le padding sur le conteneur défilant pour que les dernières cartes ne soient pas cachées par la barre de contrôles fixe */
+.app-content {
     padding-bottom: 100px; 
 }
 
@@ -523,4 +521,3 @@ body {
     grid-template-columns: repeat(8, 60px) !important;
     gap: 8px !important;
 }
-
