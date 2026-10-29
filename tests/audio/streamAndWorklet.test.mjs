@@ -233,7 +233,8 @@ describe('Audio - Gestion du flux micro et arrêt anticipé (audio.js)', () => {
       const audio = new PhyAudio(2048);
       await audio.startAudio('REC');
       assert.equal(audio.audioCtx.audioWorklet.modules.length, 1);
-      assert.equal(audio.audioCtx.audioWorklet.modules[0], 'modules/processor-node.js');
+      const expectedUrl = new URL('../../audio/modules/processor-node.js', import.meta.url).href;
+      assert.equal(new URL(audio.audioCtx.audioWorklet.modules[0]).href, expectedUrl, 'Le module AudioWorklet doit être résolu via import.meta.url');
 
       // Deuxième appel à startAudio('REC') : doit charger sur le NOUVEAU contexte
       await audio.startAudio('REC');

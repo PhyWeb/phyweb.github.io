@@ -266,6 +266,28 @@ describe('Model.fit() - Intégration et gestion des réponses du Worker', () => 
     assert.equal(MockWorkerInstance.latestInstance.terminated, true, 'Le worker doit être terminé après le résultat final');
   });
 
+  it('instancie le Worker avec une URL absolue résolue via import.meta.url', async () => {
+    MockWorkerInstance.onPostMessage = (worker) => {
+      setTimeout(() => {
+        worker.onmessage({
+          data: {
+            type: 'final_result',
+            success: true,
+            params: [2.0]
+          }
+        });
+      }, 5);
+    };
+
+    const model = createTestModel();
+    await model.fit();
+
+    assert.ok(MockWorkerInstance.latestInstance, 'Une instance de Worker doit avoir été créée');
+    const workerScript = MockWorkerInstance.latestInstance.scriptPath;
+    const expectedUrl = new URL('../../grapher/modules/fitter.worker.js', import.meta.url).href;
+    assert.equal(new URL(workerScript).href, expectedUrl, 'Le chemin du Worker doit être résolu via import.meta.url');
+  });
+
   it('démontre que si le worker ne renvoie aucun message (bug initial), la promesse reste bloquée', async () => {
     MockWorkerInstance.onPostMessage = () => {
       // Simule le comportement défectueux : le worker fait "return;" et n'envoie rien

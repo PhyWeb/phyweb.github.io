@@ -557,7 +557,7 @@ class Model {
         return reject(new Error("Pas assez de données valides."));
       }
       
-      const worker = new Worker('./modules/fitter.worker.js');
+      const worker = new Worker(new URL('./fitter.worker.js', import.meta.url));
       this.activeWorker = worker; // On stocke le worker actif
       this.resolveFit = resolve;  // On garde une trace de la résolution
 

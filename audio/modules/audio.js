@@ -36,7 +36,7 @@ class PhyAudio{
 
     // load the record processor node
     if (_mode === "REC") {
-      await this.audioCtx.audioWorklet.addModule('modules/processor-node.js');
+      await this.audioCtx.audioWorklet.addModule(new URL('./processor-node.js', import.meta.url));
     }
     
     let success = false;
