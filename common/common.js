@@ -1190,7 +1190,7 @@ function exportToPW(series, options = {}, app, calculations = "") {
       "data": {
         "curves": [],
         "models": [],
-        "parameters": [],
+        "parameters": {},
         "annotations": []
       },
       "calculations": "",
@@ -1268,7 +1268,7 @@ function exportToPW(series, options = {}, app, calculations = "") {
     "data": {
       "curves": curves,
       "models": [],
-      "parameters": [],
+      "parameters": {},
       "annotations": []
     },
     "calculations": calculations,
