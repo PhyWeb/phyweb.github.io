@@ -66,6 +66,12 @@
     "text": "Font Awesome Free is free, open source, and GPL friendly. You can use it for commercial projects, open source projects, or really almost whatever you want.\nIcons: SIL OFL 1.1\nCode: MIT License\n\nDetails: https://fontawesome.com/license/free"
   },
   {
+    "name": "Inter",
+    "author": "Rasmus Andersson",
+    "license": "SIL OFL 1.1",
+    "text": "Copyright (c) 2016 The Inter Project Authors. Licensed under the SIL Open Font License, Version 1.1.\n\nDetails: https://github.com/rsms/inter"
+  },
+  {
     "name": "Highcharts",
     "author": "Highsoft AS",
     "license": "Creative Commons Attribution-NonCommercial 3.0 / Commercial",
