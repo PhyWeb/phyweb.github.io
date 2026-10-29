@@ -53,7 +53,7 @@ export function isNumber(str) {
   return !isNaN(s) && !isNaN(parseFloat(s));
 }
 
-async function electronSetup(){
+export async function electronSetup(){
   if (window.electronAPI){
     // Met à jour l'état du bouton "maximiser/restaurer" initialement
     const isMaximized = await window.electronAPI.isMaximized()
@@ -91,12 +91,20 @@ async function electronSetup(){
       let dragOffsetX = null;
       let dragOffsetY = 15; // approximate titlebar Y offset
 
+      const cleanupWindowDragListeners = () => {
+        window.removeEventListener("mousemove", handleFullscreenDragMove);
+        window.removeEventListener("mouseup", handleFullscreenDragEnd);
+      };
+
       const handleFullscreenDragStart = (e) => {
         // Ignore clicks on buttons/links
         if (e.target.closest('a, button, .navbar-item.window-control, .navbar-brand')) return;
         startX = e.screenX;
         startY = e.screenY;
         isDraggingFullscreen = true;
+        cleanupWindowDragListeners();
+        window.addEventListener("mousemove", handleFullscreenDragMove);
+        window.addEventListener("mouseup", handleFullscreenDragEnd);
       };
 
       const handleFullscreenDragMove = async (e) => {
@@ -114,6 +122,7 @@ async function electronSetup(){
       };
 
       const handleFullscreenDragEnd = async () => {
+        cleanupWindowDragListeners();
         isDraggingFullscreen = false;
         if (isManualDragging) {
           isManualDragging = false;
@@ -124,8 +133,8 @@ async function electronSetup(){
             const navbar = document.querySelector(".navbar");
             if (navbar) {
               navbar.style.webkitAppRegion = "drag";
-              window.removeEventListener("mousemove", handleFullscreenDragMove);
-              window.removeEventListener("mouseup", handleFullscreenDragEnd);
+
+
             }
           }
         }
@@ -137,19 +146,29 @@ async function electronSetup(){
       };
 
       window.electronAPI.onEnterFullscreen(() => {
+        cleanupWindowDragListeners();
+        isDraggingFullscreen = false;
+        isManualDragging = false;
+        dragOffsetX = null;
         $("#window-maximize-button").parentNode.classList.add("is-hidden");
         $("#window-restore-button").parentNode.classList.remove("is-hidden");
         const navbar = document.querySelector(".navbar");
         if (navbar) {
           navbar.style.webkitAppRegion = "no-drag";
+          navbar.removeEventListener("mousedown", handleFullscreenDragStart);
+          navbar.removeEventListener("dblclick", handleFullscreenDoubleClick);
           navbar.addEventListener("mousedown", handleFullscreenDragStart);
           navbar.addEventListener("dblclick", handleFullscreenDoubleClick);
-          window.addEventListener("mousemove", handleFullscreenDragMove);
-          window.addEventListener("mouseup", handleFullscreenDragEnd);
+
+
         }
       });
 
       window.electronAPI.onLeaveFullscreen(async () => {
+        if (!isManualDragging) {
+          cleanupWindowDragListeners();
+          isDraggingFullscreen = false;
+        }
         const isMax = await window.electronAPI.isMaximized();
         if (isMax) {
           $("#window-maximize-button").parentNode.classList.add("is-hidden");
@@ -164,8 +183,8 @@ async function electronSetup(){
           navbar.removeEventListener("dblclick", handleFullscreenDoubleClick);
           if (!isManualDragging) {
             navbar.style.webkitAppRegion = "drag";
-            window.removeEventListener("mousemove", handleFullscreenDragMove);
-            window.removeEventListener("mouseup", handleFullscreenDragEnd);
+
+
           }
         }
       });
