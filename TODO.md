@@ -29,6 +29,8 @@
 
     parametre? pour angles en degrés
 
+    recalculer automatiquement la feuille de calcul quand on modifie les données ? Probablement car on le fait deja à la suppression de ligne. Mais par contre peut être pas les modèles ? Je sais pas.
+
 # Mendeleiev
 # Optique
 # Chromato
