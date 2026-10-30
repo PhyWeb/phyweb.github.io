@@ -6,7 +6,7 @@ Ce document liste l'ensemble des bibliothèques et composants tiers utilisés da
 
 ## 1. Electron & Outils de build
 * **Electron** (MIT) - OpenJS Foundation and Electron contributors
-* **electron-window-state** (MIT) - Marcel J. Kessler
+
 * **electron-squirrel-startup** (MIT) - GitHub Inc.
 * **npm-check-updates** (Apache 2.0) - Raine Revere
 

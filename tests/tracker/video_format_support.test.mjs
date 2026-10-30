@@ -3,7 +3,7 @@ import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { isSupportedVideoFile } from '../../tracker/modules/videoValidator.js';
 
-describe('Tracker - Support des formats vidéo (.mp4 et .m4v)', () => {
+describe('Tracker - Support des formats vidéo (mp4, m4v, webm, mkv, avi, mov, flv)', () => {
   describe('isSupportedVideoFile', () => {
     it('doit accepter un fichier .mp4 avec type MIME standard video/mp4', () => {
       const file = { name: 'experience.mp4', type: 'video/mp4' };
@@ -46,12 +46,21 @@ describe('Tracker - Support des formats vidéo (.mp4 et .m4v)', () => {
       assert.equal(isSupportedVideoFile({ type: 'video/x-m4v' }), true);
     });
 
-    it('doit rejeter les formats vidéo non supportés (.avi, .webm, .mkv, etc.)', () => {
-      assert.equal(isSupportedVideoFile({ name: 'video.avi', type: 'video/x-msvideo' }), false);
-      assert.equal(isSupportedVideoFile({ name: 'video.avi', type: '' }), false);
-      assert.equal(isSupportedVideoFile({ name: 'video.webm', type: 'video/webm' }), false);
-      assert.equal(isSupportedVideoFile({ name: 'video.mkv', type: 'video/x-matroska' }), false);
-      assert.equal(isSupportedVideoFile({ name: 'video.mov', type: 'video/quicktime' }), false);
+    it('doit accepter les formats vidéo supportés via WebDemuxer (.webm, .mkv, .avi, .mov, .flv)', () => {
+      assert.equal(isSupportedVideoFile({ name: 'video.webm', type: 'video/webm' }), true);
+      assert.equal(isSupportedVideoFile({ name: 'video.mkv', type: 'video/x-matroska' }), true);
+      assert.equal(isSupportedVideoFile({ name: 'video.avi', type: 'video/x-msvideo' }), true);
+      assert.equal(isSupportedVideoFile({ name: 'video.mov', type: 'video/quicktime' }), true);
+      assert.equal(isSupportedVideoFile({ name: 'video.flv', type: 'video/x-flv' }), true);
+      assert.equal(isSupportedVideoFile({ name: 'video.mkv', type: '' }), true);
+      assert.equal(isSupportedVideoFile({ name: 'video.avi', type: '' }), true);
+    });
+
+    it('doit rejeter les formats vidéo non supportés (.wmv, .vob, .mpg, etc.)', () => {
+      assert.equal(isSupportedVideoFile({ name: 'video.wmv', type: 'video/x-ms-wmv' }), false);
+      assert.equal(isSupportedVideoFile({ name: 'video.wmv', type: '' }), false);
+      assert.equal(isSupportedVideoFile({ name: 'video.vob', type: 'video/x-ms-vob' }), false);
+      assert.equal(isSupportedVideoFile({ name: 'video.mpg', type: 'video/mpeg' }), false);
     });
 
     it('doit rejeter les fichiers non vidéo (.pdf, .png, .txt)', () => {
@@ -158,7 +167,7 @@ describe('Tracker - Support des formats vidéo (.mp4 et .m4v)', () => {
     });
 
     it('#file-input : doit rejeter un format non supporté et afficher l\'alerte', () => {
-      const file = { name: 'incompatible.avi', type: 'video/x-msvideo' };
+      const file = { name: 'incompatible.wmv', type: 'video/x-ms-wmv' };
       handleFileInput(file);
 
       assert.equal(alertCalled, true, 'Doit afficher une alerte pour format non supporté');
@@ -175,7 +184,7 @@ describe('Tracker - Support des formats vidéo (.mp4 et .m4v)', () => {
     });
 
     it('videoDropManager : doit rejeter un fichier incompatible déposé en drag-and-drop', () => {
-      const file = { name: 'dropped.mkv', type: 'video/x-matroska' };
+      const file = { name: 'dropped.wmv', type: 'video/x-ms-wmv' };
       handleFileDrop(file);
 
       assert.equal(alertCalled, true);

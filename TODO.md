@@ -7,7 +7,7 @@
     - On defullscreen pas quand on essai de drag la fenetre
 
 # ELECTRON
-    Sous Electron, <a download="..."><click()> déclenche parfois le téléchargement direct dans le dossier Téléchargements sans demander le dossier de destination selon la configuration de la session Chromium.
+    - [x] Forcer la boîte de dialogue "Enregistrer sous..." via session.defaultSession 'will-download' (résout le téléchargement direct automatique dans Téléchargements).
 
 # Home
     - package linux et macos

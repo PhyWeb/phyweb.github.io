@@ -27,7 +27,7 @@ export default class PLAYER {
       y2: null
     };
 
-    this.pauseFlag = false;
+    this.pauseFlag = true;
     this.originFlag = "none";
 
     this.point = { x: 0, y: 0 };
@@ -358,6 +358,10 @@ export default class PLAYER {
   }
 
   drawOrigin() {
+    if (!this.measurement?.scale?.origin) {
+      return;
+    }
+
     function canvasArrow(context, fromx, fromy, tox, toy) {
       const headlen = 10; // length of head in pixels
       const dx = tox - fromx;
@@ -373,7 +377,7 @@ export default class PLAYER {
 
     this.ctx.save();
 
-    this.ctx.globalAlpha = $("#etalonnage-button").classList.contains("is-active") ? 1.0 : 0.65;
+    this.ctx.globalAlpha = $("#etalonnage-button")?.classList.contains("is-active") ? 1.0 : 0.65;
 
     // Configuration de l'ombre (le halo noir)
     this.ctx.shadowColor = "black";
@@ -407,10 +411,13 @@ export default class PLAYER {
   }
 
   drawSegment() {
-    let x1 = this.videoCanvas.width * this.measurement.scale.scaleSegment.x1;
-    let y1 = this.videoCanvas.height * this.measurement.scale.scaleSegment.y1;
-    let x2 = this.videoCanvas.width * this.measurement.scale.scaleSegment.x2;
-    let y2 = this.videoCanvas.height * this.measurement.scale.scaleSegment.y2;
+    if (!this.measurement?.scale?.scaleSegment && this.segment.x1 == null) {
+      return;
+    }
+    let x1 = this.videoCanvas.width * this.measurement?.scale?.scaleSegment?.x1;
+    let y1 = this.videoCanvas.height * this.measurement?.scale?.scaleSegment?.y1;
+    let x2 = this.videoCanvas.width * this.measurement?.scale?.scaleSegment?.x2;
+    let y2 = this.videoCanvas.height * this.measurement?.scale?.scaleSegment?.y2;
 
     if (this.segment.x1 != null) {
       // Dessiner vers la souris à la place
@@ -1005,7 +1012,7 @@ export default class PLAYER {
       this.exitScaleMode();
 
       const scaleInput = $("#scale-input");
-      if (scaleInput) {
+      if (scaleInput && typeof scaleInput.focus === "function") {
         scaleInput.focus();
         try {
           scaleInput.select();

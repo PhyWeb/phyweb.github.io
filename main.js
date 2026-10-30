@@ -1,5 +1,5 @@
 const { app, BrowserWindow, shell, globalShortcut, screen } = require('electron/main')
-const { ipcMain } = require('electron')
+const { ipcMain, session } = require('electron')
 const path = require('node:path')
 const fs = require('node:fs')
 
@@ -119,6 +119,37 @@ const createWindow = (winPath) => {
 }
 
 app.whenReady().then(() => {
+  // Configuration des téléchargements : forcer l'affichage de la boîte "Enregistrer sous..."
+  if (session && session.defaultSession) {
+    session.defaultSession.on('will-download', (event, item, webContents) => {
+      const filename = item.getFilename();
+      const ext = path.extname(filename).replace('.', '').toLowerCase();
+
+      const filters = [];
+      if (ext === 'pw') {
+        filters.push({ name: 'Fichiers PhyWeb (*.pw)', extensions: ['pw'] });
+      } else if (ext === 'csv') {
+        filters.push({ name: 'Fichiers CSV (*.csv)', extensions: ['csv'] });
+      } else if (ext === 'rw3') {
+        filters.push({ name: 'Fichiers Regressi (*.rw3)', extensions: ['rw3'] });
+      } else if (ext === 'wav') {
+        filters.push({ name: 'Fichiers Audio WAV (*.wav)', extensions: ['wav'] });
+      } else if (ext === 'png') {
+        filters.push({ name: 'Images PNG (*.png)', extensions: ['png'] });
+      } else if (ext === 'svg') {
+        filters.push({ name: 'Images vectorielles SVG (*.svg)', extensions: ['svg'] });
+      } else if (ext === 'pdf') {
+        filters.push({ name: 'Documents PDF (*.pdf)', extensions: ['pdf'] });
+      }
+      filters.push({ name: 'Tous les fichiers (*.*)', extensions: ['*'] });
+
+      item.setSaveDialogOptions({
+        title: 'Enregistrer sous...',
+        defaultPath: filename,
+        filters: filters
+      });
+    });
+  }
   const args = process.argv;
   let fileToLoad = null;
 

@@ -740,7 +740,7 @@ export default class EXTRACTOR {
 
     this.decoder.configure(this.config);
 
-    if (this.demuxerType === 'mp4box') {
+    if (this.demuxerType === 'mp4box' || (this.mp4boxfile && !this.demuxer)) {
       const trackId = this.track?.id ?? this.info?.videoTracks?.[0]?.id;
       if (trackId !== undefined && this.mp4boxfile?.setExtractionOptions) {
         this.mp4boxfile.setExtractionOptions(trackId);
@@ -749,7 +749,7 @@ export default class EXTRACTOR {
         this.mp4boxfile.seek(startTime, true);
       }
       this.mp4boxfile.start();
-    } else {
+    } else if (this.demuxer) {
       try {
         const startS = durationReduction && startTime > 0 ? startTime : 0;
         const reader = this.demuxer.read("video", startS, undefined, 1).getReader();
