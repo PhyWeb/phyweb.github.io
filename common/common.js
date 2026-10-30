@@ -513,7 +513,7 @@ function aboutModal(_app){
   let platformInfo = "";
 
   if(window.electronAPI){
-    version = "v0.3.14";
+    version = "v0.3.15";
     // Affichage spécifique à l'application Electron
     platformInfo = `
         <div class="field is-horizontal">
