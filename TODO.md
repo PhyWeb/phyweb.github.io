@@ -40,6 +40,8 @@
  - tester le flatpak puis flathub
  - tester sous linux la préselection automatique de l'onglet linux dans la modale de téléchargement
 
+ - Possibilité de pwa offline pour ceux qui ont pas acces au store ?
+
 
 # Idées
     - salsaJ ?
