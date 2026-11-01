@@ -1,4 +1,4 @@
-import IOManager from './ioManager.js';
+import IOManager, { updateFormulasReferences } from './ioManager.js';
 import { showToast } from '../../common/common.js';
 import SymbolValidator from './symbolValidator.js'; 
 
@@ -137,12 +137,19 @@ export default class App {
     this.uiManager.updateCalculationUI();
     this.data.models.forEach(model => this.uiManager.updateModelPanel(model));
     
-    // Avertir si le nom est utilisé dans les calculs
-    // Utilisation d'une RegExp avec limites de mots (\b) pour éviter les faux positifs (ex: "x" dans "exp")
-    const escapedOldTitle = oldTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const regex = new RegExp(`\\b${escapedOldTitle}\\b`);
-    if (regex.test(this.editor.getValue())) {
-      showToast(`Attention : "${oldTitle}" est utilisé dans l'éditeur de calculs. Mettez à jour vos formules.`, "is-warning", 6000);
+    // Mise à jour automatique des références dans l'éditeur de calculs
+    if (oldTitle !== newTitle && this.editor && typeof this.editor.getValue === 'function' && this.editor.getValue()) {
+      const currentCalcText = this.editor.getValue();
+      const updatedCalcText = updateFormulasReferences(currentCalcText, { [oldTitle]: newTitle });
+      if (updatedCalcText !== currentCalcText) {
+        if (typeof this.editor.setValue === 'function') {
+          this.editor.setValue(updatedCalcText);
+        }
+        if (this.uiManager && typeof this.uiManager.updateCalculationUI === 'function') {
+          this.uiManager.updateCalculationUI();
+        }
+        showToast(`Les formules utilisant "${oldTitle}" ont été mises à jour avec "${newTitle}".`, "is-info", 4000);
+      }
     }
   }
 

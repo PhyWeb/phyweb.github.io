@@ -1093,4 +1093,4 @@ generatePW() {
   }
 }
 
-export { isNumeric, isLineNumeric, sanitizeSymbol, sanitizeUnit, splitFlexible, isTabularData };
+export { isNumeric, isLineNumeric, sanitizeSymbol, sanitizeUnit, splitFlexible, isTabularData, updateFormulasReferences };

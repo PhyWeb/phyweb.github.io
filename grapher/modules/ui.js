@@ -492,7 +492,9 @@ export default class UIManager {
   setCalculationsStale(isStale) {
     if (isStale) {
       const hasCalcCurves = Boolean(this.data?.curves && this.data.curves.some(c => c.type === 'calculation'));
-      if (!hasCalcCurves) {
+      const hasUserParams = Boolean(this.data?.parameters && Object.values(this.data.parameters).some(p => p && p.type !== 'model'));
+      const hasEditorCode = Boolean(typeof this.editor?.getValue === 'function' && this.editor.getValue().trim().length > 0);
+      if (!hasCalcCurves && !hasUserParams && !hasEditorCode) {
         isStale = false;
       }
     }
