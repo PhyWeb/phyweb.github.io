@@ -36,6 +36,7 @@ export default class UIManager {
 
     this.activeToolElement = null;
     this.isZoomEnabled = false;
+    this.calculationsStale = false;
 
     this.initialSettings = {}; // Pour stocker les paramètres initiaux lors de l'ouverture de la modale des paramètres
 
@@ -480,6 +481,27 @@ export default class UIManager {
       $("#recalculate-models-button").classList.remove('is-hidden');
     } else {
       $("#recalculate-models-button").classList.add('is-hidden');
+    }
+  }
+
+  /**
+   * Marque les calculs de grandeurs comme obsolètes ou à jour, et affiche/masque
+   * le bouton de recalcul dans la barre d'outils du tableur.
+   * @param {boolean} isStale
+   */
+  setCalculationsStale(isStale) {
+    if (isStale) {
+      const hasCalcCurves = Boolean(this.data?.curves && this.data.curves.some(c => c.type === 'calculation'));
+      if (!hasCalcCurves) {
+        isStale = false;
+      }
+    }
+
+    this.calculationsStale = Boolean(isStale);
+
+    const recalculateButton = document.getElementById('recalculate-spreadsheet-button');
+    if (recalculateButton) {
+      recalculateButton.classList.toggle('is-hidden', !this.calculationsStale);
     }
   }
 
@@ -1179,8 +1201,21 @@ export default class UIManager {
         this.data.sortDataBy(selectedVariable);
         this.spreadsheet.update();
         this.grapher.updateChart();
+        this.setCalculationsStale(true);
       }
     });
+
+    // Ajouter l'écouteur pour le recalcul des grandeurs depuis le tableur
+    const recalculateSpreadsheetBtn = document.getElementById('recalculate-spreadsheet-button');
+    if (recalculateSpreadsheetBtn) {
+      recalculateSpreadsheetBtn.addEventListener('click', () => {
+        const text = typeof this.editor?.getValue === 'function' ? this.editor.getValue() : '';
+        const success = this.app.applyCalculation(text);
+        if (success) {
+          showToast("Grandeurs recalculées avec succès.", "is-success", 2500);
+        }
+      });
+    }
 
     document.getElementById('page-prev-button').addEventListener('click', () => {
       if (this.spreadsheet.currentPage > 0) {

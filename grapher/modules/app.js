@@ -190,6 +190,9 @@ export default class App {
     if (this.uiManager && typeof this.uiManager.resetSavedState === 'function') {
       this.uiManager.resetSavedState();
     }
+    if (this.uiManager && typeof this.uiManager.setCalculationsStale === 'function') {
+      this.uiManager.setCalculationsStale(false);
+    }
   }
 
   deleteRow(startRow, amount) {
@@ -197,11 +200,10 @@ export default class App {
       return;
     }
     this.data.deleteRow(startRow, amount);
-    if (this.editor && typeof this.editor.getValue === 'function' && this.editor.getValue().trim() !== '') {
-      this.applyCalculation(this.editor.getValue());
-    } else {
-      this.spreadsheet.update();
-      this.grapher.updateChart();
+    this.spreadsheet.update();
+    this.grapher.updateChart();
+    if (this.uiManager && typeof this.uiManager.setCalculationsStale === 'function') {
+      this.uiManager.setCalculationsStale(true);
     }
   }
 
@@ -289,6 +291,9 @@ export default class App {
       this.spreadsheet.update();
       this.grapher.updateChart();
       this.uiManager.updateCalculationUI();
+      if (this.uiManager && typeof this.uiManager.setCalculationsStale === 'function') {
+        this.uiManager.setCalculationsStale(false);
+      }
       return true;
     }
 
@@ -455,6 +460,9 @@ export default class App {
     this.uiManager.updateCalculationUI();
     this.uiManager.updateSortUI();
     this.uiManager.updateXAxisSelector();
+    if (this.uiManager && typeof this.uiManager.setCalculationsStale === 'function') {
+      this.uiManager.setCalculationsStale(false);
+    }
 
     // Si un RW3 a été chargé juste avant, on ajoute les courbes demandées
     if (this.pendingRW3 && Array.isArray(this.pendingRW3.y)) {

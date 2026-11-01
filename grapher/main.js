@@ -32,6 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (grapher.chart) {
       grapher.updateChart();
     }
+    uiManager.setCalculationsStale(true);
   }
   let spreadsheet = new Spreadsheet(data, spreadsheetModifiedData);
 

@@ -70,7 +70,8 @@ describe('App - applyCalculation() et interdiction de redéfinir les grandeurs e
     const mockUIManager = {
       updateCalculationUI: () => {},
       updateSortUI: () => {},
-      updateXAxisSelector: () => {}
+      updateXAxisSelector: () => {},
+      setCalculationsStale: () => {}
     };
 
     app = new App(data, mockSpreadsheet, mockGrapher, calculation, mockEditor, mockUIManager);
@@ -171,9 +172,19 @@ describe('App - applyCalculation() et interdiction de redéfinir les grandeurs e
     assert.equal(chartUpdates, 2);
   });
 
-  it('deleteRow doit recalculer les grandeurs calculées via applyCalculation si l\'éditeur contient du code', () => {
+  it('deleteRow doit supprimer la ligne des courbes et marquer les calculs obsolètes sans recalculer automatiquement', () => {
     app.editor.getValue = () => 'y = 2 * x';
     app.applyCalculation('y = 2 * x');
+
+    let staleCalled = null;
+    app.uiManager.setCalculationsStale = (val) => { staleCalled = val; };
+
+    let applyCalculationCalled = false;
+    const origApply = app.applyCalculation.bind(app);
+    app.applyCalculation = (...args) => {
+      applyCalculationCalled = true;
+      return origApply(...args);
+    };
 
     const curveY = data.getCurveByTitle('y');
     assert.equal(curveY.length, 5);
@@ -181,6 +192,11 @@ describe('App - applyCalculation() et interdiction de redéfinir les grandeurs e
 
     // Suppression de la ligne 2 (x=4, y=8)
     app.deleteRow(2, 1);
+
+    // Ne doit pas avoir appelé applyCalculation automatiquement
+    assert.equal(applyCalculationCalled, false);
+    // Doit avoir marqué les calculs comme obsolètes
+    assert.equal(staleCalled, true);
 
     // Les données brutes et calculées doivent avoir 4 éléments
     assert.equal(data.getCurveByTitle('x').length, 4);
