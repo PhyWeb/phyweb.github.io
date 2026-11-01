@@ -181,7 +181,7 @@ export default class Calculation {
 
 
 
-        // Helper pour vérifier si le sous-ensemble de points possède un pas régulier (tolérance aux arrondis flottants)
+        // Vérification de la régularité du pas d'échantillonnage
         const isUniformSpacing = (coords, startIdx, count) => {
             if (startIdx < 0 || startIdx + count > coords.length) return false;
             for (let k = 0; k < count; k++) {
@@ -753,15 +753,12 @@ evaluateBlock(formulas, initialScope) {
 
         const expressionNode = this.mathInstance.parse(cleanExpression);
         expressionNode.traverse((node, path, parent) => {
-          // On vérifie que chaque variable (SymbolNode) est bien définie
+          // Vérification de la définition de chaque variable
           if (node.isSymbolNode) {
             const symbol = node.name;
-            // La variable doit exister soit dans nos données (scope), soit être une fonction mathématique
             if (!(symbol in scope) && !(symbol in this.mathInstance)) {
-              // Si elle n'existe pas, on lève une erreur claire et on arrête tout.
               throw new Error(`La variable "${symbol}" n'est pas définie.`);
             }
-            // On s'assure que si la grandeur fait partie de nos données (scope), elle contient bien des valeurs
             if (symbol in scope && Array.isArray(scope[symbol]) && scope[symbol].length === 0) {
               throw new Error(`La grandeur "${symbol}" ne contient aucune donnée.`);
             }

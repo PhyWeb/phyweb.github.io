@@ -655,13 +655,12 @@ export default class EXTRACTOR {
         
         let actualRotation = this.rotation;
         
-        // If we expect a 90/270 rotation, check if the decoder already applied it
-        // by comparing the frame's orientation to the intended canvas orientation.
+        // Vérifie si le décodeur a déjà appliqué la rotation de 90° ou 270°
         if (actualRotation === 90 || actualRotation === 270) {
             let canvasIsPortrait = this.decodedVideo.width < this.decodedVideo.height;
             let frameIsPortrait = frame.displayWidth < frame.displayHeight;
             if (canvasIsPortrait === frameIsPortrait) {
-                actualRotation = 0; // Prevent double rotation
+                actualRotation = 0; // Évite une double rotation
             }
         }
 
@@ -679,11 +678,11 @@ export default class EXTRACTOR {
 
         const isRotated = (actualRotation === 90 || actualRotation === 270);
         
-        // Use frame's native display dimensions to avoid deformation
+        // Dimensions natives d'affichage de l'image
         let fw = frame.displayWidth;
         let fh = frame.displayHeight;
         
-        // Calculate the scale to fit the canvas while preserving aspect ratio
+        // Facteur d'échelle conservant le ratio d'aspect
         let scale = Math.min(
             this.decodedVideo.width / (isRotated ? fh : fw),
             this.decodedVideo.height / (isRotated ? fw : fh)
@@ -692,8 +691,7 @@ export default class EXTRACTOR {
         let drawW = fw * scale;
         let drawH = fh * scale;
         
-        // Center the frame inside the canvas bounds
-        // In the rotated context, X and Y correspond to different canvas dimensions
+        // Centrage de l'image dans le canevas
         let dx = (isRotated ? this.decodedVideo.height - drawW : this.decodedVideo.width - drawW) / 2;
         let dy = (isRotated ? this.decodedVideo.width - drawH : this.decodedVideo.height - drawH) / 2;
 
@@ -798,7 +796,7 @@ export default class EXTRACTOR {
                       this.decoder.decode(chunkToDecode);
                     }
                   } catch (e2) {
-                    // Ignore secondary exception
+                    // Ignore l'erreur secondaire
                   }
                 } else {
                   console.error("Decoder decode error:", e);
@@ -816,7 +814,7 @@ export default class EXTRACTOR {
     }
   }
 
-  // MP4Box Callbacks
+  // Fonctions de rappel MP4Box
   onSamples(samples){
     if (this._finishTriggered) return;
 

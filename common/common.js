@@ -35,7 +35,7 @@ class Common {
         $("#navbar-dropdown").classList.toggle("is-active");
       })
 
-      // Close the dropdown when clicking outside
+      // Fermeture du menu déroulant lors d'un clic extérieur
       document.addEventListener("click", function () {
         $("#navbar-dropdown").classList.remove("is-active");
       });
@@ -89,7 +89,7 @@ export async function electronSetup(){
       let isManualDragging = false;
       let startX = 0, startY = 0;
       let dragOffsetX = null;
-      let dragOffsetY = 15; // approximate titlebar Y offset
+      let dragOffsetY = 15; // Décalage vertical approximatif de la barre de titre
 
       const cleanupWindowDragListeners = () => {
         window.removeEventListener("mousemove", handleFullscreenDragMove);
@@ -97,7 +97,7 @@ export async function electronSetup(){
       };
 
       const handleFullscreenDragStart = (e) => {
-        // Ignore clicks on buttons/links
+        // Ignore les clics sur les boutons et liens
         if (e.target.closest('a, button, .navbar-item.window-control, .navbar-brand')) return;
         startX = e.screenX;
         startY = e.screenY;
@@ -196,17 +196,17 @@ export async function electronSetup(){
 --------------------------------------ENFORCE INTEGER INPUTS------------------------------------
 ----------------------------------------------------------------------------------------------*/
 function enforceIntegerInputs(){
-  // Enforce integer inputs
+  // Restriction de la saisie aux entiers
   (document.querySelectorAll("input.integer") || []).forEach((input) => {
     input.addEventListener("keydown", (e) => {
-      // Allow only digits, backspace, tab, escape, enter, and arrow keys
+      // Autorise uniquement les chiffres et les touches de contrôle
       const key = e.key ? e.key.toLowerCase() : "";
       if (key === "e" || key === "." || key === "-" || key === "+" || key === ",") {
         e.preventDefault();
       }
     });
     input.addEventListener("input", (e) => {
-      // Remove any non-digit characters
+      // Suppression des caractères non numériques
       if (!/^\d*$/.test(e.target.value)) {
         e.target.value = e.target.value.replace(/\D/g, '');
       }
@@ -309,7 +309,7 @@ class ModalManager {
     // Permet de stocker une fonction de rappel à exécuter lors de l'ouverture d'une modale
     this.onModalOpen = null;
 
-    // Add a click event on buttons to open a specific modal
+    // Ouverture de la modale associée au clic
     (document.querySelectorAll('.js-modal-trigger') || []).forEach(($trigger) => {
       const modal = $trigger.dataset.target;
       const $target = document.getElementById(modal);
@@ -319,7 +319,7 @@ class ModalManager {
       });
     });
       
-    // Add a click event on various child elements to close the parent modal
+    // Fermeture de la modale parente au clic sur les éléments dédiés
     (document.querySelectorAll(".modal-background, .modal-close, .delete, .modal-close-button") || []).forEach(($close) => {
       const $target = $close.closest('.modal');
       $close.addEventListener('click', () => {
@@ -327,7 +327,7 @@ class ModalManager {
       });
     });
 
-    // Add a keyboard event to close all modals
+    // Fermeture des modales via la touche Échap
     document.addEventListener('keydown', (event) => {
       if(event.key === "Escape") {
         this.closeAllModals();
@@ -405,7 +405,7 @@ function alertModal(_config){
   let title = createElement("p", "modal-card-title", head);
   let body = createElement("section", "modal-card-body", card);
 
-  // ID
+  // Identifiant
   if(_config.id){
     modal.id = _config.id;
   }
@@ -414,7 +414,7 @@ function alertModal(_config){
   if(_config.width){
     card.style.width = _config.width;
   }
-  // Header
+  // En-tête
   if(_config.title){
     title.innerHTML = _config.title;
   }
@@ -426,17 +426,17 @@ function alertModal(_config){
     deleteButton.addEventListener("click", ()=>{closeAlertModal(modal)});
   }
 
-  // Body
+  // Corps de la modale
   if(_config.body){
     body.innerHTML = _config.body;
   }
 
-  // Has a footer
+  // Pied de page
   if(_config.confirm || _config.cancel) {
     let foot = createElement("footer", "modal-card-foot", card);
     let buttons = createElement("div", "buttons", foot);
 
-    // Confirm button
+    // Bouton de confirmation
     if(_config.confirm){
       let type = "primary";
       if(_config.confirm.type){
@@ -456,7 +456,7 @@ function alertModal(_config){
       }
     }
 
-    // Cancel button
+    // Bouton d'annulation
     if(_config.cancel){
       let cancelButton = createElement("button", "button", buttons);
 
@@ -476,7 +476,7 @@ function alertModal(_config){
       cancelButton.addEventListener("click", ()=>{closeAlertModal(modal)});
     }
   } else {
-    // No footer
+    // Absence de pied de page
     body.classList.add("has-bottom-round-corner");
   }
 
@@ -508,7 +508,7 @@ function quitConfirmationModal(_cb){
 }
 
 function aboutModal(_app){
-  // electron
+  // Environnement Electron
   let version = "";
   let platformInfo = "";
 
@@ -600,7 +600,7 @@ function aboutModal(_app){
       console.error("wrong app name in about modal");
   }
 
-  // Year
+  // Année
   const d = new Date();
   let year = d.getFullYear();
   alertModal({
@@ -621,7 +621,7 @@ function aboutModal(_app){
           </div>
         </div>`
         
-        + platformInfo + // Injection du bloc conditionnel ici
+        + platformInfo +
         
         `<div class="field is-horizontal">
             <div class="field-label is-flex-grow-0">
@@ -776,7 +776,7 @@ class TabManager {
     let close = document.createElement("span");
     close.className = "icon tab-delete button has-text-danger is-white";
 
-    // Add the icons
+    // Ajout des icônes
     let i = document.createElement("i");
     i.className ="fas fa-bookmark";
     icon.appendChild(i);
@@ -806,24 +806,24 @@ class TabManager {
 
       this.tabs[currentIndex].button.remove();
 
-      // Call the callback
+      // Appel de la fonction de rappel
       if(this.tabs[currentIndex].deleteCB){
         this.tabs[currentIndex].deleteCB(currentIndex);
       }
   
       this.tabs.splice(currentIndex,1);
   
-      // If no tabs remain
+      // Si aucun onglet ne subsiste
       if(this.tabs.length === 0){
         this.activeTab = undefined;
         return;
       }
 
-      // If the deleted tab was before the active tab, decrement activeTab
+      // Décrémentation de l'index actif si l'onglet supprimé le précédait
       if(currentIndex < this.activeTab){
         this.activeTab--;
       } else if(this.activeTab === currentIndex){
-        // Activate the tab to the left if possible
+        // Activation de l'onglet précédent si possible
         if(this.activeTab > 0){
           this.onTabClicked(this.activeTab - 1);
         } else{
@@ -850,23 +850,23 @@ class TabManager {
     if(!this.tabs[_id]) return;
     this.activeTab = _id;
 
-    // Unactivate all buttons
+    // Désactivation de tous les boutons d'onglet
     for(let i = 0; i < this.tabs.length; i++){
       this.tabs[i].button.classList.remove("is-active");
     }
 
-    // Activate the clicked button
+    // Activation du bouton cliqué
 	  this.tabs[_id].button.classList.add("is-active");
 
-    // Hide all tabs
+    // Masquage de tous les onglets
     for(let i = 0; i < this.tabs.length; i++){
       this.tabs[i].tab.classList.add("is-hidden");
     }
 
-    // Show the active tab
+    // Affichage de l'onglet actif
     this.tabs[_id].tab.classList.remove("is-hidden");
 
-    // Call the callback
+    // Appel de la fonction de rappel
     if(this.tabs[_id].clickCB){
       this.tabs[_id].clickCB(_id);
     }
@@ -912,7 +912,7 @@ class FullscreenManager {
       this.compressButton?.classList.add("is-hidden");
     });
 
-    // Check initial state
+    // Vérification de l'état initial
     const isFull = await window.electronAPI.isFullscreen();
     if (isFull) {
       this.expandButton?.classList.add("is-hidden");
@@ -976,7 +976,7 @@ export class NavigationManager {
     }
 
     window.addEventListener('beforeunload', (event) => {
-      // Si la navigation a déjà été confirmée par notre modale, on ne fait rien.
+      // Si la navigation a déjà été confirmée par la modale, aucune action requise.
       if (this.isNavigationConfirmed) {
         return;
       }
@@ -1176,10 +1176,10 @@ class Serie extends Array {
    * @param {Array|TypedArray} dataArray - Le tableau de données à insérer.
    */
   setData(dataArray) {
-    // 1. Ajuster la longueur directement (très rapide)
+    // 1. Ajustement de la longueur du tableau
     this.length = dataArray.length;
     
-    // 2. Copier les valeurs une par une pour éviter le stack overflow
+    // 2. Copie des valeurs une par une
     for (let i = 0; i < dataArray.length; i++) {
       this[i] = dataArray[i];
     }
@@ -1365,7 +1365,7 @@ function exportToCSV(_series, options = false) {
       if (val === "" || val === undefined || val === null) {
         rowIsComplete = false;
       }
-      // On s'assure que les points décimaux sont des virgules pour Excel FR
+      // Formatage des décimales avec une virgule pour Excel FR
       row.push(val !== undefined && val !== null ? String(val).replace('.', ',') : val);
     }
     if (!rowMustBeComplete || rowIsComplete) {
@@ -1446,7 +1446,7 @@ function exportToRW3(_series = [], _rowMustBeComplete = false, _title = ""){
 
   rw3.push("EVARISTE REGRESSI WINDOWS 1.0");
 
-  // Names
+  // Noms des grandeurs
   rw3.push("£" + _series.length + " NOM VAR");
   for (let i = 0; i < _series.length; i++) {
     rw3.push(removeAccents((_series[i] && _series[i].title) || ""));
@@ -1458,7 +1458,7 @@ function exportToRW3(_series = [], _rowMustBeComplete = false, _title = ""){
     rw3.push("0");
   }
 
-  // Units
+  // Unités
   rw3.push("£" + _series.length + " UNITE VAR");
   for(let i = 0; i < _series.length; i++){
     if(_series[i] && _series[i].unit){
@@ -1538,7 +1538,7 @@ function exportToRW3(_series = [], _rowMustBeComplete = false, _title = ""){
   rw3.push("£1 PAGE COMMENT");
   rw3.push("");
 
-  // Values
+  // Valeurs
   rw3.push("&" + dataRows.length + " VALEUR VAR");
   for (const row of dataRows) {
       rw3.push(row);
@@ -1593,7 +1593,7 @@ export class FileDropManager {
     this.overlay.className = 'has-background-white-ter is-flex-direction-column is-justify-content-center is-align-items-center';
     
     Object.assign(this.overlay.style, {
-      position: 'fixed', // Fixed est beaucoup plus sûr que absolute pour couvrir tout l'écran
+      position: 'fixed', // Couvre l'ensemble de la fenêtre
       top: '0',
       left: '0',
       width: '100vw',
@@ -1626,7 +1626,7 @@ export class FileDropManager {
       e.preventDefault();
       this.dragCounter--;
       if (this.dragCounter <= 0) {
-        this.dragCounter = 0; // Sécurité pour éviter les valeurs négatives
+        this.dragCounter = 0; // Borne minimale à zéro
         this.overlay.style.display = 'none'; // On le cache
       }
     });

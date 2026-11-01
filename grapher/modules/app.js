@@ -33,23 +33,17 @@ export default class App {
       this.grapher.updateChart([title]);
     }
 
-    // Update the spreadsheet
+    // Mise à jour du tableur et des sélecteurs de l'interface
     this.spreadsheet.update();
-
-    // Update the calculation tab
     this.uiManager.updateCalculationUI();
-
-    // Update the sorting options
     this.uiManager.updateSortUI();
-
-    // Update the X axis selector
     this.uiManager.updateXAxisSelector();
 
     return curve;
   }
 
   deleteCurve(curveTitle){
-    // First, find and delete any models dependent on this curve
+    // Suppression des modèles dépendant de cette grandeur
     const modelsToDelete = this.data.models.filter(model => model.x.title === curveTitle || model.y.title === curveTitle);
 
     if (modelsToDelete.length > 0) {
@@ -57,7 +51,7 @@ export default class App {
       modelsToDelete.forEach(model => {
         this.deleteModel(model.id);
 
-        // remove the model's UI panel
+        // Suppression de la carte du modèle dans le panneau latéral
         const modelPanel = document.querySelector(`article[data-model-id="${model.id}"]`);
         if (modelPanel) {
           modelPanel.remove();
@@ -65,22 +59,12 @@ export default class App {
       });
     }
 
-    // Delete the curve
+    // Suppression de la grandeur et rafraîchissement des vues
     this.data.deleteCurve(curveTitle);
-
-    // Update the graph if needed
     this.grapher.deleteCurve(curveTitle);
-
-    // Update the spreadsheet
     this.spreadsheet.update();
-
-    // Update the calculation tab
     this.uiManager.updateCalculationUI();
-
-    // Update the sorting options
     this.uiManager.updateSortUI();
-
-    // Update the X axis selector
     this.uiManager.updateXAxisSelector();
   }
 
@@ -166,34 +150,19 @@ export default class App {
     this.uiManager.updateRecalculateButtonVisibility();
     this.uiManager.updateModelToolVisibility();
 
-    // Delete all curves
+    // Réinitialisation des courbes, paramètres et affichages
     this.data.deleteAllCurves();
-
-    // Delete all parameters
     this.data.parameters = {};
-
     this.uiManager.clearActiveTool();
-
-    // Update the graph
     this.grapher.deleteAllCurves(); 
-
-    // Update the calculation
     this.editor.setValue('');
     this.calculation.clear();
-
-    // clear the spreadsheet
     this.spreadsheet.clear();
-
-    // Update the calculation tab
     this.uiManager.updateCalculationUI();
-
-    // Update the sorting options
     this.uiManager.updateSortUI();
-
-    // Update the X axis selector
     this.uiManager.updateXAxisSelector();
 
-    // Reset saved state
+    // Réinitialisation de l'état de sauvegarde
     if (this.uiManager && typeof this.uiManager.resetSavedState === 'function') {
       this.uiManager.resetSavedState();
     }
@@ -277,13 +246,13 @@ export default class App {
   }
 
   applyCalculation(text) {
-    // --- Phase 1: Analyse et Validation ---
+    // Analyse syntaxique et validation des formules
     const formulasToEvaluate = [];
     const parsingWarnings = [];
 
     if (!text || text.trim() === "") {
       this.data.curves = this.data.curves.filter(curve => curve.type !== "calculation");
-      // Conserver uniquement les paramètres de type 'model'
+      // Conservation des paramètres de modèles existants
       const parametersToKeep = {};
       for (const key in this.data.parameters) {
         if (Object.prototype.hasOwnProperty.call(this.data.parameters, key)) {
@@ -333,49 +302,41 @@ export default class App {
       const variableName = leftParts[0].trim().replace(/\s+/g, '');
       const unit = leftParts.length > 1 ? leftParts.slice(1).join('_').trim().replace(/\s+/g, '') : '';
 
-      // --- VALIDATION CENTRALISÉE ---
-      // 1. Conflit avec les paramètres de modèle (non redéfinissables)
+      // Validation des symboles (conflits avec modèles, grandeurs existantes ou doublons)
       if (modelParameterNames.includes(variableName)) {
         showToast(`Le symbole "${variableName}" est un paramètre de modèle et ne peut pas être redéfini.`, "is-danger");
         return;
       }
 
-      // 2. Conflit avec les grandeurs existantes du tableau (non redéfinissables)
       if (rawCurveTitles.includes(variableName)) {
         showToast(`Le symbole "${variableName}" est une grandeur existante et ne peut pas être redéfini.`, "is-danger");
         return;
       }
 
-      // 3. Format et unicité par rapport aux courbes/paramètres existants
       const validationResult = this.symbolValidator.validate(variableName);
-      // On ignore l'erreur d'unicité car on va redéfinir la variable
       if (!validationResult.isValid && !validationResult.message.includes('déjà utilisé')) {
         showToast(validationResult.message, "is-danger");
         return;
       }
 
-      // 4. Duplication dans le bloc de calcul lui-même
       if (definedInBlock.has(variableName)) {
         showToast(`Le symbole "${variableName}" est défini plusieurs fois dans ce bloc de calcul.`, "is-danger");
         return;
       }
       definedInBlock.add(variableName);
-      // --- FIN VALIDATION ---
 
       formulasToEvaluate.push({ variableName, expression, unit });
     }
 
-    // --- Phase de nettoyage des dépendances ---
-    // 1. Identifier les grandeurs calculées qui vont être supprimées
+    // Suppression des grandeurs calculées obsolètes et des modèles associés
     const newCalculatedTitles = new Set(formulasToEvaluate.map(f => f.variableName));
     const calculatedCurvesToDelete = this.data.curves.filter(
       curve => curve.type === 'calculation' && !newCalculatedTitles.has(curve.title)
     );
 
-    // 2. Si des grandeurs calculées sont supprimées, supprimer les modèles dépendants
     if (calculatedCurvesToDelete.length > 0) {
       calculatedCurvesToDelete.forEach(curve => {
-        this.grapher.deleteCurve(curve.title); // Supprime la courbe du graphique
+        this.grapher.deleteCurve(curve.title);
         console.log(`Deleting calculated curve "${curve.title}" as it is no longer defined.`);
         const modelsToDelete = this.data.models.filter(
           model => model.x.title === curve.title || model.y.title === curve.title
@@ -383,10 +344,8 @@ export default class App {
 
         modelsToDelete.forEach(model => {
           console.log(`Deleting model ${model.id} because it depends on the deleted calculated curve "${curve.title}".`);
-          // Supprimer le modèle (données et graphique)
           this.deleteModel(model.id);
 
-          // Supprimer le panneau UI du modèle
           const modelPanel = document.querySelector(`article[data-model-id="${model.id}"]`);
           if (modelPanel) {
             modelPanel.remove();
@@ -395,9 +354,8 @@ export default class App {
       });
     }
 
-    // --- Phase 2: Exécution (uniquement si toutes les validations sont passées) ---
+    // Évaluation des expressions
     this.data.curves = this.data.curves.filter(curve => curve.type !== "calculation");
-    // Conserver uniquement les paramètres de type 'model'
     const parametersToKeep = {};
     for (const key in this.data.parameters) {
       if (Object.prototype.hasOwnProperty.call(this.data.parameters, key)) {
@@ -410,11 +368,9 @@ export default class App {
     this.data.parameters = parametersToKeep;
 
     const initialScope = {};
-    // Ajoute toutes les courbes au scope
     this.data.curves.forEach(curve => {
       initialScope[curve.title] = curve; 
     });
-    // Ajoute tous les paramètres au scope
     for (const key in this.data.parameters) {
         if (Object.prototype.hasOwnProperty.call(this.data.parameters, key)) {
             initialScope[key] = this.data.parameters[key];
@@ -423,7 +379,7 @@ export default class App {
     
     const { results, errors } = this.calculation.evaluateBlock(formulasToEvaluate, initialScope);
 
-    // --- Phase 3: Mise à jour des données et de l'interface ---
+    // Intégration des résultats dans les données
     results.forEach(result => {
       if (result.type === 'parameter') {
         this.data.parameters[result.variableName] = result.data;

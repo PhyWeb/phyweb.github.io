@@ -17,7 +17,7 @@ const createWindow = (winPath) => {
     if (fs.existsSync(stateFilePath)) {
       windowState = JSON.parse(fs.readFileSync(stateFilePath, 'utf-8'));
       
-      // SÉCURITÉ MULTI-ÉCRANS
+      // Vérification multi-écrans
       if (windowState.x !== undefined && windowState.y !== undefined) {
         const displays = screen.getAllDisplays();
         
@@ -81,7 +81,7 @@ const createWindow = (winPath) => {
   // Sauvegarde l'état juste avant la fermeture de la fenêtre
   win.on('close', () => {
     try {
-      // getNormalBounds() récupère les dimensions réelles, même si la fenêtre est actuellement maximisée !
+      // Dimensions réelles hors maximisation
       const bounds = win.getNormalBounds(); 
       const stateToSave = {
         x: bounds.x,
@@ -98,7 +98,7 @@ const createWindow = (winPath) => {
     windows.delete(win);
   });
 
-  // Écouter le redimensionnement natif pour vos icônes UI
+  // Écoute du redimensionnement natif pour la mise à jour des icônes UI
   win.on('maximize', () => {
     win.webContents.send('window-maximized');
   });
@@ -163,7 +163,7 @@ app.whenReady().then(() => {
     }
   }
 
-  // Si on a cliqué sur un fichier .pw depuis l'explorateur
+  // Fichier .pw transmis lors de l'ouverture depuis l'explorateur
   if (fileToLoad) {
     // Créer directement la fenêtre grapher
     const grapherWin = createWindow("grapher/index.html");
@@ -182,12 +182,12 @@ app.whenReady().then(() => {
       }
     });
   } else {
-    // Comportement classique : create the main window
+    // Création de la fenêtre principale
     createWindow("index.html");
   }
 
   ipcMain.on('openGrapherWindow', (event, data) => {
-    // Create the grapher window
+    // Création de la fenêtre Grapher
     const grapherWin = createWindow("grapher/index.html")
 
     grapherWin.webContents.once('did-finish-load', () => {
@@ -195,7 +195,7 @@ app.whenReady().then(() => {
     });
   });
 
-  // window controls
+  // Contrôles de fenêtre
   ipcMain.on('close', (event) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     if (win) win.close();

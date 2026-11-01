@@ -28,13 +28,13 @@ class PhyAudio{
   startAudio = async (_mode) => {
     this.stopMediaStream();
 
-    // Create a new audio context
+    // Création du contexte audio
     if(this.audioCtx){
       this.audioCtx.close();
     }
     this.audioCtx = new AudioContext();
 
-    // load the record processor node
+    // Chargement du module audio worklet pour l'enregistrement
     if (_mode === "REC") {
       await this.audioCtx.audioWorklet.addModule(new URL('./processor-node.js', import.meta.url));
     }
@@ -173,18 +173,18 @@ class PhyAudio{
 
     this.playbackSource = this.audioCtx.createBufferSource();
 
-    // set the source to be the buffer we created earlier
+    // Affectation du tampon audio à la source
     this.playbackSource.buffer = soundBuffer;
 
-    // connect the source to the destination so we can hear the sound
+    // Connexion de la source vers la sortie audio
     this.playbackSource.connect(this.audioCtx.destination);
 
-    // start the source playing!
+    // Démarrage de la lecture
     this.playbackSource.start();
   }
 
   stop = () =>{
-    // stop the source playing!
+    // Arrêt de la lecture
     this.playbackSource.stop();
   }
 
@@ -206,28 +206,28 @@ class PhyAudio{
   /*----------------------------------------------------------------------------------------------
   ---------------------------------------UTILITY FUNCTIONS----------------------------------------
   ----------------------------------------------------------------------------------------------*/
-  // Convert array to an audioBuffer (single channel only)
+  // Conversion d'un tableau en AudioBuffer (mono-canal)
   arrayToAudioBuffer = (_array, _sr = this.audioCtx.sampleRate) => {
-    // create a new single channel audio buffer to put sound into
+    // Création du tampon mono-canal
     let soundBuffer = this.audioCtx.createBuffer(1, _array.length, _sr);
-    // get channel data for mutating
+    // Données du canal audio
     let channelBuffer = soundBuffer.getChannelData(0);
 
     for (let i = 0, l = _array.length; i < l; i++) {
-      let s = Math.max(-32768, Math.min(32767, _array[i])); // built-in int16 to float32
+      let s = Math.max(-32768, Math.min(32767, _array[i])); // Conversion Int16 vers Float32
       channelBuffer[i] = s < 0 ? s / 32768 : s / 32767;
     }
     return soundBuffer;
   }
 
-  // Convert AudioBuffer to a Blob using WAVE representation
+  // Génération d'un fichier WAV à partir des données
   generateWavFile = (_data, _sr) => {
     let audioBuffer = this.arrayToAudioBuffer(_data, _sr);
     let wave = this.bufferToWave(audioBuffer, audioBuffer.length)
     return wave;
   }
 
-  // Convert AudioBuffer to a Blob using WAVE representation
+  // Encodage au format WAVE (en-tête et données PCM)
   bufferToWave = (abuffer, len) => {
     let numOfChan = abuffer.numberOfChannels,
     length = len * numOfChan * 2 + 44,
@@ -237,9 +237,9 @@ class PhyAudio{
     offset = 0,
     pos = 0;
 
-    // write WAVE header
+    // Écriture de l'en-tête WAVE
     setUint32(0x46464952);                         // "RIFF"
-    setUint32(length - 8);                         // file length - 8
+    setUint32(length - 8);                         // Longueur du fichier - 8
     setUint32(0x45564157);                         // "WAVE"
 
     setUint32(0x20746d66);                         // "fmt " chunk
@@ -249,26 +249,26 @@ class PhyAudio{
     setUint32(abuffer.sampleRate);
     setUint32(abuffer.sampleRate * 2 * numOfChan); // avg. bytes/sec
     setUint16(numOfChan * 2);                      // block-align
-    setUint16(16);                                 // 16-bit (hardcoded in this demo)
+    setUint16(16);                                 // Échantillons 16 bits
 
     setUint32(0x61746164);                         // "data" - chunk
     setUint32(length - pos - 4);                   // chunk length
 
-    // write interleaved data
+    // Écriture des données entrelacées
     for(i = 0; i < abuffer.numberOfChannels; i++)
       channels.push(abuffer.getChannelData(i));
 
     while(pos < length) {
-      for(i = 0; i < numOfChan; i++) {             // interleave channels
-        sample = Math.max(-1, Math.min(1, channels[i][offset])); // clamp
-        sample = (0.5 + sample < 0 ? sample * 32768 : sample * 32767)|0; // scale to 16-bit signed int
-        view.setInt16(pos, sample, true);          // write 16-bit sample
+      for(i = 0; i < numOfChan; i++) {             // Entrelacement des canaux
+        sample = Math.max(-1, Math.min(1, channels[i][offset])); // Saturation dans [-1, 1]
+        sample = (0.5 + sample < 0 ? sample * 32768 : sample * 32767)|0; // Conversion vers entier 16 bits signé
+        view.setInt16(pos, sample, true);          // Écriture de l'échantillon 16 bits
         pos += 2;
       }
-      offset++                                     // next source sample
+      offset++                                     // Échantillon suivant
     }
 
-    // create Blob
+    // Renvoi du tampon binaire
     return buffer;
 
     function setUint16(data) {
@@ -489,7 +489,7 @@ class LinearData {
       }
     }
 
-    // Fallback sur le premier pic maximal si aucun passage par zéro franc n'est trouvé
+    // Repli sur le pic maximal en l'absence de passage par zéro franc
     return this.data.subarray ? this.data.subarray(maxIndex) : this.data.slice(maxIndex);
   }
 }

@@ -459,7 +459,7 @@
 
     document.getElementById('toggleTank').addEventListener('change', (e) => { 
         state.showTank = e.target.checked;
-        updateCanvasDimensions(); // <-- NOUVEAU : Recalcule la taille du canvas avec les nouvelles marges
+        updateCanvasDimensions(); // Recalcul des dimensions du canvas avec les marges
         render(); 
     });
 
@@ -495,7 +495,7 @@
         isExportingEmptyGrid = true;
         copyToClipboard("Plaque vierge copiée !");
         isExportingEmptyGrid = false;
-        render(); // Correctif: force l'affichage normal après copie
+        render(); // Rendu normal après export
     }
 
     function downloadImage() {
@@ -555,7 +555,7 @@
         if (shape === 'line') {
             const w = size * 1.5;
             const h = 4;
-            // Draw a rounded rectangle for the line
+            // Tracé d'un rectangle arrondi pour la ligne
             ctx.roundRect(pxX - w, pxY - h/2, w * 2, h, h/2);
         } else {
             let w = size, h = size;
@@ -571,7 +571,7 @@
         if (isHighlighted) {
             ctx.lineWidth = 3;
             ctx.strokeStyle = color; // On garde la couleur de la tache
-            ctx.shadowColor = color; // Ajoute un léger effet de lueur (glow)
+            ctx.shadowColor = color; // Effet de halo au survol
             ctx.shadowBlur = 8;
         } else {
             ctx.lineWidth = 1;
@@ -581,7 +581,7 @@
         
         ctx.stroke();
         
-        // Sécurité : on réinitialise l'ombre pour ne pas affecter les autres dessins
+        // Réinitialisation de l'ombre portée
         ctx.shadowBlur = 0; 
         ctx.shadowColor = "transparent";
     }
@@ -721,8 +721,8 @@ function render() {
                     h = spot.size * 1.5;
                 }
 
-                // 2. On ajoute une marge fixe (4px) plutôt qu'un multiplicateur
-                // Pour les traits (line) qui sont très fins (h=2), on s'assure d'avoir au moins 8px de hauteur cliquable
+                // Tolérance de détection pour la sélection de la tache
+                // Hauteur minimale pour les traits fins
                 let tolX = w + 4;
                 let tolY = Math.max(h + 4, 8);
 

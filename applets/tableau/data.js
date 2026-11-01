@@ -136,7 +136,7 @@ const elementsData = [
         propChi: "* Chauffé à blanc il brûle avec incandescence<br/>* Se combine à chaud avec le carbone" 
     },
     
-    // --- NOUVEAUX ÉLÉMENTS AJOUTÉS (Transition & Autres) ---
+    // --- Éléments de transition et autres ---
     {
         id: "Ti", nom: "TITANE", masse: "47,9", formule: "Ti",
         propPhy: "* Métal dur, brillant<br/>* Masse volumique faible",

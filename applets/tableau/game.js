@@ -261,7 +261,7 @@ const STRUCTURE_TP = {
                     testBox.style.borderColor = "#48c774"; setTimeout(() => { testBox.style.borderColor = "#ccc"; }, 2000);
                     const fz = document.getElementById('found-zone'); const grp = document.createElement('div'); 
                     
-                    // Modification ici : on utilise is-inline-flex
+                    // Alignement en ligne
                     grp.className = 'found-group is-inline-flex mr-2';
                     
                     children.forEach(c => { c.draggable = false; c.classList.add('locked'); grp.appendChild(c); });
@@ -1011,13 +1011,13 @@ function executeValidation() {
     const res = STRUCTURE_TP[currentPart][currentStepIndex].validate();
     const msgBox = document.getElementById('global-message-box');
     
-    // Remplacement par les notifications natives de Bulma
+    // Notification de validation
     msgBox.innerHTML = res.msg; 
     msgBox.className = res.success ? "notification is-success is-light py-2 px-4 m-0" : "notification is-danger is-light py-2 px-4 m-0";
     
     // Animation de feedback
     msgBox.classList.remove('feedback-anim');
-    void msgBox.offsetWidth; // trigger reflow
+    void msgBox.offsetWidth; // Déclenche le reflow pour relancer l'animation
     msgBox.classList.add('feedback-anim');
 
     if (res.success) { 
@@ -1038,7 +1038,7 @@ window.onload = () => { renderHome(); };
 document.addEventListener('keydown', (event) => {
     // Navigation rapide (pour les professeurs / débuggage) avec "Ctrl + Flèches"
     if (event.ctrlKey && event.key === 'ArrowRight') {
-        event.preventDefault(); // Empêche un comportement par défaut indésirable
+        event.preventDefault();
         if (currentPart !== "") {
             if (currentStepIndex < STRUCTURE_TP[currentPart].length - 1) {
                 currentStepIndex++;

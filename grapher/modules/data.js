@@ -8,7 +8,7 @@ const DEFAULT_MARKER = true;
 const DEFAULT_LINE = false;
 const DEFAULT_LINE_WIDTH = 2;
 
-const DEFAULT_MODEL_RESOLUTION = 400; // Number of points to generate for the model curve
+const DEFAULT_MODEL_RESOLUTION = 400; // Nombre de points pour le tracé du modèle
 
 /**
  * Convertit une valeur de cellule ou de point de mesure en nombre ou null.
@@ -44,12 +44,12 @@ class Curve extends Serie {
     super(title, unit);
 
     this.color = color;
-    this.line = line; // true if the curve has a line
-    this.markers = markers; // true if the curve has markers
+    this.line = line; // Affichage de la ligne reliant les points
+    this.markers = markers; // Affichage des marqueurs de points
     this.lineWidth = lineWidth;
-    this.lineStyle = lineStyle; // "solid", "dash", "dot"
+    this.lineStyle = lineStyle; // Style de ligne ("solid", "dash", "dot")
     this.markerSymbol = markerSymbol;
-    this.markerRadius = markerRadius; // Radius of the marker in pixels
+    this.markerRadius = markerRadius; // Rayon des marqueurs en pixels
   }
 }
 
@@ -262,7 +262,7 @@ class Model {
 
     const meanY = sumY / n;
 
-    // Linear regression (y = mx + p)
+    // Régression linéaire (y = mx + p)
     const denominator = (n * sumXX - sumX * sumX);
     let slope = 1, intercept = 0;
     if (Math.abs(denominator) > 1e-9) {
@@ -341,7 +341,7 @@ class Model {
             const b = Math.abs(m) > 1e-9 ? -1.0 / m : defaultTau;
             const interceptExp = (sLnY - m * sX) / count; // ln(|a|)
 
-            // Protection contre l'overflow (décalage temporel x0 >> tau)
+            // Évite un dépassement exponentiel si x0 >> tau
             let a;
             if (interceptExp > 700) {
                 a = defaultA;
@@ -495,7 +495,7 @@ class Model {
     }
   }
 
-// Méthode utilitaire pour appliquer des paramètres au modèle
+  // Application des paramètres ajustés au modèle
   _applyParams(params, data) {
     const canPreserveNames = Array.isArray(this.parameters) &&
       this.parameters.length === params.length &&
@@ -545,7 +545,7 @@ class Model {
     this.calculateRSquared(data);
   }
 
-  // Méthode fit() mise à jour pour le Post & Terminate
+  // Ajustement du modèle par régression non linéaire via un Web Worker
   fit() {
     return new Promise((resolve, reject) => {
       if (this.activeWorker) {
@@ -558,16 +558,16 @@ class Model {
       }
       
       const worker = new Worker(new URL('./fitter.worker.js', import.meta.url));
-      this.activeWorker = worker; // On stocke le worker actif
-      this.resolveFit = resolve;  // On garde une trace de la résolution
+      this.activeWorker = worker;
+      this.resolveFit = resolve;
 
-      // On prévient l'interface graphique que le calcul démarre
+      // Notification du début du calcul
       document.dispatchEvent(new CustomEvent('model-fit-start', { detail: { model: this } }));
 
       worker.onmessage = (e) => {
         const message = e.data;
         if (message.type === 'partial_update') {
-          // On stocke silencieusement le dernier état partiel
+          // Mémorisation de l'état intermédiaire
           this.lastPartialParams = message.params;
         } else if (message.type === 'final_result') {
           if (message.success) {
@@ -608,7 +608,7 @@ class Model {
           initialGuess = Array(guessSize).fill(1);
       }
 
-      this.lastPartialParams = [...initialGuess]; // Initialisation au cas où on coupe instantanément
+      this.lastPartialParams = [...initialGuess]; // Paramètres par défaut en cas d'interruption
 
       worker.postMessage({
         data: data,
@@ -618,19 +618,19 @@ class Model {
     });
   }
 
-  // Permet d'arrêter le processus de fit en cours
+  // Interruption du calcul d'ajustement en cours
   stopFit() {
     if (this.activeWorker) {
-      this.activeWorker.terminate(); // Tue brutalement le worker
+      this.activeWorker.terminate(); // Arrêt du worker
       this.activeWorker = null;
       
-      // Récupère et applique les derniers paramètres partiels connus
+      // Application des derniers paramètres intermédiaires disponibles
       const data = this._buildData();
       if (this.lastPartialParams) {
          this._applyParams(this.lastPartialParams, data);
       }
       
-      // Prévient l'interface et débloque le programme principal
+      // Notification de fin de calcul
       document.dispatchEvent(new CustomEvent('model-fit-end'));
       if (this.resolveFit) {
          this.resolveFit(this);
@@ -829,9 +829,8 @@ class Model {
 export default class Data {
   constructor(initialSettings = {}) {
     this.curves = [];
-    this.parameters = {}; // For storing parameters (e.g. constants)
-
-    this.models = []; // For storing models
+    this.parameters = {}; // Paramètres et constantes
+    this.models = []; // Modèles mathématiques
     this.annotations = [];
 
     this.settings = {
@@ -842,20 +841,15 @@ export default class Data {
   }
 
   addCurve(title, unit, size, fill, line, markers, type){
-    // Check if the title is already used TODO: modal
+    // Vérifie si le nom de grandeur est déjà utilisé
     if(this.curves.find(curve => curve.title === title)){
       return null;
     }
 
-    // Find a color not already used
+    // Recherche d'une couleur non attribuée
     let color = COLOR_LIST.find(color => !this.curves.some(curve => curve.color === color));
-    /*if(!color){
-      // If no color is available, use a random color
-      color = "#" + Math.floor(Math.random()*16777215).toString(16);
-      console.warn("No more colors available, using random color: " + color);
-    }*/
 
-    // Create the curve
+    // Création de la grandeur
     let curve = new Curve(title, unit, color, line, markers);
     if (type) {
       curve.type = type;
@@ -871,7 +865,7 @@ export default class Data {
   }
 
   deleteCurve(title){
-    // If the deleted curve was the last sort variable, clear the sort
+    // Réinitialise le tri si la grandeur supprimée servait d'axe de tri
     if (this.lastSortVariable === title) {
       this.clearSort();
     }
@@ -924,7 +918,7 @@ export default class Data {
   getTable(){
     let table = [];
 
-    // Find the biggest curve
+    // Recherche de la série la plus longue
     let size = 0;
     this.curves.forEach((curve, i) => {
       if(curve.length > size){
@@ -1020,9 +1014,9 @@ export default class Data {
       return String(valA).localeCompare(String(valB));
     });
 
-    // Réorganiser les données dans chaque courbe en fonction des indices triés
+    // Réorganisation des données de chaque grandeur
     this.curves.forEach(curve => {
-      // S'assurer que la courbe a la bonne longueur
+      // Ajustement de la longueur du tableau
       while (curve.length < rowCount) {
         curve.push(null);
       }

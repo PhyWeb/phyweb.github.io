@@ -27,11 +27,11 @@ setupGlobalShortcuts({
   }
 });
 
-// SimpleMode enabled?
+// Mode simplifié
 let simpleMode = false;
 let fourierDbScale = false;
 
-// Declare vars
+// Variables d'état
 let rtWaveData;
 let recWaveData;
 let rtFourierData;
@@ -46,31 +46,31 @@ const rtBasebufferSize = 4096;
 const rtLength = 0.04;
 const chunkLength = 0.1;
 
-// True if the rt graph needs to be fully drawn
+// Indique si le tracé temps réel doit être entièrement rafraîchi
 let rtInitialDraw = true;
 
-// Create fourier, PhyAudio and fileReader objects
+// Instanciation de Fourier, PhyAudio et FileReader
 let fourier = new FOURIER(rtBasebufferSize);
 let audio = new PhyAudio(rtBasebufferSize);
 let fileReader = new FileReader();
 
-// Get the default max sample rate from the audio context
+// Fréquence d'échantillonnage par défaut du contexte audio
 let baseSampleRate;
 
-// RTS vars
+// Variables temps réel
 let paused = false;
 let lastFftDrawTime = 0; // stocke le temps de la dernière FFT
 
-// Record vars
+// Variables d'enregistrement
 let sampleLength = parseFloat($("#sample-length-input").value);
-let recSampleRate; // The sample will be recorded with this sampleRate
-let recordedSampleRate; // The sample was recorded with this sampleRate
+let recSampleRate; // Fréquence d'enregistrement cible
+let recordedSampleRate; // Fréquence d'enregistrement effective
 
 let samplingStartTime;
 
 let onAudioDecodeEndedBuffer;
 
-// Save vars
+// Variables de sauvegarde
 let saves = [];
 
 async function safeStartAudio(mode) {
@@ -115,7 +115,7 @@ tabManager.newTab({
   }
 });
 
-// rec tabs
+// Onglets d'acquisition
 $("#mic-tab-button").addEventListener("click",()=>{
   $("#mic-tab-button").classList.add("is-active");
   $("#file-tab-button").classList.remove("is-active");
@@ -129,7 +129,7 @@ $("#file-tab-button").addEventListener("click",()=>{
   $("#file-panel").classList.remove("is-hidden");
 })
 
-// save fourier tabs
+// Onglets de Fourier
 $("#regular-fourier-button").addEventListener("click",()=>{
   $("#regular-fourier-button").classList.add("is-active");
   $("#temporal-fourier-button").classList.remove("is-active");
@@ -157,7 +157,7 @@ $("#menu-dropdown-toggle").addEventListener("click", function (event) {
   $("#menu-dropdown-container").classList.toggle("is-active");
 });
 
-// Close the dropdown when clicking outside
+// Fermeture du menu déroulant lors d'un clic extérieur
 document.addEventListener("click", function () {
   $("#menu-dropdown-container").classList.remove("is-active");
 });
@@ -232,12 +232,12 @@ $("#simple-mode-button").addEventListener("click", async ()=>{
 
   simpleMode = true;
 
-  // show the RT panel
+  // Affichage du panneau temps réel
   $("#rt-panel").classList.remove("is-hidden");
   $("#empty-state-container").classList.add("is-hidden");
   $("#tab-bar").classList.remove("is-hidden");
 
-  // Hide fourier graph cards
+  // Masquage des graphes de Fourier
   $("#rt-fourier-container").style.display = "none";
   $("#rec-fourier-container").style.display = "none";
   $("#sav-fourier-container").style.display = "none";
@@ -246,20 +246,20 @@ $("#simple-mode-button").addEventListener("click", async ()=>{
   $("#rt-fourier-scale-panel").style.display = "none";
   $("#rec-fourier-scale-panel").style.display = "none";
 
-  // Hide save fourier settings
+  // Masquage des réglages de Fourier
   $("#fourier-settings-panel").style.display = "none";
 
-  // Resize wave charts to full height
+  // Redimensionnement du graphe temporel
   $("#rt-graph-container").style.height = "calc(100vh - 130px)";
   $("#rec-graph-container").style.height = "calc(100vh - 130px)";
   $("#sav-graph-container").style.height = "calc(100vh - 130px)";
 
-  //remove unnecassary margin
+  // Ajustement des marges
   $("#rt-graph-container").style.marginBottom = "0px";
   $("#rec-graph-container").style.marginBottom = "0px";
   $("#sav-graph-container").style.marginBottom = "0px";
 
-  // Reflow charts
+  // Rafraîchissement des graphiques
 	rtWaveChart.reflow();
 
   draw();
@@ -269,14 +269,14 @@ $("#complete-mode-button").addEventListener("click", async ()=>{
 	if(!await audioInit()) return;
   tabManager.activeTab = 0;
 
-  // show the RT panel
+  // Affichage du panneau temps réel
   $("#rt-panel").classList.remove("is-hidden");
   $("#empty-state-container").classList.add("is-hidden");
   $("#tab-bar").classList.remove("is-hidden");
 
   simpleMode = false;
 
-  // Reflow charts
+  // Rafraîchissement des graphiques
 	rtWaveChart.reflow();
 
   paused = false;
@@ -289,7 +289,7 @@ async function audioInit(){
   if(!ok) return false; // Arrête l'init si pas d'accès
 
   baseSampleRate = audio.getSampleRate();
-  recSampleRate = baseSampleRate; // The sample will be recorded with this sampleRate
+  recSampleRate = baseSampleRate; // Fréquence d'enregistrement cible
 
   populateSampleRateSelect($("#rec-samplerate-select"), 1, 16);
   return true;
@@ -311,44 +311,44 @@ function onRtAmplificationSliderDblClick() {
 	onRtAmplificationSliderChange();
 }
 
-//pause button
+// Bouton Pause
 $("#pause-button").addEventListener("click", ()=>{
   if(paused == true){
 		paused = false;
 		$("#pause-button").classList.remove("is-warning");
-		// Hide the record button
+		// Masquage du bouton d'enregistrement
 		$("#rt-save-to-tab-button").parentNode.classList.add("is-hidden");
 	}
 	else{
 		paused = true;
 		$("#pause-button").classList.add("is-warning");
-		// Show the record button
+		// Affichage du bouton d'enregistrement
 		$("#rt-save-to-tab-button").parentNode.classList.remove("is-hidden");
 	}
 });
 
-// rt save button
+// Bouton d'enregistrement temps réel
 $("#rt-save-to-tab-button").addEventListener("click", ()=>{
-	// Display save modal
+	// Affichage de la boîte de dialogue de sauvegarde
 	$("#save-modal").classList.add("is-active");
 
-	// Focus the input
+	// Focus sur le champ de saisie
 	$("#save-name-input").focus();
 })
 
-// rt save button
+// Bouton d'enregistrement temps réel
 $("#rec-save-to-tab-button").addEventListener("click", ()=>{
-	// Display save modal
+	// Affichage de la boîte de dialogue de sauvegarde
 	$("#save-modal").classList.add("is-active");
 
-	// Focus the input
+	// Focus sur le champ de saisie
 	$("#save-name-input").focus();
 })
 
 /*----------------------------------------------------------------------------------------------
 -----------------------------------------SAVE A NEW TAB-----------------------------------------
 ----------------------------------------------------------------------------------------------*/
-// keyboard shortcut
+// Raccourci clavier
 $("#save-name-input").addEventListener("keyup", (event)=> {
 	if (event.key === "Enter") {
 		event.preventDefault();
@@ -357,7 +357,7 @@ $("#save-name-input").addEventListener("keyup", (event)=> {
 });
 
 $("#confirm-save-button").addEventListener("click", ()=>{
-	// Get the save name
+	// Récupération du nom de sauvegarde
 	let text;
 	if($("#save-name-input").value == ""){
 		text = "Enreg";
@@ -392,7 +392,7 @@ $("#confirm-save-button").addEventListener("click", ()=>{
 			fourierType: 0
 		});
 	}
-	// add the tab
+	// Ajout de l'onglet
 	tabManager.newTab({
     tab: $("#save-panel"),
     name: text,
@@ -402,11 +402,11 @@ $("#confirm-save-button").addEventListener("click", ()=>{
   })
 
   function onCloseTabButton(_id){
-		// Delete tab datas
+		// Suppression des données de l'onglet
 		saves.splice(_id - 2,1);
   }
 
-	// Empty the input and hide the modal card
+	// Réinitialisation du champ et fermeture de la modale
 	$("#save-name-input").value = "";
 	common.modalManager.closeAllModals();
 })
@@ -415,7 +415,7 @@ $("#confirm-save-button").addEventListener("click", ()=>{
 ----------------------------------------REC SAMPLE LOGIC----------------------------------------
 ----------------------------------------------------------------------------------------------*/
 $("#sample-button").addEventListener("click",()=>{
-	// SampleLength value verifications
+	// Validation de la durée d'enregistrement
 	if($("#sample-length-input").value === ""){
     showToast("La durée d'enregistrement n'est pas un nombre valide.", "is-warning");
 		return;
@@ -428,22 +428,22 @@ $("#sample-button").addEventListener("click",()=>{
     showToast("La durée d'enregistrement maximale est de 60 s.", "is-warning");
 		return;
 	}
-	// Get the sampleLength
+	// Récupération de la durée d'enregistrement
 	sampleLength = parseFloat($("#sample-length-input").value);
 
-  // Save the sampleRate used
+  // Mémorisation de la fréquence d'échantillonnage
 	recordedSampleRate = recSampleRate;
 
-	// Record new datas
+	// Démarrage de l'acquisition des données
 	audio.startRecording(sampleLength);
 
-	// Hide the playback controls
+	// Masquage des contrôles de lecture
 	$("#sample-panel").classList.add("is-hidden");
 
-	// Save the sampling start time
+	// Heure de début d'échantillonnage
 	samplingStartTime = Date.now();
 
-	// Display the progress bar
+	// Affichage de la barre de progression
   $("#sample-length-input").classList.add("is-hidden");
 	$("#sample-progress-bar").classList.remove("is-hidden");
   $("#sample-button").classList.add("is-hidden");
@@ -480,7 +480,7 @@ $("#sav-play-button").addEventListener("click", ()=>{
     $("#sav-play-button").classList.remove("is-hidden");
     $("#sav-stop-button").classList.add("is-hidden");
   }
-	// Prepare the datas if the samplerate is not default
+	// Rééchantillonnage des données si nécessaire
 	let sr = baseSampleRate / saves[tabManager.activeTab-2].displaySampleRateLvl;
 	audioPlayback(saves[tabManager.activeTab-2].linearData.getData(saves[tabManager.activeTab-2].displaySampleRateLvl), sr, onSavPlaybackEnded);
 });
@@ -497,18 +497,18 @@ $("#rec-samplerate-select").addEventListener("change", ()=>{
   recSampleRate = parseFloat($("#rec-samplerate-select").value);
 });
 
-// save samplerate
+// Sauvegarde de la fréquence d'échantillonnage
 $("#save-samplerate-select").addEventListener("change", () => {
 	saves[tabManager.activeTab-2].displaySampleRateLvl = baseSampleRate / parseFloat($("#save-samplerate-select").value);
 	saveDraw();
 });
 
 function populateSampleRateSelect(_select, _initLvl = 1, _l = 4){
-	// Remove all previous options
+	// Suppression des options précédentes
 	while (_select.firstChild) {
     _select.removeChild(_select.firstChild);
 	}
-	// Populate sampleRate selects based on baseSampleRate
+	// Remplissage des sélecteurs de fréquence d'échantillonnage
 	for (let i = _initLvl; i <= _l; i = i * 2) {
 		let option = document.createElement("option");
 		option.value = baseSampleRate / i;
@@ -521,7 +521,7 @@ function populateSampleRateSelect(_select, _initLvl = 1, _l = 4){
 -------------------------------------------FILE LOAD--------------------------------------------
 ----------------------------------------------------------------------------------------------*/
 $("#file-input").addEventListener("change", async (event)=>{
-  if(!$("#file-input").files.length) return; // Sécurité si l'utilisateur annule
+  if(!$("#file-input").files.length) return; // Annulation si aucun fichier n'est sélectionné
 
   // Initialisation sécurisée si on est sur l'écran d'accueil
   if (!$("#empty-state-container").classList.contains("is-hidden")) {
@@ -557,9 +557,9 @@ $("#file-input").addEventListener("change", async (event)=>{
 });
 
 fileReader.addEventListener("loadend", ()=>{
-  //clear the input
+  // Réinitialisation de l'entrée
   $("#file-input").value = "";
-	// Decode the audio in the file
+	// Décodage du fichier audio
 	audio.decode(fileReader.result, onAudioDecodeEnd, onAudioDecodeError);
 });
 
@@ -617,14 +617,14 @@ function onAudioDecodeEnd(_rawData){
     // Force le graphique à s'adapter correctement aux dimensions de la modale fraîchement ouverte
     setTimeout(() => { filePreviewChart.reflow(); }, 10);
 
-    // save the data in a buffer
+    // Mémorisation des données dans un tampon
     onAudioDecodeEndedBuffer = _rawData;
   } else {
     drawDecodedAudio(_rawData, length);
   }
 }
 
-// file modal confirm
+// Confirmation de l'import de fichier
 $("#open-resized-file").addEventListener("click",()=>{
   let start = parseFloat($("#start-length-input").value);
   let end = parseFloat($("#end-length-input").value);
@@ -727,7 +727,7 @@ $("#end-length-input").addEventListener('change', () => {
 // --- LOGIQUE DE GLISSER-DÉPOSER (DRAG & DROP) ---
 let isDraggingPreview = false;
 let activePreviewHandle = null;
-let dragZoneOffset = 0; // Pour mémoriser où on a cliqué par rapport au début de la zone
+let dragZoneOffset = 0; // Décalage du point de clic par rapport au début de la zone
 let dragZoneLength = 0; // Pour mémoriser la taille de la zone
 
 $('#file-preview-graph-container').addEventListener('mousedown', function(e) {
@@ -827,10 +827,10 @@ $('#file-preview-graph-container').addEventListener('mousemove', function(e) {
 
 
 let drawDecodedAudio = (_rawData, _length, _start = 0)=>{
-  // Save the sampleRate used DUMMY
+  // Mémorisation de la fréquence d'échantillonnage DUMMY
   recordedSampleRate = baseSampleRate;
 
-  // Draw the datas
+  // Tracé des données
   recordGraphDraw(convertFloat32ToInt16(_rawData.getChannelData(0), _length, _start), baseSampleRate);
 }
 
@@ -879,7 +879,7 @@ noUiSlider.create($("#data-slider"), {
 	  mode: 'steps',
 	  stepped: true,
 	  density: 4
-    // TODO doesnt work for small durations
+    // TODO : non fonctionnel pour les durées courtes
 	},
   format:{
     to: function(value){
@@ -933,9 +933,9 @@ $("#save-button").addEventListener("click", ()=>{
   });
   $("#data-slider").noUiSlider.reset();
 
-  // Display save modal
+  // Affichage de la modale d'enregistrement
   $("#download-modal").classList.add("is-active");
-  // Focus the input
+  // Focus sur le champ de saisie
   $("#file-name-input").focus();
 });
 
@@ -946,7 +946,7 @@ $("#file-name-input").addEventListener("keyup", (event)=> {
 	}
 });
 
-// Data part selection
+// Sélection de la portion de données
 $("#all-data-button").addEventListener("click", ()=>{
 	$("#all-data-button").classList.add('is-link');
 	$("#on-screen-button").classList.remove('is-link');
@@ -1035,7 +1035,7 @@ function prepareSeriesForDownload(saveData, startTime, endTime, effectiveSampleR
   series.push(amplitudeSerie);
 
   // Recalcule Fourier pour la portion sélectionnée et ajouter les séries
-  // Uniquement si on a une durée valide pour le calcul
+  // Uniquement si la durée est valide pour le calcul
   if (saveData.fLinearData && (endTime - startTime) > 0.001) {
     
     const fourierData = computeFourier(originalWaveData, effectiveSampleRate, [startTime, endTime]);
@@ -1197,7 +1197,7 @@ $("#send-to-grapher-button").addEventListener('click', () => {
 
   const duration = active.saveData.linearData.getDuration();
 
-  // Configure slider and show the modal
+  // Configuration du curseur et affichage de la modale
   stgDataSlider.noUiSlider.updateOptions({
     range: { 'min': 0, 'max': duration }
   });
@@ -1568,7 +1568,7 @@ function realtimeDraw() {
 			rtWaveChart.series[0].setData(arrayCopy(rtWaveData.getData(2, rtLength, true)));
 		}
 
-		// Update datas and redraw the temporal serie at 60 Hz
+		// Mise à jour des données et rafraîchissement du signal temporel à 60 Hz
 		rtWaveChart.series[0].setData(arrayCopy(rtWaveData.getData(2, rtLength, true)), false);
 		rtWaveChart.series[0].redraw();
 
@@ -1577,7 +1577,7 @@ function realtimeDraw() {
 		if (now - lastFftDrawTime >= 33.3) {
 			lastFftDrawTime = now;
 
-			// Compute the fourier
+			// Calcul de la transformée de Fourier
 			if(simpleMode == false){
 				rtFourierData = computeFourier(rtWaveData, baseSampleRate, undefined, rtFourierData);
 
@@ -1587,7 +1587,7 @@ function realtimeDraw() {
 					rtFourierChart.series[0].setData(formatFourierArrayForDisplay(rtFourierData.getData()));
 				}
 
-				// Update datas and redraw the fourier serie
+				// Mise à jour des données et tracé du spectre
 				rtFourierChart.series[0].setData(formatFourierArrayForDisplay(rtFourierData.getData()), false);
 				rtFourierChart.series[0].redraw();
 			} else {
@@ -1603,11 +1603,11 @@ function realtimeDraw() {
 }
 
 function recordDraw() {
-	// Reflow the charts to the div size
+	// Redimensionnement des graphiques à la taille du conteneur
 	recWaveChart.reflow();
 	recFourierChart.reflow();
 	
-	// Update the progressBar
+	// Mise à jour de la barre de progression
 	if($("#sample-progress-bar").classList.contains("is-hidden") === false){
 		
 		let elapsedTime = Date.now() - samplingStartTime;
@@ -1619,7 +1619,7 @@ function recordDraw() {
 
 	// sample
 	if(audio.isDataAvailable() == true){
-		// Hide the progress bar
+		// Masquage de la barre de progression
 		$("#sample-length-input").classList.remove("is-hidden");
 		$("#sample-progress-bar").classList.add("is-hidden");
 		$("#sample-button").classList.remove("is-hidden");
@@ -1630,19 +1630,19 @@ function recordDraw() {
 }
 
 function recordGraphDraw(_data){
-  // Discard old datas and create a new LinearData
+  // Création d'une nouvelle instance LinearData
   recWaveData = new LinearData(_data, 1 / baseSampleRate)
-  // Display the save and playback buttons
+  // Affichage des commandes d'enregistrement et de lecture
   $("#sample-panel").classList.remove("is-hidden");
-  // Display the sample length
+  // Affichage de la durée d'échantillonnage
   $("#rec-sample-length-label").innerHTML = "Durée : " + formatDate(recWaveData.getDuration() * 1000);
-  // Compute the dft
+  // Calcul de la transformée de Fourier
   if(simpleMode == false){
     recFourierData = computeFourier(recWaveData, recordedSampleRate);
   } else{
     recFourierData = null;
   }
-  // Plot graphs
+  // Tracé des graphiques
   recWaveChart.xAxis[0].setExtremes(0, recWaveData.getDuration(), false);
   recWaveChart.series[0].pointInterval = recWaveData.step * (baseSampleRate / recordedSampleRate);
   recWaveChart.series[0].setData(arrayCopy(recWaveData.getData(baseSampleRate / recordedSampleRate)));
@@ -1654,26 +1654,26 @@ function recordGraphDraw(_data){
 }
 
 function saveDraw() {
-	// Reflow the charts to the div size
+	// Redimensionnement des graphiques à la taille du conteneur
 	savWaveChart.reflow();
 	savFourierChart.reflow();
 	//savTemporalFourierChart.reflow();
 
-	// Populate the sample rate 
+	// Remplissage de la fréquence d'échantillonnage
 	populateSampleRateSelect($("#save-samplerate-select"), saves[tabManager.activeTab-2].recordedSampleRateLvl, 32);
 	
-	// Select the right option
+	// Sélection de l'option correspondante
 	$("#save-samplerate-select").selectedIndex = Math.log2(saves[tabManager.activeTab-2].displaySampleRateLvl) - Math.log2(saves[tabManager.activeTab-2].recordedSampleRateLvl);
 
-	// Display the sample length
+	// Affichage de la durée d'échantillonnage
 	$("#save-sample-length-label").innerHTML = "Durée : " + formatDate(saves[tabManager.activeTab-2].linearData.getDuration() * 1000);
 
-	// Update the data & apply zoom
+	// Mise à jour des données et application du zoom
 	savWaveChart.series[0].pointInterval = saves[tabManager.activeTab-2].linearData.step * saves[tabManager.activeTab-2].displaySampleRateLvl;
 	savWaveChart.series[0].setData(arrayCopy(saves[tabManager.activeTab-2].linearData.getData(saves[tabManager.activeTab-2].displaySampleRateLvl)), false);
 	savWaveChart.zoom({xAxis:[{min:saves[tabManager.activeTab-2].range.xRange[0],max:saves[tabManager.activeTab-2].range.xRange[1], axis:savWaveChart.xAxis[0]}], yAxis:[{min:saves[tabManager.activeTab-2].range.yRange[0],max:saves[tabManager.activeTab-2].range.yRange[1], axis:savWaveChart.yAxis[0]}]});
 
-	// Display the right fourier type and update the datas
+	// Affichage du type de Fourier sélectionné et mise à jour des données
   if(simpleMode){return;};
 	if(saves[tabManager.activeTab-2].fourierType == 0){
 		$("#sav-fourier-container").classList.remove("is-hidden");
@@ -1695,7 +1695,7 @@ function saveDraw() {
 function draw() {
 	requestAnimationFrame(draw);
 
-	// resume the audio context if it is suspended
+	// Reprise du contexte audio s'il est suspendu
 	//audio.resumeContext(); TODO
 
 	switch(tabManager.activeTab){
@@ -1719,20 +1719,20 @@ function audioPlayback(_data, _sr, _callback){
 		return;
 	}
 
-	// Prepare the datas if the samplerate is not default
+	// Rééchantillonnage des données si nécessaire
 	if(_sr != baseSampleRate){
 		let factor = baseSampleRate / _sr; 
 		let prepData = resampleLinear(_data, factor);
 		
-		// Play the recorded sound
+		// Lecture du son enregistré
 		audio.play(prepData);
 	}
 	else{
-		// Play the recorded sound
+		// Lecture du son enregistré
 		audio.play(_data);
 	}
 
-	// New source created everytime = reset event functions
+	// Réinitialisation du gestionnaire de fin de lecture
 	if (audio.playbackSource) {
 		audio.playbackSource.onended = function(){ if (typeof _callback === "function") _callback(); };
 	}
@@ -1742,37 +1742,37 @@ function audioPlayback(_data, _sr, _callback){
 -------------------------------------HIHGCHART ZOOM EVENTS--------------------------------------
 ----------------------------------------------------------------------------------------------*/
 function onSavWaveGraphSelection(event){
-	if (event.xAxis != undefined){ // handmade selection
+	if (event.xAxis != undefined){ // Sélection manuelle
 		saves[tabManager.activeTab-2].range.xRange = [event.xAxis[0].min, event.xAxis[0].max];
 		saves[tabManager.activeTab-2].range.yRange = [event.yAxis[0].min, event.yAxis[0].max];
-	} else{ // Reset zoom button
+	} else{ // Bouton de réinitialisation du zoom
 		saves[tabManager.activeTab-2].range.xRange = [undefined, undefined];
 		saves[tabManager.activeTab-2].range.yRange = [undefined, undefined];
 	}
 }
 
 function onSavFourierGraphSelection(event){
-	if (event.xAxis != undefined){ // handmade selection
+	if (event.xAxis != undefined){ // Sélection manuelle
 		saves[tabManager.activeTab-2].fourierRange.xRange = [event.xAxis[0].min, event.xAxis[0].max];
 		saves[tabManager.activeTab-2].fourierRange.yRange = [event.yAxis[0].min, event.yAxis[0].max];
-	} else{ // Reset zoom button
+	} else{ // Bouton de réinitialisation du zoom
 		saves[tabManager.activeTab-2].fourierRange.xRange = [undefined, undefined];
 		saves[tabManager.activeTab-2].fourierRange.yRange = [undefined, undefined];
 	}
 }
 
 function onSavTemporalFourierGraphSelection(event){
-	if (event.xAxis != undefined){ // handmade selection
+	if (event.xAxis != undefined){ // Sélection manuelle
 		saves[tabManager.activeTab-2].fourierRange.xRange = [event.xAxis[0].min, event.xAxis[0].max];
 		saves[tabManager.activeTab-2].fourierRange.yRange = [event.yAxis[0].min, event.yAxis[0].max];
-	} else{ // Reset zoom button
+	} else{ // Bouton de réinitialisation du zoom
 		saves[tabManager.activeTab-2].fourierRange.xRange = [undefined, undefined];
 		saves[tabManager.activeTab-2].fourierRange.yRange = [undefined, undefined];
 	}
 }
 
 /*----------------------------------------------------------------------------------------------
--------------------------------------DEEP? COPY FUNCTION-----------------------------------------
+-------------------------------------COPIE DE TABLEAU--------------------------------------------
 ----------------------------------------------------------------------------------------------*/
 function arrayCopy(_array, _length = _array.length){
 	let copy = [];
@@ -1801,7 +1801,7 @@ function computeFourier(_wave, _sampleRate, _range, _outBuffer = null){
 	let waveData = _wave.getData(baseSampleRate / _sampleRate);
 	let slicedData = waveData.subarray ? waveData.subarray(startIndex, stopIndex) : waveData.slice(startIndex, stopIndex);
 	
-	// La taille de notre moteur FFT ultra-rapide (4096)
+	// Taille du bloc FFT (4096)
 	let chunkSize = fourier.nayuki.n; 
 
 	// Si la sélection utilisateur est plus petite que 4096 points, on réduit la taille
@@ -1821,7 +1821,7 @@ function computeFourier(_wave, _sampleRate, _range, _outBuffer = null){
 		result = new LinearData(new Float32Array(maxIndex));
 	}
 	
-	// Mise à zéro du buffer de résultat (important pour accumuler)
+	// Réinitialisation du tampon de résultat pour l'accumulation
 	for (let i = 0; i < maxIndex; i++) result.data[i] = 0;
 
 	// --- MÉTHODE DE WELCH ---
@@ -1853,7 +1853,7 @@ function computeFourier(_wave, _sampleRate, _range, _outBuffer = null){
 		result.step = tempResult.step;
 	} 
 	else {
-		// Fallback si l'utilisateur a zoomé sur une portion microscopique (< 4096 points)
+		// Repli si la portion sélectionnée est inférieure à 4096 points
 		let padData = new Float32Array(actualChunkSize);
 		padData.set(slicedData);
 		fourier.computeNormalizedFft(new LinearData(padData), result, _sampleRate, false);
@@ -1874,10 +1874,10 @@ function computeTemporalFourier(_wave, _sampleRate, _range){
 		stopIndex = Math.min(_wave.data.length, Math.floor((_range[1] || _wave.getDuration()) * baseSampleRate));
 	}
 
-	// Select the needed datas
+	// Sélection des données requises
 	let data = new LinearData(_wave.getData().slice(startIndex, stopIndex), 1 / baseSampleRate);
 
-	// Split the data in chunks and perform dft on them
+	// Découpage des données en blocs et calcul de la transformée de Fourier
 	let chunks = []
 	for(let i = 0; (i+1) * chunkLength <= data.getDuration() + 1e-4; i++){
 		chunks[i] = computeFourier(new LinearData(data.getData().slice(Math.floor(i * chunkLength * baseSampleRate), Math.floor((i+1) * chunkLength * baseSampleRate))), _sampleRate);
@@ -1885,46 +1885,46 @@ function computeTemporalFourier(_wave, _sampleRate, _range){
 	return chunks;
 }
 
-// save fourier replot
+// Recalcul du spectre sauvegardé
 $("#save-fourier-replot-button").addEventListener("click",()=>{onFourierReplotButtonClick()})
 
 function onFourierReplotButtonClick() {
-	// Save the ranges
+	// Mémorisation des plages
 	saves[tabManager.activeTab-2].fourierPlottingRange = [savWaveChart.xAxis[0].min,savWaveChart.xAxis[0].max];
 
 	if($("#regular-fourier-button").classList.contains("is-active")){
-		// display the regular dft
+		// Affichage du spectre classique
 		$("#sav-fourier-container").classList.remove("is-hidden");
 		$("#sav-temporal-fourier-container").classList.add("is-hidden");
 		savFourierChart.reflow();
 
-		// Compute the dft
+		// Calcul de la transformée de Fourier
 		saves[tabManager.activeTab-2].fLinearData = computeFourier(saves[tabManager.activeTab-2].linearData, baseSampleRate / saves[tabManager.activeTab-2].displaySampleRateLvl, saves[tabManager.activeTab-2].fourierPlottingRange);
 
-		// Update and redraw
+		// Mise à jour et rafraîchissement
 		savFourierChart.series[0].pointInterval = saves[tabManager.activeTab-2].fLinearData.step;
 		savFourierChart.series[0].setData(formatFourierArrayForDisplay(saves[tabManager.activeTab-2].fLinearData.getData()));
 		if(saves[tabManager.activeTab-2].fourierType != 0){
-			// User changed fourier type => reset zoom
+			// Réinitialisation du zoom lors du changement de type
 			savFourierChart.zoom({xAxis:[{min:undefined,max:undefined, axis:savFourierChart.xAxis[0]}], yAxis:[{min:undefined,max:undefined, axis:savFourierChart.yAxis[0]}]});
 		}
-		// Log fourier type displayed
+		// Mémorisation du type de transformée affiché
 		saves[tabManager.activeTab-2].fourierType = 0;
 	}
 	else{
-		// check data size and return if too short
+		// Vérification de la durée minimale d'échantillonnage
 		if(saves[tabManager.activeTab-2].fourierPlottingRange[1] - saves[tabManager.activeTab-2].fourierPlottingRange[0] < 0.5){
       showToast("La durée de l'enregistrement doit être supérieure à 0,5s pour réaliser une analyse spectrale temporelle.", "is-warning");
 			return;
 		}
-		// display the temporal dft
+		// Affichage du spectrogramme temporel
 		$("#sav-fourier-container").classList.add("is-hidden");
 		$("#sav-temporal-fourier-container").classList.remove("is-hidden");
 		savTemporalFourierChart.reflow();
 
 		const startTime = saves[tabManager.activeTab-2].fourierPlottingRange[0] || 0;
 		let chunks = computeTemporalFourier(saves[tabManager.activeTab-2].linearData, baseSampleRate / saves[tabManager.activeTab-2].displaySampleRateLvl, saves[tabManager.activeTab-2].fourierPlottingRange);
-		// Format data
+		// Formatage des données
 		let highestAmplitude = 0;
 		saves[tabManager.activeTab-2].fTemporalData = [];
 		for(let i = 0; i < chunks.length; i++){
@@ -1934,12 +1934,12 @@ function onFourierReplotButtonClick() {
 					startTime + (i + 0.5) * chunkLength, // centré sur le bloc temporel
 					chunks[i].data[j]
 				];
-				if(chunks[i].data[j] > highestAmplitude){ // check for the highest amplitude
+				if(chunks[i].data[j] > highestAmplitude){ // Recherche de l'amplitude maximale
 					highestAmplitude = chunks[i].data[j];
 				}
 			}
 		}
-		// Update boundaries
+		// Mise à jour des bornes des axes
 		savTemporalFourierChart.update({
 			yAxis: {
 				min: startTime,
@@ -1952,13 +1952,13 @@ function onFourierReplotButtonClick() {
 			}]
 		}, false);
 
-		// Set the new datas and draw
+		// Tracé des nouvelles données
 		savTemporalFourierChart.series[0].setData(saves[tabManager.activeTab-2].fTemporalData);
 		if(saves[tabManager.activeTab-2].fourierType != 1){
-			// User changed fourier type => reset zoom
+			// Réinitialisation du zoom lors du changement de type
 			savTemporalFourierChart.zoom({xAxis:[{min:undefined,max:undefined, axis:savTemporalFourierChart.xAxis[0]}], yAxis:[{min:undefined,max:undefined, axis:savTemporalFourierChart.yAxis[0]}]});
 		}
-		// Log fourier type displayed
+		// Mémorisation du type de transformée affiché
 		saves[tabManager.activeTab-2].fourierType = 1;
 	}
 }

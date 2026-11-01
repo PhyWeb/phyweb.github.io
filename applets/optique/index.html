@@ -438,7 +438,7 @@
 
     // --- Réinitialisation de l'applet ---
     function resetApplet() {
-        // 1. On restaure l'état par défaut (incluant l'option focales qu'on a ajoutée)
+        // Restauration de l'état par défaut
         state = {
             grid: true,
             gridOpacity: 0.3,
@@ -452,7 +452,7 @@
             l2: { active: false, x: 7, f: 1, r: 3.5, name: "L2" }
         };
 
-        // 2. On recoche les bonnes cases dans l'interface
+        // Réinitialisation des cases à cocher
         document.getElementById('toggleGrid').checked = true;
         document.getElementById('toggleSnap').checked = true;
         document.getElementById('toggleObj').checked = true;
@@ -461,14 +461,14 @@
         document.getElementById('toggleFocals').checked = true;
         document.getElementById('toggleObjInf').checked = false;
         
-        // 3. On désactive la lentille 2 proprement pour regriser ses paramètres
+        // Désactivation de la deuxième lentille
         const toggleL2 = document.getElementById('toggleL2');
         if (toggleL2.checked) {
             toggleL2.checked = false;
             toggleL2.dispatchEvent(new Event('change'));
         }
 
-        // 4. On rafraîchit les inputs numériques et le canevas
+        // Rafraîchissement des entrées numériques et du canevas
         updateInputsFromState(true); // Le 'true' force la mise à jour même si un champ est actif
         render();
     }
@@ -690,19 +690,19 @@ function drawObject(obj, nameA, nameB, color, isReal) {
     }
 
     function drawFullRay(startX, startY, lensX, lensY, img, endX, virtX, color, minSolidX = null) {
-        // Trace incident ray
+        // Tracé du rayon incident
         if (startX > lensX) { 
-            // Virtual object
+            // Objet virtuel
             let pxMinSolid = minSolidX !== null ? toPxX(minSolidX) : 0;
             let slopePx = (startY - lensY) / (startX - lensX);
             let yAtMin = lensY + slopePx * (pxMinSolid - lensX);
             drawRay(pxMinSolid, yAtMin, lensX, lensY, color);
             drawLine(lensX, lensY, startX, startY, color, 1.5, [5, 5]); 
         } else {
-            // Real object (or virtual image from previous lens acting as real object)
+            // Objet réel ou image virtuelle de la lentille précédente
             let pxMinSolid = minSolidX !== null ? toPxX(minSolidX) : -Infinity;
             if (startX < pxMinSolid) {
-                // Ray comes from a virtual image to the left of the previous lens
+                // Rayon issu d'une image virtuelle à gauche de la lentille précédente
                 let slopePx = (lensY - startY) / (lensX - startX);
                 let yAtMin = startY + slopePx * (pxMinSolid - startX);
                 drawLine(startX, startY, pxMinSolid, yAtMin, color, 1.5, [5, 5]);
@@ -712,7 +712,7 @@ function drawObject(obj, nameA, nameB, color, isReal) {
             }
         }
 
-        // Trace emergent ray
+        // Tracé du rayon émergent
         if (img.isInf) {
             let slope_px = -img.slope; 
             let yEnd = lensY + slope_px * (endX - lensX);

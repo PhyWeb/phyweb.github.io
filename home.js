@@ -3,7 +3,7 @@ import {Common, alertModal, NavigationManager} from "./common/common.js"
 const $ = document.querySelector.bind(document);
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Common
+  // Initialisation commune
   let common = new Common();
   let navigationManager = new NavigationManager(() => { return false; });
 

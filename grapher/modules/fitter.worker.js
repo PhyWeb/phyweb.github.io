@@ -49,7 +49,7 @@ function getFunction(type) {
     case 'dampedcos': // y = a*cos(b*x+c)*e^(-x/d) + e
       return (an, x) => an[0] * Math.cos(an[1] * x + an[2]) * Math.exp(-x / an[3]) + an[4];
     default:
-      return () => 0; // Fonction par défaut qui ne fait rien
+      return () => 0;
   }
 }
 
@@ -67,7 +67,7 @@ self.onmessage = async function (e) {
   }
 
   const { data, modelType, initialGuess } = e.data;
-  let iterationCount = 0; // Compteur pour ne pas spammer
+  let iterationCount = 0; // Compteur d'itérations
 
   try {
     const f = getFunction(modelType);
@@ -75,7 +75,7 @@ self.onmessage = async function (e) {
     const fn1 = function (a) {
       iterationCount++;
 
-      // Toutes les 1000 itérations, on envoie l'état actuel au thread principal
+      // Notification périodique de l'état intermédiaire
       if (iterationCount % 1000 === 0) {
         self.postMessage({ 
           type: 'partial_update', 
@@ -114,7 +114,7 @@ self.onmessage = async function (e) {
       return;
     }
 
-    // Renvoyer le résultat FINAL
+    // Émission du résultat final
     self.postMessage({ type: 'final_result', success: true, params: params });
 
   } catch (error) {

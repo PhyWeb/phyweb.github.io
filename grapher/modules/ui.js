@@ -155,23 +155,23 @@ export default class UIManager {
         const isGrapherTabActive = document.querySelector('#grapheur-tab').classList.contains('is-active');
         if (!isGrapherTabActive) return;
 
-        // SÉCURITÉ 4 : Ne rien faire si un outil de réticule ou de mesure est actif
+        // Ignorer si un outil de réticule ou de mesure est actif
         if (this.grapher?.crosshairMode !== null) return;
 
-        // Vérifie qu'on a bien un graphe avec des points sélectionnés
+        // Vérification de la présence de points sélectionnés
         if (this.grapher && this.grapher.chart) {
           const selectedPoints = this.grapher.chart.getSelectedPoints();
 
           if (selectedPoints.length > 0) {
             const point = selectedPoints[0];
             
-            // S'assurer qu'on ne supprime pas un point d'un modèle mathématique
+            // Ignore les points appartenant à un modèle
             if (!point.series.options.id?.startsWith('model-')) {
               const rowIndices = point.series.options.customRowIndices;
               const actualRow = Array.isArray(rowIndices) && rowIndices[point.index] !== undefined
                 ? rowIndices[point.index]
                 : point.index;
-              point.select?.(false, false); // <-- Nettoie l'état de sélection Highcharts avant suppression
+              point.select?.(false, false); // Réinitialise l'état de sélection Highcharts
               this.app.deleteRow(actualRow, 1);
             }
           }
@@ -463,7 +463,7 @@ export default class UIManager {
           if (stream.match(/^[0-9]+([,.][0-9]+)?([eE][+-]?[0-9]+)?/)) return "number"; // Gère entiers, décimaux et notation scientifique
           if (stream.match(/^[=+\-*/^(),]/)) return "operator";
 
-          // Fallback pour ne jamais bloquer
+          // Avance d'un caractère non reconnu
           stream.next();
           return null;
         }
@@ -782,7 +782,7 @@ export default class UIManager {
       $("#menu-dropdown-container").classList.toggle("is-active");
     });
 
-    // Close the dropdown when clicking outside
+    // Fermeture du menu déroulant lors d'un clic extérieur
     document.addEventListener("click", function () {
       $("#menu-dropdown-container").classList.remove("is-active");
     });
@@ -810,7 +810,7 @@ export default class UIManager {
     grapheurPanel.classList.add('is-hidden');
     calculsPanel.classList.add('is-hidden');
 
-    // S'assurer que l'onglet "Tableur" est bien celui qui est actif
+    // Activation de l'onglet Tableur
     document.getElementById('tableur-tab').classList.add('is-active');
     document.getElementById('grapheur-tab').classList.remove('is-active');
     document.getElementById('calculs-tab').classList.remove('is-active');
@@ -857,7 +857,7 @@ export default class UIManager {
     });
 
     $("#file-input").addEventListener("click", () => {
-      $("#file-input").value = null; // allow the onchange trigger even if the same file is selected twice
+      $("#file-input").value = null; // Réinitialisation pour déclencher l'événement même avec le même fichier
     });
 
     // Gestion du bouton "Coller depuis le presse-papier"
@@ -883,7 +883,7 @@ export default class UIManager {
       });
     });
 
-    // Show the new file modal
+    // Affichage de la modale "Nouveau fichier"
     $("#new-file-open-modal-button").addEventListener("click", () => {
         $("#new-file-modal").classList.add('is-active');
     });
@@ -892,7 +892,7 @@ export default class UIManager {
     this.fileDropManager = new FileDropManager(document.body, async (file) => {
       if (!file) return;
 
-      // On utilise navManager pour demander confirmation si des données sont déjà présentes (sécurité)
+      // Demande de confirmation via navManager si des données existent déjà
       this.navManager.confirmAction(async () => {
         // Affiche le spinner de chargement global de la modale "Nouveau fichier"
         this.setModalLoading(true);
@@ -2070,7 +2070,7 @@ export default class UIManager {
         $("#curve-details-panel").classList.add("is-hidden");
       }
 
-      $("#choose-x-curve-select").value = this.grapher.currentXCurve; // Set the current X curve in the select
+      $("#choose-x-curve-select").value = this.grapher.currentXCurve; // Sélection de la grandeur X active
 
       $("#choose-curves-modal").classList.add("is-active");
     });
@@ -2124,7 +2124,7 @@ export default class UIManager {
         li.appendChild(a);
         menu.appendChild(li);
 
-        // Event listener for the checkbox
+        // Gestionnaire d'événement pour la case à cocher
         input.addEventListener("change", (e) => {
           e.stopPropagation(); // Empêche l'événement de se propager au lien parent
           const activeCurves = Array.from(menu.querySelectorAll("input:checked")).map(
@@ -2133,24 +2133,24 @@ export default class UIManager {
           this.grapher.setVisibilityFromList(activeCurves);
         });
 
-        // Event listener for the list item click
+        // Gestionnaire de sélection au clic sur l'élément de liste
         a.addEventListener("click", (e) => {
           if (e.target.type !== 'checkbox') {
             e.preventDefault();
           }
           
-          // Remove 'is-active' from all other items
+          // Désactivation des autres éléments de la liste
           menu.querySelectorAll("a").forEach(item => item.classList.remove("is-active"));
-          // Add 'is-active' to the clicked item
+          // Activation de l'élément sélectionné
           a.classList.add("is-active");
 
-          // Populate and show the details panel
+          // Remplissage et affichage du panneau de détails
           populateCurveDetails(curve);
           panel.classList.remove("is-hidden");
         });
       });
 
-      // Select the first curve by default if available
+      // Sélection de la première courbe par défaut si disponible
       const firstCurveAnchor = menu.querySelector("a");
       if (firstCurveAnchor) {
         firstCurveAnchor.click();
@@ -2164,12 +2164,12 @@ export default class UIManager {
       const panel = $("#curve-details-panel");
       panel.setAttribute("data-active-curve", curve.title);
 
-      // Set the color picker
+      // Configuration du sélecteur de couleur
       const colorPicker = $("#curveColorPicker");
       colorPicker.value = curve.color;
       colorPicker.style.color = curve.color;
 
-      // Set the marker options
+      // Configuration des options de marqueurs
       const markerToggle = $("#curveMarkerToggle");
       markerToggle.checked = curve.markers;
       const markerUIs = panel.querySelectorAll(".curveMarkerUI");
@@ -2177,7 +2177,7 @@ export default class UIManager {
       $("#curveMarkerRadiusSelect").value = curve.markerRadius;
       $("#curveMarkerSymbolSelect").value = curve.markerSymbol;
 
-      // Set the line options
+      // Configuration du style de tracé
       const lineToggle = $("#curveLineToggle");
       lineToggle.checked = curve.line;
       const lineUIs = panel.querySelectorAll(".curveLineUI");
@@ -2196,7 +2196,7 @@ export default class UIManager {
         let option = document.createElement("option");
         option.innerHTML = element.title;
 
-        // Select the current X curve
+        // Sélection de la grandeur X active
         if(element.title === this.grapher.currentXCurve){
           option.selected = true;
         }
@@ -2209,7 +2209,7 @@ export default class UIManager {
      * Gère le changement de courbe X sélectionnée.
      */
     $("#choose-x-curve-select").addEventListener("change", () => {
-      // Update the X curve in the grapher
+      // Mise à jour de l'axe X dans le grapheur
       this.grapher.setXCurve($("#choose-x-curve-select").value, true);
       this.updateAllModelPanelVisibilityIcons();
       populateCurveMenu();
@@ -2222,8 +2222,8 @@ export default class UIManager {
       const colors = Highcharts.getOptions().colors;
       const select = document.getElementById("curveColorPicker");
 
-      // Create the options
-      select.innerHTML = ""; // Clear previous options
+      // Création des options
+      select.innerHTML = ""; // Réinitialisation des options
       colors.forEach((color) => {
         const option = document.createElement('option');
         option.value = color;
@@ -2238,7 +2238,7 @@ export default class UIManager {
      */
     function populateLineWidthSelect(){
       const select = document.getElementById("curveLineWidthSelect");
-      select.innerHTML = ""; // Clear previous options
+      select.innerHTML = ""; // Réinitialisation des options
       for(let i = 1; i <= 10; i++){
         const option = document.createElement('option');
         option.value = i;
@@ -2252,7 +2252,7 @@ export default class UIManager {
      */
     function populateMarkersRadiusSelect(){
       const select = document.getElementById("curveMarkerRadiusSelect");
-      select.innerHTML = ""; // Clear previous options
+      select.innerHTML = ""; // Réinitialisation des options
       for(let i = 1; i <= 15; i++){
         const option = document.createElement('option');
         option.value = i;
@@ -2309,7 +2309,7 @@ export default class UIManager {
           break;
       }
       
-      // Update the chart to reflect the changes
+      // Mise à jour du graphique avec les nouveaux paramètres
       const series = this.grapher.chart.series.find(s => s.name === activeCurveTitle);
       if (series) {
         series.update({
@@ -2326,7 +2326,7 @@ export default class UIManager {
         });
       }
     
-      // Update the color swatch in the list
+      // Mise à jour de la pastille de couleur dans la liste
       const activeAnchor = $(`#choose-curves-menu a[data-title="${activeCurveTitle}"]`);
       if (activeAnchor) {
         activeAnchor.querySelector('span:nth-child(2)').style.backgroundColor = curve.color;
@@ -2392,7 +2392,7 @@ export default class UIManager {
     toolItems.forEach(item => {
       item.addEventListener('click', () => {
 
-        // On s'assure que le bouton zoom est bien désactivé
+        // Désactivation du bouton de zoom
         $("#zoom-button").classList.remove("is-active");
         this.isZoomEnabled = false;
 
@@ -2432,7 +2432,7 @@ export default class UIManager {
       btn.classList.toggle('is-hidden', !hasRenderedModel);
     }
 
-    // Si l’outil était actif mais qu’il n’y a plus de modèle tracé, on le désactive proprement
+    // Désactivation de l'outil si aucun modèle tracé n'est présent
     if (!hasRenderedModel && typeof this.activeToolElement !== 'undefined' && this.activeToolElement?.id === 'tool-crosshair-model') {
       const check = this.activeToolElement.querySelector('.tool-checkmark-container');
       if (check) check.innerHTML = '';
@@ -2461,11 +2461,11 @@ export default class UIManager {
         this.grapher.chart.update({
           chart: {
             zooming: {
-              type : "xy", // Enable zooming in both directions
+              type : "xy", // Zoom selon les deux axes (X et Y)
               resetButton:{
                 theme: {
                   style:{
-                    display: "none" // Hide the default reset button
+                    display: "none" // Masquage du bouton de réinitialisation natif
                   }
                 }
               },
@@ -2577,30 +2577,29 @@ export default class UIManager {
     const expandBtn = $("#expand-modelisation-button");
     const compressBtn = $("#compress-modelisation-button");
     
-    // S'assurer que le panneau est visible au sens CSS (mais fermé par notre logique)
+    // Affichage du panneau en état replié
     panel.classList.remove("is-hidden");
 
-    // --- OUVERTURE DU PANNEAU ---
+    // Ouverture du panneau
     expandBtn.addEventListener("click", () => {
         panel.classList.add("is-open");
         expandBtn.classList.add("is-transparent");
 
-        // 3. Après 300ms (durée du CSS), on le cache vraiment et on affiche l'autre
+        // Masquage du bouton après la transition CSS (300 ms)
         setTimeout(() => {
           expandBtn.classList.add("is-hidden");
         }, 300);
     });
 
-    // --- FERMETURE DU PANNEAU ---
+    // Fermeture du panneau
     compressBtn.addEventListener("click", () => {
       panel.classList.remove("is-open");
       expandBtn.classList.remove("is-hidden");
         
-      // Petite astuce : on force le navigateur à recalculer le style avant d'enlever la transparence
-      // Sinon, le fade-in ne se lance pas car il passe de hidden à visible instantanément
+      // Force le recalcul du style pour déclencher la transition d'opacité
       void expandBtn.offsetWidth; 
         
-      // fade-in
+      // Transition d'opacité
       expandBtn.classList.remove("is-transparent");
     });
 
@@ -2632,7 +2631,7 @@ export default class UIManager {
             btn.style.backgroundColor = '';
             btn.style.borderColor = '';
             btn.style.color = '';
-            btn.classList.remove('is-info'); // Sécurité au cas où l'ancienne classe traîne
+            btn.classList.remove('is-info'); // Suppression de la classe active précédente
           });
           
           // 2. Nettoyer les autres outils (tangente, etc.) s'ils sont actifs
@@ -2648,7 +2647,7 @@ export default class UIManager {
           editBoundsBtn.style.borderColor = model.color;
           editBoundsBtn.style.color = 'white'; // Icône en blanc pour bien contraster
         }
-        return; // Important pour ne pas déclencher d'autres actions
+        return; // Interrompt le traitement de l'événement
       }
 
       // Clic sur le bouton "afficher/cacher"
@@ -2877,7 +2876,7 @@ export default class UIManager {
           return;
       }
 
-      // On s'assure que la valeur est dans l'intervalle [min, max]
+      // Ajustement de la valeur dans l'intervalle [min, max]
       const clampedValue = Math.max(min, Math.min(value, max));
       if (clampedValue !== value) {
           inputElement.value = clampedValue;
@@ -2887,7 +2886,7 @@ export default class UIManager {
     // Écouteur pour la borne de début
     borneDebutInput.onblur = () => {
       clampBorne(borneDebutInput, minX, maxX);
-      // On s'assure que début <= fin
+      // Ajustement de la borne de fin si nécessaire
       const debut = parseFloat(borneDebutInput.value);
       const fin = parseFloat(borneFinInput.value);
       if (!isNaN(debut) && !isNaN(fin) && debut > fin) {
@@ -2898,7 +2897,7 @@ export default class UIManager {
     // Écouteur pour la borne de fin
     borneFinInput.onblur = () => {
       clampBorne(borneFinInput, minX, maxX);
-      // On s'assure que début <= fin
+      // Ajustement de la borne de début si nécessaire
       const debut = parseFloat(borneDebutInput.value);
       const fin = parseFloat(borneFinInput.value);
       if (!isNaN(debut) && !isNaN(fin) && debut > fin) {
@@ -2909,7 +2908,7 @@ export default class UIManager {
     const saveButton = $('#model-edit-save-button');
     const deleteButton = $('#model-edit-delete-button');
 
-    // On s'assure de cloner le bouton pour nettoyer les anciens écouteurs d'événements
+    // Clonage du bouton pour réinitialiser les écouteurs précédents
     const newSaveButton = saveButton.cloneNode(true);
     saveButton.parentNode.replaceChild(newSaveButton, saveButton);
     
@@ -3228,7 +3227,7 @@ export default class UIManager {
       const curveToModel = $('#model-curve-select').value;
 
       if (curveToModel && selectedModelType) {
-        // On ferme la modale comme vous l'aviez prévu
+        // Fermeture de la modale
         this.common.modalManager.closeAllModals();
         
         // On affiche l'indicateur de chargement
@@ -3299,7 +3298,7 @@ export default class UIManager {
     const header = article.querySelector('.message-header');
     if (header) {
       header.style.backgroundColor = model.color;
-      // S'assure que le texte reste bien lisible en blanc
+      // Maintien du contraste avec texte blanc
       header.style.color = '#ffffff'; 
     }
     article.style.border = `1px solid ${model.color}`;
@@ -3735,7 +3734,7 @@ export default class UIManager {
 
       itemsToCreate.forEach(item => {
         if (item.isParam) {
-          // Sécuriser au cas où parseFloat aurait renvoyé NaN à cause d'une entrée bizarre
+          // Valeur de repli si la conversion numérique échoue
           const finalValue = isNaN(item.value) ? 1 : item.value;
           const varWithUnit = item.unit ? `${item.name}_${item.unit}` : item.name;
           
@@ -3746,7 +3745,7 @@ export default class UIManager {
         }
       });
 
-      // Mettre à jour l'éditeur si on a créé des paramètres
+      // Mise à jour de l'éditeur si des paramètres ont été créés
       if (editorContent !== "") {
         this.editor.setValue(editorContent.trim());
         this.app.applyCalculation(this.editor.getValue());
@@ -3933,7 +3932,7 @@ export default class UIManager {
             }
           }, 'image/png');
         };
-        // Encodage propre du SVG en Base64 pour éviter les conflits d'URL
+        // Encodage du SVG en Base64
         img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
       }
     });

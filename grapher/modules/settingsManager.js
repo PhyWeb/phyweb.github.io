@@ -15,7 +15,7 @@ export const DEFAULT_SETTINGS = {
 export function loadSettings() {
   try {
     const storedSettings = JSON.parse(localStorage.getItem('phyweb-settings'));
-    // Fusionne les paramètres par défaut avec ceux stockés pour éviter les erreurs si de nouveaux paramètres sont ajoutés au code.
+    // Fusion avec les paramètres par défaut pour initialiser toutes les clés
     return { ...DEFAULT_SETTINGS, ...storedSettings };
   } catch (e) {
     console.error("Impossible de charger les paramètres, utilisation des défauts.", e);

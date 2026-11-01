@@ -190,16 +190,16 @@ export default class MEASUREMENT {
     titleRow.appendChild(cell2);
 
     const POINT_COLORS = [
-      "#f14668", // Red
-      "#3e8ed0", // Blue
-      "#48c774", // Green
-      "#e6b800", // Yellow
-      "#b86bff", // Purple
+      "#f14668", // Rouge
+      "#3e8ed0", // Bleu
+      "#48c774", // Vert
+      "#e6b800", // Jaune
+      "#b86bff", // Violet
       "#ff8c00", // Orange
-      "#ff69b4", // Pink
+      "#ff69b4", // Rose
       "#00ced1", // Cyan
-      "#8b4513", // Brown
-      "#99cc00"  // Lime
+      "#8b4513", // Marron
+      "#99cc00"  // Vert clair
     ];
 
     for(let i = 1; i < ppf + 1; i++){
@@ -225,7 +225,7 @@ export default class MEASUREMENT {
   }
 
   init(_decodedVideo, player){
-    // Inits
+    // Initialisation
     this.player = player;
     this.series = [];
     
@@ -272,7 +272,7 @@ export default class MEASUREMENT {
     this.buildTableHead();
     this.tableBody.innerHTML="";
 
-    // Cache the labels to speed up table updates
+    // Mise en cache des libellés du tableau
     this.labelsCache = [];
 
     const fragment = document.createDocumentFragment();
@@ -281,14 +281,14 @@ export default class MEASUREMENT {
       let row = document.createElement('tr');
       this.labelsCache[i] = { t: null, x: [], y: [] };
 
-      // image index column
+      // Colonne des numéros d'images
       let cell = document.createElement('td');
       let label = document.createElement('label');
       label.textContent = i + 1;
       cell.appendChild(label);
       row.appendChild(cell);
 
-      // t column
+      // Colonne de temps
       let tcell = document.createElement('td');
       let tlabel = document.createElement('label');
       tlabel.id = "t" + i;
@@ -297,7 +297,7 @@ export default class MEASUREMENT {
       tcell.appendChild(tlabel);
       row.appendChild(tcell)
 
-      // x&y columns
+      // Colonnes des coordonnées x et y
       for(let j = 1; j < ppf + 1; j++){
         let xcell = document.createElement('td');
         let xlabel = document.createElement('label');
@@ -409,7 +409,7 @@ export default class MEASUREMENT {
       this.player.currentPoint = 0;
     }
 
-    // create new series if ppf increases
+    // Création de nouvelles séries si le nombre de points augmente
     if(ppf > currentPpf){
       const unit = this.isCalibrated ? "m" : "";
       for(let i = currentPpf; i < ppf; i++){
@@ -426,18 +426,18 @@ export default class MEASUREMENT {
         this.series.splice(ppf * 2 + 1);
       }
       
-      // Rename series
+      // Renommage des séries
       for(let i = 1; i < ppf + 1; i++){
         this.series[(i-1)*2+1].title = this.series.length > 3 ? "x" + i : "x";
         this.series[(i-1)*2+2].title = this.series.length > 3 ? "y" + i: "y";
       }
 
-      // update the table
+      // Mise à jour du tableau
       this.buildTable(this.player);
       this.updateTable();
     };
 
-    // shrink the data if ppf decreases
+    // Réduction des séries si le nombre de points diminue
     if(ppf < currentPpf){
       let hasData = false;
       for(let i = ppf * 2 + 1; i < this.series.length; i++){
@@ -519,14 +519,14 @@ export default class MEASUREMENT {
     for(let i = 0; i < this.tableBody.children.length; i++){
       if(!this.labelsCache[i]) continue;
       
-      // update t values
+      // Mise à jour des valeurs de temps
       if(i < this.originFrame){
         this.labelsCache[i].t.textContent = "";
       } else{
         this.labelsCache[i].t.textContent = round(this.series[0][i] - this.series[0][this.originFrame], 3);
       }
 
-      // update x and y values
+      // Mise à jour des valeurs x et y
 
 
 
@@ -566,14 +566,14 @@ export default class MEASUREMENT {
     for(let i = 0; i < this.series[0].length; i++){
       const isBeforeOrigin = i < this.originFrame;
 
-      // t values
+      // Valeurs de temps
       if(isBeforeOrigin){
         series[0][i] = "";
       } else{
         series[0][i] = this.series[0][i] - this.series[0][this.originFrame];
       }
 
-      // x and y values
+      // Valeurs x et y
       for(let j = 1; j < (this.series.length - 1) / 2 + 1; j++){
         const xIndex = ((j - 1) * 2) + 1;
         const yIndex = ((j - 1) * 2) + 2;

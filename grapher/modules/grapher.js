@@ -103,7 +103,7 @@ const PADDING = 0.02; // 2% de padding pour le zoom auto
 // --- Fin de la surcharge Highcharts ---
 
 function lengthOfTheLongestTable(tables){
-  // Find the biggest curve
+  // Recherche de la série la plus longue
   let size = 0;
   tables.forEach((table, i) => {
     if(table && table.length > size){
@@ -114,7 +114,7 @@ function lengthOfTheLongestTable(tables){
 }
 
 // Highcharts symbols --------------------------------------------------------------------------
-// Cross symbol for Highcharts
+// Symbole en forme de croix (+)
 Highcharts.SVGRenderer.prototype.symbols.cross = function (x, y, w, h) {
   const size = Math.min(w, h);
   const cx = x + w / 2;
@@ -129,7 +129,7 @@ Highcharts.SVGRenderer.prototype.symbols.cross = function (x, y, w, h) {
   ];
 };
 
-// Cross symbol for Highcharts with X orientation
+// Symbole en forme de croix en X (x)
 Highcharts.SVGRenderer.prototype.symbols.crossX = function (x, y, w, h) {
   const s = Math.min(w, h) / 2;
   const cx = x + w / 2;
@@ -153,7 +153,7 @@ export default class Grapher {
 
     this.uiManager = null;
 
-    this.grid = initialSettings.grapherGrid; // Default value for grid visibility
+    this.grid = initialSettings.grapherGrid; // Visibilité de la grille principale
     this.minorGrid = initialSettings.minorGrid || false;
     this.disableScientificNotation = initialSettings.disableScientificNotation || false;
     this.includeOriginOnAutoZoom = initialSettings.includeOriginOnAutoZoom ?? true;
@@ -167,7 +167,7 @@ export default class Grapher {
     this.crosshairMode = null; // Mode par défaut
     this.freeCrosshair = null;   // Pour stocker les éléments du réticule
 
-    this.suppressModelAutoUpdate = false; // used to avoid double updates
+    this.suppressModelAutoUpdate = false; // Évite les mises à jour redondantes
 
     this.renderedAnnotations = []; 
 
@@ -337,7 +337,7 @@ export default class Grapher {
             // 3. On déclenche UN SEUL redessin manuel pour appliquer tous les changements.
             this.chart.redraw();
 
-            // 4. On affiche notre bouton personnalisé.
+            // 4. Affichage du bouton contextuel personnalisé.
             $("#auto-zoom-button").classList.remove("is-hidden");
           },
           // Cet événement se déclenche lorsqu'on clique sur le fond du graphique
@@ -615,7 +615,7 @@ export default class Grapher {
       series: []
     });
 
-    // Set the custom grapher instance for tooltip formatting
+    // Référence vers l'instance de Grapher pour le formatage des infobulles
     this.chart.options.customGrapherInstance = this;
 
     // Gestion du clic pour ajouter une annotation avec le réticule libre
@@ -637,7 +637,7 @@ export default class Grapher {
         if (point) {
           this.mouseDownInfo.snappedPoint = { x: point.x, y: point.y, unit: point.series?.userOptions?.unit || '' };
         }
-      } else if (this.crosshairMode === 'model') { // <-- AJOUTEZ CE BLOC
+      } else if (this.crosshairMode === 'model') {
         const point = this._findNearestModelPoint(this.mouseDownInfo);
         if (point) {
             this.mouseDownInfo.snappedPoint = { x: point.x, y: point.y, unit: point.unit || '' };
@@ -692,13 +692,13 @@ export default class Grapher {
 
     // Ajoute un écouteur pour l'événement redraw pour les modèles
     Highcharts.addEvent(this.chart, 'redraw', () => {
-      // If we're in a programmatic update sequence, skip the automatic update
+      // En cours de mise à jour programmée, ignore la mise à jour automatique
       if (this.suppressModelAutoUpdate) return;
 
-      // Read real extremes and only update if they actually changed
+      // Lecture des bornes réelles et mise à jour uniquement si elles ont changé
       const ex = this.chart.xAxis[0].getExtremes();
 
-      // Ask redrawAllModels to use these extremes
+      // Demande à redrawAllModels d'utiliser ces bornes extrêmes
       this.redrawAllModels(ex.min, ex.max);
     });
   }
@@ -1699,7 +1699,7 @@ setDisableScientificNotation(disabled) {
             renderedTangentMethod.eqLabel = chart.renderer.label(eqText, pxEq + 12, pyEq - 20, 'callout', null, null, true)
               .attr({ 
                   fill: 'rgba(255, 255, 255, 0.95)', // Fond presque opaque
-                  stroke: '#dbdbdb',                 // Bordure standard de votre app
+                  stroke: '#dbdbdb',                 // Bordure de l'étiquette
                   'stroke-width': 1, 
                   r: 6,                              // Bords arrondis
                   padding: 8, 
@@ -1815,7 +1815,7 @@ setDisableScientificNotation(disabled) {
     if (this.crosshairMode === 'edit-bounds') {
       if (this.isDragging && this.draggingBound && this.editingModel) {
         
-        // 1. ON AFFICHE LE MESSAGE DE CHARGEMENT
+        // Affichage du message de chargement
         this.showLoading('Mise à jour du modèle...', 500, true);
 
         // 2. Relance le calcul mathématique Alglib via le Worker
@@ -1828,7 +1828,7 @@ setDisableScientificNotation(disabled) {
         }).catch(error => {
           console.error("Erreur lors du recalcul des bornes :", error);
         }).finally(() => {
-          // 3. ON MASQUE LE MESSAGE QUOI QU'IL ARRIVE
+          // Masquage du message de chargement
           this.hideLoading();
         });
       }
@@ -1885,7 +1885,7 @@ setDisableScientificNotation(disabled) {
         if (point) {
           const slope = this._calculateSlope(point);
           if (slope !== null && Number.isFinite(slope)) {
-            // Cette partie est correcte et crée UNIQUEMENT la tangente
+            // Tracé de la tangente
             this.data.annotations.push({
               id: Highcharts.uniqueKey(),
               type: 'tangent',
@@ -1914,7 +1914,7 @@ setDisableScientificNotation(disabled) {
                 seriesName: point.series.name
               });
 
-              // Simule un clic sur l'outil pour le désélectionner
+              // Désélection de l'outil
               const silentClick = new MouseEvent('click', { bubbles: false });
               $('#tool-tangent-method').dispatchEvent(silentClick);
             }
@@ -2085,7 +2085,7 @@ setDisableScientificNotation(disabled) {
     // On vérifie si les données sont au format [x,y] ou {x,y}
     const isArrayData = Array.isArray(data[0]);
 
-    // On cherche l'index du point manuellement, car point.index n'est pas fiable
+    // Recherche de l'index du point dans la série brute
     const index = data.findIndex(p => {
         if (isArrayData) {
             return p[0] === point.x && p[1] === point.y;
@@ -2099,7 +2099,7 @@ setDisableScientificNotation(disabled) {
       return null;
     }
 
-    // Fonction pour s'assurer qu'on a un objet {x, y}
+    // Normalisation au format {x, y}
     const getPointObject = (p) => {
         if (!p) return null;
         if (isArrayData) return { x: p[0], y: p[1] };
@@ -2262,7 +2262,7 @@ drawTangent(event) {
     // 3. Stocker les éléments de base
     this.freeCrosshair = { ...crosshairElements, tangentLine };
 
-    // 4. DESSIN CONDITIONNEL DU LABEL DE PENTE (uniquement pour l'outil classique)
+    // Affichage de la pente pour l'outil classique
     if (this.crosshairMode !== 'tangent-method') {
         const slopeText = `pente = ${formatNumber(slope, this.data?.settings?.significantDigits ?? 4)}`;
         const slopeLabel = chart.renderer.label(slopeText, 0, 0, 'callout')

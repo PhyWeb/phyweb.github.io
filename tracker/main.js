@@ -17,7 +17,7 @@ let extractor = new EXTRACTOR();
 let measurement = new MEASUREMENT();
 let player = new PLAYER($("#videoContainer"), $("#videoCanvas"), measurement, extractor);
 
-// handler to resize the columns
+// Gestionnaire de redimensionnement des colonnes
 let isHandlerDragging = false;
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -181,7 +181,7 @@ $("#menu-dropdown-toggle").addEventListener("click", function (event) {
   $("#menu-dropdown-container").classList.toggle("is-active");
 });
 
-// Close the dropdown when clicking outside
+// Fermeture du menu déroulant lors d'un clic extérieur
 document.addEventListener("click", function () {
   $("#menu-dropdown-container").classList.remove("is-active");
 });
@@ -242,7 +242,7 @@ $("#file-input").addEventListener("change", () => {
 });
 
 $("#file-input").addEventListener("click", () => {
-  $("#file-input").value = null; // allow the onchange trigger even if the same file is selected twice
+  $("#file-input").value = null; // Réinitialise l'entrée pour autoriser la sélection répétée du même fichier
 });
 
 // DRAG AND DROP
@@ -283,7 +283,7 @@ $("#open-resized-video").addEventListener("click", ()=>{
   extractor.extract();
 });
 
-// FILE SLIDER
+// Curseur de sélection de fichier
 noUiSlider.create($("#file-slider"), {
   start: [0, 10],
   connect: true,
@@ -323,7 +323,7 @@ $("#end-size-input").addEventListener('change', function () {
 $("#magnifier-button").addEventListener("click", ()=>{player.toggleMagnifier();});
 
 // SETTINGS
-// Open settings modal
+// Boîte de dialogue des paramètres
 $("#settings-button").addEventListener("click", ()=>{
   $("#max-digits-input").value = measurement.maxDigits;
 
@@ -359,7 +359,7 @@ function setCoordinatesPanelExpanded(isExpanded) {
   }
 }
 
-// Clic sur la petite flèche qui dépasse
+// Clic sur le bouton de bascule du panneau latéral
 $("#toggle-coordinates-button").addEventListener("click", () => {
   // On regarde l'état actuel de la checkbox et on demande l'inverse
   const currentStatus = $("#show-coordinates-input").checked;
@@ -372,7 +372,7 @@ $("#show-coordinates-input").addEventListener("change", (e) => {
   setCoordinatesPanelExpanded(e.target.checked);
 });
 
-// Max digits
+// Nombre maximal de chiffres significatifs
 $("#max-digits-input").addEventListener("change", (e)=> {
   measurement.setMaxDigits(parseInt(e.target.value));
 });
@@ -586,7 +586,7 @@ document.addEventListener('mousemove', (e) => {
 });
 
 document.addEventListener('mouseup', function(e) {
-  // Turn off dragging flag when user mouse is up
+  // Désactivation du mode glisser lors du relâchement du clic
   isHandlerDragging = false;
 });
 

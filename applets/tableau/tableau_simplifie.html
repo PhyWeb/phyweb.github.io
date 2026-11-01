@@ -33,7 +33,7 @@
         }
         .periodic-table {
             display: grid;
-            /* width proportionnelle et colonnes identiques */
+            /* Largeur proportionnelle et colonnes identiques */
             grid-template-columns: repeat(8, minmax(0, 1fr));
             gap: 10px;
             width: 100%;
@@ -43,7 +43,7 @@
             background-color: white;
             border: 2px solid var(--primary-color);
             border-radius: 8px;
-            /* Rend les cases parfaitement carrées */
+            /* Format carré */
             aspect-ratio: 1 / 1; 
             display: flex;
             flex-direction: column;
@@ -90,7 +90,7 @@
         @media print {
             @page {
                 size: A4 landscape;
-                margin: 1.5cm; /* Marges d'impression restaurées */
+                margin: 1.5cm; /* Marges d'impression */
             }
             body {
                 background-color: white;

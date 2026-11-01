@@ -219,7 +219,7 @@ class Spreadsheet {
 
   handleAfterChange(change, source) {
     if (source === "loadData" || source === "updateData") {
-      return; // don't save this change
+      return; // Modification ignorée
     }
 
     if (!change || change.length === 0) return;
@@ -230,7 +230,7 @@ class Spreadsheet {
       const [visualRow, col, oldVal, newVal] = element;
       const curve = this.data.getCurveByIndex(col);
       if (curve && curve.type === 'calculation') {
-        return; // Interdiction absolue de modifier une grandeur calculée dans le tableur
+        return; // Les grandeurs calculées ne sont pas modifiables dans le tableur
       }
       const actualRow = pageOffset + visualRow;
       const parsed = this.data.setValue(col, actualRow, newVal);
@@ -283,17 +283,17 @@ class Spreadsheet {
       }
     };
     
-    // --- SECURITE : Initialisation de la pagination au cas où ---
+    // Initialisation de la pagination
     if (typeof this.currentPage === 'undefined') this.currentPage = 0;
     if (typeof this.pageSize === 'undefined') this.pageSize = 10000;
 
-    // --- DECOUPAGE DES DONNÉES (PAGINATION) ---
+    // Découpage des données (pagination)
     const fullTableData = this.data.getTable();
     const startIdx = this.currentPage * this.pageSize;
     const endIdx = Math.min(startIdx + this.pageSize, fullTableData.length);
     const displayData = fullTableData.slice(startIdx, endIdx);
 
-    // --- CRÉATION DU TABLEAU ---
+    // Création du tableau Handsontable
     const columnsConfig = this.data.curves.map((curve) => ({ 
       type: 'numeric',
       readOnly: curve.type === 'calculation',
@@ -354,8 +354,7 @@ class Spreadsheet {
     // On s'abonne au prochain rendu naturel du tableau
     this.hot.addHookOnce('afterRender', () => {
       
-      // Le délai de 0 milliseconde libère la pile d'exécution (call stack)
-      // Cela évite la boucle infinie tout en garantissant un focus immédiat.
+      // Diffère l'activation du focus pour garantir la fin du cycle de rendu
       setTimeout(() => {
         // On vérifie que le tableau n'a pas été détruit entre temps
         if (this.hot && this.hot.countRows() > 0 && this.hot.countCols() > 0) {

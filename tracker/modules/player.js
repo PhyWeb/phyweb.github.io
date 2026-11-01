@@ -50,29 +50,29 @@ export default class PLAYER {
 
   load(_file, _forceFilesize = false){
     this.frameStep = 1;
-    // Pause if the video is playing
+    // Pause de la vidéo si la lecture est en cours
     this.pause();
     
-    // Stop loop
+    // Arrêt de la boucle de lecture
     cancelAnimationFrame(this.animationFrameRequest);
 
-    // Checksize callback
+    // Rappel de vérification de taille
     let checksizeCB = () => {
-      // destroy previous frames
+      // Libération des images précédentes
       if(this.decodedVideo){
         this.decodedVideo.frames.forEach((e)=>{
-          // Vérification de sécurité et libération de l'URL du Blob
+          // Libération de l'URL du Blob existant
           if (e && e.src) {
             URL.revokeObjectURL(e.src);
           }
         });
-        // On vide proprement le tableau
+        // Réinitialisation du tableau d'images
         this.decodedVideo.frames = [];
         if (this.decodedVideo.timestamps) this.decodedVideo.timestamps = [];
       }
     }
 
-    // Decoded video callback
+    // Rappel après décodage de la vidéo
     let decodedVideoCB = (_decodedVideo) => {
       console.log("Video decoded", _decodedVideo);
       if (!_decodedVideo || !_decodedVideo.frames || _decodedVideo.frames.length === 0) {
@@ -86,7 +86,7 @@ export default class PLAYER {
       this.currentPoint = 0;
       this.frameStep = 1;
 
-      // Display UI
+      // Affichage de l'interface
       $("#empty-state-container").classList.add("is-hidden");
       $("#video-controls").classList.remove("is-hidden");
       $("#magnifier-button").classList.remove("is-hidden");
@@ -112,7 +112,7 @@ export default class PLAYER {
       //this.animationFrameRequest = requestAnimationFrame(this.loop);
     }
     
-    // Check if _file is a file or a path and start extraction
+    // Vérification du fichier et démarrage de l'extraction
     if(typeof _file === "string"){
       fetch(_file)
       .then(res => res.blob()) 
@@ -130,25 +130,25 @@ export default class PLAYER {
       this.ctx.drawImage(this.decodedVideo.frames[_frameID]/*e.target*/, 0, 0 ,this.videoCanvas.width, this.videoCanvas.height);
     }
     
-    // Draw the origin
+    // Tracé de l'origine
     this.drawOrigin();
 
     if($("#etalonnage-button").classList.contains("is-active")){
-      // Draw the scale segment
+      // Tracé du segment d'étalonnage
       if(this.measurement.scale.scaleSegment.x1 != null || this.segment.x1 != null){
         this.drawSegment();
       }
     }
 
-    // Draw the crosses
+    // Tracé des points pointés
     this.drawCrosses();
 
-    // Draw the magnifier
+    // Tracé de la loupe
     if(this.magnifier === true){
       this.drawMagnifier(_frameID);
     }
 
-    // Update the image label
+    // Mise à jour de l'étiquette de l'image
     if (this.decodedVideo && this.decodedVideo.frames) {
       const maxPoints = (this.measurement.series.length - 1) / 2;
       const totalFrames = this.decodedVideo.frames.length;
@@ -158,16 +158,16 @@ export default class PLAYER {
 
       if (maxPoints > 1) {
         const POINT_COLORS = [
-          "#f14668", // Red
-          "#3e8ed0", // Blue
-          "#48c774", // Green
-          "#e6b800", // Yellow
-          "#b86bff", // Purple
+          "#f14668", // Rouge
+          "#3e8ed0", // Bleu
+          "#48c774", // Vert
+          "#e6b800", // Jaune
+          "#b86bff", // Violet
           "#ff8c00", // Orange
-          "#ff69b4", // Pink
+          "#ff69b4", // Rose
           "#00ced1", // Cyan
-          "#8b4513", // Brown
-          "#99cc00"  // Lime
+          "#8b4513", // Marron
+          "#99cc00"  // Vert clair
         ];
         const color = POINT_COLORS[this.currentPoint % POINT_COLORS.length];
         $("#frame-label").innerHTML = `Image n° ${fractionStr}<span class="tag is-normal" style="background-color: ${color}; color: white; font-weight: bold; margin-left: 0.5rem; vertical-align: middle; min-width: 4.5rem; justify-content: center;">Point ${this.currentPoint + 1}</span>`;
@@ -363,7 +363,7 @@ export default class PLAYER {
     }
 
     function canvasArrow(context, fromx, fromy, tox, toy) {
-      const headlen = 10; // length of head in pixels
+      const headlen = 10; // Longueur de la pointe de flèche en pixels
       const dx = tox - fromx;
       const dy = toy - fromy;
       const angle = Math.atan2(dy, dx);
@@ -485,7 +485,7 @@ export default class PLAYER {
     this.currentFrame = id;
     this.currentPoint = 0;
 
-    // Update the table
+    // Mise à jour du tableau
     this.measurement.selectRow(this.currentFrame, _pause);
 
     this.drawFrame(this.currentFrame);
@@ -654,19 +654,19 @@ export default class PLAYER {
       let videoRatio = this.decodedVideo.height / this.decodedVideo.width;
 
       if (videoContainerRatio < videoRatio) {
-        // stretch to height
+        // Ajustement en hauteur
         this.videoCanvas.width = this.videoContainer.offsetHeight / videoRatio;
         this.videoCanvas.height = this.videoContainer.offsetHeight;
 
-        // horizontal align
+        // Alignement horizontal
         let left = (this.videoContainer.offsetWidth - this.videoCanvas.width ) / 2
         this.videoCanvas.style.left = left.toString() + "px";
         this.videoCanvas.style.top = "0px";
       } else {
-        // stretch to width
+        // Ajustement en largeur
         this.videoCanvas.width = this.videoContainer.offsetWidth;
         this.videoCanvas.height = this.videoContainer.offsetWidth * videoRatio;
-        // vertical align
+        // Alignement vertical
         let top = (this.videoContainer.offsetHeight - this.videoCanvas.width * videoRatio) / 2
         this.videoCanvas.style.top = top.toString() + "px";
         this.videoCanvas.style.left = "0px";
@@ -706,7 +706,7 @@ export default class PLAYER {
     this.point = point;
     this.distPoint = distPoint;
 
-    // Update the coordinates label
+    // Mise à jour de l'affichage des coordonnées
     const scaleX = this.measurement.scale.getOrientedScaleX();
     const scaleY = this.measurement.scale.getOrientedScaleY(this.measurement.aspectRatio);
     
@@ -715,7 +715,7 @@ export default class PLAYER {
     const y = (((this.distPoint.y + 0.5) - this.measurement.scale.origin.y) * scaleY).toFixed(digits);
 
     if(this.measurement.scale.isCalibrated || this.segment.x2 != null){
-      // a scale has been set
+      // Une échelle a été définie
       $("#x-coord-label").innerHTML = "X : " + x + " m";
       $("#y-coord-label").innerHTML = "Y : " + y + " m";
     } else{
@@ -873,7 +873,7 @@ export default class PLAYER {
     }
   }
 
-  // Escape shortcut callback (originMode)
+  // Annulation du mode origine via Échap
   originModeKeyboardShortcut = (event) => {
     if (event.key === "Escape") {
       event.preventDefault();
@@ -890,7 +890,7 @@ export default class PLAYER {
     this.videoCanvas.removeEventListener("click", this.onClick);
     this.videoCanvas.addEventListener("click", this.onOriginClick);
 
-    // Keyboard shortcut
+    // Raccourci clavier Échap
     document.addEventListener("keydown", this.originModeKeyboardShortcut);
   }
 
@@ -906,7 +906,7 @@ export default class PLAYER {
     this.videoCanvas.style.cursor = "crosshair";
     this.originFlag = "none";
 
-    // Remove keyboard shortcut
+    // Suppression du raccourci clavier
     document.removeEventListener("keydown", this.originModeKeyboardShortcut);
     this.drawFrame(this.currentFrame);
   }
@@ -934,7 +934,7 @@ export default class PLAYER {
     this.exitOriginMode();
   }
 
-  // Escape shortcut callback (scaleMode)
+  // Annulation du mode étalonnage via Échap
   scaleModeKeyboardShortcut = (event) => {
     if (event.key === "Escape") {
       event.preventDefault();
@@ -952,7 +952,7 @@ export default class PLAYER {
     this.videoCanvas.removeEventListener("click", this.onClick);
     this.videoCanvas.addEventListener("click", this.onScaleClick);
 
-    // Keyboard shortcut
+    // Raccourci clavier Échap
     document.addEventListener("keydown", this.scaleModeKeyboardShortcut);
   }
 
@@ -972,7 +972,7 @@ export default class PLAYER {
     this.segment.y1 = null;
     this.segment.y2 = null;
 
-    // Remove keyboard shortcut
+    // Suppression du raccourci clavier
     document.removeEventListener("keydown", this.scaleModeKeyboardShortcut);
     this.drawFrame(this.currentFrame);
   }
@@ -1026,7 +1026,7 @@ export default class PLAYER {
       if(id >=0 && id < this.measurement.series[0].length){
         //this.measurement.originFrame = id
         this.measurement.setOriginFrame(id);
-        this.setFrame(this.currentFrame); // check if currentFrame < originFrame
+        this.setFrame(this.currentFrame); // Recalage de l'image courante
         console.log("originframe : " , id)
       } 
     }

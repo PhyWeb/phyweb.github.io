@@ -23,7 +23,7 @@ export default class VIDEOLIST {
 
   init(_url){
     this.loadXHR(_url, "text", _response => {
-      // Parse JSON
+      // Analyse du contenu JSON
       try {
         this.list = JSON.parse(_response);
       } catch (e) {
@@ -36,8 +36,8 @@ export default class VIDEOLIST {
       }
       //console.log("videolist loaded", this.list);
 
-      // Create DOM elements
-      // Iterate titles
+      // Création des éléments de l'interface
+      // Parcours des catégories
       for(let el0 of this.list.videos){
         let p = document.createElement("p");
         p.classList.add("menu-label");
@@ -47,14 +47,14 @@ export default class VIDEOLIST {
         let ul = document.createElement("ul");
         ul.classList.add("menu-list");
 
-        // Iterate elements of the title
+        // Parcours des éléments de la catégorie
         for(let el1 of el0.elements){
 
           let li = this.createIconText(el1)
           ul.appendChild(li);
           if(el1.type == "folder"){
             let ul2 = document.createElement("ul");
-            ul2.classList.add("is-hidden"); // initially closed
+            ul2.classList.add("is-hidden"); // Fermé par défaut
             for(let el2 of el1.videos){
               let li2 = this.createIconText(el2)
               ul2.appendChild(li2);

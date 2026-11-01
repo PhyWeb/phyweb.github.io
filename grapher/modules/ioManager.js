@@ -136,7 +136,7 @@ export default class IOManager {
       content = this.generateRW3();
       mimeType = 'text/plain;charset=utf-8';
     } else if (format === 'pw') {
-      content = this.generatePW(); // Nouvelle méthode
+      content = this.generatePW();
       mimeType = 'application/json;charset=utf-8';
     } else {
       console.error("Format de fichier non supporté:", format);
@@ -165,7 +165,7 @@ generatePW() {
       markerSymbol: curve.markerSymbol,
       markerRadius: curve.markerRadius,
       type: curve.type,
-      values: Array.from(curve) // La seule source pour les points de données
+      values: Array.from(curve)
     })),
     
     parameters: this.app.data.parameters,
@@ -268,14 +268,14 @@ generatePW() {
    * @returns {string} Le contenu du fichier .rw3.
    */
   generateRW3() {
-    // 1. On ne sélectionne QUE les courbes qui ne sont PAS issues d'un calcul.
+    // Sélection des grandeurs mesurées
     const rawCurves = this.app.data.curves.filter(c => c.type !== 'calculation');
     
-    // 2. Les noms et unités ne proviennent QUE de ces courbes brutes.
+    // Noms et unités des grandeurs mesurées
     const rawNames = rawCurves.map(c => removeAccents(c.title));
     const rawUnits = rawCurves.map(c => removeAccents(c.unit));
 
-    // 3. On construit le fichier en utilisant uniquement les données brutes.
+    // Construction du fichier à partir des données mesurées
     let output = "EVARISTE REGRESSI WINDOWS 1.0\n";
     
     output += `£${rawNames.length} NOM VAR\n`;
@@ -286,7 +286,7 @@ generatePW() {
     
     output += "£1 PAGE COMMENT\n\n";
     
-    // Le tableau de valeurs est aussi construit UNIQUEMENT à partir des courbes brutes.
+    // Tableau des valeurs des grandeurs mesurées
     const numRows = rawCurves.reduce((max, curve) => Math.max(max, curve.length), 0);
     const dataRows = [];
 
@@ -410,12 +410,12 @@ generatePW() {
   * @param {string} data - Les données copiées (texte brut).
   */
   loadClipboard(data) {
-    // Check if the data is tabular
+    // Vérification du format tabulaire
     if (!isTabularData(data)) {
       throw new Error("Les données du presse-papiers ne sont pas au format tabulaire.");
     }
 
-    // EMPTY DATA
+    // Données vides
     this.app.resetSession();
 
     this.loadData(data);
@@ -435,7 +435,7 @@ generatePW() {
     const existingSymbols = new Set();
     const nameMap = {}; // Dictionnaire de traduction { "ancien_nom": "nouveauNom" }
 
-    this.app.data.curves = []; // Assurer vide avant
+    this.app.data.curves = [];
     state.data.curves.forEach((savedCurve, index) => {
       const oldTitle = savedCurve.title || `Courbe ${index + 1}`;
       const newTitle = sanitizeSymbol(oldTitle, existingSymbols);
@@ -443,7 +443,7 @@ generatePW() {
 
       const newCurve = new Curve(newTitle, sanitizeUnit(savedCurve.unit));
       Object.assign(newCurve, savedCurve);
-      newCurve.title = newTitle; // S'assure que le titre est bien le nouveau
+      newCurve.title = newTitle;
       newCurve.length = 0;
 
       if (Array.isArray(savedCurve.values)) {
@@ -465,7 +465,7 @@ generatePW() {
       if (!newCurve.color || newCurve.color === '#000000') {
         let color = COLOR_LIST.find(c => !this.app.data.curves.some(curve => curve.color === c));
         if (!color) {
-          // Random si COLORLIST épuisé (rare)
+          // Couleur aléatoire si la palette est épuisée
           color = '#' + Math.floor(Math.random() * 16777215).toString(16);
           console.warn('No COLORLIST available, using random color for', newCurve.title);
         }
@@ -475,7 +475,7 @@ generatePW() {
       this.app.data.curves.push(newCurve);
     });
 
-    // 2. Restaurer TOUS les paramètres
+    // Restauration des paramètres
     this.app.data.parameters = {};
     if (state.data.parameters) {
       for (const [oldName, paramObj] of Object.entries(state.data.parameters)) {
@@ -485,7 +485,7 @@ generatePW() {
       }
     }
 
-    // 3. Restaurer les modèles SANS RECALCUL
+    // Restauration des modèles sans recalcul
     if (Array.isArray(state.data.models)) {
       for (const savedModel of state.data.models) {
         const updatedXTitle = nameMap[savedModel.xTitle] || savedModel.xTitle;
@@ -632,7 +632,7 @@ generatePW() {
       await this._processPWState(state);
     } catch (e) {
       console.error("Erreur lors du chargement des données PW depuis la chaîne de caractères :", e);
-      // We throw a new error to be caught by the caller
+      // Propagation de l'erreur pour traitement par l'appelant
       throw new Error("Les données de session sont corrompues ou invalides.");
     }
   }
@@ -649,7 +649,7 @@ generatePW() {
         skipEmptyLines: true,
         complete: (results) => {
           try {
-            // Conversion rapide en TSV pour votre méthode loadData
+            // Conversion en TSV pour la méthode loadData
             const toTSV = results.data
               .map(r => r.map(cell => String(cell).replace(/\t/g, " ")).join("\t"))
               .join("\n");
@@ -854,10 +854,10 @@ generatePW() {
 
       // lecture des paramètres
       const paramLines = [];
-      if (cleanConstNames.length) { // <-- Modification ici
+      if (cleanConstNames.length) {
         const n = Math.max(cleanConstNames.length, constUnits.length, constRawValues.length);
         for (let k = 0; k < n; k++) {
-          const name = (cleanConstNames[k] || '').trim(); // <-- Modification ici
+          const name = (cleanConstNames[k] || '').trim();
           const unit = sanitizeUnit(constUnits[k]);
           const rawVal = String(constRawValues[k] ?? '').trim();
           if (!name || !rawVal) continue; // on n’écrit que s’il y a une valeur
@@ -958,7 +958,7 @@ generatePW() {
     try {
       const lines = data.split(/\r?\n/).filter(l => l.trim().length > 0);
       if (lines.length === 0) {
-        this.isLoading = false; // S'assurer de réinitialiser le drapeau
+        this.isLoading = false;
         return; // Rien à charger
       }
 
@@ -1059,7 +1059,7 @@ generatePW() {
         const dataToAdd = curvesData[i];
 
         let curve;
-        // Performance mode: if more than PERFORMANCE_THRESHOLD points, show line but no markers
+        // Mode performance : masquage des marqueurs si grand nombre de points
         if (dataToAdd.length > PERFORMANCE_THRESHOLD) {
           curve = this.app.addCurve(headers[i], units ? units[i] : undefined, true, false);
         } else{
@@ -1088,7 +1088,7 @@ generatePW() {
 
 
     } finally {
-      this.isLoading = false; // Assure que le drapeau est réinitialisé même en cas d'erreur
+      this.isLoading = false;
     }
   }
 }

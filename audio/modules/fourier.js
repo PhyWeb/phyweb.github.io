@@ -38,7 +38,7 @@ function Nayuki(n) {
         this.sinTable[i] = Math.sin(2 * Math.PI * i / n);
     }
 
-    // --- OPTIMISATION 1 : Précalcul de la table d'inversion de bits ---
+    // Précalcul de la table d'inversion de bits
     this.reverseTable = new Uint32Array(n);
     for (var i = 0; i < n; i++) {
         var x = i;
@@ -56,7 +56,7 @@ function Nayuki(n) {
     this.fastTransformRadix2 = function(real, imag) {
         var n = this.n;
 	
-        // --- OPTIMISATION 1 : Utilisation de la table précalculée (évite 50 000 boucles) ---
+        // Inversion des bits par table précalculée
         for (var i = 0; i < n; i++) {
             var j = this.reverseTable[i];
             if (j > i) {
@@ -69,7 +69,7 @@ function Nayuki(n) {
             }
         }
     
-        // Cooley-Tukey decimation-in-time radix-2 FFT
+        // Algorithme FFT radix-2 de Cooley-Tukey
         for (var size = 2; size <= n; size *= 2) {
             var halfsize = size / 2;
             var tablestep = n / size;
@@ -89,7 +89,7 @@ function Nayuki(n) {
     }
 
     this.transformRadix2 = function(real, imag) {
-        // Fallback pour compatibilité...
+        // Repli de compatibilité
         var n = real.length;
         if (n != imag.length) throw "Mismatched lengths";
         if (n == 1) return;
@@ -224,17 +224,17 @@ function Nayuki(n) {
 export default function Fourier(_n) {
     this.nayuki = new Nayuki(_n);
     
-    // --- OPTIMISATION 2 : Pré-allocation mémoire (Garbage Collector friendly) ---
+    // Pré-allocation des tampons
     this.realBuffer = null;
     this.imagBuffer = null;
 
-    // --- OPTIMISATION 3 : Précalcul de la fenêtre de Hann ---
+    // Précalcul de la fenêtre de Hann
     this.windowTable = new Float32Array(_n);
     for (let i = 0; i < _n; i++) {
         this.windowTable[i] = 0.5 * (1 - Math.cos((2 * Math.PI * i) / (_n - 1)));
     }
 
-    // --- OPTIMISATION 4 : Moteur Real FFT N/2 (Packing) ---
+    // Transformée de Fourier réelle (packing demi-taille)
     this.nayukiHalf = new Nayuki(_n / 2);
     this.packCosTable = new Float32Array(_n / 2);
     this.packSinTable = new Float32Array(_n / 2);
@@ -255,7 +255,7 @@ export default function Fourier(_n) {
             length = _data.data.length;
         }
 
-        // --- OPTIMISATION 2 : Recyclage des tableaux ---
+        // Réutilisation des tampons alloués
         if (!this.realBuffer || this.realBuffer.length !== length) {
             this.realBuffer = new Float32Array(length);
             this.imagBuffer = new Float32Array(length);
@@ -264,20 +264,20 @@ export default function Fourier(_n) {
         let FFTreal = this.realBuffer;
         let FFTimag = this.imagBuffer;
     
-        // --- OPTIMISATION 4 : Real FFT (Packing) si les conditions sont idéales ---
+        // Calcul FFT réel par packing si applicable
         if (length === this.nayuki.n && !_zeroPadding) {
             let halfN = length / 2;
             
-            // 1. PACKING + FENÊTRAGE (Optimisation 3)
+            // Application de la fenêtre et entrelacement
             for (let i = 0; i < halfN; i++) {
                 FFTreal[i] = _data.data[2 * i] * this.windowTable[2 * i];
                 FFTimag[i] = _data.data[2 * i + 1] * this.windowTable[2 * i + 1];
             }
 
-            // 2. FFT COMPLEXE (Taille N/2, très rapide)
+            // Calcul de la FFT complexe demi-taille
             this.nayukiHalf.fastTransformRadix2(FFTreal, FFTimag);
 
-            // 3. UNPACKING (Démêlage)
+            // Séparation des composantes réelles et imaginaires
             FFTreal[halfN] = FFTreal[0] - FFTimag[0];
             FFTimag[halfN] = 0;
             FFTreal[0] = FFTreal[0] + FFTimag[0];
@@ -306,20 +306,20 @@ export default function Fourier(_n) {
                 }
             }
             
-            // Miroir pour remplir proprement la fin du tableau
+            // Symétrie hermitienne pour la seconde moitié du spectre
             for (let k = 1; k < halfN; k++) {
                 FFTreal[length - k] = FFTreal[k];
                 FFTimag[length - k] = -FFTimag[k];
             }
         }
         else { 
-            // --- FALLBACK (Ex: taille modifiée par l'utilisateur ou zero padding) ---
+            // Calcul standard avec zéro-padding ou taille variable
             for(let i = 0; i < _data.data.length; i++){
                 FFTimag[i] = 0;
             }
             FFTreal.set(_data.data,0);
 
-            // Application de la fenêtre de Hann (précalculée si taille == n, sinon calculée à la volée)
+            // Application de la fenêtre de Hann
             const dataLen = _data.data.length;
             if (dataLen === this.nayuki.n) {
                 for (let i = 0; i < dataLen; i++) {

@@ -13,10 +13,10 @@ const $ = document.querySelector.bind(document);
 
 document.addEventListener('DOMContentLoaded', () => {
 
-  // On charge les paramètres sauvegardés (ou les défauts) dès le début.
+  // Chargement des paramètres sauvegardés ou par défaut
   const initialSettings = loadSettings();
 
-  // Initialise les modules de base
+  // Initialisation des modules de base
   const common = new Common("Grapher");
   const data = new Data(initialSettings);
   const grapher = new Grapher(data, initialSettings);
@@ -39,18 +39,18 @@ document.addEventListener('DOMContentLoaded', () => {
   // Initialisation du gestionnaire d'interface utilisateur
   const uiManager = new UIManager(common, data, grapher, calculation, editor, spreadsheet);
 
-  // App
+  // Initialisation du contrôleur principal
   const app = new App(data, spreadsheet, grapher, calculation, editor, uiManager);
 
-  // UIManager a besoin de 'app' pour certaines actions (ex: app.deleteCurve)
+  // Liaison du contrôleur principal avec les gestionnaires
   uiManager.setApp(app);
   grapher.setUIManager(uiManager);
   uiManager.initialize();
 
-  // Creer le graphique au demarrage
+  // Création du graphique initial
   grapher.newChart();
 
-  // Vérifier les données d'une autre application après l'initialisation complète
+  // Vérification des données transmises par une autre application
   ExchangeManager.checkStartupData((importedPW) => {
     const newFileModal = $('#new-file-modal');
     
@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
     $('#empty-state-container').classList.add('is-hidden');
     // Afficher la modale "Nouveau fichier" pendant le chargement
     newFileModal.classList.add('is-active');
-    // Afficher un loader dans la modale
+    // Affichage de l'indicateur de chargement
     uiManager.setModalLoading(true);
 
     console.log("Données importées depuis une autre application.");
@@ -67,19 +67,17 @@ document.addEventListener('DOMContentLoaded', () => {
       try {
         await app.ioManager.loadPWFromString(importedPW);
 
-        // Si le chargement est un succès, on affiche l'interface principale et on ferme les modales.
+        // Affichage de l'interface principale et fermeture des modales
         uiManager.showTabsAndPanels();
         uiManager.common.modalManager.closeAllModals();
         uiManager.markAsSaved();
         showToast("Données importées avec succès !", "is-success");
       } catch (e) {
         console.error("Échec du chargement des données inter-applications:", e);
-        // En cas d'erreur, on affiche un toast.
+        // Notification en cas d'erreur
         showToast(`Erreur lors du chargement des données : ${e.message}`, "is-danger");
       } finally {
-        // Note : sessionStorage.removeItem est déjà géré par ExchangeManager
-        
-        // Enlever le loader
+        // Masquage de l'indicateur de chargement
         uiManager.setModalLoading(false);
       }
     }, 50);
@@ -92,10 +90,10 @@ document.addEventListener('DOMContentLoaded', () => {
     grapher.chart.reflow();
   }
 
-  // Initial resize
+  // Ajustement initial des dimensions
   resize();
 
-  // Resize on window resize
+  // Réajustement lors du redimensionnement de la fenêtre
   window.addEventListener("resize", () => {
     resize();
   });
