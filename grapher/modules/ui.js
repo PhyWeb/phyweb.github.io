@@ -1891,6 +1891,25 @@ export default class UIManager {
         : (this.spreadsheet.currentPage || 0) * (this.spreadsheet.pageSize || 0);
       const actualStartRow = pageOffset + startRow;
 
+      // Vérifie si toutes les lignes sélectionnées sont vides
+      const isEmptyValue = (v) => v === null || v === undefined || (typeof v === 'string' && v.trim() === '') || Number.isNaN(v);
+      const curves = this.data?.curves || [];
+      let allEmpty = true;
+
+      for (let r = actualStartRow; r < actualStartRow + amount; r++) {
+        const rowHasData = curves.some(curve => !isEmptyValue(curve[r]));
+        if (rowHasData) {
+          allEmpty = false;
+          break;
+        }
+      }
+
+      // Si toutes les lignes sélectionnées sont vides, on supprime directement sans modale
+      if (allEmpty) {
+        this.app.deleteRow(actualStartRow, amount);
+        return;
+      }
+
       alertModal({
         type: "danger",
         title: "Confirmer la suppression",

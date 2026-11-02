@@ -297,4 +297,184 @@ describe('Suppression de ligne avec pagination (UIManager.initDeleteLineButton &
       assert.equal(curveX.length, 2);
     });
   });
+
+  describe('Suppression de ligne vide sans modale d\'avertissement', () => {
+    it('doit supprimer directement sans modale une ligne dont toutes les cellules sont null ou vides', () => {
+      const data = new Data({ significantDigits: 4 });
+      const curveX = data.addCurve('x', 'm');
+      const curveY = data.addCurve('y', 's');
+
+      // Ligne 0 avec données, ligne 1 vide (null), ligne 2 avec données
+      curveX.push(1, null, 3);
+      curveY.push(10, null, 30);
+
+      let capturedDelete = null;
+      const mockApp = {
+        deleteRow: (startRow, amount) => {
+          capturedDelete = { startRow, amount };
+        }
+      };
+
+      const mockSpreadsheet = {
+        currentPage: 0,
+        pageSize: 10,
+        getPageOffset: () => 0,
+        hot: {
+          getSelectedRangeLast: () => ({ from: { row: 1 }, to: { row: 1 } })
+        }
+      };
+
+      const ui = new UIManager({}, data, {}, {}, {}, mockSpreadsheet);
+      ui.setApp(mockApp);
+      ui.initDeleteLineButton();
+
+      buttonListener();
+
+      // Pas de modale affichée
+      assert.equal(modalConfirmButtons.length, 0, 'Aucune modale ne doit être affichée pour une ligne vide');
+      // deleteRow doit être appelé directement
+      assert.deepEqual(capturedDelete, { startRow: 1, amount: 1 });
+    });
+
+    it('doit supprimer directement sans modale si la ligne sélectionnée est au-delà des courbes (spare row)', () => {
+      const data = new Data({ significantDigits: 4 });
+      const curveX = data.addCurve('x', 'm');
+      curveX.push(1, 2);
+
+      let capturedDelete = null;
+      const mockApp = {
+        deleteRow: (startRow, amount) => {
+          capturedDelete = { startRow, amount };
+        }
+      };
+
+      const mockSpreadsheet = {
+        currentPage: 0,
+        pageSize: 10,
+        getPageOffset: () => 0,
+        hot: {
+          getSelectedRangeLast: () => ({ from: { row: 2 }, to: { row: 2 } }) // au-delà de length (index 2)
+        }
+      };
+
+      const ui = new UIManager({}, data, {}, {}, {}, mockSpreadsheet);
+      ui.setApp(mockApp);
+      ui.initDeleteLineButton();
+
+      buttonListener();
+
+      assert.equal(modalConfirmButtons.length, 0, 'Aucune modale ne doit être affichée pour une spare row');
+      assert.deepEqual(capturedDelete, { startRow: 2, amount: 1 });
+    });
+
+    it('doit supprimer directement plusieurs lignes consécutives si elles sont toutes vides', () => {
+      const data = new Data({ significantDigits: 4 });
+      const curveX = data.addCurve('x', 'm');
+      const curveY = data.addCurve('y', 's');
+
+      curveX.push(1, null, '', undefined, 5);
+      curveY.push(10, '', null, '   ', 50);
+
+      let capturedDelete = null;
+      const mockApp = {
+        deleteRow: (startRow, amount) => {
+          capturedDelete = { startRow, amount };
+        }
+      };
+
+      const mockSpreadsheet = {
+        currentPage: 0,
+        pageSize: 10,
+        getPageOffset: () => 0,
+        hot: {
+          getSelectedRangeLast: () => ({ from: { row: 1 }, to: { row: 3 } }) // lignes 1, 2, 3 vides
+        }
+      };
+
+      const ui = new UIManager({}, data, {}, {}, {}, mockSpreadsheet);
+      ui.setApp(mockApp);
+      ui.initDeleteLineButton();
+
+      buttonListener();
+
+      assert.equal(modalConfirmButtons.length, 0);
+      assert.deepEqual(capturedDelete, { startRow: 1, amount: 3 });
+    });
+
+    it('doit afficher la modale de confirmation si une cellule vaut 0 (valeur numérique valide)', () => {
+      const data = new Data({ significantDigits: 4 });
+      const curveX = data.addCurve('x', 'm');
+      const curveY = data.addCurve('y', 's');
+
+      // Ligne 0 contient 0 pour curveX et null pour curveY
+      curveX.push(0);
+      curveY.push(null);
+
+      let capturedDelete = null;
+      const mockApp = {
+        deleteRow: (startRow, amount) => {
+          capturedDelete = { startRow, amount };
+        }
+      };
+
+      const mockSpreadsheet = {
+        currentPage: 0,
+        pageSize: 10,
+        getPageOffset: () => 0,
+        hot: {
+          getSelectedRangeLast: () => ({ from: { row: 0 }, to: { row: 0 } })
+        }
+      };
+
+      const ui = new UIManager({}, data, {}, {}, {}, mockSpreadsheet);
+      ui.setApp(mockApp);
+      ui.initDeleteLineButton();
+
+      buttonListener();
+
+      assert.ok(modalConfirmButtons.length > 0, 'La modale doit s\'afficher car 0 est une donnée valide');
+      assert.equal(capturedDelete, null, 'deleteRow ne doit pas être appelé avant confirmation');
+
+      modalConfirmButtons[0].click();
+      assert.deepEqual(capturedDelete, { startRow: 0, amount: 1 });
+    });
+
+    it('doit afficher la modale de confirmation si la sélection comprend à la fois des lignes vides et des lignes avec données', () => {
+      const data = new Data({ significantDigits: 4 });
+      const curveX = data.addCurve('x', 'm');
+      const curveY = data.addCurve('y', 's');
+
+      // Ligne 0 vide, Ligne 1 avec données
+      curveX.push(null, 42);
+      curveY.push(null, 100);
+
+      let capturedDelete = null;
+      const mockApp = {
+        deleteRow: (startRow, amount) => {
+          capturedDelete = { startRow, amount };
+        }
+      };
+
+      const mockSpreadsheet = {
+        currentPage: 0,
+        pageSize: 10,
+        getPageOffset: () => 0,
+        hot: {
+          getSelectedRangeLast: () => ({ from: { row: 0 }, to: { row: 1 } })
+        }
+      };
+
+      const ui = new UIManager({}, data, {}, {}, {}, mockSpreadsheet);
+      ui.setApp(mockApp);
+      ui.initDeleteLineButton();
+
+      buttonListener();
+
+      assert.ok(modalConfirmButtons.length > 0, 'La modale doit s\'afficher si au moins une ligne contient des données');
+      assert.equal(capturedDelete, null);
+
+      modalConfirmButtons[0].click();
+      assert.deepEqual(capturedDelete, { startRow: 0, amount: 2 });
+    });
+  });
 });
