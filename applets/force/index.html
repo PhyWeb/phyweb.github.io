@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Découverte des Forces - PhyWeb</title>
+    
+    <link rel="icon" href="../../assets/favicons/phyweb.ico" />
+    <link rel="stylesheet" href="../../common/bulma/bulma.min.css">
+
+    <link rel="preload" href="../../common/fontawesome/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="../../common/fontawesome/css/all.min.css">
+
+    <link rel="stylesheet" href="../../common/common.css">
+    <link rel="stylesheet" href="style.css">
+
+    <script>
+      if (navigator.userAgent.toLowerCase().indexOf('electron') > -1)
+        document.documentElement.classList.add('is-electron');
+    </script>
+</head>
+<body>
+
+    <div id="app">
+        <div id="navbar-container"></div>
+        
+        <div class="app-content">
+            <section class="section pt-3 pb-4">
+                <div class="container">
+                    
+                    <!-- Barre des niveaux (Bleu / Vert / Jaune / Orange / Rouge) -->
+                    <div id="level-Belt-bar" class="box py-2 px-4 mb-4" style="display: none;">
+                        <div class="level is-mobile">
+                            <div class="level-left">
+                                <span class="has-text-weight-bold is-size-6 mr-3"><i class="fas fa-layer-group mr-1"></i>Parcours :</span>
+                                <div class="buttons has-addons" id="belt-buttons">
+                                    <button class="button is-small belt-btn is-info" data-part="bleu" onclick="jumpToLevel('bleu')">Bleu</button>
+                                    <button class="button is-small belt-btn is-success" data-part="vert" onclick="jumpToLevel('vert')">Vert</button>
+                                    <button class="button is-small belt-btn is-warning" data-part="jaune" onclick="jumpToLevel('jaune')">Jaune</button>
+                                    <button class="button is-small belt-btn is-orange" data-part="orange" onclick="jumpToLevel('orange')">Orange</button>
+                                    <button class="button is-small belt-btn is-danger" data-part="rouge" onclick="jumpToLevel('rouge')">Rouge</button>
+                                </div>
+                            </div>
+                            <div class="level-right">
+                                <span id="step-title-badge" class="tag is-medium is-light has-text-weight-bold"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Conteneur SPA principal -->
+                    <div id="spa-container"></div>
+
+                    <!-- Barre de contrôle flottante -->
+                    <footer id="global-controls" class="box mt-5 has-background-white-ter" style="display: none;">
+                        <div class="level is-flex-wrap-wrap">
+                            <div class="level-left">
+                                <div class="level-item">
+                                    <button class="button is-success" id="global-btn-verif">
+                                        <span class="icon"><i class="fas fa-check"></i></span><span id="btn-verif-text">Valider</span>
+                                    </button>
+                                </div>
+                                <div class="level-item">
+                                    <button class="button is-warning" id="global-btn-action" style="display: none;"></button>
+                                </div>
+                            </div>
+                            
+                            <div class="level-item" style="flex-grow: 1;">
+                                <div id="global-message-box" class="has-text-centered" style="width: 100%;"></div>
+                            </div>
+                            
+                            <div class="level-right">
+                                <div class="level-item">
+                                    <button id="global-btn-prev" class="button is-light">
+                                        <span class="icon"><i class="fas fa-arrow-left"></i></span><span>Retour</span>
+                                    </button>
+                                </div>
+                                <div class="level-item">
+                                    <button id="global-btn-next" class="button is-link">
+                                        <span>Suite</span><span class="icon"><i class="fas fa-arrow-right"></i></span>
+                                    </button>
+                                </div>
+                                <div class="level-item">
+                                    <button id="global-btn-home" class="button is-dark" style="display: none;">
+                                        <span class="icon"><i class="fas fa-home"></i></span><span>Accueil</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </footer>
+
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script src="data.js"></script>
+    <script src="game.js"></script>
+
+    <script type="module">
+        import { initApplets } from '../../common/common.js';
+        try {
+            initApplets("Modéliser une action par une force", "../..");
+        } catch(e) {
+            console.info("Mode autonome hors PhyWeb global.");
+        }
+    </script>
+
+</body>
+</html>

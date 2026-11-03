@@ -1,0 +1,234 @@
+/* --- style.css --- */
+:root {
+    --primary-color: #006699;
+    --bg-color: #f0f4f8;
+    --panel-bg: #f8f9fa;
+    --success-color: #00AA55;
+    --error-color: #AA0055;
+    --orange-belt: #ff7700;
+    --text-color: #2c3e50;
+}
+
+body {
+    color: var(--text-color);
+    box-sizing: border-box;
+}
+
+/* Couleur spécifique Niveau Orange */
+.button.is-orange {
+    background-color: var(--orange-belt);
+    border-color: transparent;
+    color: #fff;
+}
+.button.is-orange:hover {
+    background-color: #e66b00;
+    color: #fff;
+}
+.tag.is-orange {
+    background-color: var(--orange-belt);
+    color: #fff;
+}
+
+.belt-btn {
+    opacity: 0.45;
+    transition: all 0.2s;
+}
+.belt-btn.active-belt {
+    opacity: 1;
+    transform: scale(1.08);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    font-weight: bold;
+    z-index: 2;
+}
+.belt-btn.completed-belt {
+    opacity: 0.85;
+}
+
+/* Box de consigne */
+.consigne-box {
+    background-color: #eef6fc !important;
+    border-left: 4px solid #3298dc !important;
+}
+
+/* Panneau Mémento à droite */
+.info-panel {
+    background-color: var(--panel-bg);
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.06);
+}
+
+/* Cartes de situations (Bleu / Vert) */
+.situation-card {
+    background: #fff;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 14px;
+    transition: border-color 0.2s;
+}
+.situation-card.is-correct {
+    border-color: var(--success-color);
+    background-color: #f4fff9;
+}
+.situation-card.is-incorrect {
+    border-color: var(--error-color);
+    background-color: #fff5f5;
+}
+
+.scene-svg-box {
+    width: 100%;
+    max-width: 240px;
+    height: 150px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    margin: 0 auto;
+}
+
+/* Étiquettes de sélection d'acteurs (Donneurs) */
+.actor-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    margin: 4px;
+    border-radius: 20px;
+    border: 2px solid #cbd5e1;
+    background: #fff;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.88rem;
+    user-select: none;
+    transition: all 0.15s;
+}
+.actor-chip:hover {
+    border-color: var(--primary-color);
+    background: #f1f5f9;
+}
+.actor-chip.selected {
+    background: var(--primary-color);
+    color: #fff;
+    border-color: var(--primary-color);
+}
+
+.action-row-config {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    background: #f1f5f9;
+    padding: 6px 12px;
+    border-radius: 6px;
+    margin-top: 6px;
+    font-size: 0.88rem;
+}
+
+/* --- ÉDITEUR D.O.I (NIVEAU JAUNE) --- */
+.doi-canvas-wrapper {
+    background: #ffffff;
+    border: 2px solid #cbd5e1;
+    border-radius: 8px;
+    position: relative;
+    user-select: none;
+}
+.doi-svg {
+    width: 100%;
+    height: 290px;
+    display: block;
+}
+.doi-node {
+    cursor: pointer;
+    transition: filter 0.15s;
+}
+.doi-node:hover {
+    filter: brightness(0.95);
+}
+.doi-link-hit {
+    stroke: transparent;
+    stroke-width: 22px;
+    cursor: pointer;
+}
+.doi-link-line {
+    pointer-events: none;
+    transition: stroke 0.15s;
+}
+
+/* --- TRACEUR DE VECTEURS (NIVEAUX ORANGE & ROUGE) --- */
+.vector-stage {
+    position: relative;
+    background: #ffffff;
+    border: 2px solid #94a3b8;
+    border-radius: 8px;
+    overflow: hidden;
+    user-select: none;
+    margin: 0 auto;
+}
+.vector-svg {
+    width: 100%;
+    height: 320px;
+    display: block;
+    cursor: crosshair;
+}
+.anchor-point {
+    fill: #ffffff;
+    stroke: #3b82f6;
+    stroke-width: 2.5px;
+    cursor: pointer;
+    transition: r 0.15s, fill 0.15s;
+}
+.anchor-point:hover, .anchor-point.active-anchor {
+    r: 9px;
+    fill: #bfdbfe;
+    stroke: #1d4ed8;
+}
+
+/* Animations ludiques de déséquilibre / erreur physique */
+@keyframes fallDownAnim {
+    0% { transform: translateY(0); }
+    40% { transform: translateY(45px) rotate(6deg); }
+    100% { transform: translateY(0); }
+}
+@keyframes flyUpAnim {
+    0% { transform: translateY(0); }
+    40% { transform: translateY(-45px) rotate(-6deg); }
+    100% { transform: translateY(0); }
+}
+.sim-fall { animation: fallDownAnim 0.9s ease-in-out; }
+.sim-fly { animation: flyUpAnim 0.9s ease-in-out; }
+
+/* Barre de navigation fixée en bas */
+#global-controls {
+    position: fixed;
+    bottom: 16px;
+    left: 0;
+    right: 0;
+    margin: 0 auto !important;
+    width: calc(100% - 3rem);
+    max-width: 1324px;
+    z-index: 1000;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.app-content {
+    padding-bottom: 105px;
+}
+
+@keyframes feedback-pop {
+    0% { transform: scale(0.98); opacity: 0.5; }
+    50% { transform: scale(1.02); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+}
+.feedback-anim {
+    animation: feedback-pop 0.3s ease-out;
+}
+
+@media screen and (max-height: 780px) {
+    .section { padding-top: 0.25rem !important; padding-bottom: 0.5rem !important; }
+    .box { padding: 0.75rem !important; margin-bottom: 0.75rem !important; }
+    #global-controls { padding: 0.5rem 1rem !important; bottom: 10px; }
+}
