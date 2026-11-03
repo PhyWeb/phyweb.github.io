@@ -505,11 +505,15 @@ class Model {
       params.forEach((paramValue, i) => {
         const paramName = this.parameters[i].name;
         this.parameters[i].value = paramValue;
+        const currentUnit = this.parameters[i].unit || (this.data && this.data.parameters && this.data.parameters[paramName]?.unit) || '';
+        if (currentUnit) {
+          this.parameters[i].unit = currentUnit;
+        }
         if (this.data && this.data.parameters) {
           if (this.data.parameters[paramName]) {
             this.data.parameters[paramName].value = paramValue;
           } else {
-            this.data.parameters[paramName] = { value: paramValue, unit: '', type: 'model' };
+            this.data.parameters[paramName] = { value: paramValue, unit: currentUnit, type: 'model' };
           }
         }
       });

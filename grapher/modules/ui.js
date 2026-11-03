@@ -530,7 +530,9 @@ export default class UIManager {
     model.parameters.forEach(param => {
       const li = document.createElement('li');
       const displayValue = formatNumber(param.value, significantDigits, { html: true });
-      li.innerHTML = `${param.name} = ${displayValue}`;
+      const unit = param.unit || this.data?.parameters?.[param.name]?.unit || '';
+      const unitText = unit ? ` ${unit}` : '';
+      li.innerHTML = `${param.name} = ${displayValue}${unitText}`;
       ul.appendChild(li);
     });
     const icon = panel.querySelector('.fa-eye, .fa-eye-slash');
@@ -2847,6 +2849,7 @@ export default class UIManager {
     const parametersContainer = $('#model-edit-parameters-container');
     parametersContainer.innerHTML = '';
     model.parameters.forEach(param => {
+      const currentUnit = this.data?.parameters?.[param.name]?.unit ?? param.unit ?? '';
       const field = document.createElement('div');
       field.className = 'field is-horizontal';
       field.innerHTML = `
@@ -2859,7 +2862,15 @@ export default class UIManager {
               <input class="input" type="text" value="${param.name}" data-old-name="${param.name}" />
             </div>
           </div>
-          <div class="field-label is-normal has-text-right">
+          <div class="field-label is-normal has-text-right is-flex-grow-0" style="margin-right: 0.75rem;">
+            <label class="label">Unité</label>
+          </div>
+          <div class="field">
+            <div class="control">
+              <input class="input" type="text" placeholder="Ex: m/s" value="${currentUnit}" data-unit-for="${param.name}" />
+            </div>
+          </div>
+          <div class="field-label is-normal has-text-right is-flex-grow-0" style="margin-right: 0.75rem;">
             <label class="label">Valeur</label>
           </div>
           <div class="field">
@@ -2978,6 +2989,7 @@ export default class UIManager {
       const ignoreList = model.parameters.map(p => p.name);
       let namesHaveChanged = false;
       const newParamNames = {}; // Fait correspondre les anciens noms aux nouveaux
+      const newParamUnits = {}; // Fait correspondre les anciens noms aux nouvelles unités
 
       for (const input of inputs) {
         const oldName = input.dataset.oldName;
@@ -2995,6 +3007,29 @@ export default class UIManager {
           namesHaveChanged = true;
         }
         newParamNames[oldName] = newName;
+
+        let unitInput = null;
+        if (typeof parametersContainer.querySelector === 'function') {
+          unitInput = parametersContainer.querySelector(`input[data-unit-for="${oldName}"]`);
+        }
+        if (!unitInput && typeof parametersContainer.querySelectorAll === 'function') {
+          const allUnitInputs = parametersContainer.querySelectorAll('input[data-unit-for]');
+          for (const uInput of allUnitInputs) {
+            if (uInput.dataset?.unitFor === oldName) {
+              unitInput = uInput;
+              break;
+            }
+          }
+        }
+        if (!unitInput && typeof input.closest === 'function') {
+          unitInput = input.closest('.field.is-horizontal')?.querySelector?.('input[data-unit-for]');
+        }
+
+        if (unitInput) {
+          newParamUnits[oldName] = unitInput.value.trim();
+        } else {
+          newParamUnits[oldName] = this.data.parameters[oldName]?.unit ?? '';
+        }
       }
 
       // 1. Toutes les validations ont réussi : fermer la modale
@@ -3013,13 +3048,8 @@ export default class UIManager {
         model.minX = newBorneDebut;
         model.maxX = newBorneFin;
 
-        if (namesHaveChanged) {
+        {
           const updatedParams = {};
-          const units = {};
-          model.parameters.forEach(param => {
-            units[param.name] = this.data.parameters[param.name]?.unit || '';
-          });
-
           model.parameters.forEach(param => {
             const oldName = param.name;
             const newName = newParamNames[oldName] || oldName;
@@ -3027,7 +3057,15 @@ export default class UIManager {
               delete this.data.parameters[oldName];
             }
             param.name = newName;
-            updatedParams[newName] = { value: param.value, unit: units[oldName] || '', type: 'model' };
+            const newUnit = newParamUnits[oldName] !== undefined
+              ? newParamUnits[oldName]
+              : (this.data.parameters[oldName]?.unit || param.unit || '');
+            if (newUnit) {
+              param.unit = newUnit;
+            } else {
+              delete param.unit;
+            }
+            updatedParams[newName] = { value: param.value, unit: newUnit, type: 'model' };
           });
 
           Object.assign(this.data.parameters, updatedParams);
@@ -3332,7 +3370,9 @@ export default class UIManager {
     const significantDigits = this.data?.settings?.significantDigits ?? 4;
     model.parameters.forEach(param => {
       const li = document.createElement('li');
-      li.innerHTML = `${param.name} = ${formatNumber(param.value, significantDigits, { html: true })}`;
+      const unit = param.unit || this.data?.parameters?.[param.name]?.unit || '';
+      const unitText = unit ? ` ${unit}` : '';
+      li.innerHTML = `${param.name} = ${formatNumber(param.value, significantDigits, { html: true })}${unitText}`;
       parametersList.appendChild(li);
     });
     

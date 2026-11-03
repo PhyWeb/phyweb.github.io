@@ -510,9 +510,15 @@ generatePW() {
           model.parameters = savedModel.parameters.map(p => {
             const pName = nameMap[p.name] || p.name;
             if (!this.app.data.parameters[pName]) {
-              this.app.data.parameters[pName] = { value: p.value, unit: '', type: 'model' };
+              const pUnit = p.unit || '';
+              this.app.data.parameters[pName] = { value: p.value, unit: pUnit, type: 'model' };
             }
-            return { name: pName, value: p.value };
+            const finalUnit = p.unit || this.app.data.parameters[pName]?.unit || '';
+            return {
+              name: pName,
+              value: p.value,
+              ...(finalUnit ? { unit: finalUnit } : (p.unit !== undefined ? { unit: p.unit } : {}))
+            };
           });
         }
         
