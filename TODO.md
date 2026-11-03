@@ -30,8 +30,6 @@
 
     parametre? pour angles en degrés
 
-    recalculer automatiquement la feuille de calcul quand on modifie les données ? Probablement car on le fait deja à la suppression de ligne. Mais par contre peut être pas les modèles ? Je sais pas.
-
     les grandeurs calculés se mettent toujours a droite du tableau quand on recalcul. du coup si on a mesure/calculée/mesure et que l'on recalcule ca devient mesure/mesure/calculée. On en pense quoi ?
 
 # Mendeleiev
