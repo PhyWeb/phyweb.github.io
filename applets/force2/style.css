@@ -1,0 +1,397 @@
+/* --- style.css --- */
+:root {
+    --primary-color: #006699;
+    --bg-color: #f0f4f8;
+    --panel-bg: #f8f9fa;
+    --success-color: #00AA55;
+    --error-color: #d92648;
+    --warning-color: #FF6600;
+    --text-color: #2c3e50;
+
+    /* Couleurs des ceintures */
+    --c-bleu: #2563eb;
+    --c-vert: #16a34a;
+    --c-jaune: #eab308;
+    --c-orange: #ea580c;
+    --c-rouge: #dc2626;
+}
+
+body {
+    color: var(--text-color);
+    background-color: var(--bg-color);
+    box-sizing: border-box;
+}
+
+.app-content {
+    padding-bottom: 75px;
+}
+
+/* Normalisation stricte de sup et sub (y compris dans les boutons Bulma) */
+sup, sub {
+    line-height: 0;
+    vertical-align: baseline;
+    position: relative;
+    font-size: 0.72em;
+}
+sup { top: -0.45em; }
+sub { bottom: -0.25em; }
+
+/* =========================================
+   BARRE DES CEINTURES COMPACTE (UNE LIGNE)
+   ========================================= */
+.belt-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: white;
+    padding: 6px 16px;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    overflow-x: auto;
+}
+
+.belt-step {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    opacity: 0.5;
+    transition: all 0.15s ease;
+    padding: 4px 10px;
+    border-radius: 6px;
+    white-space: nowrap;
+}
+
+.belt-step:hover {
+    opacity: 0.85;
+    background-color: #f1f5f9;
+}
+
+.belt-step.active {
+    opacity: 1;
+    background-color: #eef6fc;
+    box-shadow: inset 0 0 0 2px var(--primary-color);
+}
+
+.belt-step.completed {
+    opacity: 0.9;
+}
+
+.belt-step.completed .belt-dot::after {
+    content: "✓";
+    color: white;
+    font-size: 0.65rem;
+    font-weight: bold;
+}
+
+.belt-step.belt-optional {
+    border: 1px dashed #cbd5e1;
+}
+
+.belt-dot {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.bg-bleu { background-color: var(--c-bleu); }
+.bg-vert { background-color: var(--c-vert); }
+.bg-jaune { background-color: var(--c-jaune); }
+.bg-orange { background-color: var(--c-orange); }
+.bg-rouge { background-color: var(--c-rouge); }
+
+.belt-label {
+    font-weight: 700;
+    font-size: 0.82rem;
+}
+
+.belt-sub {
+    font-size: 0.72rem;
+    color: #64748b;
+}
+
+.belt-connector {
+    flex-grow: 1;
+    height: 2px;
+    background-color: #cbd5e1;
+    margin: 0 6px;
+    min-width: 12px;
+}
+
+/* =========================================
+   BOÎTES DE CONSIGNE COMPACTES
+   ========================================= */
+.consigne-box {
+    background-color: #eef6fc !important;
+    border-left: 4px solid #3298dc !important;
+    padding: 0.55rem 0.9rem !important;
+    margin-bottom: 0.6rem !important;
+}
+
+.paper-callout {
+    background-color: #fffbeb !important;
+    border-left: 4px solid #f59e0b !important;
+    padding: 0.55rem 0.9rem !important;
+    margin-bottom: 0.6rem !important;
+}
+
+/* =========================================
+   SCÈNE ILLUSTRÉE (SVG COMPACT)
+   ========================================= */
+.scene-box {
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.scene-svg-container {
+    width: 100%;
+    max-width: 310px;
+    height: 185px;
+    background: #f8fafc;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.scene-svg-container svg {
+    width: 100%;
+    height: 100%;
+}
+
+/* =========================================
+   NIVEAU BLEU & VERT : PUCES & CARTES D'ACTION
+   ========================================= */
+.actor-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 11px;
+    border-radius: 16px;
+    border: 2px solid #cbd5e1;
+    background: white;
+    font-weight: 600;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+}
+
+.actor-chip:hover {
+    border-color: var(--primary-color);
+    transform: translateY(-1px);
+}
+
+.actor-chip.selected {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 6px rgba(0, 102, 153, 0.25);
+}
+
+.actor-chip.trap-shake {
+    animation: shake 0.35s ease-in-out;
+    border-color: var(--error-color);
+    background-color: #ffe4e6;
+    color: var(--error-color);
+}
+
+.action-detail-card {
+    background: white;
+    border: 2px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    transition: all 0.2s;
+}
+
+.action-detail-card.correct {
+    border-color: var(--success-color);
+    background-color: #f0fdf4;
+}
+
+.action-detail-card.incorrect {
+    border-color: var(--error-color);
+    background-color: #fef2f2;
+}
+
+/* =========================================
+   NIVEAU JAUNE : CONSTRUCTEUR DE D.O.I (SVG)
+   ========================================= */
+.doi-workspace {
+    background: white;
+    border: 2px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 10px;
+}
+
+.doi-svg {
+    width: 100%;
+    height: 255px;
+    background: radial-gradient(#cbd5e1 1px, transparent 1px);
+    background-size: 16px 16px;
+    background-color: #fcfcfd;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    user-select: none;
+}
+
+.doi-line-hit {
+    stroke: transparent;
+    stroke-width: 22px;
+    cursor: pointer;
+}
+
+.doi-line-vis {
+    stroke: #1e293b;
+    stroke-width: 3px;
+    pointer-events: none;
+    transition: stroke 0.2s;
+}
+
+.doi-line-group:hover .doi-line-vis {
+    stroke: #2563eb;
+    stroke-width: 4px;
+}
+
+/* =========================================
+   NIVEAU ORANGE : TRACEUR DE VECTEURS
+   ========================================= */
+.vector-canvas-wrap {
+    position: relative;
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+    background: white;
+    border: 2px solid #94a3b8;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: inset 0 2px 5px rgba(0,0,0,0.04);
+}
+
+.vector-svg {
+    width: 100%;
+    height: 255px;
+    display: block;
+    cursor: crosshair;
+    user-select: none;
+    touch-action: none;
+}
+
+.anchor-point {
+    fill: rgba(37, 99, 235, 0.18);
+    stroke: #2563eb;
+    stroke-width: 2px;
+    stroke-dasharray: 3,2;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.anchor-point:hover, .anchor-point.active-anchor {
+    fill: rgba(37, 99, 235, 0.45);
+    r: 10px;
+}
+
+/* Boutons de sélection de force avec support propre des indices */
+.force-tab-btn {
+    border: 2px solid transparent;
+    font-weight: 700;
+    display: inline-flex !important;
+    align-items: center;
+    padding-top: 6px !important;
+    padding-bottom: 4px !important;
+}
+.force-tab-btn.is-active-tab {
+    box-shadow: 0 0 0 3px rgba(0, 102, 153, 0.35);
+    transform: translateY(-1px);
+}
+.force-btn-label {
+    display: inline-block;
+    line-height: 1.2;
+}
+.force-btn-label sub {
+    bottom: -0.25em;
+    font-size: 0.75em;
+    vertical-align: baseline;
+    position: relative;
+}
+
+/* Vecteur avec flèche au-dessus sans casser les indices */
+.vec-arrow {
+    display: inline-block;
+    position: relative;
+    font-weight: bold;
+    padding-top: 2px;
+}
+.vec-arrow::before {
+    content: "→";
+    position: absolute;
+    top: -0.58em;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.72em;
+    line-height: 1;
+}
+
+/* =========================================
+   BARRE DE CONTRÔLE FIXE & RESPONSIVE
+   ========================================= */
+#global-controls {
+    position: fixed;
+    bottom: 12px;
+    left: 0;
+    right: 0;
+    margin: 0 auto !important;
+    width: calc(100% - 3rem);
+    max-width: 1344px;
+    z-index: 1000;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    padding: 0.5rem 1rem !important;
+}
+
+/* Alignement strict de la largeur maximale sur l'applet Tableau Périodique (1324px) */
+@media screen and (min-width: 1364px) {
+    .container, #global-controls {
+        max-width: 1324px !important;
+    }
+}
+
+/* Compactage vertical identique à l'applet Tableau Périodique (< 780px de haut) */
+@media screen and (max-height: 780px) {
+    .section { padding-top: 0.25rem !important; padding-bottom: 0.25rem !important; }
+    .box { padding: 0.6rem !important; margin-bottom: 0.5rem !important; }
+    .content p, .content ul, .content ol { margin-bottom: 0.35em !important; }
+    #global-controls { padding: 0.4rem 0.8rem !important; bottom: 8px; }
+    .scene-svg-container { height: 155px; }
+    .doi-svg { height: 225px; }
+    .vector-svg { height: 225px; }
+    .action-detail-card { padding: 6px 10px; margin-bottom: 6px; }
+}
+
+@keyframes feedback-pop {
+    0% { transform: scale(0.98); opacity: 0.5; }
+    50% { transform: scale(1.02); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+}
+.feedback-anim {
+    animation: feedback-pop 0.25s ease-out;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}

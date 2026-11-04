@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Actions Mécaniques et Forces - PhyWeb</title>
+    
+    <link rel="icon" href="../../assets/favicons/phyweb.ico" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <link rel="stylesheet" href="../../common/bulma/bulma.min.css" onerror="this.remove()">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../../common/fontawesome/css/all.min.css" onerror="this.remove()">
+
+    <link rel="stylesheet" href="../../common/common.css" onerror="this.remove()">
+    <link rel="stylesheet" href="style.css">
+
+    <script>
+      if (navigator.userAgent.toLowerCase().indexOf('electron') > -1)
+        document.documentElement.classList.add('is-electron');
+    </script>
+</head>
+<body>
+
+    <div id="app">
+        <div id="navbar-container"></div>
+        
+        <div class="app-content">
+            <section class="section pt-2 pb-2">
+                <div class="container">
+                    
+                    <!-- BARRE DES CEINTURES DE COULEURS COMPACTE -->
+                    <div id="belt-tracker" class="belt-bar mb-2" style="display: none;">
+                        <div class="belt-step" id="belt-bleu" onclick="jumpToBelt('bleu')">
+                            <span class="belt-dot bg-bleu"></span>
+                            <span class="belt-label">Bleu</span>
+                            <span class="belt-sub">Actions</span>
+                        </div>
+                        <div class="belt-connector" id="conn-vert"></div>
+                        <div class="belt-step belt-optional" id="belt-vert" onclick="jumpToBelt('vert')">
+                            <span class="belt-dot bg-vert"></span>
+                            <span class="belt-label">Vert</span>
+                            <span class="belt-sub">Renforcement</span>
+                        </div>
+                        <div class="belt-connector"></div>
+                        <div class="belt-step" id="belt-jaune" onclick="jumpToBelt('jaune')">
+                            <span class="belt-dot bg-jaune"></span>
+                            <span class="belt-label">Jaune</span>
+                            <span class="belt-sub">D.O.I</span>
+                        </div>
+                        <div class="belt-connector"></div>
+                        <div class="belt-step" id="belt-orange" onclick="jumpToBelt('orange')">
+                            <span class="belt-dot bg-orange"></span>
+                            <span class="belt-label">Orange</span>
+                            <span class="belt-sub">Forces</span>
+                        </div>
+                        <div class="belt-connector"></div>
+                        <div class="belt-step" id="belt-rouge" onclick="jumpToBelt('rouge')">
+                            <span class="belt-dot bg-rouge"></span>
+                            <span class="belt-label">Rouge</span>
+                            <span class="belt-sub">Défi papier</span>
+                        </div>
+                    </div>
+
+                    <!-- CONTENEUR SPA PRINCIPAL -->
+                    <div id="spa-container"></div>
+
+                    <!-- BARRE DE CONTRÔLE FIXE EN BAS -->
+                    <footer id="global-controls" class="box mt-3 has-background-white-ter" style="display: none;">
+                        <div class="level is-flex-wrap-wrap m-0">
+                            <div class="level-left">
+                                <div class="level-item">
+                                    <button class="button is-success is-small" id="global-btn-verif">
+                                        <span class="icon"><i class="fas fa-check"></i></span>
+                                        <span id="btn-verif-text">Valider</span>
+                                    </button>
+                                </div>
+                                <div class="level-item">
+                                    <button class="button is-warning is-light is-small" id="global-btn-action" style="display: none;"></button>
+                                </div>
+                            </div>
+                            
+                            <div class="level-item" style="flex-grow: 1; max-width: 65%;">
+                                <div id="global-message-box" class="has-text-centered" style="width: 100%;"></div>
+                            </div>
+                            
+                            <div class="level-right">
+                                <div class="level-item">
+                                    <button id="global-btn-prev" class="button is-light is-small">
+                                        <span class="icon"><i class="fas fa-arrow-left"></i></span><span>Retour</span>
+                                    </button>
+                                </div>
+                                <div class="level-item">
+                                    <button id="global-btn-next" class="button is-link is-small">
+                                        <span>Suite</span><span class="icon"><i class="fas fa-arrow-right"></i></span>
+                                    </button>
+                                </div>
+                                <div class="level-item">
+                                    <button id="global-btn-home" class="button is-dark is-small" style="display: none;">
+                                        <span class="icon"><i class="fas fa-home"></i></span><span>Accueil</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </footer>
+
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script src="data.js"></script>
+    <script src="game.js"></script>
+
+    <script type="module">
+        try {
+            const module = await import('../../common/common.js');
+            if (module && module.initApplets) {
+                module.initApplets("Actions Mécaniques et Forces", "../..");
+            }
+        } catch (e) {
+            console.log("Mode autonome hors PhyWeb.");
+        }
+    </script>
+
+</body>
+</html>
