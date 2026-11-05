@@ -369,6 +369,13 @@ function renderDoiWorkspace(item) {
     });
 
     const cx = 280, cy = 140;
+    const sysW = 140, sysH = 54;
+    const hw1 = sysW / 2, hh1 = sysH / 2;
+
+    const actorW = 136, actorH = 50;
+    const hw2 = actorW / 2, hh2 = actorH / 2;
+    const pad = 3;
+
     const positions = [
         { x: 110, y: 65 },
         { x: 450, y: 65 },
@@ -391,30 +398,40 @@ function renderDoiWorkspace(item) {
         const type = window.doiActors[name];
         const dash = type === 'distance' ? 'stroke-dasharray="7,6"' : '';
 
-        const angle = Math.atan2(pos.y - cy, pos.x - cx);
-        const startX = cx + Math.cos(angle) * 66;
-        const startY = cy + Math.sin(angle) * 35;
-        const endX = pos.x - Math.cos(angle) * 66;
-        const endY = pos.y - Math.sin(angle) * 32;
+        const dx = pos.x - cx;
+        const dy = pos.y - cy;
+        const absDx = Math.abs(dx) || 1e-5;
+        const absDy = Math.abs(dy) || 1e-5;
 
-        // Sans aucun label sur la flèche, ni croix rouge sur l'ovale !
+        const scale1 = Math.min((hw1 + pad) / absDx, (hh1 + pad) / absDy);
+        const startX = Math.round(cx + dx * scale1);
+        const startY = Math.round(cy + dy * scale1);
+
+        const scale2 = Math.min((hw2 + pad) / absDx, (hh2 + pad) / absDy);
+        const endX = Math.round(pos.x - dx * scale2);
+        const endY = Math.round(pos.y - dy * scale2);
+
+        const escapedName = name.replace(/'/g, "\\'");
+        const fontSize = name.length > 16 ? 11.5 : (name.length > 13 ? 12 : 13);
+
+        // Sans aucun label sur la flèche, ni croix rouge sur le rectangle !
         svgHTML += `
-            <g class="doi-line-group" onclick="toggleDoiArrow('${name.replace(/'/g, "\'")}')" style="cursor:pointer;">
+            <g class="doi-line-group" onclick="toggleDoiArrow('${escapedName}')" style="cursor:pointer;">
                 <line x1="${startX}" y1="${startY}" x2="${endX}" y2="${endY}" class="doi-line-hit"/>
                 <line x1="${startX}" y1="${startY}" x2="${endX}" y2="${endY}" class="doi-line-vis" ${dash}
                       marker-start="url(#doi-arrow-end)" marker-end="url(#doi-arrow-end)"/>
             </g>
-            <g transform="translate(${pos.x}, ${pos.y})" onclick="removeDoiActor('${name.replace(/'/g, "\'")}')" style="cursor:pointer;">
+            <g transform="translate(${pos.x}, ${pos.y})" onclick="removeDoiActor('${escapedName}')" style="cursor:pointer;">
                 <title>Cliquer pour retirer du diagramme</title>
-                <ellipse cx="0" cy="0" rx="62" ry="28" fill="#ffffff" stroke="#2563eb" stroke-width="2.5"/>
-                <text x="0" y="5" text-anchor="middle" fill="#1e293b" font-size="13" font-weight="bold">${name}</text>
+                <rect x="${-actorW / 2}" y="${-actorH / 2}" width="${actorW}" height="${actorH}" rx="5" fill="#ffffff" stroke="#2563eb" stroke-width="2.5"/>
+                <text x="0" y="5" text-anchor="middle" fill="#1e293b" font-size="${fontSize}" font-weight="bold">${name}</text>
             </g>
         `;
     });
 
     svgHTML += `
         <g transform="translate(${cx}, ${cy})">
-            <ellipse cx="0" cy="0" rx="64" ry="33" fill="#fef08a" stroke="#ca8a04" stroke-width="3"/>
+            <rect x="${-sysW / 2}" y="${-sysH / 2}" width="${sysW}" height="${sysH}" rx="5" fill="#fef08a" stroke="#ca8a04" stroke-width="3"/>
             <text x="0" y="5" text-anchor="middle" fill="#713f12" font-size="15" font-weight="bold">${item.systeme}</text>
         </g>
     `;
