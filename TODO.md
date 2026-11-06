@@ -6,6 +6,10 @@
 
     - On defullscreen pas quand on essai de drag la fenetre
 
+    raccourcis clavier dans les modales genre enter pour ok et echap pour annuler
+
+    quand on ouvre un .pw, mettre un spinner
+
 # ELECTRON
     - [x] Forcer la boîte de dialogue "Enregistrer sous..." via session.defaultSession 'will-download' (résout le téléchargement direct automatique dans Téléchargements).
 
