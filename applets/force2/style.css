@@ -23,7 +23,7 @@ body {
 }
 
 .app-content {
-    padding-bottom: 75px;
+    padding-bottom: 95px;
 }
 
 /* Normalisation stricte de sup et sub (y compris dans les boutons Bulma) */
@@ -31,22 +31,22 @@ sup, sub {
     line-height: 0;
     vertical-align: baseline;
     position: relative;
-    font-size: 0.72em;
+    font-size: 0.75em;
 }
 sup { top: -0.45em; }
 sub { bottom: -0.25em; }
 
 /* =========================================
-   BARRE DES CEINTURES COMPACTE (UNE LIGNE)
+   BARRE DES CEINTURES (UNE LIGNE CONFORTABLE)
    ========================================= */
 .belt-bar {
     display: flex;
     align-items: center;
     justify-content: space-between;
     background: white;
-    padding: 6px 16px;
+    padding: 8px 20px;
     border-radius: 8px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
     overflow-x: auto;
 }
 
@@ -54,11 +54,11 @@ sub { bottom: -0.25em; }
     display: flex;
     flex-direction: row;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     cursor: pointer;
     opacity: 0.5;
     transition: all 0.15s ease;
-    padding: 4px 10px;
+    padding: 6px 12px;
     border-radius: 6px;
     white-space: nowrap;
 }
@@ -81,7 +81,7 @@ sub { bottom: -0.25em; }
 .belt-step.completed .belt-dot::after {
     content: "✓";
     color: white;
-    font-size: 0.65rem;
+    font-size: 0.72rem;
     font-weight: bold;
 }
 
@@ -90,8 +90,8 @@ sub { bottom: -0.25em; }
 }
 
 .belt-dot {
-    width: 18px;
-    height: 18px;
+    width: 20px;
+    height: 20px;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -107,11 +107,11 @@ sub { bottom: -0.25em; }
 
 .belt-label {
     font-weight: 700;
-    font-size: 0.82rem;
+    font-size: 0.92rem;
 }
 
 .belt-sub {
-    font-size: 0.72rem;
+    font-size: 0.8rem;
     color: #64748b;
 }
 
@@ -119,35 +119,35 @@ sub { bottom: -0.25em; }
     flex-grow: 1;
     height: 2px;
     background-color: #cbd5e1;
-    margin: 0 6px;
-    min-width: 12px;
+    margin: 0 8px;
+    min-width: 15px;
 }
 
 /* =========================================
-   BOÎTES DE CONSIGNE COMPACTES
+   BOÎTES DE CONSIGNE
    ========================================= */
 .consigne-box {
     background-color: #eef6fc !important;
     border-left: 4px solid #3298dc !important;
-    padding: 0.55rem 0.9rem !important;
-    margin-bottom: 0.6rem !important;
+    padding: 0.75rem 1.1rem !important;
+    margin-bottom: 0.85rem !important;
 }
 
 .paper-callout {
     background-color: #fffbeb !important;
     border-left: 4px solid #f59e0b !important;
-    padding: 0.55rem 0.9rem !important;
-    margin-bottom: 0.6rem !important;
+    padding: 0.75rem 1.1rem !important;
+    margin-bottom: 0.85rem !important;
 }
 
 /* =========================================
-   SCÈNE ILLUSTRÉE (SVG COMPACT)
+   SCÈNE ILLUSTRÉE (SVG AGRANDI)
    ========================================= */
 .scene-box {
     background: white;
     border: 2px solid #e2e8f0;
     border-radius: 8px;
-    padding: 10px;
+    padding: 14px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -156,10 +156,10 @@ sub { bottom: -0.25em; }
 
 .scene-svg-container {
     width: 100%;
-    max-width: 310px;
-    height: 185px;
+    max-width: 380px;
+    height: 235px;
     background: #f8fafc;
-    border-radius: 6px;
+    border-radius: 8px;
     border: 1px solid #cbd5e1;
     overflow: hidden;
     display: flex;
@@ -178,13 +178,13 @@ sub { bottom: -0.25em; }
 .actor-chip {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    padding: 5px 11px;
-    border-radius: 16px;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 18px;
     border: 2px solid #cbd5e1;
     background: white;
     font-weight: 600;
-    font-size: 0.82rem;
+    font-size: 0.92rem;
     cursor: pointer;
     transition: all 0.15s;
     user-select: none;
@@ -213,8 +213,8 @@ sub { bottom: -0.25em; }
     background: white;
     border: 2px solid #cbd5e1;
     border-radius: 8px;
-    padding: 8px 12px;
-    margin-bottom: 8px;
+    padding: 12px 15px;
+    margin-bottom: 10px;
     transition: all 0.2s;
 }
 
@@ -235,12 +235,12 @@ sub { bottom: -0.25em; }
     background: white;
     border: 2px solid #cbd5e1;
     border-radius: 8px;
-    padding: 10px;
+    padding: 14px;
 }
 
 .doi-svg {
     width: 100%;
-    height: 255px;
+    height: 315px;
     background: radial-gradient(#cbd5e1 1px, transparent 1px);
     background-size: 16px 16px;
     background-color: #fcfcfd;
@@ -251,7 +251,7 @@ sub { bottom: -0.25em; }
 
 .doi-line-hit {
     stroke: transparent;
-    stroke-width: 22px;
+    stroke-width: 24px;
     cursor: pointer;
 }
 
@@ -273,7 +273,7 @@ sub { bottom: -0.25em; }
 .vector-canvas-wrap {
     position: relative;
     width: 100%;
-    max-width: 400px;
+    max-width: 450px;
     margin: 0 auto;
     background: white;
     border: 2px solid #94a3b8;
@@ -284,7 +284,7 @@ sub { bottom: -0.25em; }
 
 .vector-svg {
     width: 100%;
-    height: 255px;
+    height: 305px;
     display: block;
     cursor: crosshair;
     user-select: none;
@@ -311,8 +311,8 @@ sub { bottom: -0.25em; }
     font-weight: 700;
     display: inline-flex !important;
     align-items: center;
-    padding-top: 6px !important;
-    padding-bottom: 4px !important;
+    padding-top: 8px !important;
+    padding-bottom: 6px !important;
 }
 .force-tab-btn.is-active-tab {
     box-shadow: 0 0 0 3px rgba(0, 102, 153, 0.35);
@@ -351,7 +351,7 @@ sub { bottom: -0.25em; }
    ========================================= */
 #global-controls {
     position: fixed;
-    bottom: 12px;
+    bottom: 16px;
     left: 0;
     right: 0;
     margin: 0 auto !important;
@@ -359,7 +359,7 @@ sub { bottom: -0.25em; }
     max-width: 1344px;
     z-index: 1000;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    padding: 0.5rem 1rem !important;
+    padding: 0.65rem 1.25rem !important;
 }
 
 /* Alignement strict de la largeur maximale sur l'applet Tableau Périodique (1324px) */
@@ -369,16 +369,14 @@ sub { bottom: -0.25em; }
     }
 }
 
-/* Compactage vertical identique à l'applet Tableau Périodique (< 780px de haut) */
+/* Ajustement doux pour les écrans < 780px de haut */
 @media screen and (max-height: 780px) {
-    .section { padding-top: 0.25rem !important; padding-bottom: 0.25rem !important; }
-    .box { padding: 0.6rem !important; margin-bottom: 0.5rem !important; }
-    .content p, .content ul, .content ol { margin-bottom: 0.35em !important; }
-    #global-controls { padding: 0.4rem 0.8rem !important; bottom: 8px; }
-    .scene-svg-container { height: 155px; }
-    .doi-svg { height: 225px; }
-    .vector-svg { height: 225px; }
-    .action-detail-card { padding: 6px 10px; margin-bottom: 6px; }
+    .section { padding-top: 0.4rem !important; padding-bottom: 0.4rem !important; }
+    .box { padding: 0.75rem !important; margin-bottom: 0.65rem !important; }
+    #global-controls { padding: 0.5rem 1rem !important; bottom: 10px; }
+    .scene-svg-container { height: 205px; }
+    .doi-svg { height: 280px; }
+    .vector-svg { height: 270px; }
 }
 
 @keyframes feedback-pop {

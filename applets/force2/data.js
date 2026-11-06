@@ -249,7 +249,7 @@ const SCENE_SVGS = {
 const BLEU_DATA = [
     {
         id: "b_1",
-        title: "Niveau Bleu (1/6) : Balle de tennis avant la frappe",
+        title: "Niveau Bleu — Balle de tennis avant la frappe",
         svg: "tennis_air",
         receveur: "la balle",
         candidates: [
@@ -261,7 +261,7 @@ const BLEU_DATA = [
     },
     {
         id: "b_2",
-        title: "Niveau Bleu (2/6) : Balle de tennis au moment de l'impact",
+        title: "Niveau Bleu — Balle de tennis au moment de l'impact",
         svg: "tennis_impact",
         receveur: "la balle",
         candidates: [
@@ -272,7 +272,7 @@ const BLEU_DATA = [
     },
     {
         id: "b_3",
-        title: "Niveau Bleu (3/6) : Balle de tennis immobile sur le court",
+        title: "Niveau Bleu — Balle de tennis immobile sur le court",
         svg: "tennis_sol",
         receveur: "la balle",
         candidates: [
@@ -283,7 +283,7 @@ const BLEU_DATA = [
     },
     {
         id: "b_4",
-        title: "Niveau Bleu (4/6) : Nikola Karabatic touche le ballon pour faire une passe",
+        title: "Niveau Bleu — Nikola Karabatic touche le ballon pour faire une passe",
         svg: "hand_passe",
         receveur: "le ballon",
         evalMode: true,
@@ -295,7 +295,7 @@ const BLEU_DATA = [
     },
     {
         id: "b_5",
-        title: "Niveau Bleu (5/6) : Le ballon vole dans les airs pendant la passe",
+        title: "Niveau Bleu — Le ballon vole dans les airs pendant la passe",
         svg: "hand_air",
         receveur: "le ballon",
         evalMode: true,
@@ -307,7 +307,7 @@ const BLEU_DATA = [
     },
     {
         id: "b_6",
-        title: "Niveau Bleu (6/6) : Le ballon de handball est posé au sol",
+        title: "Niveau Bleu — Le ballon de handball est posé au sol",
         svg: "hand_sol",
         receveur: "le ballon",
         evalMode: true,
@@ -396,7 +396,7 @@ const VERT_DATA = [
 const JAUNE_DATA = [
     {
         id: "j_1",
-        title: "Niveau Jaune (1/9) : Nikola touche le ballon pour faire sa passe",
+        title: "Niveau Jaune — Nikola touche le ballon pour faire sa passe",
         svg: "hand_passe",
         systeme: "Ballon",
         pool: ["Main (Nikola)", "Terre", "Sol", "Panneau de but"],
@@ -404,7 +404,7 @@ const JAUNE_DATA = [
     },
     {
         id: "j_2",
-        title: "Niveau Jaune (2/9) : Le ballon est en vol pendant la passe",
+        title: "Niveau Jaune — Le ballon est en vol pendant la passe",
         svg: "hand_air",
         systeme: "Ballon",
         pool: ["Terre", "Main (Nikola)", "Sol"],
@@ -412,7 +412,7 @@ const JAUNE_DATA = [
     },
     {
         id: "j_3",
-        title: "Niveau Jaune (3/9) : Le ballon est posé au sol",
+        title: "Niveau Jaune — Le ballon est posé au sol",
         svg: "hand_sol",
         systeme: "Ballon",
         pool: ["Terre", "Sol", "Main (Nikola)"],
@@ -420,7 +420,7 @@ const JAUNE_DATA = [
     },
     {
         id: "j_4",
-        title: "Niveau Jaune (4/9) : 1°/ Lampe suspendue au plafond par un fil",
+        title: "Niveau Jaune — 1°/ Lampe suspendue au plafond par un fil",
         svg: "schema_1_lampe",
         systeme: "Lampe",
         pool: ["Fil", "Terre", "Plafond", "Interrupteur"],
@@ -429,7 +429,7 @@ const JAUNE_DATA = [
     },
     {
         id: "j_5",
-        title: "Niveau Jaune (5/9) : 2°/ Livre posé sur une table",
+        title: "Niveau Jaune — 2°/ Livre posé sur une table",
         svg: "schema_2_livre_table",
         systeme: "Livre",
         pool: ["Table", "Terre", "Sol"],
@@ -438,7 +438,7 @@ const JAUNE_DATA = [
     },
     {
         id: "j_6",
-        title: "Niveau Jaune (6/9) : 3°/ Pomme qui tombe de l'arbre (chute libre)",
+        title: "Niveau Jaune — 3°/ Pomme qui tombe de l'arbre (chute libre)",
         svg: "schema_3_pomme",
         systeme: "Pomme",
         pool: ["Terre", "Branche de l'arbre", "Herbe"],
@@ -447,7 +447,7 @@ const JAUNE_DATA = [
     },
     {
         id: "j_7",
-        title: "Niveau Jaune (7/9) : 4°/ Clou suspendu à un fil et dévié par un aimant",
+        title: "Niveau Jaune — 4°/ Clou suspendu à un fil et dévié par un aimant",
         svg: "schema_4_clou",
         systeme: "Clou",
         pool: ["Fil", "Terre", "Aimant", "Plafond"],
@@ -456,7 +456,7 @@ const JAUNE_DATA = [
     },
     {
         id: "j_8",
-        title: "Niveau Jaune (8/9) : 5°/ Solide suspendu à un ressort",
+        title: "Niveau Jaune — 5°/ Solide suspendu à un ressort",
         svg: "schema_5_ressort",
         systeme: "Solide",
         pool: ["Ressort", "Terre", "Plafond"],
@@ -464,7 +464,7 @@ const JAUNE_DATA = [
     },
     {
         id: "j_9",
-        title: "Niveau Jaune (9/9) : 6°/ Livre de physique lancé en l'air (en train de monter)",
+        title: "Niveau Jaune — 6°/ Livre de physique lancé en l'air (en train de monter)",
         svg: "schema_6_livre_air",
         systeme: "Livre",
         pool: ["Terre", "Élève excédé (main)", "Sol"],
@@ -477,7 +477,7 @@ const JAUNE_DATA = [
 const ORANGE_DATA = [
     {
         id: "o_1",
-        title: "Niveau Orange (1/6) : Balle de tennis en l'air",
+        title: "Niveau Orange — Balle de tennis en l'air",
         subtitle: "Valeur donnée : P = 0,56 N. Complétez les caractéristiques et tracez la force.",
         anchors: [
             { id: "G", label: "Centre de gravité de la balle", x: 180, y: 130 },
@@ -504,7 +504,7 @@ const ORANGE_DATA = [
     },
     {
         id: "o_2",
-        title: "Niveau Orange (2/6) : Balle frappée par la raquette",
+        title: "Niveau Orange — Balle frappée par la raquette",
         subtitle: "Valeurs : P = 0,56 N et F(raquette/balle) = 10 N (beaucoup plus intense !).",
         anchors: [
             { id: "G", label: "Centre de gravité de la balle", x: 170, y: 130 },
@@ -546,7 +546,7 @@ const ORANGE_DATA = [
     },
     {
         id: "o_3",
-        title: "Niveau Orange (3/6) : Balle immobile sur le sol",
+        title: "Niveau Orange — Balle immobile sur le sol",
         subtitle: "La balle est immobile au sol : P = 0,56 N. Déduisez aussi la valeur de F(sol/balle) !",
         anchors: [
             { id: "G", label: "Centre de gravité de la balle", x: 180, y: 125 },
@@ -588,7 +588,7 @@ const ORANGE_DATA = [
     },
     {
         id: "o_4",
-        title: "Niveau Orange (4/6) : 1°/ Système : la lampe suspendue",
+        title: "Niveau Orange — 1°/ Système : la lampe suspendue",
         subtitle: "Déterminez les caractéristiques des 2 forces et tracez-les sur le schéma.",
         anchors: [
             { id: "ContactFil", label: "Point de contact avec le fil", x: 180, y: 115 },
@@ -627,7 +627,7 @@ const ORANGE_DATA = [
     },
     {
         id: "o_5",
-        title: "Niveau Orange (5/6) : 2°/ Système : le livre sur la table",
+        title: "Niveau Orange — 2°/ Système : le livre sur la table",
         subtitle: "Déterminez les caractéristiques des 2 forces et tracez-les sur le schéma.",
         anchors: [
             { id: "G", label: "Centre de gravité du livre", x: 180, y: 115 },
@@ -667,7 +667,7 @@ const ORANGE_DATA = [
     },
     {
         id: "o_6",
-        title: "Niveau Orange (6/6) : 4°/ Système : le clou attiré par l'aimant",
+        title: "Niveau Orange — 4°/ Système : le clou attiré par l'aimant",
         subtitle: "Cas à 3 forces ! Tracez P, F(fil/clou) et F(aimant/clou), puis reportez-les sur votre fiche papier !",
         paperNotice: "📝 Reproduis les caractéristiques et le tracé des 3 forces du clou (4°/) sur ta fiche papier !",
         anchors: [

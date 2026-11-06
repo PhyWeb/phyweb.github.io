@@ -26,38 +26,38 @@
         <div id="navbar-container"></div>
         
         <div class="app-content">
-            <section class="section pt-2 pb-2">
+            <section class="section pt-3 pb-3">
                 <div class="container">
                     
-                    <!-- BARRE DES CEINTURES DE COULEURS COMPACTE -->
-                    <div id="belt-tracker" class="belt-bar mb-2" style="display: none;">
+                    <!-- BARRE DES CEINTURES DE COULEURS -->
+                    <div id="belt-tracker" class="belt-bar mb-3" style="display: none;">
                         <div class="belt-step" id="belt-bleu" onclick="jumpToBelt('bleu')">
                             <span class="belt-dot bg-bleu"></span>
-                            <span class="belt-label">Bleu</span>
+                            <span class="belt-label">Niveau Bleu</span>
                             <span class="belt-sub">Actions</span>
                         </div>
                         <div class="belt-connector" id="conn-vert"></div>
                         <div class="belt-step belt-optional" id="belt-vert" onclick="jumpToBelt('vert')">
                             <span class="belt-dot bg-vert"></span>
-                            <span class="belt-label">Vert</span>
+                            <span class="belt-label">Niveau Vert</span>
                             <span class="belt-sub">Renforcement</span>
                         </div>
                         <div class="belt-connector"></div>
                         <div class="belt-step" id="belt-jaune" onclick="jumpToBelt('jaune')">
                             <span class="belt-dot bg-jaune"></span>
-                            <span class="belt-label">Jaune</span>
+                            <span class="belt-label">Niveau Jaune</span>
                             <span class="belt-sub">D.O.I</span>
                         </div>
                         <div class="belt-connector"></div>
                         <div class="belt-step" id="belt-orange" onclick="jumpToBelt('orange')">
                             <span class="belt-dot bg-orange"></span>
-                            <span class="belt-label">Orange</span>
+                            <span class="belt-label">Niveau Orange</span>
                             <span class="belt-sub">Forces</span>
                         </div>
                         <div class="belt-connector"></div>
                         <div class="belt-step" id="belt-rouge" onclick="jumpToBelt('rouge')">
                             <span class="belt-dot bg-rouge"></span>
-                            <span class="belt-label">Rouge</span>
+                            <span class="belt-label">Niveau Rouge</span>
                             <span class="belt-sub">Défi papier</span>
                         </div>
                     </div>
@@ -66,37 +66,37 @@
                     <div id="spa-container"></div>
 
                     <!-- BARRE DE CONTRÔLE FIXE EN BAS -->
-                    <footer id="global-controls" class="box mt-3 has-background-white-ter" style="display: none;">
+                    <footer id="global-controls" class="box mt-4 has-background-white-ter" style="display: none;">
                         <div class="level is-flex-wrap-wrap m-0">
                             <div class="level-left">
                                 <div class="level-item">
-                                    <button class="button is-success is-small" id="global-btn-verif">
+                                    <button class="button is-success" id="global-btn-verif">
                                         <span class="icon"><i class="fas fa-check"></i></span>
                                         <span id="btn-verif-text">Valider</span>
                                     </button>
                                 </div>
                                 <div class="level-item">
-                                    <button class="button is-warning is-light is-small" id="global-btn-action" style="display: none;"></button>
+                                    <button class="button is-warning is-light" id="global-btn-action" style="display: none;"></button>
                                 </div>
                             </div>
                             
-                            <div class="level-item" style="flex-grow: 1; max-width: 65%;">
+                            <div class="level-item" style="flex-grow: 1; max-width: 60%;">
                                 <div id="global-message-box" class="has-text-centered" style="width: 100%;"></div>
                             </div>
                             
                             <div class="level-right">
                                 <div class="level-item">
-                                    <button id="global-btn-prev" class="button is-light is-small">
+                                    <button id="global-btn-prev" class="button is-light">
                                         <span class="icon"><i class="fas fa-arrow-left"></i></span><span>Retour</span>
                                     </button>
                                 </div>
                                 <div class="level-item">
-                                    <button id="global-btn-next" class="button is-link is-small">
+                                    <button id="global-btn-next" class="button is-link">
                                         <span>Suite</span><span class="icon"><i class="fas fa-arrow-right"></i></span>
                                     </button>
                                 </div>
                                 <div class="level-item">
-                                    <button id="global-btn-home" class="button is-dark is-small" style="display: none;">
+                                    <button id="global-btn-home" class="button is-dark" style="display: none;">
                                         <span class="icon"><i class="fas fa-home"></i></span><span>Accueil</span>
                                     </button>
                                 </div>

@@ -38,24 +38,24 @@ function buildBleuStep(item, isLast = false) {
         html: `
             <div class="box content consigne-box">
                 <div class="is-flex is-justify-content-space-between is-align-items-center is-flex-wrap-wrap" style="gap: 8px;">
-                    <span class="is-size-6"><strong>Système étudié (Receveur) : <span class="tag is-link is-normal">${item.receveur}</span></strong> — Cliquez sur chaque donneur qui agit sur <em>${item.receveur}</em> puis complétez sa carte.</span>
-                    ${item.paperNotice ? `<span class="tag is-warning is-light has-text-weight-bold">${item.paperNotice}</span>` : ''}
+                    <span class="is-size-6"><strong>Système étudié (Receveur) : <span class="tag is-link is-medium">${item.receveur}</span></strong> — Cliquez sur chaque donneur qui agit sur <em>${item.receveur}</em> puis complétez sa carte.</span>
+                    ${item.paperNotice ? `<span class="tag is-warning is-light is-medium has-text-weight-bold">${item.paperNotice}</span>` : ''}
                 </div>
             </div>
-            <div class="columns is-variable is-3 mb-0">
+            <div class="columns is-variable is-4 mb-0">
                 <div class="column is-5">
                     <div class="scene-box h-100">
-                        <div class="scene-svg-container mb-2">${SCENE_SVGS[item.svg]}</div>
-                        <p class="is-size-7 has-text-grey has-text-centered mb-2">Qui agit sur <strong>${item.receveur}</strong> ? (Cliquez)</p>
-                        <div id="actors-pool" class="is-flex is-flex-wrap-wrap is-justify-content-center" style="gap: 6px;"></div>
-                        <div id="trap-feedback" class="notification is-danger is-light mt-2 py-1 px-2 is-size-7" style="display:none; width:100%;"></div>
+                        <div class="scene-svg-container mb-3">${SCENE_SVGS[item.svg]}</div>
+                        <p class="is-size-6 has-text-grey-dark has-text-weight-semibold has-text-centered mb-2">Qui agit sur <strong>${item.receveur}</strong> ? (Cliquez)</p>
+                        <div id="actors-pool" class="is-flex is-flex-wrap-wrap is-justify-content-center" style="gap: 8px;"></div>
+                        <div id="trap-feedback" class="notification is-danger is-light mt-3 py-2 px-3 is-size-6" style="display:none; width:100%;"></div>
                     </div>
                 </div>
                 <div class="column is-7">
-                    <div class="box has-background-white-bis p-3" style="min-height: 265px; height: 100%;">
-                        <h4 class="title is-6 mb-2"><i class="fas fa-list-check has-text-info mr-2"></i>Actions mécaniques identifiées :</h4>
+                    <div class="box has-background-white-bis p-4" style="min-height: 330px; height: 100%;">
+                        <h4 class="title is-5 mb-3"><i class="fas fa-list-check has-text-info mr-2"></i>Actions mécaniques identifiées :</h4>
                         <div id="actions-cards-container">
-                            <p class="has-text-grey is-italic is-size-7" id="empty-actions-hint">Cliquez sur un donneur sous l'image pour ajouter une action mécanique...</p>
+                            <p class="has-text-grey is-italic is-size-6" id="empty-actions-hint">Cliquez sur un donneur sous l'image pour ajouter une action mécanique...</p>
                         </div>
                     </div>
                 </div>
@@ -91,17 +91,17 @@ function buildBleuStep(item, isLast = false) {
                     card.className = 'action-detail-card';
                     card.id = 'card-act-' + cand.id;
                     card.innerHTML = `
-                        <div class="is-flex is-justify-content-space-between is-align-items-center mb-1">
-                            <span class="tag is-dark is-small">Donneur : ${cand.label}</span>
-                            <div class="is-flex is-align-items-center" style="gap: 6px;">
-                                <span class="is-size-7 has-text-weight-bold">Type :</span>
+                        <div class="is-flex is-justify-content-space-between is-align-items-center mb-2">
+                            <span class="tag is-dark is-normal">Donneur : ${cand.label}</span>
+                            <div class="is-flex is-align-items-center" style="gap: 8px;">
+                                <span class="is-size-6 has-text-weight-bold">Type :</span>
                                 <div class="buttons has-addons m-0">
-                                    <button type="button" class="button is-small py-0 px-2 type-btn-${cand.id}" style="height:24px;" data-val="contact" onclick="selectBleuType('${cand.id}', 'contact')">De contact</button>
-                                    <button type="button" class="button is-small py-0 px-2 type-btn-${cand.id}" style="height:24px;" data-val="distance" onclick="selectBleuType('${cand.id}', 'distance')">À distance</button>
+                                    <button type="button" class="button is-small type-btn-${cand.id}" data-val="contact" onclick="selectBleuType('${cand.id}', 'contact')">De contact</button>
+                                    <button type="button" class="button is-small type-btn-${cand.id}" data-val="distance" onclick="selectBleuType('${cand.id}', 'distance')">À distance</button>
                                 </div>
                             </div>
                         </div>
-                        <div class="is-size-7 is-flex is-align-items-center is-flex-wrap-wrap mt-1" style="gap: 5px;">
+                        <div class="is-size-6 is-flex is-align-items-center is-flex-wrap-wrap mt-2" style="gap: 6px;">
                             <span><em>« C'est une action</em></span>
                             <div class="select is-small">
                                 <select id="sel-prep-${cand.id}">
@@ -194,23 +194,23 @@ window.selectBleuType = function(candId, val) {
 function buildVertStep(batchIndex, items) {
     return {
         type: "game",
-        title: batchIndex === 0 ? "Niveau Vert (1/2) : Situations 1 à 3" : "Niveau Vert (2/2) : Situations 4 à 6",
+        title: batchIndex === 0 ? "Niveau Vert — Situations 1 à 3" : "Niveau Vert — Situations 4 à 6",
         html: `
             <div class="box content consigne-box">
                 <p class="mb-0 is-size-6">Indiquez pour chaque objet proposé s'il agit <strong>par contact</strong>, <strong>à distance</strong>, ou s'il <strong>n'agit pas directement</strong> sur le receveur étudié.</p>
             </div>
-            <div class="columns is-variable is-2 mb-0">
+            <div class="columns is-variable is-3 mb-0">
                 ${items.map(it => `
                     <div class="column is-4">
-                        <div class="box h-100 p-2" id="vcard-${it.id}">
-                            <div class="is-flex is-justify-content-space-between is-align-items-center mb-1">
-                                <span class="has-text-weight-bold is-size-7">${it.title}</span>
-                                <span class="tag is-info is-light is-small">Receveur : <strong>&nbsp;${it.receveur}</strong></span>
+                        <div class="box h-100 p-3" id="vcard-${it.id}">
+                            <div class="is-flex is-justify-content-space-between is-align-items-center mb-2">
+                                <span class="has-text-weight-bold is-size-6">${it.title}</span>
+                                <span class="tag is-info is-light is-normal">Receveur : <strong>&nbsp;${it.receveur}</strong></span>
                             </div>
-                            <div class="scene-svg-container mb-2" style="max-width:100%; height:115px;">${SCENE_SVGS[it.svg]}</div>
+                            <div class="scene-svg-container mb-3" style="max-width:100%; height:150px;">${SCENE_SVGS[it.svg]}</div>
                             ${it.options.map(opt => `
-                                <div class="is-flex is-justify-content-space-between is-align-items-center mb-1 pb-1" style="border-bottom: 1px solid #f1f5f9; gap: 4px;">
-                                    <span class="is-size-7 has-text-weight-semibold" style="line-height:1.1;">${opt.label}</span>
+                                <div class="is-flex is-justify-content-space-between is-align-items-center mb-2 pb-1" style="border-bottom: 1px solid #f1f5f9; gap: 6px;">
+                                    <span class="is-size-6 has-text-weight-semibold" style="line-height:1.15;">${opt.label}</span>
                                     <div class="select is-small" style="flex-shrink:0;">
                                         <select id="vsel-${it.id}-${opt.id}">
                                             <option value="">-- Action ? --</option>
@@ -264,7 +264,7 @@ function buildVertStep(batchIndex, items) {
 }
 
 // ==========================================
-// 4. MOTEUR INTERACTIF : NIVEAU JAUNE (CONSTRUCTEUR D.O.I ÉPURÉ)
+// 4. MOTEUR INTERACTIF : NIVEAU JAUNE (OBJETS EN RECTANGLES DANS LE D.O.I)
 // ==========================================
 function buildJauneStep(item, isLast = false) {
     return {
@@ -277,26 +277,26 @@ function buildJauneStep(item, isLast = false) {
         },
         html: `
             <div class="box content consigne-box">
-                <div class="is-flex is-justify-content-space-between is-align-items-center is-flex-wrap-wrap" style="gap: 6px;">
-                    <span class="is-size-7"><strong>1.</strong> Cliquez sur un objet (réserve ou diagramme) pour l'ajouter ou le retirer. &nbsp;|&nbsp; <strong>2. Cliquez sur une flèche</strong> pour basculer entre <strong>Trait plein (Contact)</strong> et <strong>Pointillés (À distance)</strong>.</span>
-                    ${item.paperNotice ? `<span class="tag is-warning is-light has-text-weight-bold">${item.paperNotice}</span>` : ''}
+                <div class="is-flex is-justify-content-space-between is-align-items-center is-flex-wrap-wrap" style="gap: 8px;">
+                    <span class="is-size-6"><strong>1.</strong> Cliquez sur un objet pour l'ajouter ou le retirer. &nbsp;|&nbsp; <strong>2. Cliquez sur une flèche</strong> pour basculer entre <strong>Trait plein (Contact)</strong> et <strong>Pointillés (À distance)</strong>.</span>
+                    ${item.paperNotice ? `<span class="tag is-warning is-light is-medium has-text-weight-bold">${item.paperNotice}</span>` : ''}
                 </div>
             </div>
-            <div class="columns is-variable is-3 mb-0">
+            <div class="columns is-variable is-4 mb-0">
                 <div class="column is-4">
                     <div class="scene-box h-100">
-                        <div class="scene-svg-container mb-2">${SCENE_SVGS[item.svg]}</div>
-                        <p class="is-size-7 has-text-weight-bold mb-1">Objets disponibles (Cliquez) :</p>
-                        <div id="doi-pool" class="is-flex is-flex-wrap-wrap is-justify-content-center" style="gap: 6px;"></div>
+                        <div class="scene-svg-container mb-3">${SCENE_SVGS[item.svg]}</div>
+                        <p class="is-size-6 has-text-weight-bold mb-2">Objets disponibles (Cliquez) :</p>
+                        <div id="doi-pool" class="is-flex is-flex-wrap-wrap is-justify-content-center" style="gap: 8px;"></div>
                     </div>
                 </div>
                 <div class="column is-8">
                     <div class="doi-workspace h-100">
-                        <div class="is-flex is-justify-content-space-between is-align-items-center mb-1">
-                            <span class="is-size-7 has-text-grey"><i class="fas fa-mouse-pointer mr-1"></i> Cliquez sur une double flèche : Plein (Contact) ⟷ Pointillés (À distance)</span>
-                            <span class="tag is-warning is-light has-text-weight-bold">Système : ${item.systeme}</span>
+                        <div class="is-flex is-justify-content-space-between is-align-items-center mb-2">
+                            <span class="is-size-6 has-text-grey-dark"><i class="fas fa-mouse-pointer mr-1"></i> Cliquez sur une double flèche : Plein (Contact) ⟷ Pointillés (À distance)</span>
+                            <span class="tag is-warning is-light is-medium has-text-weight-bold">Système : ${item.systeme}</span>
                         </div>
-                        <svg id="doi-canvas" class="doi-svg" viewBox="0 0 560 280"></svg>
+                        <svg id="doi-canvas" class="doi-svg" viewBox="0 0 580 310"></svg>
                     </div>
                 </div>
             </div>`,
@@ -368,20 +368,13 @@ function renderDoiWorkspace(item) {
         pool.appendChild(chip);
     });
 
-    const cx = 280, cy = 140;
-    const sysW = 140, sysH = 54;
-    const hw1 = sysW / 2, hh1 = sysH / 2;
-
-    const actorW = 136, actorH = 50;
-    const hw2 = actorW / 2, hh2 = actorH / 2;
-    const pad = 3;
-
+    const cx = 290, cy = 150;
     const positions = [
-        { x: 110, y: 65 },
-        { x: 450, y: 65 },
-        { x: 280, y: 235 },
-        { x: 110, y: 215 },
-        { x: 450, y: 215 }
+        { x: 115, y: 70 },
+        { x: 465, y: 70 },
+        { x: 290, y: 255 },
+        { x: 115, y: 235 },
+        { x: 465, y: 235 }
     ];
 
     let svgHTML = `
@@ -392,47 +385,53 @@ function renderDoiWorkspace(item) {
         </defs>
     `;
 
+    // Demi-dimensions des rectangles d'objets (136 x 54)
+    const halfW = 68, halfH = 27;
+
     const placedNames = Object.keys(window.doiActors);
     placedNames.forEach((name, idx) => {
         const pos = positions[idx % positions.length];
         const type = window.doiActors[name];
-        const dash = type === 'distance' ? 'stroke-dasharray="7,6"' : '';
+        const dash = type === 'distance' ? 'stroke-dasharray="8,6"' : '';
 
         const dx = pos.x - cx;
         const dy = pos.y - cy;
-        const absDx = Math.abs(dx) || 1e-5;
-        const absDy = Math.abs(dy) || 1e-5;
+        const angle = Math.atan2(dy, dx);
 
-        const scale1 = Math.min((hw1 + pad) / absDx, (hh1 + pad) / absDy);
-        const startX = Math.round(cx + dx * scale1);
-        const startY = Math.round(cy + dy * scale1);
+        // Point de départ sur l'ovale central (Système : rx=70, ry=36)
+        const startX = cx + Math.cos(angle) * 72;
+        const startY = cy + Math.sin(angle) * 38;
 
-        const scale2 = Math.min((hw2 + pad) / absDx, (hh2 + pad) / absDy);
-        const endX = Math.round(pos.x - dx * scale2);
-        const endY = Math.round(pos.y - dy * scale2);
+        // Point d'arrivée sur le bord du RECTANGLE de l'objet (halfW=68, halfH=27)
+        const absCos = Math.abs(Math.cos(angle));
+        const absSin = Math.abs(Math.sin(angle));
+        const distRect = Math.min(
+            absCos > 0.001 ? (halfW + 3) / absCos : 1000,
+            absSin > 0.001 ? (halfH + 3) / absSin : 1000
+        );
+        const endX = pos.x - Math.cos(angle) * distRect;
+        const endY = pos.y - Math.sin(angle) * distRect;
 
-        const escapedName = name.replace(/'/g, "\\'");
-        const fontSize = name.length > 16 ? 11.5 : (name.length > 13 ? 12 : 13);
-
-        // Sans aucun label sur la flèche, ni croix rouge sur le rectangle !
+        // Objet représenté par un RECTANGLE et Système par un OVALE !
         svgHTML += `
-            <g class="doi-line-group" onclick="toggleDoiArrow('${escapedName}')" style="cursor:pointer;">
+            <g class="doi-line-group" onclick="toggleDoiArrow('${name.replace(/'/g, "\'")}')" style="cursor:pointer;">
                 <line x1="${startX}" y1="${startY}" x2="${endX}" y2="${endY}" class="doi-line-hit"/>
                 <line x1="${startX}" y1="${startY}" x2="${endX}" y2="${endY}" class="doi-line-vis" ${dash}
                       marker-start="url(#doi-arrow-end)" marker-end="url(#doi-arrow-end)"/>
             </g>
-            <g transform="translate(${pos.x}, ${pos.y})" onclick="removeDoiActor('${escapedName}')" style="cursor:pointer;">
+            <g transform="translate(${pos.x}, ${pos.y})" onclick="removeDoiActor('${name.replace(/'/g, "\'")}')" style="cursor:pointer;">
                 <title>Cliquer pour retirer du diagramme</title>
-                <rect x="${-actorW / 2}" y="${-actorH / 2}" width="${actorW}" height="${actorH}" rx="5" fill="#ffffff" stroke="#2563eb" stroke-width="2.5"/>
-                <text x="0" y="5" text-anchor="middle" fill="#1e293b" font-size="${fontSize}" font-weight="bold">${name}</text>
+                <rect x="${-halfW}" y="${-halfH}" width="${halfW * 2}" height="${halfH * 2}" rx="4" fill="#ffffff" stroke="#2563eb" stroke-width="2.5"/>
+                <text x="0" y="5" text-anchor="middle" fill="#1e293b" font-size="14" font-weight="bold">${name}</text>
             </g>
         `;
     });
 
+    // Ovale central du Système étudié
     svgHTML += `
         <g transform="translate(${cx}, ${cy})">
-            <rect x="${-sysW / 2}" y="${-sysH / 2}" width="${sysW}" height="${sysH}" rx="5" fill="#fef08a" stroke="#ca8a04" stroke-width="3"/>
-            <text x="0" y="5" text-anchor="middle" fill="#713f12" font-size="15" font-weight="bold">${item.systeme}</text>
+            <ellipse cx="0" cy="0" rx="70" ry="36" fill="#fef08a" stroke="#ca8a04" stroke-width="3"/>
+            <text x="0" y="6" text-anchor="middle" fill="#713f12" font-size="16" font-weight="bold">${item.systeme}</text>
         </g>
     `;
 
@@ -467,33 +466,33 @@ function buildOrangeStep(item, isLast = false) {
         },
         html: `
             <div class="box content consigne-box">
-                <div class="is-flex is-justify-content-space-between is-align-items-center is-flex-wrap-wrap" style="gap: 6px;">
-                    <span class="is-size-7"><strong>${item.subtitle}</strong> Sélectionnez la force à droite puis tirez la flèche depuis un point d'ancrage bleu (●).</span>
-                    ${item.paperNotice ? `<span class="tag is-warning is-light has-text-weight-bold">${item.paperNotice}</span>` : ''}
+                <div class="is-flex is-justify-content-space-between is-align-items-center is-flex-wrap-wrap" style="gap: 8px;">
+                    <span class="is-size-6"><strong>${item.subtitle}</strong> Sélectionnez la force à droite puis tirez la flèche depuis un point d'ancrage bleu (●).</span>
+                    ${item.paperNotice ? `<span class="tag is-warning is-light is-medium has-text-weight-bold">${item.paperNotice}</span>` : ''}
                 </div>
             </div>
-            <div class="columns is-variable is-3 mb-0">
-                <!-- VOLET GAUCHE : CARACTÉRISTIQUES COMPACTES -->
+            <div class="columns is-variable is-4 mb-0">
+                <!-- VOLET GAUCHE : CARACTÉRISTIQUES -->
                 <div class="column is-6">
                     ${item.forces.map(f => `
-                        <div class="box p-2 mb-2" id="fcard-${f.id}" style="border-left: 5px solid ${f.color};">
-                            <div class="is-flex is-justify-content-space-between is-align-items-center mb-1">
-                                <span class="is-size-6 has-text-weight-bold" style="color:${f.color};">Force ${f.htmlLabel}</span>
-                                ${f.givenValue ? `<span class="tag is-dark is-small">Valeur : ${f.givenValue}</span>` : ''}
+                        <div class="box p-3 mb-3" id="fcard-${f.id}" style="border-left: 5px solid ${f.color};">
+                            <div class="is-flex is-justify-content-space-between is-align-items-center mb-2">
+                                <span class="is-size-5 has-text-weight-bold" style="color:${f.color};">Force ${f.htmlLabel}</span>
+                                ${f.givenValue ? `<span class="tag is-dark is-normal">Valeur : ${f.givenValue}</span>` : ''}
                             </div>
-                            <div class="columns is-mobile is-multiline is-variable is-1 m-0">
-                                <div class="column is-5 py-1">
-                                    <label class="is-size-7 has-text-weight-semibold">Point d'application :</label>
-                                    <div class="select is-small is-fullwidth">
+                            <div class="columns is-mobile is-multiline is-variable is-2 m-0">
+                                <div class="column is-12 py-1">
+                                    <label class="is-size-6 has-text-weight-semibold">Point d'application :</label>
+                                    <div class="select is-small is-fullwidth mt-1">
                                         <select id="f-pt-${f.id}">
-                                            <option value="">-- Choisir --</option>
+                                            <option value="">-- Choisir le point d'application --</option>
                                             ${f.pointOptions.map(o => `<option value="${o}">${o}</option>`).join('')}
                                         </select>
                                     </div>
                                 </div>
-                                <div class="column is-4 py-1">
-                                    <label class="is-size-7 has-text-weight-semibold">Direction :</label>
-                                    <div class="select is-small is-fullwidth">
+                                <div class="column is-6 py-1">
+                                    <label class="is-size-6 has-text-weight-semibold">Direction :</label>
+                                    <div class="select is-small is-fullwidth mt-1">
                                         <select id="f-dir-${f.id}">
                                             <option value="">-- Choisir --</option>
                                             <option value="verticale">Verticale (↕)</option>
@@ -502,9 +501,9 @@ function buildOrangeStep(item, isLast = false) {
                                         </select>
                                     </div>
                                 </div>
-                                <div class="column is-3 py-1">
-                                    <label class="is-size-7 has-text-weight-semibold">Sens :</label>
-                                    <div class="select is-small is-fullwidth">
+                                <div class="column is-6 py-1">
+                                    <label class="is-size-6 has-text-weight-semibold">Sens :</label>
+                                    <div class="select is-small is-fullwidth mt-1">
                                         <select id="f-sens-${f.id}">
                                             <option value="">-- Choisir --</option>
                                             <option value="vers le bas">Vers le bas (↓)</option>
@@ -516,11 +515,11 @@ function buildOrangeStep(item, isLast = false) {
                                     </div>
                                 </div>
                                 ${f.askValue ? `
-                                    <div class="column is-12 py-1">
-                                        <div class="is-flex is-align-items-center" style="gap: 6px;">
-                                            <label class="is-size-7 has-text-weight-bold">Valeur déduite :</label>
-                                            <input type="text" id="f-val-${f.id}" class="input is-small" style="max-width: 90px; height: 24px;" placeholder="ex: 0,56">
-                                            <span class="is-size-7 has-text-weight-bold">N</span>
+                                    <div class="column is-12 py-1 mt-1">
+                                        <div class="is-flex is-align-items-center" style="gap: 8px;">
+                                            <label class="is-size-6 has-text-weight-bold">Valeur déduite :</label>
+                                            <input type="text" id="f-val-${f.id}" class="input is-small" style="max-width: 100px;" placeholder="ex: 0,56">
+                                            <span class="is-size-6 has-text-weight-bold">N</span>
                                         </div>
                                     </div>
                                 ` : ''}
@@ -531,10 +530,10 @@ function buildOrangeStep(item, isLast = false) {
 
                 <!-- VOLET DROIT : TRACEUR DE VECTEURS SUR SCHÉMA -->
                 <div class="column is-6">
-                    <div class="box p-2 h-100 is-flex is-flex-direction-column align-items-center justify-content-center">
+                    <div class="box p-3 h-100 is-flex is-flex-direction-column align-items-center justify-content-center">
                         <div class="buttons is-centered mb-2" id="vector-tool-tabs">
                             ${item.forces.map(f => `
-                                <button type="button" class="button is-small force-tab-btn" id="vtab-${f.id}"
+                                <button type="button" class="button is-normal force-tab-btn" id="vtab-${f.id}"
                                         style="background-color: ${f.color}; color: white;"
                                         onclick="selectVectorTool('${f.id}')">
                                     <i class="fas fa-pen mr-2"></i>
@@ -545,7 +544,7 @@ function buildOrangeStep(item, isLast = false) {
                         <div class="vector-canvas-wrap">
                             <svg id="vector-svg" class="vector-svg" viewBox="0 0 360 250"></svg>
                         </div>
-                        <div id="vector-live-info" class="is-size-7 has-text-grey has-text-centered mt-1">
+                        <div id="vector-live-info" class="is-size-6 has-text-grey-dark has-text-centered mt-2">
                             Cliquez sur un point d'ancrage bleu (●) et glissez pour tracer le vecteur.
                         </div>
                     </div>
@@ -800,62 +799,62 @@ function renderVectorCanvas(item) {
 const ROUGE_STEPS = [
     {
         type: "game",
-        title: "Niveau Rouge : Le Skieur et le Cerf-Volant (Sur Fiche Papier)",
+        title: "Niveau Rouge — Le Skieur et le Cerf-Volant (Sur Fiche Papier)",
         html: `
             <div class="box content paper-callout">
-                <p class="mb-0 is-size-7"><strong class="has-text-danger"><i class="fas fa-pencil-ruler mr-1"></i>Défi Final sur votre Fiche Papier :</strong> Réalisez les deux études complètes sur votre feuille. Utilisez cet écran pour <strong>vérifier vos calculs de poids P</strong> avant d'appeler le professeur.</p>
+                <p class="mb-0 is-size-6"><strong class="has-text-danger"><i class="fas fa-pencil-ruler mr-1"></i>Défi Final sur votre Fiche Papier :</strong> Réalisez les deux études complètes sur votre feuille. Utilisez cet écran pour <strong>vérifier vos calculs de poids P</strong> avant d'appeler le professeur.</p>
             </div>
-            <div class="columns is-variable is-3 mb-0">
+            <div class="columns is-variable is-4 mb-0">
                 <!-- EXERCICE 1 : LE SKIEUR -->
                 <div class="column is-6">
-                    <div class="box p-3 h-100">
-                        <div class="is-flex is-justify-content-space-between is-align-items-center mb-2">
-                            <h4 class="title is-6 m-0">1. Le skieur sur le tire-fesse</h4>
-                            <span class="tag is-danger is-light is-small">m = 60,0 kg | g = 9,81 N/kg</span>
+                    <div class="box p-4 h-100">
+                        <div class="is-flex is-justify-content-space-between is-align-items-center mb-3">
+                            <h4 class="title is-5 m-0">1. Le skieur sur le tire-fesse</h4>
+                            <span class="tag is-danger is-light is-normal">m = 60,0 kg | g = 9,81 N/kg</span>
                         </div>
-                        <div class="scene-svg-container mb-2" style="max-width:100%; height:135px;">${SCENE_SVGS.rouge_skieur}</div>
-                        <div class="notification is-light p-2 mb-2">
+                        <div class="scene-svg-container mb-3" style="max-width:100%; height:180px;">${SCENE_SVGS.rouge_skieur}</div>
+                        <div class="notification is-light p-3 mb-2">
                             <div class="is-flex is-align-items-center is-justify-content-space-between" style="gap: 8px;">
-                                <label class="is-size-7 has-text-weight-bold">Calcul du poids P<sub>skieur</sub> :</label>
+                                <label class="is-size-6 has-text-weight-bold">Calcul du poids P<sub>skieur</sub> :</label>
                                 <div class="field has-addons m-0">
                                     <div class="control">
-                                        <input type="text" id="inp-poids-skieur" class="input is-small" style="width:110px;" placeholder="P = ...">
+                                        <input type="text" id="inp-poids-skieur" class="input is-small" style="width:120px;" placeholder="P = ...">
                                     </div>
                                     <div class="control"><span class="button is-static is-small">N</span></div>
                                 </div>
                             </div>
-                            <div id="fb-skieur" class="is-size-7 mt-1"></div>
+                            <div id="fb-skieur" class="is-size-6 mt-1"></div>
                         </div>
-                        <details class="is-size-7">
+                        <details class="is-size-6">
                             <summary class="has-text-link has-text-weight-semibold" style="cursor:pointer;">💡 Coup de pouce : Force de la neige</summary>
-                            <p class="mt-1 p-1 has-background-info-light" style="border-radius:4px;">Sans frottements, l'action de la neige est <strong>perpendiculaire à la pente</strong> (vers le haut) !</p>
+                            <p class="mt-1 p-2 has-background-info-light" style="border-radius:4px;">Sans frottements, l'action de la neige est <strong>perpendiculaire à la pente</strong> (vers le haut) !</p>
                         </details>
                     </div>
                 </div>
 
                 <!-- EXERCICE 2 : LE CERF-VOLANT -->
                 <div class="column is-6">
-                    <div class="box p-3 h-100">
-                        <div class="is-flex is-justify-content-space-between is-align-items-center mb-2">
-                            <h4 class="title is-6 m-0">2. Le cerf-volant</h4>
-                            <span class="tag is-danger is-small">m = 200 g | g = 9,81 N·kg⁻¹</span>
+                    <div class="box p-4 h-100">
+                        <div class="is-flex is-justify-content-space-between is-align-items-center mb-3">
+                            <h4 class="title is-5 m-0">2. Le cerf-volant</h4>
+                            <span class="tag is-danger is-normal">m = 200 g | g = 9,81 N·kg⁻¹</span>
                         </div>
-                        <div class="scene-svg-container mb-2" style="max-width:100%; height:135px;">${SCENE_SVGS.rouge_cerfvolant}</div>
-                        <div class="notification is-light p-2 mb-2">
+                        <div class="scene-svg-container mb-3" style="max-width:100%; height:180px;">${SCENE_SVGS.rouge_cerfvolant}</div>
+                        <div class="notification is-light p-3 mb-2">
                             <div class="is-flex is-align-items-center is-justify-content-space-between" style="gap: 8px;">
-                                <label class="is-size-7 has-text-weight-bold">Calcul du poids P<sub>cerf-volant</sub> :</label>
+                                <label class="is-size-6 has-text-weight-bold">Calcul du poids P<sub>cerf-volant</sub> :</label>
                                 <div class="field has-addons m-0">
                                     <div class="control">
-                                        <input type="text" id="inp-poids-cv" class="input is-small" style="width:110px;" placeholder="P = ...">
+                                        <input type="text" id="inp-poids-cv" class="input is-small" style="width:120px;" placeholder="P = ...">
                                     </div>
                                     <div class="control"><span class="button is-static is-small">N</span></div>
                                 </div>
                             </div>
-                            <div id="fb-cv" class="is-size-7 mt-1"></div>
+                            <div id="fb-cv" class="is-size-6 mt-1"></div>
                         </div>
-                        <details class="is-size-7">
+                        <details class="is-size-6">
                             <summary class="has-text-link has-text-weight-semibold" style="cursor:pointer;">💡 Coup de pouce : Les 3 donneurs</summary>
-                            <p class="mt-1 p-1 has-background-info-light" style="border-radius:4px;">Le cerf-volant subit l'action de <strong>la Terre</strong> (à distance), du <strong>fil</strong> (contact) et du <strong>vent</strong> (contact).</p>
+                            <p class="mt-1 p-2 has-background-info-light" style="border-radius:4px;">Le cerf-volant subit l'action de <strong>la Terre</strong> (à distance), du <strong>fil</strong> (contact) et du <strong>vent</strong> (contact).</p>
                         </details>
                     </div>
                 </div>
@@ -932,23 +931,23 @@ function renderHome() {
     document.getElementById('global-controls').style.display = 'none';
 
     document.getElementById('spa-container').innerHTML = `
-        <div class="columns is-desktop is-variable is-4 mt-1">
+        <div class="columns is-desktop is-variable is-5 mt-2">
             <div class="column is-7">
-                <div class="box content p-4" style="height: 100%;">
-                    <span class="tag is-link is-light mb-2">Seconde • Séquence MI-2 : Forces et lois de Newton</span>
-                    <h1 class="title is-4 has-text-primary mb-2">Découverte des Actions Mécaniques et des Forces</h1>
-                    <p class="is-size-6">Cette activité interactive accompagne votre <strong>fiche papier</strong> pour apprendre à identifier les actions mécaniques, construire un Diagramme Objet-Interaction (D.O.I) et tracer des vecteurs forces.</p>
+                <div class="box content is-medium p-5" style="height: 100%;">
+                    <span class="tag is-link is-light is-medium mb-3">Seconde • Séquence MI-2 : Forces et lois de Newton</span>
+                    <h1 class="title is-3 has-text-primary mb-3">Découverte des Actions Mécaniques et des Forces</h1>
+                    <p>Cette activité interactive accompagne votre <strong>fiche papier</strong> pour apprendre à identifier les actions mécaniques, construire un Diagramme Objet-Interaction (D.O.I) et tracer des vecteurs forces.</p>
                     
-                    <div class="notification is-info is-light my-3 py-2 px-3 is-size-7">
-                        <p class="has-text-weight-bold mb-1"><i class="fas fa-route mr-1"></i>Fonctionnement par ceintures de couleurs :</p>
-                        <ul class="mb-0" style="padding-left:16px;">
+                    <div class="notification is-info is-light my-4 py-3 px-4 is-size-6">
+                        <p class="has-text-weight-bold mb-2"><i class="fas fa-route mr-1"></i>Fonctionnement par ceintures de couleurs :</p>
+                        <ul class="mb-0" style="padding-left:18px;">
                             <li>Vous démarrez au <strong>Niveau Bleu</strong>. Sans erreur sur la fin du niveau Bleu, vous passez directement au <strong>Niveau Jaune</strong> !</li>
                             <li>Gardez votre <strong>fiche papier (avec les Mémentos Doc 1, 2 et 3)</strong> sous les yeux pour compléter les traces écrites demandées et le <strong>Niveau Rouge</strong>.</li>
                         </ul>
                     </div>
 
-                    <div class="has-text-centered mt-4">
-                        <button class="button is-link shadow" onclick="startPart('bleu', 0)">
+                    <div class="has-text-centered mt-5">
+                        <button class="button is-link is-medium shadow" onclick="startPart('bleu', 0)">
                             <span class="icon"><i class="fas fa-play"></i></span>
                             <span>Démarrer au Niveau Bleu</span>
                         </button>
@@ -957,40 +956,40 @@ function renderHome() {
             </div>
 
             <div class="column is-5">
-                <h3 class="title is-6 mb-2 has-text-grey-dark"><i class="fas fa-layer-group mr-1"></i>Accès direct aux ceintures</h3>
-                <div class="is-flex is-flex-direction-column" style="gap: 8px;">
+                <h3 class="title is-4 mb-3 has-text-grey-dark"><i class="fas fa-layer-group mr-2"></i>Accès direct aux ceintures</h3>
+                <div class="is-flex is-flex-direction-column" style="gap: 10px;">
                     
-                    <button class="button is-white is-justify-content-flex-start p-3 shadow-sm" style="height:auto; border-left: 5px solid var(--c-bleu);" onclick="startPart('bleu', 0)">
+                    <button class="button is-white is-justify-content-flex-start p-4 shadow-sm" style="height:auto; border-left: 6px solid var(--c-bleu);" onclick="startPart('bleu', 0)">
                         <div class="has-text-left">
-                            <strong class="is-block is-size-7" style="color:var(--c-bleu);">🔵 Niveau Bleu — Actions mécaniques (6 situations)</strong>
-                            <span class="is-size-7 has-text-grey">Donneur, Receveur, action de contact ou à distance.</span>
+                            <strong class="is-block is-size-5" style="color:var(--c-bleu);">🔵 Niveau Bleu — Actions mécaniques</strong>
+                            <span class="is-size-7 has-text-grey">Donneur, Receveur, action de contact ou à distance (6 situations).</span>
                         </div>
                     </button>
 
-                    <button class="button is-white is-justify-content-flex-start p-3 shadow-sm" style="height:auto; border-left: 5px solid var(--c-vert);" onclick="startPart('vert', 0)">
+                    <button class="button is-white is-justify-content-flex-start p-4 shadow-sm" style="height:auto; border-left: 6px solid var(--c-vert);" onclick="startPart('vert', 0)">
                         <div class="has-text-left">
-                            <strong class="is-block is-size-7" style="color:var(--c-vert);">🟢 Niveau Vert — Renforcement (6 situations)</strong>
-                            <span class="is-size-7 has-text-grey">Entraînement supplémentaire sur les types d'actions.</span>
+                            <strong class="is-block is-size-5" style="color:var(--c-vert);">🟢 Niveau Vert — Renforcement</strong>
+                            <span class="is-size-7 has-text-grey">Entraînement supplémentaire sur les types d'actions (6 situations).</span>
                         </div>
                     </button>
 
-                    <button class="button is-white is-justify-content-flex-start p-3 shadow-sm" style="height:auto; border-left: 5px solid var(--c-jaune);" onclick="startPart('jaune', 0)">
+                    <button class="button is-white is-justify-content-flex-start p-4 shadow-sm" style="height:auto; border-left: 6px solid var(--c-jaune);" onclick="startPart('jaune', 0)">
                         <div class="has-text-left">
-                            <strong class="is-block is-size-7" style="color:#b45309;">🟡 Niveau Jaune — Diagramme D.O.I (9 situations)</strong>
-                            <span class="is-size-7 has-text-grey">Construire les D.O.I interactifs et éviter les intrus.</span>
+                            <strong class="is-block is-size-5" style="color:#b45309;">🟡 Niveau Jaune — Diagramme D.O.I</strong>
+                            <span class="is-size-7 has-text-grey">Construire les D.O.I interactifs et éviter les intrus (9 situations).</span>
                         </div>
                     </button>
 
-                    <button class="button is-white is-justify-content-flex-start p-3 shadow-sm" style="height:auto; border-left: 5px solid var(--c-orange);" onclick="startPart('orange', 0)">
+                    <button class="button is-white is-justify-content-flex-start p-4 shadow-sm" style="height:auto; border-left: 6px solid var(--c-orange);" onclick="startPart('orange', 0)">
                         <div class="has-text-left">
-                            <strong class="is-block is-size-7" style="color:var(--c-orange);">🟠 Niveau Orange — Vecteurs Forces (6 situations)</strong>
-                            <span class="is-size-7 has-text-grey">Caractéristiques et tracé des vecteurs sur schéma.</span>
+                            <strong class="is-block is-size-5" style="color:var(--c-orange);">🟠 Niveau Orange — Vecteurs Forces</strong>
+                            <span class="is-size-7 has-text-grey">Caractéristiques et tracé des vecteurs sur schéma (6 situations).</span>
                         </div>
                     </button>
 
-                    <button class="button is-white is-justify-content-flex-start p-3 shadow-sm" style="height:auto; border-left: 5px solid var(--c-rouge);" onclick="startPart('rouge', 0)">
+                    <button class="button is-white is-justify-content-flex-start p-4 shadow-sm" style="height:auto; border-left: 6px solid var(--c-rouge);" onclick="startPart('rouge', 0)">
                         <div class="has-text-left">
-                            <strong class="is-block is-size-7" style="color:var(--c-rouge);">🔴 Niveau Rouge — Défi sur Papier (2 problèmes)</strong>
+                            <strong class="is-block is-size-5" style="color:var(--c-rouge);">🔴 Niveau Rouge — Défi sur Papier</strong>
                             <span class="is-size-7 has-text-grey">Skieur et Cerf-volant : vérification de P = m × g.</span>
                         </div>
                     </button>
@@ -1016,9 +1015,9 @@ function renderStep() {
     const totalSteps = STRUCTURE_TP[currentPart].length;
 
     const headerBadge = `
-        <div class="is-flex is-justify-content-space-between is-align-items-center mb-1">
-            <h2 class="title is-6 m-0 has-text-primary">${step.title}</h2>
-            <span class="tag is-small is-light has-text-weight-bold">Étape ${currentStepIndex + 1} / ${totalSteps}</span>
+        <div class="is-flex is-justify-content-space-between is-align-items-center mb-2">
+            <h2 class="title is-5 m-0 has-text-primary">${step.title}</h2>
+            <span class="tag is-medium is-light has-text-weight-bold">Étape ${currentStepIndex + 1} / ${totalSteps}</span>
         </div>
     `;
 
@@ -1070,8 +1069,8 @@ function executeValidation() {
 
     msgBox.innerHTML = res.msg;
     msgBox.className = res.success
-        ? "notification is-success is-light py-1 px-3 m-0 is-size-7"
-        : "notification is-danger is-light py-1 px-3 m-0 is-size-7";
+        ? "notification is-success is-light py-2 px-4 m-0 is-size-6"
+        : "notification is-danger is-light py-2 px-4 m-0 is-size-6";
 
     msgBox.classList.remove('feedback-anim');
     void msgBox.offsetWidth;
