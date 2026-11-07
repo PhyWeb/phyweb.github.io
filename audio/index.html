@@ -452,7 +452,7 @@
             <input class="input" type="text" placeholder="Nom de la sauvegarde" id="save-name-input" autofocus>
           </p>
           <p class="control">
-            <button class="button is-primary" id="confirm-save-button">
+            <button class="button is-primary" id="confirm-save-button" data-modal-confirm>
               <span class="icon">
                 <i class="fas fa-check"></i>
               </span>
@@ -470,7 +470,7 @@
     <div class="modal-card" id="download-modal-card">
       <header class="modal-card-head">
         <p class="modal-card-title">Télécharger les données</p>
-        <button class="delete" aria-label="close"></button>
+        <button class="delete modal-close-button" aria-label="close" data-modal-cancel></button>
       </header>
       <section class="modal-card-body ">
         <p class="title is-5">Durée de l'enregistrement</p>
@@ -568,7 +568,7 @@
         </div>
       </section>
       <footer class="modal-card-foot">
-        <button class="button is-fullwidth is-primary" id="download-file-button">
+        <button class="button is-fullwidth is-primary" id="download-file-button" data-modal-confirm>
           <span class="icon">
             <i class="fas fa-download"></i>
           </span>
@@ -585,7 +585,7 @@
     <div class="modal-card">
       <header class="modal-card-head">
         <p class="modal-card-title">Envoyer vers Grapher</p>
-        <button class="delete" aria-label="close"></button>
+        <button class="delete modal-close-button" aria-label="close" data-modal-cancel></button>
       </header>
       <section class="modal-card-body">
         <p class="title is-5">Durée de l'enregistrement à envoyer</p>
@@ -615,7 +615,7 @@
 
       </section>
       <footer class="modal-card-foot">
-        <button class="button is-fullwidth is-primary" id="confirm-send-to-grapher-button" autofocus>
+        <button class="button is-fullwidth is-primary" id="confirm-send-to-grapher-button" autofocus data-modal-confirm>
           <span class="icon"><i class="fas fa-paper-plane"></i></span>
           <span>Envoyer les données</span>
         </button>
@@ -630,7 +630,7 @@
     <div class="modal-card" id="file-length-modal-card">
       <header class="modal-card-head">
         <p class="modal-card-title is-size-4">Fichier trop long</p>
-        <button class="delete" aria-label="close"></button>
+        <button class="delete modal-close-button" aria-label="close" data-modal-cancel></button>
       </header>
       <section class="modal-card-body">
         <p class="block">
@@ -672,7 +672,7 @@
           <span class="icon"><i class="fas fa-play"></i></span>
           <span>Ecouter</span>
         </button>
-        <button class="button is-primary is-flex-grow-1" id="open-resized-file">Charger</button>
+        <button class="button is-primary is-flex-grow-1" id="open-resized-file" data-modal-confirm>Charger</button>
       </footer>
     </div>
   </div>

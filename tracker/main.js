@@ -41,6 +41,11 @@ setupGlobalShortcuts({
     $("#open-video-button").click();
   },
   onEscape: () => {
+    // Si une modale est ouverte, on annule uniquement celle du premier plan
+    if (common?.modalManager?.getActiveModal()) {
+      common.modalManager.cancelActiveModal();
+      return;
+    }
     if (player.originFlag !== "none") {
       player.exitOriginMode();
       return;
@@ -49,8 +54,6 @@ setupGlobalShortcuts({
       player.exitScaleMode();
       return;
     }
-    // Ferme toutes les modales
-    common.modalManager.closeAllModals();
   },
   onDebug: () => {
   }
@@ -192,6 +195,9 @@ $("#open-video").addEventListener("click", () => {
   const selectedPath = videolist.getSelectedPath?.() || $(".video-item.is-active")?.dataset?.path;
   if (!selectedPath) {
     return;
+  }
+  if (document.activeElement && typeof document.activeElement.blur === 'function') {
+    document.activeElement.blur();
   }
   navManager.confirmAction(() => {
     common.modalManager.closeAllModals();

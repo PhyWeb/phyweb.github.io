@@ -6,7 +6,7 @@
 
     - On defullscreen pas quand on essai de drag la fenetre
 
-    raccourcis clavier dans les modales genre enter pour ok et echap pour annuler
+    - [x] Raccourcis clavier dans les modales (Entrée pour valider, Échap pour annuler)
 
     quand on ouvre un .pw, mettre un spinner
 
@@ -17,10 +17,13 @@
     - package linux et macos
 
 # Audio
+    autofocus pour le nom de l'onglet et le nom de la sauvegarde
 
 # Tracker
     - Add vidéos
     - pan and zoom
+
+    les croix ne sont pas zoomés et les petites devraient etre plus opaque
 
 # Grapher
     - possibilité d'avoir 2 axes y
@@ -32,6 +35,10 @@
     parametre? pour angles en degrés
 
     les grandeurs calculés se mettent toujours a droite du tableau quand on recalcul. du coup si on a mesure/calculée/mesure et que l'on recalcule ca devient mesure/mesure/calculée. On en pense quoi ?
+
+    modal edition model entré marche pas si rein a été modifié
+
+    on propose le recalcul des formules... meme quand yen a pas
 
 # Mendeleiev
 # Optique

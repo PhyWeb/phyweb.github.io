@@ -20,8 +20,12 @@ setupGlobalShortcuts({
     $("#new-session-button").click();
   },
   onEscape: () => {
-    // Ferme toutes les modales
-    common.modalManager.closeAllModals();
+
+
+    if (common?.modalManager?.getActiveModal()) {
+      common.modalManager.cancelActiveModal();
+      return;
+    }
   },
   onDebug: () => {
   }
@@ -1095,7 +1099,11 @@ $("#download-file-button").addEventListener('click', () => {
     
     const file = audio.generateWavFile(wavDataSerie, effectiveSampleRate);
     downloadFile(file, 'wav', filename);
-    common.modalManager.closeAllModals();
+
+    if (common?.modalManager?.getActiveModal()) {
+      common.modalManager.cancelActiveModal();
+      return;
+    }
     return; 
   }
 

@@ -87,6 +87,11 @@ export default class UIManager {
         if (document.activeElement) {
           document.activeElement.blur();
         }
+        // Si une modale est ouverte, on annule uniquement celle du premier plan
+        if (this.common?.modalManager?.getActiveModal()) {
+          this.common.modalManager.cancelActiveModal();
+          return;
+        }
         // Ferme le dropdown des fonctions s'il est ouvert
         const functionsDropdown = document.getElementById('functions-dropdown');
         if (functionsDropdown) {
@@ -97,8 +102,6 @@ export default class UIManager {
         if (constantsDropdown) {
           constantsDropdown.classList.remove('is-active');
         }
-        // Ferme toutes les modales
-        this.common.modalManager.closeAllModals();
         // Désactive les outils du grapheur (réticule, etc.)
         this.clearActiveTool(); 
         // Deselectionne toute cellule sélectionnée dans le tableur

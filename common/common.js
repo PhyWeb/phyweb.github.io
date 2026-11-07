@@ -229,7 +229,7 @@ function enforceIntegerInputs(){
  * @param {Function} [actions.onTab3] - Fonction appelée lors de Alt+3
  */
 function setupGlobalShortcuts(actions = {}) {
-  document.addEventListener('keydown', (event) => {
+  const keydownListener = (event) => {
     const isAltGr = Boolean(event.getModifierState && event.getModifierState('AltGraph'));
     const isCtrlOrCmd = (event.ctrlKey || event.metaKey) && !isAltGr;
     const isAlt = event.altKey && !isAltGr;
@@ -237,6 +237,11 @@ function setupGlobalShortcuts(actions = {}) {
 
     // Touche Échap (Escape)
     if (key === 'escape') {
+      // Si une modale est actuellement ouverte, la touche Échap lui est réservée
+      const activeModals = Array.from(document.querySelectorAll('.modal') || []).filter(m => m.classList && m.classList.contains('is-active'));
+      if (activeModals.length > 0) {
+        return;
+      }
       if (typeof actions.onEscape === 'function') actions.onEscape();
       return; // On s'arrête là
     }
@@ -297,14 +302,38 @@ function setupGlobalShortcuts(actions = {}) {
           break;
       }
     }
-  });
+  };
+
+  document.addEventListener('keydown', keydownListener);
+  return () => {
+    if (typeof document !== 'undefined' && typeof document.removeEventListener === 'function') {
+      document.removeEventListener('keydown', keydownListener);
+    }
+  };
 }
 
 /*----------------------------------------------------------------------------------------------
 -----------------------------------------MODALS / ALERTS----------------------------------------
 ----------------------------------------------------------------------------------------------*/
+function isNodeInside(parent, child) {
+  if (!parent || !child) return false;
+  if (parent === child) return true;
+  if (typeof parent.contains === 'function') {
+    return parent.contains(child);
+  }
+  let current = child.parentNode;
+  while (current) {
+    if (current === parent) return true;
+    current = current.parentNode;
+  }
+  return false;
+}
+
 class ModalManager {
 	constructor() {
+
+    // Pile des modales actuellement ouvertes (pour gérer proprement les modales superposées)
+    this.modalStack = [];
 
     // Permet de stocker une fonction de rappel à exécuter lors de l'ouverture d'une modale
     this.onModalOpen = null;
@@ -327,15 +356,210 @@ class ModalManager {
       });
     });
 
-    // Fermeture des modales via la touche Échap
-    document.addEventListener('keydown', (event) => {
-      if(event.key === "Escape") {
-        this.closeAllModals();
+    // Raccourcis clavier dans les modales : Entrée pour valider, Échap pour annuler
+    this.handleKeydown = (event) => {
+      if (!event) return;
+
+      if (event.key === "Escape") {
+        const activeModal = this.getActiveModal();
+        if (activeModal) {
+          event.preventDefault();
+          if (typeof event.stopImmediatePropagation === 'function') {
+            event.stopImmediatePropagation();
+          }
+          this.cancelActiveModal();
+        }
+      } else if (event.key === "Enter") {
+        const activeModal = this.getActiveModal();
+        if (activeModal) {
+          // Ignorer la saisie IME en cours de composition
+          if (event.isComposing || event.keyCode === 229) {
+            return;
+          }
+          // Ignorer les combinaisons de touches avec modificateurs
+          if (event.shiftKey || event.ctrlKey || event.metaKey || event.altKey) {
+            return;
+          }
+          const target = event.target || (typeof document !== 'undefined' ? document.activeElement : null);
+          const isTargetInActiveModal = isNodeInside(activeModal, target);
+
+          // Si le focus est à l'intérieur de la modale active dans un textarea, laisser le comportement par défaut (retour à la ligne)
+          const tagName = target?.tagName ? String(target.tagName).toUpperCase() : '';
+          if (isTargetInActiveModal && tagName === 'TEXTAREA') {
+            return;
+          }
+
+          // Si le focus est directement sur un bouton à l'intérieur de la modale active,
+          // laisser le clic natif s'exécuter
+          if (isTargetInActiveModal && (tagName === 'BUTTON' || (typeof target?.closest === 'function' && target.closest('button')))) {
+            return;
+          }
+
+          // Si le focus était resté sur un élément extérieur à la modale active (ex: bouton de la page
+          // ou d'une modale sous-jacente), ou sur un champ texte interne, on empêche l'activation native
+          event.preventDefault();
+          if (typeof event.stopImmediatePropagation === 'function') {
+            event.stopImmediatePropagation();
+          }
+
+          if (typeof document !== 'undefined' && document.activeElement && typeof document.activeElement.blur === 'function') {
+            document.activeElement.blur();
+          }
+
+          this.confirmActiveModal();
+        }
       }
-    });
+    };
+
+    document.addEventListener('keydown', this.handleKeydown);
 	}
 
+  _addToStack($el) {
+    if (!$el) return;
+    if (!this.modalStack) this.modalStack = [];
+    const idx = this.modalStack.indexOf($el);
+    if (idx !== -1) {
+      this.modalStack.splice(idx, 1);
+    }
+    this.modalStack.push($el);
+  }
+
+  _removeFromStack($el) {
+    if (!this.modalStack || !$el) return;
+    const idx = this.modalStack.indexOf($el);
+    if (idx !== -1) {
+      this.modalStack.splice(idx, 1);
+    }
+  }
+
+  getActiveModal() {
+    this.modalStack = (this.modalStack || []).filter(m => {
+      if (!m || !m.classList || !m.classList.contains('is-active')) return false;
+      if (typeof m.isConnected !== 'undefined' && !m.isConnected) return false;
+      return true;
+    });
+
+    const domActiveModals = Array.from(document.querySelectorAll('.modal') || []).filter(m => m.classList && m.classList.contains('is-active'));
+    for (const m of domActiveModals) {
+      if (!this.modalStack.includes(m)) {
+        this.modalStack.push(m);
+      }
+    }
+
+    if (this.modalStack.length === 0) return null;
+    return this.modalStack[this.modalStack.length - 1];
+  }
+
+  getConfirmButton($modal) {
+    if (!$modal) return null;
+
+    if (typeof $modal.querySelector === 'function') {
+      // 1. Bouton explicitement marqué pour la validation
+      let btn = $modal.querySelector('[data-modal-confirm="true"], [data-modal-confirm], .modal-confirm-button, .modal-validate-button');
+      if (btn) return btn;
+
+      // 2. Boutons d'action dans le pied de page (en excluant les boutons d'annulation)
+      if (typeof $modal.querySelectorAll === 'function') {
+        const footButtons = Array.from($modal.querySelectorAll('.modal-card-foot button, footer.modal-card-foot button'));
+        btn = footButtons.find(b => {
+          if (b.classList && (b.classList.contains('modal-close-button') || b.classList.contains('delete') || b.classList.contains('modal-cancel-button'))) {
+            return false;
+          }
+          if (typeof b.hasAttribute === 'function' && b.hasAttribute('data-modal-cancel')) {
+            return false;
+          }
+          const text = (b.textContent || '').trim().toLowerCase();
+          if (text === 'annuler' || text === 'fermer' || text === 'cancel' || text === 'close') {
+            return false;
+          }
+          return b.classList && (b.classList.contains('is-primary') || b.classList.contains('is-success') || b.classList.contains('is-danger') || b.classList.contains('is-link'));
+        });
+        if (btn) return btn;
+      }
+
+      // 3. Heuristiques sur les identifiants connus de boutons de validation
+      btn = $modal.querySelector('#confirm-save-button, #download-file-button, #confirm-send-to-grapher-button, #open-resized-file, #open-video, #validate-settings-button, #open-resized-video, #add-curve-confirm-button, #delete-curve-confirm-button, #choose-curves-confirm-button, #edit-header-save-button, #settings-save-button, #add-model-confirm-button, #model-edit-save-button, #compute-model-confirm-button, #init-session-confirm-btn, #export-confirm-button, [id*="confirm"], [id*="validate"], [id*="save"]');
+      if (btn) return btn;
+    }
+
+    return null;
+  }
+
+  getCancelButton($modal) {
+    if (!$modal) return null;
+
+    if (typeof $modal.querySelector === 'function') {
+      // 1. Bouton explicitement marqué pour l'annulation
+      let btn = $modal.querySelector('[data-modal-cancel="true"], [data-modal-cancel], .modal-cancel-button');
+      if (btn) return btn;
+
+      // 2. Bouton d'annulation / fermeture dans le pied de page
+      if (typeof $modal.querySelectorAll === 'function') {
+        const footButtons = Array.from($modal.querySelectorAll('.modal-card-foot button, footer.modal-card-foot button'));
+        btn = footButtons.find(b => {
+          if (b.classList && b.classList.contains('modal-close-button')) return true;
+          if (typeof b.hasAttribute === 'function' && b.hasAttribute('data-modal-cancel')) return true;
+          const text = (b.textContent || '').trim().toLowerCase();
+          return text === 'annuler' || text === 'fermer' || text === 'cancel' || text === 'close';
+        });
+        if (btn) return btn;
+      }
+
+      // 3. Bouton de fermeture dans l'en-tête (.delete ou .modal-close) ou corps
+      btn = $modal.querySelector('.modal-card-head .delete, .modal-card-head .modal-close-button, .delete, .modal-close, .modal-close-button, #new-file-close-button, #init-session-skip-btn');
+      if (btn) return btn;
+    }
+
+    return null;
+  }
+
+  confirmActiveModal() {
+    const modal = this.getActiveModal();
+    if (!modal) return false;
+    const btn = this.getConfirmButton(modal);
+    if (!btn) return false;
+
+    // Ne pas déclencher si le bouton est désactivé ou en cours de chargement
+    if (btn.disabled || (typeof btn.hasAttribute === 'function' && btn.hasAttribute('disabled')) || (btn.classList && btn.classList.contains('is-loading'))) {
+      return false;
+    }
+
+    // Déclencher le blur pour s'assurer que les événements change sont émis
+    if (typeof document !== 'undefined' && document.activeElement && typeof document.activeElement.blur === 'function') {
+      document.activeElement.blur();
+    }
+
+    if (typeof btn.click === 'function') {
+      btn.click();
+    } else if (typeof btn.dispatchEvent === 'function') {
+      btn.dispatchEvent(new Event('click'));
+    }
+    return true;
+  }
+
+  cancelActiveModal() {
+    const modal = this.getActiveModal();
+    if (!modal) return false;
+    const btn = this.getCancelButton(modal);
+    if (btn) {
+      if (typeof btn.click === 'function') {
+        btn.click();
+      } else if (typeof btn.dispatchEvent === 'function') {
+        btn.dispatchEvent(new Event('click'));
+      }
+      // Si la modale est toujours active après le clic, on s'assure de la fermer
+      if (modal.classList && modal.classList.contains('is-active')) {
+        this.closeModal(modal);
+      }
+    } else {
+      this.closeModal(modal);
+    }
+    this._removeFromStack(modal);
+    return true;
+  }
+
   openModal($el) {
+    if (!$el) return;
     // Appelle la fonction de rappel d'ouverture de modale, si elle est définie
     if (typeof this.onModalOpen === 'function') {
       this.onModalOpen();
@@ -345,6 +569,7 @@ class ModalManager {
     void $el.offsetWidth;
 
     $el.classList.add('is-active');
+    this._addToStack($el);
 
     // Recherche un élément avec l'attribut autofocus dans la modale
     const toFocus = $el.querySelector('[autofocus]');
@@ -358,6 +583,7 @@ class ModalManager {
   closeModal($el) {
     if (!$el) return;
     $el.classList?.remove('is-active');
+    this._removeFromStack($el);
     if ($el.classList?.contains('alert-modal') || $el.dataset?.dynamic === 'true' || $el.getAttribute?.('data-dynamic') === 'true') {
       $el.remove?.();
     }
@@ -367,6 +593,14 @@ class ModalManager {
     (document.querySelectorAll('.modal') || []).forEach(($modal) => {
       this.closeModal($modal);
     });
+    this.modalStack = [];
+  }
+
+  destroy() {
+    if (this.handleKeydown && typeof document !== 'undefined') {
+      document.removeEventListener('keydown', this.handleKeydown);
+    }
+    this.modalStack = [];
   }
 }
 
@@ -381,7 +615,8 @@ function createElement(_type, _className, _parent){
 }
 
 function closeAlertModal(_e){
-  _e.remove?.();
+  _e?.classList?.remove('is-active');
+  _e?.remove?.();
 }
 
 function alertModal(_config){
@@ -391,6 +626,11 @@ function alertModal(_config){
     if(existing){
       existing.remove?.();
     }
+  }
+
+  // Enlève le focus de l'élément précédemment actif (ex: bouton déclencheur en arrière-plan)
+  if (typeof document !== 'undefined' && document.activeElement && typeof document.activeElement.blur === 'function') {
+    document.activeElement.blur();
   }
 
   let modal = createElement("div", "modal alert-modal", document.body);
@@ -404,6 +644,10 @@ function alertModal(_config){
   let head = createElement("header", "modal-card-head", card);
   let title = createElement("p", "modal-card-title", head);
   let body = createElement("section", "modal-card-body", card);
+
+  let deleteButton = null;
+  let confirmButton = null;
+  let cancelButton = null;
 
   // Identifiant
   if(_config.id){
@@ -422,7 +666,10 @@ function alertModal(_config){
     head.classList.add("has-background-"+_config.type);
   }
   if(_config.delete){
-    let deleteButton = createElement("button", "delete", head);
+    deleteButton = createElement("button", "delete modal-close-button modal-cancel-button", head);
+    if (deleteButton.setAttribute) {
+      deleteButton.setAttribute('data-modal-cancel', 'true');
+    }
     deleteButton.addEventListener("click", ()=>{closeAlertModal(modal)});
   }
 
@@ -442,7 +689,10 @@ function alertModal(_config){
       if(_config.confirm.type){
         type = _config.confirm.type;
       }
-      let confirmButton = createElement("button", "button is-" + type, buttons);
+      confirmButton = createElement("button", "button is-" + type + " modal-confirm-button", buttons);
+      if (confirmButton.setAttribute) {
+        confirmButton.setAttribute('data-modal-confirm', 'true');
+      }
       confirmButton.addEventListener("click", ()=>{closeAlertModal(modal)});
 
       if(typeof _config.confirm === "string"){
@@ -458,7 +708,10 @@ function alertModal(_config){
 
     // Bouton d'annulation
     if(_config.cancel){
-      let cancelButton = createElement("button", "button", buttons);
+      cancelButton = createElement("button", "button modal-cancel-button modal-close-button", buttons);
+      if (cancelButton.setAttribute) {
+        cancelButton.setAttribute('data-modal-cancel', 'true');
+      }
 
       if(typeof _config.cancel === "string"){
         cancelButton.innerHTML = _config.cancel;
@@ -487,6 +740,16 @@ function alertModal(_config){
   // On force le calcul du navigateur et on active l'animation à la fin
   void modal.offsetWidth;
   modal.classList.add("is-active");
+
+  // Donne le focus au bouton d'action principal de la modale
+  const buttonToFocus = confirmButton || cancelButton || deleteButton;
+  if (buttonToFocus && typeof buttonToFocus.focus === 'function') {
+    setTimeout(() => {
+      try {
+        buttonToFocus.focus();
+      } catch (_) {}
+    }, 50);
+  }
 
   return modal;
 }
