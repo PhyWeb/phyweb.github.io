@@ -34,34 +34,77 @@
             overflow: auto;
             box-shadow: 0 4px 6px rgba(0,0,0,0.05);
             display: inline-block;
+            max-width: 100%;
         }
         canvas {
             display: block;
         }
-        /* Panneau de contrôle */
+        /* Panneau de contrôle compact */
         .controls-panel {
             background: white;
-            padding: 1.15rem; 
+            padding: 1rem; 
             border-radius: 6px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.05);
             height: auto;
             width: 100%;
-            max-width: 400px; 
+            max-width: 390px; 
             margin: 0 auto;
         }
-        .track-control-box {
-            border-left: 4px solid #3298dc;
-            padding-left: 10px;
-            margin-bottom: 12px;
-            background-color: #fafbfc;
-            padding-top: 6px;
-            padding-bottom: 8px;
-            padding-right: 6px;
-            border-radius: 0 4px 4px 0;
+        
+        /* Barre d'onglets des spectres (1 seule ligne garantie) */
+        .spectrum-tabs {
+            display: flex;
+            gap: 3px;
+            margin-bottom: 0;
+            border-bottom: 2px solid #dbdbdb;
+            padding-bottom: 0;
         }
-        .track-control-box.t2 { border-left-color: #48c774; }
-        .track-control-box.t3 { border-left-color: #e67e22; }
-        .track-control-box.t4 { border-left-color: #9b59b6; }
+        .spec-tab {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            padding: 6px 2px;
+            font-size: 0.76rem;
+            font-weight: 600;
+            white-space: nowrap;
+            border: 1px solid transparent;
+            border-bottom: none;
+            border-radius: 6px 6px 0 0;
+            cursor: pointer;
+            background: #f1f3f5;
+            color: #7f8c8d;
+            transition: all 0.15s ease;
+            margin-bottom: -2px;
+        }
+        .spec-tab:hover {
+            background: #e9ecef;
+        }
+        .spec-tab.is-selected {
+            background: #ffffff;
+            color: #2c3e50;
+            border-color: #dbdbdb;
+            border-bottom: 2px solid #ffffff;
+        }
+        .spec-tab.t1.is-selected { border-top: 3px solid #3298dc; }
+        .spec-tab.t2.is-selected { border-top: 3px solid #48c774; }
+        .spec-tab.t3.is-selected { border-top: 3px solid #e67e22; }
+        .spec-tab.t4.is-selected { border-top: 3px solid #9b59b6; }
+        
+        .spec-tab input[type="checkbox"] {
+            cursor: pointer;
+            margin: 0;
+            flex-shrink: 0;
+        }
+
+        .track-editor-box {
+            border: 1px solid #dbdbdb;
+            border-top: none;
+            border-radius: 0 0 6px 6px;
+            padding: 10px;
+            background-color: #ffffff;
+        }
         
         h1.title { color: var(--primary-color); }
         input[type="range"] { cursor: pointer; }
@@ -79,31 +122,49 @@
             flex-shrink: 0;
         }
         .lines-list {
-            max-height: 165px;
+            max-height: 195px;
             overflow-y: auto;
-            padding-right: 4px;
+            padding-right: 2px;
             margin-top: 6px;
             border-top: 1px dashed #e0e0e0;
-            padding-top: 4px;
+            padding-top: 6px;
         }
-        .preset-chips {
+        .line-row {
             display: flex;
-            flex-wrap: wrap;
-            gap: 4px;
-            margin-top: 4px;
-            margin-bottom: 6px;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 4px;
         }
-        .preset-chips .button.is-tiny {
-            font-size: 0.7rem;
-            height: 22px;
-            padding: 0 6px;
+
+        /* Réduction des marges à gauche et à droite sur petits écrans */
+        @media screen and (max-width: 1023px) {
+            .section {
+                padding-left: 0.4rem !important;
+                padding-right: 0.4rem !important;
+            }
+            .container.is-fluid {
+                padding-left: 0 !important;
+                padding-right: 0 !important;
+            }
+            .columns {
+                margin-left: 0 !important;
+                margin-right: 0 !important;
+            }
+            .column {
+                padding-left: 0.25rem !important;
+                padding-right: 0.25rem !important;
+            }
+            .controls-panel {
+                max-width: 100%;
+                padding: 0.75rem;
+            }
         }
     </style>
 </head>
 <body>
 <div id="navbar-container"></div>
-<section class="section pt-2 pb-2">
-    <div class="container is-fluid">
+<section class="section pt-2 pb-2 px-3">
+    <div class="container is-fluid px-1">
         
         <div class="columns is-desktop">
             
@@ -141,8 +202,8 @@
 
                 </div>
 
-                <p class="help has-text-grey mt-1">
-                    <i class="fas fa-mouse-pointer"></i> <strong>Astuce :</strong> Vous pouvez glisser-déposer directement les raies et bandes sur le spectre avec la souris.
+                <p class="help has-text-grey mt-1 has-text-centered">
+                    <i class="fas fa-mouse-pointer"></i> <strong>Astuce :</strong> Glissez-déposez directement les raies et bandes sur le spectre avec la souris.
                 </p>
 
             </div>
@@ -159,28 +220,29 @@
                         </button>
                     </div>
 
-                    <!-- Options d'affichage -->
+                    <!-- Dimensions -->
                     <div class="control-row">
-                        <label class="label" style="width: 115px;">Largeur (px)</label>
-                        <input class="input is-small mr-2" style="width: 65px;" type="number" id="specWidthInput" min="400" max="1200" step="20" value="680">
-                        <label class="label mr-2" style="width: auto;">Hauteur bande</label>
-                        <input class="input is-small" style="width: 55px;" type="number" id="bandHeightInput" min="30" max="150" step="5" value="65">
+                        <label class="label" style="width: 90px;">Largeur (px)</label>
+                        <input class="input is-small mr-3" style="width: 65px;" type="number" id="specWidthInput" min="300" max="1200" step="20" value="600">
+                        <label class="label mr-2" style="width: auto;">Épaisseur (px)</label>
+                        <input class="input is-small" style="width: 55px;" type="number" id="bandHeightInput" min="10" max="150" step="5" value="60">
                     </div>
 
-                    <div class="is-flex is-flex-wrap-wrap" style="gap: 6px 14px; margin-bottom: 6px;">
-                        <label class="checkbox is-size-7 is-flex is-align-items-center" style="gap: 5px;">
+                    <!-- Cases à cocher globales -->
+                    <div class="is-flex is-flex-wrap-wrap" style="gap: 5px 12px; margin-bottom: 6px;">
+                        <label class="checkbox is-size-7 is-flex is-align-items-center" style="gap: 4px;">
                             <input type="checkbox" id="toggleAxis" checked> Axe gradué (nm)
                         </label>
-                        <label class="checkbox is-size-7 is-flex is-align-items-center" style="gap: 5px;">
+                        <label class="checkbox is-size-7 is-flex is-align-items-center" style="gap: 4px;">
                             <input type="checkbox" id="toggleUVIR" checked> Zones UV / IR
                         </label>
-                        <label class="checkbox is-size-7 is-flex is-align-items-center" style="gap: 5px;" title="Affiche les valeurs en nm au-dessus des raies">
-                            <input type="checkbox" id="toggleLineValues"> Valeurs $\lambda$ raies
+                        <label class="checkbox is-size-7 is-flex is-align-items-center" style="gap: 4px;" title="Affiche les valeurs en nm au-dessus des raies">
+                            <input type="checkbox" id="toggleLineValues"> Valeurs &lambda; raies
                         </label>
-                        <label class="checkbox is-size-7 is-flex is-align-items-center" style="gap: 5px;" title="Affiche le profil spectral d'intensité I(λ) sous le Spectre 1">
-                            <input type="checkbox" id="toggleProfile"> Profil $I(\lambda)$ (Spectre 1)
+                        <label class="checkbox is-size-7 is-flex is-align-items-center" style="gap: 4px;" title="Affiche le profil spectral d'intensité I(&lambda;) sous le Spectre 1">
+                            <input type="checkbox" id="toggleProfile"> Profil I(&lambda;)
                         </label>
-                        <label class="checkbox is-size-7 is-flex is-align-items-center" style="gap: 5px;" title="Impression noir et blanc / Photocopie : fond blanc pour les spectres d'émission">
+                        <label class="checkbox is-size-7 is-flex is-align-items-center" style="gap: 4px;" title="Impression noir et blanc / Photocopie : fond clair pour les spectres d'émission">
                             <input type="checkbox" id="togglePrintMode"> Mode photocopie (fond clair)
                         </label>
                     </div>
@@ -198,10 +260,9 @@
                         </div>
                     </div>
 
-                    <hr class="my-2">
-
-                    <!-- Conteneur dynamique des pistes de spectres -->
-                    <div id="tracksContainer"></div>
+                    <!-- Onglets des 4 spectres + Panneau du spectre sélectionné -->
+                    <div id="tracksTabsContainer" class="spectrum-tabs mt-2"></div>
+                    <div id="activeTrackContainer" class="track-editor-box"></div>
 
                 </div>
             </div>
@@ -215,7 +276,6 @@
     try {
         initApplets("Générateur de Spectres", "../..");
     } catch (e) {
-        // Fallback si exécuté hors de l'arborescence PhyWeb
         window.showToast = (msg) => alert(msg);
     }
 </script>
@@ -227,9 +287,12 @@
     const EXPORT_SCALE = 3;
     let currentScale = window.devicePixelRatio || 1;
     let logicalWidth = 800;
-    let logicalHeight = 300;
+    let logicalHeight = 260;
     let isExportingEmptyGrid = false;
     let pendingTexts = [];
+
+    // Onglet actuellement affiché dans le panneau de droite (0 à 3)
+    let selectedTabIndex = 0;
 
     // Bornes spectrales (en nm)
     const LAMBDA_MIN_VISIBLE = 400;
@@ -237,11 +300,12 @@
     const UV_MARGIN_NM = 30; // 370 à 400 nm
     const IR_MARGIN_NM = 30; // 750 à 780 nm
 
-    // Base de données de raies atomiques, moléculaires et bandes d'absorption (en nm)
-    // w = largeur en nm (1.5 = raie atomique fine, >15 = bande moléculaire ou solution colorée)
+    // Base de données enrichie classée par catégories
     const PRESETS_DB = {
+        // --- ATOMES & IONS ---
         H: {
-            label: "H (Hydrogène)",
+            category: "Atomes & Ions",
+            label: "Hydrogène (H - Série de Balmer)",
             lines: [
                 { lambda: 410.2, w: 1.8, intensity: 0.75, label: "Hδ" },
                 { lambda: 434.0, w: 2.0, intensity: 0.85, label: "Hγ" },
@@ -249,47 +313,108 @@
                 { lambda: 656.3, w: 2.5, intensity: 1.00, label: "Hα" }
             ]
         },
-        Na: {
-            label: "Na (Sodium)",
+        He: {
+            category: "Atomes & Ions",
+            label: "Hélium (He)",
             lines: [
-                { lambda: 589.0, w: 2.2, intensity: 1.0, label: "D1" },
-                { lambda: 589.6, w: 2.2, intensity: 1.0, label: "D2" }
+                { lambda: 447.1, w: 1.8, intensity: 0.85, label: "" },
+                { lambda: 471.3, w: 1.6, intensity: 0.70, label: "" },
+                { lambda: 492.2, w: 1.6, intensity: 0.75, label: "" },
+                { lambda: 501.6, w: 2.0, intensity: 0.90, label: "" },
+                { lambda: 587.6, w: 2.5, intensity: 1.00, label: "D3" },
+                { lambda: 667.8, w: 2.2, intensity: 0.90, label: "" },
+                { lambda: 706.5, w: 1.8, intensity: 0.75, label: "" }
+            ]
+        },
+        Na: {
+            category: "Atomes & Ions",
+            label: "Sodium (Na - Doublet D)",
+            lines: [
+                { lambda: 589.0, w: 2.2, intensity: 1.0, label: "D2" },
+                { lambda: 589.6, w: 2.2, intensity: 1.0, label: "D1" }
             ]
         },
         Hg: {
-            label: "Hg (Mercure)",
+            category: "Atomes & Ions",
+            label: "Mercure (Hg)",
             lines: [
-                { lambda: 404.7, w: 1.8, intensity: 0.80 },
-                { lambda: 435.8, w: 2.2, intensity: 0.95 },
-                { lambda: 546.1, w: 2.5, intensity: 1.00 },
-                { lambda: 577.0, w: 1.8, intensity: 0.85 },
-                { lambda: 579.1, w: 1.8, intensity: 0.85 }
-            ]
-        },
-        He: {
-            label: "He (Hélium)",
-            lines: [
-                { lambda: 447.1, w: 1.8, intensity: 0.85 },
-                { lambda: 471.3, w: 1.6, intensity: 0.70 },
-                { lambda: 492.2, w: 1.6, intensity: 0.75 },
-                { lambda: 501.6, w: 2.0, intensity: 0.90 },
-                { lambda: 587.6, w: 2.5, intensity: 1.00 },
-                { lambda: 667.8, w: 2.2, intensity: 0.90 },
-                { lambda: 706.5, w: 1.8, intensity: 0.75 }
+                { lambda: 404.7, w: 1.8, intensity: 0.80, label: "" },
+                { lambda: 435.8, w: 2.2, intensity: 0.95, label: "" },
+                { lambda: 546.1, w: 2.5, intensity: 1.00, label: "" },
+                { lambda: 577.0, w: 1.8, intensity: 0.85, label: "" },
+                { lambda: 579.1, w: 1.8, intensity: 0.85, label: "" }
             ]
         },
         Ca: {
-            label: "Ca / Ion Ca+",
+            category: "Atomes & Ions",
+            label: "Calcium (Ca / Ca+ H & K)",
             lines: [
                 { lambda: 393.4, w: 2.8, intensity: 1.00, label: "K" },
                 { lambda: 396.8, w: 2.8, intensity: 1.00, label: "H" },
-                { lambda: 422.7, w: 2.2, intensity: 0.90 },
-                { lambda: 527.0, w: 1.8, intensity: 0.75 },
-                { lambda: 616.2, w: 1.8, intensity: 0.80 }
+                { lambda: 422.7, w: 2.2, intensity: 0.90, label: "" },
+                { lambda: 527.0, w: 1.8, intensity: 0.75, label: "" },
+                { lambda: 616.2, w: 1.8, intensity: 0.80, label: "" }
             ]
         },
-        Soleil: {
-            label: "Soleil (Fraunhofer)",
+        Li: {
+            category: "Atomes & Ions",
+            label: "Lithium (Li - Test de flamme)",
+            lines: [
+                { lambda: 460.3, w: 1.8, intensity: 0.65, label: "" },
+                { lambda: 610.4, w: 2.0, intensity: 0.85, label: "" },
+                { lambda: 670.8, w: 2.6, intensity: 1.00, label: "" }
+            ]
+        },
+        K: {
+            category: "Atomes & Ions",
+            label: "Potassium (K - Test de flamme)",
+            lines: [
+                { lambda: 404.4, w: 2.2, intensity: 0.90, label: "" },
+                { lambda: 404.7, w: 2.2, intensity: 0.85, label: "" },
+                { lambda: 766.5, w: 2.8, intensity: 1.00, label: "" },
+                { lambda: 769.9, w: 2.8, intensity: 1.00, label: "" }
+            ]
+        },
+        Cu: {
+            category: "Atomes & Ions",
+            label: "Cuivre (Cu - Flamme verte)",
+            lines: [
+                { lambda: 510.6, w: 2.4, intensity: 0.95, label: "" },
+                { lambda: 515.3, w: 2.2, intensity: 0.85, label: "" },
+                { lambda: 521.8, w: 2.5, intensity: 1.00, label: "" },
+                { lambda: 578.2, w: 2.0, intensity: 0.75, label: "" }
+            ]
+        },
+        Sr: {
+            category: "Atomes & Ions",
+            label: "Strontium (Sr - Feux d'artifice)",
+            lines: [
+                { lambda: 407.8, w: 2.0, intensity: 0.85, label: "" },
+                { lambda: 460.7, w: 2.2, intensity: 0.90, label: "" },
+                { lambda: 606.0, w: 2.0, intensity: 0.80, label: "" },
+                { lambda: 638.7, w: 2.2, intensity: 0.85, label: "" },
+                { lambda: 687.8, w: 2.5, intensity: 1.00, label: "" }
+            ]
+        },
+        Ne: {
+            category: "Atomes & Ions",
+            label: "Néon (Ne - Tube luminescent)",
+            lines: [
+                { lambda: 540.1, w: 1.6, intensity: 0.65, label: "" },
+                { lambda: 585.2, w: 2.4, intensity: 0.95, label: "" },
+                { lambda: 607.4, w: 1.8, intensity: 0.80, label: "" },
+                { lambda: 614.3, w: 2.2, intensity: 0.90, label: "" },
+                { lambda: 633.4, w: 2.2, intensity: 0.90, label: "" },
+                { lambda: 640.2, w: 2.6, intensity: 1.00, label: "" },
+                { lambda: 650.7, w: 2.0, intensity: 0.85, label: "" }
+            ]
+        },
+
+        // --- ÉTOILES & ASTROPHYSIQUE ---
+        Star_Soleil: {
+            category: "Étoiles (Astrophysique)",
+            label: "Soleil (Type G2 - 5800 K - Fraunhofer)",
+            temp: 5800,
             lines: [
                 { lambda: 393.4, w: 2.6, intensity: 0.95, label: "K" },
                 { lambda: 396.8, w: 2.6, intensity: 0.95, label: "H" },
@@ -297,12 +422,53 @@
                 { lambda: 486.1, w: 2.2, intensity: 0.90, label: "F" },
                 { lambda: 517.3, w: 2.0, intensity: 0.80, label: "b" },
                 { lambda: 589.3, w: 2.4, intensity: 0.95, label: "D" },
-                { lambda: 656.3, w: 2.4, intensity: 0.90, label: "C" },
-                { lambda: 686.7, w: 3.0, intensity: 0.75, label: "B" }
+                { lambda: 656.3, w: 2.4, intensity: 0.90, label: "C" }
             ]
         },
+        Star_Vega: {
+            category: "Étoiles (Astrophysique)",
+            label: "Véga / Sirius (Type A - 9500 K - Balmer fort)",
+            temp: 9500,
+            lines: [
+                { lambda: 397.0, w: 3.5, intensity: 0.95, label: "Hε" },
+                { lambda: 410.2, w: 3.8, intensity: 0.98, label: "Hδ" },
+                { lambda: 434.0, w: 4.0, intensity: 1.00, label: "Hγ" },
+                { lambda: 486.1, w: 4.2, intensity: 1.00, label: "Hβ" },
+                { lambda: 656.3, w: 4.2, intensity: 1.00, label: "Hα" }
+            ]
+        },
+        Star_Rigel: {
+            category: "Étoiles (Astrophysique)",
+            label: "Rigel (Type B - 11500 K - H & He)",
+            temp: 11500,
+            lines: [
+                { lambda: 410.2, w: 2.0, intensity: 0.80, label: "Hδ" },
+                { lambda: 434.0, w: 2.2, intensity: 0.85, label: "Hγ" },
+                { lambda: 447.1, w: 2.4, intensity: 0.95, label: "He" },
+                { lambda: 486.1, w: 2.2, intensity: 0.85, label: "Hβ" },
+                { lambda: 587.6, w: 2.4, intensity: 0.90, label: "He" },
+                { lambda: 656.3, w: 2.2, intensity: 0.85, label: "Hα" }
+            ]
+        },
+        Star_Betelgeuse: {
+            category: "Étoiles (Astrophysique)",
+            label: "Bételgeuse (Type M - 3500 K - Bandes TiO)",
+            temp: 3500,
+            lines: [
+                { lambda: 422.7, w: 3.2, intensity: 0.95, label: "Ca" },
+                { lambda: 495.5, w: 14.0, intensity: 0.85, label: "TiO" },
+                { lambda: 516.7, w: 16.0, intensity: 0.90, label: "TiO" },
+                { lambda: 544.8, w: 15.0, intensity: 0.85, label: "TiO" },
+                { lambda: 589.3, w: 3.0, intensity: 0.95, label: "Na" },
+                { lambda: 615.9, w: 18.0, intensity: 0.90, label: "TiO" },
+                { lambda: 705.4, w: 22.0, intensity: 0.92, label: "TiO" }
+            ]
+        },
+
+        // --- MOLÉCULES & SOLUTIONS COLORÉES ---
         Atm: {
-            label: "Bandes O₂/H₂O (Atm.)",
+            category: "Molécules & Solutions (Bandes)",
+            label: "Atmosphère terrestre (Bandes O₂ / H₂O)",
             lines: [
                 { lambda: 628.0, w: 8.0, intensity: 0.65, label: "O₂" },
                 { lambda: 688.0, w: 12.0, intensity: 0.85, label: "O₂(B)" },
@@ -311,23 +477,39 @@
             ]
         },
         Chloro: {
-            label: "Chlorophylle (Bandes)",
+            category: "Molécules & Solutions (Bandes)",
+            label: "Chlorophylle a (Abs. Bleu & Rouge)",
             lines: [
-                { lambda: 435.0, w: 45.0, intensity: 0.95, label: "Bande Soret" },
-                { lambda: 665.0, w: 32.0, intensity: 0.92, label: "Bande Q" }
+                { lambda: 430.0, w: 48.0, intensity: 0.96, label: "Bande Soret" },
+                { lambda: 662.0, w: 34.0, intensity: 0.92, label: "Bande Q" }
             ]
         },
         KMnO4: {
-            label: "Solution KMnO₄ (Bande)",
+            category: "Molécules & Solutions (Bandes)",
+            label: "Permanganate KMnO₄ (Abs. Vert ~530nm)",
             lines: [
-                { lambda: 530.0, w: 55.0, intensity: 0.95, label: "Abs. Vert" }
+                { lambda: 528.0, w: 58.0, intensity: 0.96, label: "Abs. Vert" }
+            ]
+        },
+        BleuPatente: {
+            category: "Molécules & Solutions (Bandes)",
+            label: "Bleu patenté E131 (Abs. Orange-Rouge ~638nm)",
+            lines: [
+                { lambda: 638.0, w: 52.0, intensity: 0.96, label: "Abs. Rouge" }
+            ]
+        },
+        Tartrazine: {
+            category: "Molécules & Solutions (Bandes)",
+            label: "Tartrazine E102 / Solution Jaune (Abs. Bleu ~425nm)",
+            lines: [
+                { lambda: 425.0, w: 55.0, intensity: 0.95, label: "Abs. Bleu" }
             ]
         }
     };
 
     const DEFAULT_STATE = {
-        specWidth: 680,
-        bandHeight: 65,
+        specWidth: 600,
+        bandHeight: 60,
         showAxis: true,
         showUVIR: true,
         showLineValues: false,
@@ -338,38 +520,42 @@
         tracks: [
             {
                 active: true,
-                name: "Étoile (Thermique + Abs.)",
+                name: "Étoile",
                 showName: true,
-                mode: "thermal_abs", // 'thermal' | 'emission_lines' | 'absorption_lines' | 'thermal_abs'
+                mode: "thermal_abs",
                 temp: 5800,
                 showTempBadge: true,
+                presetKey: "H",
                 lines: JSON.parse(JSON.stringify(PRESETS_DB.H.lines))
             },
             {
                 active: true,
-                name: "Hydrogène (Réf.)",
+                name: "Hydrogène",
                 showName: true,
                 mode: "emission_lines",
                 temp: 5800,
                 showTempBadge: false,
+                presetKey: "H",
                 lines: JSON.parse(JSON.stringify(PRESETS_DB.H.lines))
             },
             {
                 active: false,
-                name: "Corps chaud (3500 K)",
+                name: "Corps chaud",
                 showName: true,
                 mode: "thermal",
                 temp: 3500,
                 showTempBadge: true,
+                presetKey: "H",
                 lines: []
             },
             {
                 active: false,
-                name: "Sodium (Na)",
+                name: "Sodium",
                 showName: true,
                 mode: "absorption_lines",
                 temp: 6000,
                 showTempBadge: false,
+                presetKey: "Na",
                 lines: JSON.parse(JSON.stringify(PRESETS_DB.Na.lines))
             }
         ]
@@ -409,7 +595,6 @@
             b = 0.0;
         }
 
-        // Atténuation aux bords du domaine visible (sensibilité de l'œil humain)
         if (wavelength >= 380 && wavelength < 420) {
             factor = 0.35 + 0.65 * (wavelength - 380) / (420 - 380);
         } else if (wavelength >= 420 && wavelength <= 700) {
@@ -433,46 +618,30 @@
         if (lambdaNm < 380 || lambdaNm > 780) return 0;
 
         if (!isExaggerated) {
-            // Loi de Planck normalisée sur le domaine visible pour rendu réaliste
-            const c2 = 1.4388e7; // hc/k en nm.K
+            const c2 = 1.4388e7;
             const planck = (l, T) => 1.0 / (Math.pow(l, 5) * (Math.exp(c2 / (l * T)) - 1));
 
-            // On normalise par rapport au maximum dans le visible [400..750]
             let maxVal = 0;
             for (let l = 400; l <= 750; l += 25) {
                 const v = planck(l, tempK);
                 if (v > maxVal) maxVal = v;
             }
             const rawRatio = maxVal > 0 ? planck(lambdaNm, tempK) / maxVal : 0;
-
-            // Légère compression gamma + luminosité globale selon T (un corps à 2000K est plus sombre qu'à 6000K)
             const globalBrightness = Math.min(1.0, 0.55 + 0.45 * ((tempK - 1500) / 4500));
             return Math.min(1.0, Math.pow(rawRatio, 0.65) * globalBrightness);
         } else {
-            // MODE EXAGÉRATION PÉDAGOGIQUE :
-            // Coupure franche qui se déplace du rouge vers le violet quand T augmente.
-            // - À 1800 K : seul le rouge (> 640 nm) est présent
-            // - À 3000 K : rouge + orange + jaune (> 540 nm)
-            // - À 4500 K : jusqu'au bleu-cyan (> 455 nm)
-            // - À 6000 K et + : tout le spectre visible (jusqu'à 390 nm) est pleinement allumé
             let cutoffNm;
             if (tempK <= 6000) {
                 const tNorm = Math.max(0, (tempK - 1500) / (6000 - 1500));
-                // Courbe légèrement non-linéaire pour bien séparer 2000K, 3500K, 5000K, 6000K
                 cutoffNm = 685 - 305 * Math.pow(tNorm, 0.85);
             } else {
                 cutoffNm = 380 - (tempK - 6000) * 0.02;
             }
 
-            // Largeur de la transition en nm selon le slider "Netteté" (sharpness de 1 à 10)
-            // Sharpness 10 -> coupure quasi binaire (3 nm) ; Sharpness 1 -> transition douce (45 nm)
             const transitionWidth = Math.max(2.5, 50 - sharpness * 4.7);
-
-            // Fonction sigmoïde centrée sur cutoffNm (passe de 0 à gauche à 1 à droite)
             const x = (lambdaNm - cutoffNm) / (transitionWidth * 0.35);
             const sigmoid = 1.0 / (1.0 + Math.exp(-x));
 
-            // Si T > 7500 K (étoile bleue/blanche très chaude), on accentue légèrement le bleu/violet par rapport au rouge
             let hotBlueBoost = 1.0;
             if (tempK > 7000) {
                 const hotFactor = Math.min(1, (tempK - 7000) / 5000);
@@ -484,14 +653,13 @@
         }
     }
 
-    // --- Calcul du facteur d'absorption/émission des raies à une longueur d'onde lambda ---
+    // --- Calcul du facteur d'absorption/émission des raies ---
     function getLinesFactor(lambdaNm, lines) {
         let total = 0;
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i];
             const dist = Math.abs(lambdaNm - line.lambda);
             const halfW = (line.w || 2.0) / 2;
-            // Profil super-gaussien : cœur bien marqué et bords légèrement adoucis
             if (dist < halfW * 3.5) {
                 const sigma = halfW * 0.75;
                 const val = (line.intensity ?? 1.0) * Math.exp(-0.5 * Math.pow(dist / sigma, 2.4));
@@ -505,19 +673,43 @@
     function getLayoutGeometry() {
         const activeTracks = state.tracks.map((t, idx) => ({ ...t, index: idx })).filter(t => t.active);
         const count = activeTracks.length || 1;
+        const isSmallScreen = window.innerWidth < 768;
 
-        const hasVisibleNames = activeTracks.some(t => t.showName && t.name.trim() !== "");
-        const leftMargin = hasVisibleNames ? 165 : 35;
-        const rightMargin = 35;
-        const topMargin = 28;
-        const bottomMargin = state.showAxis ? 52 : 25;
-        const trackGap = state.showLineValues ? 32 : 22;
+        // Mesure précise de la largeur maximale des titres à gauche (titre et température toujours sur 2 lignes distinctes)
+        ctx.save();
+        let maxTextW = 0;
+        activeTracks.forEach((t, aIdx) => {
+            if (t.showName && t.name.trim() !== "") {
+                ctx.font = "bold 13px Arial";
+                const nameW = ctx.measureText(t.name.trim()).width;
+                maxTextW = Math.max(maxTextW, nameW);
+
+                const hasTemp = (t.mode === 'thermal' || t.mode === 'thermal_abs') && t.showTempBadge;
+                if (hasTemp) {
+                    ctx.font = "italic bold 11px Arial";
+                    const tempW = ctx.measureText(`T = ${t.temp} K`).width;
+                    maxTextW = Math.max(maxTextW, tempW);
+                }
+            }
+            if (aIdx === 0 && state.showProfile) {
+                ctx.font = "italic 12px Arial";
+                maxTextW = Math.max(maxTextW, ctx.measureText("Profil I(λ)").width);
+            }
+        });
+        ctx.restore();
+
+        const basePad = isSmallScreen ? 14 : 24;
+        const leftMargin = maxTextW > 0 ? Math.ceil(maxTextW) + basePad : (isSmallScreen ? 12 : 24);
+        const rightMargin = state.showAxis ? (isSmallScreen ? 56 : 66) : (isSmallScreen ? 12 : 24);
+        const topMargin = 26;
+        const bottomMargin = state.showAxis ? 44 : 20;
+        const trackGap = state.showLineValues ? 28 : 18;
 
         const uvPx = state.showUVIR ? Math.round(state.specWidth * (UV_MARGIN_NM / (LAMBDA_MAX_VISIBLE - LAMBDA_MIN_VISIBLE))) : 0;
         const irPx = state.showUVIR ? Math.round(state.specWidth * (IR_MARGIN_NM / (LAMBDA_MAX_VISIBLE - LAMBDA_MIN_VISIBLE))) : 0;
 
         const totalBarWidth = uvPx + state.specWidth + irPx;
-        const profileExtraH = state.showProfile ? 95 : 0;
+        const profileExtraH = state.showProfile ? 88 : 0;
 
         const totalW = leftMargin + totalBarWidth + rightMargin;
         const totalH = topMargin + count * state.bandHeight + (count - 1) * trackGap + profileExtraH + bottomMargin;
@@ -602,7 +794,7 @@
         const imgData = offCtx.createImageData(offCanvas.width, 1);
         const data = imgData.data;
 
-        const bgByte = state.printMode ? 248 : 8; // Fond blanc cassé en mode photocopie, noir profond sinon
+        const bgByte = state.printMode ? 248 : 8;
 
         for (let px = 0; px < offCanvas.width; px++) {
             const lambda = geom.minNm + (px / offCanvas.width) * (geom.maxNm - geom.minNm);
@@ -612,12 +804,10 @@
             let R = bgByte, G = bgByte, B = bgByte;
 
             if (!isVisibleDomain) {
-                // Zone UV ou IR : fond grisé/noir léger
                 R = state.printMode ? 238 : 18;
                 G = state.printMode ? 238 : 18;
                 B = state.printMode ? 238 : 18;
 
-                // Si des raies (ex: Ca H/K à 393nm ou O2 à 760nm) tombent dans l'UV/IR proche, on les trace subtilement
                 const lFactor = getLinesFactor(lambda, track.lines);
                 if (lFactor > 0.05) {
                     if (track.mode === 'emission_lines') {
@@ -637,13 +827,11 @@
                 } 
                 else if (track.mode === 'emission_lines') {
                     const em = getLinesFactor(lambda, track.lines);
-                    // En mode photocopie sur fond blanc, si la raie est jaune/claire on renforce sa saturation
                     R = Math.round(bgByte * (1 - em) + baseR * em);
                     G = Math.round(bgByte * (1 - em) + baseG * em);
                     B = Math.round(bgByte * (1 - em) + baseB * em);
                 } 
                 else if (track.mode === 'absorption_lines') {
-                    // Fond continu 100% + raies noires d'absorption
                     const abs = getLinesFactor(lambda, track.lines);
                     const darkR = 10, darkG = 10, darkB = 10;
                     R = Math.round(baseR * (1 - abs) + darkR * abs);
@@ -651,7 +839,6 @@
                     B = Math.round(baseB * (1 - abs) + darkB * abs);
                 } 
                 else if (track.mode === 'thermal_abs') {
-                    // Fond thermique à la température T puis absorption par le gaz froid au second plan
                     const th = getThermalMultiplier(lambda, track.temp, state.exaggerated, state.sharpness);
                     const thR = bgByte * (1 - th) + baseR * th;
                     const thG = bgByte * (1 - th) + baseG * th;
@@ -693,7 +880,6 @@
             const bandW = geom.totalBarWidth;
             const bandH = state.bandHeight;
 
-            // 1. Rendu du spectre (ou rectangle blanc si export "Cadre vierge")
             if (isExportingEmptyGrid) {
                 ctx.fillStyle = "#ffffff";
                 ctx.fillRect(bandX, bandY, bandW, bandH);
@@ -701,7 +887,6 @@
                 renderSpectrumBand(track, bandX, bandY, bandW, bandH, geom);
             }
 
-            // 2. Séparateurs pointillés UV / Visible / IR
             if (state.showUVIR) {
                 const x400 = geom.nmToX(LAMBDA_MIN_VISIBLE);
                 const x750 = geom.nmToX(LAMBDA_MAX_VISIBLE);
@@ -711,28 +896,27 @@
                 drawLine(x750, bandY, x750, bandY + bandH, sepColor, 1.5, [4, 4]);
 
                 if (activeIdx === 0) {
-                    drawText("UV", (bandX + x400) / 2, bandY - 11, "#7f8c8d", "bold 12px Arial", "center", "middle");
-                    drawText("IR", (x750 + bandX + bandW) / 2, bandY - 11, "#7f8c8d", "bold 12px Arial", "center", "middle");
+                    drawText("UV", (bandX + x400) / 2, bandY - 10, "#7f8c8d", "bold 11px Arial", "center", "middle");
+                    drawText("IR", (x750 + bandX + bandW) / 2, bandY - 10, "#7f8c8d", "bold 11px Arial", "center", "middle");
                 }
             }
 
-            // 3. Bordure du cadre spectral
             ctx.strokeStyle = "#34495e";
-            ctx.lineWidth = 1.8;
+            ctx.lineWidth = 1.6;
             ctx.strokeRect(bandX, bandY, bandW, bandH);
 
-            // 4. Nom de la piste à gauche + Badge de température éventuel
+            // Titre à gauche et température systématiquement à la ligne en dessous
             if (track.showName && track.name) {
                 const hasTemp = (track.mode === 'thermal' || track.mode === 'thermal_abs') && track.showTempBadge && !isExportingEmptyGrid;
-                const labelY = hasTemp ? bandY + bandH / 2 - 8 : bandY + bandH / 2;
-                drawText(track.name, bandX - 12, labelY, "#2c3e50", "bold 14px Arial", "right", "middle");
-
                 if (hasTemp) {
-                    drawText(`T = ${track.temp} K`, bandX - 12, bandY + bandH / 2 + 10, "#e67e22", "italic bold 12px Arial", "right", "middle");
+                    drawText(track.name, bandX - 10, bandY + bandH / 2 - 7, "#2c3e50", "bold 13px Arial", "right", "middle");
+                    drawText(`T = ${track.temp} K`, bandX - 10, bandY + bandH / 2 + 8, "#e67e22", "italic bold 11px Arial", "right", "middle");
+                } else {
+                    drawText(track.name, bandX - 10, bandY + bandH / 2, "#2c3e50", "bold 13px Arial", "right", "middle");
                 }
             }
 
-            // 5. Marqueurs de raies (valeurs en nm + surbrillance au survol)
+            // Marqueurs de raies
             if (!isExportingEmptyGrid && track.mode !== 'thermal') {
                 track.lines.forEach((line, lIdx) => {
                     if (line.lambda < geom.minNm || line.lambda > geom.maxNm) return;
@@ -746,36 +930,34 @@
                         ctx.strokeStyle = "#f1c40f";
                         ctx.lineWidth = 2;
                         ctx.setLineDash([2, 2]);
-                        ctx.strokeRect(lx - Math.max(3, (line.w / 350) * state.specWidth / 2), bandY - 2, Math.max(6, (line.w / 350) * state.specWidth), bandH + 4);
+                        const boxW = Math.max(6, (line.w / 350) * state.specWidth);
+                        ctx.strokeRect(lx - boxW / 2, bandY - 2, boxW, bandH + 4);
                         ctx.restore();
-                        drawText(`${line.lambda.toFixed(1)} nm`, lx, bandY - 10, "#d35400", "bold 11px Arial", "center", "middle");
+                        drawText(`${line.lambda.toFixed(1)} nm`, lx, bandY - 9, "#d35400", "bold 11px Arial", "center", "middle");
                     } else if (state.showLineValues) {
                         const txt = line.label ? `${Math.round(line.lambda)} (${line.label})` : `${Math.round(line.lambda)}`;
-                        drawText(txt, lx, bandY - 9, "#2c3e50", "10px Arial", "center", "middle");
+                        drawText(txt, lx, bandY - 8, "#2c3e50", "10px Arial", "center", "middle");
                     }
                 });
             }
 
-            // 6. Profil spectral d'intensité I(λ) sous le Spectre 1 si activé
+            // Profil spectral I(λ) sous le Spectre 1
             if (activeIdx === 0 && state.showProfile) {
-                const profY = bandY + bandH + 14;
-                const profH = 72;
+                const profY = bandY + bandH + 12;
+                const profH = 68;
 
-                // Fond du graphe
                 ctx.fillStyle = "#fafbfc";
                 ctx.fillRect(bandX, profY, bandW, profH);
                 ctx.strokeStyle = "#bdc3c7";
                 ctx.lineWidth = 1;
                 ctx.strokeRect(bandX, profY, bandW, profH);
 
-                if (geom.leftMargin > 60) {
-                    drawText("Profil I(λ)", bandX - 12, profY + profH / 2, "#7f8c8d", "italic 13px Arial", "right", "middle");
-                }
+                drawText("Profil I(λ)", bandX - 10, profY + profH / 2, "#7f8c8d", "italic 12px Arial", "right", "middle");
 
                 if (!isExportingEmptyGrid) {
                     ctx.beginPath();
                     ctx.strokeStyle = "#e74c3c";
-                    ctx.lineWidth = 2;
+                    ctx.lineWidth = 1.8;
 
                     for (let px = 0; px <= bandW; px += 2) {
                         const lambda = geom.minNm + (px / bandW) * (geom.maxNm - geom.minNm);
@@ -793,46 +975,44 @@
                             intensity = th * (1 - abs);
                         }
 
-                        const py = profY + profH - 6 - intensity * (profH - 12);
+                        const py = profY + profH - 5 - intensity * (profH - 10);
                         if (px === 0) ctx.moveTo(bandX + px, py);
                         else ctx.lineTo(bandX + px, py);
                     }
                     ctx.stroke();
                 }
 
-                currentY += profH + 16;
+                currentY += profH + 14;
             }
 
             currentY += bandH + geom.trackGap;
         });
 
-        // 7. Axe gradué des longueurs d'onde en bas
+        // Axe gradué en bas
         if (state.showAxis) {
             const axisY = currentY - geom.trackGap + 8;
             const axisStartX = geom.leftMargin;
             const axisEndX = geom.leftMargin + geom.totalBarWidth;
 
-            // Flèche de l'axe
-            drawLine(axisStartX, axisY, axisEndX + 12, axisY, "#2c3e50", 1.8);
+            drawLine(axisStartX, axisY, axisEndX + 10, axisY, "#2c3e50", 1.6);
             ctx.beginPath();
             ctx.fillStyle = "#2c3e50";
-            ctx.moveTo(axisEndX + 16, axisY);
-            ctx.lineTo(axisEndX + 8, axisY - 4);
-            ctx.lineTo(axisEndX + 8, axisY + 4);
+            ctx.moveTo(axisEndX + 15, axisY);
+            ctx.lineTo(axisEndX + 7, axisY - 4);
+            ctx.lineTo(axisEndX + 7, axisY + 4);
             ctx.fill();
 
-            drawText("λ (nm)", axisEndX + 15, axisY + 18, "#2c3e50", "bold italic 13px Arial", "center", "middle");
+            drawText("λ (nm)", axisEndX + 19, axisY, "#2c3e50", "bold italic 12px Arial", "left", "middle");
 
-            // Graduations tous les 10 nm, étiquettes tous les 50 nm
             const firstTick = Math.ceil(geom.minNm / 10) * 10;
             for (let nm = firstTick; nm <= geom.maxNm; nm += 10) {
                 const tx = geom.nmToX(nm);
                 const isMajor = (nm % 50 === 0);
-                const tickH = isMajor ? 8 : 4;
+                const tickH = isMajor ? 7 : 4;
 
-                drawLine(tx, axisY, tx, axisY + tickH, "#2c3e50", isMajor ? 1.6 : 1);
+                drawLine(tx, axisY, tx, axisY + tickH, "#2c3e50", isMajor ? 1.5 : 1);
                 if (isMajor) {
-                    drawText(nm.toString(), tx, axisY + 19, "#2c3e50", "bold 12px Arial", "center", "middle");
+                    drawText(nm.toString(), tx, axisY + 17, "#2c3e50", "bold 11px Arial", "center", "middle");
                 }
             }
         }
@@ -840,133 +1020,176 @@
         flushTexts();
     }
 
-    // --- Génération de l'interface des pistes (DOM) ---
+    // --- Construction des options du menu déroulant de présélections ---
+    function buildPresetsDropdownHTML(currentKey) {
+        const categories = {};
+        Object.keys(PRESETS_DB).forEach(key => {
+            const item = PRESETS_DB[key];
+            if (!categories[item.category]) categories[item.category] = [];
+            categories[item.category].push({ key, label: item.label });
+        });
+
+        let html = `<option value="">-- Choisir un élément / étoile / solution --</option>`;
+        Object.keys(categories).forEach(catName => {
+            html += `<optgroup label="${catName}">`;
+            categories[catName].forEach(opt => {
+                const sel = (opt.key === currentKey) ? 'selected' : '';
+                html += `<option value="${opt.key}" ${sel}>${opt.label}</option>`;
+            });
+            html += `</optgroup>`;
+        });
+        return html;
+    }
+
+    // --- Génération de l'interface par onglets (1 seul spectre affiché à la fois) ---
     function buildTracksUI() {
-        const container = document.getElementById('tracksContainer');
-        container.innerHTML = '';
+        const tabsContainer = document.getElementById('tracksTabsContainer');
+        const editorContainer = document.getElementById('activeTrackContainer');
 
-        state.tracks.forEach((track, idx) => {
+        // 1. Barre d'onglets Spectre 1 à Spectre 4
+        tabsContainer.innerHTML = '';
+        state.tracks.forEach((t, idx) => {
             const n = idx + 1;
-            const isThermal = (track.mode === 'thermal' || track.mode === 'thermal_abs');
-            const hasLines = (track.mode !== 'thermal');
+            const isSelected = (idx === selectedTabIndex);
+            const tabEl = document.createElement('div');
+            tabEl.className = `spec-tab t${n} ${isSelected ? 'is-selected' : ''}`;
+            tabEl.dataset.tab = idx;
+            tabEl.innerHTML = `
+                <input type="checkbox" class="toggle-track-tab" data-track="${idx}" ${t.active ? 'checked' : ''} title="Activer/Désactiver le Spectre ${n}">
+                <span>Spectre ${n}</span>
+            `;
+            tabsContainer.appendChild(tabEl);
+        });
 
-            let linesHtml = '';
-            if (hasLines) {
-                // Boutons de présélections rapides
-                let chipsHtml = `<div class="preset-chips">`;
-                Object.keys(PRESETS_DB).forEach(key => {
-                    chipsHtml += `<button class="button is-tiny is-info is-light preset-btn" data-track="${idx}" data-preset="${key}" title="Charger ${PRESETS_DB[key].label}">${key}</button>`;
-                });
-                chipsHtml += `<button class="button is-tiny is-danger is-light clear-lines-btn" data-track="${idx}" title="Vider toutes les raies"><i class="fas fa-trash-can"></i></button>`;
-                chipsHtml += `</div>`;
+        // 2. Contenu de l'onglet actif
+        const idx = selectedTabIndex;
+        const track = state.tracks[idx];
+        const isThermal = (track.mode === 'thermal' || track.mode === 'thermal_abs');
+        const hasLines = (track.mode !== 'thermal');
 
-                // Liste des raies / bandes
-                let itemsHtml = '';
-                track.lines.forEach((line, lIdx) => {
-                    itemsHtml += `
-                        <div class="is-flex is-align-items-center mb-1" style="gap: 4px;">
-                            <span class="has-text-grey is-size-7" style="width: 18px;">${lIdx + 1}.</span>
-                            <input class="input is-small line-lambda" data-track="${idx}" data-line="${lIdx}" id="lambda-input-${idx}-${lIdx}" type="number" step="0.5" min="370" max="780" value="${line.lambda}" style="width: 68px; text-align: center;" title="Longueur d'onde λ (nm)">
-                            <span class="is-size-7 has-text-grey">nm</span>
-                            <input class="input is-small line-width" data-track="${idx}" data-line="${lIdx}" type="number" step="0.5" min="0.5" max="120" value="${line.w}" style="width: 54px; text-align: center;" title="Largeur Δλ (nm) : ~2nm pour raie atomique, >15nm pour bande moléculaire/colorant">
-                            <span class="is-size-7 has-text-grey" title="Largeur de la raie ou bande">Δλ</span>
-                            <input class="input is-small line-label" data-track="${idx}" data-line="${lIdx}" type="text" placeholder="Nom" value="${line.label || ''}" style="width: 52px;" title="Étiquette optionnelle (ex: Hα, D)">
-                            <button class="button is-small is-danger is-light px-2 remove-line" data-track="${idx}" data-line="${lIdx}" title="Supprimer">
-                                <span class="icon is-small"><i class="fas fa-times"></i></span>
-                            </button>
-                        </div>
-                    `;
-                });
-
-                linesHtml = `
-                    <div class="mt-2">
-                        <div class="is-flex is-justify-content-space-between is-align-items-center">
-                            <span class="is-size-7 has-text-weight-semibold has-text-grey-dark">Présélections (Atomes, Étoiles, Molécules) :</span>
-                        </div>
-                        ${chipsHtml}
-                        <div class="is-flex is-justify-content-space-between is-align-items-center mt-1">
-                            <span class="is-size-7 has-text-weight-semibold has-text-grey-dark">Raies / Bandes (${track.lines.length}) :</span>
-                            <div class="buttons has-addons mb-0">
-                                <button class="button is-small is-primary is-light py-0 px-2 add-line" data-track="${idx}" data-width="2" style="height: 22px; font-size: 0.72rem;" title="Ajouter une raie fine (atome)">
-                                    + Raie fine
-                                </button>
-                                <button class="button is-small is-link is-light py-0 px-2 add-line" data-track="${idx}" data-width="35" style="height: 22px; font-size: 0.72rem;" title="Ajouter une bande large (molécule ou solution colorée)">
-                                    + Bande large
-                                </button>
-                            </div>
-                        </div>
-                        <div class="lines-list">
-                            ${itemsHtml || '<p class="is-size-7 has-text-grey-light has-text-centered py-1">Aucune raie. Cliquez sur un élément ou "+ Raie".</p>'}
-                        </div>
+        let linesHtml = '';
+        if (hasLines) {
+            let itemsHtml = '';
+            track.lines.forEach((line, lIdx) => {
+                itemsHtml += `
+                    <div class="line-row">
+                        <span class="has-text-grey is-size-7" style="width: 18px; flex-shrink: 0;">${lIdx + 1}.</span>
+                        <input class="input is-small line-lambda" data-track="${idx}" data-line="${lIdx}" id="lambda-input-${idx}-${lIdx}" type="number" step="0.5" min="370" max="780" value="${line.lambda}" style="width: 64px; text-align: center; flex-shrink: 0;" title="Longueur d'onde λ (nm)">
+                        <span class="is-size-7 has-text-grey" style="margin-left: 3px; margin-right: 10px; flex-shrink: 0;">nm</span>
+                        <input class="input is-small line-width" data-track="${idx}" data-line="${lIdx}" type="number" step="0.5" min="0.5" max="120" value="${line.w}" style="width: 52px; text-align: center; flex-shrink: 0;" title="Largeur Δλ (nm)">
+                        <span class="is-size-7 has-text-grey" style="margin-left: 3px; margin-right: 10px; flex-shrink: 0;" title="Largeur de la raie ou bande">Δλ</span>
+                        <input class="input is-small line-label" data-track="${idx}" data-line="${lIdx}" type="text" placeholder="Label" value="${line.label || ''}" style="flex: 1; min-width: 45px; margin-right: 8px;" title="Étiquette optionnelle (ex: Hα, D)">
+                        <button class="button is-small is-danger is-light px-2 remove-line" data-track="${idx}" data-line="${lIdx}" style="flex-shrink: 0; margin-left: auto;" title="Supprimer">
+                            <span class="icon is-small"><i class="fas fa-times"></i></span>
+                        </button>
                     </div>
                 `;
-            }
+            });
 
-            const thermalHtml = isThermal ? `
-                <div class="mt-2 p-2" style="background: #fff8f0; border-radius: 4px; border: 1px solid #fae5d3;">
-                    <div class="is-flex is-justify-content-space-between is-align-items-center mb-1">
-                        <span class="is-size-7 has-text-weight-bold" style="color: #d35400;"><i class="fas fa-temperature-high"></i> Température :</span>
-                        <div class="is-flex is-align-items-center" style="gap: 4px;">
-                            <input class="input is-small track-temp-num" data-track="${idx}" type="number" step="100" min="1500" max="12000" value="${track.temp}" style="width: 72px; height: 24px; text-align: right;">
-                            <span class="is-size-7 has-text-weight-bold">K</span>
+            linesHtml = `
+                <div class="mt-2">
+                    <div class="control-row mb-2">
+                        <label class="label" style="width: 68px;">Catalogue</label>
+                        <div class="select is-small is-fullwidth" style="flex: 1; margin-right: 4px;">
+                            <select class="preset-select" data-track="${idx}">
+                                ${buildPresetsDropdownHTML(track.presetKey)}
+                            </select>
                         </div>
-                    </div>
-                    <input type="range" class="track-temp-range" data-track="${idx}" min="1500" max="12000" step="50" value="${track.temp}" style="width: 100%;">
-                    <div class="is-flex is-justify-content-space-between is-align-items-center mt-1">
-                        <div class="buttons are-small mb-0" style="gap: 3px;">
-                            <button class="button is-white is-tiny temp-quick" data-track="${idx}" data-temp="2200" style="font-size: 0.65rem; height: 20px; padding: 0 5px;">Filament 2200K</button>
-                            <button class="button is-white is-tiny temp-quick" data-track="${idx}" data-temp="3500" style="font-size: 0.65rem; height: 20px; padding: 0 5px;">Bételgeuse 3500K</button>
-                            <button class="button is-white is-tiny temp-quick" data-track="${idx}" data-temp="5800" style="font-size: 0.65rem; height: 20px; padding: 0 5px;">Soleil 5800K</button>
-                            <button class="button is-white is-tiny temp-quick" data-track="${idx}" data-temp="9500" style="font-size: 0.65rem; height: 20px; padding: 0 5px;">Sirius 9500K</button>
-                        </div>
-                        <label class="checkbox is-size-7" title="Afficher la température sous le nom du spectre">
-                            <input type="checkbox" class="track-temp-badge" data-track="${idx}" ${track.showTempBadge ? 'checked' : ''}> Légende K
-                        </label>
-                    </div>
-                </div>
-            ` : '';
-
-            const html = `
-                <div class="track-control-box t${n}">
-                    <div class="is-flex is-justify-content-space-between is-align-items-center mb-1">
-                        <label class="checkbox is-flex is-align-items-center has-text-weight-bold is-size-6" style="gap: 6px;">
-                            <input type="checkbox" class="toggle-track" data-track="${idx}" ${track.active ? 'checked' : ''}>
-                            <span>Spectre ${n}</span>
-                        </label>
-                        <button class="button is-small is-white px-2 py-0 toggle-track-name" data-track="${idx}" style="display: ${track.active ? 'inline-flex' : 'none'}; height: 22px;" title="Afficher/Masquer le titre à gauche du spectre">
-                            <span class="icon is-small"><i class="fas ${track.showName ? 'fa-eye' : 'fa-eye-slash has-text-grey-light'}"></i></span>
+                        <button class="button is-small is-danger is-light px-2 clear-lines-btn" data-track="${idx}" title="Vider toutes les raies">
+                            <span class="icon is-small"><i class="fas fa-trash-can"></i></span>
                         </button>
                     </div>
 
-                    <div style="display: ${track.active ? 'block' : 'none'};">
-                        <div class="control-row">
-                            <label class="label" style="width: 48px;">Titre</label>
-                            <input class="input is-small track-name" data-track="${idx}" type="text" value="${track.name}">
+                    <div class="is-flex is-justify-content-space-between is-align-items-center mt-1">
+                        <span class="is-size-7 has-text-weight-semibold has-text-grey-dark">Raies / Bandes (${track.lines.length}) :</span>
+                        <div class="buttons has-addons mb-0">
+                            <button class="button is-small is-primary is-light py-0 px-2 add-line" data-track="${idx}" data-width="2" style="height: 22px; font-size: 0.72rem;" title="Ajouter une raie fine (atome)">
+                                + Raie fine
+                            </button>
+                            <button class="button is-small is-link is-light py-0 px-2 add-line" data-track="${idx}" data-width="35" style="height: 22px; font-size: 0.72rem;" title="Ajouter une bande large (molécule ou solution colorée)">
+                                + Bande large
+                            </button>
                         </div>
-                        <div class="control-row">
-                            <label class="label" style="width: 48px;">Nature</label>
-                            <div class="select is-small is-fullwidth">
-                                <select class="track-mode" data-track="${idx}">
-                                    <option value="thermal" ${track.mode === 'thermal' ? 'selected' : ''}>Émission thermique (Continu seul)</option>
-                                    <option value="emission_lines" ${track.mode === 'emission_lines' ? 'selected' : ''}>Émission de raies / bandes (Gaz, laser...)</option>
-                                    <option value="absorption_lines" ${track.mode === 'absorption_lines' ? 'selected' : ''}>Absorption sur fond blanc continu</option>
-                                    <option value="thermal_abs" ${track.mode === 'thermal_abs' ? 'selected' : ''}>Thermique + Absorption (Étoile / Gaz froid)</option>
-                                </select>
-                            </div>
-                        </div>
-                        ${thermalHtml}
-                        ${linesHtml}
+                    </div>
+                    <div class="lines-list">
+                        ${itemsHtml || '<p class="is-size-7 has-text-grey-light has-text-centered py-2">Aucune raie. Choisissez un modèle dans le catalogue ou cliquez sur "+ Raie".</p>'}
                     </div>
                 </div>
             `;
-            container.insertAdjacentHTML('beforeend', html);
-        });
+        }
+
+        const thermalHtml = isThermal ? `
+            <div class="mt-2 p-2" style="background: #fff8f0; border-radius: 4px; border: 1px solid #fae5d3;">
+                <div class="is-flex is-justify-content-space-between is-align-items-center mb-1">
+                    <span class="is-size-7 has-text-weight-bold" style="color: #d35400;"><i class="fas fa-temperature-high"></i> Température :</span>
+                    <div class="is-flex is-align-items-center" style="gap: 6px;">
+                        <input class="input is-small track-temp-num" data-track="${idx}" type="number" step="100" min="1500" max="12000" value="${track.temp}" style="width: 70px; height: 24px; text-align: right;">
+                        <span class="is-size-7 has-text-weight-bold">K</span>
+                        <label class="checkbox is-size-7 ml-2" title="Afficher la température sous le titre">
+                            <input type="checkbox" class="track-temp-badge" data-track="${idx}" ${track.showTempBadge ? 'checked' : ''}> Légende
+                        </label>
+                    </div>
+                </div>
+                <input type="range" class="track-temp-range" data-track="${idx}" min="1500" max="12000" step="50" value="${track.temp}" style="width: 100%;">
+                <div class="is-flex is-justify-content-between mt-1" style="gap: 4px;">
+                    <button class="button is-white is-small temp-quick" data-track="${idx}" data-temp="2200" style="flex:1; font-size: 0.65rem; height: 20px; padding: 0;">Lampe 2200K</button>
+                    <button class="button is-white is-small temp-quick" data-track="${idx}" data-temp="3500" style="flex:1; font-size: 0.65rem; height: 20px; padding: 0;">3500K</button>
+                    <button class="button is-white is-small temp-quick" data-track="${idx}" data-temp="5800" style="flex:1; font-size: 0.65rem; height: 20px; padding: 0;">Soleil 5800K</button>
+                    <button class="button is-white is-small temp-quick" data-track="${idx}" data-temp="9500" style="flex:1; font-size: 0.65rem; height: 20px; padding: 0;">Sirius 9500K</button>
+                </div>
+            </div>
+        ` : '';
+
+        editorContainer.innerHTML = `
+            <div style="${track.active ? '' : 'opacity: 0.55;'}">
+                <div class="control-row">
+                    <label class="label" style="width: 52px;">Titre</label>
+                    <input class="input is-small track-name" data-track="${idx}" type="text" value="${track.name}" style="flex: 1;">
+                    <button class="button is-small is-white px-2 ml-1 toggle-track-name" data-track="${idx}" title="Afficher/Masquer le titre à gauche du spectre">
+                        <span class="icon is-small"><i class="fas ${track.showName ? 'fa-eye' : 'fa-eye-slash has-text-grey-light'}"></i></span>
+                    </button>
+                </div>
+                <div class="control-row mb-0">
+                    <label class="label" style="width: 52px;">Nature</label>
+                    <div class="select is-small is-fullwidth" style="flex: 1;">
+                        <select class="track-mode" data-track="${idx}">
+                            <option value="thermal" ${track.mode === 'thermal' ? 'selected' : ''}>Émission thermique (Continu seul)</option>
+                            <option value="emission_lines" ${track.mode === 'emission_lines' ? 'selected' : ''}>Émission de raies / bandes (Gaz, lampes)</option>
+                            <option value="absorption_lines" ${track.mode === 'absorption_lines' ? 'selected' : ''}>Absorption sur fond blanc continu</option>
+                            <option value="thermal_abs" ${track.mode === 'thermal_abs' ? 'selected' : ''}>Thermique + Absorption (Étoile / Gaz froid)</option>
+                        </select>
+                    </div>
+                </div>
+                ${thermalHtml}
+                ${linesHtml}
+            </div>
+        `;
     }
 
-    // --- Événements délégués du panneau de pistes ---
-    const tracksContainer = document.getElementById('tracksContainer');
+    // --- Gestion des clics sur la barre d'onglets ---
+    document.getElementById('tracksTabsContainer').addEventListener('click', (e) => {
+        const checkbox = e.target.closest('.toggle-track-tab');
+        if (checkbox) {
+            const tIdx = parseInt(checkbox.dataset.track);
+            state.tracks[tIdx].active = checkbox.checked;
+            selectedTabIndex = tIdx;
+            buildTracksUI();
+            updateCanvasDimensions();
+            render();
+            return;
+        }
 
-    tracksContainer.addEventListener('input', (e) => {
+        const tab = e.target.closest('.spec-tab');
+        if (tab) {
+            selectedTabIndex = parseInt(tab.dataset.tab);
+            buildTracksUI();
+        }
+    });
+
+    // --- Événements délégués du panneau du spectre actif ---
+    const activeTrackContainer = document.getElementById('activeTrackContainer');
+
+    activeTrackContainer.addEventListener('input', (e) => {
         const t = e.target;
         const tIdx = parseInt(t.dataset.track);
         const lIdx = parseInt(t.dataset.line);
@@ -978,14 +1201,16 @@
         } else if (t.classList.contains('track-temp-range')) {
             const val = parseInt(t.value) || 5800;
             state.tracks[tIdx].temp = val;
-            const numInput = tracksContainer.querySelector(`.track-temp-num[data-track="${tIdx}"]`);
+            const numInput = activeTrackContainer.querySelector(`.track-temp-num[data-track="${tIdx}"]`);
             if (numInput) numInput.value = val;
+            updateCanvasDimensions();
             render();
         } else if (t.classList.contains('track-temp-num')) {
             const val = Math.max(1000, Math.min(20000, parseInt(t.value) || 5800));
             state.tracks[tIdx].temp = val;
-            const rangeInput = tracksContainer.querySelector(`.track-temp-range[data-track="${tIdx}"]`);
+            const rangeInput = activeTrackContainer.querySelector(`.track-temp-range[data-track="${tIdx}"]`);
             if (rangeInput) rangeInput.value = val;
+            updateCanvasDimensions();
             render();
         } else if (t.classList.contains('line-lambda')) {
             const val = parseFloat(t.value);
@@ -1005,49 +1230,49 @@
         }
     });
 
-    tracksContainer.addEventListener('change', (e) => {
+    activeTrackContainer.addEventListener('change', (e) => {
         const t = e.target;
         const tIdx = parseInt(t.dataset.track);
 
-        if (t.classList.contains('toggle-track')) {
-            state.tracks[tIdx].active = t.checked;
-            buildTracksUI();
-            updateCanvasDimensions();
-            render();
-        } else if (t.classList.contains('track-mode')) {
+        if (t.classList.contains('track-mode')) {
             state.tracks[tIdx].mode = t.value;
-            // Si on passe en mode raies et que la liste est vide, on pré-remplit avec Hydrogène
             if (t.value !== 'thermal' && state.tracks[tIdx].lines.length === 0) {
                 state.tracks[tIdx].lines = JSON.parse(JSON.stringify(PRESETS_DB.H.lines));
+                state.tracks[tIdx].presetKey = "H";
             }
             buildTracksUI();
             updateCanvasDimensions();
             render();
+        } else if (t.classList.contains('preset-select')) {
+            const key = t.value;
+            if (key && PRESETS_DB[key]) {
+                state.tracks[tIdx].presetKey = key;
+                state.tracks[tIdx].lines = JSON.parse(JSON.stringify(PRESETS_DB[key].lines));
+                if (PRESETS_DB[key].temp) {
+                    state.tracks[tIdx].temp = PRESETS_DB[key].temp;
+                }
+                buildTracksUI();
+                updateCanvasDimensions();
+                render();
+            }
         } else if (t.classList.contains('track-temp-badge')) {
             state.tracks[tIdx].showTempBadge = t.checked;
+            updateCanvasDimensions();
             render();
         }
     });
 
-    tracksContainer.addEventListener('click', (e) => {
-        const presetBtn = e.target.closest('.preset-btn');
+    activeTrackContainer.addEventListener('click', (e) => {
         const clearBtn = e.target.closest('.clear-lines-btn');
         const addBtn = e.target.closest('.add-line');
         const removeBtn = e.target.closest('.remove-line');
         const toggleNameBtn = e.target.closest('.toggle-track-name');
         const tempQuickBtn = e.target.closest('.temp-quick');
 
-        if (presetBtn) {
-            const tIdx = parseInt(presetBtn.dataset.track);
-            const key = presetBtn.dataset.preset;
-            if (PRESETS_DB[key]) {
-                state.tracks[tIdx].lines = JSON.parse(JSON.stringify(PRESETS_DB[key].lines));
-                buildTracksUI();
-                render();
-            }
-        } else if (clearBtn) {
+        if (clearBtn) {
             const tIdx = parseInt(clearBtn.dataset.track);
             state.tracks[tIdx].lines = [];
+            state.tracks[tIdx].presetKey = "";
             buildTracksUI();
             render();
         } else if (addBtn) {
@@ -1078,6 +1303,7 @@
             const temp = parseInt(tempQuickBtn.dataset.temp);
             state.tracks[tIdx].temp = temp;
             buildTracksUI();
+            updateCanvasDimensions();
             render();
         }
     });
@@ -1085,7 +1311,7 @@
     // --- Événements des contrôles globaux ---
     document.getElementById('specWidthInput').addEventListener('input', (e) => {
         const val = parseInt(e.target.value);
-        if (!isNaN(val) && val >= 300 && val <= 1400) {
+        if (!isNaN(val) && val >= 250 && val <= 1400) {
             state.specWidth = val;
             updateCanvasDimensions();
             render();
@@ -1094,7 +1320,7 @@
 
     document.getElementById('bandHeightInput').addEventListener('input', (e) => {
         const val = parseInt(e.target.value);
-        if (!isNaN(val) && val >= 25 && val <= 200) {
+        if (!isNaN(val) && val >= 10 && val <= 200) {
             state.bandHeight = val;
             updateCanvasDimensions();
             render();
@@ -1143,6 +1369,11 @@
         render();
     });
 
+    window.addEventListener('resize', () => {
+        updateCanvasDimensions();
+        render();
+    });
+
     // --- Interaction Souris (Glisser-déposer des raies sur le canvas) ---
     function getHoveredLine(mouseX, mouseY) {
         const geom = getLayoutGeometry();
@@ -1165,7 +1396,7 @@
             }
 
             if (aIdx === 0 && state.showProfile) {
-                currentY += 72 + 16;
+                currentY += 68 + 14;
             }
             currentY += bandH + geom.trackGap;
         }
@@ -1178,7 +1409,13 @@
         const mouseY = (e.clientY - rect.top) * (logicalHeight / rect.height);
 
         draggedLine = getHoveredLine(mouseX, mouseY);
-        if (draggedLine) canvas.style.cursor = 'grabbing';
+        if (draggedLine) {
+            canvas.style.cursor = 'grabbing';
+            if (selectedTabIndex !== draggedLine.trackIndex) {
+                selectedTabIndex = draggedLine.trackIndex;
+                buildTracksUI();
+            }
+        }
     });
 
     canvas.addEventListener('mousemove', (e) => {
@@ -1278,6 +1515,7 @@
 
     function resetApplet() {
         state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+        selectedTabIndex = 0;
         document.getElementById('specWidthInput').value = state.specWidth;
         document.getElementById('bandHeightInput').value = state.bandHeight;
         document.getElementById('toggleAxis').checked = state.showAxis;
