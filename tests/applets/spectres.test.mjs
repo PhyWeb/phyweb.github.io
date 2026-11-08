@@ -179,6 +179,16 @@ describe('Générateur de Spectres (/applets/spectres)', () => {
         }
       }
     });
+
+    it('Mode réaliste : le cache du maximum de Planck ne change pas les résultats (alternance de températures)', () => {
+      const { getThermalMultiplier } = sandbox;
+      const first3000 = getThermalMultiplier(600, 3000, false, 7);
+      const first9000 = getThermalMultiplier(600, 9000, false, 7);
+      // Alternance de températures : le cache doit rester cohérent
+      assert.equal(getThermalMultiplier(600, 3000, false, 7), first3000);
+      assert.equal(getThermalMultiplier(600, 9000, false, 7), first9000);
+      assert.notEqual(first3000, first9000);
+    });
   });
 
   describe('Facteur de raies spectrales (getLinesFactor)', () => {
@@ -240,7 +250,18 @@ describe('Générateur de Spectres (/applets/spectres)', () => {
     it('le code de gestion du catalogue doit adapter automatiquement le mode et le nom', () => {
       assert.match(htmlContent, /state\.tracks\[tIdx\]\.mode\s*=\s*['"]absorption_lines['"]/);
       assert.match(htmlContent, /state\.tracks\[tIdx\]\.mode\s*=\s*['"]thermal_abs['"]/);
-      assert.match(htmlContent, /state\.tracks\[tIdx\]\.name\s*=\s*item\.label\.split/);
+      assert.match(htmlContent, /state\.tracks\[tIdx\]\.name\s*=\s*getPresetShortName\(item\)/);
+    });
+
+    it('getPresetShortName retire la partie entre parenthèses du libellé', () => {
+      const { getPresetShortName } = sandbox;
+      assert.equal(getPresetShortName({ label: 'Soleil (5800 K)' }), 'Soleil');
+      assert.equal(getPresetShortName({ label: 'Hydrogène' }), 'Hydrogène');
+    });
+
+    it('le changement de preset ne doit pas écraser un nom personnalisé', () => {
+      assert.match(htmlContent, /const\s+isAutoName\s*=/);
+      assert.match(htmlContent, /if\s*\(isAutoName\)\s*\{\s*state\.tracks\[tIdx\]\.name/);
     });
   });
 

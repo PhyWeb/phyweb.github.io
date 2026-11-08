@@ -258,22 +258,22 @@
                             <i class="fas fa-magnifying-glass"></i> Zoom &lambda; :
                         </span>
 
-                        <input class="input is-small" type="number" id="zoomMinInput" min="350" max="795" step="any" value="370" style="width: 62px; text-align: center; height: 24px;" title="Longueur d'onde minimale (nm)">
+                        <input class="input is-small" type="number" id="zoomMinInput" min="350" max="795" step="any" value="350" style="width: 62px; text-align: center; height: 24px;" title="Longueur d'onde minimale (nm)">
                         
                         <div class="dual-range-wrapper">
                             <div class="dual-range-track"></div>
                             <div class="dual-range-fill" id="zoomRangeFill"></div>
-                            <input type="range" id="zoomMinSlider" min="350" max="800" step="0.5" value="370" aria-label="Longueur d'onde minimale">
-                            <input type="range" id="zoomMaxSlider" min="350" max="800" step="0.5" value="780" aria-label="Longueur d'onde maximale">
+                            <input type="range" id="zoomMinSlider" min="350" max="800" step="0.5" value="350" aria-label="Longueur d'onde minimale">
+                            <input type="range" id="zoomMaxSlider" min="350" max="800" step="0.5" value="800" aria-label="Longueur d'onde maximale">
                         </div>
 
-                        <input class="input is-small" type="number" id="zoomMaxInput" min="355" max="800" step="any" value="780" style="width: 62px; text-align: center; height: 24px;" title="Longueur d'onde maximale (nm)">
+                        <input class="input is-small" type="number" id="zoomMaxInput" min="355" max="800" step="any" value="800" style="width: 62px; text-align: center; height: 24px;" title="Longueur d'onde maximale (nm)">
                         <span class="is-size-7 has-text-grey">nm</span>
 
                         <!-- Boutons de zoom rapides -->
                         <div class="buttons are-small mb-0 ml-auto" style="gap: 4px;">
-                            <button class="button is-light is-info py-0 px-2 zoom-preset" data-min="370" data-max="780" style="height: 22px; font-size: 0.7rem;" title="Vue complète avec UV et IR (370 - 780 nm)">Tout</button>
-                            <button class="button is-light py-0 px-2 zoom-preset" data-min="400" data-max="750" style="height: 22px; font-size: 0.7rem;" title="Domaine visible uniquement (400 - 750 nm)">Visible</button>
+                            <button class="button is-light is-info py-0 px-2 zoom-preset" data-min="350" data-max="800" style="height: 22px; font-size: 0.7rem;" title="Vue complète avec UV et IR (350 - 800 nm)">Tout</button>
+                            <button class="button is-light py-0 px-2 zoom-preset" data-min="380" data-max="780" style="height: 22px; font-size: 0.7rem;" title="Domaine visible uniquement (380 - 780 nm)">Visible</button>
                         </div>
                     </div>
                 </div>
@@ -403,10 +403,16 @@
     let selectedTabIndex = 0;
 
     // Bornes physiques du domaine visible (en nm)
-    const LAMBDA_MIN_VISIBLE = 400;
-    const LAMBDA_MAX_VISIBLE = 750;
+    // Définition unique du visible, utilisée pour la couleur, le thermique, le dégradé, la bande et le profil
+    const LAMBDA_MIN_VISIBLE = 380;
+    const LAMBDA_MAX_VISIBLE = 780;
     const ABS_MIN_NM = 350;
     const ABS_MAX_NM = 800;
+
+    // Bornes de température (K), identiques aux attributs min/max des champs HTML
+    const TEMP_MIN_K = 1500;
+    const TEMP_MAX_K = 12000;
+    const TEMP_DEFAULT_K = 5800;
 
     // Base de données vérifiée (NIST ASD / Fraunhofer / Spectrophotométrie UV-Vis)
     const PRESETS_DB = {
@@ -659,8 +665,8 @@
     const DEFAULT_STATE = {
         specWidth: 600,
         bandHeight: 60,
-        viewMinNm: 370,
-        viewMaxNm: 780,
+        viewMinNm: ABS_MIN_NM,
+        viewMaxNm: ABS_MAX_NM,
         showAxis: true,
         showUVIR: true,
         showLineValues: false,
@@ -674,10 +680,10 @@
                 name: "Étoile",
                 showName: true,
                 mode: "thermal_abs",
-                temp: 5800,
+                temp: PRESETS_DB.Star_Soleil.temp,
                 showTempBadge: true,
-                presetKey: "H",
-                lines: JSON.parse(JSON.stringify(PRESETS_DB.H.lines))
+                presetKey: "Star_Soleil",
+                lines: JSON.parse(JSON.stringify(PRESETS_DB.Star_Soleil.lines))
             },
             {
                 active: true,
@@ -712,13 +718,19 @@
         ]
     };
 
+    // Noms automatiques : ceux des pistes par défaut et le nom court d'un preset (« Soleil (5800 K) » -> « Soleil »)
+    const DEFAULT_TRACK_NAMES = DEFAULT_STATE.tracks.map(t => t.name);
+    function getPresetShortName(preset) {
+        return preset.label.split(' (')[0];
+    }
+
     let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
     let draggedLine = null;
     let hoveredLine = null;
     let isPanningSpectrum = false;
     let panStartX = 0;
-    let panStartMinNm = 370;
-    let panStartMaxNm = 780;
+    let panStartMinNm = ABS_MIN_NM;
+    let panStartMaxNm = ABS_MAX_NM;
     let isDraggingZoomSlider = false;
 
     // --- Conversion Longueur d'onde (nm) -> Couleur RGB ---
@@ -769,19 +781,32 @@
         return [R, G, B];
     }
 
+    // --- Loi de Planck (mode réaliste) ---
+    const PLANCK_C2 = 1.4388e7; // hc/k en nm·K
+    const planck = (l, T) => 1.0 / (Math.pow(l, 5) * (Math.exp(PLANCK_C2 / (l * T)) - 1));
+
+    // Maximum de Planck sur le visible, mémoïsé par température (évite 15 évaluations par pixel)
+    const planckMaxCache = new Map();
+    function getPlanckMax(tempK) {
+        const cached = planckMaxCache.get(tempK);
+        if (cached !== undefined) return cached;
+        let maxVal = 0;
+        for (let l = 400; l <= 750; l += 25) {
+            const v = planck(l, tempK);
+            if (v > maxVal) maxVal = v;
+        }
+        // Le curseur de température évolue par pas : on borne la taille du cache
+        if (planckMaxCache.size > 200) planckMaxCache.clear();
+        planckMaxCache.set(tempK, maxVal);
+        return maxVal;
+    }
+
     // --- Calcul de l'intensité thermique (Réaliste vs Exagéré) ---
     function getThermalMultiplier(lambdaNm, tempK, isExaggerated, sharpness) {
-        if (lambdaNm < 380 || lambdaNm > 780) return 0;
+        if (lambdaNm < LAMBDA_MIN_VISIBLE || lambdaNm > LAMBDA_MAX_VISIBLE) return 0;
 
         if (!isExaggerated) {
-            const c2 = 1.4388e7;
-            const planck = (l, T) => 1.0 / (Math.pow(l, 5) * (Math.exp(c2 / (l * T)) - 1));
-
-            let maxVal = 0;
-            for (let l = 400; l <= 750; l += 25) {
-                const v = planck(l, tempK);
-                if (v > maxVal) maxVal = v;
-            }
+            const maxVal = getPlanckMax(tempK);
             const rawRatio = maxVal > 0 ? planck(lambdaNm, tempK) / maxVal : 0;
             const globalBrightness = Math.min(1.0, 0.55 + 0.45 * ((tempK - 1500) / 4500));
             return Math.min(1.0, Math.pow(rawRatio, 0.65) * globalBrightness);
@@ -791,7 +816,7 @@
                 const tNorm = Math.max(0, (tempK - 1500) / (6000 - 1500));
                 cutoffNm = 685 - 305 * Math.pow(tNorm, 0.85);
             } else {
-                cutoffNm = 380 - (tempK - 6000) * 0.02;
+                cutoffNm = LAMBDA_MIN_VISIBLE - (tempK - 6000) * 0.02;
             }
 
             const transitionWidth = Math.max(2.5, 50 - sharpness * 4.7);
@@ -801,7 +826,7 @@
             let hotBlueBoost = 1.0;
             if (tempK > 7000) {
                 const hotFactor = Math.min(1, (tempK - 7000) / 5000);
-                const redAttenuation = ((lambdaNm - 400) / 350) * 0.25 * hotFactor;
+                const redAttenuation = ((lambdaNm - LAMBDA_MIN_VISIBLE) / (LAMBDA_MAX_VISIBLE - LAMBDA_MIN_VISIBLE)) * 0.25 * hotFactor;
                 hotBlueBoost = 1.0 - redAttenuation;
             }
 
@@ -851,18 +876,8 @@
             const lambda = rMin + (i / numStops) * span;
             let [r, g, b] = wavelengthToRGB(lambda);
 
-            if (lambda < 380 || lambda > 780) {
+            if (lambda < LAMBDA_MIN_VISIBLE || lambda > LAMBDA_MAX_VISIBLE) {
                 r = 30; g = 30; b = 30;
-            } else if (lambda < 400) {
-                const f = (lambda - 380) / 20;
-                r = Math.round(r * f + 30 * (1 - f));
-                g = Math.round(g * f + 30 * (1 - f));
-                b = Math.round(b * f + 30 * (1 - f));
-            } else if (lambda > 750) {
-                const f = (780 - lambda) / 30;
-                r = Math.round(r * f + 30 * (1 - f));
-                g = Math.round(g * f + 30 * (1 - f));
-                b = Math.round(b * f + 30 * (1 - f));
             }
 
             const pct = Math.round((i / numStops) * 100);
@@ -1231,7 +1246,7 @@
                         ctx.strokeStyle = "#f1c40f";
                         ctx.lineWidth = 2;
                         ctx.setLineDash([2, 2]);
-                        const boxW = Math.max(6, (line.w / geom.spanNm) * state.specWidth * 0.5);
+                        const boxW = Math.max(6, (line.w / geom.spanNm) * geom.totalBarWidth * 0.5);
                         ctx.strokeRect(lx - boxW / 2, bandY - 2, boxW, bandH + 4);
                         ctx.restore();
                         drawText(`${line.lambda.toFixed(1)} nm`, lx, bandY - 9, "#d35400", "bold 11px Arial", "center", "middle");
@@ -1274,7 +1289,8 @@
                         } else if (track.mode === 'emission_lines') {
                             intensity = getLinesFactor(lambda, track.lines, geom.spanNm);
                         } else if (track.mode === 'absorption_lines') {
-                            intensity = (lambda >= 400 && lambda <= 750 ? 1.0 : 0.2) * (1 - getLinesFactor(lambda, track.lines, geom.spanNm));
+                            const inVisible = lambda >= LAMBDA_MIN_VISIBLE && lambda <= LAMBDA_MAX_VISIBLE;
+                            intensity = (inVisible ? 1.0 : 0) * (1 - getLinesFactor(lambda, track.lines, geom.spanNm));
                         } else if (track.mode === 'thermal_abs') {
                             const th = getThermalMultiplier(lambda, track.temp, state.exaggerated, state.sharpness);
                             const abs = getLinesFactor(lambda, track.lines, geom.spanNm);
@@ -1584,20 +1600,25 @@
             updateCanvasDimensions();
             render();
         } else if (t.classList.contains('track-temp-range')) {
-            const val = parseInt(t.value) || 5800;
+            const parsed = parseInt(t.value);
+            const val = Number.isFinite(parsed) ? Math.max(TEMP_MIN_K, Math.min(TEMP_MAX_K, parsed)) : TEMP_DEFAULT_K;
             state.tracks[tIdx].temp = val;
             const numInput = activeTrackContainer.querySelector(`.track-temp-num[data-track="${tIdx}"]`);
             if (numInput) numInput.value = val;
             scheduleRender();
         } else if (t.classList.contains('track-temp-num')) {
-            const val = Math.max(1000, Math.min(20000, parseInt(t.value) || 5800));
-            state.tracks[tIdx].temp = val;
-            const rangeInput = activeTrackContainer.querySelector(`.track-temp-range[data-track="${tIdx}"]`);
-            if (rangeInput) rangeInput.value = val;
-            scheduleRender();
+            // Pendant la frappe : on n'applique que les valeurs valides, sans réécrire le champ
+            const val = parseInt(t.value);
+            if (Number.isFinite(val) && val >= TEMP_MIN_K && val <= TEMP_MAX_K) {
+                state.tracks[tIdx].temp = val;
+                const rangeInput = activeTrackContainer.querySelector(`.track-temp-range[data-track="${tIdx}"]`);
+                if (rangeInput) rangeInput.value = val;
+                scheduleRender();
+            }
         } else if (t.classList.contains('line-lambda')) {
+            // Pendant la frappe : seules les valeurs dans la plage affichable sont appliquées
             const val = parseFloat(t.value);
-            if (!isNaN(val)) {
+            if (Number.isFinite(val) && val >= ABS_MIN_NM && val <= ABS_MAX_NM) {
                 state.tracks[tIdx].lines[lIdx].lambda = val;
                 scheduleRender();
             }
@@ -1617,6 +1638,32 @@
         const t = e.target;
         const tIdx = parseInt(t.dataset.track);
 
+        // Validation finale à la fin de la saisie : recadrage ou restauration de la dernière valeur valide
+        if (t.classList.contains('track-temp-num')) {
+            const parsed = parseInt(t.value);
+            const val = Number.isFinite(parsed)
+                ? Math.max(TEMP_MIN_K, Math.min(TEMP_MAX_K, parsed))
+                : state.tracks[tIdx].temp;
+            state.tracks[tIdx].temp = val;
+            t.value = val;
+            const rangeInput = activeTrackContainer.querySelector(`.track-temp-range[data-track="${tIdx}"]`);
+            if (rangeInput) rangeInput.value = val;
+            scheduleRender();
+            return;
+        }
+        if (t.classList.contains('line-lambda')) {
+            const lIdx = parseInt(t.dataset.line);
+            const line = state.tracks[tIdx].lines[lIdx];
+            const parsed = parseFloat(t.value);
+            const val = Number.isFinite(parsed)
+                ? Math.max(ABS_MIN_NM, Math.min(ABS_MAX_NM, parsed))
+                : line.lambda;
+            line.lambda = val;
+            t.value = val;
+            scheduleRender();
+            return;
+        }
+
         if (t.classList.contains('track-mode')) {
             state.tracks[tIdx].mode = t.value;
             if (t.value !== 'thermal' && state.tracks[tIdx].lines.length === 0) {
@@ -1630,10 +1677,18 @@
             const key = t.value;
             if (key && PRESETS_DB[key]) {
                 const item = PRESETS_DB[key];
+                const prevPreset = PRESETS_DB[state.tracks[tIdx].presetKey];
+                const currentName = state.tracks[tIdx].name.trim();
                 state.tracks[tIdx].presetKey = key;
                 state.tracks[tIdx].lines = JSON.parse(JSON.stringify(item.lines));
 
-                state.tracks[tIdx].name = item.label.split(' (')[0];
+                // Le nom n'est remplacé que s'il n'a pas été personnalisé par l'utilisateur
+                const isAutoName = currentName === ''
+                    || DEFAULT_TRACK_NAMES.includes(currentName)
+                    || (prevPreset && currentName === getPresetShortName(prevPreset));
+                if (isAutoName) {
+                    state.tracks[tIdx].name = getPresetShortName(item);
+                }
 
                 if (item.category === 'Molécules & Solutions') {
                     state.tracks[tIdx].mode = 'absorption_lines';
@@ -1734,10 +1789,10 @@
 
     document.getElementById('toggleUVIR').addEventListener('change', (e) => {
         state.showUVIR = e.target.checked;
-        if (state.showUVIR && state.viewMinNm === 400 && state.viewMaxNm === 750) {
-            setZoomRange(370, 780);
-        } else if (!state.showUVIR && state.viewMinNm === 370 && state.viewMaxNm === 780) {
-            setZoomRange(400, 750);
+        if (state.showUVIR && state.viewMinNm === LAMBDA_MIN_VISIBLE && state.viewMaxNm === LAMBDA_MAX_VISIBLE) {
+            setZoomRange(ABS_MIN_NM, ABS_MAX_NM);
+        } else if (!state.showUVIR && state.viewMinNm === ABS_MIN_NM && state.viewMaxNm === ABS_MAX_NM) {
+            setZoomRange(LAMBDA_MIN_VISIBLE, LAMBDA_MAX_VISIBLE);
         } else {
             updateCanvasDimensions();
             render();
@@ -1794,7 +1849,7 @@
                     const line = track.lines[lIdx];
                     if (line.lambda < geom.minNm || line.lambda > geom.maxNm) continue;
                     const lx = geom.nmToX(line.lambda);
-                    const tolPx = Math.max(6, ((line.w || 2) / geom.spanNm) * state.specWidth * 0.25 + 4);
+                    const tolPx = Math.max(6, ((line.w || 2) / geom.spanNm) * geom.totalBarWidth * 0.25 + 4);
                     if (Math.abs(mouseX - lx) <= tolPx) {
                         return { trackIndex: track.index, lineIndex: lIdx };
                     }
