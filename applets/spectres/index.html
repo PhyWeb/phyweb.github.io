@@ -39,6 +39,72 @@
         canvas {
             display: block;
         }
+
+        /* Barre de Zoom sous le spectre */
+        .zoom-toolbar {
+            background: white;
+            border: 1px solid #dbdbdb;
+            border-radius: 8px;
+            padding: 0.45rem 0.85rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+            width: 100%;
+            max-width: 760px;
+        }
+        .dual-range-wrapper {
+            position: relative;
+            height: 22px;
+            flex: 1;
+            min-width: 140px;
+            display: flex;
+            align-items: center;
+        }
+        .dual-range-track {
+            position: absolute;
+            width: 100%;
+            height: 6px;
+            background: #e9ecef;
+            border-radius: 3px;
+            z-index: 1;
+        }
+        .dual-range-fill {
+            position: absolute;
+            height: 6px;
+            background: linear-gradient(90deg, #8e44ad, #3498db, #2ecc71, #f1c40f, #e74c3c);
+            border-radius: 3px;
+            z-index: 2;
+        }
+        .dual-range-wrapper input[type="range"] {
+            position: absolute;
+            width: 100%;
+            pointer-events: none;
+            -webkit-appearance: none;
+            appearance: none;
+            background: none;
+            z-index: 3;
+            margin: 0;
+        }
+        .dual-range-wrapper input[type="range"]::-webkit-slider-thumb {
+            pointer-events: auto;
+            -webkit-appearance: none;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: #2c3e50;
+            border: 2px solid white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+            cursor: ew-resize;
+        }
+        .dual-range-wrapper input[type="range"]::-moz-range-thumb {
+            pointer-events: auto;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: #2c3e50;
+            border: 2px solid white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+            cursor: ew-resize;
+        }
+
         /* Panneau de contrôle compact */
         .controls-panel {
             background: white;
@@ -168,15 +234,45 @@
         
         <div class="columns is-desktop">
             
-            <!-- Colonne de gauche : Canvas + Barre d'export -->
+            <!-- Colonne de gauche : Canvas + Barre de Zoom + Barre d'export -->
             <div class="column is-flex is-flex-direction-column is-align-items-center">
                 
                 <div class="canvas-container" id="canvasWrapper">
                     <canvas id="spectrumCanvas"></canvas>
                 </div>
 
+                <!-- Barre de Zoom / Plage spectrale juste en dessous des spectres -->
+                <div class="zoom-toolbar mt-2">
+                    <div class="is-flex is-align-items-center is-flex-wrap-wrap" style="gap: 8px;">
+                        <span class="is-size-7 has-text-weight-bold has-text-grey-dark" style="white-space: nowrap;">
+                            <i class="fas fa-magnifying-glass"></i> Zoom &lambda; :
+                        </span>
+
+                        <input class="input is-small" type="number" id="zoomMinInput" min="350" max="795" step="1" value="370" style="width: 62px; text-align: center; height: 24px;" title="Longueur d'onde minimale (nm)">
+                        
+                        <div class="dual-range-wrapper">
+                            <div class="dual-range-track"></div>
+                            <div class="dual-range-fill" id="zoomRangeFill"></div>
+                            <input type="range" id="zoomMinSlider" min="350" max="800" step="0.5" value="370">
+                            <input type="range" id="zoomMaxSlider" min="350" max="800" step="0.5" value="780">
+                        </div>
+
+                        <input class="input is-small" type="number" id="zoomMaxInput" min="355" max="800" step="1" value="780" style="width: 62px; text-align: center; height: 24px;" title="Longueur d'onde maximale (nm)">
+                        <span class="is-size-7 has-text-grey">nm</span>
+
+                        <!-- Boutons de zoom rapides -->
+                        <div class="buttons are-small mb-0 ml-auto" style="gap: 3px;">
+                            <button class="button is-light is-info py-0 px-2 zoom-preset" data-min="370" data-max="780" style="height: 22px; font-size: 0.7rem;" title="Vue complète avec UV et IR">Tout</button>
+                            <button class="button is-light py-0 px-2 zoom-preset" data-min="400" data-max="750" style="height: 22px; font-size: 0.7rem;" title="Domaine visible uniquement (400 - 750 nm)">Visible</button>
+                            <button class="button is-light is-warning py-0 px-2 zoom-preset" data-min="586" data-max="593" style="height: 22px; font-size: 0.7rem;" title="Zoom sur le doublet du Sodium (589,0 et 589,6 nm)">Doublet Na</button>
+                            <button class="button is-light is-success py-0 px-2 zoom-preset" data-min="573" data-max="583" style="height: 22px; font-size: 0.7rem;" title="Zoom sur le doublet jaune du Mercure (577,0 et 579,1 nm)">Doublet Hg</button>
+                            <button class="button is-light is-link py-0 px-2 zoom-preset" data-min="388" data-max="402" style="height: 22px; font-size: 0.7rem;" title="Zoom sur les raies H et K du Calcium (393,4 et 396,8 nm)">Ca H/K</button>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Panneau Export avec les bulles -->
-                <div class="box mt-3 p-2 is-flex is-align-items-center is-justify-content-center is-flex-wrap-wrap" style="gap: 1rem; border-radius: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <div class="box mt-2 p-2 is-flex is-align-items-center is-justify-content-center is-flex-wrap-wrap" style="gap: 1rem; border-radius: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
                     
                     <!-- Zone 1 : Spectre complet -->
                     <div class="is-flex is-align-items-center" style="gap: 6px; padding-right: 0.5rem; border-right: 2px solid #f5f5f5;">
@@ -203,7 +299,7 @@
                 </div>
 
                 <p class="help has-text-grey mt-1 has-text-centered">
-                    <i class="fas fa-mouse-pointer"></i> <strong>Astuce :</strong> Glissez-déposez directement les raies et bandes sur le spectre avec la souris.
+                    <i class="fas fa-mouse-pointer"></i> <strong>Astuce :</strong> Glissez une raie pour changer sa longueur d'onde, utilisez la <strong>molette</strong> sur le spectre pour zoomer, ou glissez le fond pour défiler.
                 </p>
 
             </div>
@@ -294,19 +390,20 @@
     // Onglet actuellement affiché dans le panneau de droite (0 à 3)
     let selectedTabIndex = 0;
 
-    // Bornes spectrales (en nm)
+    // Bornes physiques du domaine visible (en nm)
     const LAMBDA_MIN_VISIBLE = 400;
     const LAMBDA_MAX_VISIBLE = 750;
-    const UV_MARGIN_NM = 30; // 370 à 400 nm
-    const IR_MARGIN_NM = 30; // 750 à 780 nm
+    const ABS_MIN_NM = 350;
+    const ABS_MAX_NM = 800;
 
-    // Base de données enrichie classée par catégories
+    // Base de données vérifiée (NIST ASD / Fraunhofer / Spectrophotométrie UV-Vis)
     const PRESETS_DB = {
         // --- ATOMES & IONS ---
         H: {
             category: "Atomes & Ions",
-            label: "Hydrogène (H - Série de Balmer)",
+            label: "Hydrogène",
             lines: [
+                { lambda: 397.0, w: 1.6, intensity: 0.65, label: "Hε" },
                 { lambda: 410.2, w: 1.8, intensity: 0.75, label: "Hδ" },
                 { lambda: 434.0, w: 2.0, intensity: 0.85, label: "Hγ" },
                 { lambda: 486.1, w: 2.2, intensity: 0.95, label: "Hβ" },
@@ -315,8 +412,9 @@
         },
         He: {
             category: "Atomes & Ions",
-            label: "Hélium (He)",
+            label: "Hélium",
             lines: [
+                { lambda: 402.6, w: 1.6, intensity: 0.65, label: "" },
                 { lambda: 447.1, w: 1.8, intensity: 0.85, label: "" },
                 { lambda: 471.3, w: 1.6, intensity: 0.70, label: "" },
                 { lambda: 492.2, w: 1.6, intensity: 0.75, label: "" },
@@ -328,18 +426,19 @@
         },
         Na: {
             category: "Atomes & Ions",
-            label: "Sodium (Na - Doublet D)",
+            label: "Sodium",
             lines: [
-                { lambda: 589.0, w: 2.2, intensity: 1.0, label: "D2" },
-                { lambda: 589.6, w: 2.2, intensity: 1.0, label: "D1" }
+                { lambda: 589.0, w: 1.8, intensity: 1.00, label: "D2" },
+                { lambda: 589.6, w: 1.8, intensity: 0.95, label: "D1" }
             ]
         },
         Hg: {
             category: "Atomes & Ions",
-            label: "Mercure (Hg)",
+            label: "Mercure",
             lines: [
-                { lambda: 404.7, w: 1.8, intensity: 0.80, label: "" },
+                { lambda: 404.7, w: 1.8, intensity: 0.85, label: "" },
                 { lambda: 435.8, w: 2.2, intensity: 0.95, label: "" },
+                { lambda: 491.6, w: 1.5, intensity: 0.55, label: "" },
                 { lambda: 546.1, w: 2.5, intensity: 1.00, label: "" },
                 { lambda: 577.0, w: 1.8, intensity: 0.85, label: "" },
                 { lambda: 579.1, w: 1.8, intensity: 0.85, label: "" }
@@ -347,18 +446,30 @@
         },
         Ca: {
             category: "Atomes & Ions",
-            label: "Calcium (Ca / Ca+ H & K)",
+            label: "Calcium",
             lines: [
-                { lambda: 393.4, w: 2.8, intensity: 1.00, label: "K" },
-                { lambda: 396.8, w: 2.8, intensity: 1.00, label: "H" },
-                { lambda: 422.7, w: 2.2, intensity: 0.90, label: "" },
+                { lambda: 393.4, w: 2.6, intensity: 1.00, label: "K" },
+                { lambda: 396.8, w: 2.6, intensity: 1.00, label: "H" },
+                { lambda: 422.7, w: 2.2, intensity: 0.95, label: "" },
                 { lambda: 527.0, w: 1.8, intensity: 0.75, label: "" },
-                { lambda: 616.2, w: 1.8, intensity: 0.80, label: "" }
+                { lambda: 616.2, w: 1.8, intensity: 0.80, label: "" },
+                { lambda: 643.9, w: 2.0, intensity: 0.85, label: "" }
+            ]
+        },
+        Fe: {
+            category: "Atomes & Ions",
+            label: "Fer",
+            lines: [
+                { lambda: 404.6, w: 1.8, intensity: 0.85, label: "" },
+                { lambda: 430.8, w: 2.0, intensity: 0.90, label: "G" },
+                { lambda: 438.4, w: 2.0, intensity: 0.90, label: "e" },
+                { lambda: 495.8, w: 1.8, intensity: 0.80, label: "c" },
+                { lambda: 527.0, w: 2.0, intensity: 0.90, label: "E" }
             ]
         },
         Li: {
             category: "Atomes & Ions",
-            label: "Lithium (Li - Test de flamme)",
+            label: "Lithium",
             lines: [
                 { lambda: 460.3, w: 1.8, intensity: 0.65, label: "" },
                 { lambda: 610.4, w: 2.0, intensity: 0.85, label: "" },
@@ -367,38 +478,39 @@
         },
         K: {
             category: "Atomes & Ions",
-            label: "Potassium (K - Test de flamme)",
+            label: "Potassium",
             lines: [
-                { lambda: 404.4, w: 2.2, intensity: 0.90, label: "" },
-                { lambda: 404.7, w: 2.2, intensity: 0.85, label: "" },
+                { lambda: 404.4, w: 2.0, intensity: 0.90, label: "" },
+                { lambda: 404.7, w: 2.0, intensity: 0.85, label: "" },
                 { lambda: 766.5, w: 2.8, intensity: 1.00, label: "" },
-                { lambda: 769.9, w: 2.8, intensity: 1.00, label: "" }
+                { lambda: 769.9, w: 2.8, intensity: 0.95, label: "" }
             ]
         },
         Cu: {
             category: "Atomes & Ions",
-            label: "Cuivre (Cu - Flamme verte)",
+            label: "Cuivre",
             lines: [
-                { lambda: 510.6, w: 2.4, intensity: 0.95, label: "" },
+                { lambda: 510.6, w: 2.2, intensity: 0.90, label: "" },
                 { lambda: 515.3, w: 2.2, intensity: 0.85, label: "" },
                 { lambda: 521.8, w: 2.5, intensity: 1.00, label: "" },
-                { lambda: 578.2, w: 2.0, intensity: 0.75, label: "" }
+                { lambda: 570.0, w: 1.8, intensity: 0.70, label: "" },
+                { lambda: 578.2, w: 2.0, intensity: 0.80, label: "" }
             ]
         },
         Sr: {
             category: "Atomes & Ions",
-            label: "Strontium (Sr - Feux d'artifice)",
+            label: "Strontium",
             lines: [
-                { lambda: 407.8, w: 2.0, intensity: 0.85, label: "" },
-                { lambda: 460.7, w: 2.2, intensity: 0.90, label: "" },
-                { lambda: 606.0, w: 2.0, intensity: 0.80, label: "" },
-                { lambda: 638.7, w: 2.2, intensity: 0.85, label: "" },
-                { lambda: 687.8, w: 2.5, intensity: 1.00, label: "" }
+                { lambda: 407.8, w: 2.2, intensity: 0.90, label: "Sr II" },
+                { lambda: 421.6, w: 2.0, intensity: 0.85, label: "Sr II" },
+                { lambda: 460.7, w: 2.4, intensity: 1.00, label: "Sr I" },
+                { lambda: 606.0, w: 8.0, intensity: 0.85, label: "SrOH" },
+                { lambda: 671.0, w: 12.0, intensity: 0.90, label: "SrOH" }
             ]
         },
         Ne: {
             category: "Atomes & Ions",
-            label: "Néon (Ne - Tube luminescent)",
+            label: "Néon",
             lines: [
                 { lambda: 540.1, w: 1.6, intensity: 0.65, label: "" },
                 { lambda: 585.2, w: 2.4, intensity: 0.95, label: "" },
@@ -410,10 +522,10 @@
             ]
         },
 
-        // --- ÉTOILES & ASTROPHYSIQUE ---
+        // --- ÉTOILES ---
         Star_Soleil: {
-            category: "Étoiles (Astrophysique)",
-            label: "Soleil (Type G2 - 5800 K - Fraunhofer)",
+            category: "Étoiles",
+            label: "Soleil (5800 K)",
             temp: 5800,
             lines: [
                 { lambda: 393.4, w: 2.6, intensity: 0.95, label: "K" },
@@ -421,13 +533,14 @@
                 { lambda: 430.8, w: 2.2, intensity: 0.85, label: "G" },
                 { lambda: 486.1, w: 2.2, intensity: 0.90, label: "F" },
                 { lambda: 517.3, w: 2.0, intensity: 0.80, label: "b" },
+                { lambda: 527.0, w: 1.8, intensity: 0.75, label: "E" },
                 { lambda: 589.3, w: 2.4, intensity: 0.95, label: "D" },
                 { lambda: 656.3, w: 2.4, intensity: 0.90, label: "C" }
             ]
         },
         Star_Vega: {
-            category: "Étoiles (Astrophysique)",
-            label: "Véga / Sirius (Type A - 9500 K - Balmer fort)",
+            category: "Étoiles",
+            label: "Véga / Sirius (9500 K)",
             temp: 9500,
             lines: [
                 { lambda: 397.0, w: 3.5, intensity: 0.95, label: "Hε" },
@@ -438,10 +551,11 @@
             ]
         },
         Star_Rigel: {
-            category: "Étoiles (Astrophysique)",
-            label: "Rigel (Type B - 11500 K - H & He)",
-            temp: 11500,
+            category: "Étoiles",
+            label: "Rigel (12000 K)",
+            temp: 12000,
             lines: [
+                { lambda: 402.6, w: 2.0, intensity: 0.80, label: "He" },
                 { lambda: 410.2, w: 2.0, intensity: 0.80, label: "Hδ" },
                 { lambda: 434.0, w: 2.2, intensity: 0.85, label: "Hγ" },
                 { lambda: 447.1, w: 2.4, intensity: 0.95, label: "He" },
@@ -451,58 +565,60 @@
             ]
         },
         Star_Betelgeuse: {
-            category: "Étoiles (Astrophysique)",
-            label: "Bételgeuse (Type M - 3500 K - Bandes TiO)",
+            category: "Étoiles",
+            label: "Bételgeuse (3500 K)",
             temp: 3500,
             lines: [
                 { lambda: 422.7, w: 3.2, intensity: 0.95, label: "Ca" },
-                { lambda: 495.5, w: 14.0, intensity: 0.85, label: "TiO" },
+                { lambda: 476.1, w: 12.0, intensity: 0.80, label: "TiO" },
+                { lambda: 495.4, w: 14.0, intensity: 0.85, label: "TiO" },
                 { lambda: 516.7, w: 16.0, intensity: 0.90, label: "TiO" },
                 { lambda: 544.8, w: 15.0, intensity: 0.85, label: "TiO" },
                 { lambda: 589.3, w: 3.0, intensity: 0.95, label: "Na" },
                 { lambda: 615.9, w: 18.0, intensity: 0.90, label: "TiO" },
+                { lambda: 665.8, w: 16.0, intensity: 0.85, label: "TiO" },
                 { lambda: 705.4, w: 22.0, intensity: 0.92, label: "TiO" }
             ]
         },
 
-        // --- MOLÉCULES & SOLUTIONS COLORÉES ---
+        // --- MOLÉCULES & SOLUTIONS ---
         Atm: {
-            category: "Molécules & Solutions (Bandes)",
-            label: "Atmosphère terrestre (Bandes O₂ / H₂O)",
+            category: "Molécules & Solutions",
+            label: "Atmosphère terrestre (O₂ / H₂O)",
             lines: [
-                { lambda: 628.0, w: 8.0, intensity: 0.65, label: "O₂" },
-                { lambda: 688.0, w: 12.0, intensity: 0.85, label: "O₂(B)" },
+                { lambda: 627.7, w: 8.0, intensity: 0.65, label: "O₂" },
+                { lambda: 686.7, w: 12.0, intensity: 0.85, label: "O₂" },
                 { lambda: 720.0, w: 18.0, intensity: 0.75, label: "H₂O" },
-                { lambda: 760.5, w: 14.0, intensity: 0.95, label: "O₂(A)" }
+                { lambda: 759.4, w: 14.0, intensity: 0.95, label: "O₂" }
             ]
         },
         Chloro: {
-            category: "Molécules & Solutions (Bandes)",
-            label: "Chlorophylle a (Abs. Bleu & Rouge)",
+            category: "Molécules & Solutions",
+            label: "Chlorophylle a",
             lines: [
-                { lambda: 430.0, w: 48.0, intensity: 0.96, label: "Bande Soret" },
+                { lambda: 430.0, w: 48.0, intensity: 0.96, label: "Soret" },
                 { lambda: 662.0, w: 34.0, intensity: 0.92, label: "Bande Q" }
             ]
         },
         KMnO4: {
-            category: "Molécules & Solutions (Bandes)",
-            label: "Permanganate KMnO₄ (Abs. Vert ~530nm)",
+            category: "Molécules & Solutions",
+            label: "Permanganate de potassium (KMnO₄)",
             lines: [
-                { lambda: 528.0, w: 58.0, intensity: 0.96, label: "Abs. Vert" }
+                { lambda: 526.0, w: 56.0, intensity: 0.96, label: "" }
             ]
         },
         BleuPatente: {
-            category: "Molécules & Solutions (Bandes)",
-            label: "Bleu patenté E131 (Abs. Orange-Rouge ~638nm)",
+            category: "Molécules & Solutions",
+            label: "Bleu patenté V (E131)",
             lines: [
-                { lambda: 638.0, w: 52.0, intensity: 0.96, label: "Abs. Rouge" }
+                { lambda: 638.0, w: 52.0, intensity: 0.96, label: "" }
             ]
         },
         Tartrazine: {
-            category: "Molécules & Solutions (Bandes)",
-            label: "Tartrazine E102 / Solution Jaune (Abs. Bleu ~425nm)",
+            category: "Molécules & Solutions",
+            label: "Tartrazine (E102)",
             lines: [
-                { lambda: 425.0, w: 55.0, intensity: 0.95, label: "Abs. Bleu" }
+                { lambda: 426.0, w: 55.0, intensity: 0.95, label: "" }
             ]
         }
     };
@@ -510,6 +626,8 @@
     const DEFAULT_STATE = {
         specWidth: 600,
         bandHeight: 60,
+        viewMinNm: 370,
+        viewMaxNm: 780,
         showAxis: true,
         showUVIR: true,
         showLineValues: false,
@@ -564,6 +682,10 @@
     let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
     let draggedLine = null;
     let hoveredLine = null;
+    let isPanningSpectrum = false;
+    let panStartX = 0;
+    let panStartMinNm = 370;
+    let panStartMaxNm = 780;
 
     // --- Conversion Longueur d'onde (nm) -> Couleur RGB ---
     function wavelengthToRGB(wavelength) {
@@ -653,13 +775,21 @@
         }
     }
 
-    // --- Calcul du facteur d'absorption/émission des raies ---
-    function getLinesFactor(lambdaNm, lines) {
+    // --- Calcul du facteur d'absorption/émission des raies (avec résolution adaptative au zoom) ---
+    function getLinesFactor(lambdaNm, lines, spanNm = 410) {
         let total = 0;
+        // Quand on zoome fortement (ex: spanNm = 8 nm sur le doublet Na), on affine la largeur instrumentale des raies fines
+        // pour que le doublet 589,0 / 589,6 nm soit parfaitement séparé à l'écran.
+        const zoomResolutionScale = Math.min(1.0, Math.max(0.08, Math.pow(spanNm / 350, 0.75)));
+
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i];
             const dist = Math.abs(lambdaNm - line.lambda);
-            const halfW = (line.w || 2.0) / 2;
+            const rawW = line.w || 2.0;
+            // Les raies atomiques fines (< 5 nm) s'affinent au zoom optique, les bandes larges gardent leur largeur réelle
+            const effectiveW = rawW <= 5.0 ? rawW * zoomResolutionScale : rawW;
+            const halfW = effectiveW / 2;
+
             if (dist < halfW * 3.5) {
                 const sigma = halfW * 0.75;
                 const val = (line.intensity ?? 1.0) * Math.exp(-0.5 * Math.pow(dist / sigma, 2.4));
@@ -669,13 +799,45 @@
         return Math.min(1.0, total);
     }
 
+    // --- Synchronisation de la barre de Zoom UI ---
+    function syncZoomUI() {
+        const minInput = document.getElementById('zoomMinInput');
+        const maxInput = document.getElementById('zoomMaxInput');
+        const minSlider = document.getElementById('zoomMinSlider');
+        const maxSlider = document.getElementById('zoomMaxSlider');
+        const fill = document.getElementById('zoomRangeFill');
+
+        const vMin = Math.round(state.viewMinNm * 10) / 10;
+        const vMax = Math.round(state.viewMaxNm * 10) / 10;
+
+        if (document.activeElement !== minInput) minInput.value = vMin;
+        if (document.activeElement !== maxInput) maxInput.value = vMax;
+        minSlider.value = vMin;
+        maxSlider.value = vMax;
+
+        const pctMin = ((vMin - ABS_MIN_NM) / (ABS_MAX_NM - ABS_MIN_NM)) * 100;
+        const pctMax = ((vMax - ABS_MIN_NM) / (ABS_MAX_NM - ABS_MIN_NM)) * 100;
+        fill.style.left = `${Math.max(0, pctMin)}%`;
+        fill.style.width = `${Math.max(0, pctMax - pctMin)}%`;
+    }
+
+    function setZoomRange(newMin, newMax) {
+        const minSpan = 3; // Zoom max = fenêtre de 3 nm
+        let a = Math.max(ABS_MIN_NM, Math.min(ABS_MAX_NM - minSpan, newMin));
+        let b = Math.min(ABS_MAX_NM, Math.max(a + minSpan, newMax));
+        state.viewMinNm = a;
+        state.viewMaxNm = b;
+        syncZoomUI();
+        updateCanvasDimensions();
+        render();
+    }
+
     // --- Géométrie du Canvas ---
     function getLayoutGeometry() {
         const activeTracks = state.tracks.map((t, idx) => ({ ...t, index: idx })).filter(t => t.active);
         const count = activeTracks.length || 1;
         const isSmallScreen = window.innerWidth < 768;
 
-        // Mesure précise de la largeur maximale des titres à gauche (titre et température toujours sur 2 lignes distinctes)
         ctx.save();
         let maxTextW = 0;
         activeTracks.forEach((t, aIdx) => {
@@ -705,20 +867,19 @@
         const bottomMargin = state.showAxis ? 44 : 20;
         const trackGap = state.showLineValues ? 28 : 18;
 
-        const uvPx = state.showUVIR ? Math.round(state.specWidth * (UV_MARGIN_NM / (LAMBDA_MAX_VISIBLE - LAMBDA_MIN_VISIBLE))) : 0;
-        const irPx = state.showUVIR ? Math.round(state.specWidth * (IR_MARGIN_NM / (LAMBDA_MAX_VISIBLE - LAMBDA_MIN_VISIBLE))) : 0;
+        const minNm = state.viewMinNm;
+        const maxNm = state.viewMaxNm;
+        const spanNm = Math.max(1, maxNm - minNm);
 
-        const totalBarWidth = uvPx + state.specWidth + irPx;
+        // Largeur de la barre spectrale
+        const totalBarWidth = state.specWidth;
         const profileExtraH = state.showProfile ? 88 : 0;
 
         const totalW = leftMargin + totalBarWidth + rightMargin;
         const totalH = topMargin + count * state.bandHeight + (count - 1) * trackGap + profileExtraH + bottomMargin;
 
-        const minNm = state.showUVIR ? (LAMBDA_MIN_VISIBLE - UV_MARGIN_NM) : LAMBDA_MIN_VISIBLE;
-        const maxNm = state.showUVIR ? (LAMBDA_MAX_VISIBLE + IR_MARGIN_NM) : LAMBDA_MAX_VISIBLE;
-
-        const nmToX = (nm) => leftMargin + ((nm - minNm) / (maxNm - minNm)) * totalBarWidth;
-        const xToNm = (px) => minNm + ((px - leftMargin) / totalBarWidth) * (maxNm - minNm);
+        const nmToX = (nm) => leftMargin + ((nm - minNm) / spanNm) * totalBarWidth;
+        const xToNm = (px) => minNm + ((px - leftMargin) / totalBarWidth) * spanNm;
 
         return {
             activeTracks,
@@ -727,14 +888,13 @@
             topMargin,
             bottomMargin,
             trackGap,
-            uvPx,
-            irPx,
             totalBarWidth,
             profileExtraH,
             totalW,
             totalH,
             minNm,
             maxNm,
+            spanNm,
             nmToX,
             xToNm
         };
@@ -797,7 +957,7 @@
         const bgByte = state.printMode ? 248 : 8;
 
         for (let px = 0; px < offCanvas.width; px++) {
-            const lambda = geom.minNm + (px / offCanvas.width) * (geom.maxNm - geom.minNm);
+            const lambda = geom.minNm + (px / offCanvas.width) * geom.spanNm;
             const [baseR, baseG, baseB] = wavelengthToRGB(lambda);
             const isVisibleDomain = (lambda >= LAMBDA_MIN_VISIBLE && lambda <= LAMBDA_MAX_VISIBLE);
 
@@ -808,7 +968,7 @@
                 G = state.printMode ? 238 : 18;
                 B = state.printMode ? 238 : 18;
 
-                const lFactor = getLinesFactor(lambda, track.lines);
+                const lFactor = getLinesFactor(lambda, track.lines, geom.spanNm);
                 if (lFactor > 0.05) {
                     if (track.mode === 'emission_lines') {
                         const c = state.printMode ? Math.round(238 * (1 - lFactor * 0.7)) : Math.round(18 + lFactor * 140);
@@ -826,13 +986,13 @@
                     B = Math.round(bgByte * (1 - th) + baseB * th);
                 } 
                 else if (track.mode === 'emission_lines') {
-                    const em = getLinesFactor(lambda, track.lines);
+                    const em = getLinesFactor(lambda, track.lines, geom.spanNm);
                     R = Math.round(bgByte * (1 - em) + baseR * em);
                     G = Math.round(bgByte * (1 - em) + baseG * em);
                     B = Math.round(bgByte * (1 - em) + baseB * em);
                 } 
                 else if (track.mode === 'absorption_lines') {
-                    const abs = getLinesFactor(lambda, track.lines);
+                    const abs = getLinesFactor(lambda, track.lines, geom.spanNm);
                     const darkR = 10, darkG = 10, darkB = 10;
                     R = Math.round(baseR * (1 - abs) + darkR * abs);
                     G = Math.round(baseG * (1 - abs) + darkG * abs);
@@ -844,7 +1004,7 @@
                     const thG = bgByte * (1 - th) + baseG * th;
                     const thB = bgByte * (1 - th) + baseB * th;
 
-                    const abs = getLinesFactor(lambda, track.lines);
+                    const abs = getLinesFactor(lambda, track.lines, geom.spanNm);
                     const darkR = 8, darkG = 8, darkB = 8;
                     R = Math.round(thR * (1 - abs) + darkR * abs);
                     G = Math.round(thG * (1 - abs) + darkG * abs);
@@ -887,17 +1047,23 @@
                 renderSpectrumBand(track, bandX, bandY, bandW, bandH, geom);
             }
 
+            // Délimitations UV (< 400 nm) et IR (> 750 nm) si présentes dans la fenêtre de zoom
             if (state.showUVIR) {
-                const x400 = geom.nmToX(LAMBDA_MIN_VISIBLE);
-                const x750 = geom.nmToX(LAMBDA_MAX_VISIBLE);
                 const sepColor = isExportingEmptyGrid || state.printMode ? "#7f8c8d" : "rgba(255,255,255,0.65)";
 
-                drawLine(x400, bandY, x400, bandY + bandH, sepColor, 1.5, [4, 4]);
-                drawLine(x750, bandY, x750, bandY + bandH, sepColor, 1.5, [4, 4]);
-
-                if (activeIdx === 0) {
-                    drawText("UV", (bandX + x400) / 2, bandY - 10, "#7f8c8d", "bold 11px Arial", "center", "middle");
-                    drawText("IR", (x750 + bandX + bandW) / 2, bandY - 10, "#7f8c8d", "bold 11px Arial", "center", "middle");
+                if (geom.minNm < LAMBDA_MIN_VISIBLE && geom.maxNm > LAMBDA_MIN_VISIBLE) {
+                    const x400 = geom.nmToX(LAMBDA_MIN_VISIBLE);
+                    drawLine(x400, bandY, x400, bandY + bandH, sepColor, 1.5, [4, 4]);
+                    if (activeIdx === 0 && (x400 - bandX) > 22) {
+                        drawText("UV", (bandX + x400) / 2, bandY - 10, "#7f8c8d", "bold 11px Arial", "center", "middle");
+                    }
+                }
+                if (geom.minNm < LAMBDA_MAX_VISIBLE && geom.maxNm > LAMBDA_MAX_VISIBLE) {
+                    const x750 = geom.nmToX(LAMBDA_MAX_VISIBLE);
+                    drawLine(x750, bandY, x750, bandY + bandH, sepColor, 1.5, [4, 4]);
+                    if (activeIdx === 0 && (bandX + bandW - x750) > 22) {
+                        drawText("IR", (x750 + bandX + bandW) / 2, bandY - 10, "#7f8c8d", "bold 11px Arial", "center", "middle");
+                    }
                 }
             }
 
@@ -930,12 +1096,13 @@
                         ctx.strokeStyle = "#f1c40f";
                         ctx.lineWidth = 2;
                         ctx.setLineDash([2, 2]);
-                        const boxW = Math.max(6, (line.w / 350) * state.specWidth);
+                        const boxW = Math.max(6, (line.w / geom.spanNm) * state.specWidth * 0.5);
                         ctx.strokeRect(lx - boxW / 2, bandY - 2, boxW, bandH + 4);
                         ctx.restore();
                         drawText(`${line.lambda.toFixed(1)} nm`, lx, bandY - 9, "#d35400", "bold 11px Arial", "center", "middle");
                     } else if (state.showLineValues) {
-                        const txt = line.label ? `${Math.round(line.lambda)} (${line.label})` : `${Math.round(line.lambda)}`;
+                        const formattedLambda = geom.spanNm < 40 ? line.lambda.toFixed(1) : Math.round(line.lambda);
+                        const txt = line.label ? `${formattedLambda} (${line.label})` : `${formattedLambda}`;
                         drawText(txt, lx, bandY - 8, "#2c3e50", "10px Arial", "center", "middle");
                     }
                 });
@@ -960,18 +1127,18 @@
                     ctx.lineWidth = 1.8;
 
                     for (let px = 0; px <= bandW; px += 2) {
-                        const lambda = geom.minNm + (px / bandW) * (geom.maxNm - geom.minNm);
+                        const lambda = geom.minNm + (px / bandW) * geom.spanNm;
                         let intensity = 0;
 
                         if (track.mode === 'thermal') {
                             intensity = getThermalMultiplier(lambda, track.temp, state.exaggerated, state.sharpness);
                         } else if (track.mode === 'emission_lines') {
-                            intensity = getLinesFactor(lambda, track.lines);
+                            intensity = getLinesFactor(lambda, track.lines, geom.spanNm);
                         } else if (track.mode === 'absorption_lines') {
-                            intensity = (lambda >= 400 && lambda <= 750 ? 1.0 : 0.2) * (1 - getLinesFactor(lambda, track.lines));
+                            intensity = (lambda >= 400 && lambda <= 750 ? 1.0 : 0.2) * (1 - getLinesFactor(lambda, track.lines, geom.spanNm));
                         } else if (track.mode === 'thermal_abs') {
                             const th = getThermalMultiplier(lambda, track.temp, state.exaggerated, state.sharpness);
-                            const abs = getLinesFactor(lambda, track.lines);
+                            const abs = getLinesFactor(lambda, track.lines, geom.spanNm);
                             intensity = th * (1 - abs);
                         }
 
@@ -988,7 +1155,7 @@
             currentY += bandH + geom.trackGap;
         });
 
-        // Axe gradué en bas
+        // Axe gradué en bas (pas adaptatif selon le niveau de zoom)
         if (state.showAxis) {
             const axisY = currentY - geom.trackGap + 8;
             const axisStartX = geom.leftMargin;
@@ -1004,15 +1171,27 @@
 
             drawText("λ (nm)", axisEndX + 19, axisY, "#2c3e50", "bold italic 12px Arial", "left", "middle");
 
-            const firstTick = Math.ceil(geom.minNm / 10) * 10;
-            for (let nm = firstTick; nm <= geom.maxNm; nm += 10) {
-                const tx = geom.nmToX(nm);
-                const isMajor = (nm % 50 === 0);
+            // Calcul automatique du pas de graduation selon la largeur en nm affichée
+            let majorStep = 50, minorStep = 10;
+            if (geom.spanNm <= 8) { majorStep = 1; minorStep = 0.2; }
+            else if (geom.spanNm <= 20) { majorStep = 2; minorStep = 0.5; }
+            else if (geom.spanNm <= 50) { majorStep = 5; minorStep = 1; }
+            else if (geom.spanNm <= 120) { majorStep = 10; minorStep = 2; }
+            else if (geom.spanNm <= 240) { majorStep = 20; minorStep = 5; }
+
+            const firstTick = Math.ceil(geom.minNm / minorStep) * minorStep;
+            for (let nm = firstTick; nm <= geom.maxNm + 1e-6; nm += minorStep) {
+                const roundedNm = Math.round(nm * 100) / 100;
+                const tx = geom.nmToX(roundedNm);
+                if (tx < axisStartX - 1 || tx > axisEndX + 1) continue;
+
+                const isMajor = Math.abs(roundedNm / majorStep - Math.round(roundedNm / majorStep)) < 1e-4;
                 const tickH = isMajor ? 7 : 4;
 
                 drawLine(tx, axisY, tx, axisY + tickH, "#2c3e50", isMajor ? 1.5 : 1);
                 if (isMajor) {
-                    drawText(nm.toString(), tx, axisY + 17, "#2c3e50", "bold 11px Arial", "center", "middle");
+                    const labelStr = majorStep < 1 ? roundedNm.toFixed(1) : Math.round(roundedNm).toString();
+                    drawText(labelStr, tx, axisY + 17, "#2c3e50", "bold 11px Arial", "center", "middle");
                 }
             }
         }
@@ -1046,7 +1225,6 @@
         const tabsContainer = document.getElementById('tracksTabsContainer');
         const editorContainer = document.getElementById('activeTrackContainer');
 
-        // 1. Barre d'onglets Spectre 1 à Spectre 4
         tabsContainer.innerHTML = '';
         state.tracks.forEach((t, idx) => {
             const n = idx + 1;
@@ -1061,7 +1239,6 @@
             tabsContainer.appendChild(tabEl);
         });
 
-        // 2. Contenu de l'onglet actif
         const idx = selectedTabIndex;
         const track = state.tracks[idx];
         const isThermal = (track.mode === 'thermal' || track.mode === 'thermal_abs');
@@ -1074,9 +1251,9 @@
                 itemsHtml += `
                     <div class="line-row">
                         <span class="has-text-grey is-size-7" style="width: 18px; flex-shrink: 0;">${lIdx + 1}.</span>
-                        <input class="input is-small line-lambda" data-track="${idx}" data-line="${lIdx}" id="lambda-input-${idx}-${lIdx}" type="number" step="0.5" min="370" max="780" value="${line.lambda}" style="width: 64px; text-align: center; flex-shrink: 0;" title="Longueur d'onde λ (nm)">
+                        <input class="input is-small line-lambda" data-track="${idx}" data-line="${lIdx}" id="lambda-input-${idx}-${lIdx}" type="number" step="0.1" min="350" max="800" value="${line.lambda}" style="width: 64px; text-align: center; flex-shrink: 0;" title="Longueur d'onde λ (nm)">
                         <span class="is-size-7 has-text-grey" style="margin-left: 3px; margin-right: 10px; flex-shrink: 0;">nm</span>
-                        <input class="input is-small line-width" data-track="${idx}" data-line="${lIdx}" type="number" step="0.5" min="0.5" max="120" value="${line.w}" style="width: 52px; text-align: center; flex-shrink: 0;" title="Largeur Δλ (nm)">
+                        <input class="input is-small line-width" data-track="${idx}" data-line="${lIdx}" type="number" step="0.5" min="0.2" max="120" value="${line.w}" style="width: 52px; text-align: center; flex-shrink: 0;" title="Largeur Δλ (nm)">
                         <span class="is-size-7 has-text-grey" style="margin-left: 3px; margin-right: 10px; flex-shrink: 0;" title="Largeur de la raie ou bande">Δλ</span>
                         <input class="input is-small line-label" data-track="${idx}" data-line="${lIdx}" type="text" placeholder="Label" value="${line.label || ''}" style="flex: 1; min-width: 45px; margin-right: 8px;" title="Étiquette optionnelle (ex: Hα, D)">
                         <button class="button is-small is-danger is-light px-2 remove-line" data-track="${idx}" data-line="${lIdx}" style="flex-shrink: 0; margin-left: auto;" title="Supprimer">
@@ -1153,10 +1330,10 @@
                     <label class="label" style="width: 52px;">Nature</label>
                     <div class="select is-small is-fullwidth" style="flex: 1;">
                         <select class="track-mode" data-track="${idx}">
-                            <option value="thermal" ${track.mode === 'thermal' ? 'selected' : ''}>Émission thermique (Continu seul)</option>
-                            <option value="emission_lines" ${track.mode === 'emission_lines' ? 'selected' : ''}>Émission de raies / bandes (Gaz, lampes)</option>
-                            <option value="absorption_lines" ${track.mode === 'absorption_lines' ? 'selected' : ''}>Absorption sur fond blanc continu</option>
-                            <option value="thermal_abs" ${track.mode === 'thermal_abs' ? 'selected' : ''}>Thermique + Absorption (Étoile / Gaz froid)</option>
+                            <option value="thermal" ${track.mode === 'thermal' ? 'selected' : ''}>Émission thermique</option>
+                            <option value="emission_lines" ${track.mode === 'emission_lines' ? 'selected' : ''}>Émission de raies / bandes</option>
+                            <option value="absorption_lines" ${track.mode === 'absorption_lines' ? 'selected' : ''}>Absorption sur fond continu</option>
+                            <option value="thermal_abs" ${track.mode === 'thermal_abs' ? 'selected' : ''}>Thermique + Absorption</option>
                         </select>
                     </div>
                 </div>
@@ -1165,6 +1342,35 @@
             </div>
         `;
     }
+
+    // --- Événements de la barre de Zoom ---
+    document.getElementById('zoomMinSlider').addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value);
+        setZoomRange(Math.min(val, state.viewMaxNm - 3), state.viewMaxNm);
+    });
+
+    document.getElementById('zoomMaxSlider').addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value);
+        setZoomRange(state.viewMinNm, Math.max(val, state.viewMinNm + 3));
+    });
+
+    document.getElementById('zoomMinInput').addEventListener('change', (e) => {
+        const val = parseFloat(e.target.value);
+        if (!isNaN(val)) setZoomRange(val, state.viewMaxNm);
+    });
+
+    document.getElementById('zoomMaxInput').addEventListener('change', (e) => {
+        const val = parseFloat(e.target.value);
+        if (!isNaN(val)) setZoomRange(state.viewMinNm, val);
+    });
+
+    document.querySelectorAll('.zoom-preset').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const zMin = parseFloat(btn.dataset.min);
+            const zMax = parseFloat(btn.dataset.max);
+            setZoomRange(zMin, zMax);
+        });
+    });
 
     // --- Gestion des clics sur la barre d'onglets ---
     document.getElementById('tracksTabsContainer').addEventListener('click', (e) => {
@@ -1278,8 +1484,9 @@
         } else if (addBtn) {
             const tIdx = parseInt(addBtn.dataset.track);
             const w = parseFloat(addBtn.dataset.width) || 2.0;
+            const centerNm = Math.round(((state.viewMinNm + state.viewMaxNm) / 2) * 2) / 2;
             state.tracks[tIdx].lines.push({
-                lambda: 550.0,
+                lambda: centerNm,
                 w: w,
                 intensity: 1.0,
                 label: w > 10 ? "Bande" : ""
@@ -1335,8 +1542,14 @@
 
     document.getElementById('toggleUVIR').addEventListener('change', (e) => {
         state.showUVIR = e.target.checked;
-        updateCanvasDimensions();
-        render();
+        if (state.showUVIR && state.viewMinNm === 400 && state.viewMaxNm === 750) {
+            setZoomRange(370, 780);
+        } else if (!state.showUVIR && state.viewMinNm === 370 && state.viewMaxNm === 780) {
+            setZoomRange(400, 750);
+        } else {
+            updateCanvasDimensions();
+            render();
+        }
     });
 
     document.getElementById('toggleLineValues').addEventListener('change', (e) => {
@@ -1374,7 +1587,7 @@
         render();
     });
 
-    // --- Interaction Souris (Glisser-déposer des raies sur le canvas) ---
+    // --- Interaction Souris (Glisser-déposer des raies, Panoramique et Molette de Zoom) ---
     function getHoveredLine(mouseX, mouseY) {
         const geom = getLayoutGeometry();
         let currentY = geom.topMargin;
@@ -1387,8 +1600,9 @@
             if (track.mode !== 'thermal' && mouseY >= bandY - 5 && mouseY <= bandY + bandH + 5) {
                 for (let lIdx = 0; lIdx < track.lines.length; lIdx++) {
                     const line = track.lines[lIdx];
+                    if (line.lambda < geom.minNm || line.lambda > geom.maxNm) continue;
                     const lx = geom.nmToX(line.lambda);
-                    const tolPx = Math.max(6, ((line.w || 2) / 350) * state.specWidth / 2 + 4);
+                    const tolPx = Math.max(6, ((line.w || 2) / geom.spanNm) * state.specWidth * 0.25 + 4);
                     if (Math.abs(mouseX - lx) <= tolPx) {
                         return { trackIndex: track.index, lineIndex: lIdx };
                     }
@@ -1403,6 +1617,35 @@
         return null;
     }
 
+    // Zoom à la molette directement centré sur le pointeur de la souris
+    canvas.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = (e.clientX - rect.left) * (logicalWidth / rect.width);
+        const geom = getLayoutGeometry();
+
+        if (mouseX < geom.leftMargin || mouseX > geom.leftMargin + geom.totalBarWidth) return;
+
+        const cursorNm = geom.xToNm(mouseX);
+        const zoomFactor = e.deltaY < 0 ? 0.82 : 1.22;
+        const newSpan = Math.max(3, Math.min(ABS_MAX_NM - ABS_MIN_NM, geom.spanNm * zoomFactor));
+
+        const ratio = (cursorNm - geom.minNm) / geom.spanNm;
+        let newMin = cursorNm - ratio * newSpan;
+        let newMax = newMin + newSpan;
+
+        if (newMin < ABS_MIN_NM) {
+            newMin = ABS_MIN_NM;
+            newMax = newMin + newSpan;
+        }
+        if (newMax > ABS_MAX_NM) {
+            newMax = ABS_MAX_NM;
+            newMin = newMax - newSpan;
+        }
+
+        setZoomRange(newMin, newMax);
+    }, { passive: false });
+
     canvas.addEventListener('mousedown', (e) => {
         const rect = canvas.getBoundingClientRect();
         const mouseX = (e.clientX - rect.left) * (logicalWidth / rect.width);
@@ -1414,6 +1657,16 @@
             if (selectedTabIndex !== draggedLine.trackIndex) {
                 selectedTabIndex = draggedLine.trackIndex;
                 buildTracksUI();
+            }
+        } else {
+            // Si on clique sur le spectre en dehors d'une raie, on active le panoramique horizontal (pan)
+            const geom = getLayoutGeometry();
+            if (mouseX >= geom.leftMargin && mouseX <= geom.leftMargin + geom.totalBarWidth) {
+                isPanningSpectrum = true;
+                panStartX = mouseX;
+                panStartMinNm = state.viewMinNm;
+                panStartMaxNm = state.viewMaxNm;
+                canvas.style.cursor = 'grabbing';
             }
         }
     });
@@ -1427,7 +1680,8 @@
             canvas.style.cursor = 'grabbing';
             const geom = getLayoutGeometry();
             const rawNm = geom.xToNm(mouseX);
-            const clampedNm = Math.max(geom.minNm, Math.min(geom.maxNm, Math.round(rawNm * 2) / 2));
+            const stepRound = geom.spanNm < 30 ? 10 : 2; // Précision 0,1 nm quand on est zoomé
+            const clampedNm = Math.max(geom.minNm, Math.min(geom.maxNm, Math.round(rawNm * stepRound) / stepRound));
 
             state.tracks[draggedLine.trackIndex].lines[draggedLine.lineIndex].lambda = clampedNm;
 
@@ -1435,23 +1689,43 @@
             if (inputEl) inputEl.value = clampedNm;
 
             render();
+        } else if (isPanningSpectrum) {
+            const geom = getLayoutGeometry();
+            const dxPx = mouseX - panStartX;
+            const span = panStartMaxNm - panStartMinNm;
+            const dNm = -(dxPx / geom.totalBarWidth) * span;
+
+            let newMin = panStartMinNm + dNm;
+            let newMax = panStartMaxNm + dNm;
+
+            if (newMin < ABS_MIN_NM) {
+                newMin = ABS_MIN_NM;
+                newMax = newMin + span;
+            }
+            if (newMax > ABS_MAX_NM) {
+                newMax = ABS_MAX_NM;
+                newMin = newMax - span;
+            }
+            setZoomRange(newMin, newMax);
         } else {
             const newHover = getHoveredLine(mouseX, mouseY);
             const changed = JSON.stringify(newHover) !== JSON.stringify(hoveredLine);
             hoveredLine = newHover;
-            canvas.style.cursor = hoveredLine ? 'ew-resize' : 'default';
+            canvas.style.cursor = hoveredLine ? 'ew-resize' : 'grab';
             if (changed) render();
         }
     });
 
     canvas.addEventListener('mouseup', () => {
         draggedLine = null;
-        canvas.style.cursor = hoveredLine ? 'ew-resize' : 'default';
+        isPanningSpectrum = false;
+        canvas.style.cursor = hoveredLine ? 'ew-resize' : 'grab';
         render();
     });
 
     canvas.addEventListener('mouseleave', () => {
         draggedLine = null;
+        isPanningSpectrum = false;
         hoveredLine = null;
         canvas.style.cursor = 'default';
         render();
@@ -1529,12 +1803,14 @@
         document.getElementById('sharpnessRow').style.opacity = '1';
         document.getElementById('sharpnessRow').style.pointerEvents = 'auto';
 
+        syncZoomUI();
         buildTracksUI();
         updateCanvasDimensions();
         render();
     }
 
     // Initialisation au chargement
+    syncZoomUI();
     buildTracksUI();
     updateCanvasDimensions();
     render();
