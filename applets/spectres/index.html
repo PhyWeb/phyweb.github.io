@@ -1853,14 +1853,24 @@
             const bandH = state.bandHeight;
 
             if (track.mode !== 'thermal' && mouseY >= bandY - 5 && mouseY <= bandY + bandH + 5) {
+                let bestMatch = null;
+                let minDistance = Infinity;
+
                 for (let lIdx = 0; lIdx < track.lines.length; lIdx++) {
                     const line = track.lines[lIdx];
                     if (line.lambda < geom.minNm || line.lambda > geom.maxNm) continue;
                     const lx = geom.nmToX(line.lambda);
                     const tolPx = Math.max(6, ((line.w || 2) / geom.spanNm) * geom.totalBarWidth * 0.25 + 4);
-                    if (Math.abs(mouseX - lx) <= tolPx) {
-                        return { trackIndex: track.index, lineIndex: lIdx };
+                    const dist = Math.abs(mouseX - lx);
+
+                    if (dist <= tolPx && dist < minDistance) {
+                        minDistance = dist;
+                        bestMatch = { trackIndex: track.index, lineIndex: lIdx };
                     }
+                }
+
+                if (bestMatch) {
+                    return bestMatch;
                 }
             }
 

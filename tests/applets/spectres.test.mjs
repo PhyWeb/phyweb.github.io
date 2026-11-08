@@ -50,7 +50,7 @@ describe('Générateur de Spectres (/applets/spectres)', () => {
   // Extraction du code JS du script principal (dernier bloc <script> non-module)
   const scripts = [...htmlContent.matchAll(/<script(?![^>]*type=['"]module['"])[^>]*>([\s\S]*?)<\/script>/gi)];
   assert.ok(scripts.length >= 2, 'Les scripts inline de spectres doivent exister');
-  const jsCode = scripts[scripts.length - 1][1] + '; globalThis.__PRESETS_DB = PRESETS_DB; globalThis.__state = state;';
+  const jsCode = scripts[scripts.length - 1][1] + '; globalThis.__PRESETS_DB = PRESETS_DB; globalThis.__state = state; globalThis.__getHoveredLine = getHoveredLine; globalThis.__getLayoutGeometry = getLayoutGeometry;';
 
   const elementsById = new Map();
   const createMockElement = (id = '') => {
@@ -523,6 +523,63 @@ describe('Générateur de Spectres (/applets/spectres)', () => {
       minInput.dispatchEvent({ type: 'change', target: minInput });
 
       assert.equal(minInput.value, 350, 'Une saisie invalide doit être réinitialisée à la valeur actuelle');
+    });
+  });
+
+  describe('Sélection de la raie la plus proche au survol (B4)', () => {
+    it('doit attraper la raie la plus proche et non la première raie dans la tolérance (doublet du sodium Na)', () => {
+      const state = sandbox.__state;
+      const getHoveredLine = sandbox.__getHoveredLine;
+      const getLayoutGeometry = sandbox.__getLayoutGeometry;
+
+      // Configuration de la piste 0 avec le preset Na (D2 à 589.0 nm, D1 à 589.6 nm)
+      state.tracks[0].active = true;
+      state.tracks[0].mode = 'emission_lines';
+      state.tracks[0].lines = [
+        { lambda: 589.0, w: 1.8, intensity: 1.00, label: 'D2' },
+        { lambda: 589.6, w: 1.8, intensity: 0.95, label: 'D1' }
+      ];
+      // Zoom global standard (380 - 780 nm)
+      state.viewMinNm = 380;
+      state.viewMaxNm = 780;
+
+      const geom = getLayoutGeometry();
+      const xD2 = geom.nmToX(589.0);
+      const xD1 = geom.nmToX(589.6);
+      const testY = geom.topMargin + 10; // Dans la bande de la piste 0
+
+      // 1. Survol exactement sur D2 (589.0 nm) -> doit sélectionner D2 (index 0)
+      const hoverD2 = getHoveredLine(xD2, testY);
+      assert.ok(hoverD2, 'Doit détecter une raie en xD2');
+      assert.equal(hoverD2.lineIndex, 0, 'Doit sélectionner D2 (index 0) lorsque le curseur est sur 589.0 nm');
+
+      // 2. Survol exactement sur D1 (589.6 nm) -> doit sélectionner D1 (index 1) et non masquer D1 par D2
+      const hoverD1 = getHoveredLine(xD1, testY);
+      assert.ok(hoverD1, 'Doit détecter une raie en xD1');
+      assert.equal(hoverD1.lineIndex, 1, 'Doit sélectionner D1 (index 1) lorsque le curseur est sur 589.6 nm');
+
+      // 3. Survol légèrement à droite de D1 (589.8 nm) -> doit sélectionner D1 (index 1)
+      const xD1Right = geom.nmToX(589.8);
+      const hoverD1Right = getHoveredLine(xD1Right, testY);
+      assert.ok(hoverD1Right, 'Doit détecter une raie en xD1Right');
+      assert.equal(hoverD1Right.lineIndex, 1, 'Doit sélectionner D1 (index 1) lorsque le curseur est plus proche de D1');
+
+      // 4. Survol légèrement à gauche de D2 (588.8 nm) -> doit sélectionner D2 (index 0)
+      const xD2Left = geom.nmToX(588.8);
+      const hoverD2Left = getHoveredLine(xD2Left, testY);
+      assert.ok(hoverD2Left, 'Doit détecter une raie en xD2Left');
+      assert.equal(hoverD2Left.lineIndex, 0, 'Doit sélectionner D2 (index 0) lorsque le curseur est plus proche de D2');
+    });
+
+    it('retourne null si le pointeur est en dehors de la bande ou de la tolérance', () => {
+      const getHoveredLine = sandbox.__getHoveredLine;
+      const getLayoutGeometry = sandbox.__getLayoutGeometry;
+      const geom = getLayoutGeometry();
+
+      // En dehors en Y (au-dessus du spectre)
+      assert.equal(getHoveredLine(geom.nmToX(589.0), 0), null);
+      // En dehors en X (loin de toute raie, ex: 450 nm)
+      assert.equal(getHoveredLine(geom.nmToX(450.0), geom.topMargin + 10), null);
     });
   });
 });
