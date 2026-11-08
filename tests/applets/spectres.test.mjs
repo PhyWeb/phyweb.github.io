@@ -52,41 +52,57 @@ describe('Générateur de Spectres (/applets/spectres)', () => {
   assert.ok(scripts.length >= 2, 'Les scripts inline de spectres doivent exister');
   const jsCode = scripts[scripts.length - 1][1] + '; globalThis.__PRESETS_DB = PRESETS_DB; globalThis.__state = state;';
 
-  const createMockElement = (id = '') => ({
-    id,
-    value: '500',
-    checked: true,
-    style: {},
-    classList: { add: () => {}, remove: () => {}, contains: () => false },
-    addEventListener: () => {},
-    dataset: {},
-    getContext: () => ({
-      setTransform: () => {},
-      fillRect: () => {},
-      scale: () => {},
-      beginPath: () => {},
-      moveTo: () => {},
-      lineTo: () => {},
-      stroke: () => {},
-      fill: () => {},
-      strokeRect: () => {},
-      strokeText: () => {},
-      fillText: () => {},
-      measureText: () => ({ width: 50 }),
-      save: () => {},
-      restore: () => {},
-      setLineDash: () => {},
-      drawImage: () => {},
-      createImageData: (w, h) => ({ data: new Uint8ClampedArray(w * h * 4) }),
-      putImageData: () => {}
-    }),
-    getBoundingClientRect: () => ({ left: 0, top: 0, width: 800, height: 260 }),
-    appendChild: () => {},
-    innerHTML: '',
-    setPointerCapture: () => {},
-    releasePointerCapture: () => {},
-    hasPointerCapture: () => false
-  });
+  const elementsById = new Map();
+  const createMockElement = (id = '') => {
+    if (id && elementsById.has(id)) return elementsById.get(id);
+    const listeners = {};
+    const el = {
+      id,
+      value: '500',
+      checked: true,
+      style: {},
+      classList: { add: () => {}, remove: () => {}, contains: () => false },
+      addEventListener: (type, fn) => {
+        if (!listeners[type]) listeners[type] = [];
+        listeners[type].push(fn);
+      },
+      dispatchEvent: (event) => {
+        if (listeners[event.type]) {
+          listeners[event.type].forEach(fn => fn(event));
+        }
+      },
+      _listeners: listeners,
+      dataset: {},
+      getContext: () => ({
+        setTransform: () => {},
+        fillRect: () => {},
+        scale: () => {},
+        beginPath: () => {},
+        moveTo: () => {},
+        lineTo: () => {},
+        stroke: () => {},
+        fill: () => {},
+        strokeRect: () => {},
+        strokeText: () => {},
+        fillText: () => {},
+        measureText: () => ({ width: 50 }),
+        save: () => {},
+        restore: () => {},
+        setLineDash: () => {},
+        drawImage: () => {},
+        createImageData: (w, h) => ({ data: new Uint8ClampedArray(w * h * 4) }),
+        putImageData: () => {}
+      }),
+      getBoundingClientRect: () => ({ left: 0, top: 0, width: 800, height: 260 }),
+      appendChild: () => {},
+      innerHTML: '',
+      setPointerCapture: () => {},
+      releasePointerCapture: () => {},
+      hasPointerCapture: () => false
+    };
+    if (id) elementsById.set(id, el);
+    return el;
+  };
 
   // Exécution du script dans un bac à sable avec mocks DOM
   const sandbox = {
@@ -101,11 +117,15 @@ describe('Générateur de Spectres (/applets/spectres)', () => {
     window: {
       devicePixelRatio: 1,
       innerWidth: 1200,
-      addEventListener: () => {}
+      addEventListener: () => {},
+      requestAnimationFrame: (cb) => { cb(); return 1; },
+      cancelAnimationFrame: () => {}
     },
     navigator: {
       userAgent: 'Mozilla/5.0'
     },
+    setTimeout,
+    clearTimeout,
     Math,
     parseFloat,
     parseInt,
@@ -353,6 +373,120 @@ describe('Générateur de Spectres (/applets/spectres)', () => {
     it('doit éviter les reflows forcés (getBoundingClientRect) pendant le glissement des curseurs', () => {
       assert.match(htmlContent, /isDraggingZoomSlider\s*=\s*true/);
       assert.match(htmlContent, /if\s*\(\s*isDraggingZoomSlider\s*\)\s*return;/);
+    });
+  });
+
+  describe('Gestion de la molette et zoom au pavé tactile (wheel)', () => {
+    it('le code source ne doit pas appeler preventDefault avant de vérifier que le curseur est dans la bande', () => {
+      const wheelCodeMatch = htmlContent.match(/canvas\.addEventListener\(['"]wheel['"],\s*\(e\)\s*=>\s*\{([\s\S]*?)\}\s*,\s*\{\s*passive:\s*false\s*\}\);/);
+      assert.ok(wheelCodeMatch, 'Le listener wheel doit être présent');
+      const body = wheelCodeMatch[1];
+      const preventDefaultIndex = body.indexOf('e.preventDefault()');
+      const boundCheckIndex = body.search(/mouseX\s*<\s*geom\.leftMargin/);
+      assert.ok(preventDefaultIndex > -1, 'e.preventDefault() doit être appelé');
+      assert.ok(boundCheckIndex > -1, 'Le test curseur dans la bande doit exister');
+      assert.ok(
+        preventDefaultIndex > boundCheckIndex,
+        'e.preventDefault() doit être appelé APRÈS le test du curseur dans la bande pour ne pas bloquer le scroll'
+      );
+    });
+
+    it('le zoom doit être proportionnel à deltaY (évite le sur-zoom sur pavé tactile)', () => {
+      assert.match(htmlContent, /Math\.pow\(\s*1\.22\s*,\s*clampedDy\s*\/\s*100\s*\)/);
+      assert.match(htmlContent, /e\.deltaMode\s*===\s*1/);
+    });
+
+    it('ne doit pas bloquer le défilement (pas de preventDefault) quand le curseur est hors de la bande spectrale', () => {
+      const canvasEl = elementsById.get('spectrumCanvas');
+      assert.ok(canvasEl && canvasEl._listeners.wheel?.length > 0, 'Le canvas doit avoir un listener wheel');
+      const wheelHandler = canvasEl._listeners.wheel[0];
+
+      // Curseur dans la marge gauche (titres des spectres)
+      let prevented = false;
+      wheelHandler({
+        clientX: 5,
+        clientY: 50,
+        deltaY: 100,
+        deltaMode: 0,
+        preventDefault: () => { prevented = true; }
+      });
+      assert.equal(prevented, false, 'Ne doit pas appeler preventDefault dans la marge gauche');
+
+      // Curseur dans la marge droite
+      prevented = false;
+      wheelHandler({
+        clientX: 790,
+        clientY: 50,
+        deltaY: 100,
+        deltaMode: 0,
+        preventDefault: () => { prevented = true; }
+      });
+      assert.equal(prevented, false, 'Ne doit pas appeler preventDefault dans la marge droite');
+
+      // deltaY nul
+      prevented = false;
+      wheelHandler({
+        clientX: 400,
+        clientY: 50,
+        deltaY: 0,
+        deltaMode: 0,
+        preventDefault: () => { prevented = true; }
+      });
+      assert.equal(prevented, false, 'Ne doit pas appeler preventDefault si deltaY est 0');
+    });
+
+    it('doit zoomer progressivement sur pavé tactile sans sauts brutaux de 22%', () => {
+      const canvasEl = elementsById.get('spectrumCanvas');
+      const wheelHandler = canvasEl._listeners.wheel[0];
+      const state = sandbox.__state;
+
+      // Fixer une plage de zoom initiale connue
+      state.viewMinNm = 400;
+      state.viewMaxNm = 700;
+      const initialSpan = state.viewMaxNm - state.viewMinNm; // 300 nm
+
+      let prevented = false;
+      // Événement typique de pavé tactile : petit deltaY (+2)
+      wheelHandler({
+        clientX: 400,
+        clientY: 50,
+        deltaY: 2,
+        deltaMode: 0,
+        preventDefault: () => { prevented = true; }
+      });
+
+      assert.equal(prevented, true, 'Doit appeler preventDefault dans la bande spectrale');
+      const newSpan = state.viewMaxNm - state.viewMinNm;
+      const ratioChange = (newSpan - initialSpan) / initialSpan;
+
+      // Pour deltaY = 2, le zoom doit être très faible (< 1%) et non 22%
+      assert.ok(
+        ratioChange > 0 && ratioChange < 0.01,
+        `Le zoom pour deltaY=2 doit être progressif (< 1%), obtenu ${(ratioChange * 100).toFixed(2)}%`
+      );
+    });
+
+    it('doit appliquer un facteur de zoom d\'environ 1.22 pour un cran classique de molette (deltaY = 100)', () => {
+      const canvasEl = elementsById.get('spectrumCanvas');
+      const wheelHandler = canvasEl._listeners.wheel[0];
+      const state = sandbox.__state;
+
+      // Plage initiale
+      state.viewMinNm = 500;
+      state.viewMaxNm = 600;
+      const initialSpan = state.viewMaxNm - state.viewMinNm; // 100 nm
+
+      wheelHandler({
+        clientX: 400,
+        clientY: 50,
+        deltaY: 100,
+        deltaMode: 0,
+        preventDefault: () => {}
+      });
+
+      const newSpan = state.viewMaxNm - state.viewMinNm;
+      const factor = newSpan / initialSpan;
+      assert.ok(Math.abs(factor - 1.22) < 0.01, `Pour deltaY=100, le facteur doit être proche de 1.22 (obtenu ${factor})`);
     });
   });
 });

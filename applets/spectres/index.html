@@ -1865,15 +1865,28 @@
     }
 
     canvas.addEventListener('wheel', (e) => {
-        e.preventDefault();
         const rect = canvas.getBoundingClientRect();
+        if (!rect.width || !rect.height) return;
         const mouseX = (e.clientX - rect.left) * (logicalWidth / rect.width);
         const geom = getLayoutGeometry();
 
+        // Ne pas bloquer le défilement de la page si le curseur est en dehors de la bande spectrale
         if (mouseX < geom.leftMargin || mouseX > geom.leftMargin + geom.totalBarWidth) return;
+        if (e.deltaY === 0) return;
+
+        e.preventDefault();
+
+        let dy = e.deltaY;
+        if (e.deltaMode === 1) {
+            dy *= 33;
+        } else if (e.deltaMode === 2) {
+            dy *= 800;
+        }
 
         const cursorNm = geom.xToNm(mouseX);
-        const zoomFactor = e.deltaY < 0 ? 0.82 : 1.22;
+        // Facteur de zoom continu dépendant de deltaY pour compatibilité molette crantée et pavé tactile (touchpad)
+        const clampedDy = Math.max(-300, Math.min(300, dy));
+        const zoomFactor = Math.pow(1.22, clampedDy / 100);
         const newSpan = Math.max(3, Math.min(ABS_MAX_NM - ABS_MIN_NM, geom.spanNm * zoomFactor));
 
         const ratio = (cursorNm - geom.minNm) / geom.spanNm;
