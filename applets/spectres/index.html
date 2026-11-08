@@ -267,12 +267,9 @@
                         <span class="is-size-7 has-text-grey">nm</span>
 
                         <!-- Boutons de zoom rapides -->
-                        <div class="buttons are-small mb-0 ml-auto" style="gap: 3px;">
-                            <button class="button is-light is-info py-0 px-2 zoom-preset" data-min="370" data-max="780" style="height: 22px; font-size: 0.7rem;" title="Vue complète avec UV et IR">Tout</button>
+                        <div class="buttons are-small mb-0 ml-auto" style="gap: 4px;">
+                            <button class="button is-light is-info py-0 px-2 zoom-preset" data-min="370" data-max="780" style="height: 22px; font-size: 0.7rem;" title="Vue complète avec UV et IR (370 - 780 nm)">Tout</button>
                             <button class="button is-light py-0 px-2 zoom-preset" data-min="400" data-max="750" style="height: 22px; font-size: 0.7rem;" title="Domaine visible uniquement (400 - 750 nm)">Visible</button>
-                            <button class="button is-light is-warning py-0 px-2 zoom-preset" data-min="586" data-max="593" style="height: 22px; font-size: 0.7rem;" title="Zoom sur le doublet du Sodium (589,0 et 589,6 nm)">Doublet Na</button>
-                            <button class="button is-light is-success py-0 px-2 zoom-preset" data-min="573" data-max="583" style="height: 22px; font-size: 0.7rem;" title="Zoom sur le doublet jaune du Mercure (577,0 et 579,1 nm)">Doublet Hg</button>
-                            <button class="button is-light is-link py-0 px-2 zoom-preset" data-min="388" data-max="402" style="height: 22px; font-size: 0.7rem;" title="Zoom sur les raies H et K du Calcium (393,4 et 396,8 nm)">Ca H/K</button>
                         </div>
                     </div>
                 </div>
@@ -810,15 +807,12 @@
     // --- Calcul du facteur d'absorption/émission des raies (avec résolution adaptative au zoom) ---
     function getLinesFactor(lambdaNm, lines, spanNm = 410) {
         let total = 0;
-        // Quand on zoome fortement (ex: spanNm = 8 nm sur le doublet Na), on affine la largeur instrumentale des raies fines
-        // pour que le doublet 589,0 / 589,6 nm soit parfaitement séparé à l'écran.
         const zoomResolutionScale = Math.min(1.0, Math.max(0.08, Math.pow(spanNm / 350, 0.75)));
 
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i];
             const dist = Math.abs(lambdaNm - line.lambda);
             const rawW = line.w || 2.0;
-            // Les raies atomiques fines (< 5 nm) s'affinent au zoom optique, les bandes larges gardent leur largeur réelle
             const effectiveW = rawW <= 5.0 ? rawW * zoomResolutionScale : rawW;
             const halfW = effectiveW / 2;
 
@@ -911,7 +905,6 @@
         const maxNm = state.viewMaxNm;
         const spanNm = Math.max(1, maxNm - minNm);
 
-        // Largeur de la barre spectrale
         const totalBarWidth = state.specWidth;
         const profileExtraH = state.showProfile ? 88 : 0;
 
@@ -1036,7 +1029,6 @@
                 else if (track.mode === 'emission_lines') {
                     const em = getLinesFactor(lambda, track.lines, geom.spanNm);
                     if (state.printMode) {
-                        // En mode photocopie : assombrir les raies claires (jaune Na, vert) pour une lisibilité parfaite sur papier
                         const darkR = Math.round(baseR * 0.35);
                         const darkG = Math.round(baseG * 0.35);
                         const darkB = Math.round(baseB * 0.35);
@@ -1180,7 +1172,6 @@
                 drawText("Profil I(λ)", bandX - 10, profY + profH / 2, "#7f8c8d", "italic 12px Arial", "right", "middle");
 
                 if (!isExportingEmptyGrid) {
-                    // Ligne de base (zéro) discrète et repères 0 et 1
                     drawLine(bandX, profY + profH - 5, bandX + bandW, profY + profH - 5, "#eceff1", 1);
                     drawText("1", bandX - 3, profY + 7, "#95a5a6", "9px Arial", "right", "middle", false);
                     drawText("0", bandX - 3, profY + profH - 5, "#95a5a6", "9px Arial", "right", "middle", false);
@@ -1234,7 +1225,6 @@
 
             drawText("λ (nm)", axisEndX + 19, axisY, "#2c3e50", "bold italic 12px Arial", "left", "middle");
 
-            // Calcul automatique du pas de graduation selon la largeur en nm affichée
             let majorStep = 50, minorStep = 10;
             if (geom.spanNm <= 4) { majorStep = 0.5; minorStep = 0.1; }
             else if (geom.spanNm <= 8) { majorStep = 1; minorStep = 0.2; }
@@ -1546,10 +1536,8 @@
                 state.tracks[tIdx].presetKey = key;
                 state.tracks[tIdx].lines = JSON.parse(JSON.stringify(item.lines));
 
-                // Mettre à jour automatiquement le nom du spectre
                 state.tracks[tIdx].name = item.label.split(' (')[0];
 
-                // Adapter intelligemment le mode du spectre selon la catégorie
                 if (item.category === 'Molécules & Solutions') {
                     state.tracks[tIdx].mode = 'absorption_lines';
                 } else if (item.category === 'Étoiles') {
@@ -1694,7 +1682,7 @@
         render();
     });
 
-    // --- Interaction Souris (Glisser-déposer des raies, Panoramique et Molette de Zoom) ---
+    // --- Interaction Pointeur (Glisser-déposer des raies, Panoramique et Molette de Zoom) ---
     function getHoveredLine(mouseX, mouseY) {
         const geom = getLayoutGeometry();
         let currentY = geom.topMargin;
@@ -1724,7 +1712,6 @@
         return null;
     }
 
-    // Zoom à la molette directement centré sur le pointeur de la souris
     canvas.addEventListener('wheel', (e) => {
         e.preventDefault();
         const rect = canvas.getBoundingClientRect();
@@ -1754,6 +1741,7 @@
     }, { passive: false });
 
     canvas.addEventListener('pointerdown', (e) => {
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
         if (canvas.setPointerCapture) canvas.setPointerCapture(e.pointerId);
         const rect = canvas.getBoundingClientRect();
         const mouseX = (e.clientX - rect.left) * (logicalWidth / rect.width);
@@ -1767,7 +1755,6 @@
                 buildTracksUI();
             }
         } else {
-            // Si on clique sur le spectre en dehors d'une raie, on active le panoramique horizontal (pan)
             const geom = getLayoutGeometry();
             if (mouseX >= geom.leftMargin && mouseX <= geom.leftMargin + geom.totalBarWidth) {
                 isPanningSpectrum = true;
@@ -1788,7 +1775,7 @@
             canvas.style.cursor = 'grabbing';
             const geom = getLayoutGeometry();
             const rawNm = geom.xToNm(mouseX);
-            const stepRound = geom.spanNm < 30 ? 10 : 2; // Précision 0,1 nm quand on est zoomé
+            const stepRound = geom.spanNm < 30 ? 10 : 2;
             const clampedNm = Math.max(geom.minNm, Math.min(geom.maxNm, Math.round(rawNm * stepRound) / stepRound));
 
             state.tracks[draggedLine.trackIndex].lines[draggedLine.lineIndex].lambda = clampedNm;
@@ -1829,7 +1816,6 @@
             canvas.releasePointerCapture(e.pointerId);
         }
         if (draggedLine) {
-            // Maintenir les raies triées par longueur d'onde croissante
             state.tracks[draggedLine.trackIndex].lines.sort((a, b) => a.lambda - b.lambda);
             buildTracksUI();
         }
@@ -1841,6 +1827,13 @@
 
     canvas.addEventListener('pointerup', endPointerAction);
     canvas.addEventListener('pointercancel', endPointerAction);
+    canvas.addEventListener('pointerleave', () => {
+        if (!draggedLine && !isPanningSpectrum && hoveredLine) {
+            hoveredLine = null;
+            canvas.style.cursor = 'default';
+            render();
+        }
+    });
 
     // --- Fonctions d'Export HD et Réinitialisation ---
     function withHDExport(exportAction) {
@@ -1857,27 +1850,22 @@
     }
 
     function copyToClipboard(successMsg = "Spectre HD copié dans le presse-papier !") {
-        if (!navigator.clipboard || !navigator.clipboard.write) {
-            if (window.showToast) {
-                window.showToast("Presse-papier inaccessible dans ce navigateur. Utilisez le bouton 'PNG'.", "is-warning");
-            } else {
-                alert("Presse-papier inaccessible dans ce navigateur. Utilisez le bouton 'PNG'.");
-            }
+        if (!navigator.clipboard || !navigator.clipboard.write || typeof ClipboardItem === "undefined") {
+            showToast("Presse-papier inaccessible dans ce contexte. Utilisez le bouton 'PNG'.", "is-warning");
             return;
         }
 
+        let dataUrl;
         withHDExport(() => {
-            canvas.toBlob(blob => {
-                if (!blob) {
-                    showToast("Erreur lors de la génération de l'image.", "is-danger");
-                    return;
-                }
-                const item = new ClipboardItem({ "image/png": blob });
-                navigator.clipboard.write([item])
-                    .then(() => showToast(successMsg, "is-success"))
-                    .catch(() => showToast("Erreur lors de la copie.", "is-danger"));
-            }, "image/png");
+            dataUrl = canvas.toDataURL("image/png");
         });
+
+        const blobPromise = fetch(dataUrl).then(res => res.blob());
+        const item = new ClipboardItem({ "image/png": blobPromise });
+
+        navigator.clipboard.write([item])
+            .then(() => showToast(successMsg, "is-success"))
+            .catch(() => showToast("Erreur lors de la copie. Utilisez le bouton 'PNG'.", "is-danger"));
     }
 
     function copyEmptyGrid() {
