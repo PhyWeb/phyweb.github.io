@@ -26,6 +26,11 @@
             min-height: 100vh;
             background-color: #f5f7fa; 
             user-select: none;
+            overflow-y: auto !important;
+            overflow-x: hidden;
+        }
+        input, select, textarea {
+            user-select: text;
         }
         .canvas-container {
             background-color: var(--canvas-bg);
@@ -38,6 +43,7 @@
         }
         canvas {
             display: block;
+            touch-action: none;
         }
 
         /* Barre de Zoom sous le spectre */
@@ -248,16 +254,16 @@
                             <i class="fas fa-magnifying-glass"></i> Zoom &lambda; :
                         </span>
 
-                        <input class="input is-small" type="number" id="zoomMinInput" min="350" max="795" step="1" value="370" style="width: 62px; text-align: center; height: 24px;" title="Longueur d'onde minimale (nm)">
+                        <input class="input is-small" type="number" id="zoomMinInput" min="350" max="795" step="any" value="370" style="width: 62px; text-align: center; height: 24px;" title="Longueur d'onde minimale (nm)">
                         
                         <div class="dual-range-wrapper">
                             <div class="dual-range-track"></div>
                             <div class="dual-range-fill" id="zoomRangeFill"></div>
-                            <input type="range" id="zoomMinSlider" min="350" max="800" step="0.5" value="370">
-                            <input type="range" id="zoomMaxSlider" min="350" max="800" step="0.5" value="780">
+                            <input type="range" id="zoomMinSlider" min="350" max="800" step="0.5" value="370" aria-label="Longueur d'onde minimale">
+                            <input type="range" id="zoomMaxSlider" min="350" max="800" step="0.5" value="780" aria-label="Longueur d'onde maximale">
                         </div>
 
-                        <input class="input is-small" type="number" id="zoomMaxInput" min="355" max="800" step="1" value="780" style="width: 62px; text-align: center; height: 24px;" title="Longueur d'onde maximale (nm)">
+                        <input class="input is-small" type="number" id="zoomMaxInput" min="355" max="800" step="any" value="780" style="width: 62px; text-align: center; height: 24px;" title="Longueur d'onde maximale (nm)">
                         <span class="is-size-7 has-text-grey">nm</span>
 
                         <!-- Boutons de zoom rapides -->
@@ -377,6 +383,8 @@
 </script>
 
 <script>
+    window.showToast = window.showToast || ((msg) => console.log(msg));
+
     const canvas = document.getElementById('spectrumCanvas');
     const ctx = canvas.getContext('2d');
 
@@ -385,6 +393,9 @@
     let logicalWidth = 800;
     let logicalHeight = 260;
     let isExportingEmptyGrid = false;
+    let isExportingHD = false;
+    let cachedBandCanvas = null;
+    let cachedBandCtx = null;
     let pendingTexts = [];
 
     // Onglet actuellement affiché dans le panneau de droite (0 à 3)
@@ -519,6 +530,27 @@
                 { lambda: 633.4, w: 2.2, intensity: 0.90, label: "" },
                 { lambda: 640.2, w: 2.6, intensity: 1.00, label: "" },
                 { lambda: 650.7, w: 2.0, intensity: 0.85, label: "" }
+            ]
+        },
+        Ar: {
+            category: "Atomes & Ions",
+            label: "Argon",
+            lines: [
+                { lambda: 696.5, w: 2.2, intensity: 0.85, label: "" },
+                { lambda: 706.7, w: 2.0, intensity: 0.80, label: "" },
+                { lambda: 738.4, w: 2.2, intensity: 0.85, label: "" },
+                { lambda: 750.4, w: 2.6, intensity: 1.00, label: "" },
+                { lambda: 763.5, w: 2.8, intensity: 0.95, label: "" }
+            ]
+        },
+        Cd: {
+            category: "Atomes & Ions",
+            label: "Cadmium",
+            lines: [
+                { lambda: 467.8, w: 2.0, intensity: 0.85, label: "" },
+                { lambda: 479.9, w: 2.2, intensity: 0.90, label: "" },
+                { lambda: 508.6, w: 2.6, intensity: 1.00, label: "" },
+                { lambda: 643.8, w: 2.6, intensity: 0.95, label: "" }
             ]
         },
 
@@ -819,6 +851,14 @@
         const pctMax = ((vMax - ABS_MIN_NM) / (ABS_MAX_NM - ABS_MIN_NM)) * 100;
         fill.style.left = `${Math.max(0, pctMin)}%`;
         fill.style.width = `${Math.max(0, pctMax - pctMin)}%`;
+
+        if (vMin > (ABS_MIN_NM + ABS_MAX_NM) / 2) {
+            minSlider.style.zIndex = '4';
+            maxSlider.style.zIndex = '3';
+        } else {
+            minSlider.style.zIndex = '3';
+            maxSlider.style.zIndex = '4';
+        }
     }
 
     function setZoomRange(newMin, newMax) {
@@ -901,14 +941,17 @@
     }
 
     function updateCanvasDimensions() {
+        if (!isExportingHD) {
+            currentScale = window.devicePixelRatio || 1;
+        }
         const geom = getLayoutGeometry();
         logicalWidth = geom.totalW;
         logicalHeight = geom.totalH;
 
         canvas.style.width = logicalWidth + "px";
         canvas.style.height = logicalHeight + "px";
-        canvas.width = logicalWidth * currentScale;
-        canvas.height = logicalHeight * currentScale;
+        canvas.width = Math.round(logicalWidth * currentScale);
+        canvas.height = Math.round(logicalHeight * currentScale);
     }
 
     // --- Utilitaires de dessin ---
@@ -947,17 +990,22 @@
 
     // --- Rendu d'une piste spectrale pixel par pixel ---
     function renderSpectrumBand(track, xStart, yStart, width, height, geom) {
-        const offCanvas = document.createElement('canvas');
-        offCanvas.width = Math.max(1, Math.round(width));
-        offCanvas.height = 1;
-        const offCtx = offCanvas.getContext('2d');
-        const imgData = offCtx.createImageData(offCanvas.width, 1);
+        const renderW = Math.max(1, Math.round(width * currentScale));
+        if (!cachedBandCanvas) {
+            cachedBandCanvas = document.createElement('canvas');
+            cachedBandCtx = cachedBandCanvas.getContext('2d');
+        }
+        if (cachedBandCanvas.width !== renderW) {
+            cachedBandCanvas.width = renderW;
+            cachedBandCanvas.height = 1;
+        }
+        const imgData = cachedBandCtx.createImageData(renderW, 1);
         const data = imgData.data;
 
         const bgByte = state.printMode ? 248 : 8;
 
-        for (let px = 0; px < offCanvas.width; px++) {
-            const lambda = geom.minNm + (px / offCanvas.width) * geom.spanNm;
+        for (let px = 0; px < renderW; px++) {
+            const lambda = geom.minNm + (px / renderW) * geom.spanNm;
             const [baseR, baseG, baseB] = wavelengthToRGB(lambda);
             const isVisibleDomain = (lambda >= LAMBDA_MIN_VISIBLE && lambda <= LAMBDA_MAX_VISIBLE);
 
@@ -971,7 +1019,7 @@
                 const lFactor = getLinesFactor(lambda, track.lines, geom.spanNm);
                 if (lFactor > 0.05) {
                     if (track.mode === 'emission_lines') {
-                        const c = state.printMode ? Math.round(238 * (1 - lFactor * 0.7)) : Math.round(18 + lFactor * 140);
+                        const c = state.printMode ? Math.round(238 * (1 - lFactor * 0.75)) : Math.round(18 + lFactor * 140);
                         R = c; G = Math.round(c * 0.7); B = c;
                     } else if (track.mode === 'absorption_lines' || track.mode === 'thermal_abs') {
                         const c = Math.round(R * (1 - lFactor * 0.85));
@@ -987,9 +1035,19 @@
                 } 
                 else if (track.mode === 'emission_lines') {
                     const em = getLinesFactor(lambda, track.lines, geom.spanNm);
-                    R = Math.round(bgByte * (1 - em) + baseR * em);
-                    G = Math.round(bgByte * (1 - em) + baseG * em);
-                    B = Math.round(bgByte * (1 - em) + baseB * em);
+                    if (state.printMode) {
+                        // En mode photocopie : assombrir les raies claires (jaune Na, vert) pour une lisibilité parfaite sur papier
+                        const darkR = Math.round(baseR * 0.35);
+                        const darkG = Math.round(baseG * 0.35);
+                        const darkB = Math.round(baseB * 0.35);
+                        R = Math.round(bgByte * (1 - em) + darkR * em);
+                        G = Math.round(bgByte * (1 - em) + darkG * em);
+                        B = Math.round(bgByte * (1 - em) + darkB * em);
+                    } else {
+                        R = Math.round(bgByte * (1 - em) + baseR * em);
+                        G = Math.round(bgByte * (1 - em) + baseG * em);
+                        B = Math.round(bgByte * (1 - em) + baseB * em);
+                    }
                 } 
                 else if (track.mode === 'absorption_lines') {
                     const abs = getLinesFactor(lambda, track.lines, geom.spanNm);
@@ -1019,9 +1077,9 @@
             data[idx + 3] = 255;
         }
 
-        offCtx.putImageData(imgData, 0, 0);
-        ctx.imageSmoothingEnabled = true;
-        ctx.drawImage(offCanvas, xStart, yStart, width, height);
+        cachedBandCtx.putImageData(imgData, 0, 0);
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(cachedBandCanvas, xStart, yStart, width, height);
     }
 
     // --- Rendu principal ---
@@ -1122,11 +1180,16 @@
                 drawText("Profil I(λ)", bandX - 10, profY + profH / 2, "#7f8c8d", "italic 12px Arial", "right", "middle");
 
                 if (!isExportingEmptyGrid) {
+                    // Ligne de base (zéro) discrète et repères 0 et 1
+                    drawLine(bandX, profY + profH - 5, bandX + bandW, profY + profH - 5, "#eceff1", 1);
+                    drawText("1", bandX - 3, profY + 7, "#95a5a6", "9px Arial", "right", "middle", false);
+                    drawText("0", bandX - 3, profY + profH - 5, "#95a5a6", "9px Arial", "right", "middle", false);
+
                     ctx.beginPath();
                     ctx.strokeStyle = "#e74c3c";
                     ctx.lineWidth = 1.8;
 
-                    for (let px = 0; px <= bandW; px += 2) {
+                    for (let px = 0; px <= bandW; px++) {
                         const lambda = geom.minNm + (px / bandW) * geom.spanNm;
                         let intensity = 0;
 
@@ -1155,7 +1218,7 @@
             currentY += bandH + geom.trackGap;
         });
 
-        // Axe gradué en bas (pas adaptatif selon le niveau de zoom)
+        // Axe gradué en bas (adaptatif selon le niveau de zoom)
         if (state.showAxis) {
             const axisY = currentY - geom.trackGap + 8;
             const axisStartX = geom.leftMargin;
@@ -1173,7 +1236,8 @@
 
             // Calcul automatique du pas de graduation selon la largeur en nm affichée
             let majorStep = 50, minorStep = 10;
-            if (geom.spanNm <= 8) { majorStep = 1; minorStep = 0.2; }
+            if (geom.spanNm <= 4) { majorStep = 0.5; minorStep = 0.1; }
+            else if (geom.spanNm <= 8) { majorStep = 1; minorStep = 0.2; }
             else if (geom.spanNm <= 20) { majorStep = 2; minorStep = 0.5; }
             else if (geom.spanNm <= 50) { majorStep = 5; minorStep = 1; }
             else if (geom.spanNm <= 120) { majorStep = 10; minorStep = 2; }
@@ -1344,12 +1408,38 @@
     }
 
     // --- Événements de la barre de Zoom ---
-    document.getElementById('zoomMinSlider').addEventListener('input', (e) => {
+    const dualRangeWrap = document.querySelector('.dual-range-wrapper');
+    const minSliderEl = document.getElementById('zoomMinSlider');
+    const maxSliderEl = document.getElementById('zoomMaxSlider');
+
+    if (dualRangeWrap) {
+        dualRangeWrap.addEventListener('pointermove', (e) => {
+            const rect = dualRangeWrap.getBoundingClientRect();
+            if (rect.width <= 0) return;
+            const pct = (e.clientX - rect.left) / rect.width;
+            const valUnderMouse = ABS_MIN_NM + pct * (ABS_MAX_NM - ABS_MIN_NM);
+            const distMin = Math.abs(valUnderMouse - state.viewMinNm);
+            const distMax = Math.abs(valUnderMouse - state.viewMaxNm);
+            if (distMin < distMax) {
+                minSliderEl.style.zIndex = '5';
+                maxSliderEl.style.zIndex = '4';
+            } else {
+                minSliderEl.style.zIndex = '4';
+                maxSliderEl.style.zIndex = '5';
+            }
+        });
+    }
+
+    minSliderEl.addEventListener('input', (e) => {
+        minSliderEl.style.zIndex = '5';
+        maxSliderEl.style.zIndex = '4';
         const val = parseFloat(e.target.value);
         setZoomRange(Math.min(val, state.viewMaxNm - 3), state.viewMaxNm);
     });
 
-    document.getElementById('zoomMaxSlider').addEventListener('input', (e) => {
+    maxSliderEl.addEventListener('input', (e) => {
+        minSliderEl.style.zIndex = '4';
+        maxSliderEl.style.zIndex = '5';
         const val = parseFloat(e.target.value);
         setZoomRange(state.viewMinNm, Math.max(val, state.viewMinNm + 3));
     });
@@ -1452,10 +1542,27 @@
         } else if (t.classList.contains('preset-select')) {
             const key = t.value;
             if (key && PRESETS_DB[key]) {
+                const item = PRESETS_DB[key];
                 state.tracks[tIdx].presetKey = key;
-                state.tracks[tIdx].lines = JSON.parse(JSON.stringify(PRESETS_DB[key].lines));
-                if (PRESETS_DB[key].temp) {
-                    state.tracks[tIdx].temp = PRESETS_DB[key].temp;
+                state.tracks[tIdx].lines = JSON.parse(JSON.stringify(item.lines));
+
+                // Mettre à jour automatiquement le nom du spectre
+                state.tracks[tIdx].name = item.label.split(' (')[0];
+
+                // Adapter intelligemment le mode du spectre selon la catégorie
+                if (item.category === 'Molécules & Solutions') {
+                    state.tracks[tIdx].mode = 'absorption_lines';
+                } else if (item.category === 'Étoiles') {
+                    state.tracks[tIdx].mode = 'thermal_abs';
+                    if (item.temp) state.tracks[tIdx].temp = item.temp;
+                } else if (item.category === 'Atomes & Ions') {
+                    if (state.tracks[tIdx].mode === 'thermal') {
+                        state.tracks[tIdx].mode = 'emission_lines';
+                    }
+                }
+
+                if (item.temp) {
+                    state.tracks[tIdx].temp = item.temp;
                 }
                 buildTracksUI();
                 updateCanvasDimensions();
@@ -1646,7 +1753,8 @@
         setZoomRange(newMin, newMax);
     }, { passive: false });
 
-    canvas.addEventListener('mousedown', (e) => {
+    canvas.addEventListener('pointerdown', (e) => {
+        if (canvas.setPointerCapture) canvas.setPointerCapture(e.pointerId);
         const rect = canvas.getBoundingClientRect();
         const mouseX = (e.clientX - rect.left) * (logicalWidth / rect.width);
         const mouseY = (e.clientY - rect.top) * (logicalHeight / rect.height);
@@ -1671,7 +1779,7 @@
         }
     });
 
-    canvas.addEventListener('mousemove', (e) => {
+    canvas.addEventListener('pointermove', (e) => {
         const rect = canvas.getBoundingClientRect();
         const mouseX = (e.clientX - rect.left) * (logicalWidth / rect.width);
         const mouseY = (e.clientY - rect.top) * (logicalHeight / rect.height);
@@ -1716,47 +1824,60 @@
         }
     });
 
-    canvas.addEventListener('mouseup', () => {
+    const endPointerAction = (e) => {
+        if (e && canvas.hasPointerCapture && canvas.hasPointerCapture(e.pointerId)) {
+            canvas.releasePointerCapture(e.pointerId);
+        }
+        if (draggedLine) {
+            // Maintenir les raies triées par longueur d'onde croissante
+            state.tracks[draggedLine.trackIndex].lines.sort((a, b) => a.lambda - b.lambda);
+            buildTracksUI();
+        }
         draggedLine = null;
         isPanningSpectrum = false;
         canvas.style.cursor = hoveredLine ? 'ew-resize' : 'grab';
         render();
-    });
+    };
 
-    canvas.addEventListener('mouseleave', () => {
-        draggedLine = null;
-        isPanningSpectrum = false;
-        hoveredLine = null;
-        canvas.style.cursor = 'default';
-        render();
-    });
+    canvas.addEventListener('pointerup', endPointerAction);
+    canvas.addEventListener('pointercancel', endPointerAction);
 
     // --- Fonctions d'Export HD et Réinitialisation ---
     function withHDExport(exportAction) {
+        isExportingHD = true;
         const savedScale = currentScale;
         currentScale = EXPORT_SCALE;
         updateCanvasDimensions();
         render();
         exportAction();
         currentScale = savedScale;
+        isExportingHD = false;
         updateCanvasDimensions();
         render();
     }
 
     function copyToClipboard(successMsg = "Spectre HD copié dans le presse-papier !") {
-        let dataUrl;
-        withHDExport(() => {
-            dataUrl = canvas.toDataURL("image/png");
-        });
+        if (!navigator.clipboard || !navigator.clipboard.write) {
+            if (window.showToast) {
+                window.showToast("Presse-papier inaccessible dans ce navigateur. Utilisez le bouton 'PNG'.", "is-warning");
+            } else {
+                alert("Presse-papier inaccessible dans ce navigateur. Utilisez le bouton 'PNG'.");
+            }
+            return;
+        }
 
-        fetch(dataUrl)
-            .then(res => res.blob())
-            .then(blob => {
+        withHDExport(() => {
+            canvas.toBlob(blob => {
+                if (!blob) {
+                    showToast("Erreur lors de la génération de l'image.", "is-danger");
+                    return;
+                }
                 const item = new ClipboardItem({ "image/png": blob });
-                return navigator.clipboard.write([item]);
-            })
-            .then(() => showToast(successMsg, "is-success"))
-            .catch(() => showToast("Erreur lors de la copie.", "is-danger"));
+                navigator.clipboard.write([item])
+                    .then(() => showToast(successMsg, "is-success"))
+                    .catch(() => showToast("Erreur lors de la copie.", "is-danger"));
+            }, "image/png");
+        });
     }
 
     function copyEmptyGrid() {
