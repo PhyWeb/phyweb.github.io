@@ -489,4 +489,40 @@ describe('Générateur de Spectres (/applets/spectres)', () => {
       assert.ok(Math.abs(factor - 1.22) < 0.01, `Pour deltaY=100, le facteur doit être proche de 1.22 (obtenu ${factor})`);
     });
   });
+
+  describe('Synchronisation des champs de zoom min/max (B3)', () => {
+    it('doit réécrire la valeur corrigée (350) dans zoomMinInput même si le champ a le focus (Entrée)', () => {
+      const minInput = elementsById.get('zoomMinInput');
+      const state = sandbox.__state;
+      sandbox.document.activeElement = minInput;
+
+      minInput.value = '100';
+      minInput.dispatchEvent({ type: 'change', target: minInput });
+
+      assert.equal(state.viewMinNm, 350);
+      assert.equal(minInput.value, 350, 'Le champ minInput doit afficher 350 et non 100 après validation');
+    });
+
+    it('doit réécrire la valeur corrigée (800) dans zoomMaxInput même si le champ a le focus', () => {
+      const maxInput = elementsById.get('zoomMaxInput');
+      const state = sandbox.__state;
+      sandbox.document.activeElement = maxInput;
+
+      maxInput.value = '999';
+      maxInput.dispatchEvent({ type: 'change', target: maxInput });
+
+      assert.equal(state.viewMaxNm, 800);
+      assert.equal(maxInput.value, 800, 'Le champ maxInput doit afficher 800 et non 999 après validation');
+    });
+
+    it('doit restaurer la valeur courante dans l\'input si la saisie est invalide (NaN)', () => {
+      const minInput = elementsById.get('zoomMinInput');
+      sandbox.document.activeElement = minInput;
+
+      minInput.value = 'texte_invalide';
+      minInput.dispatchEvent({ type: 'change', target: minInput });
+
+      assert.equal(minInput.value, 350, 'Une saisie invalide doit être réinitialisée à la valeur actuelle');
+    });
+  });
 });

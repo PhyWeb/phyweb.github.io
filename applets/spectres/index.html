@@ -899,8 +899,8 @@
         const vMin = Math.round(state.viewMinNm * 10) / 10;
         const vMax = Math.round(state.viewMaxNm * 10) / 10;
 
-        if (document.activeElement !== minInput) minInput.value = vMin;
-        if (document.activeElement !== maxInput) maxInput.value = vMax;
+        minInput.value = vMin;
+        maxInput.value = vMax;
         minSlider.value = vMin;
         maxSlider.value = vMax;
 
@@ -1551,12 +1551,20 @@
 
     document.getElementById('zoomMinInput').addEventListener('change', (e) => {
         const val = parseFloat(e.target.value);
-        if (!isNaN(val)) setZoomRange(val, state.viewMaxNm, true);
+        if (!isNaN(val)) {
+            setZoomRange(val, state.viewMaxNm, true);
+        } else {
+            syncZoomUI();
+        }
     });
 
     document.getElementById('zoomMaxInput').addEventListener('change', (e) => {
         const val = parseFloat(e.target.value);
-        if (!isNaN(val)) setZoomRange(state.viewMinNm, val, true);
+        if (!isNaN(val)) {
+            setZoomRange(state.viewMinNm, val, true);
+        } else {
+            syncZoomUI();
+        }
     });
 
     document.querySelectorAll('.zoom-preset').forEach(btn => {
