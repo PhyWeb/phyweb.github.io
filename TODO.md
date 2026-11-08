@@ -43,6 +43,7 @@
 # Mendeleiev
 # Optique
 # Chromato
+# Spectres
 
 # MISC
  - tester le flatpak puis flathub

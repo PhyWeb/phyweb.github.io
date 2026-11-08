@@ -35,6 +35,18 @@ describe('Générateur de Spectres (/applets/spectres)', () => {
     assert.match(htmlContent, /id=["']zoomMaxInput["'][^>]*step=["']any["']/);
   });
 
+  it('la page d\'accueil index.html doit référencer l\'outil Spectres dans la section Outils pour l\'enseignant', () => {
+    const homeHtml = fs.readFileSync(path.join(rootDir, 'index.html'), 'utf8');
+    assert.match(homeHtml, /href=["']\.\/applets\/spectres\/index\.html["']/);
+    assert.match(homeHtml, /Spectres d['’]émission et d['’]absorption/);
+  });
+
+  it('la page 404.html doit rediriger les URL /spectres et /spectre vers /applets/spectres/', () => {
+    const errorHtml = fs.readFileSync(path.join(rootDir, '404.html'), 'utf8');
+    assert.match(errorHtml, /\/spectres/);
+    assert.match(errorHtml, /\/applets\/spectres\//);
+  });
+
   // Extraction du code JS du script principal (dernier bloc <script> non-module)
   const scripts = [...htmlContent.matchAll(/<script(?![^>]*type=['"]module['"])[^>]*>([\s\S]*?)<\/script>/gi)];
   assert.ok(scripts.length >= 2, 'Les scripts inline de spectres doivent exister');
@@ -235,6 +247,91 @@ describe('Générateur de Spectres (/applets/spectres)', () => {
   describe('Intégrité de l\'axe et du zoom à fort grossissement', () => {
     it('doit prévoir un pas fin (majorStep=0.5, minorStep=0.1) quand spanNm <= 4', () => {
       assert.match(htmlContent, /geom\.spanNm\s*<=\s*4\)\s*\{\s*majorStep\s*=\s*0\.5;\s*minorStep\s*=\s*0\.1;/);
+    });
+  });
+
+  describe('Dégradé spectral dynamique de la barre de zoom (getSpectrumGradient)', () => {
+    it('la fonction getSpectrumGradient doit être définie', () => {
+      assert.equal(typeof sandbox.getSpectrumGradient, 'function');
+    });
+
+    it('doit produire uniquement du jaune pour une sélection serrée sur le doublet du Sodium (586 - 593 nm)', () => {
+      const grad = sandbox.getSpectrumGradient(586, 593);
+      assert.ok(grad.startsWith('linear-gradient(90deg,'));
+      // Extraire tous les rgb(...) du dégradé
+      const rgbMatches = [...grad.matchAll(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/g)];
+      assert.ok(rgbMatches.length > 5, 'Doit contenir plusieurs stops de couleur');
+      for (const m of rgbMatches) {
+        const r = parseInt(m[1]);
+        const g = parseInt(m[2]);
+        const b = parseInt(m[3]);
+        // Du jaune : R élevé (> 200), G élevé (> 150), B nul/négligeable (< 20)
+        assert.ok(r > 200, `R (${r}) doit être élevé pour du jaune`);
+        assert.ok(g > 150, `G (${g}) doit être élevé pour du jaune`);
+        assert.ok(b < 20, `B (${b}) doit être quasi nul pour du jaune`);
+      }
+    });
+
+    it('doit produire uniquement du rouge pour une sélection serrée vers H-alpha (650 - 670 nm)', () => {
+      const grad = sandbox.getSpectrumGradient(650, 670);
+      const rgbMatches = [...grad.matchAll(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/g)];
+      for (const m of rgbMatches) {
+        const r = parseInt(m[1]);
+        const g = parseInt(m[2]);
+        const b = parseInt(m[3]);
+        assert.ok(r > 200, `R (${r}) doit dominer`);
+        assert.equal(g, 0, 'G doit être 0 dans le rouge');
+        assert.equal(b, 0, 'B doit être 0 dans le rouge');
+      }
+    });
+
+    it('doit couvrir tout le spectre visible pour une vue globale (400 - 750 nm)', () => {
+      const grad = sandbox.getSpectrumGradient(400, 750);
+      const rgbMatches = [...grad.matchAll(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/g)];
+      // Premier stop : violet (B élevé)
+      const firstB = parseInt(rgbMatches[0][3]);
+      assert.ok(firstB > 150, 'Le début du spectre visible doit être violet/bleu');
+      // Dernier stop : rouge sombre (R dominant, G et B nuls)
+      const lastR = parseInt(rgbMatches[rgbMatches.length - 1][1]);
+      const lastG = parseInt(rgbMatches[rgbMatches.length - 1][2]);
+      const lastB = parseInt(rgbMatches[rgbMatches.length - 1][3]);
+      assert.ok(lastR > 50 && lastG === 0 && lastB === 0, 'La fin du spectre visible doit être rouge sombre');
+    });
+
+    it('syncZoomUI doit appliquer le dégradé dynamique sur fill.style.background', () => {
+      assert.match(htmlContent, /fill\.style\.background\s*=\s*getSpectrumGradient\(vMin,\s*vMax\)/);
+    });
+
+    it('doit mémoïser le dégradé pour éviter des allocations et recalculs superflus', () => {
+      const grad1 = sandbox.getSpectrumGradient(500, 600);
+      const grad2 = sandbox.getSpectrumGradient(500, 600);
+      assert.equal(grad1, grad2);
+      // Même résultat pour un écart inférieur à 0.1 nm (arrondi au 0.2 nm)
+      const grad3 = sandbox.getSpectrumGradient(500.04, 600.04);
+      assert.equal(grad1, grad3);
+    });
+  });
+
+  describe('Fluidité 60 Hz et Optimisation de la barre de zoom', () => {
+    it('la piste de remplissage .dual-range-fill doit avoir will-change et pointer-events: none', () => {
+      assert.match(htmlContent, /\.dual-range-fill\s*\{[^}]*pointer-events:\s*none;/);
+      assert.match(htmlContent, /\.dual-range-fill\s*\{[^}]*will-change:\s*left,\s*width;/);
+      assert.match(htmlContent, /\.dual-range-track\s*\{[^}]*pointer-events:\s*none;/);
+    });
+
+    it('doit découpler le rafraîchissement continu via scheduleRender / requestAnimationFrame', () => {
+      assert.match(htmlContent, /function\s+scheduleRender\s*\(\)/);
+      assert.match(htmlContent, /renderAnimFrameId\s*=\s*requestFrame/);
+    });
+
+    it('updateCanvasDimensions ne doit réallouer canvas.width/height que si les dimensions ont changé', () => {
+      assert.match(htmlContent, /if\s*\(\s*canvas\.width\s*!==\s*targetW\s*\)\s*canvas\.width\s*=\s*targetW;/);
+      assert.match(htmlContent, /if\s*\(\s*canvas\.height\s*!==\s*targetH\s*\)\s*canvas\.height\s*=\s*targetH;/);
+    });
+
+    it('doit éviter les reflows forcés (getBoundingClientRect) pendant le glissement des curseurs', () => {
+      assert.match(htmlContent, /isDraggingZoomSlider\s*=\s*true/);
+      assert.match(htmlContent, /if\s*\(\s*isDraggingZoomSlider\s*\)\s*return;/);
     });
   });
 });

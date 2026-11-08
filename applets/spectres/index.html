@@ -71,13 +71,16 @@
             background: #e9ecef;
             border-radius: 3px;
             z-index: 1;
+            pointer-events: none;
         }
         .dual-range-fill {
             position: absolute;
             height: 6px;
-            background: linear-gradient(90deg, #8e44ad, #3498db, #2ecc71, #f1c40f, #e74c3c);
             border-radius: 3px;
             z-index: 2;
+            box-shadow: 0 0 2px rgba(0,0,0,0.15);
+            will-change: left, width;
+            pointer-events: none;
         }
         .dual-range-wrapper input[type="range"] {
             position: absolute;
@@ -88,6 +91,7 @@
             background: none;
             z-index: 3;
             margin: 0;
+            touch-action: none;
         }
         .dual-range-wrapper input[type="range"]::-webkit-slider-thumb {
             pointer-events: auto;
@@ -715,6 +719,7 @@
     let panStartX = 0;
     let panStartMinNm = 370;
     let panStartMaxNm = 780;
+    let isDraggingZoomSlider = false;
 
     // --- Conversion Longueur d'onde (nm) -> Couleur RGB ---
     function wavelengthToRGB(wavelength) {
@@ -825,6 +830,49 @@
         return Math.min(1.0, total);
     }
 
+    // --- Calcul du dégradé représentant exactement les couleurs de la plage [minNm, maxNm] ---
+    let lastGradKey = "";
+    let lastGradCss = "";
+
+    function getSpectrumGradient(minNm, maxNm) {
+        // Arrondi à 0.2 nm pour éviter des recalculs superflus sur micro-déplacements
+        const rMin = Math.round(minNm * 5) / 5;
+        const rMax = Math.round(maxNm * 5) / 5;
+        const key = `${rMin}_${rMax}`;
+        if (key === lastGradKey) {
+            return lastGradCss;
+        }
+
+        const numStops = 12;
+        const stops = [];
+        const span = Math.max(1e-3, rMax - rMin);
+
+        for (let i = 0; i <= numStops; i++) {
+            const lambda = rMin + (i / numStops) * span;
+            let [r, g, b] = wavelengthToRGB(lambda);
+
+            if (lambda < 380 || lambda > 780) {
+                r = 30; g = 30; b = 30;
+            } else if (lambda < 400) {
+                const f = (lambda - 380) / 20;
+                r = Math.round(r * f + 30 * (1 - f));
+                g = Math.round(g * f + 30 * (1 - f));
+                b = Math.round(b * f + 30 * (1 - f));
+            } else if (lambda > 750) {
+                const f = (780 - lambda) / 30;
+                r = Math.round(r * f + 30 * (1 - f));
+                g = Math.round(g * f + 30 * (1 - f));
+                b = Math.round(b * f + 30 * (1 - f));
+            }
+
+            const pct = Math.round((i / numStops) * 100);
+            stops.push(`rgb(${r}, ${g}, ${b}) ${pct}%`);
+        }
+        lastGradKey = key;
+        lastGradCss = `linear-gradient(90deg, ${stops.join(', ')})`;
+        return lastGradCss;
+    }
+
     // --- Synchronisation de la barre de Zoom UI ---
     function syncZoomUI() {
         const minInput = document.getElementById('zoomMinInput');
@@ -845,25 +893,52 @@
         const pctMax = ((vMax - ABS_MIN_NM) / (ABS_MAX_NM - ABS_MIN_NM)) * 100;
         fill.style.left = `${Math.max(0, pctMin)}%`;
         fill.style.width = `${Math.max(0, pctMax - pctMin)}%`;
+        fill.style.background = getSpectrumGradient(vMin, vMax);
 
-        if (vMin > (ABS_MIN_NM + ABS_MAX_NM) / 2) {
-            minSlider.style.zIndex = '4';
-            maxSlider.style.zIndex = '3';
-        } else {
-            minSlider.style.zIndex = '3';
-            maxSlider.style.zIndex = '4';
+        if (!isDraggingZoomSlider) {
+            if (vMin > (ABS_MIN_NM + ABS_MAX_NM) / 2) {
+                minSlider.style.zIndex = '4';
+                maxSlider.style.zIndex = '3';
+            } else {
+                minSlider.style.zIndex = '3';
+                maxSlider.style.zIndex = '4';
+            }
         }
     }
 
-    function setZoomRange(newMin, newMax) {
+    // --- Rendu fluide synchronisé au rafraîchissement d'écran (60-144 Hz) ---
+    const requestFrame = (typeof window !== 'undefined' && window.requestAnimationFrame)
+        ? window.requestAnimationFrame.bind(window)
+        : (typeof requestAnimationFrame === 'function' ? requestAnimationFrame : (cb) => setTimeout(cb, 0));
+    const cancelFrame = (typeof window !== 'undefined' && window.cancelAnimationFrame)
+        ? window.cancelAnimationFrame.bind(window)
+        : (typeof cancelAnimationFrame === 'function' ? cancelAnimationFrame : (id) => clearTimeout(id));
+
+    let renderAnimFrameId = null;
+    function scheduleRender() {
+        if (renderAnimFrameId !== null) return;
+        renderAnimFrameId = requestFrame(() => {
+            renderAnimFrameId = null;
+            render();
+        });
+    }
+
+    function setZoomRange(newMin, newMax, immediate = false) {
         const minSpan = 3; // Zoom max = fenêtre de 3 nm
         let a = Math.max(ABS_MIN_NM, Math.min(ABS_MAX_NM - minSpan, newMin));
         let b = Math.min(ABS_MAX_NM, Math.max(a + minSpan, newMax));
         state.viewMinNm = a;
         state.viewMaxNm = b;
         syncZoomUI();
-        updateCanvasDimensions();
-        render();
+        if (immediate) {
+            if (renderAnimFrameId !== null) {
+                cancelFrame(renderAnimFrameId);
+                renderAnimFrameId = null;
+            }
+            render();
+        } else {
+            scheduleRender();
+        }
     }
 
     // --- Géométrie du Canvas ---
@@ -941,10 +1016,15 @@
         logicalWidth = geom.totalW;
         logicalHeight = geom.totalH;
 
-        canvas.style.width = logicalWidth + "px";
-        canvas.style.height = logicalHeight + "px";
-        canvas.width = Math.round(logicalWidth * currentScale);
-        canvas.height = Math.round(logicalHeight * currentScale);
+        const targetW = Math.round(logicalWidth * currentScale);
+        const targetH = Math.round(logicalHeight * currentScale);
+        if (canvas.width !== targetW) canvas.width = targetW;
+        if (canvas.height !== targetH) canvas.height = targetH;
+
+        const styleW = logicalWidth + "px";
+        const styleH = logicalHeight + "px";
+        if (canvas.style.width !== styleW) canvas.style.width = styleW;
+        if (canvas.style.height !== styleH) canvas.style.height = styleH;
     }
 
     // --- Utilitaires de dessin ---
@@ -982,6 +1062,8 @@
     }
 
     // --- Rendu d'une piste spectrale pixel par pixel ---
+    let cachedImgData = null;
+
     function renderSpectrumBand(track, xStart, yStart, width, height, geom) {
         const renderW = Math.max(1, Math.round(width * currentScale));
         if (!cachedBandCanvas) {
@@ -991,9 +1073,12 @@
         if (cachedBandCanvas.width !== renderW) {
             cachedBandCanvas.width = renderW;
             cachedBandCanvas.height = 1;
+            cachedImgData = null;
         }
-        const imgData = cachedBandCtx.createImageData(renderW, 1);
-        const data = imgData.data;
+        if (!cachedImgData) {
+            cachedImgData = cachedBandCtx.createImageData(renderW, 1);
+        }
+        const data = cachedImgData.data;
 
         const bgByte = state.printMode ? 248 : 8;
 
@@ -1069,7 +1154,7 @@
             data[idx + 3] = 255;
         }
 
-        cachedBandCtx.putImageData(imgData, 0, 0);
+        cachedBandCtx.putImageData(cachedImgData, 0, 0);
         ctx.imageSmoothingEnabled = false;
         ctx.drawImage(cachedBandCanvas, xStart, yStart, width, height);
     }
@@ -1404,6 +1489,7 @@
 
     if (dualRangeWrap) {
         dualRangeWrap.addEventListener('pointermove', (e) => {
+            if (isDraggingZoomSlider) return;
             const rect = dualRangeWrap.getBoundingClientRect();
             if (rect.width <= 0) return;
             const pct = (e.clientX - rect.left) / rect.width;
@@ -1420,8 +1506,21 @@
         });
     }
 
+    minSliderEl.addEventListener('pointerdown', () => {
+        isDraggingZoomSlider = true;
+        minSliderEl.style.zIndex = '6';
+        maxSliderEl.style.zIndex = '4';
+    });
+    maxSliderEl.addEventListener('pointerdown', () => {
+        isDraggingZoomSlider = true;
+        minSliderEl.style.zIndex = '4';
+        maxSliderEl.style.zIndex = '6';
+    });
+    window.addEventListener('pointerup', () => { isDraggingZoomSlider = false; });
+    window.addEventListener('pointercancel', () => { isDraggingZoomSlider = false; });
+
     minSliderEl.addEventListener('input', (e) => {
-        minSliderEl.style.zIndex = '5';
+        minSliderEl.style.zIndex = '6';
         maxSliderEl.style.zIndex = '4';
         const val = parseFloat(e.target.value);
         setZoomRange(Math.min(val, state.viewMaxNm - 3), state.viewMaxNm);
@@ -1429,26 +1528,26 @@
 
     maxSliderEl.addEventListener('input', (e) => {
         minSliderEl.style.zIndex = '4';
-        maxSliderEl.style.zIndex = '5';
+        maxSliderEl.style.zIndex = '6';
         const val = parseFloat(e.target.value);
         setZoomRange(state.viewMinNm, Math.max(val, state.viewMinNm + 3));
     });
 
     document.getElementById('zoomMinInput').addEventListener('change', (e) => {
         const val = parseFloat(e.target.value);
-        if (!isNaN(val)) setZoomRange(val, state.viewMaxNm);
+        if (!isNaN(val)) setZoomRange(val, state.viewMaxNm, true);
     });
 
     document.getElementById('zoomMaxInput').addEventListener('change', (e) => {
         const val = parseFloat(e.target.value);
-        if (!isNaN(val)) setZoomRange(state.viewMinNm, val);
+        if (!isNaN(val)) setZoomRange(state.viewMinNm, val, true);
     });
 
     document.querySelectorAll('.zoom-preset').forEach(btn => {
         btn.addEventListener('click', () => {
             const zMin = parseFloat(btn.dataset.min);
             const zMax = parseFloat(btn.dataset.max);
-            setZoomRange(zMin, zMax);
+            setZoomRange(zMin, zMax, true);
         });
     });
 
@@ -1489,30 +1588,28 @@
             state.tracks[tIdx].temp = val;
             const numInput = activeTrackContainer.querySelector(`.track-temp-num[data-track="${tIdx}"]`);
             if (numInput) numInput.value = val;
-            updateCanvasDimensions();
-            render();
+            scheduleRender();
         } else if (t.classList.contains('track-temp-num')) {
             const val = Math.max(1000, Math.min(20000, parseInt(t.value) || 5800));
             state.tracks[tIdx].temp = val;
             const rangeInput = activeTrackContainer.querySelector(`.track-temp-range[data-track="${tIdx}"]`);
             if (rangeInput) rangeInput.value = val;
-            updateCanvasDimensions();
-            render();
+            scheduleRender();
         } else if (t.classList.contains('line-lambda')) {
             const val = parseFloat(t.value);
             if (!isNaN(val)) {
                 state.tracks[tIdx].lines[lIdx].lambda = val;
-                render();
+                scheduleRender();
             }
         } else if (t.classList.contains('line-width')) {
             const val = parseFloat(t.value);
             if (!isNaN(val) && val > 0) {
                 state.tracks[tIdx].lines[lIdx].w = val;
-                render();
+                scheduleRender();
             }
         } else if (t.classList.contains('line-label')) {
             state.tracks[tIdx].lines[lIdx].label = t.value;
-            render();
+            scheduleRender();
         }
     });
 
@@ -1783,7 +1880,7 @@
             const inputEl = document.getElementById(`lambda-input-${draggedLine.trackIndex}-${draggedLine.lineIndex}`);
             if (inputEl) inputEl.value = clampedNm;
 
-            render();
+            scheduleRender();
         } else if (isPanningSpectrum) {
             const geom = getLayoutGeometry();
             const dxPx = mouseX - panStartX;
@@ -1807,7 +1904,7 @@
             const changed = JSON.stringify(newHover) !== JSON.stringify(hoveredLine);
             hoveredLine = newHover;
             canvas.style.cursor = hoveredLine ? 'ew-resize' : 'grab';
-            if (changed) render();
+            if (changed) scheduleRender();
         }
     });
 
