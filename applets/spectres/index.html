@@ -212,6 +212,74 @@
             margin-bottom: 4px;
         }
 
+        /* Style violet pour les molécules et solutions (harmonisé avec Grapher) */
+        .has-text-purple {
+            color: #7b1fa2 !important;
+        }
+        .tag.is-purple-light {
+            background-color: #f3e8ff;
+            color: #7b1fa2;
+        }
+        .button.is-purple-light {
+            background-color: #f3e8ff;
+            color: #7b1fa2;
+            border-color: transparent;
+        }
+
+        /* Méga-dropdown des présélections (catalogue) inspiré de Grapher */
+        #presets-dropdown .dropdown-menu {
+            min-width: 520px;
+            max-width: 95vw;
+        }
+        #presets-dropdown .dropdown-content {
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14), 0 2px 6px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+        }
+        .preset-dropdown-btn {
+            border-color: #dbdbdb;
+            background-color: #ffffff;
+            transition: all 0.15s ease;
+        }
+        .preset-dropdown-btn:hover {
+            border-color: #b5b5b5;
+            background-color: #fafafa;
+        }
+        #presets-dropdown.is-active .preset-dropdown-btn {
+            border-color: #3273dc;
+            box-shadow: 0 0 0 0.125em rgba(50, 115, 220, 0.25);
+        }
+        #presets-dropdown.is-active .preset-dropdown-btn .fa-angle-down {
+            transform: rotate(180deg);
+        }
+        .preset-dropdown-btn .fa-angle-down {
+            transition: transform 0.2s ease;
+        }
+        .preset-item {
+            transition: background-color 0.12s ease;
+            border-radius: 4px;
+        }
+        .preset-item:hover {
+            background-color: #f1f5f9;
+        }
+        .preset-item.is-active-preset {
+            background-color: #eff6ff !important;
+        }
+        @media screen and (max-width: 560px) {
+            #presets-dropdown .dropdown-menu {
+                min-width: calc(100vw - 20px) !important;
+                right: -40px !important;
+            }
+            #presets-dropdown .dropdown-menu .columns {
+                display: block !important;
+            }
+            #presets-dropdown .dropdown-menu .column {
+                width: 100% !important;
+                padding-top: 0.25rem !important;
+                padding-bottom: 0.25rem !important;
+            }
+        }
+
         /* Réduction des marges à gauche et à droite sur petits écrans */
         @media screen and (max-width: 1023px) {
             .section {
@@ -258,22 +326,22 @@
                             <i class="fas fa-magnifying-glass"></i> Zoom &lambda; :
                         </span>
 
-                        <input class="input is-small" type="number" id="zoomMinInput" min="350" max="795" step="any" value="350" style="width: 62px; text-align: center; height: 24px;" title="Longueur d'onde minimale (nm)">
+                        <input class="input is-small" type="number" id="zoomMinInput" min="350" max="845" step="any" value="350" style="width: 62px; text-align: center; height: 24px;" title="Longueur d'onde minimale (nm)">
                         
                         <div class="dual-range-wrapper">
                             <div class="dual-range-track"></div>
                             <div class="dual-range-fill" id="zoomRangeFill"></div>
-                            <input type="range" id="zoomMinSlider" min="350" max="800" step="0.5" value="350" aria-label="Longueur d'onde minimale">
-                            <input type="range" id="zoomMaxSlider" min="350" max="800" step="0.5" value="800" aria-label="Longueur d'onde maximale">
+                            <input type="range" id="zoomMinSlider" min="350" max="850" step="0.5" value="350" aria-label="Longueur d'onde minimale">
+                            <input type="range" id="zoomMaxSlider" min="350" max="850" step="0.5" value="850" aria-label="Longueur d'onde maximale">
                         </div>
 
-                        <input class="input is-small" type="number" id="zoomMaxInput" min="355" max="800" step="any" value="800" style="width: 62px; text-align: center; height: 24px;" title="Longueur d'onde maximale (nm)">
+                        <input class="input is-small" type="number" id="zoomMaxInput" min="355" max="850" step="any" value="850" style="width: 62px; text-align: center; height: 24px;" title="Longueur d'onde maximale (nm)">
                         <span class="is-size-7 has-text-grey">nm</span>
 
                         <!-- Boutons de zoom rapides -->
                         <div class="buttons are-small mb-0 ml-auto" style="gap: 4px;">
-                            <button class="button is-light is-info py-0 px-2 zoom-preset" data-min="350" data-max="800" style="height: 22px; font-size: 0.7rem;" title="Vue complète avec UV et IR (350 - 800 nm)">Tout</button>
-                            <button class="button is-light py-0 px-2 zoom-preset" data-min="380" data-max="780" style="height: 22px; font-size: 0.7rem;" title="Domaine visible uniquement (380 - 780 nm)">Visible</button>
+                            <button class="button is-light is-info py-0 px-2 zoom-preset" data-min="350" data-max="850" style="height: 22px; font-size: 0.7rem;" title="Vue complète avec UV et IR (350 - 850 nm)">Tout</button>
+                            <button class="button is-light py-0 px-2 zoom-preset" data-min="400" data-max="800" style="height: 22px; font-size: 0.7rem;" title="Domaine visible uniquement (400 - 800 nm)">Visible</button>
                         </div>
                     </div>
                 </div>
@@ -402,12 +470,12 @@
     // Onglet actuellement affiché dans le panneau de droite (0 à 3)
     let selectedTabIndex = 0;
 
-    // Bornes physiques du domaine visible (en nm)
+    // Bornes physiques du domaine visible (en nm) selon la convention lycée (400 à 800 nm)
     // Définition unique du visible, utilisée pour la couleur, le thermique, le dégradé, la bande et le profil
-    const LAMBDA_MIN_VISIBLE = 380;
-    const LAMBDA_MAX_VISIBLE = 780;
+    const LAMBDA_MIN_VISIBLE = 400;
+    const LAMBDA_MAX_VISIBLE = 800;
     const ABS_MIN_NM = 350;
-    const ABS_MAX_NM = 800;
+    const ABS_MAX_NM = 850;
 
     // Bornes de température (K), identiques aux attributs min/max des champs HTML
     const TEMP_MIN_K = 1500;
@@ -420,6 +488,9 @@
         H: {
             category: "Atomes & Ions",
             label: "Hydrogène",
+            tag: "H",
+            desc: "Hydrogène",
+            tagClass: "is-info is-light",
             lines: [
                 { lambda: 397.0, w: 1.6, intensity: 0.65, label: "Hε" },
                 { lambda: 410.2, w: 1.8, intensity: 0.75, label: "Hδ" },
@@ -431,6 +502,9 @@
         He: {
             category: "Atomes & Ions",
             label: "Hélium",
+            tag: "He",
+            desc: "Hélium",
+            tagClass: "is-info is-light",
             lines: [
                 { lambda: 402.6, w: 1.6, intensity: 0.65, label: "" },
                 { lambda: 447.1, w: 1.8, intensity: 0.85, label: "" },
@@ -445,6 +519,9 @@
         Na: {
             category: "Atomes & Ions",
             label: "Sodium",
+            tag: "Na",
+            desc: "Sodium",
+            tagClass: "is-info is-light",
             lines: [
                 { lambda: 589.0, w: 1.8, intensity: 1.00, label: "D2" },
                 { lambda: 589.6, w: 1.8, intensity: 0.95, label: "D1" }
@@ -453,6 +530,9 @@
         Hg: {
             category: "Atomes & Ions",
             label: "Mercure",
+            tag: "Hg",
+            desc: "Mercure",
+            tagClass: "is-info is-light",
             lines: [
                 { lambda: 404.7, w: 1.8, intensity: 0.85, label: "" },
                 { lambda: 435.8, w: 2.2, intensity: 0.95, label: "" },
@@ -465,6 +545,9 @@
         Ca: {
             category: "Atomes & Ions",
             label: "Calcium",
+            tag: "Ca",
+            desc: "Calcium",
+            tagClass: "is-info is-light",
             lines: [
                 { lambda: 393.4, w: 2.6, intensity: 1.00, label: "K" },
                 { lambda: 396.8, w: 2.6, intensity: 1.00, label: "H" },
@@ -477,6 +560,9 @@
         Fe: {
             category: "Atomes & Ions",
             label: "Fer",
+            tag: "Fe",
+            desc: "Fer",
+            tagClass: "is-info is-light",
             lines: [
                 { lambda: 404.6, w: 1.8, intensity: 0.85, label: "" },
                 { lambda: 430.8, w: 2.0, intensity: 0.90, label: "G" },
@@ -488,6 +574,9 @@
         Li: {
             category: "Atomes & Ions",
             label: "Lithium",
+            tag: "Li",
+            desc: "Lithium",
+            tagClass: "is-info is-light",
             lines: [
                 { lambda: 460.3, w: 1.8, intensity: 0.65, label: "" },
                 { lambda: 610.4, w: 2.0, intensity: 0.85, label: "" },
@@ -497,6 +586,9 @@
         K: {
             category: "Atomes & Ions",
             label: "Potassium",
+            tag: "K",
+            desc: "Potassium",
+            tagClass: "is-info is-light",
             lines: [
                 { lambda: 404.4, w: 2.0, intensity: 0.90, label: "" },
                 { lambda: 404.7, w: 2.0, intensity: 0.85, label: "" },
@@ -507,6 +599,9 @@
         Cu: {
             category: "Atomes & Ions",
             label: "Cuivre",
+            tag: "Cu",
+            desc: "Cuivre",
+            tagClass: "is-info is-light",
             lines: [
                 { lambda: 510.6, w: 2.2, intensity: 0.90, label: "" },
                 { lambda: 515.3, w: 2.2, intensity: 0.85, label: "" },
@@ -518,6 +613,9 @@
         Sr: {
             category: "Atomes & Ions",
             label: "Strontium",
+            tag: "Sr",
+            desc: "Strontium",
+            tagClass: "is-info is-light",
             lines: [
                 { lambda: 407.8, w: 2.2, intensity: 0.90, label: "Sr II" },
                 { lambda: 421.6, w: 2.0, intensity: 0.85, label: "Sr II" },
@@ -529,6 +627,9 @@
         Ne: {
             category: "Atomes & Ions",
             label: "Néon",
+            tag: "Ne",
+            desc: "Néon",
+            tagClass: "is-info is-light",
             lines: [
                 { lambda: 540.1, w: 1.6, intensity: 0.65, label: "" },
                 { lambda: 585.2, w: 2.4, intensity: 0.95, label: "" },
@@ -542,6 +643,9 @@
         Ar: {
             category: "Atomes & Ions",
             label: "Argon",
+            tag: "Ar",
+            desc: "Argon",
+            tagClass: "is-info is-light",
             lines: [
                 { lambda: 696.5, w: 2.2, intensity: 0.85, label: "" },
                 { lambda: 706.7, w: 2.0, intensity: 0.80, label: "" },
@@ -553,6 +657,9 @@
         Cd: {
             category: "Atomes & Ions",
             label: "Cadmium",
+            tag: "Cd",
+            desc: "Cadmium",
+            tagClass: "is-info is-light",
             lines: [
                 { lambda: 467.8, w: 2.0, intensity: 0.85, label: "" },
                 { lambda: 479.9, w: 2.2, intensity: 0.90, label: "" },
@@ -565,6 +672,9 @@
         Star_Soleil: {
             category: "Étoiles",
             label: "Soleil (5800 K)",
+            tag: "Soleil",
+            desc: "5800 K",
+            tagClass: "is-warning is-light",
             temp: 5800,
             lines: [
                 { lambda: 393.4, w: 2.6, intensity: 0.95, label: "K" },
@@ -580,6 +690,9 @@
         Star_Vega: {
             category: "Étoiles",
             label: "Véga / Sirius (9500 K)",
+            tag: "Véga / Sirius",
+            desc: "9500 K",
+            tagClass: "is-warning is-light",
             temp: 9500,
             lines: [
                 { lambda: 397.0, w: 3.5, intensity: 0.95, label: "Hε" },
@@ -592,6 +705,9 @@
         Star_Rigel: {
             category: "Étoiles",
             label: "Rigel (12000 K)",
+            tag: "Rigel",
+            desc: "12000 K",
+            tagClass: "is-warning is-light",
             temp: 12000,
             lines: [
                 { lambda: 402.6, w: 2.0, intensity: 0.80, label: "He" },
@@ -606,6 +722,9 @@
         Star_Betelgeuse: {
             category: "Étoiles",
             label: "Bételgeuse (3500 K)",
+            tag: "Bételgeuse",
+            desc: "3500 K",
+            tagClass: "is-warning is-light",
             temp: 3500,
             lines: [
                 { lambda: 422.7, w: 3.2, intensity: 0.95, label: "Ca" },
@@ -624,6 +743,9 @@
         Atm: {
             category: "Molécules & Solutions",
             label: "Atmosphère terrestre (O₂ / H₂O)",
+            tag: "O₂ / H₂O",
+            desc: "Atmosphère",
+            tagClass: "is-purple-light",
             lines: [
                 { lambda: 627.7, w: 8.0, intensity: 0.65, label: "O₂" },
                 { lambda: 686.7, w: 12.0, intensity: 0.85, label: "O₂" },
@@ -634,6 +756,9 @@
         Chloro: {
             category: "Molécules & Solutions",
             label: "Chlorophylle a",
+            tag: "Chl a",
+            desc: "Chlorophylle a",
+            tagClass: "is-purple-light",
             lines: [
                 { lambda: 430.0, w: 48.0, intensity: 0.96, label: "Soret" },
                 { lambda: 662.0, w: 34.0, intensity: 0.92, label: "Bande Q" }
@@ -642,6 +767,9 @@
         KMnO4: {
             category: "Molécules & Solutions",
             label: "Permanganate de potassium (KMnO₄)",
+            tag: "KMnO₄",
+            desc: "Permanganate",
+            tagClass: "is-purple-light",
             lines: [
                 { lambda: 526.0, w: 56.0, intensity: 0.96, label: "" }
             ]
@@ -649,6 +777,9 @@
         BleuPatente: {
             category: "Molécules & Solutions",
             label: "Bleu patenté V (E131)",
+            tag: "E131",
+            desc: "Bleu patenté V",
+            tagClass: "is-purple-light",
             lines: [
                 { lambda: 638.0, w: 52.0, intensity: 0.96, label: "" }
             ]
@@ -656,6 +787,9 @@
         Tartrazine: {
             category: "Molécules & Solutions",
             label: "Tartrazine (E102)",
+            tag: "E102",
+            desc: "Tartrazine",
+            tagClass: "is-purple-light",
             lines: [
                 { lambda: 426.0, w: 55.0, intensity: 0.95, label: "" }
             ]
@@ -737,8 +871,8 @@
     function wavelengthToRGB(wavelength) {
         let r = 0, g = 0, b = 0, factor = 0;
 
-        if (wavelength >= 380 && wavelength < 440) {
-            r = -(wavelength - 440) / (440 - 380);
+        if (wavelength >= LAMBDA_MIN_VISIBLE && wavelength < 440) {
+            r = -(wavelength - 440) / (440 - LAMBDA_MIN_VISIBLE);
             g = 0.0;
             b = 1.0;
         } else if (wavelength >= 440 && wavelength < 490) {
@@ -757,18 +891,18 @@
             r = 1.0;
             g = -(wavelength - 645) / (645 - 580);
             b = 0.0;
-        } else if (wavelength >= 645 && wavelength <= 780) {
+        } else if (wavelength >= 645 && wavelength <= LAMBDA_MAX_VISIBLE) {
             r = 1.0;
             g = 0.0;
             b = 0.0;
         }
 
-        if (wavelength >= 380 && wavelength < 420) {
-            factor = 0.35 + 0.65 * (wavelength - 380) / (420 - 380);
+        if (wavelength >= LAMBDA_MIN_VISIBLE && wavelength < 420) {
+            factor = 0.55 + 0.45 * (wavelength - LAMBDA_MIN_VISIBLE) / (420 - LAMBDA_MIN_VISIBLE);
         } else if (wavelength >= 420 && wavelength <= 700) {
             factor = 1.0;
-        } else if (wavelength > 700 && wavelength <= 780) {
-            factor = 0.35 + 0.65 * (780 - wavelength) / (780 - 700);
+        } else if (wavelength > 700 && wavelength <= LAMBDA_MAX_VISIBLE) {
+            factor = 0.35 + 0.65 * (LAMBDA_MAX_VISIBLE - wavelength) / (LAMBDA_MAX_VISIBLE - 700);
         } else {
             factor = 0.0;
         }
@@ -791,7 +925,7 @@
         const cached = planckMaxCache.get(tempK);
         if (cached !== undefined) return cached;
         let maxVal = 0;
-        for (let l = 400; l <= 750; l += 25) {
+        for (let l = LAMBDA_MIN_VISIBLE; l <= LAMBDA_MAX_VISIBLE; l += 25) {
             const v = planck(l, tempK);
             if (v > maxVal) maxVal = v;
         }
@@ -1208,22 +1342,22 @@
                 renderSpectrumBand(track, bandX, bandY, bandW, bandH, geom);
             }
 
-            // Délimitations UV (< 400 nm) et IR (> 750 nm) si présentes dans la fenêtre de zoom
+            // Délimitations UV (< 400 nm) et IR (> 800 nm) si présentes dans la fenêtre de zoom
             if (state.showUVIR) {
                 const sepColor = isExportingEmptyGrid || state.printMode ? "#7f8c8d" : "rgba(255,255,255,0.65)";
 
                 if (geom.minNm < LAMBDA_MIN_VISIBLE && geom.maxNm > LAMBDA_MIN_VISIBLE) {
-                    const x400 = geom.nmToX(LAMBDA_MIN_VISIBLE);
-                    drawLine(x400, bandY, x400, bandY + bandH, sepColor, 1.5, [4, 4]);
-                    if (activeIdx === 0 && (x400 - bandX) > 22) {
-                        drawText("UV", (bandX + x400) / 2, bandY - 10, "#7f8c8d", "bold 11px Arial", "center", "middle");
+                    const xMinVis = geom.nmToX(LAMBDA_MIN_VISIBLE);
+                    drawLine(xMinVis, bandY, xMinVis, bandY + bandH, sepColor, 1.5, [4, 4]);
+                    if (activeIdx === 0 && (xMinVis - bandX) > 22) {
+                        drawText("UV", (bandX + xMinVis) / 2, bandY - 10, "#7f8c8d", "bold 11px Arial", "center", "middle");
                     }
                 }
                 if (geom.minNm < LAMBDA_MAX_VISIBLE && geom.maxNm > LAMBDA_MAX_VISIBLE) {
-                    const x750 = geom.nmToX(LAMBDA_MAX_VISIBLE);
-                    drawLine(x750, bandY, x750, bandY + bandH, sepColor, 1.5, [4, 4]);
-                    if (activeIdx === 0 && (bandX + bandW - x750) > 22) {
-                        drawText("IR", (x750 + bandX + bandW) / 2, bandY - 10, "#7f8c8d", "bold 11px Arial", "center", "middle");
+                    const xMaxVis = geom.nmToX(LAMBDA_MAX_VISIBLE);
+                    drawLine(xMaxVis, bandY, xMaxVis, bandY + bandH, sepColor, 1.5, [4, 4]);
+                    if (activeIdx === 0 && (bandX + bandW - xMaxVis) > 22) {
+                        drawText("IR", (xMaxVis + bandX + bandW) / 2, bandY - 10, "#7f8c8d", "bold 11px Arial", "center", "middle");
                     }
                 }
             }
@@ -1366,25 +1500,111 @@
         flushTexts();
     }
 
-    // --- Construction des options du menu déroulant de présélections ---
-    function buildPresetsDropdownHTML(currentKey) {
-        const categories = {};
+    // --- Construction des options du méga-dropdown de présélections (inspiré de Grapher) ---
+    function buildPresetsDropdownHTML(currentKey, trackIdx = selectedTabIndex) {
+        const catAtomes = {
+            title: 'Atomes & Ions',
+            icon: 'fa-atom',
+            iconColor: 'has-text-info',
+            items: []
+        };
+        const catEtoiles = {
+            title: 'Étoiles',
+            icon: 'fa-star',
+            iconColor: 'has-text-warning',
+            items: []
+        };
+        const catMolecules = {
+            title: 'Molécules & Solutions',
+            icon: 'fa-flask',
+            iconColor: 'has-text-purple',
+            items: []
+        };
+
         Object.keys(PRESETS_DB).forEach(key => {
             const item = PRESETS_DB[key];
-            if (!categories[item.category]) categories[item.category] = [];
-            categories[item.category].push({ key, label: item.label });
+            if (item.category === 'Atomes & Ions') catAtomes.items.push(key);
+            else if (item.category === 'Étoiles') catEtoiles.items.push(key);
+            else if (item.category === 'Molécules & Solutions') catMolecules.items.push(key);
+            else catMolecules.items.push(key);
         });
 
-        let html = `<option value="">-- Choisir un élément / étoile / solution --</option>`;
-        Object.keys(categories).forEach(catName => {
-            html += `<optgroup label="${catName}">`;
-            categories[catName].forEach(opt => {
-                const sel = (opt.key === currentKey) ? 'selected' : '';
-                html += `<option value="${opt.key}" ${sel}>${opt.label}</option>`;
+        const renderItem = (key) => {
+            const item = PRESETS_DB[key];
+            if (!item) return '';
+            const isSelected = (key === currentKey);
+            const tag = item.tag || key;
+            const desc = item.desc || item.label;
+            const tagClass = item.tagClass || 'is-info is-light';
+            return `
+                <a class="dropdown-item p-1 is-flex is-align-items-center is-justify-content-space-between preset-item ${isSelected ? 'is-active-preset' : ''}" data-key="${key}" data-track="${trackIdx}" style="border-radius: 4px; cursor: pointer;">
+                    <span class="tag ${tagClass} has-text-weight-bold" style="font-family: monospace; min-width: 44px; justify-content: center; flex-shrink: 0;"><span style="display: inline-block; line-height: normal;">${tag}</span></span>
+                    <span class="is-size-7 ${isSelected ? 'has-text-link has-text-weight-bold' : 'has-text-grey'} ml-2" style="white-space: nowrap;">${desc}${isSelected ? ' <i class="fas fa-check ml-1 has-text-link"></i>' : ''}</span>
+                </a>
+            `;
+        };
+
+        const renderCategory = (cat) => {
+            let html = `
+                <p class="menu-label mb-2 is-flex is-align-items-center" style="font-weight: 600;">
+                    <span class="icon is-small ${cat.iconColor} mr-1"><i class="fas ${cat.icon}"></i></span>
+                    <span>${cat.title}</span>
+                </p>
+            `;
+            cat.items.forEach(key => {
+                html += renderItem(key);
             });
-            html += `</optgroup>`;
-        });
-        return html;
+            return html;
+        };
+
+        return `
+            <div class="columns is-variable is-3 mb-0">
+                <div class="column is-6 py-1">
+                    ${renderCategory(catAtomes)}
+                </div>
+                <div class="column is-6 py-1">
+                    ${renderCategory(catEtoiles)}
+                    <hr class="my-2" style="background-color: #edf2f7; height: 1px; border: none;">
+                    ${renderCategory(catMolecules)}
+                </div>
+            </div>
+        `;
+    }
+
+    // --- Application d'une présélection de catalogue sur une piste ---
+    function applyPreset(tIdx, key) {
+        if (!key || !PRESETS_DB[key]) return;
+        const item = PRESETS_DB[key];
+        const prevPreset = PRESETS_DB[state.tracks[tIdx].presetKey];
+        const currentName = state.tracks[tIdx].name.trim();
+        state.tracks[tIdx].presetKey = key;
+        state.tracks[tIdx].lines = JSON.parse(JSON.stringify(item.lines));
+
+        // Le nom n'est remplacé que s'il n'a pas été personnalisé par l'utilisateur
+        const isAutoName = currentName === ''
+            || DEFAULT_TRACK_NAMES.includes(currentName)
+            || (prevPreset && currentName === getPresetShortName(prevPreset));
+        if (isAutoName) {
+            state.tracks[tIdx].name = getPresetShortName(item);
+        }
+
+        if (item.category === 'Molécules & Solutions') {
+            state.tracks[tIdx].mode = 'absorption_lines';
+        } else if (item.category === 'Étoiles') {
+            state.tracks[tIdx].mode = 'thermal_abs';
+            if (item.temp) state.tracks[tIdx].temp = item.temp;
+        } else if (item.category === 'Atomes & Ions') {
+            if (state.tracks[tIdx].mode === 'thermal') {
+                state.tracks[tIdx].mode = 'emission_lines';
+            }
+        }
+
+        if (item.temp) {
+            state.tracks[tIdx].temp = item.temp;
+        }
+        buildTracksUI();
+        updateCanvasDimensions();
+        render();
     }
 
     // --- Génération de l'interface par onglets (1 seul spectre affiché à la fois) ---
@@ -1411,6 +1631,25 @@
         const isThermal = (track.mode === 'thermal' || track.mode === 'thermal_abs');
         const hasLines = (track.mode !== 'thermal');
 
+        const currentPreset = track.presetKey ? PRESETS_DB[track.presetKey] : null;
+        let currentPresetLabel = "-- Choisir un modèle --";
+        let currentCategoryIcon = "fa-layer-group";
+        let currentIconClass = "has-text-grey";
+
+        if (currentPreset) {
+            currentPresetLabel = currentPreset.label;
+            if (currentPreset.category === 'Atomes & Ions') {
+                currentCategoryIcon = "fa-atom";
+                currentIconClass = "has-text-info";
+            } else if (currentPreset.category === 'Étoiles') {
+                currentCategoryIcon = "fa-star";
+                currentIconClass = "has-text-warning";
+            } else if (currentPreset.category === 'Molécules & Solutions') {
+                currentCategoryIcon = "fa-flask";
+                currentIconClass = "has-text-purple";
+            }
+        }
+
         let linesHtml = '';
         if (hasLines) {
             let itemsHtml = '';
@@ -1418,7 +1657,7 @@
                 itemsHtml += `
                     <div class="line-row">
                         <span class="has-text-grey is-size-7" style="width: 18px; flex-shrink: 0;">${lIdx + 1}.</span>
-                        <input class="input is-small line-lambda" data-track="${idx}" data-line="${lIdx}" id="lambda-input-${idx}-${lIdx}" type="number" step="0.1" min="350" max="800" value="${line.lambda}" style="width: 64px; text-align: center; flex-shrink: 0;" title="Longueur d'onde λ (nm)">
+                        <input class="input is-small line-lambda" data-track="${idx}" data-line="${lIdx}" id="lambda-input-${idx}-${lIdx}" type="number" step="0.1" min="350" max="850" value="${line.lambda}" style="width: 64px; text-align: center; flex-shrink: 0;" title="Longueur d'onde λ (nm)">
                         <span class="is-size-7 has-text-grey" style="margin-left: 3px; margin-right: 10px; flex-shrink: 0;">nm</span>
                         <input class="input is-small line-width" data-track="${idx}" data-line="${lIdx}" type="number" step="0.5" min="0.2" max="120" value="${line.w}" style="width: 52px; text-align: center; flex-shrink: 0;" title="Largeur Δλ (nm)">
                         <span class="is-size-7 has-text-grey" style="margin-left: 3px; margin-right: 10px; flex-shrink: 0;" title="Largeur de la raie ou bande">Δλ</span>
@@ -1434,10 +1673,21 @@
                 <div class="mt-2">
                     <div class="control-row mb-2">
                         <label class="label" style="width: 68px;">Catalogue</label>
-                        <div class="select is-small is-fullwidth" style="flex: 1; margin-right: 4px;">
-                            <select class="preset-select" data-track="${idx}">
-                                ${buildPresetsDropdownHTML(track.presetKey)}
-                            </select>
+                        <div class="dropdown is-right" id="presets-dropdown" style="flex: 1; margin-right: 4px; min-width: 0;">
+                            <div class="dropdown-trigger" style="width: 100%;">
+                                <button class="button is-small is-fullwidth is-justify-content-space-between preset-dropdown-btn" type="button" aria-haspopup="true" aria-controls="presets-dropdown-menu" data-track="${idx}" title="Choisir un modèle dans le catalogue">
+                                    <span class="is-flex is-align-items-center" style="gap: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;">
+                                        <span class="icon is-small ${currentIconClass}"><i class="fas ${currentCategoryIcon}"></i></span>
+                                        <span class="preset-label-text" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${currentPresetLabel}</span>
+                                    </span>
+                                    <span class="icon is-small ml-1" style="flex-shrink: 0;"><i class="fas fa-angle-down" aria-hidden="true"></i></span>
+                                </button>
+                            </div>
+                            <div class="dropdown-menu" id="presets-dropdown-menu" role="menu" style="min-width: 520px; z-index: 100;">
+                                <div class="dropdown-content p-3" id="presets-dropdown-content" style="max-height: 480px; overflow-y: auto;">
+                                    ${buildPresetsDropdownHTML(track.presetKey, idx)}
+                                </div>
+                            </div>
                         </div>
                         <button class="button is-small is-danger is-light px-2 clear-lines-btn" data-track="${idx}" title="Vider toutes les raies">
                             <span class="icon is-small"><i class="fas fa-trash-can"></i></span>
@@ -1694,40 +1944,7 @@
             updateCanvasDimensions();
             render();
         } else if (t.classList.contains('preset-select')) {
-            const key = t.value;
-            if (key && PRESETS_DB[key]) {
-                const item = PRESETS_DB[key];
-                const prevPreset = PRESETS_DB[state.tracks[tIdx].presetKey];
-                const currentName = state.tracks[tIdx].name.trim();
-                state.tracks[tIdx].presetKey = key;
-                state.tracks[tIdx].lines = JSON.parse(JSON.stringify(item.lines));
-
-                // Le nom n'est remplacé que s'il n'a pas été personnalisé par l'utilisateur
-                const isAutoName = currentName === ''
-                    || DEFAULT_TRACK_NAMES.includes(currentName)
-                    || (prevPreset && currentName === getPresetShortName(prevPreset));
-                if (isAutoName) {
-                    state.tracks[tIdx].name = getPresetShortName(item);
-                }
-
-                if (item.category === 'Molécules & Solutions') {
-                    state.tracks[tIdx].mode = 'absorption_lines';
-                } else if (item.category === 'Étoiles') {
-                    state.tracks[tIdx].mode = 'thermal_abs';
-                    if (item.temp) state.tracks[tIdx].temp = item.temp;
-                } else if (item.category === 'Atomes & Ions') {
-                    if (state.tracks[tIdx].mode === 'thermal') {
-                        state.tracks[tIdx].mode = 'emission_lines';
-                    }
-                }
-
-                if (item.temp) {
-                    state.tracks[tIdx].temp = item.temp;
-                }
-                buildTracksUI();
-                updateCanvasDimensions();
-                render();
-            }
+            applyPreset(tIdx, t.value);
         } else if (t.classList.contains('track-temp-badge')) {
             state.tracks[tIdx].showTempBadge = t.checked;
             updateCanvasDimensions();
@@ -1736,6 +1953,26 @@
     });
 
     activeTrackContainer.addEventListener('click', (e) => {
+        const dropdownBtn = e.target.closest('.preset-dropdown-btn');
+        const presetItem = e.target.closest('.preset-item');
+
+        if (dropdownBtn) {
+            e.stopPropagation();
+            const dropdown = document.getElementById('presets-dropdown');
+            if (dropdown) {
+                dropdown.classList.toggle('is-active');
+            }
+            return;
+        }
+
+        if (presetItem) {
+            e.preventDefault();
+            const tIdx = parseInt(presetItem.dataset.track);
+            const key = presetItem.dataset.key;
+            applyPreset(tIdx, key);
+            return;
+        }
+
         const clearBtn = e.target.closest('.clear-lines-btn');
         const addBtn = e.target.closest('.add-line');
         const removeBtn = e.target.closest('.remove-line');
@@ -1779,6 +2016,22 @@
             buildTracksUI();
             updateCanvasDimensions();
             render();
+        }
+    });
+
+    // Fermeture du dropdown lors d'un clic extérieur ou appui sur Échap
+    window.addEventListener('click', (e) => {
+        const dropdown = document.getElementById('presets-dropdown');
+        if (!dropdown || !dropdown.classList.contains('is-active')) return;
+        if (!dropdown.contains(e.target)) {
+            dropdown.classList.remove('is-active');
+        }
+    });
+
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            const dropdown = document.getElementById('presets-dropdown');
+            if (dropdown) dropdown.classList.remove('is-active');
         }
     });
 

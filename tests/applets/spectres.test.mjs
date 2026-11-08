@@ -56,7 +56,7 @@ describe('Générateur de Spectres (/applets/spectres)', () => {
   // Extraction du code JS du script principal (dernier bloc <script> non-module)
   const scripts = [...htmlContent.matchAll(/<script(?![^>]*type=['"]module['"])[^>]*>([\s\S]*?)<\/script>/gi)];
   assert.ok(scripts.length >= 2, 'Les scripts inline de spectres doivent exister');
-  const jsCode = scripts[scripts.length - 1][1] + '; globalThis.__PRESETS_DB = PRESETS_DB; globalThis.__state = state; globalThis.__getHoveredLine = getHoveredLine; globalThis.__getLayoutGeometry = getLayoutGeometry; globalThis.__getEffectiveLineWidth = getEffectiveLineWidth;';
+  const jsCode = scripts[scripts.length - 1][1] + '; globalThis.__PRESETS_DB = PRESETS_DB; globalThis.__state = state; globalThis.__getHoveredLine = getHoveredLine; globalThis.__getLayoutGeometry = getLayoutGeometry; globalThis.__getEffectiveLineWidth = getEffectiveLineWidth; globalThis.__buildPresetsDropdownHTML = buildPresetsDropdownHTML; globalThis.__applyPreset = applyPreset;';
 
   const elementsById = new Map();
   const createMockElement = (id = '') => {
@@ -152,10 +152,12 @@ describe('Générateur de Spectres (/applets/spectres)', () => {
   });
 
   describe('Conversion longueur d\'onde -> RGB (wavelengthToRGB)', () => {
-    it('retourne [0, 0, 0] pour les longueurs d\'onde hors du visible (< 380 nm ou > 780 nm)', () => {
+    it('retourne [0, 0, 0] pour les longueurs d\'onde hors du visible (< 400 nm ou > 800 nm)', () => {
       const { wavelengthToRGB } = sandbox;
       assert.deepEqual([...wavelengthToRGB(300)], [0, 0, 0]);
       assert.deepEqual([...wavelengthToRGB(350)], [0, 0, 0]);
+      assert.deepEqual([...wavelengthToRGB(395)], [0, 0, 0]);
+      assert.deepEqual([...wavelengthToRGB(805)], [0, 0, 0]);
       assert.deepEqual([...wavelengthToRGB(850)], [0, 0, 0]);
     });
 
@@ -260,7 +262,7 @@ describe('Générateur de Spectres (/applets/spectres)', () => {
         assert.ok(preset.label, `Le preset ${key} doit avoir un label`);
         assert.ok(Array.isArray(preset.lines), `Le preset ${key} doit avoir un tableau lines`);
         for (const line of preset.lines) {
-          assert.ok(line.lambda >= 350 && line.lambda <= 800, `λ=${line.lambda} dans ${key} doit être dans [350, 800] nm`);
+          assert.ok(line.lambda >= 350 && line.lambda <= 850, `λ=${line.lambda} dans ${key} doit être dans [350, 850] nm`);
           assert.ok(line.w > 0, `Largeur w=${line.w} dans ${key} doit être > 0`);
           assert.ok(line.intensity >= 0 && line.intensity <= 1, `Intensité dans ${key} doit être dans [0, 1]`);
         }
@@ -301,6 +303,82 @@ describe('Générateur de Spectres (/applets/spectres)', () => {
     it('le changement de preset ne doit pas écraser un nom personnalisé', () => {
       assert.match(htmlContent, /const\s+isAutoName\s*=/);
       assert.match(htmlContent, /if\s*\(isAutoName\)\s*\{\s*state\.tracks\[tIdx\]\.name/);
+    });
+  });
+
+  describe('Méga-dropdown des présélections (catalogue structuré par catégories comme Grapher)', () => {
+    it('le HTML de spectres doit inclure le conteneur dropdown Bulma avec menu structuré', () => {
+      assert.match(htmlContent, /id=["']presets-dropdown["']/);
+      assert.match(htmlContent, /class=["'][^"']*dropdown\s+is-right[^"']*["']/);
+      assert.match(htmlContent, /class=["'][^"']*preset-dropdown-btn[^"']*["']/);
+      assert.match(htmlContent, /class=["'][^"']*preset-dropdown-content[^"']*["']|id=["']presets-dropdown-content["']/);
+    });
+
+    it('buildPresetsDropdownHTML doit générer une disposition en colonnes avec les 3 catégories', () => {
+      const buildDropdownHTML = sandbox.__buildPresetsDropdownHTML;
+      assert.equal(typeof buildDropdownHTML, 'function');
+
+      const html = buildDropdownHTML('Na', 0);
+      // Colonnes Bulma
+      assert.match(html, /class=["'][^"']*columns[^"']*["']/);
+      assert.match(html, /class=["'][^"']*column\s+is-6[^"']*["']/);
+
+      // Titres des 3 catégories
+      assert.match(html, /Atomes\s*&\s*Ions/);
+      assert.match(html, /Étoiles/);
+      assert.match(html, /Molécules\s*&\s*Solutions/);
+
+      // Icônes de catégories
+      assert.match(html, /fa-atom/);
+      assert.match(html, /fa-star/);
+      assert.match(html, /fa-flask/);
+    });
+
+    it('chaque preset doit posséder son tag, sa description et son attribut data-key', () => {
+      const buildDropdownHTML = sandbox.__buildPresetsDropdownHTML;
+      const html = buildDropdownHTML('H', 0);
+
+      // Atomes : tag bleu
+      assert.match(html, /data-key=["']H["'][^>]*>[\s\S]*?<span\s+class=["'][^"']*tag\s+is-info\s+is-light[^"']*["'][^>]*>[\s\S]*?H[\s\S]*?<\/span>/);
+      // Étoiles : tag jaune
+      assert.match(html, /data-key=["']Star_Soleil["'][^>]*>[\s\S]*?<span\s+class=["'][^"']*tag\s+is-warning\s+is-light[^"']*["'][^>]*>[\s\S]*?Soleil[\s\S]*?<\/span>/);
+      // Molécules : tag violet harmonisé avec Grapher
+      assert.match(html, /data-key=["']KMnO4["'][^>]*>[\s\S]*?<span\s+class=["'][^"']*tag\s+is-purple-light[^"']*["'][^>]*>[\s\S]*?KMnO₄[\s\S]*?<\/span>/);
+    });
+
+    it('l\'élément sélectionné doit être mis en valeur (is-active-preset et coche check)', () => {
+      const buildDropdownHTML = sandbox.__buildPresetsDropdownHTML;
+      const htmlNa = buildDropdownHTML('Na', 0);
+
+      assert.match(htmlNa, /class=["'][^"']*preset-item\s+is-active-preset[^"']*["'][^>]*data-key=["']Na["']/);
+      assert.match(htmlNa, /data-key=["']Na["'][\s\S]*?fa-check/);
+    });
+
+    it('applyPreset applique correctement le modèle, met à jour les raies et ajuste le mode', () => {
+      const applyPreset = sandbox.__applyPreset;
+      const state = sandbox.__state;
+      const PRESETS_DB = sandbox.__PRESETS_DB;
+      assert.equal(typeof applyPreset, 'function');
+
+      // Test 1: Sélection d'un atome (Na)
+      state.tracks[0].name = "Corps chaud"; // nom par défaut
+      applyPreset(0, 'Na');
+      assert.equal(state.tracks[0].presetKey, 'Na');
+      assert.equal(state.tracks[0].name, 'Sodium');
+      assert.equal(state.tracks[0].lines.length, PRESETS_DB.Na.lines.length);
+
+      // Test 2: Sélection d'une solution (KMnO4) -> bascule automatique en mode absorption
+      applyPreset(0, 'KMnO4');
+      assert.equal(state.tracks[0].presetKey, 'KMnO4');
+      assert.equal(state.tracks[0].mode, 'absorption_lines');
+      assert.equal(state.tracks[0].name, 'Permanganate de potassium');
+
+      // Test 3: Sélection d'une étoile (Soleil) -> mode thermal_abs et température
+      applyPreset(0, 'Star_Soleil');
+      assert.equal(state.tracks[0].presetKey, 'Star_Soleil');
+      assert.equal(state.tracks[0].mode, 'thermal_abs');
+      assert.equal(state.tracks[0].temp, 5800);
+      assert.equal(state.tracks[0].name, 'Soleil');
     });
   });
 
@@ -345,8 +423,8 @@ describe('Générateur de Spectres (/applets/spectres)', () => {
       }
     });
 
-    it('doit couvrir tout le spectre visible pour une vue globale (400 - 750 nm)', () => {
-      const grad = sandbox.getSpectrumGradient(400, 750);
+    it('doit couvrir tout le spectre visible pour une vue globale (400 - 800 nm)', () => {
+      const grad = sandbox.getSpectrumGradient(400, 800);
       const rgbMatches = [...grad.matchAll(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/g)];
       // Premier stop : violet (B élevé)
       const firstB = parseInt(rgbMatches[0][3]);
@@ -522,7 +600,7 @@ describe('Générateur de Spectres (/applets/spectres)', () => {
       assert.equal(minInput.value, 350, 'Le champ minInput doit afficher 350 et non 100 après validation');
     });
 
-    it('doit réécrire la valeur corrigée (800) dans zoomMaxInput même si le champ a le focus', () => {
+    it('doit réécrire la valeur corrigée (850) dans zoomMaxInput même si le champ a le focus', () => {
       const maxInput = elementsById.get('zoomMaxInput');
       const state = sandbox.__state;
       sandbox.document.activeElement = maxInput;
@@ -530,8 +608,8 @@ describe('Générateur de Spectres (/applets/spectres)', () => {
       maxInput.value = '999';
       maxInput.dispatchEvent({ type: 'change', target: maxInput });
 
-      assert.equal(state.viewMaxNm, 800);
-      assert.equal(maxInput.value, 800, 'Le champ maxInput doit afficher 800 et non 999 après validation');
+      assert.equal(state.viewMaxNm, 850);
+      assert.equal(maxInput.value, 850, 'Le champ maxInput doit afficher 850 et non 999 après validation');
     });
 
     it('doit restaurer la valeur courante dans l\'input si la saisie est invalide (NaN)', () => {
@@ -558,9 +636,9 @@ describe('Générateur de Spectres (/applets/spectres)', () => {
         { lambda: 589.0, w: 1.8, intensity: 1.00, label: 'D2' },
         { lambda: 589.6, w: 1.8, intensity: 0.95, label: 'D1' }
       ];
-      // Zoom global standard (380 - 780 nm)
-      state.viewMinNm = 380;
-      state.viewMaxNm = 780;
+      // Zoom global standard (400 - 800 nm)
+      state.viewMinNm = 400;
+      state.viewMaxNm = 800;
 
       const geom = getLayoutGeometry();
       const xD2 = geom.nmToX(589.0);
