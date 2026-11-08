@@ -23,6 +23,12 @@ describe('Générateur de Spectres (/applets/spectres)', () => {
     assert.match(htmlContent, /id=["']activeTrackContainer["']/);
   });
 
+  it('le mode exagération doit être désactivé par défaut', () => {
+    assert.doesNotMatch(htmlContent, /<input\s+type=["']checkbox["']\s+id=["']toggleExaggerated["']\s+checked/);
+    assert.match(htmlContent, /<input\s+type=["']checkbox["']\s+id=["']toggleExaggerated["']/);
+    assert.match(htmlContent, /exaggerated:\s*false/);
+  });
+
   it('doit corriger le défilement vertical pour éviter que le panneau soit tronqué (overflow-y: auto)', () => {
     // common.css applique overflow: hidden sur body, html.
     // L'applet doit impérativement forcer overflow-y: auto !important pour les petits écrans / ordinateurs portables.
@@ -50,7 +56,7 @@ describe('Générateur de Spectres (/applets/spectres)', () => {
   // Extraction du code JS du script principal (dernier bloc <script> non-module)
   const scripts = [...htmlContent.matchAll(/<script(?![^>]*type=['"]module['"])[^>]*>([\s\S]*?)<\/script>/gi)];
   assert.ok(scripts.length >= 2, 'Les scripts inline de spectres doivent exister');
-  const jsCode = scripts[scripts.length - 1][1] + '; globalThis.__PRESETS_DB = PRESETS_DB; globalThis.__state = state; globalThis.__getHoveredLine = getHoveredLine; globalThis.__getLayoutGeometry = getLayoutGeometry;';
+  const jsCode = scripts[scripts.length - 1][1] + '; globalThis.__PRESETS_DB = PRESETS_DB; globalThis.__state = state; globalThis.__getHoveredLine = getHoveredLine; globalThis.__getLayoutGeometry = getLayoutGeometry; globalThis.__getEffectiveLineWidth = getEffectiveLineWidth;';
 
   const elementsById = new Map();
   const createMockElement = (id = '') => {
@@ -139,6 +145,7 @@ describe('Générateur de Spectres (/applets/spectres)', () => {
   it('le script principal doit s\'évaluer sans erreur', () => {
     vm.runInContext(jsCode, sandbox);
     assert.ok(sandbox.__PRESETS_DB);
+    assert.equal(sandbox.__state.exaggerated, false);
     assert.equal(typeof sandbox.wavelengthToRGB, 'function');
     assert.equal(typeof sandbox.getThermalMultiplier, 'function');
     assert.equal(typeof sandbox.getLinesFactor, 'function');
@@ -187,6 +194,18 @@ describe('Générateur de Spectres (/applets/spectres)', () => {
 
       const multHotViolet = getThermalMultiplier(420, 9000, true, 7);
       assert.ok(multHotViolet > 0.9, `À 9000 K, le violet doit être allumé (obtenu ${multHotViolet})`);
+    });
+
+    it('Mode exagéré : à très haute température (12000 K), le violet domine et le rouge est atténué sans extinction totale', () => {
+      const { getThermalMultiplier } = sandbox;
+      const multHotViolet = getThermalMultiplier(400, 12000, true, 7);
+      const multHotHAlpha = getThermalMultiplier(656.3, 12000, true, 7);
+      const multHotDeepRed = getThermalMultiplier(770, 12000, true, 7);
+
+      assert.ok(multHotViolet > 0.9, `À 12000 K, le violet doit être éclatant (> 0.9), obtenu ${multHotViolet}`);
+      assert.ok(multHotDeepRed < 0.35, `À 12000 K, le rouge extrême doit être atténué (< 0.35), obtenu ${multHotDeepRed}`);
+      assert.ok(multHotDeepRed > 0.15, `À 12000 K, le rouge ne doit pas être totalement coupé (> 0.15), obtenu ${multHotDeepRed}`);
+      assert.ok(multHotHAlpha > 0.45, `À 12000 K, la raie Hα (656.3 nm) doit rester clairement visible (> 0.45), obtenu ${multHotHAlpha}`);
     });
 
     it('Mode réaliste (loi de Planck) : produit des valeurs bornées dans [0, 1] sans NaN', () => {
@@ -580,6 +599,43 @@ describe('Générateur de Spectres (/applets/spectres)', () => {
       assert.equal(getHoveredLine(geom.nmToX(589.0), 0), null);
       // En dehors en X (loin de toute raie, ex: 450 nm)
       assert.equal(getHoveredLine(geom.nmToX(450.0), geom.topMargin + 10), null);
+    });
+  });
+
+  describe('Continuité de la largeur des raies et cadre de survol (B5)', () => {
+    it('getEffectiveLineWidth doit assurer la continuité autour de 5 nm sans saut brutal', () => {
+      const getEffectiveLineWidth = sandbox.__getEffectiveLineWidth;
+      assert.equal(typeof getEffectiveLineWidth, 'function', 'getEffectiveLineWidth doit être définie');
+
+      // Zoom fort (span = 7 nm, zoomResolutionScale = 0.08)
+      const w50 = getEffectiveLineWidth(5.0, 7);
+      const w51 = getEffectiveLineWidth(5.1, 7);
+
+      assert.ok(w50 > 2.0 && w50 < 3.0, `w50 doit être environ 2.7 nm (obtenu: ${w50})`);
+      assert.ok(w51 > 2.0 && w51 < 3.0, `w51 doit être environ 2.8 nm (obtenu: ${w51})`);
+      assert.ok(Math.abs(w51 - w50) < 0.2, `La différence entre 5.0 et 5.1 nm doit être continue (<0.2 nm) : ${Math.abs(w51 - w50)}`);
+
+      // Raie fine atomique (w = 1.8 nm) : doit être amincie au maximum
+      const wFine = getEffectiveLineWidth(1.8, 7);
+      assert.ok(wFine < 0.2, `Une raie fine atomique doit être amincie (obtenu: ${wFine})`);
+
+      // Bande large moléculaire (w >= 8 nm) : doit conserver sa largeur physique exacte
+      const wBand = getEffectiveLineWidth(40.0, 7);
+      assert.equal(wBand, 40.0, 'Une bande large doit conserver sa largeur physique exacte');
+    });
+
+    it('getEffectiveLineWidth doit être robuste aux valeurs invalides ou indéfinies', () => {
+      const getEffectiveLineWidth = sandbox.__getEffectiveLineWidth;
+      assert.equal(getEffectiveLineWidth(undefined, 400), 2.0);
+      assert.equal(getEffectiveLineWidth(null, 400), 2.0);
+      assert.equal(getEffectiveLineWidth(0, 400), 2.0);
+      assert.equal(getEffectiveLineWidth(-5, 400), 2.0);
+      assert.equal(getEffectiveLineWidth(NaN, 400), 2.0);
+    });
+
+    it('le code de rendu du cadre de survol et de capture doit utiliser getEffectiveLineWidth', () => {
+      assert.match(htmlContent, /const\s+effectiveW\s*=\s*getEffectiveLineWidth\(line\.w,\s*geom\.spanNm\);/);
+      assert.match(htmlContent, /const\s+boxW\s*=\s*Math\.max\(6,\s*\(effectiveW\s*\/\s*geom\.spanNm\)\s*\*\s*geom\.totalBarWidth\);/);
     });
   });
 });
