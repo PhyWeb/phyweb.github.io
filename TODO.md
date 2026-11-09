@@ -4,9 +4,7 @@
 
     - Deplacer le a propos dans le menu ?
 
-    - On defullscreen pas quand on essai de drag la fenetre
-
-    - [x] Raccourcis clavier dans les modales (Entrée pour valider, Échap pour annuler)
+    - On defullscreen pas quand on essai de drag la fenetre (si?)
 
     quand on ouvre un .pw, mettre un spinner
 
