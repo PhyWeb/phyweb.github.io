@@ -11,10 +11,27 @@ const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '../..');
 
 describe('Générateur de Spectres (/applets/spectres)', () => {
-  const htmlPath = path.join(rootDir, 'applets/spectres/index.html');
-  const htmlContent = fs.readFileSync(htmlPath, 'utf8');
+  const spectresDir = path.join(rootDir, 'applets/spectres');
+  const htmlPath = path.join(spectresDir, 'index.html');
+  const cssPath = path.join(spectresDir, 'style.css');
+  const dataPath = path.join(spectresDir, 'data.js');
+  const mainPath = path.join(spectresDir, 'main.js');
 
-  it('le fichier applets/spectres/index.html doit contenir les balises et styles essentiels', () => {
+  const htmlContent = fs.readFileSync(htmlPath, 'utf8');
+  const cssContent = fs.readFileSync(cssPath, 'utf8');
+  const dataContent = fs.readFileSync(dataPath, 'utf8');
+  const mainContent = fs.readFileSync(mainPath, 'utf8');
+
+  it('l\'applet doit être correctement découpée en 4 fichiers (html, css, data, main)', () => {
+    assert.ok(fs.existsSync(htmlPath), 'index.html doit exister');
+    assert.ok(fs.existsSync(cssPath), 'style.css doit exister');
+    assert.ok(fs.existsSync(dataPath), 'data.js doit exister');
+    assert.ok(fs.existsSync(mainPath), 'main.js doit exister');
+    assert.match(htmlContent, /<link\s+rel=["']stylesheet["']\s+href=["']style\.css["']/);
+    assert.match(htmlContent, /<script\s+type=["']module["']\s+src=["']main\.js["']>/);
+  });
+
+  it('le fichier applets/spectres/index.html doit contenir les balises essentielles', () => {
     assert.ok(htmlContent.length > 0);
     assert.match(htmlContent, /<canvas\s+id=["']spectrumCanvas["']/);
     assert.match(htmlContent, /id=["']zoomMinSlider["']/);
@@ -26,14 +43,14 @@ describe('Générateur de Spectres (/applets/spectres)', () => {
   it('le mode exagération doit être désactivé par défaut', () => {
     assert.doesNotMatch(htmlContent, /<input\s+type=["']checkbox["']\s+id=["']toggleExaggerated["']\s+checked/);
     assert.match(htmlContent, /<input\s+type=["']checkbox["']\s+id=["']toggleExaggerated["']/);
-    assert.match(htmlContent, /exaggerated:\s*false/);
+    assert.match(dataContent, /exaggerated:\s*false/);
   });
 
   it('doit corriger le défilement vertical pour éviter que le panneau soit tronqué (overflow-y: auto)', () => {
     // common.css applique overflow: hidden sur body, html.
     // L'applet doit impérativement forcer overflow-y: auto !important pour les petits écrans / ordinateurs portables.
-    assert.match(htmlContent, /overflow-y:\s*auto\s*!important/i);
-    assert.match(htmlContent, /touch-action:\s*none/i);
+    assert.match(cssContent, /overflow-y:\s*auto\s*!important/i);
+    assert.match(cssContent, /touch-action:\s*none/i);
   });
 
   it('les inputs de zoom doivent accepter des pas décimaux (step="any")', () => {
@@ -52,11 +69,6 @@ describe('Générateur de Spectres (/applets/spectres)', () => {
     assert.match(errorHtml, /\/spectres/);
     assert.match(errorHtml, /\/applets\/spectres\//);
   });
-
-  // Extraction du code JS du script principal (dernier bloc <script> non-module)
-  const scripts = [...htmlContent.matchAll(/<script(?![^>]*type=['"]module['"])[^>]*>([\s\S]*?)<\/script>/gi)];
-  assert.ok(scripts.length >= 2, 'Les scripts inline de spectres doivent exister');
-  const jsCode = scripts[scripts.length - 1][1] + '; globalThis.__PRESETS_DB = PRESETS_DB; globalThis.__state = state; globalThis.__getHoveredLine = getHoveredLine; globalThis.__getLayoutGeometry = getLayoutGeometry; globalThis.__getEffectiveLineWidth = getEffectiveLineWidth; globalThis.__buildPresetsDropdownHTML = buildPresetsDropdownHTML; globalThis.__applyPreset = applyPreset;';
 
   const elementsById = new Map();
   const createMockElement = (id = '') => {
@@ -110,7 +122,7 @@ describe('Générateur de Spectres (/applets/spectres)', () => {
     return el;
   };
 
-  // Exécution du script dans un bac à sable avec mocks DOM
+  // Exécution des scripts dans un bac à sable avec mocks DOM
   const sandbox = {
     document: {
       documentElement: { classList: { add: () => {} } },
@@ -138,12 +150,25 @@ describe('Générateur de Spectres (/applets/spectres)', () => {
     isNaN,
     JSON,
     Uint8ClampedArray,
-    showToast: () => {}
+    showToast: () => {},
+    initApplets: () => {}
   };
   vm.createContext(sandbox);
 
-  it('le script principal doit s\'évaluer sans erreur', () => {
-    vm.runInContext(jsCode, sandbox);
+  // Évaluation de data.js et main.js dans le sandbox
+  const dataJsClean = dataContent
+    .replace(/^export\s+(const|let|function)/gm, '$1')
+    .replace(/^export\s*\{[^}]*\};?/gm, '');
+  vm.runInContext(dataJsClean, sandbox);
+
+  const mainJsClean = mainContent
+    .replace(/^import\s+[\s\S]*?from\s+['"][^'"]+['"];?/gm, '')
+    .replace(/^export\s+(const|let|function)/gm, '$1')
+    .replace(/^export\s*\{[^}]*\};?/gm, '') +
+    '; globalThis.__PRESETS_DB = PRESETS_DB; globalThis.__state = state; globalThis.__getHoveredLine = getHoveredLine; globalThis.__getLayoutGeometry = getLayoutGeometry; globalThis.__getEffectiveLineWidth = getEffectiveLineWidth; globalThis.__buildPresetsDropdownHTML = buildPresetsDropdownHTML; globalThis.__applyPreset = applyPreset;';
+
+  it('les modules data.js et main.js doivent s\'évaluer sans erreur', () => {
+    vm.runInContext(mainJsClean, sandbox);
     assert.ok(sandbox.__PRESETS_DB);
     assert.equal(sandbox.__state.exaggerated, false);
     assert.equal(typeof sandbox.wavelengthToRGB, 'function');
@@ -289,9 +314,9 @@ describe('Générateur de Spectres (/applets/spectres)', () => {
 
   describe('Logique de sélection de presets (nom et mode)', () => {
     it('le code de gestion du catalogue doit adapter automatiquement le mode et le nom', () => {
-      assert.match(htmlContent, /state\.tracks\[tIdx\]\.mode\s*=\s*['"]absorption_lines['"]/);
-      assert.match(htmlContent, /state\.tracks\[tIdx\]\.mode\s*=\s*['"]thermal_abs['"]/);
-      assert.match(htmlContent, /state\.tracks\[tIdx\]\.name\s*=\s*getPresetShortName\(item\)/);
+      assert.match(mainContent, /state\.tracks\[tIdx\]\.mode\s*=\s*['"]absorption_lines['"]/);
+      assert.match(mainContent, /state\.tracks\[tIdx\]\.mode\s*=\s*['"]thermal_abs['"]/);
+      assert.match(mainContent, /state\.tracks\[tIdx\]\.name\s*=\s*getPresetShortName\(item\)/);
     });
 
     it('getPresetShortName retire la partie entre parenthèses du libellé', () => {
@@ -301,17 +326,23 @@ describe('Générateur de Spectres (/applets/spectres)', () => {
     });
 
     it('le changement de preset ne doit pas écraser un nom personnalisé', () => {
-      assert.match(htmlContent, /const\s+isAutoName\s*=/);
-      assert.match(htmlContent, /if\s*\(isAutoName\)\s*\{\s*state\.tracks\[tIdx\]\.name/);
+      assert.match(mainContent, /const\s+isAutoName\s*=/);
+      assert.match(mainContent, /if\s*\(isAutoName\)\s*\{\s*state\.tracks\[tIdx\]\.name/);
     });
   });
 
   describe('Méga-dropdown des présélections (catalogue structuré par catégories comme Grapher)', () => {
-    it('le HTML de spectres doit inclure le conteneur dropdown Bulma avec menu structuré', () => {
-      assert.match(htmlContent, /id=["']presets-dropdown["']/);
-      assert.match(htmlContent, /class=["'][^"']*dropdown\s+is-right[^"']*["']/);
-      assert.match(htmlContent, /class=["'][^"']*preset-dropdown-btn[^"']*["']/);
-      assert.match(htmlContent, /class=["'][^"']*preset-dropdown-content[^"']*["']|id=["']presets-dropdown-content["']/);
+    it('le code de spectres doit inclure le conteneur dropdown Bulma avec menu structuré', () => {
+      assert.match(mainContent, /id=["']presets-dropdown["']/);
+      assert.match(mainContent, /class=["'][^"']*dropdown\s+is-right[^"']*["']/);
+      assert.match(mainContent, /class=["'][^"']*preset-dropdown-btn[^"']*["']/);
+      assert.match(mainContent, /class=["'][^"']*preset-dropdown-content[^"']*["']|id=["']presets-dropdown-content["']/);
+    });
+
+    it('le bouton du dropdown ne doit pas tronquer son icône à gauche (annulation des marges négatives Bulma)', () => {
+      // Bulma applique .button .icon:first-child:not(:last-child) avec margin-inline-start négatif.
+      // Dans le bouton de présélection, l'icône de gauche ne doit pas avoir de marge négative et ne doit pas être tronquée.
+      assert.match(cssContent, /\.preset-dropdown-btn\s+\.icon:first-child:not\(:last-child\)\s*\{[^}]*margin-inline-start:\s*0/);
     });
 
     it('buildPresetsDropdownHTML doit générer une disposition en colonnes avec les 3 catégories', () => {
@@ -384,7 +415,7 @@ describe('Générateur de Spectres (/applets/spectres)', () => {
 
   describe('Intégrité de l\'axe et du zoom à fort grossissement', () => {
     it('doit prévoir un pas fin (majorStep=0.5, minorStep=0.1) quand spanNm <= 4', () => {
-      assert.match(htmlContent, /geom\.spanNm\s*<=\s*4\)\s*\{\s*majorStep\s*=\s*0\.5;\s*minorStep\s*=\s*0\.1;/);
+      assert.match(mainContent, /geom\.spanNm\s*<=\s*4\)\s*\{\s*majorStep\s*=\s*0\.5;\s*minorStep\s*=\s*0\.1;/);
     });
   });
 
@@ -437,7 +468,7 @@ describe('Générateur de Spectres (/applets/spectres)', () => {
     });
 
     it('syncZoomUI doit appliquer le dégradé dynamique sur fill.style.background', () => {
-      assert.match(htmlContent, /fill\.style\.background\s*=\s*getSpectrumGradient\(vMin,\s*vMax\)/);
+      assert.match(mainContent, /fill\.style\.background\s*=\s*getSpectrumGradient\(vMin,\s*vMax\)/);
     });
 
     it('doit mémoïser le dégradé pour éviter des allocations et recalculs superflus', () => {
@@ -452,30 +483,30 @@ describe('Générateur de Spectres (/applets/spectres)', () => {
 
   describe('Fluidité 60 Hz et Optimisation de la barre de zoom', () => {
     it('la piste de remplissage .dual-range-fill doit avoir will-change et pointer-events: none', () => {
-      assert.match(htmlContent, /\.dual-range-fill\s*\{[^}]*pointer-events:\s*none;/);
-      assert.match(htmlContent, /\.dual-range-fill\s*\{[^}]*will-change:\s*left,\s*width;/);
-      assert.match(htmlContent, /\.dual-range-track\s*\{[^}]*pointer-events:\s*none;/);
+      assert.match(cssContent, /\.dual-range-fill\s*\{[^}]*pointer-events:\s*none;/);
+      assert.match(cssContent, /\.dual-range-fill\s*\{[^}]*will-change:\s*left,\s*width;/);
+      assert.match(cssContent, /\.dual-range-track\s*\{[^}]*pointer-events:\s*none;/);
     });
 
     it('doit découpler le rafraîchissement continu via scheduleRender / requestAnimationFrame', () => {
-      assert.match(htmlContent, /function\s+scheduleRender\s*\(\)/);
-      assert.match(htmlContent, /renderAnimFrameId\s*=\s*requestFrame/);
+      assert.match(mainContent, /function\s+scheduleRender\s*\(\)/);
+      assert.match(mainContent, /renderAnimFrameId\s*=\s*requestFrame/);
     });
 
     it('updateCanvasDimensions ne doit réallouer canvas.width/height que si les dimensions ont changé', () => {
-      assert.match(htmlContent, /if\s*\(\s*canvas\.width\s*!==\s*targetW\s*\)\s*canvas\.width\s*=\s*targetW;/);
-      assert.match(htmlContent, /if\s*\(\s*canvas\.height\s*!==\s*targetH\s*\)\s*canvas\.height\s*=\s*targetH;/);
+      assert.match(mainContent, /if\s*\(\s*canvas\.width\s*!==\s*targetW\s*\)\s*canvas\.width\s*=\s*targetW;/);
+      assert.match(mainContent, /if\s*\(\s*canvas\.height\s*!==\s*targetH\s*\)\s*canvas\.height\s*=\s*targetH;/);
     });
 
     it('doit éviter les reflows forcés (getBoundingClientRect) pendant le glissement des curseurs', () => {
-      assert.match(htmlContent, /isDraggingZoomSlider\s*=\s*true/);
-      assert.match(htmlContent, /if\s*\(\s*isDraggingZoomSlider\s*\)\s*return;/);
+      assert.match(mainContent, /isDraggingZoomSlider\s*=\s*true/);
+      assert.match(mainContent, /if\s*\(\s*isDraggingZoomSlider\s*\)\s*return;/);
     });
   });
 
   describe('Gestion de la molette et zoom au pavé tactile (wheel)', () => {
     it('le code source ne doit pas appeler preventDefault avant de vérifier que le curseur est dans la bande', () => {
-      const wheelCodeMatch = htmlContent.match(/canvas\.addEventListener\(['"]wheel['"],\s*\(e\)\s*=>\s*\{([\s\S]*?)\}\s*,\s*\{\s*passive:\s*false\s*\}\);/);
+      const wheelCodeMatch = mainContent.match(/canvas\.addEventListener\(['"]wheel['"],\s*\(e\)\s*=>\s*\{([\s\S]*?)\}\s*,\s*\{\s*passive:\s*false\s*\}\);/);
       assert.ok(wheelCodeMatch, 'Le listener wheel doit être présent');
       const body = wheelCodeMatch[1];
       const preventDefaultIndex = body.indexOf('e.preventDefault()');
@@ -489,8 +520,8 @@ describe('Générateur de Spectres (/applets/spectres)', () => {
     });
 
     it('le zoom doit être proportionnel à deltaY (évite le sur-zoom sur pavé tactile)', () => {
-      assert.match(htmlContent, /Math\.pow\(\s*1\.22\s*,\s*clampedDy\s*\/\s*100\s*\)/);
-      assert.match(htmlContent, /e\.deltaMode\s*===\s*1/);
+      assert.match(mainContent, /Math\.pow\(\s*1\.22\s*,\s*clampedDy\s*\/\s*100\s*\)/);
+      assert.match(mainContent, /e\.deltaMode\s*===\s*1/);
     });
 
     it('ne doit pas bloquer le défilement (pas de preventDefault) quand le curseur est hors de la bande spectrale', () => {
@@ -712,8 +743,8 @@ describe('Générateur de Spectres (/applets/spectres)', () => {
     });
 
     it('le code de rendu du cadre de survol et de capture doit utiliser getEffectiveLineWidth', () => {
-      assert.match(htmlContent, /const\s+effectiveW\s*=\s*getEffectiveLineWidth\(line\.w,\s*geom\.spanNm\);/);
-      assert.match(htmlContent, /const\s+boxW\s*=\s*Math\.max\(6,\s*\(effectiveW\s*\/\s*geom\.spanNm\)\s*\*\s*geom\.totalBarWidth\);/);
+      assert.match(mainContent, /const\s+effectiveW\s*=\s*getEffectiveLineWidth\(line\.w,\s*geom\.spanNm\);/);
+      assert.match(mainContent, /const\s+boxW\s*=\s*Math\.max\(6,\s*\(effectiveW\s*\/\s*geom\.spanNm\)\s*\*\s*geom\.totalBarWidth\);/);
     });
   });
 });
