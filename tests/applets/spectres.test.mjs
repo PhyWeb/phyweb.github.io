@@ -173,7 +173,7 @@ describe('Générateur de Spectres (/applets/spectres)', () => {
     .replace(/^import\s+[\s\S]*?from\s+['"][^'"]+['"];?/gm, '')
     .replace(/^export\s+(const|let|function)/gm, '$1')
     .replace(/^export\s*\{[^}]*\};?/gm, '') +
-    '; globalThis.__PRESETS_DB = PRESETS_DB; globalThis.__state = state; globalThis.__getHoveredLine = getHoveredLine; globalThis.__getLayoutGeometry = getLayoutGeometry; globalThis.__getEffectiveLineWidth = getEffectiveLineWidth; globalThis.__buildPresetsDropdownHTML = buildPresetsDropdownHTML; globalThis.__applyPreset = applyPreset;';
+    '; globalThis.__DEFAULT_STATE = DEFAULT_STATE; globalThis.__PRESETS_DB = PRESETS_DB; globalThis.__state = state; globalThis.__getHoveredLine = getHoveredLine; globalThis.__getLayoutGeometry = getLayoutGeometry; globalThis.__getEffectiveLineWidth = getEffectiveLineWidth; globalThis.__buildPresetsDropdownHTML = buildPresetsDropdownHTML; globalThis.__applyPreset = applyPreset;';
 
   it('les modules data.js et main.js doivent s\'évaluer sans erreur', () => {
     vm.runInContext(mainJsClean, sandbox);
@@ -365,6 +365,16 @@ describe('Générateur de Spectres (/applets/spectres)', () => {
     it('le changement de preset ne doit pas écraser un nom personnalisé', () => {
       assert.match(mainContent, /const\s+isAutoName\s*=/);
       assert.match(mainContent, /if\s*\(isAutoName\)\s*\{\s*state\.tracks\[tIdx\]\.name/);
+    });
+
+    it('DEFAULT_STATE : la piste Corps chaud (mode thermique sans raies) ne doit pas être liée au preset Hydrogène', () => {
+      const DEFAULT_STATE = sandbox.__DEFAULT_STATE;
+      assert.ok(DEFAULT_STATE);
+      const track3 = DEFAULT_STATE.tracks[2];
+      assert.equal(track3.name, 'Corps chaud');
+      assert.equal(track3.mode, 'thermal');
+      assert.equal(track3.lines.length, 0);
+      assert.equal(track3.presetKey, null, 'Le presetKey doit être null pour un corps chaud pur sans raies');
     });
   });
 

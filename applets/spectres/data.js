@@ -364,7 +364,7 @@ export const DEFAULT_STATE = {
             mode: "thermal",
             temp: 3500,
             showTempBadge: true,
-            presetKey: "H",
+            presetKey: null,
             lines: []
         },
         {
