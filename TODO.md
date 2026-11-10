@@ -30,8 +30,6 @@
 
     les grandeurs calculés se mettent toujours a droite du tableau quand on recalcul. du coup si on a mesure/calculée/mesure et que l'on recalcule ca devient mesure/mesure/calculée. On en pense quoi ?
 
-    modal edition model entré marche pas si rein a été modifié
-
 # Mendeleiev
 # Optique
 # Chromato
