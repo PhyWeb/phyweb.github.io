@@ -6,7 +6,7 @@
 
     - On defullscreen pas quand on essai de drag la fenetre (si?)
 
-    quand on ouvre un .pw, mettre un spinner
+    quand on ouvre un .pw, mettre un spinner (sur desktop ca va. tester sur un ordi faible)
 
 # ELECTRON
 
@@ -40,6 +40,8 @@
  - tester sous linux la préselection automatique de l'onglet linux dans la modale de téléchargement
 
  - Possibilité de pwa offline pour ceux qui ont pas acces au store ?
+
+ - tester sur une tablette (apk ?)
 
 
 # Idées
