@@ -1,5 +1,5 @@
 # Common
-    - tester sur petit ecran (et faire les adaptations nécessaires)
+    - tester sur petit ecran (et faire les adaptations nécessaires) <== notament spectres et forces
     - continuer d'ajouter des raccourcis clavier
 
     - Deplacer le a propos dans le menu ?
