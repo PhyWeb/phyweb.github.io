@@ -10,9 +10,11 @@ export const TEMP_MIN_K = 1500;
 export const TEMP_MAX_K = 12000;
 export const TEMP_DEFAULT_K = 5800;
 
-// Base de données vérifiée (NIST ASD / Fraunhofer / Spectrophotométrie UV-Vis)
+// Base de données vérifiée (NIST ASD / Fraunhofer / Spectrophotométrie UV-Vis / Spectres d'éclairage)
 export const PRESETS_DB = {
+    // =========================================================================
     // --- ATOMES & IONS ---
+    // =========================================================================
     H: {
         category: "Atomes & Ions",
         label: "Hydrogène",
@@ -70,6 +72,20 @@ export const PRESETS_DB = {
             { lambda: 579.1, w: 1.8, intensity: 0.85, label: "" }
         ]
     },
+    Mg: {
+        category: "Atomes & Ions",
+        label: "Magnésium",
+        tag: "Mg",
+        desc: "Magnésium",
+        tagClass: "is-info is-light",
+        lines: [
+            { lambda: 383.8, w: 2.2, intensity: 0.85, label: "" },
+            { lambda: 457.1, w: 1.8, intensity: 0.60, label: "" },
+            { lambda: 516.7, w: 2.0, intensity: 0.85, label: "b4" },
+            { lambda: 517.3, w: 2.2, intensity: 0.95, label: "b2" },
+            { lambda: 518.4, w: 2.4, intensity: 1.00, label: "b1" }
+        ]
+    },
     Ca: {
         category: "Atomes & Ions",
         label: "Calcium",
@@ -77,9 +93,9 @@ export const PRESETS_DB = {
         desc: "Calcium",
         tagClass: "is-info is-light",
         lines: [
-            { lambda: 393.4, w: 2.6, intensity: 1.00, label: "Ca II (K)" },
-            { lambda: 396.8, w: 2.6, intensity: 1.00, label: "Ca II (H)" },
-            { lambda: 422.7, w: 2.2, intensity: 0.95, label: "Ca I (g)" },
+            { lambda: 393.4, w: 2.6, intensity: 1.00, label: "K" },
+            { lambda: 396.8, w: 2.6, intensity: 1.00, label: "H" },
+            { lambda: 422.7, w: 2.2, intensity: 0.95, label: "g" },
             { lambda: 612.2, w: 1.8, intensity: 0.75, label: "" },
             { lambda: 616.2, w: 1.8, intensity: 0.80, label: "" },
             { lambda: 643.9, w: 2.0, intensity: 0.85, label: "" }
@@ -124,6 +140,30 @@ export const PRESETS_DB = {
             { lambda: 769.9, w: 2.8, intensity: 0.95, label: "" }
         ]
     },
+    Rb: {
+        category: "Atomes & Ions",
+        label: "Rubidium",
+        tag: "Rb",
+        desc: "Rubidium",
+        tagClass: "is-info is-light",
+        lines: [
+            { lambda: 420.2, w: 1.8, intensity: 0.80, label: "" },
+            { lambda: 421.6, w: 1.8, intensity: 0.75, label: "" },
+            { lambda: 780.0, w: 2.6, intensity: 1.00, label: "" },
+            { lambda: 794.8, w: 2.6, intensity: 0.95, label: "" }
+        ]
+    },
+    Cs: {
+        category: "Atomes & Ions",
+        label: "Césium",
+        tag: "Cs",
+        desc: "Césium",
+        tagClass: "is-info is-light",
+        lines: [
+            { lambda: 455.5, w: 2.2, intensity: 1.00, label: "" },
+            { lambda: 459.3, w: 2.0, intensity: 0.85, label: "" }
+        ]
+    },
     Cu: {
         category: "Atomes & Ions",
         label: "Cuivre",
@@ -150,6 +190,33 @@ export const PRESETS_DB = {
             { lambda: 460.7, w: 2.4, intensity: 1.00, label: "Sr I" },
             { lambda: 606.0, w: 8.0, intensity: 0.85, label: "SrOH" },
             { lambda: 671.0, w: 12.0, intensity: 0.90, label: "SrOH" }
+        ]
+    },
+    Ba: {
+        category: "Atomes & Ions",
+        label: "Baryum",
+        tag: "Ba",
+        desc: "Baryum",
+        tagClass: "is-info is-light",
+        lines: [
+            { lambda: 455.4, w: 2.0, intensity: 0.80, label: "Ba II" },
+            { lambda: 493.4, w: 2.0, intensity: 0.75, label: "Ba II" },
+            { lambda: 553.5, w: 2.6, intensity: 1.00, label: "Ba I" },
+            { lambda: 512.0, w: 8.0, intensity: 0.65, label: "BaCl" },
+            { lambda: 524.0, w: 8.0, intensity: 0.70, label: "BaCl" }
+        ]
+    },
+    Zn: {
+        category: "Atomes & Ions",
+        label: "Zinc",
+        tag: "Zn",
+        desc: "Zinc",
+        tagClass: "is-info is-light",
+        lines: [
+            { lambda: 468.0, w: 2.0, intensity: 0.85, label: "" },
+            { lambda: 472.2, w: 2.2, intensity: 0.90, label: "" },
+            { lambda: 481.1, w: 2.4, intensity: 0.95, label: "" },
+            { lambda: 636.2, w: 2.5, intensity: 1.00, label: "" }
         ]
     },
     Ne: {
@@ -196,7 +263,9 @@ export const PRESETS_DB = {
         ]
     },
 
+    // =========================================================================
     // --- ÉTOILES ---
+    // =========================================================================
     Star_Soleil: {
         category: "Étoiles",
         label: "Soleil (5800 K)",
@@ -247,6 +316,24 @@ export const PRESETS_DB = {
             { lambda: 656.3, w: 2.2, intensity: 0.85, label: "Hα" }
         ]
     },
+    Star_Arcturus: {
+        category: "Étoiles",
+        label: "Arcturus (4300 K)",
+        tag: "Arcturus",
+        desc: "4300 K",
+        tagClass: "is-warning is-light",
+        temp: 4300,
+        lines: [
+            { lambda: 393.4, w: 3.2, intensity: 1.00, label: "K" },
+            { lambda: 396.8, w: 3.2, intensity: 1.00, label: "H" },
+            { lambda: 422.7, w: 2.8, intensity: 0.95, label: "Ca" },
+            { lambda: 430.8, w: 2.4, intensity: 0.90, label: "G" },
+            { lambda: 517.3, w: 2.4, intensity: 0.85, label: "b" },
+            { lambda: 527.0, w: 2.4, intensity: 0.85, label: "Fe" },
+            { lambda: 589.3, w: 2.8, intensity: 0.95, label: "Na" },
+            { lambda: 656.3, w: 2.0, intensity: 0.70, label: "Hα" }
+        ]
+    },
     Star_Betelgeuse: {
         category: "Étoiles",
         label: "Bételgeuse (3500 K)",
@@ -267,7 +354,9 @@ export const PRESETS_DB = {
         ]
     },
 
+    // =========================================================================
     // --- MOLÉCULES & SOLUTIONS ---
+    // =========================================================================
     Atm: {
         category: "Molécules & Solutions",
         label: "Atmosphère terrestre (O₂ / H₂O)",
@@ -281,7 +370,77 @@ export const PRESETS_DB = {
             { lambda: 759.4, w: 14.0, intensity: 0.95, label: "O₂" }
         ]
     },
-    Chloro: {
+    CuSO4: {
+        category: "Molécules & Solutions",
+        label: "Sulfate de cuivre (Cu²⁺ aq)",
+        tag: "Cu²⁺",
+        desc: "Sulfate de cuivre",
+        tagClass: "is-purple-light",
+        lines: [
+            { lambda: 800.0, w: 130.0, intensity: 0.95, label: "Cu²⁺ aq" }
+        ]
+    },
+    Diiode: {
+        category: "Molécules & Solutions",
+        label: "Diiode en solution aqueuse (I₂ / I₃⁻)",
+        tag: "I₂",
+        desc: "Diiode",
+        tagClass: "is-purple-light",
+        lines: [
+            { lambda: 460.0, w: 75.0, intensity: 0.92, label: "I₃⁻" }
+        ]
+    },
+    KMnO4: {
+        category: "Molécules & Solutions",
+        label: "Permanganate de potassium (KMnO₄)",
+        tag: "KMnO₄",
+        desc: "Permanganate",
+        tagClass: "is-purple-light",
+        lines: [
+            { lambda: 526.0, w: 56.0, intensity: 0.96, label: "MnO₄⁻" }
+        ]
+    },
+    BleuPatente: {
+        category: "Molécules & Solutions",
+        label: "Bleu patenté V (E131)",
+        tag: "E131",
+        desc: "Bleu patenté V",
+        tagClass: "is-purple-light",
+        lines: [
+            { lambda: 638.0, w: 52.0, intensity: 0.96, label: "E131" }
+        ]
+    },
+    BleuBrillant: {
+        category: "Molécules & Solutions",
+        label: "Bleu brillant FCF (E133)",
+        tag: "E133",
+        desc: "Bleu brillant",
+        tagClass: "is-purple-light",
+        lines: [
+            { lambda: 630.0, w: 46.0, intensity: 0.95, label: "E133" }
+        ]
+    },
+    Tartrazine: {
+        category: "Molécules & Solutions",
+        label: "Tartrazine (E102)",
+        tag: "E102",
+        desc: "Tartrazine",
+        tagClass: "is-purple-light",
+        lines: [
+            { lambda: 426.0, w: 55.0, intensity: 0.95, label: "E102" }
+        ]
+    },
+    RougeAllura: {
+        category: "Molécules & Solutions",
+        label: "Rouge allura AC (E129)",
+        tag: "E129",
+        desc: "Rouge allura",
+        tagClass: "is-purple-light",
+        lines: [
+            { lambda: 504.0, w: 52.0, intensity: 0.94, label: "E129" }
+        ]
+    },
+    ChloroA: {
         category: "Molécules & Solutions",
         label: "Chlorophylle a",
         tag: "Chl a",
@@ -292,34 +451,46 @@ export const PRESETS_DB = {
             { lambda: 662.0, w: 34.0, intensity: 0.92, label: "Bande Q" }
         ]
     },
-    KMnO4: {
+    ChloroB: {
         category: "Molécules & Solutions",
-        label: "Permanganate de potassium (KMnO₄)",
-        tag: "KMnO₄",
-        desc: "Permanganate",
+        label: "Chlorophylle b",
+        tag: "Chl b",
+        desc: "Chlorophylle b",
         tagClass: "is-purple-light",
         lines: [
-            { lambda: 526.0, w: 56.0, intensity: 0.96, label: "" }
+            { lambda: 455.0, w: 46.0, intensity: 0.94, label: "Soret" },
+            { lambda: 645.0, w: 36.0, intensity: 0.90, label: "Bande Q" }
         ]
     },
-    BleuPatente: {
-        category: "Molécules & Solutions",
-        label: "Bleu patenté V (E131)",
-        tag: "E131",
-        desc: "Bleu patenté V",
-        tagClass: "is-purple-light",
+
+    // =========================================================================
+    // --- SOURCES D'ÉCLAIRAGE ---
+    // =========================================================================
+    Lamp_Fluo: {
+        category: "Sources d'éclairage",
+        label: "Lampe fluocompacte / Tube fluo",
+        tag: "Fluo",
+        desc: "Tube fluorescent",
+        tagClass: "is-success is-light",
         lines: [
-            { lambda: 638.0, w: 52.0, intensity: 0.96, label: "" }
+            { lambda: 404.7, w: 2.0, intensity: 0.40, label: "Hg" },
+            { lambda: 435.8, w: 2.5, intensity: 0.85, label: "Hg" },
+            { lambda: 487.0, w: 6.0, intensity: 0.45, label: "Tb³⁺" },
+            { lambda: 542.4, w: 6.0, intensity: 0.80, label: "Tb³⁺" },
+            { lambda: 546.1, w: 2.5, intensity: 1.00, label: "Hg" },
+            { lambda: 587.0, w: 10.0, intensity: 0.50, label: "Eu³⁺" },
+            { lambda: 611.5, w: 7.0, intensity: 0.95, label: "Eu³⁺" }
         ]
     },
-    Tartrazine: {
-        category: "Molécules & Solutions",
-        label: "Tartrazine (E102)",
-        tag: "E102",
-        desc: "Tartrazine",
-        tagClass: "is-purple-light",
+    Lamp_LED_Blanche: {
+        category: "Sources d'éclairage",
+        label: "LED blanche (GaN + Phosphore YAG)",
+        tag: "LED",
+        desc: "LED blanche",
+        tagClass: "is-success is-light",
         lines: [
-            { lambda: 426.0, w: 55.0, intensity: 0.95, label: "" }
+            { lambda: 452.0, w: 22.0, intensity: 1.00, label: "GaN" },
+            { lambda: 565.0, w: 110.0, intensity: 0.70, label: "YAG:Ce" }
         ]
     }
 };
