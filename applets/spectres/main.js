@@ -97,13 +97,13 @@ export function wavelengthToRGB(wavelength) {
 export const PLANCK_C2 = 1.4388e7; // hc/k en nm·K
 export const planck = (l, T) => 1.0 / (Math.pow(l, 5) * (Math.exp(PLANCK_C2 / (l * T)) - 1));
 
-// Maximum de Planck sur le visible, mémoïsé par température (évite 15 évaluations par pixel)
+// Maximum de Planck sur le spectre observable (350 à 850 nm), mémoïsé par température (évite 15 évaluations par pixel)
 export const planckMaxCache = new Map();
 export function getPlanckMax(tempK) {
     const cached = planckMaxCache.get(tempK);
     if (cached !== undefined) return cached;
     let maxVal = 0;
-    for (let l = LAMBDA_MIN_VISIBLE; l <= LAMBDA_MAX_VISIBLE; l += 25) {
+    for (let l = ABS_MIN_NM; l <= ABS_MAX_NM; l += 25) {
         const v = planck(l, tempK);
         if (v > maxVal) maxVal = v;
     }
@@ -115,14 +115,14 @@ export function getPlanckMax(tempK) {
 
 // --- Calcul de l'intensité thermique (Réaliste vs Exagéré) ---
 export function getThermalMultiplier(lambdaNm, tempK, isExaggerated, sharpness) {
-    if (lambdaNm < LAMBDA_MIN_VISIBLE || lambdaNm > LAMBDA_MAX_VISIBLE) return 0;
-
     if (!isExaggerated) {
+        if (lambdaNm < ABS_MIN_NM || lambdaNm > ABS_MAX_NM) return 0;
         const maxVal = getPlanckMax(tempK);
         const rawRatio = maxVal > 0 ? planck(lambdaNm, tempK) / maxVal : 0;
         const globalBrightness = Math.min(1.0, 0.55 + 0.45 * ((tempK - 1500) / 4500));
         return Math.min(1.0, Math.pow(rawRatio, 0.65) * globalBrightness);
     } else {
+        if (lambdaNm < LAMBDA_MIN_VISIBLE || lambdaNm > LAMBDA_MAX_VISIBLE) return 0;
         let cutoffNm;
         if (tempK <= 6000) {
             const tNorm = Math.max(0, (tempK - 1500) / (6000 - 1500));
@@ -321,7 +321,7 @@ export function getLayoutGeometry() {
     const spanNm = Math.max(1, maxNm - minNm);
 
     const totalBarWidth = state.specWidth;
-    const profileExtraH = state.showProfile ? 88 : 0;
+    const profileExtraH = state.showProfile ? 82 : 0;
 
     const totalW = leftMargin + totalBarWidth + rightMargin;
     const totalH = topMargin + count * state.bandHeight + (count - 1) * trackGap + profileExtraH + bottomMargin;
@@ -597,11 +597,11 @@ export function render() {
 
             drawText("Profil I(λ)", bandX - 10, profY + profH / 2, "#7f8c8d", "italic 12px Arial", "right", "middle");
 
-            if (!isExportingEmptyGrid) {
-                drawLine(bandX, profY + profH - 5, bandX + bandW, profY + profH - 5, "#eceff1", 1);
-                drawText("1", bandX - 3, profY + 7, "#95a5a6", "9px Arial", "right", "middle", false);
-                drawText("0", bandX - 3, profY + profH - 5, "#95a5a6", "9px Arial", "right", "middle", false);
+            drawLine(bandX, profY + profH - 5, bandX + bandW, profY + profH - 5, "#eceff1", 1);
+            drawText("1", bandX - 3, profY + 7, "#95a5a6", "9px Arial", "right", "middle", false);
+            drawText("0", bandX - 3, profY + profH - 5, "#95a5a6", "9px Arial", "right", "middle", false);
 
+            if (!isExportingEmptyGrid) {
                 ctx.beginPath();
                 ctx.strokeStyle = "#e74c3c";
                 ctx.lineWidth = 1.8;
@@ -774,7 +774,7 @@ export function applyPreset(tIdx, key) {
         state.tracks[tIdx].mode = 'thermal_abs';
         if (item.temp) state.tracks[tIdx].temp = item.temp;
     } else if (item.category === 'Atomes & Ions') {
-        if (state.tracks[tIdx].mode === 'thermal') {
+        if (state.tracks[tIdx].mode === 'thermal' || state.tracks[tIdx].mode === 'thermal_abs') {
             state.tracks[tIdx].mode = 'emission_lines';
         }
     }
@@ -906,7 +906,7 @@ export function buildTracksUI() {
                 </div>
             </div>
             <input type="range" class="track-temp-range" data-track="${idx}" min="1500" max="12000" step="50" value="${track.temp}" style="width: 100%;">
-            <div class="is-flex is-justify-content-between mt-1" style="gap: 4px;">
+            <div class="is-flex is-justify-content-space-between mt-1" style="gap: 4px;">
                 <button class="button is-white is-small temp-quick" data-track="${idx}" data-temp="2200" style="flex:1; font-size: 0.65rem; height: 20px; padding: 0;">Lampe 2200K</button>
                 <button class="button is-white is-small temp-quick" data-track="${idx}" data-temp="3500" style="flex:1; font-size: 0.65rem; height: 20px; padding: 0;">3500K</button>
                 <button class="button is-white is-small temp-quick" data-track="${idx}" data-temp="5800" style="flex:1; font-size: 0.65rem; height: 20px; padding: 0;">Soleil 5800K</button>
@@ -1122,6 +1122,18 @@ if (activeTrackContainer) {
                 ? Math.max(ABS_MIN_NM, Math.min(ABS_MAX_NM, parsed))
                 : line.lambda;
             line.lambda = val;
+            t.value = val;
+            scheduleRender();
+            return;
+        }
+        if (t.classList.contains('line-width')) {
+            const lIdx = parseInt(t.dataset.line);
+            const line = state.tracks[tIdx].lines[lIdx];
+            const parsed = parseFloat(t.value);
+            const val = (Number.isFinite(parsed) && parsed > 0)
+                ? Math.max(0.2, Math.min(120, parsed))
+                : line.w;
+            line.w = val;
             t.value = val;
             scheduleRender();
             return;
@@ -1503,10 +1515,11 @@ if (canvas) {
     canvas.addEventListener('pointerup', endPointerAction);
     canvas.addEventListener('pointercancel', endPointerAction);
     canvas.addEventListener('pointerleave', () => {
-        if (!draggedLine && !isPanningSpectrum && hoveredLine) {
+        if (!draggedLine && !isPanningSpectrum) {
+            const hadHover = hoveredLine !== null;
             hoveredLine = null;
             canvas.style.cursor = 'default';
-            render();
+            if (hadHover) render();
         }
     });
 }

@@ -79,8 +79,8 @@ export const PRESETS_DB = {
         lines: [
             { lambda: 393.4, w: 2.6, intensity: 1.00, label: "K" },
             { lambda: 396.8, w: 2.6, intensity: 1.00, label: "H" },
-            { lambda: 422.7, w: 2.2, intensity: 0.95, label: "" },
-            { lambda: 527.0, w: 1.8, intensity: 0.75, label: "" },
+            { lambda: 422.7, w: 2.2, intensity: 0.95, label: "g" },
+            { lambda: 612.2, w: 1.8, intensity: 0.75, label: "" },
             { lambda: 616.2, w: 1.8, intensity: 0.80, label: "" },
             { lambda: 643.9, w: 2.0, intensity: 0.85, label: "" }
         ]

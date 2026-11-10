@@ -40,6 +40,14 @@ describe('Générateur de Spectres (/applets/spectres)', () => {
     assert.match(htmlContent, /id=["']activeTrackContainer["']/);
   });
 
+  it('les boutons d\'action ne doivent pas avoir d\'attributs inline onclick (évite les doubles exécutions)', () => {
+    assert.doesNotMatch(htmlContent, /id=["']btnCopyHD["'][^>]*onclick=/);
+    assert.doesNotMatch(htmlContent, /id=["']btnDownloadHD["'][^>]*onclick=/);
+    assert.doesNotMatch(htmlContent, /id=["']btnCopyEmpty["'][^>]*onclick=/);
+    assert.doesNotMatch(htmlContent, /id=["']btnDownloadEmpty["'][^>]*onclick=/);
+    assert.doesNotMatch(htmlContent, /id=["']btnResetApplet["'][^>]*onclick=/);
+  });
+
   it('le mode exagération doit être désactivé par défaut', () => {
     assert.doesNotMatch(htmlContent, /<input\s+type=["']checkbox["']\s+id=["']toggleExaggerated["']\s+checked/);
     assert.match(htmlContent, /<input\s+type=["']checkbox["']\s+id=["']toggleExaggerated["']/);
@@ -255,6 +263,23 @@ describe('Générateur de Spectres (/applets/spectres)', () => {
       assert.equal(getThermalMultiplier(600, 9000, false, 7), first9000);
       assert.notEqual(first3000, first9000);
     });
+
+    it('Mode réaliste : continuité de la courbe de Planck à la frontière UV/visible (390-410 nm)', () => {
+      const { getThermalMultiplier } = sandbox;
+      // À 5800 K (Soleil), l'intensité thermique doit rester continue à travers 400 nm sans s'effondrer à 0
+      const val390 = getThermalMultiplier(390, 5800, false, 7);
+      const val400 = getThermalMultiplier(400, 5800, false, 7);
+      const val410 = getThermalMultiplier(410, 5800, false, 7);
+
+      assert.ok(val390 > 0.8, `À 390 nm (proche UV), l'intensité doit être calculée (> 0.8), obtenu ${val390}`);
+      assert.ok(val400 > 0.8, `À 400 nm, l'intensité doit être continue (> 0.8), obtenu ${val400}`);
+      assert.ok(val410 > 0.8, `À 410 nm, l'intensité doit être continue (> 0.8), obtenu ${val410}`);
+      assert.ok(Math.abs(val400 - val390) < 0.05, `Continuité entre 390 et 400 nm : écart ${Math.abs(val400 - val390)}`);
+
+      // En dehors de [350, 850], la fonction retourne 0
+      assert.equal(getThermalMultiplier(340, 5800, false, 7), 0);
+      assert.equal(getThermalMultiplier(860, 5800, false, 7), 0);
+    });
   });
 
   describe('Facteur de raies spectrales (getLinesFactor)', () => {
@@ -309,6 +334,18 @@ describe('Générateur de Spectres (/applets/spectres)', () => {
       assert.equal(naLines[1].lambda, 589.6);
       assert.equal(naLines[0].label, 'D2');
       assert.equal(naLines[1].label, 'D1');
+    });
+
+    it('le preset Calcium (Ca) doit contenir les raies authentiques et pas la raie du fer à 527.0 nm', () => {
+      const PRESETS_DB = sandbox.__PRESETS_DB;
+      const caLines = PRESETS_DB.Ca.lines;
+      const lambdas = caLines.map(l => l.lambda);
+      assert.ok(lambdas.includes(393.4), 'Doit contenir Ca II K (393.4 nm)');
+      assert.ok(lambdas.includes(396.8), 'Doit contenir Ca II H (396.8 nm)');
+      assert.ok(lambdas.includes(422.7), 'Doit contenir Ca I g (422.7 nm)');
+      assert.ok(lambdas.includes(612.2), 'Doit contenir la raie orange à 612.2 nm');
+      assert.ok(lambdas.includes(616.2), 'Doit contenir la raie orange à 616.2 nm');
+      assert.ok(!lambdas.includes(527.0), 'Ne doit pas contenir la raie Fraunhofer E du fer (527.0 nm)');
     });
   });
 
@@ -410,12 +447,31 @@ describe('Générateur de Spectres (/applets/spectres)', () => {
       assert.equal(state.tracks[0].mode, 'thermal_abs');
       assert.equal(state.tracks[0].temp, 5800);
       assert.equal(state.tracks[0].name, 'Soleil');
+
+      // Test 4: Sélection d'un atome (H) depuis un mode thermal_abs -> bascule en emission_lines
+      applyPreset(0, 'H');
+      assert.equal(state.tracks[0].presetKey, 'H');
+      assert.equal(state.tracks[0].mode, 'emission_lines', 'Doit basculer en emission_lines lors du choix d\'un atome depuis thermal_abs');
+      assert.equal(state.tracks[0].name, 'Hydrogène');
     });
   });
 
   describe('Intégrité de l\'axe et du zoom à fort grossissement', () => {
     it('doit prévoir un pas fin (majorStep=0.5, minorStep=0.1) quand spanNm <= 4', () => {
       assert.match(mainContent, /geom\.spanNm\s*<=\s*4\)\s*\{\s*majorStep\s*=\s*0\.5;\s*minorStep\s*=\s*0\.1;/);
+    });
+
+    it('l\'encombrement vertical du profil I(λ) dans getLayoutGeometry doit être exactement de 82 px', () => {
+      const state = sandbox.__state;
+      const getLayoutGeometry = sandbox.__getLayoutGeometry;
+
+      state.showProfile = false;
+      const hSansProfil = getLayoutGeometry().totalH;
+
+      state.showProfile = true;
+      const hAvecProfil = getLayoutGeometry().totalH;
+
+      assert.equal(hAvecProfil - hSansProfil, 82, 'L\'activation du profil doit ajouter exactement 82 px au totalH');
     });
   });
 
@@ -709,6 +765,15 @@ describe('Générateur de Spectres (/applets/spectres)', () => {
       // En dehors en X (loin de toute raie, ex: 450 nm)
       assert.equal(getHoveredLine(geom.nmToX(450.0), geom.topMargin + 10), null);
     });
+
+    it('doit réinitialiser le curseur souris à "default" lors du pointerleave même sans raie survolée', () => {
+      const canvasEl = elementsById.get('spectrumCanvas');
+      assert.ok(canvasEl, 'Le canvas doit exister');
+      canvasEl.style.cursor = 'grab';
+
+      canvasEl.dispatchEvent({ type: 'pointerleave' });
+      assert.equal(canvasEl.style.cursor, 'default', 'Le curseur doit revenir à "default" après pointerleave');
+    });
   });
 
   describe('Continuité de la largeur des raies et cadre de survol (B5)', () => {
@@ -745,6 +810,48 @@ describe('Générateur de Spectres (/applets/spectres)', () => {
     it('le code de rendu du cadre de survol et de capture doit utiliser getEffectiveLineWidth', () => {
       assert.match(mainContent, /const\s+effectiveW\s*=\s*getEffectiveLineWidth\(line\.w,\s*geom\.spanNm\);/);
       assert.match(mainContent, /const\s+boxW\s*=\s*Math\.max\(6,\s*\(effectiveW\s*\/\s*geom\.spanNm\)\s*\*\s*geom\.totalBarWidth\);/);
+    });
+  });
+
+  describe('Validation des paramètres de raie (line-width, line-lambda) (Bug 7)', () => {
+    it('doit recadrer ou restaurer line-width en cas de saisie invalide (change)', () => {
+      const activeTrackContainer = elementsById.get('activeTrackContainer');
+      const state = sandbox.__state;
+      state.tracks[0].lines = [{ lambda: 500, w: 2.0, intensity: 1 }];
+
+      const widthInput = {
+        classList: { contains: (c) => c === 'line-width' },
+        dataset: { track: '0', line: '0' },
+        value: '-5'
+      };
+
+      const changeHandler = activeTrackContainer._listeners.change[0];
+      changeHandler({ target: widthInput });
+
+      assert.equal(state.tracks[0].lines[0].w, 2.0, 'Doit restaurer la valeur précédente si valeur négative');
+      assert.equal(widthInput.value, 2.0, 'Doit réécrire la valeur valide dans l\'input');
+
+      // Test avec valeur trop grande (> 120)
+      widthInput.value = '250';
+      changeHandler({ target: widthInput });
+      assert.equal(state.tracks[0].lines[0].w, 120, 'Doit borner à 120 max');
+      assert.equal(widthInput.value, 120);
+    });
+  });
+
+  describe('Export du cadre vierge et repères d\'axe du profil (Bug 8)', () => {
+    it('les repères 0 et 1 et la ligne de base doivent être tracés même lors de l\'export du cadre vierge', () => {
+      assert.match(
+        mainContent,
+        /drawText\(["']Profil I\(λ\)["'][\s\S]*?drawLine\(bandX,\s*profY\s*\+\s*profH\s*-\s*5[\s\S]*?drawText\(["']1["'][\s\S]*?drawText\(["']0["'][\s\S]*?if\s*\(!isExportingEmptyGrid\)\s*\{\s*ctx\.beginPath/
+      );
+    });
+  });
+
+  describe('Conformité des classes CSS Bulma (Bug 9)', () => {
+    it('doit utiliser la classe officielle Bulma is-justify-content-space-between', () => {
+      assert.doesNotMatch(mainContent, /class=["'][^"']*is-justify-content-between[^"']*["']/);
+      assert.match(mainContent, /class=["'][^"']*is-justify-content-space-between mt-1[^"']*["']/);
     });
   });
 });
