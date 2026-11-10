@@ -343,6 +343,9 @@ describe('Générateur de Spectres (/applets/spectres)', () => {
       assert.ok(lambdas.includes(393.4), 'Doit contenir Ca II K (393.4 nm)');
       assert.ok(lambdas.includes(396.8), 'Doit contenir Ca II H (396.8 nm)');
       assert.ok(lambdas.includes(422.7), 'Doit contenir Ca I g (422.7 nm)');
+      assert.equal(caLines[0].label, 'Ca II (K)');
+      assert.equal(caLines[1].label, 'Ca II (H)');
+      assert.equal(caLines[2].label, 'Ca I (g)');
       assert.ok(lambdas.includes(612.2), 'Doit contenir la raie orange à 612.2 nm');
       assert.ok(lambdas.includes(616.2), 'Doit contenir la raie orange à 616.2 nm');
       assert.ok(!lambdas.includes(527.0), 'Ne doit pas contenir la raie Fraunhofer E du fer (527.0 nm)');

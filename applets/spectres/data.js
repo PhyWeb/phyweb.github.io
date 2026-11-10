@@ -77,9 +77,9 @@ export const PRESETS_DB = {
         desc: "Calcium",
         tagClass: "is-info is-light",
         lines: [
-            { lambda: 393.4, w: 2.6, intensity: 1.00, label: "K" },
-            { lambda: 396.8, w: 2.6, intensity: 1.00, label: "H" },
-            { lambda: 422.7, w: 2.2, intensity: 0.95, label: "g" },
+            { lambda: 393.4, w: 2.6, intensity: 1.00, label: "Ca II (K)" },
+            { lambda: 396.8, w: 2.6, intensity: 1.00, label: "Ca II (H)" },
+            { lambda: 422.7, w: 2.2, intensity: 0.95, label: "Ca I (g)" },
             { lambda: 612.2, w: 1.8, intensity: 0.75, label: "" },
             { lambda: 616.2, w: 1.8, intensity: 0.80, label: "" },
             { lambda: 643.9, w: 2.0, intensity: 0.85, label: "" }
