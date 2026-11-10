@@ -9,7 +9,6 @@
     quand on ouvre un .pw, mettre un spinner
 
 # ELECTRON
-    - [x] Forcer la boîte de dialogue "Enregistrer sous..." via session.defaultSession 'will-download' (résout le téléchargement direct automatique dans Téléchargements).
 
 # Home
     - package linux et macos
