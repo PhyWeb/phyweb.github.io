@@ -471,8 +471,10 @@ describe('Générateur de Spectres (/applets/spectres)', () => {
       assert.doesNotMatch(mainContent, /id=["']presets-dropdown-content["'][^>]*style=["'][^"']*overflow-y:\s*auto/);
       assert.doesNotMatch(mainContent, /id=["']presets-dropdown-content["'][^>]*style=["'][^"']*max-height:\s*480px/);
 
-      // Le style CSS doit prévoir une largeur min-width d'au moins 680px pour les 4 colonnes
-      assert.match(cssContent, /#presets-dropdown\s+\.dropdown-menu\s*\{[^}]*min-width:\s*680px/);
+      // Le style CSS doit prévoir une largeur min-width d'au moins 740px et un équilibrage soigné des colonnes
+      assert.match(cssContent, /#presets-dropdown\s+\.dropdown-menu\s*\{[^}]*min-width:\s*740px/);
+      assert.match(cssContent, /\.presets-col-atomes2\s*\{[^}]*min-width:\s*175px/);
+      assert.match(cssContent, /\.presets-col-molecules\s*\{[^}]*min-width:\s*215px/);
       // Le mode dropup is-up doit positionner vers le haut (bottom: 100%, top: auto)
       assert.match(cssContent, /#presets-dropdown\.is-up\s+\.dropdown-menu\s*\{[^}]*bottom:\s*100%/);
     });
@@ -561,6 +563,12 @@ describe('Générateur de Spectres (/applets/spectres)', () => {
       assert.equal(state.tracks[0].presetKey, 'H');
       assert.equal(state.tracks[0].mode, 'emission_lines', 'Doit basculer en emission_lines lors du choix d\'un atome depuis thermal_abs');
       assert.equal(state.tracks[0].name, 'Hydrogène');
+
+      // Test 5: Sélection d'un éclairage (Lamp_Fluo) depuis un mode absorption_lines -> bascule automatiquement en emission_lines
+      state.tracks[0].mode = 'absorption_lines';
+      applyPreset(0, 'Lamp_Fluo');
+      assert.equal(state.tracks[0].presetKey, 'Lamp_Fluo');
+      assert.equal(state.tracks[0].mode, 'emission_lines', 'Les sources d\'éclairage doivent automatiquement basculer en mode émission');
     });
   });
 

@@ -704,7 +704,7 @@ export function buildPresetsDropdownHTML(currentKey, trackIdx = selectedTabIndex
         const desc = item.desc || item.label;
         const tagClass = item.tagClass || 'is-info is-light';
         return `
-            <a class="dropdown-item py-1 px-2 is-flex is-align-items-center is-justify-content-space-between preset-item ${isSelected ? 'is-active-preset' : ''}" data-key="${key}" data-track="${trackIdx}" style="border-radius: 4px; cursor: pointer; line-height: 1.2;">
+            <a class="dropdown-item py-1 px-2 is-flex is-align-items-center is-justify-content-space-between preset-item ${isSelected ? 'is-active-preset' : ''}" data-key="${key}" data-track="${trackIdx}" style="border-radius: 4px; cursor: pointer; line-height: 1.2;" title="${item.label || desc}">
                 <span class="tag ${tagClass} has-text-weight-bold" style="font-family: monospace; min-width: 42px; justify-content: center; flex-shrink: 0; height: 1.5em; padding: 0 4px;"><span style="display: inline-block; line-height: normal;">${tag}</span></span>
                 <span class="is-size-7 ${isSelected ? 'has-text-link has-text-weight-bold' : 'has-text-grey-dark'} ml-2" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${desc}${isSelected ? ' <i class="fas fa-check ml-1 has-text-link"></i>' : ''}</span>
             </a>
@@ -717,9 +717,9 @@ export function buildPresetsDropdownHTML(currentKey, trackIdx = selectedTabIndex
     const atomesCol2 = atomesItems.slice(midAtomes);
 
     return `
-        <div class="columns is-variable is-2 mb-0">
+        <div class="columns is-variable is-1 mb-0 presets-menu-columns">
             <!-- Colonne 1 : Atomes & Ions (partie 1) -->
-            <div class="column is-3 py-1">
+            <div class="column is-3 presets-col presets-col-atomes1 py-1">
                 <p class="menu-label mb-1 is-flex is-align-items-center" style="font-weight: 600;">
                     <span class="icon is-small has-text-info mr-1"><i class="fas fa-atom"></i></span>
                     <span>Atomes & Ions</span>
@@ -728,8 +728,8 @@ export function buildPresetsDropdownHTML(currentKey, trackIdx = selectedTabIndex
             </div>
 
             <!-- Colonne 2 : Atomes & Ions (partie 2) -->
-            <div class="column is-3 py-1">
-                <p class="menu-label mb-1 is-flex is-align-items-center" style="font-weight: 600;">
+            <div class="column is-3 presets-col presets-col-atomes2 py-1">
+                <p class="menu-label mb-1 is-flex is-align-items-center" style="font-weight: 600; white-space: nowrap;">
                     <span class="icon is-small has-text-info mr-1"><i class="fas fa-atom"></i></span>
                     <span>Atomes (suite)</span>
                 </p>
@@ -737,7 +737,7 @@ export function buildPresetsDropdownHTML(currentKey, trackIdx = selectedTabIndex
             </div>
 
             <!-- Colonne 3 : Étoiles et Éclairage -->
-            <div class="column is-3 py-1">
+            <div class="column is-3 presets-col presets-col-etoiles py-1">
                 <p class="menu-label mb-1 is-flex is-align-items-center" style="font-weight: 600;">
                     <span class="icon is-small has-text-warning mr-1"><i class="fas fa-star"></i></span>
                     <span>Étoiles</span>
@@ -753,8 +753,8 @@ export function buildPresetsDropdownHTML(currentKey, trackIdx = selectedTabIndex
                 ${sourcesItems.map(renderItem).join('')}
             </div>
 
-            <!-- Colonne 4 : Molécules & Solutions -->
-            <div class="column is-3 py-1">
+            <!-- Colonne 4 : Molécules & Solutions (plus large pour les libellés étendus) -->
+            <div class="column is-3 presets-col presets-col-molecules py-1">
                 <p class="menu-label mb-1 is-flex is-align-items-center" style="font-weight: 600;">
                     <span class="icon is-small has-text-purple mr-1"><i class="fas fa-flask"></i></span>
                     <span>Molécules & Solutions</span>
@@ -787,7 +787,9 @@ export function applyPreset(tIdx, key) {
     } else if (item.category === 'Étoiles') {
         state.tracks[tIdx].mode = 'thermal_abs';
         if (item.temp) state.tracks[tIdx].temp = item.temp;
-    } else if (item.category === 'Atomes & Ions' || item.category === "Sources d'éclairage") {
+    } else if (item.category === "Sources d'éclairage") {
+        state.tracks[tIdx].mode = 'emission_lines';
+    } else if (item.category === 'Atomes & Ions') {
         if (state.tracks[tIdx].mode === 'thermal' || state.tracks[tIdx].mode === 'thermal_abs') {
             state.tracks[tIdx].mode = 'emission_lines';
         }
