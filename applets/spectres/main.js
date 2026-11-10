@@ -682,31 +682,18 @@ export function render() {
 
 // --- Construction des options du méga-dropdown de présélections (inspiré de Grapher) ---
 export function buildPresetsDropdownHTML(currentKey, trackIdx = selectedTabIndex) {
-    const catAtomes = {
-        title: 'Atomes & Ions',
-        icon: 'fa-atom',
-        iconColor: 'has-text-info',
-        items: []
-    };
-    const catEtoiles = {
-        title: 'Étoiles',
-        icon: 'fa-star',
-        iconColor: 'has-text-warning',
-        items: []
-    };
-    const catMolecules = {
-        title: 'Molécules & Solutions',
-        icon: 'fa-flask',
-        iconColor: 'has-text-purple',
-        items: []
-    };
+    const atomesItems = [];
+    const etoilesItems = [];
+    const sourcesItems = [];
+    const moleculesItems = [];
 
     Object.keys(PRESETS_DB).forEach(key => {
         const item = PRESETS_DB[key];
-        if (item.category === 'Atomes & Ions') catAtomes.items.push(key);
-        else if (item.category === 'Étoiles') catEtoiles.items.push(key);
-        else if (item.category === 'Molécules & Solutions') catMolecules.items.push(key);
-        else catMolecules.items.push(key);
+        if (item.category === 'Atomes & Ions') atomesItems.push(key);
+        else if (item.category === 'Étoiles') etoilesItems.push(key);
+        else if (item.category === "Sources d'éclairage") sourcesItems.push(key);
+        else if (item.category === 'Molécules & Solutions') moleculesItems.push(key);
+        else moleculesItems.push(key);
     });
 
     const renderItem = (key) => {
@@ -717,35 +704,62 @@ export function buildPresetsDropdownHTML(currentKey, trackIdx = selectedTabIndex
         const desc = item.desc || item.label;
         const tagClass = item.tagClass || 'is-info is-light';
         return `
-            <a class="dropdown-item p-1 is-flex is-align-items-center is-justify-content-space-between preset-item ${isSelected ? 'is-active-preset' : ''}" data-key="${key}" data-track="${trackIdx}" style="border-radius: 4px; cursor: pointer;">
-                <span class="tag ${tagClass} has-text-weight-bold" style="font-family: monospace; min-width: 44px; justify-content: center; flex-shrink: 0;"><span style="display: inline-block; line-height: normal;">${tag}</span></span>
-                <span class="is-size-7 ${isSelected ? 'has-text-link has-text-weight-bold' : 'has-text-grey'} ml-2" style="white-space: nowrap;">${desc}${isSelected ? ' <i class="fas fa-check ml-1 has-text-link"></i>' : ''}</span>
+            <a class="dropdown-item py-1 px-2 is-flex is-align-items-center is-justify-content-space-between preset-item ${isSelected ? 'is-active-preset' : ''}" data-key="${key}" data-track="${trackIdx}" style="border-radius: 4px; cursor: pointer; line-height: 1.2;">
+                <span class="tag ${tagClass} has-text-weight-bold" style="font-family: monospace; min-width: 42px; justify-content: center; flex-shrink: 0; height: 1.5em; padding: 0 4px;"><span style="display: inline-block; line-height: normal;">${tag}</span></span>
+                <span class="is-size-7 ${isSelected ? 'has-text-link has-text-weight-bold' : 'has-text-grey-dark'} ml-2" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${desc}${isSelected ? ' <i class="fas fa-check ml-1 has-text-link"></i>' : ''}</span>
             </a>
         `;
     };
 
-    const renderCategory = (cat) => {
-        let html = `
-            <p class="menu-label mb-2 is-flex is-align-items-center" style="font-weight: 600;">
-                <span class="icon is-small ${cat.iconColor} mr-1"><i class="fas ${cat.icon}"></i></span>
-                <span>${cat.title}</span>
-            </p>
-        `;
-        cat.items.forEach(key => {
-            html += renderItem(key);
-        });
-        return html;
-    };
+    // Répartition équilibrée des atomes sur 2 colonnes (9 et 9) pour compacter la hauteur
+    const midAtomes = Math.ceil(atomesItems.length / 2);
+    const atomesCol1 = atomesItems.slice(0, midAtomes);
+    const atomesCol2 = atomesItems.slice(midAtomes);
 
     return `
-        <div class="columns is-variable is-3 mb-0">
-            <div class="column is-6 py-1">
-                ${renderCategory(catAtomes)}
+        <div class="columns is-variable is-2 mb-0">
+            <!-- Colonne 1 : Atomes & Ions (partie 1) -->
+            <div class="column is-3 py-1">
+                <p class="menu-label mb-1 is-flex is-align-items-center" style="font-weight: 600;">
+                    <span class="icon is-small has-text-info mr-1"><i class="fas fa-atom"></i></span>
+                    <span>Atomes & Ions</span>
+                </p>
+                ${atomesCol1.map(renderItem).join('')}
             </div>
-            <div class="column is-6 py-1">
-                ${renderCategory(catEtoiles)}
+
+            <!-- Colonne 2 : Atomes & Ions (partie 2) -->
+            <div class="column is-3 py-1">
+                <p class="menu-label mb-1 is-flex is-align-items-center" style="font-weight: 600;">
+                    <span class="icon is-small has-text-info mr-1"><i class="fas fa-atom"></i></span>
+                    <span>Atomes (suite)</span>
+                </p>
+                ${atomesCol2.map(renderItem).join('')}
+            </div>
+
+            <!-- Colonne 3 : Étoiles et Éclairage -->
+            <div class="column is-3 py-1">
+                <p class="menu-label mb-1 is-flex is-align-items-center" style="font-weight: 600;">
+                    <span class="icon is-small has-text-warning mr-1"><i class="fas fa-star"></i></span>
+                    <span>Étoiles</span>
+                </p>
+                ${etoilesItems.map(renderItem).join('')}
+
                 <hr class="my-2" style="background-color: #edf2f7; height: 1px; border: none;">
-                ${renderCategory(catMolecules)}
+
+                <p class="menu-label mb-1 is-flex is-align-items-center" style="font-weight: 600;">
+                    <span class="icon is-small has-text-success mr-1"><i class="fas fa-lightbulb"></i></span>
+                    <span>Éclairage</span>
+                </p>
+                ${sourcesItems.map(renderItem).join('')}
+            </div>
+
+            <!-- Colonne 4 : Molécules & Solutions -->
+            <div class="column is-3 py-1">
+                <p class="menu-label mb-1 is-flex is-align-items-center" style="font-weight: 600;">
+                    <span class="icon is-small has-text-purple mr-1"><i class="fas fa-flask"></i></span>
+                    <span>Molécules & Solutions</span>
+                </p>
+                ${moleculesItems.map(renderItem).join('')}
             </div>
         </div>
     `;
@@ -773,7 +787,7 @@ export function applyPreset(tIdx, key) {
     } else if (item.category === 'Étoiles') {
         state.tracks[tIdx].mode = 'thermal_abs';
         if (item.temp) state.tracks[tIdx].temp = item.temp;
-    } else if (item.category === 'Atomes & Ions') {
+    } else if (item.category === 'Atomes & Ions' || item.category === "Sources d'éclairage") {
         if (state.tracks[tIdx].mode === 'thermal' || state.tracks[tIdx].mode === 'thermal_abs') {
             state.tracks[tIdx].mode = 'emission_lines';
         }
@@ -825,6 +839,9 @@ export function buildTracksUI() {
         } else if (currentPreset.category === 'Étoiles') {
             currentCategoryIcon = "fa-star";
             currentIconClass = "has-text-warning";
+        } else if (currentPreset.category === "Sources d'éclairage") {
+            currentCategoryIcon = "fa-lightbulb";
+            currentIconClass = "has-text-success";
         } else if (currentPreset.category === 'Molécules & Solutions') {
             currentCategoryIcon = "fa-flask";
             currentIconClass = "has-text-purple";
@@ -864,8 +881,8 @@ export function buildTracksUI() {
                                 <span class="icon is-small ml-1" style="flex-shrink: 0;"><i class="fas fa-angle-down" aria-hidden="true"></i></span>
                             </button>
                         </div>
-                        <div class="dropdown-menu" id="presets-dropdown-menu" role="menu" style="min-width: 520px; z-index: 100;">
-                            <div class="dropdown-content p-3" id="presets-dropdown-content" style="max-height: 480px; overflow-y: auto;">
+                        <div class="dropdown-menu" id="presets-dropdown-menu" role="menu">
+                            <div class="dropdown-content p-2" id="presets-dropdown-content">
                                 ${buildPresetsDropdownHTML(track.presetKey, idx)}
                             </div>
                         </div>
@@ -939,6 +956,100 @@ export function buildTracksUI() {
             ${linesHtml}
         </div>
     `;
+    updateLinesListMaxHeight();
+}
+
+// Adapte dynamiquement la hauteur de la liste des raies pour exploiter l'espace jusqu'en bas de l'écran
+export function updateLinesListMaxHeight() {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return;
+
+    const listEl = document.querySelector('.lines-list');
+    if (!listEl) return;
+
+    const innerWidth = window.innerWidth || 1200;
+    const innerHeight = window.innerHeight || 800;
+
+    if (innerWidth < 1024) {
+        listEl.style.maxHeight = '';
+        return;
+    }
+
+    if (typeof listEl.getBoundingClientRect !== 'function') return;
+
+    // Hauteur minimale pour garantir 4 raies pleinement visibles sans coupure
+    const FOUR_LINES_HEIGHT = 140;
+
+    const appContent = document.querySelector('.app-content');
+    const appScrollTop = appContent ? appContent.scrollTop : 0;
+    const rect = listEl.getBoundingClientRect();
+    if (!rect || typeof rect.top !== 'number') return;
+
+    // Position du haut de la liste par rapport au haut du viewport quand la page n'est pas scrollée
+    const listTopUnscrolled = rect.top + appScrollTop;
+
+    // Marge réduite pour rapprocher élégamment le bas des paramètres du bas de l'écran
+    const BOTTOM_MARGIN = 28;
+    const availableHeight = innerHeight - listTopUnscrolled - BOTTOM_MARGIN;
+
+    // Sur grand écran, la liste s'agrandit jusqu'en bas de l'écran et déclenche son propre overflow si on dépasse.
+    // L'overflow global ne se déclenche que si l'espace restant est inférieur à 4 raies visibles.
+    const targetMaxHeight = Math.max(FOUR_LINES_HEIGHT, Math.floor(availableHeight));
+    listEl.style.maxHeight = `${targetMaxHeight}px`;
+}
+
+// Repositionne intelligemment le dropdown pour éviter qu'il ne dépasse de l'écran ou n'ait de défilement interne
+export function positionPresetsDropdown() {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return;
+    const dropdown = document.getElementById('presets-dropdown');
+    if (!dropdown) return;
+    const btn = dropdown.querySelector('.preset-dropdown-btn');
+    const menu = document.getElementById('presets-dropdown-menu');
+    if (!btn || !menu) return;
+
+    const viewportHeight = window.innerHeight || 800;
+    const navbarHeight = 52;
+    const margin = 10;
+
+    // Réinitialiser les ajustements inline
+    menu.style.top = '';
+    menu.style.bottom = '';
+    menu.style.maxHeight = '';
+    menu.style.overflowY = '';
+
+    if (typeof btn.getBoundingClientRect !== 'function') return;
+    const btnRect = btn.getBoundingClientRect();
+    const menuHeight = (menu.offsetHeight && menu.offsetHeight > 50) ? menu.offsetHeight : 280;
+
+    const spaceBelow = viewportHeight - btnRect.bottom - margin;
+    const spaceAbove = btnRect.top - navbarHeight - margin;
+
+    // Décision haut (is-up) ou bas :
+    // Si l'espace dessous est insuffisant pour accueillir le menu entier sans overflow,
+    // et que l'espace au-dessus est suffisant ou plus grand, ouvrir vers le haut (dropup)
+    if (spaceBelow < menuHeight && spaceAbove >= menuHeight) {
+        dropdown.classList.add('is-up');
+    } else if (spaceBelow < menuHeight && spaceAbove > spaceBelow) {
+        dropdown.classList.add('is-up');
+        // Si l'espace au-dessus est quand même inférieur à la hauteur du menu, caler le haut sous la navbar
+        const relativeTop = (navbarHeight + margin) - btnRect.top;
+        menu.style.top = `${relativeTop}px`;
+        menu.style.bottom = 'auto';
+    } else {
+        dropdown.classList.remove('is-up');
+        // Si l'espace en dessous est inférieur à la hauteur du menu, caler le bas au-dessus du bas de l'écran
+        if (spaceBelow < menuHeight) {
+            const maxBottomViewport = viewportHeight - margin;
+            const relativeTop = (maxBottomViewport - menuHeight) - btnRect.top;
+            menu.style.top = `${relativeTop}px`;
+        }
+    }
+
+    // Sécurité supplémentaire si la hauteur totale du viewport est inférieure au menu
+    const maxAllowedHeight = viewportHeight - navbarHeight - margin * 2;
+    if (maxAllowedHeight > 0 && menuHeight > maxAllowedHeight) {
+        menu.style.maxHeight = `${maxAllowedHeight}px`;
+        menu.style.overflowY = 'auto';
+    }
 }
 
 // --- Événements de la barre de Zoom ---
@@ -1166,6 +1277,9 @@ if (activeTrackContainer) {
             const dropdown = document.getElementById('presets-dropdown');
             if (dropdown) {
                 dropdown.classList.toggle('is-active');
+                if (dropdown.classList.contains('is-active')) {
+                    positionPresetsDropdown();
+                }
             }
             return;
         }
@@ -1341,8 +1455,20 @@ if (exaggerationSharpness) {
 
 window.addEventListener('resize', () => {
     updateCanvasDimensions();
+    updateLinesListMaxHeight();
+    positionPresetsDropdown();
     render();
 });
+
+const appContentEl = document.querySelector('.app-content');
+if (appContentEl) {
+    appContentEl.addEventListener('scroll', () => {
+        const dropdown = document.getElementById('presets-dropdown');
+        if (dropdown && dropdown.classList.contains('is-active')) {
+            positionPresetsDropdown();
+        }
+    });
+}
 
 // --- Interaction Pointeur (Glisser-déposer des raies, Panoramique et Molette de Zoom) ---
 export function getHoveredLine(mouseX, mouseY) {

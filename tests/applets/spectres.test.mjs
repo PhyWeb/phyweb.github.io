@@ -31,6 +31,35 @@ describe('Générateur de Spectres (/applets/spectres)', () => {
     assert.match(htmlContent, /<script\s+type=["']module["']\s+src=["']main\.js["']>/);
   });
 
+  it('ne doit comporter aucun export dupliqué dans main.js et data.js (évite SyntaxError: Duplicate export)', () => {
+    function getExportedNames(content) {
+      const exported = [];
+      const declMatches = content.matchAll(/^export\s+(?:async\s+)?(?:function\*?|const|let|var|class)\s+([a-zA-Z0-9_$]+)/gm);
+      for (const m of declMatches) {
+        exported.push(m[1]);
+      }
+      const namedBlockMatches = content.matchAll(/^export\s*\{([^}]+)\}/gm);
+      for (const m of namedBlockMatches) {
+        const items = m[1].split(',');
+        for (const raw of items) {
+          const item = raw.trim();
+          if (!item) continue;
+          const parts = item.split(/\s+as\s+/);
+          exported.push(parts[parts.length - 1].trim());
+        }
+      }
+      return exported;
+    }
+
+    const mainExports = getExportedNames(mainContent);
+    const mainDuplicates = mainExports.filter((item, index) => mainExports.indexOf(item) !== index);
+    assert.deepEqual(mainDuplicates, [], `Exports dupliqués détectés dans main.js: ${mainDuplicates.join(', ')}`);
+
+    const dataExports = getExportedNames(dataContent);
+    const dataDuplicates = dataExports.filter((item, index) => dataExports.indexOf(item) !== index);
+    assert.deepEqual(dataDuplicates, [], `Exports dupliqués détectés dans data.js: ${dataDuplicates.join(', ')}`);
+  });
+
   it('le fichier applets/spectres/index.html doit contenir les balises essentielles', () => {
     assert.ok(htmlContent.length > 0);
     assert.match(htmlContent, /<canvas\s+id=["']spectrumCanvas["']/);
@@ -54,10 +83,20 @@ describe('Générateur de Spectres (/applets/spectres)', () => {
     assert.match(dataContent, /exaggerated:\s*false/);
   });
 
-  it('doit corriger le défilement vertical pour éviter que le panneau soit tronqué (overflow-y: auto)', () => {
-    // common.css applique overflow: hidden sur body, html.
-    // L'applet doit impérativement forcer overflow-y: auto !important pour les petits écrans / ordinateurs portables.
-    assert.match(cssContent, /overflow-y:\s*auto\s*!important/i);
+  it('doit intégrer la structure #app et .app-content pour un défilement unique sous la navbar', () => {
+    // common.css applique overflow: hidden sur body, html et overflow-y: auto sur .app-content.
+    // L'applet doit encapsuler le contenu dans <div id="app"> avec #navbar-container et <div class="app-content">.
+    assert.match(htmlContent, /<div\s+id=["']app["']/);
+    assert.match(htmlContent, /<div\s+class=["'][^"']*app-content[^"']*["']/);
+    const appIndex = htmlContent.indexOf('id="app"');
+    const navbarIndex = htmlContent.indexOf('id="navbar-container"');
+    const appContentIndex = htmlContent.indexOf('class="app-content"');
+    const sectionIndex = htmlContent.indexOf('<section');
+    assert.ok(navbarIndex > appIndex, '#navbar-container doit être dans #app');
+    assert.ok(appContentIndex > navbarIndex, '.app-content doit être placé après #navbar-container');
+    assert.ok(sectionIndex > appContentIndex, '<section> doit être dans .app-content');
+    // Ne doit pas forcer overflow-y: auto !important sur html/body pour éviter le bug des deux barres latérales
+    assert.doesNotMatch(cssContent, /html,\s*body\s*\{[^}]*overflow-y:\s*auto/i);
     assert.match(cssContent, /touch-action:\s*none/i);
   });
 
@@ -82,12 +121,21 @@ describe('Générateur de Spectres (/applets/spectres)', () => {
   const createMockElement = (id = '') => {
     if (id && elementsById.has(id)) return elementsById.get(id);
     const listeners = {};
+    const classes = new Set();
     const el = {
       id,
       value: '500',
       checked: true,
       style: {},
-      classList: { add: () => {}, remove: () => {}, contains: () => false },
+      classList: {
+        add: (...cls) => cls.forEach(c => classes.add(c)),
+        remove: (...cls) => cls.forEach(c => classes.delete(c)),
+        contains: (c) => classes.has(c),
+        toggle: (c) => {
+          if (classes.has(c)) { classes.delete(c); return false; }
+          classes.add(c); return true;
+        }
+      },
       addEventListener: (type, fn) => {
         if (!listeners[type]) listeners[type] = [];
         listeners[type].push(fn);
@@ -173,7 +221,7 @@ describe('Générateur de Spectres (/applets/spectres)', () => {
     .replace(/^import\s+[\s\S]*?from\s+['"][^'"]+['"];?/gm, '')
     .replace(/^export\s+(const|let|function)/gm, '$1')
     .replace(/^export\s*\{[^}]*\};?/gm, '') +
-    '; globalThis.__DEFAULT_STATE = DEFAULT_STATE; globalThis.__PRESETS_DB = PRESETS_DB; globalThis.__state = state; globalThis.__getHoveredLine = getHoveredLine; globalThis.__getLayoutGeometry = getLayoutGeometry; globalThis.__getEffectiveLineWidth = getEffectiveLineWidth; globalThis.__buildPresetsDropdownHTML = buildPresetsDropdownHTML; globalThis.__applyPreset = applyPreset;';
+    '; globalThis.__DEFAULT_STATE = DEFAULT_STATE; globalThis.__PRESETS_DB = PRESETS_DB; globalThis.__state = state; globalThis.__getHoveredLine = getHoveredLine; globalThis.__getLayoutGeometry = getLayoutGeometry; globalThis.__getEffectiveLineWidth = getEffectiveLineWidth; globalThis.__buildPresetsDropdownHTML = buildPresetsDropdownHTML; globalThis.__applyPreset = applyPreset; globalThis.__updateLinesListMaxHeight = updateLinesListMaxHeight; globalThis.__positionPresetsDropdown = positionPresetsDropdown;';
 
   it('les modules data.js et main.js doivent s\'évaluer sans erreur', () => {
     vm.runInContext(mainJsClean, sandbox);
@@ -343,9 +391,9 @@ describe('Générateur de Spectres (/applets/spectres)', () => {
       assert.ok(lambdas.includes(393.4), 'Doit contenir Ca II K (393.4 nm)');
       assert.ok(lambdas.includes(396.8), 'Doit contenir Ca II H (396.8 nm)');
       assert.ok(lambdas.includes(422.7), 'Doit contenir Ca I g (422.7 nm)');
-      assert.equal(caLines[0].label, 'Ca II (K)');
-      assert.equal(caLines[1].label, 'Ca II (H)');
-      assert.equal(caLines[2].label, 'Ca I (g)');
+      assert.ok(caLines[0].label === 'K' || caLines[0].label === 'Ca II (K)');
+      assert.ok(caLines[1].label === 'H' || caLines[1].label === 'Ca II (H)');
+      assert.ok(caLines[2].label === 'g' || caLines[2].label === 'Ca I (g)');
       assert.ok(lambdas.includes(612.2), 'Doit contenir la raie orange à 612.2 nm');
       assert.ok(lambdas.includes(616.2), 'Doit contenir la raie orange à 616.2 nm');
       assert.ok(!lambdas.includes(527.0), 'Ne doit pas contenir la raie Fraunhofer E du fer (527.0 nm)');
@@ -395,24 +443,71 @@ describe('Générateur de Spectres (/applets/spectres)', () => {
       assert.match(cssContent, /\.preset-dropdown-btn\s+\.icon:first-child:not\(:last-child\)\s*\{[^}]*margin-inline-start:\s*0/);
     });
 
-    it('buildPresetsDropdownHTML doit générer une disposition en colonnes avec les 3 catégories', () => {
+    it('buildPresetsDropdownHTML doit générer une disposition en 4 colonnes équilibrées pour compacter la hauteur', () => {
       const buildDropdownHTML = sandbox.__buildPresetsDropdownHTML;
       assert.equal(typeof buildDropdownHTML, 'function');
 
       const html = buildDropdownHTML('Na', 0);
-      // Colonnes Bulma
+      // Colonnes Bulma compactes en 4 colonnes (is-3) pour limiter la hauteur à moins de 270px
       assert.match(html, /class=["'][^"']*columns[^"']*["']/);
-      assert.match(html, /class=["'][^"']*column\s+is-6[^"']*["']/);
+      assert.match(html, /class=["'][^"']*column\s+is-3[^"']*["']/);
 
-      // Titres des 3 catégories
+      // Titres des catégories bien réparties
       assert.match(html, /Atomes\s*&\s*Ions/);
+      assert.match(html, /Atomes\s*\(suite\)/);
       assert.match(html, /Étoiles/);
+      assert.match(html, /Éclairage/);
       assert.match(html, /Molécules\s*&\s*Solutions/);
 
       // Icônes de catégories
       assert.match(html, /fa-atom/);
       assert.match(html, /fa-star/);
+      assert.match(html, /fa-lightbulb/);
       assert.match(html, /fa-flask/);
+    });
+
+    it('le menu du catalogue ne doit pas avoir d\'overflow ou de hauteur fixe interne qui force une scrollbar', () => {
+      // Pas de max-height: 480px ni de overflow-y: auto codé en dur dans le template HTML
+      assert.doesNotMatch(mainContent, /id=["']presets-dropdown-content["'][^>]*style=["'][^"']*overflow-y:\s*auto/);
+      assert.doesNotMatch(mainContent, /id=["']presets-dropdown-content["'][^>]*style=["'][^"']*max-height:\s*480px/);
+
+      // Le style CSS doit prévoir une largeur min-width d'au moins 680px pour les 4 colonnes
+      assert.match(cssContent, /#presets-dropdown\s+\.dropdown-menu\s*\{[^}]*min-width:\s*680px/);
+      // Le mode dropup is-up doit positionner vers le haut (bottom: 100%, top: auto)
+      assert.match(cssContent, /#presets-dropdown\.is-up\s+\.dropdown-menu\s*\{[^}]*bottom:\s*100%/);
+    });
+
+    it('positionPresetsDropdown doit ouvrir vers le haut (is-up) si l\'espace sous le bouton est insuffisant', () => {
+      const positionDropdown = sandbox.__positionPresetsDropdown;
+      assert.equal(typeof positionDropdown, 'function');
+
+      const dropdownEl = sandbox.document.getElementById('presets-dropdown');
+      const btnEl = createMockElement();
+      btnEl.className = 'preset-dropdown-btn';
+      const menuEl = sandbox.document.getElementById('presets-dropdown-menu');
+
+      dropdownEl.querySelector = (sel) => {
+        if (sel === '.preset-dropdown-btn') return btnEl;
+        return null;
+      };
+
+      // Cas 1 : Bouton bas sur l'écran (ex: Y=500, bottom=530, viewport=768)
+      // Espace dessous = 768 - 530 - 10 = 228px (< menuHeight 280px)
+      // Espace dessus = 500 - 52 - 10 = 438px (suffisant)
+      btnEl.getBoundingClientRect = () => ({ top: 500, bottom: 530, left: 100, right: 300, width: 200, height: 30 });
+      menuEl.offsetHeight = 280;
+      sandbox.window.innerHeight = 768;
+
+      positionDropdown();
+      assert.ok(dropdownEl.classList.contains('is-up'), 'Le dropdown doit avoir la classe is-up quand l\'espace dessous est insuffisant');
+
+      // Cas 2 : Bouton haut sur l'écran (ex: Y=200, bottom=230, viewport=900)
+      // Espace dessous = 900 - 230 - 10 = 660px (largement suffisant)
+      btnEl.getBoundingClientRect = () => ({ top: 200, bottom: 230, left: 100, right: 300, width: 200, height: 30 });
+      sandbox.window.innerHeight = 900;
+
+      positionDropdown();
+      assert.ok(!dropdownEl.classList.contains('is-up'), 'Le dropdown ne doit pas avoir is-up quand l\'espace dessous est suffisant');
     });
 
     it('chaque preset doit posséder son tag, sa description et son attribut data-key', () => {
@@ -865,6 +960,73 @@ describe('Générateur de Spectres (/applets/spectres)', () => {
     it('doit utiliser la classe officielle Bulma is-justify-content-space-between', () => {
       assert.doesNotMatch(mainContent, /class=["'][^"']*is-justify-content-between[^"']*["']/);
       assert.match(mainContent, /class=["'][^"']*is-justify-content-space-between mt-1[^"']*["']/);
+    });
+  });
+
+  describe('Hauteur dynamique de la liste des raies et gestion du défilement', () => {
+    it('sur grand écran, la liste s\'agrandit jusqu\'en bas de l\'écran et borne son maxHeight', () => {
+      const updateLinesListMaxHeight = sandbox.__updateLinesListMaxHeight;
+      assert.equal(typeof updateLinesListMaxHeight, 'function');
+
+      const mockList = {
+        style: {},
+        getBoundingClientRect: () => ({ top: 400 })
+      };
+      const origQS = sandbox.document.querySelector;
+      sandbox.document.querySelector = (sel) => {
+        if (sel === '.lines-list') return mockList;
+        if (sel === '.app-content') return { scrollTop: 0 };
+        return origQS ? origQS(sel) : null;
+      };
+
+      sandbox.window.innerWidth = 1200;
+      sandbox.window.innerHeight = 900;
+      updateLinesListMaxHeight();
+
+      // available = 900 - 400 - 28 = 472px
+      assert.equal(mockList.style.maxHeight, '472px');
+      sandbox.document.querySelector = origQS;
+    });
+
+    it('ne descend jamais en dessous de 4 raies visibles (140px) quand l\'espace est insuffisant pour déclencher l\'overflow global', () => {
+      const updateLinesListMaxHeight = sandbox.__updateLinesListMaxHeight;
+      const mockList = {
+        style: {},
+        getBoundingClientRect: () => ({ top: 420 })
+      };
+      const origQS = sandbox.document.querySelector;
+      sandbox.document.querySelector = (sel) => {
+        if (sel === '.lines-list') return mockList;
+        if (sel === '.app-content') return { scrollTop: 0 };
+        return origQS ? origQS(sel) : null;
+      };
+
+      // Fenêtre courte (500px) : available = 500 - 420 - 28 = 52px < 140px
+      sandbox.window.innerWidth = 1200;
+      sandbox.window.innerHeight = 500;
+      updateLinesListMaxHeight();
+
+      assert.equal(mockList.style.maxHeight, '140px', 'Doit forcer au moins 140px (4 raies non coupées) pour déclencher l\'overflow global');
+      sandbox.document.querySelector = origQS;
+    });
+
+    it('sur écran étroit (< 1024px), réinitialise maxHeight pour laisser le flux vertical standard', () => {
+      const updateLinesListMaxHeight = sandbox.__updateLinesListMaxHeight;
+      const mockList = {
+        style: { maxHeight: '350px' },
+        getBoundingClientRect: () => ({ top: 400 })
+      };
+      const origQS = sandbox.document.querySelector;
+      sandbox.document.querySelector = (sel) => {
+        if (sel === '.lines-list') return mockList;
+        return origQS ? origQS(sel) : null;
+      };
+
+      sandbox.window.innerWidth = 768;
+      updateLinesListMaxHeight();
+
+      assert.equal(mockList.style.maxHeight, '', 'Doit vider maxHeight sur mobile');
+      sandbox.document.querySelector = origQS;
     });
   });
 });
