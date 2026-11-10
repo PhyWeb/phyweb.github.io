@@ -261,14 +261,14 @@ describe('Tracker - Loupe vectorielle (drawMagnifier) et croix nettes (drawCross
     // 2 passes = 4 strokes au total
     assert.equal(strokeCalls.length, 4);
 
-    // Passe 1 : croix normale (image 0) avec transparence 0.65 et taille normale 4
-    assert.equal(strokeCalls[0].strokeStyle, 'rgba(0, 0, 0, 0.85)');
-    assert.equal(strokeCalls[0].lineWidth, 3);
-    assert.equal(strokeCalls[0].globalAlpha, 0.65);
+    // Passe 1 : croix normale (image 0) avec transparence 0.9 et taille normale 5
+    assert.equal(strokeCalls[0].strokeStyle, 'rgba(0, 0, 0, 0.9)');
+    assert.equal(strokeCalls[0].lineWidth, 3.5);
+    assert.equal(strokeCalls[0].globalAlpha, 0.9);
 
     assert.equal(strokeCalls[1].strokeStyle, '#ffffff');
-    assert.equal(strokeCalls[1].lineWidth, 1.5);
-    assert.equal(strokeCalls[1].globalAlpha, 0.65);
+    assert.equal(strokeCalls[1].lineWidth, 1.75);
+    assert.equal(strokeCalls[1].globalAlpha, 0.9);
 
     // Passe 2 : mire (image 1) avec opacité 1.0
     assert.equal(strokeCalls[2].strokeStyle, 'rgba(0, 0, 0, 0.95)');
@@ -311,17 +311,30 @@ describe('Tracker - Loupe vectorielle (drawMagnifier) et croix nettes (drawCross
     player.currentFrame = 1;
 
     const scale = 2; // magnifierPower = 2
+    const scaleFactor = Math.sqrt(scale);
     player.drawCrosses(scale);
 
     assert.equal(strokeCalls.length, 4);
 
-    // Passe 1 : contour lineWidth = 3 / 2 = 1.5, cœur = 1.5 / 2 = 0.75
-    assert.equal(strokeCalls[0].lineWidth, 3 / scale);
-    assert.equal(strokeCalls[1].lineWidth, 1.5 / scale);
+    // Passe 1 : contour lineWidth = 3.5 / scaleFactor, cœur = 1.75 / scaleFactor
+    assert.equal(strokeCalls[0].lineWidth, 3.5 / scaleFactor);
+    assert.equal(strokeCalls[1].lineWidth, 1.75 / scaleFactor);
 
-    // Passe 2 : contour lineWidth = 4 / 2 = 2, cœur = 2 / 2 = 1
-    assert.equal(strokeCalls[2].lineWidth, 4 / scale);
-    assert.equal(strokeCalls[3].lineWidth, 2 / scale);
+    // Passe 2 : contour lineWidth = 4 / scaleFactor, cœur = 2 / scaleFactor
+    assert.equal(strokeCalls[2].lineWidth, 4 / scaleFactor);
+    assert.equal(strokeCalls[3].lineWidth, 2 / scaleFactor);
+
+    // Vérification des dimensions géométriques réduites par scaleFactor (Math.sqrt(scale))
+    const normalSize = 5 / scaleFactor;
+    assert.deepEqual(moveToCalls[0], [128.5 - normalSize, 96.5]);
+    assert.deepEqual(lineToCalls[0], [128.5 + normalSize, 96.5]);
+
+    const activeSize = 7 / scaleFactor;
+    const gap = 2 / scaleFactor;
+    assert.deepEqual(moveToCalls[2], [512.5 - activeSize, 384.5]);
+    assert.deepEqual(lineToCalls[2], [512.5 - gap, 384.5]);
+    assert.deepEqual(moveToCalls[3], [512.5 + gap, 384.5]);
+    assert.deepEqual(lineToCalls[3], [512.5 + activeSize, 384.5]);
   });
 
   it('drawCrosses supporte plusieurs séries de points (maxPoints > 1)', () => {

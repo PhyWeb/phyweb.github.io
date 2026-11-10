@@ -182,6 +182,8 @@ export default class PLAYER {
       return;
     }
 
+    const scaleFactor = Math.sqrt(scale);
+
     this.ctx.save();
     this.ctx.lineCap = "round";
 
@@ -233,8 +235,8 @@ export default class PLAYER {
       }
 
       // Passe 1 : Les croix normales (j !== highlightFrame)
-      this.ctx.globalAlpha = 0.65;
-      const normalSize = 4 / scale;
+      this.ctx.globalAlpha = 0.9;
+      const normalSize = 5 / scaleFactor;
       this.ctx.beginPath();
       let hasNormalCrosses = false;
 
@@ -259,13 +261,13 @@ export default class PLAYER {
 
       if (hasNormalCrosses) {
         // Contour noir
-        this.ctx.strokeStyle = "rgba(0, 0, 0, 0.85)";
-        this.ctx.lineWidth = 3 / scale;
+        this.ctx.strokeStyle = "rgba(0, 0, 0, 0.9)";
+        this.ctx.lineWidth = 3.5 / scaleFactor;
         this.ctx.stroke();
 
         // Cœur de la couleur de la série
         this.ctx.strokeStyle = (maxPoints === 1) ? "#ffffff" : CROSS_COLORS[i % CROSS_COLORS.length];
-        this.ctx.lineWidth = 1.5 / scale;
+        this.ctx.lineWidth = 1.75 / scaleFactor;
         this.ctx.stroke();
       }
       this.ctx.closePath();
@@ -277,8 +279,8 @@ export default class PLAYER {
 
         if (hxCoord !== "" && hyCoord !== "" && hxCoord != null && hyCoord != null) {
           this.ctx.globalAlpha = 1.0;
-          const activeSize = 7 / scale;
-          const gap = 2 / scale;
+          const activeSize = 7 / scaleFactor;
+          const gap = 2 / scaleFactor;
           const x = Math.round(this.videoCanvas.width * hxCoord) + 0.5;
           const y = Math.round(this.videoCanvas.height * hyCoord) + 0.5;
 
@@ -295,12 +297,12 @@ export default class PLAYER {
 
           // Contour noir plus franc
           this.ctx.strokeStyle = "rgba(0, 0, 0, 0.95)";
-          this.ctx.lineWidth = 4 / scale;
+          this.ctx.lineWidth = 4 / scaleFactor;
           this.ctx.stroke();
 
           // Cœur coloré
           this.ctx.strokeStyle = (maxPoints === 1) ? "#00ffcc" : CROSS_COLORS[i % CROSS_COLORS.length];
-          this.ctx.lineWidth = 2 / scale;
+          this.ctx.lineWidth = 2 / scaleFactor;
           this.ctx.stroke();
 
           this.ctx.closePath();

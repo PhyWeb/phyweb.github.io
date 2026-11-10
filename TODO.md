@@ -19,8 +19,6 @@
     - Add vidéos
     - pan and zoom
 
-    les croix ne sont pas zoomés et les petites devraient etre plus opaque
-
 # Grapher
     - possibilité d'avoir 2 axes y
 
