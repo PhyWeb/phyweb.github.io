@@ -576,7 +576,14 @@ class ModalManager {
     if (toFocus) {
       // Un court délai est nécessaire pour s'assurer que l'élément est visible et focusable
       // avant de tenter de lui donner le focus.
-      setTimeout(() => toFocus.focus(), 50);
+      setTimeout(() => {
+        if (typeof toFocus.focus === 'function') {
+          toFocus.focus();
+        }
+        if (typeof toFocus.select === 'function') {
+          toFocus.select();
+        }
+      }, 50);
     }
   }
 

@@ -333,20 +333,14 @@ $("#pause-button").addEventListener("click", ()=>{
 
 // Bouton d'enregistrement temps réel
 $("#rt-save-to-tab-button").addEventListener("click", ()=>{
-	// Affichage de la boîte de dialogue de sauvegarde
-	$("#save-modal").classList.add("is-active");
-
-	// Focus sur le champ de saisie
-	$("#save-name-input").focus();
+	// Affichage de la boîte de dialogue de sauvegarde d'onglet
+	common.modalManager.openModal($("#save-modal"));
 })
 
-// Bouton d'enregistrement temps réel
+// Bouton d'enregistrement acquisition
 $("#rec-save-to-tab-button").addEventListener("click", ()=>{
-	// Affichage de la boîte de dialogue de sauvegarde
-	$("#save-modal").classList.add("is-active");
-
-	// Focus sur le champ de saisie
-	$("#save-name-input").focus();
+	// Affichage de la boîte de dialogue de sauvegarde d'onglet
+	common.modalManager.openModal($("#save-modal"));
 })
 
 /*----------------------------------------------------------------------------------------------
@@ -616,10 +610,10 @@ function onAudioDecodeEnd(_rawData){
     $("#end-length-input").value = initialEnd.toFixed(3);
     updatePreviewVisuals(0, initialEnd);
 
-    $("#file-length-modal").classList.add("is-active");
+    common.modalManager.openModal($("#file-length-modal"));
 
     // Force le graphique à s'adapter correctement aux dimensions de la modale fraîchement ouverte
-    setTimeout(() => { filePreviewChart.reflow(); }, 10);
+    setTimeout(() => { filePreviewChart.reflow(); }, 50);
 
     // Mémorisation des données dans un tampon
     onAudioDecodeEndedBuffer = _rawData;
@@ -644,7 +638,7 @@ $("#open-resized-file").addEventListener("click",()=>{
 
   drawDecodedAudio(onAudioDecodeEndedBuffer, length, startSample);
 
-  $("#file-length-modal").classList.remove("is-active");
+  common.modalManager.closeModal($("#file-length-modal"));
 });
 
 let previewAudioSource = null;
@@ -938,9 +932,7 @@ $("#save-button").addEventListener("click", ()=>{
   $("#data-slider").noUiSlider.reset();
 
   // Affichage de la modale d'enregistrement
-  $("#download-modal").classList.add("is-active");
-  // Focus sur le champ de saisie
-  $("#file-name-input").focus();
+  common.modalManager.openModal($("#download-modal"));
 });
 
 $("#file-name-input").addEventListener("keyup", (event)=> {
@@ -1237,7 +1229,7 @@ $('#confirm-send-to-grapher-button').addEventListener('click', async () => {
 
   try {
     await ExchangeManager.sendToGrapher(pw);
-    $('#send-to-grapher-modal').classList.remove('is-active');
+    common.modalManager.closeModal($('#send-to-grapher-modal'));
   } catch(e) {
     console.error(e);
     showToast("Une erreur est survenue lors de l'envoi des données à Grapher.", "is-danger");

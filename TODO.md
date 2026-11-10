@@ -15,7 +15,7 @@
     - package linux et macos
 
 # Audio
-    autofocus pour le nom de l'onglet et le nom de la sauvegarde
+    - [x] autofocus pour le nom de l'onglet et le nom de la sauvegarde
 
 # Tracker
     - Add vidéos

@@ -161,4 +161,50 @@ describe('Audio - Correctifs d\'interface, de configuration et de typage', () =>
       '#save-tabs doit être strictement vide dans le HTML initial'
     );
   });
+
+  it('audio/index.html configure l\'attribut autofocus pour le nom d\'onglet (#save-name-input) et le nom de fichier de sauvegarde (#file-name-input)', () => {
+    const htmlPath = path.resolve(__dirname, '../../audio/index.html');
+    const html = fs.readFileSync(htmlPath, 'utf8');
+
+    assert.match(
+      html,
+      /<input[^>]*id="save-name-input"[^>]*autofocus/,
+      '#save-name-input doit avoir l\'attribut autofocus'
+    );
+    assert.match(
+      html,
+      /<input[^>]*id="file-name-input"[^>]*autofocus/,
+      '#file-name-input doit avoir l\'attribut autofocus'
+    );
+    assert.match(
+      html,
+      /<div id="save-modal"[^>]*>[\s\S]*?<header class="modal-card-head[^"]*">[\s\S]*?<button class="delete modal-close-button"[^>]*data-modal-cancel/,
+      '#save-modal doit posséder un bouton de fermeture avec data-modal-cancel'
+    );
+  });
+
+  it('audio/main.js utilise modalManager.openModal pour ouvrir les modales #save-modal et #download-modal', () => {
+    const mainPath = path.resolve(__dirname, '../../audio/main.js');
+    const main = fs.readFileSync(mainPath, 'utf8');
+
+    // Vérifie l'ouverture de save-modal via modalManager
+    assert.ok(
+      main.includes('common.modalManager.openModal($("#save-modal"));'),
+      '#save-modal doit être ouvert via common.modalManager.openModal'
+    );
+    assert.ok(
+      !main.includes('$("#save-modal").classList.add("is-active");'),
+      '#save-modal ne doit plus être ouvert par classList.add("is-active")'
+    );
+
+    // Vérifie l'ouverture de download-modal via modalManager
+    assert.ok(
+      main.includes('common.modalManager.openModal($("#download-modal"));'),
+      '#download-modal doit être ouvert via common.modalManager.openModal'
+    );
+    assert.ok(
+      !main.includes('$("#download-modal").classList.add("is-active");'),
+      '#download-modal ne doit plus être ouvert par classList.add("is-active")'
+    );
+  });
 });
