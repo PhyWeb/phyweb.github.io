@@ -34,8 +34,6 @@
 
     modal edition model entré marche pas si rein a été modifié
 
-    on propose le recalcul des formules... meme quand yen a pas
-
 # Mendeleiev
 # Optique
 # Chromato

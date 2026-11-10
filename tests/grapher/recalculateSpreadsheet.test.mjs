@@ -122,6 +122,50 @@ describe('Bouton Recalculer les grandeurs dans le tableur (#recalculate-spreadsh
       assert.ok(!buttonElement.classList.contains('is-hidden'));
     });
 
+    it('ne doit pas marquer stale si l\'éditeur ne contient que des commentaires (ex: // Pointage PhyWeb Tracker)', () => {
+      mockEditor.getValue = () => '// Pointage PhyWeb Tracker\n// Enregistrement PhyWeb Audio';
+      uiManager.setCalculationsStale(true);
+
+      assert.equal(uiManager.calculationsStale, false);
+      assert.ok(buttonElement.classList.contains('is-hidden'));
+    });
+
+    it('ne doit pas marquer stale si l\'éditeur ne contient que des commentaires Regressi ou dièse (#, \')', () => {
+      mockEditor.getValue = () => '# Commentaire dièse\n\' Commentaire Regressi\n   \n';
+      uiManager.setCalculationsStale(true);
+
+      assert.equal(uiManager.calculationsStale, false);
+      assert.ok(buttonElement.classList.contains('is-hidden'));
+    });
+
+    it('ne doit pas marquer stale si l\'éditeur ne contient pas de formule valide (pas de signe = ou variable vide)', () => {
+      mockEditor.getValue = () => 'Ceci est une note sans signe égal\n = expressionSansNom\nnomSansExpression = ';
+      uiManager.setCalculationsStale(true);
+
+      assert.equal(uiManager.calculationsStale, false);
+      assert.ok(buttonElement.classList.contains('is-hidden'));
+    });
+
+    it('doit marquer stale si l\'éditeur contient des commentaires et au moins une formule valide', () => {
+      mockEditor.getValue = () => '// Pointage PhyWeb Tracker\nv = diff(x, t)';
+      uiManager.setCalculationsStale(true);
+
+      assert.equal(uiManager.calculationsStale, true);
+      assert.ok(!buttonElement.classList.contains('is-hidden'));
+    });
+
+    it('hasCalculationFormulas() doit identifier correctement les formules et ignorer les commentaires', () => {
+      assert.equal(uiManager.hasCalculationFormulas('// Commentaire'), false);
+      assert.equal(uiManager.hasCalculationFormulas('# Dièse'), false);
+      assert.equal(uiManager.hasCalculationFormulas('\' Regressi'), false);
+      assert.equal(uiManager.hasCalculationFormulas('Note sans égal'), false);
+      assert.equal(uiManager.hasCalculationFormulas('y = 2 * x'), true);
+      assert.equal(uiManager.hasCalculationFormulas('v_m/s = diff(x, t)'), true);
+      assert.equal(uiManager.hasCalculationFormulas('// Tracker\nv = diff(x, t)'), true);
+      assert.equal(uiManager.hasCalculationFormulas(''), false);
+      assert.equal(uiManager.hasCalculationFormulas(null), false);
+    });
+
     it('setCalculationsStale(false) doit masquer le bouton et repasser calculationsStale à false', () => {
       mockEditor.getValue = () => 'y = 2 * x';
       uiManager.setCalculationsStale(true);

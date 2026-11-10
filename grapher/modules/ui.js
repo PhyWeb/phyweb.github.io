@@ -488,6 +488,50 @@ export default class UIManager {
   }
 
   /**
+   * Vérifie si le script de l'éditeur de calculs contient au moins une formule valide
+   * (ignore les lignes vides, les commentaires et le texte sans assignation '=').
+   * @param {string} [text] - Texte optionnel à analyser (par défaut le contenu de l'éditeur)
+   * @returns {boolean}
+   */
+  hasCalculationFormulas(text) {
+    const rawText = typeof text === 'string'
+      ? text
+      : (typeof this.editor?.getValue === 'function' ? this.editor.getValue() : '');
+
+    if (!rawText || typeof rawText !== 'string') {
+      return false;
+    }
+
+    const lines = rawText.split('\n');
+    for (const line of lines) {
+      const trimmedLine = line.trim();
+      if (
+        trimmedLine === '' ||
+        trimmedLine.startsWith('#') ||
+        trimmedLine.startsWith('//') ||
+        trimmedLine.startsWith("'")
+      ) {
+        continue;
+      }
+
+      const parts = trimmedLine.split('=');
+      if (parts.length < 2) {
+        continue;
+      }
+
+      const leftPart = parts[0].trim();
+      const expression = parts.slice(1).join('=').trim();
+      const variableName = leftPart.split('_')[0].trim().replace(/\s+/g, '');
+
+      if (variableName.length > 0 && expression.length > 0) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /**
    * Marque les calculs de grandeurs comme obsolètes ou à jour, et affiche/masque
    * le bouton de recalcul dans la barre d'outils du tableur.
    * @param {boolean} isStale
@@ -496,8 +540,8 @@ export default class UIManager {
     if (isStale) {
       const hasCalcCurves = Boolean(this.data?.curves && this.data.curves.some(c => c.type === 'calculation'));
       const hasUserParams = Boolean(this.data?.parameters && Object.values(this.data.parameters).some(p => p && p.type !== 'model'));
-      const hasEditorCode = Boolean(typeof this.editor?.getValue === 'function' && this.editor.getValue().trim().length > 0);
-      if (!hasCalcCurves && !hasUserParams && !hasEditorCode) {
+      const hasEditorFormulas = this.hasCalculationFormulas();
+      if (!hasCalcCurves && !hasUserParams && !hasEditorFormulas) {
         isStale = false;
       }
     }
