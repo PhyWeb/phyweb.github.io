@@ -84,6 +84,7 @@ describe('UIManager - État de #new-file-modal lors des erreurs de chargement', 
   let closeAllModalsCalls;
   let showTabsCalls;
   let markAsSavedCalls;
+  let resetSavedStateCalls;
   const collectText = (node) => {
     if (!node) return '';
     return [
@@ -104,6 +105,7 @@ describe('UIManager - État de #new-file-modal lors des erreurs de chargement', 
     closeAllModalsCalls = 0;
     showTabsCalls = 0;
     markAsSavedCalls = 0;
+    resetSavedStateCalls = 0;
 
     newFileModal = createMockElement('div');
     emptyStateContainer = createMockElement('div');
@@ -180,6 +182,9 @@ describe('UIManager - État de #new-file-modal lors des erreurs de chargement', 
     };
     ui.markAsSaved = () => {
       markAsSavedCalls++;
+    };
+    ui.resetSavedState = () => {
+      resetSavedStateCalls++;
     };
 
     ui.initFileModals();
@@ -308,17 +313,28 @@ describe('UIManager - État de #new-file-modal lors des erreurs de chargement', 
     assert.equal(errorToast.classList.contains('is-danger'), true);
   });
 
-  it('loadStartupPW réussi : affiche les onglets, ferme la modale et marque enregistré', async () => {
+  it('loadStartupPW réussi (import inter-applications) : affiche les onglets, ferme la modale et conserve l\'état non enregistré', async () => {
     await ui.loadStartupPW('{"version":"3.0","curves":[]}');
 
     assert.equal(newFileModal.classList.contains('is-active'), false);
     assert.equal(showTabsCalls, 1);
     assert.equal(closeAllModalsCalls, 1);
-    assert.equal(markAsSavedCalls, 1);
+    assert.equal(markAsSavedCalls, 0);
+    assert.equal(resetSavedStateCalls, 1);
 
     const successToast = createdElements.find((el) => el.innerHTML?.includes('Données importées avec succès'));
     assert.ok(successToast);
     assert.equal(successToast.classList.contains('is-success'), true);
+  });
+
+  it('loadStartupPW réussi avec { markAsSaved: true } (fichier disque Electron) : marque enregistré', async () => {
+    await ui.loadStartupPW('{"version":"3.0","curves":[]}', { markAsSaved: true });
+
+    assert.equal(newFileModal.classList.contains('is-active'), false);
+    assert.equal(showTabsCalls, 1);
+    assert.equal(closeAllModalsCalls, 1);
+    assert.equal(markAsSavedCalls, 1);
+    assert.equal(resetSavedStateCalls, 0);
   });
 
   it('Drag & Drop en erreur ferme #new-file-modal même si modalManager ne fournit pas closeModal', async () => {

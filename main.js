@@ -175,8 +175,8 @@ app.whenReady().then(() => {
         if (fileContent.charCodeAt(0) === 0xFEFF) {
           fileContent = fileContent.slice(1);
         }
-        // Envoyer les données au grapher
-        grapherWin.webContents.send('import-data', fileContent);
+        // Envoyer les données au grapher (fichier déjà enregistré sur disque)
+        grapherWin.webContents.send('import-data', { data: fileContent, markAsSaved: true });
       } catch (error) {
         console.error("Erreur lors de la lecture du fichier .pw :", error);
       }
@@ -191,7 +191,7 @@ app.whenReady().then(() => {
     const grapherWin = createWindow("grapher/index.html")
 
     grapherWin.webContents.once('did-finish-load', () => {
-      grapherWin.webContents.send('import-data', data);
+      grapherWin.webContents.send('import-data', { data, markAsSaved: false });
     });
   });
 

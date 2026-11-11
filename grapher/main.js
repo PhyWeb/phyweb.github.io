@@ -51,8 +51,8 @@ document.addEventListener('DOMContentLoaded', () => {
   grapher.newChart();
 
   // Vérification des données transmises par une autre application
-  ExchangeManager.checkStartupData((importedPW) => {
-    uiManager.loadStartupPW(importedPW);
+  ExchangeManager.checkStartupData((importedPW, options) => {
+    uiManager.loadStartupPW(importedPW, options);
   });
 
   // Gestion du redimensionnement de la fenêtre

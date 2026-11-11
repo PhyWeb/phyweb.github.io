@@ -730,20 +730,67 @@ export default class UIManager {
         color: curve.color,
         line: curve.line,
         markers: curve.markers,
+        lineWidth: curve.lineWidth,
+        lineStyle: curve.lineStyle,
+        markerSymbol: curve.markerSymbol,
+        markerRadius: curve.markerRadius,
+        type: curve.type,
         values: Array.from(curve)
       }));
       const annotations = this.data?.annotations || [];
       const parameters = this.data?.parameters || {};
-      const models = this.data?.models ? this.data.models.map(m => ({
+      const models = (this.data?.models || []).map(m => ({
         id: m.id,
         type: m.type,
         x: m.x?.title,
         y: m.y?.title,
-        parameters: m.parameters
-      })) : [];
+        visible: m.visible,
+        color: m.color,
+        lineWidth: m.lineWidth,
+        lineStyle: m.lineStyle,
+        minX: m.minX,
+        maxX: m.maxX,
+        parameters: m.parameters,
+        rmse: m.rmse,
+        rSquared: m.rSquared
+      }));
       const script = typeof this.editor?.getValue === 'function' ? this.editor.getValue() : '';
+      const xCurve = this.grapher?.currentXCurve ?? null;
+      const yCurves = Array.isArray(this.grapher?.chart?.series)
+        ? this.grapher.chart.series
+            .filter(s => !s.options?.id?.startsWith('model-') && s.visible !== false)
+            .map(s => s.name)
+        : [];
 
-      return JSON.stringify({ curves, annotations, parameters, models, script });
+      let zoom = null;
+      if (
+        this.grapher?.hasUserZoom &&
+        typeof this.grapher?.chart?.xAxis?.[0]?.getExtremes === 'function' &&
+        typeof this.grapher?.chart?.yAxis?.[0]?.getExtremes === 'function'
+      ) {
+        const xEx = this.grapher.chart.xAxis[0].getExtremes();
+        const yEx = this.grapher.chart.yAxis[0].getExtremes();
+        zoom = {
+          xUserMin: xEx.userMin ?? null,
+          xUserMax: xEx.userMax ?? null,
+          yUserMin: yEx.userMin ?? null,
+          yUserMax: yEx.userMax ?? null
+        };
+      }
+
+      const lastSortVariable = this.data?.lastSortVariable ?? null;
+
+      return JSON.stringify({
+        curves,
+        annotations,
+        parameters,
+        models,
+        script,
+        xCurve,
+        yCurves,
+        zoom,
+        lastSortVariable
+      });
     };
 
     let lastSavedHash = null;
@@ -917,11 +964,12 @@ export default class UIManager {
   }
 
   /**
-   * Importe des données .pw transmises au démarrage depuis une autre application.
+   * Importe des données .pw transmises au démarrage (transfert inter-applications ou ouverture de fichier).
    * @param {string} importedPW
+   * @param {{ markAsSaved?: boolean }} [options]
    * @returns {Promise<void>}
    */
-  loadStartupPW(importedPW) {
+  loadStartupPW(importedPW, { markAsSaved = false } = {}) {
     const newFileModal = $('#new-file-modal');
     const emptyStateContainer = $('#empty-state-container');
     const wasNewFileModalOpen = Boolean(newFileModal?.classList?.contains?.('is-active'));
@@ -944,7 +992,11 @@ export default class UIManager {
           // Affichage de l'interface principale et fermeture des modales
           this.showTabsAndPanels();
           this.common.modalManager.closeAllModals();
-          this.markAsSaved();
+          if (markAsSaved) {
+            this.markAsSaved();
+          } else {
+            this.resetSavedState?.();
+          }
           showToast("Données importées avec succès !", "is-success");
         } catch (e) {
           console.error("Échec du chargement des données inter-applications:", e);

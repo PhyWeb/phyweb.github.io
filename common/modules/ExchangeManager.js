@@ -68,13 +68,17 @@ export default class ExchangeManager {
 
   /**
    * Vérifie la présence de données au démarrage et exécute le callback si trouvé.
-   * @param {function} callback - Fonction recevant les données importées.
+   * @param {function(string, { markAsSaved: boolean }): void} callback - Fonction recevant les données importées et leur état de sauvegarde initial.
    */
   static async checkStartupData(callback) {
     // Cas 1 : Electron (via l'API exposée dans preload.js)
     if (window.electronAPI && window.electronAPI.onImportData) {
-      window.electronAPI.onImportData((data) => {
-        callback(data);
+      window.electronAPI.onImportData((payload) => {
+        if (payload && typeof payload === 'object' && Object.hasOwn(payload, 'data')) {
+          callback(payload.data, { markAsSaved: Boolean(payload.markAsSaved) });
+        } else {
+          callback(payload, { markAsSaved: false });
+        }
       });
     } 
     // Cas 2 : Web (IndexedDB)
@@ -97,9 +101,9 @@ export default class ExchangeManager {
           request.onerror = () => reject(request.error);
         });
 
-        // Si des données étaient en attente, on lance le callback
+        // Si des données étaient en attente, on lance le callback (transfert web non sauvegardé sur disque)
         if (data) {
-          callback(data);
+          callback(data, { markAsSaved: false });
         }
       } catch (e) {
         console.error("ExchangeManager: Erreur de lecture IndexedDB", e);
