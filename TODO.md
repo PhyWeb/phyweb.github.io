@@ -28,7 +28,7 @@
 
     parametre? pour angles en degrés
 
-    les grandeurs calculés se mettent toujours a droite du tableau quand on recalcul. du coup si on a mesure/calculée/mesure et que l'on recalcule ca devient mesure/mesure/calculée. On en pense quoi ?
+    mettre un sous titres dans les colonnes calculées
 
 # Mendeleiev
 # Optique

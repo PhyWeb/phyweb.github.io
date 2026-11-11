@@ -160,16 +160,67 @@ describe('App - applyCalculation() et interdiction de redéfinir les grandeurs e
     app.spreadsheet.update = () => { spreadsheetUpdates++; };
     app.grapher.updateChart = () => { chartUpdates++; };
 
-    // Premier calcul
+    // Premier calcul : création de la grandeur calculée 'y'
     app.applyCalculation('y = 2 * x');
     assert.equal(spreadsheetUpdates, 2); // 1 dans addCurve, 1 à la fin de applyCalculation
     assert.equal(chartUpdates, 1);
 
-    // Deuxième calcul identique
+    // Deuxième calcul identique : mise à jour in-place sans ré-appeler addCurve
     app.applyCalculation('y = 2 * x');
-    // Le tableur et le graphique doivent toujours être mis à jour à la fin
-    assert.equal(spreadsheetUpdates, 4);
+    // Le tableur et le graphique doivent toujours être mis à jour à la fin (1 update chacun)
+    assert.equal(spreadsheetUpdates, 3);
     assert.equal(chartUpdates, 2);
+  });
+
+  it('doit préserver la position et l\'ordre des colonnes calculées lors d\'un recalcul (mesure / calculée / mesure)', () => {
+    // Ordre initial : t (mesure), x (mesure)
+    // On ajoute une grandeur calculée v = diff(x, t)
+    app.applyCalculation('v = diff(x, t)');
+    // Ordre : t, x, v
+
+    // L'utilisateur ajoute ensuite une nouvelle mesure brute 'z'
+    const curveZ = data.addCurve('z', 'm');
+    curveZ.push(10, 20, 30, 40, 50);
+    // Ordre : t, x, v (calculée), z (mesure)
+    assert.deepEqual(data.curves.map(c => c.title), ['t', 'x', 'v', 'z']);
+
+    const originalCurveV = data.getCurveByTitle('v');
+    originalCurveV.color = '#ff00ff'; // Propriété personnalisée
+
+    // Recalcul des formules (par exemple en modifiant les données ou en relançant le calcul)
+    app.applyCalculation('v = diff(x, t) * 3');
+
+    // L'ordre des colonnes doit impérativement rester : t, x, v, z (v ne doit PAS passer à droite de z)
+    assert.deepEqual(data.curves.map(c => c.title), ['t', 'x', 'v', 'z']);
+    assert.equal(data.curves[2].title, 'v');
+    assert.equal(data.curves[3].title, 'z');
+
+    // La référence de l'objet Curve et sa couleur doivent être préservées
+    const updatedCurveV = data.getCurveByTitle('v');
+    assert.equal(updatedCurveV, originalCurveV);
+    assert.equal(updatedCurveV.color, '#ff00ff');
+    // Les nouvelles valeurs doivent être appliquées
+    assert.equal(updatedCurveV[1], 6); // dx/dt * 3 = 2 * 3 = 6
+  });
+
+  it('doit ajouter les nouvelles grandeurs calculées à la fin et supprimer les obsolètes', () => {
+    // 1. Calcul initial avec v
+    app.applyCalculation('v = diff(x, t)');
+    const curveZ = data.addCurve('z', 'm');
+    curveZ.push(1, 2, 3, 4, 5);
+    // Ordre : t, x, v, z
+    assert.deepEqual(data.curves.map(c => c.title), ['t', 'x', 'v', 'z']);
+
+    // 2. On ajoute une nouvelle grandeur 'a' et on garde 'v'
+    app.applyCalculation('v = diff(x, t)\na = v * 2');
+    // Ordre attendu : t, x, v (conservé à l'index 2), z (conservé à l'index 3), a (ajouté à la fin)
+    assert.deepEqual(data.curves.map(c => c.title), ['t', 'x', 'v', 'z', 'a']);
+
+    // 3. On supprime 'v' du script (ne garde que 'a = 10 * t')
+    app.applyCalculation('a = 10 * t');
+    // 'v' doit être supprimé, 'a' doit rester
+    assert.deepEqual(data.curves.map(c => c.title), ['t', 'x', 'z', 'a']);
+    assert.equal(data.getCurveByTitle('v'), undefined);
   });
 
   it('deleteRow doit supprimer la ligne des courbes et marquer les calculs obsolètes sans recalculer automatiquement', () => {
