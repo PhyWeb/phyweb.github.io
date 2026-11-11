@@ -251,6 +251,20 @@ export default class App {
     const parsingWarnings = [];
 
     if (!text || text.trim() === "") {
+      const calculationCurves = this.data.curves.filter(curve => curve.type === "calculation");
+      calculationCurves.forEach(curve => {
+        this.grapher.deleteCurve(curve.title);
+        const modelsToDelete = this.data.models.filter(
+          model => model.x.title === curve.title || model.y.title === curve.title
+        );
+        modelsToDelete.forEach(model => {
+          this.deleteModel(model.id);
+          const modelPanel = document.querySelector(`article[data-model-id="${model.id}"]`);
+          if (modelPanel) {
+            modelPanel.remove();
+          }
+        });
+      });
       this.data.curves = this.data.curves.filter(curve => curve.type !== "calculation");
       // Conservation des paramètres de modèles existants
       const parametersToKeep = {};
@@ -351,11 +365,12 @@ export default class App {
             modelPanel.remove();
           }
         });
+
+        this.data.deleteCurve(curve.title);
       });
     }
 
     // Évaluation des expressions
-    this.data.curves = this.data.curves.filter(curve => curve.type !== "calculation");
     const parametersToKeep = {};
     for (const key in this.data.parameters) {
       if (Object.prototype.hasOwnProperty.call(this.data.parameters, key)) {
@@ -367,9 +382,12 @@ export default class App {
     }
     this.data.parameters = parametersToKeep;
 
+    // Construction du scope initial pour l'évaluation (uniquement grandeurs brutes et paramètres)
     const initialScope = {};
     this.data.curves.forEach(curve => {
-      initialScope[curve.title] = curve; 
+      if (curve.type !== 'calculation') {
+        initialScope[curve.title] = curve; 
+      }
     });
     for (const key in this.data.parameters) {
         if (Object.prototype.hasOwnProperty.call(this.data.parameters, key)) {
@@ -379,22 +397,47 @@ export default class App {
     
     const { results, errors } = this.calculation.evaluateBlock(formulasToEvaluate, initialScope);
 
-    // Intégration des résultats dans les données
+    // Intégration des résultats dans les données (mise à jour in-place pour préserver l'ordre et le style)
     results.forEach(result => {
       if (result.type === 'parameter') {
         this.data.parameters[result.variableName] = result.data;
       } else {
-        const newCurve = this.addCurve(result.variableName, result.unit, undefined, undefined, 'calculation');
-        newCurve.type = "calculation";
-        newCurve.length = 0;
-        const dataToAdd = result.data;
-        if (dataToAdd) {
+        const existingCurve = this.data.getCurveByTitle(result.variableName);
+        if (existingCurve && existingCurve.type === 'calculation') {
+          // Mise à jour in-place pour conserver l'ordre des colonnes et les attributs graphiques (couleur, etc.)
+          existingCurve.unit = result.unit || '';
+          existingCurve.length = 0;
+          const dataToAdd = result.data;
+          if (dataToAdd) {
             for (let i = 0; i < dataToAdd.length; i++) {
-                newCurve.push(dataToAdd[i]);
+              existingCurve.push(dataToAdd[i]);
             }
+          }
+        } else {
+          // Nouvelle grandeur calculée ajoutée à la fin
+          const newCurve = this.addCurve(result.variableName, result.unit, undefined, undefined, 'calculation');
+          if (newCurve) {
+            newCurve.type = "calculation";
+            newCurve.length = 0;
+            const dataToAdd = result.data;
+            if (dataToAdd) {
+              for (let i = 0; i < dataToAdd.length; i++) {
+                newCurve.push(dataToAdd[i]);
+              }
+            }
+          }
         }
       }
     });
+
+    if (errors && errors.length > 0) {
+      errors.forEach(err => {
+        const existingCurve = this.data.getCurveByTitle(err.variableName);
+        if (existingCurve && existingCurve.type === 'calculation') {
+          existingCurve.length = 0;
+        }
+      });
+    }
 
     const allErrors = [
       ...parsingWarnings,

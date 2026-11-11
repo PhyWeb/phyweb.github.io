@@ -884,6 +884,12 @@ updateChart(yCurveTitles, redraw = true) {
       const xCurveData = this.data.getCurveByTitle(this.currentXCurve);
 
       if (curveData && xCurveData) {
+        if (serie.userOptions) {
+          serie.userOptions.unit = curveData.unit;
+        }
+        if (serie.options) {
+          serie.options.unit = curveData.unit;
+        }
         const formatted = this.formatData(xCurveData, curveData);
         serie.options.customRowIndices = formatted.rowIndices;
         serie.setData(formatted, false);
