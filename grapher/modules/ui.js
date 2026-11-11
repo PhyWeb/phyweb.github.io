@@ -868,41 +868,112 @@ export default class UIManager {
   }
 
   /**
+   * Ferme #new-file-modal si elle n'était pas déjà ouverte avant l'opération de chargement.
+   * @param {Element|null} newFileModal
+   * @param {boolean} wasOpen
+   */
+  _closeNewFileModalIfOpened(newFileModal, wasOpen) {
+    if (!wasOpen && newFileModal) {
+      this.common?.modalManager?.closeModal?.(newFileModal);
+      newFileModal.classList?.remove?.('is-active');
+    }
+  }
+
+  /**
+   * Charge un fichier après confirmation éventuelle et restaure #new-file-modal en cas d'erreur si elle était fermée.
+   * @param {File} file
+   * @param {{ showModalSpinner?: boolean, logLabel?: string }} [options]
+   */
+  loadFileWithFeedback(file, { showModalSpinner = false, logLabel = "Échec du chargement du fichier:" } = {}) {
+    if (!file) return;
+
+    return this.navManager.confirmAction(async () => {
+      const newFileModal = $("#new-file-modal");
+      const wasNewFileModalOpen = Boolean(newFileModal?.classList?.contains?.('is-active'));
+
+      this.setModalLoading(true);
+      if (showModalSpinner && newFileModal) {
+        newFileModal.classList.add('is-active');
+      }
+
+      try {
+        await this.app.ioManager.loadFile(file);
+        this.showTabsAndPanels();
+        this.common.modalManager.closeAllModals();
+        this.markAsSaved();
+      } catch (error) {
+        console.error(logLabel, error);
+        this._closeNewFileModalIfOpened(newFileModal, wasNewFileModalOpen);
+        alertModal({
+          type: 'warning',
+          title: 'Erreur de chargement',
+          body: error.message,
+          confirm: 'OK'
+        });
+      } finally {
+        this.setModalLoading(false);
+      }
+    });
+  }
+
+  /**
+   * Importe des données .pw transmises au démarrage depuis une autre application.
+   * @param {string} importedPW
+   * @returns {Promise<void>}
+   */
+  loadStartupPW(importedPW) {
+    const newFileModal = $('#new-file-modal');
+    const emptyStateContainer = $('#empty-state-container');
+    const wasNewFileModalOpen = Boolean(newFileModal?.classList?.contains?.('is-active'));
+    const wasEmptyStateHidden = Boolean(emptyStateContainer?.classList?.contains?.('is-hidden'));
+
+    // Masquer l'état vide pendant le chargement
+    emptyStateContainer?.classList?.add('is-hidden');
+    // Afficher la modale "Nouveau fichier" pendant le chargement
+    newFileModal?.classList?.add('is-active');
+    // Affichage de l'indicateur de chargement
+    this.setModalLoading(true);
+
+    console.log("Données importées depuis une autre application.");
+
+    return new Promise((resolve) => {
+      setTimeout(async () => {
+        try {
+          await this.app.ioManager.loadPWFromString(importedPW);
+
+          // Affichage de l'interface principale et fermeture des modales
+          this.showTabsAndPanels();
+          this.common.modalManager.closeAllModals();
+          this.markAsSaved();
+          showToast("Données importées avec succès !", "is-success");
+        } catch (e) {
+          console.error("Échec du chargement des données inter-applications:", e);
+          this._closeNewFileModalIfOpened(newFileModal, wasNewFileModalOpen);
+          if (!wasEmptyStateHidden && emptyStateContainer) {
+            emptyStateContainer.classList.remove('is-hidden');
+          }
+          // Notification en cas d'erreur
+          showToast(`Erreur lors du chargement des données : ${e.message}`, "is-danger");
+        } finally {
+          // Masquage de l'indicateur de chargement
+          this.setModalLoading(false);
+          resolve();
+        }
+      }, 50);
+    });
+  }
+
+  /**
    * Initialise les modales liées aux fichiers (nouveau, ouvrir, coller, etc.)
    * et gère les événements associés.
    */
   initFileModals() {
     // Gestion de l'ouverture de fichier
-    $("#file-input").addEventListener('change', async (event) => {
+    $("#file-input").addEventListener('change', (event) => {
       const file = event.target.files[0];
       if (!file) return;
 
-      // La confirmation de suppression des données existantes
-      this.navManager.confirmAction(async () => {
-        // Affiche le spinner de chargement
-        this.setModalLoading(true);
-        try {
-          // On attend que le chargement soit terminé (succès ou échec)
-          await this.app.ioManager.loadFile(file);
-          // Si aucune erreur n'est levée, on ferme la modale et affiche l'ui
-          this.showTabsAndPanels();
-          this.common.modalManager.closeAllModals();
-          this.markAsSaved();
-        } catch (error) {
-          // Si une erreur est levée par ioManager, on affiche une alerte
-          // et la modale reste ouverte.
-          console.error("Échec du chargement du fichier:", error);
-          alertModal({
-            type: 'warning',
-            title: 'Erreur de chargement',
-            body: error.message,
-            confirm: 'OK'
-          });
-        } finally {
-          // Cache le spinner de chargement
-          this.setModalLoading(false);
-        }
-      });
+      return this.loadFileWithFeedback(file);
     });
 
     $("#file-input").addEventListener("click", () => {
@@ -938,35 +1009,12 @@ export default class UIManager {
     });
 
     // Gestion du Drag & Drop
-    this.fileDropManager = new FileDropManager(document.body, async (file) => {
+    this.fileDropManager = new FileDropManager(document.body, (file) => {
       if (!file) return;
 
-      // Demande de confirmation via navManager si des données existent déjà
-      this.navManager.confirmAction(async () => {
-        // Affiche le spinner de chargement global de la modale "Nouveau fichier"
-        this.setModalLoading(true);
-        // Si la modale n'est pas ouverte, on l'affiche avec le spinner
-        $("#new-file-modal").classList.add('is-active'); 
-
-        try {
-          // On passe le fichier au gestionnaire IO
-          await this.app.ioManager.loadFile(file);
-          // Si aucune erreur, on affiche l'interface et ferme la modale
-          this.showTabsAndPanels();
-          this.common.modalManager.closeAllModals();
-          this.markAsSaved();
-        } catch (error) {
-          console.error("Échec du chargement du fichier par Drag&Drop:", error);
-          alertModal({
-            type: 'warning',
-            title: 'Erreur de chargement',
-            body: error.message,
-            confirm: 'OK'
-          });
-        } finally {
-          // Cache le spinner
-          this.setModalLoading(false);
-        }
+      return this.loadFileWithFeedback(file, {
+        showModalSpinner: true,
+        logLabel: "Échec du chargement du fichier par Drag&Drop:"
       });
     });
   }

@@ -382,8 +382,6 @@ generatePW() {
    * Méthode principale de chargement
    */
   async loadFile(file) {
-    this.app.resetSession();
-
     const fileName = (file?.name || "").toLowerCase();
     const fileType = (file?.type || "").toLowerCase();
 
@@ -415,12 +413,77 @@ generatePW() {
       throw new Error("Les données du presse-papiers ne sont pas au format tabulaire.");
     }
 
-    // Données vides
-    this.app.resetSession();
+    // Réinitialiser la session uniquement après validation des données du presse-papiers
+    this.app.resetSession?.();
 
     this.loadData(data);
   }
 
+  /**
+   * Parse une entrée .pw (chaîne JSON éventuellement précédée d'un BOM UTF-8, ou objet direct).
+   * @param {string|object} pwInput
+   * @returns {object}
+   * @private
+   */
+  _parsePWInput(pwInput) {
+    if (typeof pwInput === 'string') {
+      const cleanData = pwInput.replace(/^\uFEFF/, '').trim();
+      if (!cleanData) {
+        throw new Error("Fichier PW invalide : contenu vide.");
+      }
+      return JSON.parse(cleanData);
+    }
+    if (pwInput && typeof pwInput === 'object' && !Array.isArray(pwInput)) {
+      return pwInput;
+    }
+    throw new Error("Fichier PW invalide : format d'entrée incorrect.");
+  }
+
+  /**
+   * Valide la structure minimale d'un état .pw avant de modifier ou réinitialiser la session active.
+   * @param {object} state
+   * @private
+   */
+  _validatePWState(state) {
+    if (
+      !state ||
+      typeof state !== 'object' ||
+      Array.isArray(state) ||
+      !state.data ||
+      typeof state.data !== 'object' ||
+      Array.isArray(state.data) ||
+      !Array.isArray(state.data.curves)
+    ) {
+      throw new Error("Fichier PW invalide : données de courbes manquantes.");
+    }
+    if (state.data.curves.some(curve => !curve || typeof curve !== 'object' || Array.isArray(curve))) {
+      throw new Error("Fichier PW invalide : format de courbe incorrect.");
+    }
+    if (
+      state.data.parameters !== undefined &&
+      state.data.parameters !== null &&
+      (typeof state.data.parameters !== 'object' || Array.isArray(state.data.parameters))
+    ) {
+      throw new Error("Fichier PW invalide : format de paramètres incorrect.");
+    }
+    if (state.data.models !== undefined && state.data.models !== null && !Array.isArray(state.data.models)) {
+      throw new Error("Fichier PW invalide : format de modèles incorrect.");
+    }
+    if (state.data.annotations !== undefined && state.data.annotations !== null && !Array.isArray(state.data.annotations)) {
+      throw new Error("Fichier PW invalide : format d'annotations incorrect.");
+    }
+  }
+
+  /**
+   * Valide un état .pw, réinitialise la session puis restaure les données.
+   * @param {object} state
+   * @private
+   */
+  async _applyValidatedPWState(state) {
+    this._validatePWState(state);
+    this.app.resetSession?.();
+    await this._processPWState(state);
+  }
 
   /**
    * Processes the parsed state from a .pw file or session storage.
@@ -428,9 +491,7 @@ generatePW() {
    * @private
    */
   async _processPWState(state) {
-    if (!state.data || !state.data.curves) {
-      throw new Error("Fichier PW invalide : données de courbes manquantes.");
-    }
+    this._validatePWState(state);
 
     const existingSymbols = new Set();
     const nameMap = {}; // Dictionnaire de traduction { "ancien_nom": "nouveauNom" }
@@ -602,12 +663,8 @@ generatePW() {
       const reader = new FileReader();
       reader.onload = async (event) => {
         try {
-          let text = event.target.result;
-          if (typeof text === 'string') {
-            text = text.replace(/^\uFEFF/, '').trim();
-          }
-          const state = JSON.parse(text);
-          await this._processPWState(state);
+          const state = this._parsePWInput(event?.target?.result);
+          await this._applyValidatedPWState(state);
           resolve();
         } catch (e) {
           console.error(`Erreur lors du chargement du fichier .pw :`, e);
@@ -627,15 +684,9 @@ generatePW() {
    * @returns {Promise<void>}
    */
   async loadPWFromString(pwDataString) {
-    this.app.resetSession();
     try {
-      const cleanData = typeof pwDataString === 'string'
-        ? pwDataString.replace(/^\uFEFF/, '').trim()
-        : pwDataString;
-      const state = typeof cleanData === 'object' && cleanData !== null
-        ? cleanData
-        : JSON.parse(cleanData);
-      await this._processPWState(state);
+      const state = this._parsePWInput(pwDataString);
+      await this._applyValidatedPWState(state);
     } catch (e) {
       console.error("Erreur lors du chargement des données PW depuis la chaîne de caractères :", e);
       // Propagation de l'erreur pour traitement par l'appelant
@@ -655,11 +706,20 @@ generatePW() {
         skipEmptyLines: true,
         complete: (results) => {
           try {
+            if (!results || !Array.isArray(results.data) || results.data.length === 0) {
+              throw new Error('Le fichier CSV ne contient aucune donnée.');
+            }
+
             // Conversion en TSV pour la méthode loadData
             const toTSV = results.data
-              .map(r => r.map(cell => String(cell).replace(/\t/g, " ")).join("\t"))
+              .map(r => (Array.isArray(r) ? r : [r]).map(cell => String(cell).replace(/\t/g, " ")).join("\t"))
               .join("\n");
 
+            if (!toTSV.trim()) {
+              throw new Error('Le fichier CSV ne contient aucune donnée exploitable.');
+            }
+
+            this.app.resetSession?.();
             this.loadData(toTSV);
             resolve();
           } catch (e) {
@@ -834,6 +894,10 @@ generatePW() {
         ? genres.map((g, idx) => (g === 0 ? idx : -1)).filter(idx => idx !== -1)
         : names.map((_, idx) => idx);
 
+      if (measuredIdx.length === 0) {
+        throw new Error('Aucune variable mesurée trouvée dans le fichier. Fichier invalide.');
+      }
+
       const existingSymbols = new Set();
       const nameMap = {};
 
@@ -913,6 +977,9 @@ generatePW() {
       }
 
       const normalizedMemoLines = memoLines.map(moveUnitSuffixToLHS);
+
+      // Réinitialiser la session uniquement après lecture et validation complètes du fichier
+      this.app.resetSession?.();
 
       // remplir l’éditeur avec le MEMO + paramètres
       const memoText = normalizedMemoLines.length ? normalizedMemoLines.join('\n') : '';

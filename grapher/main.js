@@ -52,35 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Vérification des données transmises par une autre application
   ExchangeManager.checkStartupData((importedPW) => {
-    const newFileModal = $('#new-file-modal');
-    
-    // Masquer l'état vide
-    $('#empty-state-container').classList.add('is-hidden');
-    // Afficher la modale "Nouveau fichier" pendant le chargement
-    newFileModal.classList.add('is-active');
-    // Affichage de l'indicateur de chargement
-    uiManager.setModalLoading(true);
-
-    console.log("Données importées depuis une autre application.");
-
-    setTimeout(async () => {
-      try {
-        await app.ioManager.loadPWFromString(importedPW);
-
-        // Affichage de l'interface principale et fermeture des modales
-        uiManager.showTabsAndPanels();
-        uiManager.common.modalManager.closeAllModals();
-        uiManager.markAsSaved();
-        showToast("Données importées avec succès !", "is-success");
-      } catch (e) {
-        console.error("Échec du chargement des données inter-applications:", e);
-        // Notification en cas d'erreur
-        showToast(`Erreur lors du chargement des données : ${e.message}`, "is-danger");
-      } finally {
-        // Masquage de l'indicateur de chargement
-        uiManager.setModalLoading(false);
-      }
-    }, 50);
+    uiManager.loadStartupPW(importedPW);
   });
 
   // Gestion du redimensionnement de la fenêtre
