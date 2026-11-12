@@ -34,6 +34,10 @@
 
     z-index des points selectionnés quand les points sont très serrés.
 
+    pouvoir definir numeriquement les bornes du graphique.
+
+    une option pour que le premier et le dernier point soient a la limite du graphique et pas à 5% du bord
+
 # Mendeleiev
 # Optique
 # Chromato
