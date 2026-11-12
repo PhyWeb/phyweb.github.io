@@ -5,6 +5,35 @@ import { DEFAULT_SETTINGS, saveSettings, loadSettings, clearSavedSettings } from
 const $ = document.querySelector.bind(document);
 
 export const MAX_PRINT_TABLE_POINTS = 500;
+const EXTRA_CUSTOMIZATION_COLORS = ['#000000'];
+
+/**
+ * Retourne la palette de couleurs proposée dans les sélecteurs de personnalisation.
+ * @returns {string[]}
+ */
+export function getCustomizationColors() {
+  const baseColors = Highcharts.getOptions()?.colors || [];
+  const existing = new Set(baseColors.map(color => String(color).toLowerCase()));
+  const extras = EXTRA_CUSTOMIZATION_COLORS.filter(color => !existing.has(color.toLowerCase()));
+  return [...baseColors, ...extras];
+}
+
+/**
+ * Remplit un élément <select> avec les pastilles de couleurs de personnalisation.
+ * @param {HTMLSelectElement} selectElement
+ */
+export function populateColorSelect(selectElement) {
+  if (!selectElement) return;
+  const colors = getCustomizationColors();
+  selectElement.innerHTML = "";
+  colors.forEach((color) => {
+    const option = document.createElement('option');
+    option.value = color;
+    option.style.color = color;
+    option.textContent = "■■■■■■■■■";
+    selectElement.appendChild(option);
+  });
+}
 
 /**
  * Échappe les caractères HTML spéciaux pour prévenir les injections XSS
@@ -2220,7 +2249,7 @@ export default class UIManager {
       }
       populateCurveMenu();
       populateCurveSelect();
-      populateColors();
+      populateColorSelect(document.getElementById("curveColorPicker"));
       populateLineWidthSelect();
       populateMarkersRadiusSelect()
 
@@ -2382,24 +2411,6 @@ export default class UIManager {
       this.updateAllModelPanelVisibilityIcons();
       populateCurveMenu();
     });
-
-    /**
-     * Remplit le menu déroulant des couleurs disponibles.
-     */
-    function populateColors(){
-      const colors = Highcharts.getOptions().colors;
-      const select = document.getElementById("curveColorPicker");
-
-      // Création des options
-      select.innerHTML = ""; // Réinitialisation des options
-      colors.forEach((color) => {
-        const option = document.createElement('option');
-        option.value = color;
-        option.style.color = color;
-        option.textContent = "■■■■■■■■■"; // On peut aussi mettre un code couleur ici
-        select.appendChild(option);
-      });
-    }
 
     /**
      * Remplit le menu déroulant des épaisseurs de ligne disponibles.
@@ -2972,7 +2983,10 @@ export default class UIManager {
     if (maxX === -Infinity) maxX = 0;
     
     // Réinitialisation des menus déroulants et attribution des valeurs actuelles
-    populateModelColors(colorPicker);
+    populateColorSelect(colorPicker);
+    colorPicker.onchange = function () {
+      this.style.color = this.value;
+    };
     colorPicker.value = model.color;
     colorPicker.style.color = model.color; // Met à jour la couleur du sélecteur
     populateModelLineWidthSelect(lineWidthSelect);
@@ -3252,22 +3266,6 @@ export default class UIManager {
     };
     
     editModelModal.classList.add('is-active');
-
-    // Remplit le sélecteur de couleurs avec les couleurs disponibles dans Highcharts
-    function populateModelColors(selectElement){
-      const colors = Highcharts.getOptions().colors;
-      selectElement.innerHTML = "";
-      colors.forEach((color) => {
-        const option = document.createElement('option');
-        option.value = color;
-        option.style.color = color;
-        option.textContent = "■■■■■■■■■";
-        selectElement.appendChild(option);
-      });
-      selectElement.addEventListener('change', function () {
-        this.style.color = this.value;
-      });
-    }
 
     // Remplit le sélecteur d'épaisseurs de ligne avec des valeurs de 1 à 10
     function populateModelLineWidthSelect(selectElement){
