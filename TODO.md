@@ -32,6 +32,8 @@
 
     bug avecle mode afficher tous les chiffres
 
+    z-index des points selectionnés quand les points sont très serrés.
+
 # Mendeleiev
 # Optique
 # Chromato
