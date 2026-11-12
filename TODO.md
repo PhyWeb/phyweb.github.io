@@ -30,6 +30,8 @@
 
     mettre un sous titres dans les colonnes calculées
 
+    bug avecle mode afficher tous les chiffres
+
 # Mendeleiev
 # Optique
 # Chromato
