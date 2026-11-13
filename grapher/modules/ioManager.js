@@ -502,10 +502,31 @@ generatePW() {
       const newTitle = sanitizeSymbol(oldTitle, existingSymbols);
       if (oldTitle !== newTitle) nameMap[oldTitle] = newTitle;
 
-      const newCurve = new Curve(newTitle, sanitizeUnit(savedCurve.unit));
-      Object.assign(newCurve, savedCurve);
-      newCurve.title = newTitle;
-      newCurve.length = 0;
+      let curveColor = savedCurve.color;
+      if (!curveColor || typeof curveColor !== 'string') {
+        curveColor = COLOR_LIST.find(c => !this.app.data.curves.some(curve => curve.color === c));
+        if (!curveColor) {
+          // Couleur aléatoire si la palette est épuisée
+          curveColor = '#' + Math.floor(Math.random() * 16777215).toString(16);
+          console.warn('No COLORLIST available, using random color for', newTitle);
+        }
+      }
+
+      const sanitizedUnit = sanitizeUnit(savedCurve.unit);
+      const newCurve = new Curve(
+        newTitle,
+        sanitizedUnit,
+        curveColor,
+        savedCurve.line,
+        savedCurve.markers,
+        savedCurve.lineWidth,
+        savedCurve.lineStyle,
+        savedCurve.markerSymbol,
+        savedCurve.markerRadius
+      );
+      if (savedCurve.type !== undefined) {
+        newCurve.type = savedCurve.type;
+      }
 
       if (Array.isArray(savedCurve.values)) {
         savedCurve.values.forEach(val => {
@@ -519,18 +540,6 @@ generatePW() {
         });
       } else {
         console.error('Invalid values array:', savedCurve.values);
-      }
-      delete newCurve.values;
-
-      // Assignation de couleur si default ou absente (comme addCurve)
-      if (!newCurve.color || newCurve.color === '#000000') {
-        let color = COLOR_LIST.find(c => !this.app.data.curves.some(curve => curve.color === c));
-        if (!color) {
-          // Couleur aléatoire si la palette est épuisée
-          color = '#' + Math.floor(Math.random() * 16777215).toString(16);
-          console.warn('No COLORLIST available, using random color for', newCurve.title);
-        }
-        newCurve.color = color;
       }
 
       this.app.data.curves.push(newCurve);

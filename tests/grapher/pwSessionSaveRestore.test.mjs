@@ -402,6 +402,86 @@ describe('IOManager - Sauvegarde et Restauration des sessions .pw (v3.0)', () =>
       assert.equal(Object.prototype.hasOwnProperty.call(c, 'values'), false);
     });
 
+    it('doit assainir les unités des courbes et ignorer les propriétés parasites du JSON', async () => {
+      const state = {
+        version: '3.0',
+        data: {
+          curves: [
+            {
+              title: 'v',
+              unit: ' m_s ',
+              values: [1, 2],
+              parasiteProperty: 'ignored',
+              nestedParasite: { evil: true }
+            },
+            {
+              title: 'theta',
+              unit: undefined,
+              values: [0, 90]
+            },
+            {
+              title: 'vide',
+              unit: null,
+              values: [5]
+            }
+          ]
+        }
+      };
+
+      await ioManager._processPWState(state);
+
+      assert.equal(data.curves.length, 3);
+
+      const c1 = data.curves[0];
+      assert.equal(c1.title, 'v');
+      assert.equal(c1.unit, 'm-s', 'L\'unité avec underscore et espaces doit être assainie en "m-s"');
+      assert.equal(Object.prototype.hasOwnProperty.call(c1, 'parasiteProperty'), false, 'La propriété parasite ne doit pas être copiée');
+      assert.equal(Object.prototype.hasOwnProperty.call(c1, 'nestedParasite'), false, 'La propriété parasite imbriquée ne doit pas être copiée');
+      assert.equal(Object.prototype.hasOwnProperty.call(c1, 'values'), false);
+
+      const c2 = data.curves[1];
+      assert.equal(c2.title, 'theta');
+      assert.equal(c2.unit, '', 'Une unité undefined doit devenir une chaîne vide');
+      assert.equal(Object.prototype.hasOwnProperty.call(c2, 'values'), false);
+
+      const c3 = data.curves[2];
+      assert.equal(c3.title, 'vide');
+      assert.equal(c3.unit, '', 'Une unité null doit devenir une chaîne vide');
+      assert.equal(Object.prototype.hasOwnProperty.call(c3, 'values'), false);
+    });
+
+    it('doit préserver la couleur noire (#000000) et attribuer une couleur de la palette si absente', async () => {
+      const state = {
+        version: '3.0',
+        data: {
+          curves: [
+            {
+              title: 'blackCurve',
+              unit: '',
+              color: '#000000',
+              values: [1, 2, 3]
+            },
+            {
+              title: 'noColorCurve',
+              unit: '',
+              values: [4, 5, 6]
+            }
+          ]
+        }
+      };
+
+      await ioManager._processPWState(state);
+
+      assert.equal(data.curves.length, 2);
+
+      const blackCurve = data.curves[0];
+      assert.equal(blackCurve.color, '#000000', 'La couleur noire #000000 doit être préservée et non remplacée');
+
+      const noColorCurve = data.curves[1];
+      assert.ok(noColorCurve.color, 'Une couleur doit être assignée si absente');
+      assert.notEqual(noColorCurve.color, '#000000', 'Une couleur non noire doit être tirée de COLOR_LIST');
+    });
+
     it('doit restaurer le style personnalisé du modèle sur la série graphique du chart', async () => {
       const state = {
         version: '3.0',
