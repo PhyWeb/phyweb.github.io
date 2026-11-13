@@ -789,6 +789,7 @@ export default class UIManager {
         ? this.grapher.chart.series
             .filter(s => !s.options?.id?.startsWith('model-') && s.visible !== false)
             .map(s => s.name)
+            .sort()
         : [];
 
       let zoom = null;
@@ -976,6 +977,7 @@ export default class UIManager {
         await this.app.ioManager.loadFile(file);
         this.showTabsAndPanels();
         this.common.modalManager.closeAllModals();
+        await new Promise(resolve => setTimeout(resolve, 50));
         this.markAsSaved();
       } catch (error) {
         console.error(logLabel, error);

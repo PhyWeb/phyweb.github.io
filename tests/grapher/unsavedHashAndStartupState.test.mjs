@@ -206,6 +206,23 @@ describe('UIManager.initNavbar - détection étendue de hash (styles, modèles, 
     assert.equal(ui.hasUnsavedData(), false);
   });
 
+  it('ne considère pas comme non sauvegardé une permutation de l\'ordre des séries dans chart.series', () => {
+    seedBaseCurveAndSave();
+    mockGrapher.chart.series = [
+      { name: 'u', visible: true, options: { id: 'curve-u' } },
+      { name: 'v', visible: true, options: { id: 'curve-v' } }
+    ];
+    ui.markAsSaved();
+    assert.equal(ui.hasUnsavedData(), false);
+
+    // Inversion de l'ordre interne des séries Highcharts
+    mockGrapher.chart.series = [
+      { name: 'v', visible: true, options: { id: 'curve-v' } },
+      { name: 'u', visible: true, options: { id: 'curve-u' } }
+    ];
+    assert.equal(ui.hasUnsavedData(), false, 'L\'ordre interne de chart.series ne doit pas fausser la détection');
+  });
+
   it('distingue un zoom utilisateur d\'un simple redimensionnement (reflow sans hasUserZoom)', () => {
     seedBaseCurveAndSave();
 
@@ -340,6 +357,41 @@ describe('UIManager.loadStartupPW + initNavbar - état sauvegardé au démarrage
 
     mockData.curves[0].lineWidth = 5;
     assert.equal(ui.hasUnsavedData(), true);
+  });
+
+  it('rétablit hasUnsavedData à false après remplacement par un fichier via loadFileWithFeedback', async () => {
+    // 1. Démarrage avec données Tracker non sauvegardées
+    await ui.loadStartupPW('{"version":"3.0","curves":[{"title":"t"}]}', { markAsSaved: false });
+    assert.equal(ui.hasUnsavedData(), true, 'L\'import Tracker doit initialement être non sauvegardé');
+
+    // 2. Préparation du mock de ioManager.loadFile
+    let loadFileCalled = false;
+    ui.app.ioManager.loadFile = async (file) => {
+      loadFileCalled = true;
+      mockData.curves = [{ title: 'x', unit: 'm', values: [1, 2] }];
+      if (ui.grapher?.chart) {
+        ui.grapher.chart.series = [{ name: 'x', visible: true, options: { id: 'curve-x' } }];
+      }
+    };
+
+    let alertModalConfig = null;
+    ui.navManager.alertModal = (cfg) => {
+      alertModalConfig = cfg;
+    };
+
+    const dummyFile = new File(['{"version":"3.0"}'], 'test.pw', { type: 'application/json' });
+    const loadPromise = ui.loadFileWithFeedback(dummyFile, { showModalSpinner: true });
+
+    assert.ok(alertModalConfig, 'Une alerte de confirmation doit être demandée car des données étaient présentes');
+    // L\'utilisateur confirme le remplacement
+    alertModalConfig.confirm.cb();
+
+    await loadPromise;
+    // Attendre la temporisation de stabilisation de loadFileWithFeedback (50ms)
+    await new Promise(r => setTimeout(r, 60));
+
+    assert.equal(loadFileCalled, true, 'ioManager.loadFile doit avoir été exécuté');
+    assert.equal(ui.hasUnsavedData(), false, 'Après remplacement par le fichier, la session doit être marquée enregistrée');
   });
 });
 

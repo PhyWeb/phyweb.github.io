@@ -38,6 +38,8 @@
 
     une option pour que le premier et le dernier point soient a la limite du graphique et pas à 5% du bord
 
+    la ligne du zero en abscisse et ordonnée devrait etre plus grosse
+
 # Mendeleiev
 # Optique
 # Chromato
