@@ -40,6 +40,8 @@
 
     la ligne du zero en abscisse et ordonnée devrait etre plus grosse
 
+    remplacer les carrés moches du selecteur de couleur par un vrai aplat
+
 # Mendeleiev
 # Optique
 # Chromato
