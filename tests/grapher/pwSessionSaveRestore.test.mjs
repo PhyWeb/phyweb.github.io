@@ -141,6 +141,7 @@ describe('IOManager - Sauvegarde et Restauration des sessions .pw (v3.0)', () =>
         this.currentXCurve = title;
       },
       updateChart() {
+        if (!this.chart || !this.currentXCurve) return;
         // Ajoute les séries ordonnées non présentes
         data.curves.forEach(curve => {
           if (curve.title === this.currentXCurve) return;
@@ -696,6 +697,90 @@ describe('IOManager - Sauvegarde et Restauration des sessions .pw (v3.0)', () =>
 
       assert.equal(app.grapher.hasUserZoom, false);
       assert.equal(autoZoomButton.classList.contains('is-hidden'), true, 'Le bouton Zoom auto doit être masqué');
+    });
+
+    it('doit afficher les courbes par repli sur curves[0].title si state.grapher est absent ou null', async () => {
+      const state = {
+        version: '3.0',
+        data: {
+          curves: [
+            { title: 'temps', unit: 's', values: [0, 1, 2] },
+            { title: 'tension', unit: 'V', values: [0, 5, 10] }
+          ]
+        }
+      };
+
+      await ioManager._processPWState(state);
+
+      assert.equal(app.grapher.currentXCurve, 'temps');
+      assert.equal(mockSeries.length, 1);
+      assert.equal(mockSeries[0].name, 'tension');
+      assert.equal(mockSeries[0].visible, true);
+    });
+
+    it('doit afficher les courbes par repli si state.grapher est un objet vide ({})', async () => {
+      const state = {
+        version: '3.0',
+        data: {
+          curves: [
+            { title: 'temps', unit: 's', values: [0, 1, 2] },
+            { title: 'tension', unit: 'V', values: [0, 5, 10] }
+          ]
+        },
+        grapher: {}
+      };
+
+      await ioManager._processPWState(state);
+
+      assert.equal(app.grapher.currentXCurve, 'temps');
+      assert.equal(mockSeries.length, 1);
+      assert.equal(mockSeries[0].name, 'tension');
+      assert.equal(mockSeries[0].visible, true);
+    });
+
+    it('doit utiliser la courbe de type "x" en priorité de repli si xCurve est null', async () => {
+      const state = {
+        version: '3.0',
+        data: {
+          curves: [
+            { title: 'tension', unit: 'V', values: [0, 5, 10] },
+            { title: 'temps', unit: 's', type: 'x', values: [0, 1, 2] }
+          ]
+        },
+        grapher: {
+          xCurve: null,
+          yCurves: ['tension']
+        }
+      };
+
+      await ioManager._processPWState(state);
+
+      assert.equal(app.grapher.currentXCurve, 'temps');
+      assert.equal(mockSeries.length, 1);
+      assert.equal(mockSeries[0].name, 'tension');
+      assert.equal(mockSeries[0].visible, true);
+    });
+
+    it('ne doit pas masquer les courbes si state.grapher existe sans tableau yCurves', async () => {
+      const state = {
+        version: '3.0',
+        data: {
+          curves: [
+            { title: 't', unit: 's', values: [0, 1] },
+            { title: 'y', unit: 'm', values: [2, 4] }
+          ]
+        },
+        grapher: {
+          xCurve: 't'
+        }
+      };
+
+      await ioManager._processPWState(state);
+
+      assert.equal(app.grapher.currentXCurve, 't');
+      assert.equal(mockSeries.length, 1);
+      assert.equal(mockSeries[0].name, 'y');
+      assert.equal(mockSeries[0].visible, true);
     });
   });
 });

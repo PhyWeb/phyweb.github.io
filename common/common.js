@@ -1544,10 +1544,14 @@ function exportToPW(series, options = {}, app, calculations = "") {
   let xCurve, yCurves;
   if (xCurveIndex !== -1) {
     xCurve = series[xCurveIndex].title;
-    yCurves = series.filter(s => s.type === 'y').map(s => s.title);
+    const yCandidates = series.filter(s => s.type === 'y').map(s => s.title);
+    yCurves = yCandidates.length > 0
+      ? yCandidates
+      : series.filter((_, idx) => idx !== xCurveIndex).map(s => s.title);
   } else {
-    xCurve = null;
-    yCurves = series.map(s => s.title);
+    // Repli : première série en abscisse X, reste des séries en ordonnées Y
+    xCurve = series.length > 0 ? series[0].title : null;
+    yCurves = series.length > 1 ? series.slice(1).map(s => s.title) : (series.length === 1 ? [series[0].title] : []);
   }
 
 

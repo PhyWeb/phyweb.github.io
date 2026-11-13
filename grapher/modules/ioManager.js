@@ -610,14 +610,27 @@ generatePW() {
     });
     this.app.uiManager.updateClearAnnotationsButtonVisibility();
     
-    if (state.grapher) {
-      const mappedXCurve = nameMap[state.grapher.xCurve] || state.grapher.xCurve;
-      this.app.grapher.setXCurve(mappedXCurve, false);
-      this.app.grapher.updateChart();
-      const mappedYCurves = Array.isArray(state.grapher.yCurves)
-        ? state.grapher.yCurves.map(y => nameMap[y] || y)
-        : [];
-      this.app.grapher.setVisibilityFromList(mappedYCurves);
+    // 4. Restaurer le graphique (abscisse, courbes affichées et visibilité)
+    const existingTitles = this.app.data.curves.map(c => c.title);
+    const rawXCurve = state.grapher?.xCurve;
+    const mappedXCurve = rawXCurve ? (nameMap[rawXCurve] || rawXCurve) : null;
+
+    const chosenX = (mappedXCurve && existingTitles.includes(mappedXCurve))
+      ? mappedXCurve
+      : (this.app.data.curves.find(c => c.type === 'x')?.title || existingTitles[0] || null);
+
+    if (chosenX) {
+      this.app.grapher.setXCurve(chosenX, false);
+    }
+
+    this.app.grapher.updateChart();
+
+    if (Array.isArray(state.grapher?.yCurves)) {
+      const mappedYCurves = state.grapher.yCurves.map(y => nameMap[y] || y);
+      const validYCurves = mappedYCurves.filter(y => existingTitles.includes(y));
+      if (mappedYCurves.length === 0 || validYCurves.length > 0) {
+        this.app.grapher.setVisibilityFromList(mappedYCurves);
+      }
     }
 
     if (state.sort && state.sort.lastSortVariable) {

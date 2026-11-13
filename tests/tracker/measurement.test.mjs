@@ -1003,6 +1003,17 @@ describe('Tracker - Export de données et objets occultés (ppf >= 2)', () => {
     assert.equal(csvWithoutBOMAlias.startsWith('\uFEFF'), false, 'Ne doit pas inclure le BOM avec bom: false');
     assert.notEqual(csvWithoutBOMAlias.charCodeAt(0), 0xFEFF);
   });
+
+  it('exportToPW() doit replier xCurve sur la 1re série et yCurves sur les suivantes si aucune série n\'a type === "x"', () => {
+    const s1 = new Serie('A', 'm');
+    s1.setData([1, 2]);
+    const s2 = new Serie('B', 's');
+    s2.setData([3, 4]);
+
+    const pw = JSON.parse(exportToPW([s1, s2], {}, 'TestApp'));
+    assert.equal(pw.grapher.xCurve, 'A');
+    assert.deepEqual(pw.grapher.yCurves, ['B']);
+  });
 });
 
 describe('Tracker - Fonction d\'arrondi sécurisée et absence de pollution du prototype global', () => {
