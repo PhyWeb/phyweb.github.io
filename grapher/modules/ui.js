@@ -48,6 +48,7 @@ export function populateColorSelect(selectElement) {
     customDropdown.className = 'dropdown is-fullwidth custom-color-dropdown';
     customDropdown.dataset.target = selectElement.id;
     customDropdown.style.width = '100%';
+    customDropdown.style.minWidth = '115px';
 
     customDropdown.innerHTML = `
       <div class="dropdown-trigger" style="width: 100%;">
