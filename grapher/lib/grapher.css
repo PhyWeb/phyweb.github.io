@@ -394,3 +394,10 @@ sub {
 fieldset[disabled] .button {
   cursor: default !important;
 }
+
+/* Animation de survol pour les blocs de couleur dans le dropdown personnalisé */
+.custom-color-dropdown .color-option-btn:hover {
+  transform: scale(1.05);
+  border-color: #363636 !important;
+  transition: transform 0.1s ease;
+}

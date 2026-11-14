@@ -19,20 +19,115 @@ export function getCustomizationColors() {
 }
 
 /**
- * Remplit un élément <select> avec les pastilles de couleurs de personnalisation.
+ * Remplit un élément <select> avec la palette de couleurs et génère
+ * un sélecteur visuel Bulma affichant un bloc de couleur uni.
  * @param {HTMLSelectElement} selectElement
  */
 export function populateColorSelect(selectElement) {
   if (!selectElement) return;
   const colors = getCustomizationColors();
+
+  // Maintien du <select> natif caché pour compatibilité totale avec le reste du code
   selectElement.innerHTML = "";
   colors.forEach((color) => {
     const option = document.createElement('option');
     option.value = color;
-    option.style.color = color;
-    option.textContent = "■■■■■■■■■";
+    option.textContent = color;
     selectElement.appendChild(option);
   });
+
+  // Création ou récupération du wrapper dropdown personnalisé
+  const selectWrapper = selectElement.closest('.select');
+  if (!selectWrapper) return;
+
+  selectWrapper.style.display = 'none';
+
+  let customDropdown = selectWrapper.parentElement.querySelector(`.custom-color-dropdown[data-target="${selectElement.id}"]`);
+  if (!customDropdown) {
+    customDropdown = document.createElement('div');
+    customDropdown.className = 'dropdown is-fullwidth custom-color-dropdown';
+    customDropdown.dataset.target = selectElement.id;
+    customDropdown.style.width = '100%';
+
+    customDropdown.innerHTML = `
+      <div class="dropdown-trigger" style="width: 100%;">
+        <button type="button" class="button is-fullwidth is-justify-content-space-between px-3" aria-haspopup="true">
+          <span class="color-swatch-preview" style="display: block; flex-grow: 1; height: 18px; border-radius: 4px; border: 1px solid rgba(0,0,0,0.15);"></span>
+          <span class="icon is-small ml-2">
+            <i class="fas fa-angle-down" aria-hidden="true"></i>
+          </span>
+        </button>
+      </div>
+      <div class="dropdown-menu" role="menu" style="width: 100%; min-width: 140px;">
+        <div class="dropdown-content p-2" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px;"></div>
+      </div>
+    `;
+
+    selectWrapper.parentElement.insertBefore(customDropdown, selectWrapper.nextSibling);
+
+    const triggerBtn = customDropdown.querySelector('.dropdown-trigger button');
+    triggerBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      // Ferme les autres sélecteurs de couleur éventuellement ouverts
+      document.querySelectorAll('.custom-color-dropdown.is-active').forEach(el => {
+        if (el !== customDropdown) el.classList.remove('is-active');
+      });
+      customDropdown.classList.toggle('is-active');
+    });
+
+    document.addEventListener('click', () => {
+      customDropdown.classList.remove('is-active');
+    });
+  }
+
+  // Peuplement des blocs de couleur dans le menu
+  const contentContainer = customDropdown.querySelector('.dropdown-content');
+  const previewSpan = customDropdown.querySelector('.color-swatch-preview');
+  contentContainer.innerHTML = '';
+
+  const updatePreview = (color) => {
+    if (previewSpan && color) {
+      previewSpan.style.backgroundColor = color;
+    }
+  };
+
+  colors.forEach((color) => {
+    const item = document.createElement('button');
+    item.type = 'button';
+    item.className = 'button is-small p-1 color-option-btn';
+    item.dataset.color = color;
+    item.style.height = '28px';
+    item.style.border = '1px solid #dbdbdb';
+    item.innerHTML = `<span style="display: block; width: 100%; height: 100%; border-radius: 3px; background-color: ${color};"></span>`;
+
+    item.addEventListener('click', (e) => {
+      e.stopPropagation();
+      selectElement.value = color;
+      updatePreview(color);
+      customDropdown.classList.remove('is-active');
+      // Déclenche l'événement 'change' natif pour mettre à jour la courbe ou le modèle
+      selectElement.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+
+    contentContainer.appendChild(item);
+  });
+
+  // Synchronisation si selectElement.value est modifié par script (à l'ouverture d'une modale)
+  if (!selectElement._colorObserverAttached) {
+    const descriptor = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value');
+    Object.defineProperty(selectElement, 'value', {
+      get() {
+        return descriptor.get.call(this);
+      },
+      set(val) {
+        descriptor.set.call(this, val);
+        updatePreview(val);
+      }
+    });
+    selectElement._colorObserverAttached = true;
+  }
+
+  updatePreview(selectElement.value || colors[0]);
 }
 
 /**
