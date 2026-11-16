@@ -14,6 +14,7 @@
     - package linux et macos
 
 # Audio
+    - ajout d'un générateur de fonction a l'image de celui généré pour le bac sti2d
 
 # Tracker
     - Add vidéos
