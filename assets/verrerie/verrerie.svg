@@ -392,23 +392,23 @@
   <!-- ========================================================= -->
 
   <!-- 37. RÉFRIGÉRANT À BOULES / ALLIHN (corrigé : conduits alignés et olivettes ouvertes, y=1730 à 2160) -->
-  <path class="verre-fond" d="M 101,1730 L 129,1730 L 129,1783 L 141,1793 L 141,2097 L 128,2107 L 128,2160 L 102,2160 L 102,2107 L 89,2097 L 89,1793 L 101,1783 Z" />
+  <path class="verre-fond" d="M 101,1730 L 129,1730 L 129,1783 L 149,1793 L 149,2097 L 128,2107 L 128,2160 L 102,2160 L 102,2107 L 81,2097 L 81,1793 L 101,1783 Z" />
   <!-- Manchon extérieur interrompu aux olivettes d'eau (haut gauche y=1809..1819, bas droite y=2071..2081) -->
-  <path class="verre" style="fill:none;" d="M 101,1730 L 101,1783 L 89,1793 L 89,1809 L 63,1809" />
-  <path class="verre" style="fill:none;" d="M 63,1819 L 89,1819 L 89,2097 L 102,2107 L 102,2160" />
-  <path class="verre" style="fill:none;" d="M 129,1730 L 129,1783 L 141,1793 L 141,2071 L 167,2071" />
-  <path class="verre" style="fill:none;" d="M 167,2081 L 141,2081 L 141,2097 L 128,2107 L 128,2160" />
+  <path class="verre" style="fill:none;" d="M 101,1730 L 101,1783 L 81,1793 L 81,1809 L 55,1809" />
+  <path class="verre" style="fill:none;" d="M 55,1819 L 81,1819 L 81,2097 L 102,2107 L 102,2160" />
+  <path class="verre" style="fill:none;" d="M 129,1730 L 129,1783 L 149,1793 L 149,2071 L 175,2071" />
+  <path class="verre" style="fill:none;" d="M 175,2081 L 149,2081 L 149,2097 L 128,2107 L 128,2160" />
   <!-- Tube central à boules dans le prolongement exact des cols (x=101..129 -> x=102..128) -->
   <path class="trait" d="M 101,1783 L 101,1825 C 91,1831 91,1853 101,1859 L 101,1891 C 91,1897 91,1919 101,1925 L 101,1957 C 91,1963 91,1985 101,1991 L 101,2023 C 91,2029 91,2051 101,2057 L 102,2107" />
   <path class="trait" d="M 129,1783 L 129,1825 C 139,1831 139,1853 129,1859 L 129,1891 C 139,1897 139,1919 129,1925 L 129,1957 C 139,1963 139,1985 129,1991 L 129,2023 C 139,2029 139,2051 129,2057 L 128,2107" />
 
   <!-- 38. RÉFRIGÉRANT DROIT / LIEBIG (corrigé : conduits alignés et olivettes ouvertes, y=1730 à 2160) -->
-  <path class="verre-fond" d="M 261,1730 L 289,1730 L 289,1783 L 301,1793 L 301,2097 L 288,2107 L 288,2160 L 262,2160 L 262,2107 L 249,2097 L 249,1793 L 261,1783 Z" />
+  <path class="verre-fond" d="M 261,1730 L 289,1730 L 289,1783 L 309,1793 L 309,2097 L 288,2107 L 288,2160 L 262,2160 L 262,2107 L 241,2097 L 241,1793 L 261,1783 Z" />
   <!-- Manchon extérieur interrompu aux olivettes d'eau -->
-  <path class="verre" style="fill:none;" d="M 261,1730 L 261,1783 L 249,1793 L 249,1809 L 223,1809" />
-  <path class="verre" style="fill:none;" d="M 223,1819 L 249,1819 L 249,2097 L 262,2107 L 262,2160" />
-  <path class="verre" style="fill:none;" d="M 289,1730 L 289,1783 L 301,1793 L 301,2071 L 327,2071" />
-  <path class="verre" style="fill:none;" d="M 327,2081 L 301,2081 L 301,2097 L 288,2107 L 288,2160" />
+  <path class="verre" style="fill:none;" d="M 261,1730 L 261,1783 L 241,1793 L 241,1809 L 215,1809" />
+  <path class="verre" style="fill:none;" d="M 215,1819 L 241,1819 L 241,2097 L 262,2107 L 262,2160" />
+  <path class="verre" style="fill:none;" d="M 289,1730 L 289,1783 L 309,1793 L 309,2071 L 335,2071" />
+  <path class="verre" style="fill:none;" d="M 335,2081 L 309,2081 L 309,2097 L 288,2107 L 288,2160" />
   <!-- Tube central rectiligne dans le prolongement continu des cols -->
   <line class="trait" x1="261" y1="1783" x2="262" y2="2107" />
   <line class="trait" x1="289" y1="1783" x2="288" y2="2107" />
