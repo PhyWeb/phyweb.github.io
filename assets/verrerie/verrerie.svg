@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2480 2220" width="2480" height="2220">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2640 2540" width="2640" height="2540">
   <style>
     .verre { fill: #ffffff; stroke: #000000; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
     .verre-fond { fill: #ffffff; stroke: none; }
@@ -16,7 +16,7 @@
   </style>
 
   <!-- FOND BLANC -->
-  <rect x="0" y="0" width="2480" height="2220" fill="#ffffff" />
+  <rect x="0" y="0" width="2640" height="2540" fill="#ffffff" />
 
   <!-- ========================================================= -->
   <!-- LIGNE 1 : PRÉPARATION, PESÉE, PRÉLÈVEMENT (base à y = 600) -->
@@ -233,15 +233,15 @@
   <circle cx="1160" cy="860" r="8" fill="#000000" />
   <path class="potence" d="M 1030,850 L 1062,850 L 1062,870 L 1030,870" />
 
-  <!-- 23. TUBE À ESSAIS VIDE -->
-  <path class="verre-fond" d="M 1272,1035 L 1274,1040 L 1274,1209 A 11,11 0 0,0 1296,1209 L 1296,1040 L 1298,1035 Z" />
-  <path class="verre" style="fill:none;" d="M 1272,1035 L 1274,1040 L 1274,1209 A 11,11 0 0,0 1296,1209 L 1296,1040 L 1298,1035" />
+  <!-- 23. TUBE À ESSAIS VIDE (sans collerette, largeur constante 22 px) -->
+  <path class="verre-fond" d="M 1274,1035 L 1274,1209 A 11,11 0 0,0 1296,1209 L 1296,1035 Z" />
+  <path class="verre" style="fill:none;" d="M 1274,1035 L 1274,1209 A 11,11 0 0,0 1296,1209 L 1296,1035" />
 
-  <!-- 24. TUBE À ESSAIS REMPLI -->
-  <path class="verre-fond" d="M 1332,1035 L 1334,1040 L 1334,1209 A 11,11 0 0,0 1356,1209 L 1356,1040 L 1358,1035 Z" />
+  <!-- 24. TUBE À ESSAIS REMPLI (sans collerette, largeur constante 22 px) -->
+  <path class="verre-fond" d="M 1334,1035 L 1334,1209 A 11,11 0 0,0 1356,1209 L 1356,1035 Z" />
   <path class="liquide" d="M 1335.5,1135 L 1354.5,1135 L 1354.5,1209 A 9.5,9.5 0 0,1 1335.5,1209 Z" />
-  <path class="verre" style="fill:none;" d="M 1332,1035 L 1334,1040 L 1334,1209 A 11,11 0 0,0 1356,1209 L 1356,1040 L 1358,1035" />
-
+  <path class="verre" style="fill:none;" d="M 1334,1035 L 1334,1209 A 11,11 0 0,0 1356,1209 L 1356,1035" />
+  
   <!-- 25. PORTOIR / SUPPORT 6 PLACES POUR TUBES À ESSAIS -->
   <rect class="metal" x="1400" y="1204" width="280" height="16" rx="2.5" />
   <rect class="metal" x="1414" y="1088" width="10" height="116" />
@@ -614,5 +614,59 @@
       <line x1="2288" y1="1897" x2="2288" y2="1924" stroke="#000000" stroke-width="1.5" />
       <line x1="2299" y1="1897" x2="2299" y2="1924" stroke="#000000" stroke-width="1.5" />
     </g>
+  </g>
+
+  <!-- 56. FIOLE À VIDE (gabarit grand erlenmeyer 500 mL, haut. 215 px, base à y=2160) -->
+  <g id="fiole-a-vide">
+    <!-- Fond blanc global (corps conique + col renforcé + olive latérale) -->
+    <path class="verre-fond" d="M 2392,1945 L 2397,1951 L 2397,1995 L 2354,2133 C 2349,2147 2358,2160 2372,2160 L 2452,2160 C 2466,2160 2475,2147 2470,2133 L 2427,1995 L 2427,1988 L 2456,1988 L 2456,1977 L 2427,1977 L 2427,1951 L 2432,1945 Z" />
+    <!-- Contours en verre épais -->
+    <path class="verre" style="fill:none;" d="M 2392,1945 L 2397,1951 L 2397,1995 L 2354,2133 C 2349,2147 2358,2160 2372,2160 L 2452,2160 C 2466,2160 2475,2147 2470,2133 L 2427,1995 L 2427,1988 L 2456,1988" />
+    <path class="verre" style="fill:none;" d="M 2432,1945 L 2427,1951 L 2427,1977 L 2456,1977" />
+  </g>
+
+  <!-- 57. ENTONNOIR BÜCHNER + JOINT CONIQUE (haut. 146 px, larg. 92 px, base à y=2160) -->
+  <g id="entonnoir-buchner">
+    <!-- Fond blanc global (cuve cylindrique + cône + tige biseautée) -->
+    <path class="verre-fond" d="M 2496,2014 L 2588,2014 L 2588,2060 L 2549,2098 L 2549,2160 L 2535,2150 L 2535,2098 L 2496,2060 Z" />
+    <!-- Contours en verre épais -->
+    <path class="verre" style="fill:none;" d="M 2496,2014 L 2496,2060 L 2535,2098 L 2535,2150" />
+    <path class="verre" style="fill:none;" d="M 2588,2014 L 2588,2060 L 2549,2098 L 2549,2160" />
+    <!-- Plateau perforé interne -->
+    <line class="trait" x1="2496" y1="2057" x2="2588" y2="2057" />
+    <!-- Joint caoutchouc conique (adapté au col de 30 px de la fiole à vide) -->
+    <polygon class="bouchon" points="2523,2100 2561,2100 2557,2118 2527,2118" />
+  </g>
+
+  <!-- 58. VERRE DE MONTRE (calotte sphérique creuse, larg. 130 px, base à y=2480) -->
+  <g id="verre-de-montre">
+    <path class="verre" d="M 60,2454 Q 125,2480 190,2454 Q 125,2471 60,2454 Z" />
+  </g>
+
+  <!-- 59. BOÎTE DE PETRI (coupelle + couvercle séparable, Ø 136 px, base à y=2480) -->
+  <g id="boite-de-petri">
+    <!-- Coupelle inférieure (larg. 128 px, haut. 24 px) -->
+    <g id="petri-coupelle">
+      <path class="verre-fond" d="M 244,2456 L 244,2474 C 244,2478 247,2480 251,2480 L 365,2480 C 369,2480 372,2478 372,2474 L 372,2456 Z" />
+      <path class="verre" style="fill:none;" d="M 244,2456 L 244,2474 C 244,2478 247,2480 251,2480 L 365,2480 C 369,2480 372,2478 372,2474 L 372,2456" />
+    </g>
+    <!-- Couvercle supérieur emboîté (larg. 136 px, haut. 16 px) -->
+    <g id="petri-couvercle">
+      <path class="verre-fond" d="M 240,2464 L 240,2454 C 240,2450 243,2448 247,2448 L 369,2448 C 373,2448 376,2450 376,2454 L 376,2464 Z" />
+      <path class="verre" style="fill:none;" d="M 240,2464 L 240,2454 C 240,2450 243,2448 247,2448 L 369,2448 C 373,2448 376,2450 376,2454 L 376,2464" />
+    </g>
+  </g>
+
+  <!-- 60. PIPETTE PASTEUR EN PLASTIQUE (poire + tige graduée effilée, haut. 210 px, base à y=2480) -->
+  <g id="pipette-pasteur">
+    <!-- Corps complet translucide -->
+    <path class="verre" d="M 436,2270 C 425,2270 423,2280 423,2292 L 423,2314 C 423,2321 428,2325 430,2328 L 430,2418 L 433.5,2442 L 433.5,2480 L 438.5,2480 L 438.5,2442 L 442,2418 L 442,2328 C 444,2325 449,2321 449,2314 L 449,2292 C 449,2280 447,2270 436,2270 Z" />
+    <!-- Collerette de la poire -->
+    <line class="trait" x1="426" y1="2323" x2="446" y2="2323" />
+    <!-- Repères de volume moulés (ex: 0,5 mL / 1 mL) -->
+    <line class="trait" style="stroke-width: 1.5;" x1="436" y1="2348" x2="442" y2="2348" />
+    <line class="trait" style="stroke-width: 1.5;" x1="438" y1="2366" x2="442" y2="2366" />
+    <line class="trait" style="stroke-width: 1.5;" x1="436" y1="2384" x2="442" y2="2384" />
+    <line class="trait" style="stroke-width: 1.5;" x1="438" y1="2402" x2="442" y2="2402" />
   </g>
 </svg>
