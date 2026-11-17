@@ -696,4 +696,14 @@
     <!-- Bouton MODE incurvé en bas -->
     <path d="M 527,2448 Q 552,2444 577,2448 L 572,2457 Q 552,2462 532,2457 Z" fill="#444444" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
   </g>
+
+  <!-- 62. TUBE À DÉGAGEMENT SEUL (retour inférieur allongé à droite, base à y=2480) -->
+  <g id="tube-a-degagement">
+    <!-- Fond blanc (diamètre extérieur 8 px, intérieur 4 px) -->
+    <path class="verre-fond" d="M 674,2316 L 674,2236 Q 674,2222 688,2222 L 864,2222 Q 878,2222 878,2236 L 878,2462 Q 878,2480 896,2480 L 936,2480 Q 954,2480 954,2462 L 954,2448 L 946,2448 L 946,2462 Q 946,2472 936,2472 L 896,2472 Q 886,2472 886,2462 L 886,2236 Q 886,2214 864,2214 L 688,2214 Q 666,2214 666,2236 L 666,2316 Z" />
+    <!-- Paroi supérieure / gauche -->
+    <path class="verre" style="fill:none;" d="M 666,2316 L 666,2236 Q 666,2214 688,2214 L 864,2214 Q 886,2214 886,2236 L 886,2462 Q 886,2472 896,2472 L 936,2472 Q 946,2472 946,2462 L 946,2448" />
+    <!-- Paroi inférieure / droite -->
+    <path class="verre" style="fill:none;" d="M 674,2316 L 674,2236 Q 674,2222 688,2222 L 864,2222 Q 878,2222 878,2236 L 878,2462 Q 878,2480 896,2480 L 936,2480 Q 954,2480 954,2462 L 954,2448" />
+  </g>
 </svg>
