@@ -669,4 +669,31 @@
     <line class="trait" style="stroke-width: 1.5;" x1="436" y1="2384" x2="442" y2="2384" />
     <line class="trait" style="stroke-width: 1.5;" x1="438" y1="2402" x2="442" y2="2402" />
   </g>
+
+  <!-- 61. CHRONOMÈTRE NUMÉRIQUE DE TP (modèle jaune classique, base à y=2480) -->
+  <g id="chronometre">
+    <!-- Bouton poussoir gauche incliné à -42° -->
+    <g transform="translate(507, 2376) rotate(-42)">
+      <rect x="-12" y="-7" width="24" height="10" rx="2" fill="#333333" stroke="#000000" stroke-width="2.5" stroke-linejoin="round" />
+    </g>
+    <!-- Bouton poussoir droit incliné à +42° -->
+    <g transform="translate(597, 2376) rotate(42)">
+      <rect x="-12" y="-7" width="24" height="10" rx="2" fill="#333333" stroke="#000000" stroke-width="2.5" stroke-linejoin="round" />
+    </g>
+    <!-- Bouton central supérieur -->
+    <rect x="546" y="2356" width="12" height="10" rx="2" fill="#333333" stroke="#000000" stroke-width="2.5" />
+
+    <!-- Coque principale jaune avec oreilles latérales et passant de cordon inférieur -->
+    <path d="M 538,2365 L 566,2365 L 580,2373 L 591,2364 L 609,2380 L 600,2391 A 54,54 0 0,1 564,2471 L 562,2480 L 542,2480 L 540,2471 A 54,54 0 0,1 504,2391 L 495,2380 L 513,2364 L 524,2373 Z" fill="#f2d638" stroke="#000000" stroke-width="3" stroke-linejoin="round" />
+
+    <!-- Façade centrale noire -->
+    <rect x="514" y="2382" width="76" height="58" rx="14" fill="#222222" stroke="#000000" stroke-width="2" />
+
+    <!-- Écran LCD -->
+    <rect class="ecran" x="521" y="2394" width="62" height="32" rx="3" />
+    <text class="texte-ecran" style="font-size: 13px;" x="580" y="2415">00:00.0</text>
+
+    <!-- Bouton MODE incurvé en bas -->
+    <path d="M 527,2448 Q 552,2444 577,2448 L 572,2457 Q 552,2462 532,2457 Z" fill="#444444" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+  </g>
 </svg>
