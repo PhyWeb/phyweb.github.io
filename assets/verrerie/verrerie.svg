@@ -141,11 +141,11 @@
   <line class="trait" x1="1655.5" y1="500" x2="1663.5" y2="500" />
   <line class="trait" x1="1658" y1="515" x2="1663.5" y2="515" />
 
-  <!-- 13. PROPIPETTE RONDE -->
-  <path class="propipette" d="M 1745,370 L 1745,399 A 40,40 0 1,0 1745,479 L 1745,495 L 1740,495 L 1740,510 L 1745,510 L 1745,525 L 1723,525 L 1723,535 L 1745,535 L 1745,557 L 1756,557 L 1756,510 L 1761,510 L 1761,495 L 1756,495 L 1756,479 A 40,40 0 1,0 1756,399 L 1756,370 Z" />
-  <rect class="bouchon" x="1742" y="365" width="17" height="5" />
-  <rect class="bouchon" x="1718" y="522" width="5" height="16" />
-  <rect class="bouchon" x="1742" y="557" width="17" height="5" />
+  <!-- 13. PROPIPETTE RONDE (ajustée à l'échelle : boule sphérique Ø 56 px, haut. 143 px) -->
+  <path class="propipette" d="M 1745,422 L 1745,437.55 A 28,28 0 0,0 1745,492.45 L 1745,505 L 1741,505 L 1741,516 L 1745,516 L 1745,528 L 1728,528 L 1728,536 L 1745,536 L 1745,555 L 1756,555 L 1756,516 L 1760,516 L 1760,505 L 1756,505 L 1756,492.45 A 28,28 0 0,0 1756,437.55 L 1756,422 Z" />
+  <rect class="bouchon" x="1742" y="417" width="17" height="5" />
+  <rect class="bouchon" x="1724" y="525" width="4" height="14" />
+  <rect class="bouchon" x="1742" y="555" width="17" height="5" />
 
 
   <!-- ========================================================= -->
@@ -220,11 +220,6 @@
   <rect class="verre" x="936" y="1172" width="34" height="8" rx="3" />
   <rect class="verre" x="940" y="1180" width="26" height="40" rx="2" />
 
-  <!-- 21b. BOUCHON CYLINDRIQUE PERCÉ (26 px) -->
-  <rect class="bouchon" x="980" y="1180" width="26" height="40" rx="2" />
-  <rect class="verre-fond" x="985" y="1178" width="16" height="44" />
-  <line class="trait" x1="985" y1="1180" x2="985" y2="1220" />
-  <line class="trait" x1="1001" y1="1180" x2="1001" y2="1220" />
 
   <!-- 22. POTENCE UNIFORMISÉE -->
   <line class="potence" x1="1060" y1="1220" x2="1205" y2="1220" />
@@ -553,66 +548,66 @@
     <path class="metal" d="M 1916,1938 C 1906,1946 1904,1962 1914,1975 L 1916,1978 L 1916,2132 L 1914,2136 L 1914,2160 L 1918.5,2160 L 1919.5,2136 L 1920,2132 L 1920,1976 C 1911,1964 1912,1950 1919,1940 Z" />
   </g>
 
-  <!-- 53. PETIT FLACON DE LABORATOIRE (250 mL, haut. totale 168 px, base à y=2160) -->
+  <!-- 53. PETIT FLACON DE LABORATOIRE (250 mL, bouchon GL45 standard, haut. totale 168 px, base à y=2160) -->
   <g id="flacon-petit">
-    <!-- Corps en verre (78 x 142 px) -->
-    <path class="verre-fond" d="M 1978,2018 L 1978,2036 C 1978,2048 1960,2058 1960,2076 L 1960,2148 C 1960,2155 1965,2160 1972,2160 L 2026,2160 C 2033,2160 2038,2155 2038,2148 L 2038,2076 C 2038,2058 2020,2048 2020,2036 L 2020,2018 Z" />
-    <path class="verre" style="fill:none;" d="M 1978,2018 L 1978,2036 C 1978,2048 1960,2058 1960,2076 L 1960,2148 C 1960,2155 1965,2160 1972,2160 L 2026,2160 C 2033,2160 2038,2155 2038,2148 L 2038,2076 C 2038,2058 2020,2048 2020,2036 L 2020,2018" />
+    <!-- Corps en verre (78 x 142 px, col 46 px) -->
+    <path class="verre-fond" d="M 1976,2018 L 1976,2036 C 1976,2048 1960,2058 1960,2076 L 1960,2148 C 1960,2155 1965,2160 1972,2160 L 2026,2160 C 2033,2160 2038,2155 2038,2148 L 2038,2076 C 2038,2058 2022,2048 2022,2036 L 2022,2018 Z" />
+    <path class="verre" style="fill:none;" d="M 1976,2018 L 1976,2036 C 1976,2048 1960,2058 1960,2076 L 1960,2148 C 1960,2155 1965,2160 1972,2160 L 2026,2160 C 2033,2160 2038,2155 2038,2148 L 2038,2076 C 2038,2058 2022,2048 2022,2036 L 2022,2018" />
     <!-- Graduations -->
     <path class="trait" d="M 2022,2088 L 2028,2088 L 2028,2139 L 2022,2139" />
     <line class="trait" x1="2020" y1="2113.5" x2="2028" y2="2113.5" />
-    <!-- Bouchon à vis bleu (GL45) -->
+    <!-- Bouchon à vis bleu standard (GL45) -->
     <g id="bouchon-flacon-petit">
-      <rect x="1975" y="1992" width="48" height="26" rx="3" fill="#2554b0" stroke="#000000" stroke-width="2.5" stroke-linejoin="round" />
-      <rect x="1973" y="2014" width="52" height="5" rx="1.5" fill="#2554b0" stroke="#000000" stroke-width="2" />
-      <line x1="1983" y1="1993" x2="1983" y2="2013" stroke="#000000" stroke-width="1.5" />
-      <line x1="1991" y1="1993" x2="1991" y2="2013" stroke="#000000" stroke-width="1.5" />
+      <rect x="1973" y="1992" width="52" height="26" rx="3" fill="#2554b0" stroke="#000000" stroke-width="2.5" stroke-linejoin="round" />
+      <rect x="1971" y="2013" width="56" height="5" rx="1.5" fill="#2554b0" stroke="#000000" stroke-width="2" />
+      <line x1="1982" y1="1993" x2="1982" y2="2013" stroke="#000000" stroke-width="1.5" />
+      <line x1="1990.5" y1="1993" x2="1990.5" y2="2013" stroke="#000000" stroke-width="1.5" />
       <line x1="1999" y1="1993" x2="1999" y2="2013" stroke="#000000" stroke-width="1.5" />
-      <line x1="2007" y1="1993" x2="2007" y2="2013" stroke="#000000" stroke-width="1.5" />
-      <line x1="2015" y1="1993" x2="2015" y2="2013" stroke="#000000" stroke-width="1.5" />
+      <line x1="2007.5" y1="1993" x2="2007.5" y2="2013" stroke="#000000" stroke-width="1.5" />
+      <line x1="2016" y1="1993" x2="2016" y2="2013" stroke="#000000" stroke-width="1.5" />
     </g>
   </g>
 
-  <!-- 54. FLACON DE LABORATOIRE MOYEN (500 mL, haut. totale 212 px, base à y=2160) -->
+  <!-- 54. FLACON DE LABORATOIRE MOYEN (500 mL, bouchon GL45 standard, haut. totale 208 px, base à y=2160) -->
   <g id="flacon-moyen">
-    <!-- Corps en verre (98 x 182 px) -->
-    <path class="verre-fond" d="M 2100,1978 L 2100,1998 C 2100,2012 2076,2026 2076,2048 L 2076,2146 C 2076,2154 2082,2160 2090,2160 L 2160,2160 C 2168,2160 2174,2154 2174,2146 L 2174,2048 C 2174,2026 2150,2012 2150,1998 L 2150,1978 Z" />
-    <path class="verre" style="fill:none;" d="M 2100,1978 L 2100,1998 C 2100,2012 2076,2026 2076,2048 L 2076,2146 C 2076,2154 2082,2160 2090,2160 L 2160,2160 C 2168,2160 2174,2154 2174,2146 L 2174,2048 C 2174,2026 2150,2012 2150,1998 L 2150,1978" />
+    <!-- Corps en verre (98 x 182 px, col 46 px) -->
+    <path class="verre-fond" d="M 2102,1978 L 2102,1998 C 2102,2012 2076,2026 2076,2048 L 2076,2146 C 2076,2154 2082,2160 2090,2160 L 2160,2160 C 2168,2160 2174,2154 2174,2146 L 2174,2048 C 2174,2026 2148,2012 2148,1998 L 2148,1978 Z" />
+    <path class="verre" style="fill:none;" d="M 2102,1978 L 2102,1998 C 2102,2012 2076,2026 2076,2048 L 2076,2146 C 2076,2154 2082,2160 2090,2160 L 2160,2160 C 2168,2160 2174,2154 2174,2146 L 2174,2048 C 2174,2026 2148,2012 2148,1998 L 2148,1978" />
     <!-- Graduations -->
     <path class="trait" d="M 2155,2060 L 2162,2060 L 2162,2135 L 2155,2135" />
     <line class="trait" x1="2152" y1="2085" x2="2162" y2="2085" />
     <line class="trait" x1="2152" y1="2110" x2="2162" y2="2110" />
-    <!-- Bouchon à vis bleu (GL45) -->
+    <!-- Bouchon à vis bleu standard (GL45) -->
     <g id="bouchon-flacon-moyen">
-      <rect x="2097" y="1948" width="56" height="30" rx="3.5" fill="#2554b0" stroke="#000000" stroke-width="2.5" stroke-linejoin="round" />
-      <rect x="2094" y="1973" width="62" height="6" rx="1.5" fill="#2554b0" stroke="#000000" stroke-width="2" />
-      <line x1="2106" y1="1949" x2="2106" y2="1972" stroke="#000000" stroke-width="1.5" />
-      <line x1="2115.5" y1="1949" x2="2115.5" y2="1972" stroke="#000000" stroke-width="1.5" />
-      <line x1="2125" y1="1949" x2="2125" y2="1972" stroke="#000000" stroke-width="1.5" />
-      <line x1="2134.5" y1="1949" x2="2134.5" y2="1972" stroke="#000000" stroke-width="1.5" />
-      <line x1="2144" y1="1949" x2="2144" y2="1972" stroke="#000000" stroke-width="1.5" />
+      <rect x="2099" y="1952" width="52" height="26" rx="3" fill="#2554b0" stroke="#000000" stroke-width="2.5" stroke-linejoin="round" />
+      <rect x="2097" y="1973" width="56" height="5" rx="1.5" fill="#2554b0" stroke="#000000" stroke-width="2" />
+      <line x1="2108" y1="1953" x2="2108" y2="1973" stroke="#000000" stroke-width="1.5" />
+      <line x1="2116.5" y1="1953" x2="2116.5" y2="1973" stroke="#000000" stroke-width="1.5" />
+      <line x1="2125" y1="1953" x2="2125" y2="1973" stroke="#000000" stroke-width="1.5" />
+      <line x1="2133.5" y1="1953" x2="2133.5" y2="1973" stroke="#000000" stroke-width="1.5" />
+      <line x1="2142" y1="1953" x2="2142" y2="1973" stroke="#000000" stroke-width="1.5" />
     </g>
   </g>
 
-  <!-- 55. GRAND FLACON DE LABORATOIRE (1 L, haut. totale 264 px, base à y=2160) -->
+  <!-- 55. GRAND FLACON DE LABORATOIRE (1 L, bouchon GL45 standard, haut. totale 256 px, base à y=2160) -->
   <g id="flacon-grand">
-    <!-- Corps en verre (122 x 230 px) -->
-    <path class="verre-fond" d="M 2248,1930 L 2248,1952 C 2248,1968 2216,1986 2216,2012 L 2216,2144 C 2216,2153 2223,2160 2232,2160 L 2322,2160 C 2331,2160 2338,2153 2338,2144 L 2338,2012 C 2338,1986 2306,1968 2306,1952 L 2306,1930 Z" />
-    <path class="verre" style="fill:none;" d="M 2248,1930 L 2248,1952 C 2248,1968 2216,1986 2216,2012 L 2216,2144 C 2216,2153 2223,2160 2232,2160 L 2322,2160 C 2331,2160 2338,2153 2338,2144 L 2338,2012 C 2338,1986 2306,1968 2306,1952 L 2306,1930" />
+    <!-- Corps en verre (122 x 230 px, col 46 px) -->
+    <path class="verre-fond" d="M 2254,1930 L 2254,1952 C 2254,1968 2216,1986 2216,2012 L 2216,2144 C 2216,2153 2223,2160 2232,2160 L 2322,2160 C 2331,2160 2338,2153 2338,2144 L 2338,2012 C 2338,1986 2300,1968 2300,1952 L 2300,1930 Z" />
+    <path class="verre" style="fill:none;" d="M 2254,1930 L 2254,1952 C 2254,1968 2216,1986 2216,2012 L 2216,2144 C 2216,2153 2223,2160 2232,2160 L 2322,2160 C 2331,2160 2338,2153 2338,2144 L 2338,2012 C 2338,1986 2300,1968 2300,1952 L 2300,1930" />
     <!-- Graduations -->
     <path class="trait" d="M 2316,2026 L 2324,2026 L 2324,2130 L 2316,2130" />
     <line class="trait" x1="2313" y1="2052" x2="2324" y2="2052" />
     <line class="trait" x1="2313" y1="2078" x2="2324" y2="2078" />
     <line class="trait" x1="2313" y1="2104" x2="2324" y2="2104" />
-    <!-- Bouchon à vis bleu (GL45) -->
+    <!-- Bouchon à vis bleu standard (GL45) -->
     <g id="bouchon-flacon-grand">
-      <rect x="2244" y="1896" width="66" height="34" rx="4" fill="#2554b0" stroke="#000000" stroke-width="2.5" stroke-linejoin="round" />
-      <rect x="2241" y="1925" width="72" height="6" rx="1.5" fill="#2554b0" stroke="#000000" stroke-width="2" />
-      <line x1="2255" y1="1897" x2="2255" y2="1924" stroke="#000000" stroke-width="1.5" />
-      <line x1="2266" y1="1897" x2="2266" y2="1924" stroke="#000000" stroke-width="1.5" />
-      <line x1="2277" y1="1897" x2="2277" y2="1924" stroke="#000000" stroke-width="1.5" />
-      <line x1="2288" y1="1897" x2="2288" y2="1924" stroke="#000000" stroke-width="1.5" />
-      <line x1="2299" y1="1897" x2="2299" y2="1924" stroke="#000000" stroke-width="1.5" />
+      <rect x="2251" y="1904" width="52" height="26" rx="3" fill="#2554b0" stroke="#000000" stroke-width="2.5" stroke-linejoin="round" />
+      <rect x="2249" y="1925" width="56" height="5" rx="1.5" fill="#2554b0" stroke="#000000" stroke-width="2" />
+      <line x1="2260" y1="1905" x2="2260" y2="1925" stroke="#000000" stroke-width="1.5" />
+      <line x1="2268.5" y1="1905" x2="2268.5" y2="1925" stroke="#000000" stroke-width="1.5" />
+      <line x1="2277" y1="1905" x2="2277" y2="1925" stroke="#000000" stroke-width="1.5" />
+      <line x1="2285.5" y1="1905" x2="2285.5" y2="1925" stroke="#000000" stroke-width="1.5" />
+      <line x1="2294" y1="1905" x2="2294" y2="1925" stroke="#000000" stroke-width="1.5" />
     </g>
   </g>
 
@@ -657,17 +652,17 @@
     </g>
   </g>
 
-  <!-- 60. PIPETTE PASTEUR EN PLASTIQUE (poire + tige graduée effilée, haut. 210 px, base à y=2480) -->
+  <!-- 60. PIPETTE PASTEUR EN PLASTIQUE (poire + tige graduée effilée, haut. 150 px, base à y=2480) -->
   <g id="pipette-pasteur">
-    <!-- Corps complet translucide -->
-    <path class="verre" d="M 436,2270 C 425,2270 423,2280 423,2292 L 423,2314 C 423,2321 428,2325 430,2328 L 430,2418 L 433.5,2442 L 433.5,2480 L 438.5,2480 L 438.5,2442 L 442,2418 L 442,2328 C 444,2325 449,2321 449,2314 L 449,2292 C 449,2280 447,2270 436,2270 Z" />
+    <!-- Corps complet translucide (poire 14 px, tige 6 px effilée à 3 px) -->
+    <path class="verre" d="M 436,2330 C 430,2330 429,2336 429,2344 L 429,2362 C 429,2367 432,2370 433,2372 L 433,2435 L 434.5,2450 L 434.5,2480 L 437.5,2480 L 437.5,2450 L 439,2435 L 439,2372 C 440,2370 443,2367 443,2362 L 443,2344 C 443,2336 442,2330 436,2330 Z" />
     <!-- Collerette de la poire -->
-    <line class="trait" x1="426" y1="2323" x2="446" y2="2323" />
+    <line class="trait" x1="431" y1="2368" x2="441" y2="2368" />
     <!-- Repères de volume moulés (ex: 0,5 mL / 1 mL) -->
-    <line class="trait" style="stroke-width: 1.5;" x1="436" y1="2348" x2="442" y2="2348" />
-    <line class="trait" style="stroke-width: 1.5;" x1="438" y1="2366" x2="442" y2="2366" />
-    <line class="trait" style="stroke-width: 1.5;" x1="436" y1="2384" x2="442" y2="2384" />
-    <line class="trait" style="stroke-width: 1.5;" x1="438" y1="2402" x2="442" y2="2402" />
+    <line class="trait" style="stroke-width: 1.5;" x1="435" y1="2390" x2="439" y2="2390" />
+    <line class="trait" style="stroke-width: 1.5;" x1="436" y1="2405" x2="439" y2="2405" />
+    <line class="trait" style="stroke-width: 1.5;" x1="435" y1="2420" x2="439" y2="2420" />
+    <line class="trait" style="stroke-width: 1.5;" x1="436" y1="2435" x2="439" y2="2435" />
   </g>
 
   <!-- 61. CHRONOMÈTRE NUMÉRIQUE DE TP (modèle jaune classique, base à y=2480) -->
