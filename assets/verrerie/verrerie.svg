@@ -541,4 +541,78 @@
     <!-- Bouton de préhension supérieur -->
     <rect class="verre" x="1704" y="2136" width="28" height="12" rx="3" />
   </g>
+
+  <!-- 51. BAGUETTE EN VERRE (agitateur en verre à bouts arrondis, base à y=2160) -->
+  <g id="baguette-verre">
+    <rect class="verre" x="1845" y="1940" width="7" height="220" rx="3.5" />
+  </g>
+
+  <!-- 52. SPATULE DE LABORATOIRE VUE DE CÔTÉ (cuillère + manche + bout plat, base à y=2160) -->
+  <g id="spatule-cote">
+    <!-- Profil complet : extrémité plate en bas, tige cylindrique, cuillère relevée en haut -->
+    <path class="metal" d="M 1916,1938 C 1906,1946 1904,1962 1914,1975 L 1916,1978 L 1916,2132 L 1914,2136 L 1914,2160 L 1918.5,2160 L 1919.5,2136 L 1920,2132 L 1920,1976 C 1911,1964 1912,1950 1919,1940 Z" />
+  </g>
+
+  <!-- 53. PETIT FLACON DE LABORATOIRE (250 mL, haut. totale 168 px, base à y=2160) -->
+  <g id="flacon-petit">
+    <!-- Corps en verre (78 x 142 px) -->
+    <path class="verre-fond" d="M 1978,2018 L 1978,2036 C 1978,2048 1960,2058 1960,2076 L 1960,2148 C 1960,2155 1965,2160 1972,2160 L 2026,2160 C 2033,2160 2038,2155 2038,2148 L 2038,2076 C 2038,2058 2020,2048 2020,2036 L 2020,2018 Z" />
+    <path class="verre" style="fill:none;" d="M 1978,2018 L 1978,2036 C 1978,2048 1960,2058 1960,2076 L 1960,2148 C 1960,2155 1965,2160 1972,2160 L 2026,2160 C 2033,2160 2038,2155 2038,2148 L 2038,2076 C 2038,2058 2020,2048 2020,2036 L 2020,2018" />
+    <!-- Graduations -->
+    <path class="trait" d="M 2022,2088 L 2028,2088 L 2028,2139 L 2022,2139" />
+    <line class="trait" x1="2020" y1="2113.5" x2="2028" y2="2113.5" />
+    <!-- Bouchon à vis bleu (GL45) -->
+    <g id="bouchon-flacon-petit">
+      <rect x="1975" y="1992" width="48" height="26" rx="3" fill="#2554b0" stroke="#000000" stroke-width="2.5" stroke-linejoin="round" />
+      <rect x="1973" y="2014" width="52" height="5" rx="1.5" fill="#2554b0" stroke="#000000" stroke-width="2" />
+      <line x1="1983" y1="1993" x2="1983" y2="2013" stroke="#000000" stroke-width="1.5" />
+      <line x1="1991" y1="1993" x2="1991" y2="2013" stroke="#000000" stroke-width="1.5" />
+      <line x1="1999" y1="1993" x2="1999" y2="2013" stroke="#000000" stroke-width="1.5" />
+      <line x1="2007" y1="1993" x2="2007" y2="2013" stroke="#000000" stroke-width="1.5" />
+      <line x1="2015" y1="1993" x2="2015" y2="2013" stroke="#000000" stroke-width="1.5" />
+    </g>
+  </g>
+
+  <!-- 54. FLACON DE LABORATOIRE MOYEN (500 mL, haut. totale 212 px, base à y=2160) -->
+  <g id="flacon-moyen">
+    <!-- Corps en verre (98 x 182 px) -->
+    <path class="verre-fond" d="M 2100,1978 L 2100,1998 C 2100,2012 2076,2026 2076,2048 L 2076,2146 C 2076,2154 2082,2160 2090,2160 L 2160,2160 C 2168,2160 2174,2154 2174,2146 L 2174,2048 C 2174,2026 2150,2012 2150,1998 L 2150,1978 Z" />
+    <path class="verre" style="fill:none;" d="M 2100,1978 L 2100,1998 C 2100,2012 2076,2026 2076,2048 L 2076,2146 C 2076,2154 2082,2160 2090,2160 L 2160,2160 C 2168,2160 2174,2154 2174,2146 L 2174,2048 C 2174,2026 2150,2012 2150,1998 L 2150,1978" />
+    <!-- Graduations -->
+    <path class="trait" d="M 2155,2060 L 2162,2060 L 2162,2135 L 2155,2135" />
+    <line class="trait" x1="2152" y1="2085" x2="2162" y2="2085" />
+    <line class="trait" x1="2152" y1="2110" x2="2162" y2="2110" />
+    <!-- Bouchon à vis bleu (GL45) -->
+    <g id="bouchon-flacon-moyen">
+      <rect x="2097" y="1948" width="56" height="30" rx="3.5" fill="#2554b0" stroke="#000000" stroke-width="2.5" stroke-linejoin="round" />
+      <rect x="2094" y="1973" width="62" height="6" rx="1.5" fill="#2554b0" stroke="#000000" stroke-width="2" />
+      <line x1="2106" y1="1949" x2="2106" y2="1972" stroke="#000000" stroke-width="1.5" />
+      <line x1="2115.5" y1="1949" x2="2115.5" y2="1972" stroke="#000000" stroke-width="1.5" />
+      <line x1="2125" y1="1949" x2="2125" y2="1972" stroke="#000000" stroke-width="1.5" />
+      <line x1="2134.5" y1="1949" x2="2134.5" y2="1972" stroke="#000000" stroke-width="1.5" />
+      <line x1="2144" y1="1949" x2="2144" y2="1972" stroke="#000000" stroke-width="1.5" />
+    </g>
+  </g>
+
+  <!-- 55. GRAND FLACON DE LABORATOIRE (1 L, haut. totale 264 px, base à y=2160) -->
+  <g id="flacon-grand">
+    <!-- Corps en verre (122 x 230 px) -->
+    <path class="verre-fond" d="M 2248,1930 L 2248,1952 C 2248,1968 2216,1986 2216,2012 L 2216,2144 C 2216,2153 2223,2160 2232,2160 L 2322,2160 C 2331,2160 2338,2153 2338,2144 L 2338,2012 C 2338,1986 2306,1968 2306,1952 L 2306,1930 Z" />
+    <path class="verre" style="fill:none;" d="M 2248,1930 L 2248,1952 C 2248,1968 2216,1986 2216,2012 L 2216,2144 C 2216,2153 2223,2160 2232,2160 L 2322,2160 C 2331,2160 2338,2153 2338,2144 L 2338,2012 C 2338,1986 2306,1968 2306,1952 L 2306,1930" />
+    <!-- Graduations -->
+    <path class="trait" d="M 2316,2026 L 2324,2026 L 2324,2130 L 2316,2130" />
+    <line class="trait" x1="2313" y1="2052" x2="2324" y2="2052" />
+    <line class="trait" x1="2313" y1="2078" x2="2324" y2="2078" />
+    <line class="trait" x1="2313" y1="2104" x2="2324" y2="2104" />
+    <!-- Bouchon à vis bleu (GL45) -->
+    <g id="bouchon-flacon-grand">
+      <rect x="2244" y="1896" width="66" height="34" rx="4" fill="#2554b0" stroke="#000000" stroke-width="2.5" stroke-linejoin="round" />
+      <rect x="2241" y="1925" width="72" height="6" rx="1.5" fill="#2554b0" stroke="#000000" stroke-width="2" />
+      <line x1="2255" y1="1897" x2="2255" y2="1924" stroke="#000000" stroke-width="1.5" />
+      <line x1="2266" y1="1897" x2="2266" y2="1924" stroke="#000000" stroke-width="1.5" />
+      <line x1="2277" y1="1897" x2="2277" y2="1924" stroke="#000000" stroke-width="1.5" />
+      <line x1="2288" y1="1897" x2="2288" y2="1924" stroke="#000000" stroke-width="1.5" />
+      <line x1="2299" y1="1897" x2="2299" y2="1924" stroke="#000000" stroke-width="1.5" />
+    </g>
+  </g>
 </svg>
