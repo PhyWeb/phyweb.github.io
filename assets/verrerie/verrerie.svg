@@ -1,0 +1,454 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2480 2220" width="2480" height="2220">
+  <style>
+    .verre { fill: #ffffff; stroke: #000000; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+    .verre-fond { fill: #ffffff; stroke: none; }
+    .liquide { fill: #9ad1f5; stroke: none; }
+    .solide { fill: #4ecdc4; stroke: none; }
+    .propipette { fill: #e06358; stroke: #000000; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+    .robinet-rouge { fill: #e06358; stroke: #000000; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .trait { fill: none; stroke: #000000; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+    .potence { fill: none; stroke: #000000; stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; }
+    .bouchon { fill: #555555; stroke: #000000; stroke-width: 3; stroke-linejoin: round; }
+    .metal { fill: #b8bec4; stroke: #000000; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+    .ecran { fill: #e6ece8; stroke: #000000; stroke-width: 2.5; stroke-linejoin: round; }
+    .bouton { fill: #cccccc; stroke: #000000; stroke-width: 2; stroke-linejoin: round; }
+    .texte-ecran { font-family: monospace; font-size: 16px; font-weight: bold; fill: #000000; text-anchor: end; }
+  </style>
+
+  <!-- FOND BLANC -->
+  <rect x="0" y="0" width="2480" height="2220" fill="#ffffff" />
+
+  <!-- ========================================================= -->
+  <!-- LIGNE 1 : PRÉPARATION, PESÉE, PRÉLÈVEMENT (base à y = 600) -->
+  <!-- ========================================================= -->
+
+  <!-- 1. FIOLE JAUGÉE VIDE -->
+  <path class="verre-fond" d="M 73,385 L 73,482 C 73,500 35,532 35,572 C 35,590 45,600 60,600 L 106,600 C 121,600 131,590 131,572 C 131,532 93,500 93,482 L 93,385 Z" />
+  <path class="verre" style="fill:none;" d="M 73,385 L 73,482 C 73,500 35,532 35,572 C 35,590 45,600 60,600 L 106,600 C 121,600 131,590 131,572 C 131,532 93,500 93,482 L 93,385" />
+  <line class="trait" x1="73" y1="438" x2="93" y2="438" />
+
+  <!-- 2. BOUCHON -->
+  <polygon class="bouchon" points="160.5,568 185.5,568 182.5,600 163.5,600" />
+
+  <!-- 3. PISSETTE DROITE -->
+  <rect class="verre" x="225" y="395" width="76" height="205" rx="11" />
+  <path class="liquide" d="M 226.5,495 L 299.5,495 L 299.5,589 C 299.5,594.5 295,598.5 289.5,598.5 L 236.5,598.5 C 231,598.5 226.5,594.5 226.5,589 Z" />
+  <rect class="verre" x="249" y="385" width="28" height="10" />
+  <rect class="verre" x="244" y="369" width="38" height="16" rx="2.5" />
+  <path class="verre" d="M 265.5,587 L 265.5,342 C 265.5,330 256,328 246,336 L 211,366 L 205,375 L 208.5,377.5 L 216,370 L 250,341 C 256,336 260.5,338 260.5,344 L 260.5,587 Z" />
+
+  <!-- 4. FIOLE JAUGÉE À MOITIÉ REMPLIE -->
+  <path class="verre-fond" d="M 383,385 L 383,482 C 383,500 345,532 345,572 C 345,590 355,600 370,600 L 416,600 C 431,600 441,590 441,572 C 441,532 403,500 403,482 L 403,385 Z" />
+  <path class="liquide" d="M 351,552 L 435,552 C 438.5,560 439.5,566 439.5,572 C 439.5,589 430,598.5 416,598.5 L 370,598.5 C 356,598.5 346.5,589 346.5,572 C 346.5,566 347.5,560 351,552 Z" />
+  <path class="verre" style="fill:none;" d="M 383,385 L 383,482 C 383,500 345,532 345,572 C 345,590 355,600 370,600 L 416,600 C 431,600 441,590 441,572 C 441,532 403,500 403,482 L 403,385" />
+  <line class="trait" x1="383" y1="438" x2="403" y2="438" />
+
+  <!-- 5. FIOLE REMPLIE JUSQU'AU TRAIT DE JAUGE AVEC ZOOM + ŒIL -->
+  <path class="liquide" d="M 538,482 C 538,500 500,532 500,572 C 500,590 510,600 525,600 L 571,600 C 586,600 596,590 596,572 C 596,532 558,500 558,482 Z" />
+  <path class="verre" style="fill:none;" d="M 538,482 C 538,500 500,532 500,572 C 500,590 510,600 525,600 L 571,600 C 586,600 596,590 596,572 C 596,532 558,500 558,482" />
+
+  <!-- Loupe circulaire -->
+  <circle cx="548" cy="425" r="62" fill="#ffffff" stroke="#000000" stroke-width="3.5" />
+  <path class="liquide" d="M 526,416 Q 548,432 570,416 L 570,482 A 62,62 0 0,1 526,482 Z" />
+  <line class="trait" x1="526" y1="368" x2="526" y2="482" />
+  <line class="trait" x1="570" y1="368" x2="570" y2="482" />
+  <line class="trait" x1="526" y1="425" x2="570" y2="425" />
+  <circle cx="548" cy="425" r="62" fill="none" stroke="#000000" stroke-width="3.5" />
+
+  <!-- Œil aligné sur y=425 -->
+  <path d="M 638,407 A 24,24 0 0,1 638,443 A 35,35 0 0,1 638,407 Z" fill="#6ab5e8" />
+  <path d="M 634,416 A 11,11 0 0,1 634,434 A 22,22 0 0,1 634,416 Z" fill="#000000" />
+  <path class="trait" d="M 640,405 A 38,38 0 0,0 640,445" />
+  <path class="trait" d="M 630,399 L 685,425 L 630,451" />
+
+  <!-- 6. ENTONNOIR SIMPLE -->
+  <path class="verre-fond" d="M 730,490 L 758,535 L 758,590 L 768,590 L 768,535 L 796,490 Z" />
+  <path class="verre" style="fill:none;" d="M 730,490 L 758,535 L 758,590" />
+  <path class="verre" style="fill:none;" d="M 796,490 L 768,535 L 768,590" />
+
+  <!-- 6b. GRAND ENTONNOIR AVEC FILTRE PLISSÉ -->
+  <path class="verre-fond" d="M 776,322 L 792,330 L 806,322 L 820,330 L 834,322 L 848,330 L 864,322 L 825,382 L 825,442 L 815,442 L 815,382 Z" />
+  <path class="trait" d="M 776,322 L 792,330 L 806,322 L 820,330 L 834,322 L 848,330 L 864,322 L 824,380 Q 820,384 816,380 Z" />
+  <path class="verre" style="fill:none;" d="M 784,344 L 815,386 L 815,442" />
+  <path class="verre" style="fill:none;" d="M 856,344 L 825,386 L 825,442" />
+
+  <!-- 7. COUPELLE DE PESÉE -->
+  <path class="solide" d="M 728,256.5 Q 752,249.5 776,256.5 L 771,262.5 L 733,262.5 Z" />
+  <path class="trait" d="M 708,250 L 722,262 C 725,263.5 728,264 732,264 L 772,264 C 776,264 779,263.5 782,262 L 796,250" />
+
+  <!-- 8. BALANCE DE PRÉCISION -->
+  <rect class="bouchon" x="906" y="591" width="22" height="9" rx="2" />
+  <rect class="bouchon" x="1088" y="591" width="22" height="9" rx="2" />
+  <path class="verre" d="M 894,515 L 1122,515 L 1130,581 C 1130,587 1125,591 1118,591 L 898,591 C 891,591 886,587 886,581 Z" />
+  <rect class="bouchon" x="996" y="502" width="24" height="13" />
+  <rect class="verre" x="934" y="494" width="148" height="8" rx="2.5" />
+  <rect class="ecran" x="910" y="534" width="122" height="36" rx="4" />
+  <text class="texte-ecran" x="1023" y="558">0.00 g</text>
+  <rect class="bouton" x="1046" y="534" width="26" height="36" rx="3" />
+  <rect class="bouton" x="1080" y="534" width="26" height="36" rx="3" />
+
+  <!-- 9. PETIT BÉCHER -->
+  <path class="verre-fond" d="M 1170,490 L 1180,500 L 1180,590 C 1180,596 1184,600 1190,600 L 1235,600 C 1241,600 1245,596 1245,590 L 1245,490 Z" />
+  <path class="verre" style="fill:none;" d="M 1170,490 L 1180,500 L 1180,590 C 1180,596 1184,600 1190,600 L 1235,600 C 1241,600 1245,596 1245,590 L 1245,490" />
+  <path class="trait" d="M 1232,520 L 1237,520 L 1237,570 L 1232,570" />
+  <line class="trait" x1="1230" y1="545" x2="1237" y2="545" />
+
+  <!-- 10. BÉCHER MOYEN -->
+  <path class="verre-fond" d="M 1275,440 L 1287,452 L 1287,588 C 1287,595 1292,600 1299,600 L 1358,600 C 1365,600 1370,595 1370,588 L 1370,440 Z" />
+  <path class="liquide" d="M 1288.5,520 L 1368.5,520 L 1368.5,588 C 1368.5,594 1364,598.5 1358,598.5 L 1299,598.5 C 1293,598.5 1288.5,594 1288.5,588 Z" />
+  <path class="verre" style="fill:none;" d="M 1275,440 L 1287,452 L 1287,588 C 1287,595 1292,600 1299,600 L 1358,600 C 1365,600 1370,595 1370,588 L 1370,440" />
+  <path class="trait" d="M 1354,480 L 1360,480 L 1360,565 L 1354,565" />
+  <line class="trait" x1="1352" y1="508" x2="1360" y2="508" />
+  <line class="trait" x1="1352" y1="537" x2="1360" y2="537" />
+
+  <!-- 11. GRAND BÉCHER LARGE -->
+  <path class="verre-fond" d="M 1395,440 L 1409,454 L 1409,586 C 1409,594 1415,600 1423,600 L 1531,600 C 1539,600 1545,594 1545,586 L 1545,440 Z" />
+  <path class="verre" style="fill:none;" d="M 1395,440 L 1409,454 L 1409,586 C 1409,594 1415,600 1423,600 L 1531,600 C 1539,600 1545,594 1545,586 L 1545,440" />
+  <path class="trait" d="M 1527,480 L 1534,480 L 1534,565 L 1527,565" />
+  <line class="trait" x1="1524" y1="508" x2="1534" y2="508" />
+  <line class="trait" x1="1524" y1="537" x2="1534" y2="537" />
+
+  <!-- 12. PIPETTE JAUGÉE -->
+  <path class="verre" d="M 1590,105 L 1590,133 C 1582,138 1582,158 1590,163 L 1590,283 C 1581,290 1581,297 1581,305 L 1581,391 C 1581,399 1581,406 1590,413 L 1590,583 L 1592.5,600 L 1596.5,600 L 1599,583 L 1599,413 C 1608,406 1608,399 1608,391 L 1608,305 C 1608,297 1608,290 1599,283 L 1599,163 C 1607,158 1607,138 1599,133 L 1599,105 Z" />
+  <path class="liquide" d="M 1591.5,223 L 1597.5,223 L 1597.5,283 C 1606.5,290 1606.5,297 1606.5,305 L 1606.5,391 C 1606.5,399 1606.5,406 1597.5,413 L 1597.5,583 L 1595.5,598.5 L 1593.5,598.5 L 1591.5,583 L 1591.5,413 C 1582.5,406 1582.5,399 1582.5,391 L 1582.5,305 C 1582.5,297 1582.5,290 1591.5,283 Z" />
+  <path class="verre" style="fill:none;" d="M 1590,105 L 1590,133 C 1582,138 1582,158 1590,163 L 1590,283 C 1581,290 1581,297 1581,305 L 1581,391 C 1581,399 1581,406 1590,413 L 1590,583 L 1592.5,600 L 1596.5,600 L 1599,583 L 1599,413 C 1608,406 1608,399 1608,391 L 1608,305 C 1608,297 1608,290 1599,283 L 1599,163 C 1607,158 1607,138 1599,133 L 1599,105" />
+  <line class="trait" x1="1590" y1="223" x2="1599" y2="223" />
+
+  <!-- 12b. PIPETTE GRADUÉE -->
+  <path class="verre-fond" d="M 1652,105 L 1652,133 C 1644,138 1644,158 1652,163 L 1652,175 L 1649.5,182 L 1649.5,525 L 1652,535 L 1652,583 L 1654.5,600 L 1658.5,600 L 1661,583 L 1661,535 L 1663.5,525 L 1663.5,182 L 1661,175 L 1661,163 C 1669,158 1669,138 1661,133 L 1661,105 Z" />
+  <path class="liquide" d="M 1651,260 L 1662,260 L 1662,525 L 1659.5,535 L 1659.5,583 L 1657.5,598.5 L 1655.5,598.5 L 1653.5,583 L 1653.5,535 L 1651,525 Z" />
+  <path class="verre" style="fill:none;" d="M 1652,105 L 1652,133 C 1644,138 1644,158 1652,163 L 1652,175 L 1649.5,182 L 1649.5,525 L 1652,535 L 1652,583 L 1654.5,600 L 1658.5,600 L 1661,583 L 1661,535 L 1663.5,525 L 1663.5,182 L 1661,175 L 1661,163 C 1669,158 1669,138 1661,133 L 1661,105" />
+  <line class="trait" x1="1655.5" y1="200" x2="1663.5" y2="200" />
+  <line class="trait" x1="1658" y1="215" x2="1663.5" y2="215" />
+  <line class="trait" x1="1655.5" y1="230" x2="1663.5" y2="230" />
+  <line class="trait" x1="1658" y1="245" x2="1663.5" y2="245" />
+  <line class="trait" x1="1655.5" y1="260" x2="1663.5" y2="260" />
+  <line class="trait" x1="1658" y1="275" x2="1663.5" y2="275" />
+  <line class="trait" x1="1655.5" y1="290" x2="1663.5" y2="290" />
+  <line class="trait" x1="1658" y1="305" x2="1663.5" y2="305" />
+  <line class="trait" x1="1655.5" y1="320" x2="1663.5" y2="320" />
+  <line class="trait" x1="1658" y1="335" x2="1663.5" y2="335" />
+  <line class="trait" x1="1655.5" y1="350" x2="1663.5" y2="350" />
+  <line class="trait" x1="1658" y1="365" x2="1663.5" y2="365" />
+  <line class="trait" x1="1655.5" y1="380" x2="1663.5" y2="380" />
+  <line class="trait" x1="1658" y1="395" x2="1663.5" y2="395" />
+  <line class="trait" x1="1655.5" y1="410" x2="1663.5" y2="410" />
+  <line class="trait" x1="1658" y1="425" x2="1663.5" y2="425" />
+  <line class="trait" x1="1655.5" y1="440" x2="1663.5" y2="440" />
+  <line class="trait" x1="1658" y1="455" x2="1663.5" y2="455" />
+  <line class="trait" x1="1655.5" y1="470" x2="1663.5" y2="470" />
+  <line class="trait" x1="1658" y1="485" x2="1663.5" y2="485" />
+  <line class="trait" x1="1655.5" y1="500" x2="1663.5" y2="500" />
+  <line class="trait" x1="1658" y1="515" x2="1663.5" y2="515" />
+
+  <!-- 13. PROPIPETTE RONDE -->
+  <path class="propipette" d="M 1745,370 L 1745,399 A 40,40 0 1,0 1745,479 L 1745,495 L 1740,495 L 1740,510 L 1745,510 L 1745,525 L 1723,525 L 1723,535 L 1745,535 L 1745,557 L 1756,557 L 1756,510 L 1761,510 L 1761,495 L 1756,495 L 1756,479 A 40,40 0 1,0 1756,399 L 1756,370 Z" />
+  <rect class="bouchon" x="1742" y="365" width="17" height="5" />
+  <rect class="bouchon" x="1718" y="522" width="5" height="16" />
+  <rect class="bouchon" x="1742" y="557" width="17" height="5" />
+
+
+  <!-- ========================================================= -->
+  <!-- LIGNE 2 : VOLUMES, EXTRACTION, TUBES, CHAUFFAGE & TITRAGE -->
+  <!-- ========================================================= -->
+
+  <!-- 14. PETITE ÉPROUVETTE GRADUÉE -->
+  <path class="verre-fond" d="M 45,995 L 55,1005 L 55,1220 L 87,1220 L 87,995 Z" />
+  <path class="verre" style="fill:none;" d="M 45,995 L 55,1005 L 55,1220 L 87,1220 L 87,995" />
+  <line class="verre" x1="39" y1="1220" x2="103" y2="1220" />
+  <line class="trait" x1="69" y1="1040" x2="87" y2="1040" />
+  <line class="trait" x1="69" y1="1075" x2="87" y2="1075" />
+  <line class="trait" x1="69" y1="1110" x2="87" y2="1110" />
+  <line class="trait" x1="69" y1="1145" x2="87" y2="1145" />
+  <line class="trait" x1="69" y1="1180" x2="87" y2="1180" />
+
+  <!-- 15. ÉPROUVETTE GRADUÉE MOYENNE -->
+  <path class="verre-fond" d="M 137,915 L 149,927 L 149,1220 L 193,1220 L 193,915 Z" />
+  <path class="liquide" d="M 150.5,1060 L 191.5,1060 L 191.5,1218.5 L 150.5,1218.5 Z" />
+  <path class="verre" style="fill:none;" d="M 137,915 L 149,927 L 149,1220 L 193,1220 L 193,915" />
+  <line class="verre" x1="129" y1="1220" x2="213" y2="1220" />
+  <line class="trait" x1="169" y1="970" x2="193" y2="970" />
+  <line class="trait" x1="169" y1="1010" x2="193" y2="1010" />
+  <line class="trait" x1="169" y1="1050" x2="193" y2="1050" />
+  <line class="trait" x1="169" y1="1090" x2="193" y2="1090" />
+  <line class="trait" x1="169" y1="1130" x2="193" y2="1130" />
+  <line class="trait" x1="169" y1="1170" x2="193" y2="1170" />
+
+  <!-- 16. GRANDE ÉPROUVETTE GRADUÉE -->
+  <path class="verre-fond" d="M 250,845 L 264,859 L 264,1220 L 320,1220 L 320,845 Z" />
+  <path class="verre" style="fill:none;" d="M 250,845 L 264,859 L 264,1220 L 320,1220 L 320,845" />
+  <line class="verre" x1="240" y1="1220" x2="344" y2="1220" />
+  <line class="trait" x1="289" y1="905" x2="320" y2="905" />
+  <line class="trait" x1="289" y1="950" x2="320" y2="950" />
+  <line class="trait" x1="289" y1="995" x2="320" y2="995" />
+  <line class="trait" x1="289" y1="1040" x2="320" y2="1040" />
+  <line class="trait" x1="289" y1="1085" x2="320" y2="1085" />
+  <line class="trait" x1="289" y1="1130" x2="320" y2="1130" />
+  <line class="trait" x1="289" y1="1175" x2="320" y2="1175" />
+
+  <!-- 17. PETIT ERLENMEYER -->
+  <path class="verre-fond" d="M 395,1090 L 398,1094 L 398,1123 L 373,1201 C 370,1211 376,1220 386,1220 L 432,1220 C 442,1220 448,1211 445,1201 L 420,1123 L 420,1094 L 423,1090 Z" />
+  <path class="verre" style="fill:none;" d="M 395,1090 L 398,1094 L 398,1123 L 373,1201 C 370,1211 376,1220 386,1220 L 432,1220 C 442,1220 448,1211 445,1201 L 420,1123 L 420,1094 L 423,1090" />
+  <line class="trait" x1="415" y1="1157" x2="430" y2="1157" />
+  <line class="trait" x1="423" y1="1187" x2="440" y2="1187" />
+
+  <!-- 18. ERLENMEYER MOYEN -->
+  <path class="verre-fond" d="M 510,1045 L 514,1050 L 514,1087 L 480,1197 C 476,1209 483,1220 495,1220 L 559,1220 C 571,1220 578,1209 574,1197 L 540,1087 L 540,1050 L 544,1045 Z" />
+  <path class="liquide" d="M 493.5,1157 L 560.5,1157 L 572.5,1197 C 576,1208 570,1218.5 559,1218.5 L 495,1218.5 C 484,1218.5 478,1208 481.5,1197 Z" />
+  <path class="verre" style="fill:none;" d="M 510,1045 L 514,1050 L 514,1087 L 480,1197 C 476,1209 483,1220 495,1220 L 559,1220 C 571,1220 578,1209 574,1197 L 540,1087 L 540,1050 L 544,1045" />
+  <line class="trait" x1="535" y1="1130" x2="552" y2="1130" />
+  <line class="trait" x1="545" y1="1163" x2="563" y2="1163" />
+  <line class="trait" x1="554" y1="1195" x2="572" y2="1195" />
+
+  <!-- 19. GRAND ERLENMEYER -->
+  <path class="verre-fond" d="M 657,1005 L 662,1011 L 662,1055 L 619,1193 C 614,1207 623,1220 637,1220 L 717,1220 C 731,1220 740,1207 735,1193 L 692,1055 L 692,1011 L 697,1005 Z" />
+  <path class="verre" style="fill:none;" d="M 657,1005 L 662,1011 L 662,1055 L 619,1193 C 614,1207 623,1220 637,1220 L 717,1220 C 731,1220 740,1207 735,1193 L 692,1055 L 692,1011 L 697,1005" />
+  <line class="trait" x1="685" y1="1100" x2="705" y2="1100" />
+  <line class="trait" x1="695" y1="1133" x2="716" y2="1133" />
+  <line class="trait" x1="705" y1="1166" x2="726" y2="1166" />
+  <line class="trait" x1="715" y1="1199" x2="736" y2="1199" />
+
+  <!-- 20. AMPOULE À DÉCANTER -->
+  <path class="verre-fond" d="M 861,660 L 861,702 C 815,712 813,770 835,808 C 849,832 863,848 865,862 L 865,1035 L 871,1048 L 871,1092 L 879,1084 L 879,1048 L 885,1035 L 885,862 C 887,848 901,832 915,808 C 937,770 935,712 889,702 L 889,660 Z" />
+  <path class="verre" style="fill:none;" d="M 861,660 L 861,702 C 815,712 813,770 835,808 C 849,832 863,848 865,862 L 865,1035 L 871,1048 L 871,1092" />
+  <path class="verre" style="fill:none;" d="M 889,660 L 889,702 C 935,712 937,770 915,808 C 901,832 887,848 885,862 L 885,1035 L 879,1048 L 879,1084" />
+  <rect class="robinet-rouge" x="849" y="1054" width="10" height="10" rx="1.5" />
+  <rect class="verre" style="stroke-width: 2.5;" x="859" y="1055.5" width="32" height="7" />
+  <rect class="robinet-rouge" x="891" y="1043" width="7" height="32" rx="2" />
+
+  <!-- 21. BOUCHON CYLINDRIQUE PLEIN (26 px) -->
+  <rect class="verre" x="936" y="1172" width="34" height="8" rx="3" />
+  <rect class="verre" x="940" y="1180" width="26" height="40" rx="2" />
+
+  <!-- 21b. BOUCHON CYLINDRIQUE PERCÉ (26 px) -->
+  <rect class="bouchon" x="980" y="1180" width="26" height="40" rx="2" />
+  <rect class="verre-fond" x="985" y="1178" width="16" height="44" />
+  <line class="trait" x1="985" y1="1180" x2="985" y2="1220" />
+  <line class="trait" x1="1001" y1="1180" x2="1001" y2="1220" />
+
+  <!-- 22. POTENCE UNIFORMISÉE -->
+  <line class="potence" x1="1060" y1="1220" x2="1205" y2="1220" />
+  <line class="potence" x1="1160" y1="655" x2="1160" y2="1220" />
+  <line class="potence" x1="1062" y1="860" x2="1200" y2="860" />
+  <circle cx="1160" cy="860" r="8" fill="#000000" />
+  <path class="potence" d="M 1030,850 L 1062,850 L 1062,870 L 1030,870" />
+
+  <!-- 23. TUBE À ESSAIS VIDE -->
+  <path class="verre-fond" d="M 1272,1035 L 1274,1040 L 1274,1209 A 11,11 0 0,0 1296,1209 L 1296,1040 L 1298,1035 Z" />
+  <path class="verre" style="fill:none;" d="M 1272,1035 L 1274,1040 L 1274,1209 A 11,11 0 0,0 1296,1209 L 1296,1040 L 1298,1035" />
+
+  <!-- 24. TUBE À ESSAIS REMPLI -->
+  <path class="verre-fond" d="M 1332,1035 L 1334,1040 L 1334,1209 A 11,11 0 0,0 1356,1209 L 1356,1040 L 1358,1035 Z" />
+  <path class="liquide" d="M 1335.5,1135 L 1354.5,1135 L 1354.5,1209 A 9.5,9.5 0 0,1 1335.5,1209 Z" />
+  <path class="verre" style="fill:none;" d="M 1332,1035 L 1334,1040 L 1334,1209 A 11,11 0 0,0 1356,1209 L 1356,1040 L 1358,1035" />
+
+  <!-- 25. PORTOIR / SUPPORT 6 PLACES POUR TUBES À ESSAIS -->
+  <rect class="metal" x="1400" y="1204" width="280" height="16" rx="2.5" />
+  <rect class="metal" x="1414" y="1088" width="10" height="116" />
+  <rect class="metal" x="1656" y="1088" width="10" height="116" />
+  <rect class="metal" x="1405" y="1076" width="270" height="12" rx="2.5" />
+  <rect class="verre-fond" x="1422" y="1074" width="26" height="16" />
+  <rect class="verre-fond" x="1464" y="1074" width="26" height="16" />
+  <rect class="verre-fond" x="1506" y="1074" width="26" height="16" />
+  <rect class="verre-fond" x="1548" y="1074" width="26" height="16" />
+  <rect class="verre-fond" x="1590" y="1074" width="26" height="16" />
+  <rect class="verre-fond" x="1632" y="1074" width="26" height="16" />
+  <line class="trait" x1="1422" y1="1076" x2="1422" y2="1088" />
+  <line class="trait" x1="1448" y1="1076" x2="1448" y2="1088" />
+  <line class="trait" x1="1464" y1="1076" x2="1464" y2="1088" />
+  <line class="trait" x1="1490" y1="1076" x2="1490" y2="1088" />
+  <line class="trait" x1="1506" y1="1076" x2="1506" y2="1088" />
+  <line class="trait" x1="1532" y1="1076" x2="1532" y2="1088" />
+  <line class="trait" x1="1548" y1="1076" x2="1548" y2="1088" />
+  <line class="trait" x1="1574" y1="1076" x2="1574" y2="1088" />
+  <line class="trait" x1="1590" y1="1076" x2="1590" y2="1088" />
+  <line class="trait" x1="1616" y1="1076" x2="1616" y2="1088" />
+  <line class="trait" x1="1632" y1="1076" x2="1632" y2="1088" />
+  <line class="trait" x1="1658" y1="1076" x2="1658" y2="1088" />
+
+  <!-- 26. AGITATEUR MAGNÉTIQUE CHAUFFANT -->
+  <rect class="bouchon" x="1748" y="1211" width="22" height="9" rx="2" />
+  <rect class="bouchon" x="1930" y="1211" width="22" height="9" rx="2" />
+  <path class="verre" d="M 1736,1135 L 1964,1135 L 1972,1201 C 1972,1207 1967,1211 1960,1211 L 1740,1211 C 1733,1211 1728,1207 1728,1201 Z" />
+  <rect class="bouchon" x="1834" y="1124" width="32" height="11" />
+  <rect class="metal" x="1772" y="1115" width="156" height="9" rx="2.5" />
+  <circle cx="1765" cy="1156" r="5" fill="#4ecdc4" stroke="#000000" stroke-width="2" />
+  <circle cx="1765" cy="1186" r="5" fill="#e06358" stroke="#000000" stroke-width="2" />
+  <circle class="bouton" cx="1828" cy="1172" r="18" />
+  <line class="trait" x1="1828" y1="1172" x2="1838" y2="1160" />
+  <circle class="bouton" cx="1908" cy="1172" r="18" />
+  <line class="trait" x1="1908" y1="1172" x2="1919" y2="1161" />
+
+  <!-- 27. BARREAU AIMANTÉ -->
+  <rect class="verre" x="2015" y="1210" width="34" height="10" rx="5" />
+  <line class="trait" style="stroke-width: 1.5;" x1="2032" y1="1210" x2="2032" y2="1220" />
+
+  <!-- 28. BURETTE GRADUÉE -->
+  <path class="verre-fond" d="M 2103,485 L 2107,495 L 2107,1040 L 2114,1055 L 2114,1095 L 2122,1087 L 2122,1055 L 2129,1040 L 2129,495 L 2133,485 Z" />
+  <path class="liquide" d="M 2108.5,550 L 2127.5,550 L 2127.5,1040 L 2120.5,1055 L 2120.5,1086.5 L 2115.5,1091.5 L 2115.5,1055 L 2108.5,1040 Z" />
+  <path class="verre" style="fill:none;" d="M 2103,485 L 2107,495 L 2107,1040 L 2114,1055 L 2114,1095" />
+  <path class="verre" style="fill:none;" d="M 2133,485 L 2129,495 L 2129,1040 L 2122,1055 L 2122,1087" />
+  <line class="trait" x1="2116" y1="550" x2="2129" y2="550" />
+  <line class="trait" x1="2121" y1="569" x2="2129" y2="569" />
+  <line class="trait" x1="2116" y1="588" x2="2129" y2="588" />
+  <line class="trait" x1="2121" y1="607" x2="2129" y2="607" />
+  <line class="trait" x1="2116" y1="626" x2="2129" y2="626" />
+  <line class="trait" x1="2121" y1="645" x2="2129" y2="645" />
+  <line class="trait" x1="2116" y1="664" x2="2129" y2="664" />
+  <line class="trait" x1="2121" y1="683" x2="2129" y2="683" />
+  <line class="trait" x1="2116" y1="702" x2="2129" y2="702" />
+  <line class="trait" x1="2121" y1="721" x2="2129" y2="721" />
+  <line class="trait" x1="2116" y1="740" x2="2129" y2="740" />
+  <line class="trait" x1="2121" y1="759" x2="2129" y2="759" />
+  <line class="trait" x1="2116" y1="778" x2="2129" y2="778" />
+  <line class="trait" x1="2121" y1="797" x2="2129" y2="797" />
+  <line class="trait" x1="2116" y1="816" x2="2129" y2="816" />
+  <line class="trait" x1="2121" y1="835" x2="2129" y2="835" />
+  <line class="trait" x1="2116" y1="854" x2="2129" y2="854" />
+  <line class="trait" x1="2121" y1="873" x2="2129" y2="873" />
+  <line class="trait" x1="2116" y1="892" x2="2129" y2="892" />
+  <line class="trait" x1="2121" y1="911" x2="2129" y2="911" />
+  <line class="trait" x1="2116" y1="930" x2="2129" y2="930" />
+  <line class="trait" x1="2121" y1="949" x2="2129" y2="949" />
+  <line class="trait" x1="2116" y1="968" x2="2129" y2="968" />
+  <line class="trait" x1="2121" y1="987" x2="2129" y2="987" />
+  <line class="trait" x1="2116" y1="1006" x2="2129" y2="1006" />
+  <line class="trait" x1="2121" y1="1025" x2="2129" y2="1025" />
+  <rect class="robinet-rouge" x="2092" y="1062" width="10" height="10" rx="1.5" />
+  <rect class="verre" style="stroke-width: 2.5;" x="2102" y="1063" width="32" height="8" />
+  <rect class="robinet-rouge" x="2134" y="1051" width="7" height="32" rx="2" />
+
+  <!-- 29. POTENCE DE TITRAGE UNIFORMISÉE -->
+  <line class="potence" x1="2245" y1="1220" x2="2415" y2="1220" />
+  <line class="potence" x1="2365" y1="472" x2="2365" y2="1220" />
+  <line class="potence" x1="2252" y1="600" x2="2405" y2="600" />
+  <circle cx="2365" cy="600" r="8" fill="#000000" />
+  <path class="potence" d="M 2220,589 L 2252,589 L 2252,611 L 2220,611" />
+  <line class="potence" x1="2252" y1="860" x2="2405" y2="860" />
+  <circle cx="2365" cy="860" r="8" fill="#000000" />
+  <path class="potence" d="M 2220,849 L 2252,849 L 2252,871 L 2220,871" />
+
+
+  <!-- ========================================================= -->
+  <!-- LIGNE 3 : CHIMIE ORGANIQUE - BALLONS & CHAUFFAGE (y=1660) -->
+  <!-- ========================================================= -->
+
+  <!-- 30. BALLON MONOCOL À FOND ROND -->
+  <path class="verre-fond" d="M 91,1445 L 91,1495 A 68,68 0 1,0 119,1495 L 119,1445 Z" />
+  <path class="verre" style="fill:none;" d="M 91,1445 L 91,1495 A 68,68 0 1,0 119,1495 L 119,1445" />
+
+  <!-- 31. BALLON BICOL À FOND ROND -->
+  <path class="verre-fond" d="M 266,1445 L 266,1495 A 68,68 0 1,0 294,1495 L 294,1445 Z" />
+  <polygon class="verre-fond" points="344,1479 364,1499 338,1524 318,1504" />
+  <line class="verre" x1="344" y1="1479" x2="318" y2="1504" />
+  <line class="verre" x1="364" y1="1499" x2="338" y2="1524" />
+  <path class="verre" style="fill:none;" d="M 266,1445 L 266,1495 A 68,68 0 1,0 338,1524" />
+  <path class="verre" style="fill:none;" d="M 318,1504 A 68,68 0 0,0 294,1495 L 294,1445" />
+
+  <!-- 32. BALLON TRICOL À FOND ROND -->
+  <path class="verre-fond" d="M 466,1445 L 466,1495 A 68,68 0 1,0 494,1495 L 494,1445 Z" />
+  <polygon class="verre-fond" points="416,1479 396,1499 422,1524 442,1504" />
+  <line class="verre" x1="416" y1="1479" x2="442" y2="1504" />
+  <line class="verre" x1="396" y1="1499" x2="422" y2="1524" />
+  <polygon class="verre-fond" points="544,1479 564,1499 538,1524 518,1504" />
+  <line class="verre" x1="544" y1="1479" x2="518" y2="1504" />
+  <line class="verre" x1="564" y1="1499" x2="538" y2="1524" />
+  <path class="verre" style="fill:none;" d="M 422,1524 A 68,68 0 1,0 538,1524" />
+  <path class="verre" style="fill:none;" d="M 466,1445 L 466,1495 A 68,68 0 0,0 442,1504" />
+  <path class="verre" style="fill:none;" d="M 518,1504 A 68,68 0 0,0 494,1495 L 494,1445" />
+
+  <!-- 33. SUPPORT À BALLON AVEC EMPREINTE -->
+  <path class="verre" d="M 615,1634 C 615,1630.5 617.5,1628 621,1628 L 636,1628 A 68,68 0 0,0 730,1628 L 745,1628 C 748.5,1628 751,1630.5 751,1634 L 751,1654 C 751,1657.5 748.5,1660 745,1660 L 621,1660 C 617.5,1660 615,1657.5 615,1654 Z" />
+
+  <!-- 34. CHAUFFE-BALLON EN VUE EN COUPE ÉPURÉE -->
+  <rect class="bouchon" x="814" y="1651" width="24" height="9" rx="2" />
+  <rect class="bouchon" x="962" y="1651" width="24" height="9" rx="2" />
+  <path class="verre" d="M 804,1519 L 830,1519 A 70,70 0 0,0 970,1519 L 996,1519 L 996,1651 L 804,1651 Z" />
+  <circle cx="844" cy="1624" r="5" fill="#cccccc" stroke="#000000" stroke-width="2" />
+  <circle class="bouton" cx="954" cy="1624" r="14" />
+  <line class="trait" x1="954" y1="1624" x2="963" y2="1615" />
+
+  <!-- 35. SUPPORT ÉLÉVATEUR / BOY - PETITE HAUTEUR -->
+  <rect class="metal" x="1060" y="1651" width="200" height="9" rx="2" />
+  <line class="potence" x1="1088" y1="1584" x2="1232" y2="1651" />
+  <line class="potence" x1="1232" y1="1584" x2="1088" y2="1651" />
+  <line class="trait" x1="1080" y1="1617.5" x2="1276" y2="1617.5" />
+  <circle cx="1160" cy="1617.5" r="6" fill="#555555" stroke="#000000" stroke-width="2" />
+  <rect class="bouchon" x="1276" y="1605.5" width="12" height="24" rx="2" />
+  <rect class="metal" x="1060" y="1575" width="200" height="9" rx="2" />
+
+  <!-- 36. SUPPORT ÉLÉVATEUR / BOY - GRANDE HAUTEUR -->
+  <rect class="metal" x="1340" y="1651" width="200" height="9" rx="2" />
+  <line class="potence" x1="1384" y1="1524" x2="1496" y2="1651" />
+  <line class="potence" x1="1496" y1="1524" x2="1384" y2="1651" />
+  <line class="trait" x1="1376" y1="1587.5" x2="1556" y2="1587.5" />
+  <circle cx="1440" cy="1587.5" r="6" fill="#555555" stroke="#000000" stroke-width="2" />
+  <rect class="bouchon" x="1556" y="1575.5" width="12" height="24" rx="2" />
+  <rect class="metal" x="1340" y="1515" width="200" height="9" rx="2" />
+
+
+  <!-- ========================================================= -->
+  <!-- LIGNE 4 : RÉFRIGÉRANTS, VIGREUX & DISTILLATION (y=2160)   -->
+  <!-- ========================================================= -->
+
+  <!-- 37. RÉFRIGÉRANT À BOULES / ALLIHN (corrigé : conduits alignés et olivettes ouvertes, y=1730 à 2160) -->
+  <path class="verre-fond" d="M 101,1730 L 129,1730 L 129,1783 L 141,1793 L 141,2097 L 128,2107 L 128,2160 L 102,2160 L 102,2107 L 89,2097 L 89,1793 L 101,1783 Z" />
+  <!-- Manchon extérieur interrompu aux olivettes d'eau (haut gauche y=1809..1819, bas droite y=2071..2081) -->
+  <path class="verre" style="fill:none;" d="M 101,1730 L 101,1783 L 89,1793 L 89,1809 L 63,1809" />
+  <path class="verre" style="fill:none;" d="M 63,1819 L 89,1819 L 89,2097 L 102,2107 L 102,2160" />
+  <path class="verre" style="fill:none;" d="M 129,1730 L 129,1783 L 141,1793 L 141,2071 L 167,2071" />
+  <path class="verre" style="fill:none;" d="M 167,2081 L 141,2081 L 141,2097 L 128,2107 L 128,2160" />
+  <!-- Tube central à boules dans le prolongement exact des cols (x=101..129 -> x=102..128) -->
+  <path class="trait" d="M 101,1783 L 101,1825 C 91,1831 91,1853 101,1859 L 101,1891 C 91,1897 91,1919 101,1925 L 101,1957 C 91,1963 91,1985 101,1991 L 101,2023 C 91,2029 91,2051 101,2057 L 102,2107" />
+  <path class="trait" d="M 129,1783 L 129,1825 C 139,1831 139,1853 129,1859 L 129,1891 C 139,1897 139,1919 129,1925 L 129,1957 C 139,1963 139,1985 129,1991 L 129,2023 C 139,2029 139,2051 129,2057 L 128,2107" />
+
+  <!-- 38. RÉFRIGÉRANT DROIT / LIEBIG (corrigé : conduits alignés et olivettes ouvertes, y=1730 à 2160) -->
+  <path class="verre-fond" d="M 261,1730 L 289,1730 L 289,1783 L 301,1793 L 301,2097 L 288,2107 L 288,2160 L 262,2160 L 262,2107 L 249,2097 L 249,1793 L 261,1783 Z" />
+  <!-- Manchon extérieur interrompu aux olivettes d'eau -->
+  <path class="verre" style="fill:none;" d="M 261,1730 L 261,1783 L 249,1793 L 249,1809 L 223,1809" />
+  <path class="verre" style="fill:none;" d="M 223,1819 L 249,1819 L 249,2097 L 262,2107 L 262,2160" />
+  <path class="verre" style="fill:none;" d="M 289,1730 L 289,1783 L 301,1793 L 301,2071 L 327,2071" />
+  <path class="verre" style="fill:none;" d="M 327,2081 L 301,2081 L 301,2097 L 288,2107 L 288,2160" />
+  <!-- Tube central rectiligne dans le prolongement continu des cols -->
+  <line class="trait" x1="261" y1="1783" x2="262" y2="2107" />
+  <line class="trait" x1="289" y1="1783" x2="288" y2="2107" />
+
+  <!-- 39. COLONNE DE VIGREUX (haut 410 px : y=1750 à 2160, fût 34 px, col haut 28 px, embout mâle bas 26 px) -->
+  <path class="verre-fond" d="M 421,1750 L 449,1750 L 449,1790 L 452,1798 L 452,2095 L 448,2105 L 448,2160 L 422,2160 L 422,2105 L 418,2095 L 418,1798 L 421,1790 Z" />
+  <path class="verre" style="fill:none;" d="M 421,1750 L 421,1790 L 418,1798 L 418,2095 L 422,2105 L 422,2160" />
+  <path class="verre" style="fill:none;" d="M 449,1750 L 449,1790 L 452,1798 L 452,2095 L 448,2105 L 448,2160" />
+  <!-- 5 paires de pointes internes en quinconce -->
+  <polyline class="trait" points="418,1825 431,1833 418,1841" />
+  <polyline class="trait" points="452,1848 439,1856 452,1864" />
+  <polyline class="trait" points="418,1880 431,1888 418,1896" />
+  <polyline class="trait" points="452,1903 439,1911 452,1919" />
+  <polyline class="trait" points="418,1935 431,1943 418,1951" />
+  <polyline class="trait" points="452,1958 439,1966 452,1974" />
+  <polyline class="trait" points="418,1990 431,1998 418,2006" />
+  <polyline class="trait" points="452,2013 439,2021 452,2029" />
+  <polyline class="trait" points="418,2045 431,2053 418,2061" />
+  <polyline class="trait" points="452,2068 439,2076 452,2084" />
+
+  <!-- 40. TÊTE DE DISTILLATION RACCOURCIE + BOUCHON + THERMOMÈTRE (y=2005 à 2160, embout mâle bas 26 px, sortie latérale mâle 26 px) -->
+  <path class="verre-fond" d="M 576,2005 L 604,2005 L 604,2052 L 698,2077 L 692,2102 L 603,2079 L 603,2160 L 577,2160 L 577,2052 Z" />
+  <path class="verre" style="fill:none;" d="M 576,2005 L 576,2052 L 577,2064 L 577,2160" />
+  <path class="verre" style="fill:none;" d="M 604,2005 L 604,2052 L 698,2077" />
+  <path class="verre" style="fill:none;" d="M 603,2160 L 603,2079 L 692,2102" />
+  <!-- Bouchon percé en haut de la tête de distillation -->
+  <rect class="bouchon" x="577" y="1987" width="26" height="32" rx="2" />
+  <!-- Thermomètre calibré pour la tête raccourcie (bulbe à y=2070 au niveau de la dérivation) -->
+  <rect class="verre" x="586" y="1825" width="8" height="245" rx="4" />
+  <circle cx="590" cy="2068" r="6" fill="#e06358" stroke="#000000" stroke-width="2" />
+  <rect x="588.5" y="1925" width="3" height="139" fill="#e06358" />
+  <line class="trait" style="stroke-width: 1.5;" x1="590" y1="1855" x2="594" y2="1855" />
+  <line class="trait" style="stroke-width: 1.5;" x1="590" y1="1875" x2="594" y2="1875" />
+  <line class="trait" style="stroke-width: 1.5;" x1="590" y1="1895" x2="594" y2="1895" />
+  <line class="trait" style="stroke-width: 1.5;" x1="590" y1="1915" x2="594" y2="1915" />
+  <line class="trait" style="stroke-width: 1.5;" x1="590" y1="1935" x2="594" y2="1935" />
+  <line class="trait" style="stroke-width: 1.5;" x1="590" y1="1955" x2="594" y2="1955" />
+
+  <!-- 41. ALLONGE COUDÉE DE DISTILLATION (embout femelle 28 px incliné à 75° -> tube vertical de recette 14 px, base à y=2160) -->
+  <path class="verre-fond" d="M 755,2042 L 802,2055 Q 814,2058 814,2072 L 814,2160 L 800,2160 L 800,2082 L 748,2069 Z" />
+  <path class="verre" style="fill:none;" d="M 755,2042 L 802,2055 Q 814,2058 814,2072 L 814,2160" />
+  <path class="verre" style="fill:none;" d="M 748,2069 L 800,2082 L 800,2160" />
+</svg>
