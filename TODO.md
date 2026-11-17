@@ -42,6 +42,8 @@
     la ligne du zero en abscisse et ordonnée devrait etre plus grosse
 
     ajouter un color picker dans la liste des couleurs pour donner acces a toutes les couleurs possibles.
+
+    une option pour renommer les grandeurs dans les exports afin de mettre des espaces par exemple.
     
 # Mendeleiev
 # Optique
