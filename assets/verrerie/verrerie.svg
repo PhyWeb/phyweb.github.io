@@ -386,12 +386,20 @@
   <rect class="bouchon" x="1556" y="1575.5" width="12" height="24" rx="2" />
   <rect class="metal" x="1340" y="1515" width="200" height="9" rx="2" />
 
+  <!-- 37. PETIT CRISTALLISOIR (diamètre 180 px, hauteur 90 px, base à y=1660) -->
+  <path class="verre-fond" d="M 1632,1570 L 1646,1584 L 1646,1646 C 1646,1654 1652,1660 1660,1660 L 1812,1660 C 1820,1660 1826,1654 1826,1646 L 1826,1570 Z" />
+  <path class="verre" style="fill:none;" d="M 1632,1570 L 1646,1584 L 1646,1646 C 1646,1654 1652,1660 1660,1660 L 1812,1660 C 1820,1660 1826,1654 1826,1646 L 1826,1570" />
+
+  <!-- 38. GRAND CRISTALLISOIR (diamètre 240 px, hauteur 120 px, base à y=1660) -->
+  <path class="verre-fond" d="M 1866,1540 L 1882,1556 L 1882,1644 C 1882,1653 1889,1660 1898,1660 L 2106,1660 C 2115,1660 2122,1653 2122,1644 L 2122,1540 Z" />
+  <path class="verre" style="fill:none;" d="M 1866,1540 L 1882,1556 L 1882,1644 C 1882,1653 1889,1660 1898,1660 L 2106,1660 C 2115,1660 2122,1653 2122,1644 L 2122,1540" />
+
 
   <!-- ========================================================= -->
   <!-- LIGNE 4 : RÉFRIGÉRANTS, VIGREUX & DISTILLATION (y=2160)   -->
   <!-- ========================================================= -->
 
-  <!-- 37. RÉFRIGÉRANT À BOULES / ALLIHN (corrigé : conduits alignés et olivettes ouvertes, y=1730 à 2160) -->
+  <!-- 39. RÉFRIGÉRANT À BOULES / ALLIHN (corrigé : conduits alignés et olivettes ouvertes, y=1730 à 2160) -->
   <path class="verre-fond" d="M 101,1730 L 129,1730 L 129,1783 L 149,1793 L 149,2097 L 128,2107 L 128,2160 L 102,2160 L 102,2107 L 81,2097 L 81,1793 L 101,1783 Z" />
   <!-- Manchon extérieur interrompu aux olivettes d'eau (haut gauche y=1809..1819, bas droite y=2071..2081) -->
   <path class="verre" style="fill:none;" d="M 101,1730 L 101,1783 L 81,1793 L 81,1809 L 55,1809" />
@@ -402,7 +410,7 @@
   <path class="trait" d="M 101,1783 L 101,1825 C 91,1831 91,1853 101,1859 L 101,1891 C 91,1897 91,1919 101,1925 L 101,1957 C 91,1963 91,1985 101,1991 L 101,2023 C 91,2029 91,2051 101,2057 L 102,2107" />
   <path class="trait" d="M 129,1783 L 129,1825 C 139,1831 139,1853 129,1859 L 129,1891 C 139,1897 139,1919 129,1925 L 129,1957 C 139,1963 139,1985 129,1991 L 129,2023 C 139,2029 139,2051 129,2057 L 128,2107" />
 
-  <!-- 38. RÉFRIGÉRANT DROIT / LIEBIG (corrigé : conduits alignés et olivettes ouvertes, y=1730 à 2160) -->
+  <!-- 40. RÉFRIGÉRANT DROIT / LIEBIG (corrigé : conduits alignés et olivettes ouvertes, y=1730 à 2160) -->
   <path class="verre-fond" d="M 261,1730 L 289,1730 L 289,1783 L 309,1793 L 309,2097 L 288,2107 L 288,2160 L 262,2160 L 262,2107 L 241,2097 L 241,1793 L 261,1783 Z" />
   <!-- Manchon extérieur interrompu aux olivettes d'eau -->
   <path class="verre" style="fill:none;" d="M 261,1730 L 261,1783 L 241,1793 L 241,1809 L 215,1809" />
@@ -413,7 +421,7 @@
   <line class="trait" x1="261" y1="1783" x2="262" y2="2107" />
   <line class="trait" x1="289" y1="1783" x2="288" y2="2107" />
 
-  <!-- 39. COLONNE DE VIGREUX (haut 410 px : y=1750 à 2160, fût 34 px, col haut 28 px, embout mâle bas 26 px) -->
+  <!-- 41. COLONNE DE VIGREUX (haut 410 px : y=1750 à 2160, fût 34 px, col haut 28 px, embout mâle bas 26 px) -->
   <path class="verre-fond" d="M 421,1750 L 449,1750 L 449,1790 L 452,1798 L 452,2095 L 448,2105 L 448,2160 L 422,2160 L 422,2105 L 418,2095 L 418,1798 L 421,1790 Z" />
   <path class="verre" style="fill:none;" d="M 421,1750 L 421,1790 L 418,1798 L 418,2095 L 422,2105 L 422,2160" />
   <path class="verre" style="fill:none;" d="M 449,1750 L 449,1790 L 452,1798 L 452,2095 L 448,2105 L 448,2160" />
@@ -429,7 +437,7 @@
   <polyline class="trait" points="418,2045 431,2053 418,2061" />
   <polyline class="trait" points="452,2068 439,2076 452,2084" />
 
-  <!-- 40. TÊTE DE DISTILLATION RACCOURCIE + BOUCHON + THERMOMÈTRE (y=2005 à 2160, embout mâle bas 26 px, sortie latérale mâle 26 px) -->
+  <!-- 42. TÊTE DE DISTILLATION RACCOURCIE + BOUCHON + THERMOMÈTRE (y=2005 à 2160, embout mâle bas 26 px, sortie latérale mâle 26 px) -->
   <path class="verre-fond" d="M 576,2005 L 604,2005 L 604,2052 L 698,2077 L 692,2102 L 603,2079 L 603,2160 L 577,2160 L 577,2052 Z" />
   <path class="verre" style="fill:none;" d="M 576,2005 L 576,2052 L 577,2064 L 577,2160" />
   <path class="verre" style="fill:none;" d="M 604,2005 L 604,2052 L 698,2077" />
@@ -447,7 +455,7 @@
   <line class="trait" style="stroke-width: 1.5;" x1="590" y1="1935" x2="594" y2="1935" />
   <line class="trait" style="stroke-width: 1.5;" x1="590" y1="1955" x2="594" y2="1955" />
 
-  <!-- 41. ALLONGE COUDÉE DE DISTILLATION (embout femelle 28 px incliné à 75° -> tube vertical de recette 14 px, base à y=2160) -->
+  <!-- 43. ALLONGE COUDÉE DE DISTILLATION (embout femelle 28 px incliné à 75° -> tube vertical de recette 14 px, base à y=2160) -->
   <path class="verre-fond" d="M 755,2042 L 802,2055 Q 814,2058 814,2072 L 814,2160 L 800,2160 L 800,2082 L 748,2069 Z" />
   <path class="verre" style="fill:none;" d="M 755,2042 L 802,2055 Q 814,2058 814,2072 L 814,2160" />
   <path class="verre" style="fill:none;" d="M 748,2069 L 800,2082 L 800,2160" />
