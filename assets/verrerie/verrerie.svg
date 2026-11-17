@@ -437,23 +437,16 @@
   <polyline class="trait" points="418,2045 431,2053 418,2061" />
   <polyline class="trait" points="452,2068 439,2076 452,2084" />
 
-  <!-- 42. TÊTE DE DISTILLATION RACCOURCIE + BOUCHON + THERMOMÈTRE (y=2005 à 2160, embout mâle bas 26 px, sortie latérale mâle 26 px) -->
+  <!-- 42. TÊTE DE DISTILLATION RACCOURCIE + BOUCHON PERCÉ (y=1987 à 2160) -->
   <path class="verre-fond" d="M 576,2005 L 604,2005 L 604,2052 L 698,2077 L 692,2102 L 603,2079 L 603,2160 L 577,2160 L 577,2052 Z" />
   <path class="verre" style="fill:none;" d="M 576,2005 L 576,2052 L 577,2064 L 577,2160" />
   <path class="verre" style="fill:none;" d="M 604,2005 L 604,2052 L 698,2077" />
   <path class="verre" style="fill:none;" d="M 603,2160 L 603,2079 L 692,2102" />
-  <!-- Bouchon percé en haut de la tête de distillation -->
+  <!-- Bouchon percé en haut de la tête de distillation (passage central 8 px en x=586..594) -->
   <rect class="bouchon" x="577" y="1987" width="26" height="32" rx="2" />
-  <!-- Thermomètre calibré pour la tête raccourcie (bulbe à y=2070 au niveau de la dérivation) -->
-  <rect class="verre" x="586" y="1825" width="8" height="245" rx="4" />
-  <circle cx="590" cy="2068" r="6" fill="#e06358" stroke="#000000" stroke-width="2" />
-  <rect x="588.5" y="1925" width="3" height="139" fill="#e06358" />
-  <line class="trait" style="stroke-width: 1.5;" x1="590" y1="1855" x2="594" y2="1855" />
-  <line class="trait" style="stroke-width: 1.5;" x1="590" y1="1875" x2="594" y2="1875" />
-  <line class="trait" style="stroke-width: 1.5;" x1="590" y1="1895" x2="594" y2="1895" />
-  <line class="trait" style="stroke-width: 1.5;" x1="590" y1="1915" x2="594" y2="1915" />
-  <line class="trait" style="stroke-width: 1.5;" x1="590" y1="1935" x2="594" y2="1935" />
-  <line class="trait" style="stroke-width: 1.5;" x1="590" y1="1955" x2="594" y2="1955" />
+  <rect class="verre-fond" x="586" y="1986" width="8" height="34" />
+  <line class="trait" x1="586" y1="1987" x2="586" y2="2019" />
+  <line class="trait" x1="594" y1="1987" x2="594" y2="2019" />
 
   <!-- 43. ALLONGE COUDÉE DE DISTILLATION (embout femelle 28 px incliné à 75° -> tube vertical de recette 14 px, base à y=2160) -->
   <path class="verre-fond" d="M 755,2042 L 802,2055 Q 814,2058 814,2072 L 814,2160 L 800,2160 L 800,2082 L 748,2069 Z" />
@@ -501,5 +494,51 @@
     <!-- 2 plaques parallèles (base à y=2160) -->
     <rect class="metal" x="1201" y="2132" width="4" height="28" />
     <rect class="metal" x="1211" y="2132" width="4" height="28" />
+  </g>
+
+  <!-- 47. THERMOMÈTRE À ALCOOL (calibré pour la tête de distillation #42) -->
+  <g id="thermometre-alcool">
+    <!-- Tige de verre 8x245 px -->
+    <rect class="verre" x="1282" y="1909" width="8" height="245" rx="4" />
+    <!-- Réservoir et colonne d'alcool rouge (centre bulbe à y=2152) -->
+    <circle cx="1286" cy="2152" r="6" fill="#e06358" stroke="#000000" stroke-width="2" />
+    <rect x="1284.5" y="2009" width="3" height="139" fill="#e06358" />
+    <!-- Graduations -->
+    <line class="trait" style="stroke-width: 1.5;" x1="1286" y1="1939" x2="1290" y2="1939" />
+    <line class="trait" style="stroke-width: 1.5;" x1="1286" y1="1959" x2="1290" y2="1959" />
+    <line class="trait" style="stroke-width: 1.5;" x1="1286" y1="1979" x2="1290" y2="1979" />
+    <line class="trait" style="stroke-width: 1.5;" x1="1286" y1="1999" x2="1290" y2="1999" />
+    <line class="trait" style="stroke-width: 1.5;" x1="1286" y1="2019" x2="1290" y2="2019" />
+    <line class="trait" style="stroke-width: 1.5;" x1="1286" y1="2039" x2="1290" y2="2039" />
+  </g>
+
+  <!-- 48. THERMOMÈTRE NUMÉRIQUE DE PAILLASSE (tige 8 px compatible tête #42) -->
+  <g id="thermometre-numerique">
+    <!-- Sonde métallique fine (8 px de large, compatible avec la tête de distillation) -->
+    <rect class="metal" x="1376" y="1915" width="8" height="245" rx="4" />
+    <!-- Tête d'affichage numérique compacte -->
+    <rect class="verre" x="1344" y="1863" width="72" height="52" rx="6" />
+    <rect class="ecran" x="1352" y="1871" width="56" height="26" rx="3" />
+    <text class="texte-ecran" style="font-size: 13px;" x="1403" y="1889">25.0°C</text>
+    <!-- Bouton ON/OFF -->
+    <circle class="bouton" cx="1380" cy="1905" r="4" />
+  </g>
+
+  <!-- 49. CUVE À CCM (base à y=2160, largeur intérieure 130 px) -->
+  <g id="cuve-ccm">
+    <!-- Fond de verre -->
+    <path class="verre-fond" d="M 1456,1980 L 1464,1988 L 1464,2152 C 1464,2157 1468,2160 1473,2160 L 1587,2160 C 1592,2160 1596,2157 1596,2152 L 1596,1988 L 1604,1980 Z" />
+    <!-- Fond d'éluant au bas de la cuve (hauteur 24 px) -->
+    <path class="liquide" d="M 1465.5,2134 L 1594.5,2134 L 1594.5,2152 C 1594.5,2156 1591.5,2158.5 1587,2158.5 L 1473,2158.5 C 1468.5,2158.5 1465.5,2156 1465.5,2152 Z" />
+    <!-- Parois en verre épais avec rebord supérieur évasé -->
+    <path class="verre" style="fill:none;" d="M 1456,1980 L 1464,1988 L 1464,2152 C 1464,2157 1468,2160 1473,2160 L 1587,2160 C 1592,2160 1596,2157 1596,2152 L 1596,1988 L 1604,1980" />
+  </g>
+
+  <!-- 50. COUVERCLE DE CUVE À CCM (indépendant, pose directe sur y=1980) -->
+  <g id="couvercle-ccm">
+    <!-- Plaque de verre couvrante (156 px de large pour couvrir le rebord 148 px) -->
+    <rect class="verre" x="1640" y="2148" width="156" height="12" rx="2" />
+    <!-- Bouton de préhension supérieur -->
+    <rect class="verre" x="1704" y="2136" width="28" height="12" rx="3" />
   </g>
 </svg>
