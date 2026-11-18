@@ -45,6 +45,12 @@
     ajouter un color picker dans la liste des couleurs pour donner acces a toutes les couleurs possibles.
 
     une option pour renommer les grandeurs dans les exports afin de mettre des espaces par exemple.
+
+    dans l'export, les puissances de 10 ont l'exposant cassé.
+
+    dans l'export il y a parfois des grandeurs rayés ? genre import audio avec fft
+
+    dans l'export il y a PAS les puissances de 10 en bas a droite.
     
 # Mendeleiev
 # Optique
