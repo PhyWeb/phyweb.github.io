@@ -46,6 +46,9 @@
 
     une option pour renommer les grandeurs dans les exports afin de mettre des espaces par exemple.
 
+    améliorer la grille (voir géogebra)
+    
+    
     dans l'export, les puissances de 10 ont l'exposant cassé.
 
     dans l'export il y a parfois des grandeurs rayés ? genre import audio avec fft
