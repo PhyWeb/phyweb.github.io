@@ -1,4 +1,31 @@
 /**
+ * Convertit un nombre ou une chaîne en exposant Unicode (ex: 3 -> '³', -3 -> '⁻³').
+ * @param {number|string} value 
+ * @returns {string}
+ */
+export function toSuperscript(value) {
+  if (value === undefined || value === null || value === '') return '';
+  const map = {
+    '0': '⁰',
+    '1': '¹',
+    '2': '²',
+    '3': '³',
+    '4': '⁴',
+    '5': '⁵',
+    '6': '⁶',
+    '7': '⁷',
+    '8': '⁸',
+    '9': '⁹',
+    '-': '⁻',
+    '+': '⁺'
+  };
+  return String(value)
+    .split('')
+    .map(char => map[char] || char)
+    .join('');
+}
+
+/**
  * Formate un nombre en chaîne de caractères avec un nombre fixe de chiffres significatifs.
  * Utilise la notation scientifique (ex: "1,23·10⁵") pour les grands et petits nombres.
  * @param {*} value La valeur à formater.
@@ -47,14 +74,7 @@ export function formatNumber(value, significantDigits = 4, options = {}) {
     }
 
     // Formate l'exposant avec des caractères en exposant.
-    const superscriptExponent = exponent
-      .toString()
-      .split('')
-      .map(char => {
-        if (char === '-') return '⁻'; // Caractère moins en exposant
-        return '⁰¹²³⁴⁵⁶⁷⁸⁹'[char];
-      })
-      .join('');
+    const superscriptExponent = toSuperscript(exponent);
 
     return `${formattedMantissa}·10${superscriptExponent}`;
   }
