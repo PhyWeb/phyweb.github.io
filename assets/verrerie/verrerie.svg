@@ -1,4 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2640 2540" width="2640" height="2540">
+  <!-- ===================================================================== -->
+  <!-- ÉCHELLE DU SCHÉMA : 1 mm = 1 px                                       -->
+  <!-- Tous les éléments de verrerie, instruments et consommables respectent -->
+  <!-- les dimensions métriques réelles (hauteurs, diamètres, épaisseurs).   -->
+  <!-- ===================================================================== -->
   <style>
     .verre { fill: #ffffff; stroke: #000000; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
     .verre-fond { fill: #ffffff; stroke: none; }
@@ -13,6 +18,11 @@
     .ecran { fill: #e6ece8; stroke: #000000; stroke-width: 2.5; stroke-linejoin: round; }
     .bouton { fill: #cccccc; stroke: #000000; stroke-width: 2; stroke-linejoin: round; }
     .texte-ecran { font-family: monospace; font-size: 16px; font-weight: bold; fill: #000000; text-anchor: end; }
+    .cuivre { fill: #c87a52; stroke: #000000; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+    .zinc { fill: #94a0aa; stroke: #000000; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+    .texte-metal { font-family: sans-serif; font-size: 14px; font-weight: bold; fill: #000000; text-anchor: middle; }
+    .multimetre-jaune { fill: #f5b025; stroke: #000000; stroke-width: 3; stroke-linejoin: round; }
+    .texte-multimetre { font-family: sans-serif; font-size: 11px; font-weight: bold; fill: #000000; text-anchor: middle; }
   </style>
 
   <!-- FOND BLANC -->
@@ -633,6 +643,10 @@
     <polygon class="bouchon" points="2523,2100 2561,2100 2557,2118 2527,2118" />
   </g>
 
+  <!-- ========================================================= -->
+  <!-- LIGNE 5 : ACCESSOIRES, CONSOMMABLES & ÉLECTROCHIMIE (y=2480) -->
+  <!-- ========================================================= -->
+
   <!-- 58. VERRE DE MONTRE (calotte sphérique creuse, larg. 130 px, base à y=2480) -->
   <g id="verre-de-montre">
     <path class="verre" d="M 60,2454 Q 125,2480 190,2454 Q 125,2471 60,2454 Z" />
@@ -700,5 +714,182 @@
     <path class="verre" style="fill:none;" d="M 666,2316 L 666,2236 Q 666,2214 688,2214 L 864,2214 Q 886,2214 886,2236 L 886,2462 Q 886,2472 896,2472 L 936,2472 Q 946,2472 946,2462 L 946,2448" />
     <!-- Paroi inférieure / droite -->
     <path class="verre" style="fill:none;" d="M 674,2316 L 674,2236 Q 674,2222 688,2222 L 864,2222 Q 878,2222 878,2236 L 878,2462 Q 878,2480 896,2480 L 936,2480 Q 954,2480 954,2462 L 954,2448" />
+  </g>
+
+  <!-- 63. PONT SALIN EN U (tube en U inversé avec gel électrolytique et embouts poreux, base à y=2480) -->
+  <g id="pont-salin">
+    <!-- Fond blanc global -->
+    <path class="verre-fond" d="M 1040,2480 L 1040,2377 A 22,22 0 0 1 1062,2355 L 1140,2355 A 22,22 0 0 1 1162,2377 L 1162,2480 L 1148,2480 L 1148,2377 A 8,8 0 0 0 1140,2369 L 1062,2369 A 8,8 0 0 0 1054,2377 L 1054,2480 Z" />
+    <!-- Gel électrolytique interne (gel agar-agar salé) -->
+    <path class="liquide" d="M 1041.5,2466 L 1041.5,2377 A 20.5,20.5 0 0 1 1062,2356.5 L 1140,2356.5 A 20.5,20.5 0 0 1 1160.5,2377 L 1160.5,2466 L 1149.5,2466 L 1149.5,2377 A 9.5,9.5 0 0 0 1140,2367.5 L 1062,2367.5 A 9.5,9.5 0 0 0 1052.5,2377 L 1052.5,2466 Z" />
+    <!-- Embouts poreux aux extrémités (disques frittés / tampons de coton) -->
+    <rect x="1040" y="2466" width="14" height="14" rx="2" fill="#dce3ea" stroke="#000000" stroke-width="2" />
+    <line x1="1043" y1="2471" x2="1051" y2="2471" stroke="#88929b" stroke-width="1.5" stroke-dasharray="1 2" />
+    <line x1="1043" y1="2476" x2="1051" y2="2476" stroke="#88929b" stroke-width="1.5" stroke-dasharray="1 2" />
+    <rect x="1148" y="2466" width="14" height="14" rx="2" fill="#dce3ea" stroke="#000000" stroke-width="2" />
+    <line x1="1151" y1="2471" x2="1159" y2="2471" stroke="#88929b" stroke-width="1.5" stroke-dasharray="1 2" />
+    <line x1="1151" y1="2476" x2="1159" y2="2476" stroke="#88929b" stroke-width="1.5" stroke-dasharray="1 2" />
+    <!-- Paroi extérieure en verre -->
+    <path class="verre" style="fill:none;" d="M 1040,2480 L 1040,2377 A 22,22 0 0 1 1062,2355 L 1140,2355 A 22,22 0 0 1 1162,2377 L 1162,2480" />
+    <!-- Paroi intérieure en verre -->
+    <path class="verre" style="fill:none;" d="M 1054,2480 L 1054,2377 A 8,8 0 0 1 1062,2369 L 1140,2369 A 8,8 0 0 1 1148,2377 L 1148,2480" />
+  </g>
+
+  <!-- 64. LAME DE CUIVRE (électrode Cu avec trou de connexion, base à y=2480) -->
+  <g id="lame-cuivre">
+    <!-- Lame métallique en cuivre (28 x 135 px) -->
+    <rect class="cuivre" x="1220" y="2345" width="28" height="135" rx="3" />
+    <!-- Trou supérieur pour borne / pince crocodile -->
+    <circle cx="1234" cy="2362" r="4" fill="#ffffff" stroke="#000000" stroke-width="2" />
+    <!-- Marquage du métal Cu -->
+    <text class="texte-metal" x="1234" y="2425">Cu</text>
+  </g>
+
+  <!-- 65. LAME DE ZINC (électrode Zn avec trou de connexion, base à y=2480) -->
+  <g id="lame-zinc">
+    <!-- Lame métallique en zinc (28 x 135 px) -->
+    <rect class="zinc" x="1284" y="2345" width="28" height="135" rx="3" />
+    <!-- Trou supérieur pour borne / pince crocodile -->
+    <circle cx="1298" cy="2362" r="4" fill="#ffffff" stroke="#000000" stroke-width="2" />
+    <!-- Marquage du métal Zn -->
+    <text class="texte-metal" x="1298" y="2425">Zn</text>
+  </g>
+
+  <!-- 66. TUBE EN U POUR ÉLECTROLYSE SUR PIED (haut. 200 mm, Ø tubes 26 mm, entraxe 90 mm, base à y=2480) -->
+  <g id="tube-en-u">
+    <!-- Branche gauche : x 1350 à 1376 (centre 1363) -->
+    <!-- Branche droite : x 1440 à 1466 (centre 1453) -->
+    <!-- Axe central du tube : x = 1408 -->
+    <!-- Sommet ouvert à y=2280, fond du tube en U arrondi complet à y=2458 -->
+
+    <!-- 1. PIED SUPPORT INDÉPENDANT (semelle plate à y=2480 + tige support montant jusqu'au dessous du U) -->
+    <path class="verre-fond" d="M 1360,2480 L 1456,2480 L 1456,2472 L 1416,2472 L 1416,2458 L 1400,2458 L 1400,2472 L 1360,2472 Z" />
+    <path class="verre" style="fill:none;" d="M 1360,2480 L 1456,2480 L 1456,2472 L 1416,2472 L 1416,2458" />
+    <path class="verre" style="fill:none;" d="M 1360,2472 L 1400,2472 L 1400,2458" />
+    <!-- Jonction / soudure séparatrice entre la tige du pied et le fond du tube -->
+    <line class="verre" style="stroke-width:2.5;" x1="1400" y1="2458" x2="1416" y2="2458" />
+
+    <!-- 2. TUBE EN U (fermé et arrondi de façon continue sur tout son fond) -->
+    <!-- Fond blanc du tube -->
+    <path class="verre-fond" d="M 1350,2280 L 1350,2400 A 58,58 0 0,0 1466,2400 L 1466,2280 L 1440,2280 L 1440,2400 A 32,32 0 0,1 1376,2400 L 1376,2280 Z" />
+
+    <!-- Solution électrolytique bleutée (remplie aux 2/3, niveau à y=2340) -->
+    <path class="liquide" d="M 1351.5,2340 L 1374.5,2340 L 1374.5,2400 A 33.5,33.5 0 0,0 1441.5,2400 L 1441.5,2340 L 1464.5,2340 L 1464.5,2400 A 56.5,56.5 0 0,1 1351.5,2400 Z" />
+
+    <!-- Paroi extérieure en verre (arc circulaire complet et ininterrompu) -->
+    <path class="verre" style="fill:none;" d="M 1350,2280 L 1350,2400 A 58,58 0 0,0 1466,2400 L 1466,2280" />
+
+    <!-- Paroi intérieure en verre (arc circulaire intérieur) -->
+    <path class="verre" style="fill:none;" d="M 1376,2280 L 1376,2400 A 32,32 0 0,0 1440,2400 L 1440,2280" />
+
+    <!-- Bords rodés au sommet de chaque branche -->
+    <line class="verre" style="stroke-width:2.5;" x1="1348" y1="2280" x2="1378" y2="2280" />
+    <line class="verre" style="stroke-width:2.5;" x1="1438" y1="2280" x2="1468" y2="2280" />
+  </g>
+
+  <!-- 67. ÉLECTROLYSEUR DE PAILLASSE (cuve évasée, base y=2480, électrodes C/Pt adaptées aux tubes à essais Ø22) -->
+  <g id="electrolyseur">
+    <!-- Axe central : x = 1590 -->
+    <!-- Socle lourd rectangulaire inférieur rehaussé (noir/gris foncé, 130 x 18 mm, de y=2462 à y=2480) -->
+    <rect x="1525" y="2462" width="130" height="18" rx="3" fill="#333333" stroke="#000000" stroke-width="3" stroke-linejoin="round" />
+
+    <!-- Bloc d'étanchéité intermédiaire agrandi (bouchon / embase grise, 90 x 52 mm, de y=2410 à y=2462) -->
+    <rect class="verre-fond" x="1545" y="2410" width="90" height="52" />
+    <rect x="1545" y="2410" width="90" height="52" fill="#a0a8b0" stroke="#000000" stroke-width="2.5" />
+
+    <!-- Bornes de raccordement latérales plaquées contre le socle rehaussé (centrées à y=2436) -->
+    <!-- Borne 1 gauche rouge (affleurante au socle, x=1531 à 1545, y=2436) -->
+    <line class="trait" style="stroke-width: 3;" x1="1526" y1="2436" x2="1545" y2="2436" />
+    <rect x="1531" y="2429" width="14" height="14" rx="2" fill="#e06358" stroke="#000000" stroke-width="2" />
+    <!-- Borne 2 droite noire (affleurante au socle, x=1635 à 1649, y=2436) -->
+    <line class="trait" style="stroke-width: 3;" x1="1635" y1="2436" x2="1654" y2="2436" />
+    <rect x="1635" y="2429" width="14" height="14" rx="2" fill="#333333" stroke="#000000" stroke-width="2" />
+
+    <!-- Cuve évasée transparente (fond 104 mm à y=2410, ouverture 156 mm à y=2300, haut. 110 mm) -->
+    <polygon class="verre-fond" points="1512,2300 1668,2300 1642,2410 1538,2410" />
+
+    <!-- Solution électrolytique (niveau à y=2345, hauteur de liquide 65 mm) -->
+    <polygon class="liquide" points="1523,2345 1657,2345 1640.5,2408.5 1539.5,2408.5" />
+
+    <!-- Parois en verre ouvertes de la cuve évasée -->
+    <path class="verre" style="fill:none;" d="M 1512,2300 L 1538,2410 L 1642,2410 L 1668,2300" />
+
+    <!-- Électrodes verticales (entraxe 46 mm : x=1567 et x=1613, hauteur 50 mm au-dessus du fond de cuve) -->
+    <!-- Électrode 1 (gauche, x=1564 à 1570, centre 1567, de y=2360 à y=2448) -->
+    <rect x="1564" y="2360" width="6" height="88" rx="1.5" fill="#44494d" stroke="#000000" stroke-width="2" />
+    <!-- Électrode 2 (droite, x=1610 à 1616, centre 1613, de y=2360 à y=2448) -->
+    <rect x="1610" y="2360" width="6" height="88" rx="1.5" fill="#44494d" stroke="#000000" stroke-width="2" />
+  </g>
+
+  <!-- 68. VOLTMÈTRE MULTIMÈTRE NUMÉRIQUE PORTABLE STANDARD (85 x 170 mm, base à y=2480) -->
+  <g id="voltmetre">
+    <!-- Boîtier antichoc jaune/orange standard (85 x 170 mm, de x=1710 à 1795, y=2310 à 2480) -->
+    <rect class="multimetre-jaune" x="1710" y="2310" width="85" height="170" rx="10" />
+    <!-- Façade intérieure grise -->
+    <rect x="1716" y="2316" width="73" height="158" rx="6" fill="#2d3136" stroke="#000000" stroke-width="2" />
+
+    <!-- Écran numérique LCD supérieur (61 x 32 mm) -->
+    <rect class="ecran" x="1722" y="2324" width="61" height="32" rx="3" />
+    <text class="texte-ecran" style="font-size: 15px;" x="1775" y="2346">1.10 V</text>
+
+    <!-- Commutateur rotatif central (Ø 30 mm, centre à x=1752.5, y=2395) -->
+    <circle cx="1752.5" cy="2395" r="15" fill="#181a1c" stroke="#000000" stroke-width="2" />
+    <circle cx="1752.5" cy="2395" r="11" fill="#40454a" stroke="#000000" stroke-width="1.5" />
+    <!-- Index / flèche sélecteur pointant vers V (en haut à gauche) -->
+    <line x1="1752.5" y1="2395" x2="1744" y2="2386" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" />
+    <!-- Repères/calibres bien espacés autour du cadran -->
+    <text style="font-family: sans-serif; font-size: 9px; font-weight: bold; fill: #f5b025; text-anchor: middle;" x="1731" y="2382">V~</text>
+    <text style="font-family: sans-serif; font-size: 9px; font-weight: bold; fill: #ffffff; text-anchor: middle;" x="1752.5" y="2371">V⎓</text>
+    <text style="font-family: sans-serif; font-size: 9px; font-weight: bold; fill: #ffffff; text-anchor: middle;" x="1774" y="2382">Ω</text>
+    <text style="font-family: sans-serif; font-size: 8px; font-weight: bold; fill: #ff4d4d; text-anchor: middle;" x="1752.5" y="2421">OFF</text>
+
+    <!-- Bornes femelles de sécurité 4 mm en bas (COM et V) -->
+    <!-- Borne COM (noire, à gauche : centre x=1738, y=2445) -->
+    <circle cx="1738" cy="2445" r="8" fill="#181a1c" stroke="#000000" stroke-width="2" />
+    <circle cx="1738" cy="2445" r="4.5" fill="#333333" stroke="#000000" stroke-width="1.5" />
+    <circle cx="1738" cy="2445" r="2" fill="#000000" />
+    <text class="texte-multimetre" style="font-size: 9px; fill: #ffffff;" x="1738" y="2462">COM</text>
+
+    <!-- Borne V / Ω (rouge, à droite : centre x=1767, y=2445) -->
+    <circle cx="1767" cy="2445" r="8" fill="#e06358" stroke="#000000" stroke-width="2" />
+    <circle cx="1767" cy="2445" r="4.5" fill="#f28b82" stroke="#000000" stroke-width="1.5" />
+    <circle cx="1767" cy="2445" r="2" fill="#000000" />
+    <text class="texte-multimetre" style="font-size: 10px; fill: #e06358;" x="1767" y="2462">V</text>
+  </g>
+
+  <!-- 69. AMPÈREMÈTRE MULTIMÈTRE NUMÉRIQUE PORTABLE STANDARD (sosie, 85 x 170 mm, base à y=2480) -->
+  <g id="amperemetre">
+    <!-- Boîtier antichoc jaune/orange standard (85 x 170 mm, de x=1820 à 1905, y=2310 à 2480) -->
+    <rect class="multimetre-jaune" x="1820" y="2310" width="85" height="170" rx="10" />
+    <!-- Façade intérieure grise -->
+    <rect x="1826" y="2316" width="73" height="158" rx="6" fill="#2d3136" stroke="#000000" stroke-width="2" />
+
+    <!-- Écran numérique LCD supérieur (61 x 32 mm) -->
+    <rect class="ecran" x="1832" y="2324" width="61" height="32" rx="3" />
+    <text class="texte-ecran" style="font-size: 15px;" x="1885" y="2346">0.15 A</text>
+
+    <!-- Commutateur rotatif central (Ø 30 mm, centre à x=1862.5, y=2395) -->
+    <circle cx="1862.5" cy="2395" r="15" fill="#181a1c" stroke="#000000" stroke-width="2" />
+    <circle cx="1862.5" cy="2395" r="11" fill="#40454a" stroke="#000000" stroke-width="1.5" />
+    <!-- Index / flèche sélecteur pointant vers A (en haut à droite) -->
+    <line x1="1862.5" y1="2395" x2="1871" y2="2386" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" />
+    <!-- Repères/calibres bien espacés autour du cadran -->
+    <text style="font-family: sans-serif; font-size: 9px; font-weight: bold; fill: #ffffff; text-anchor: middle;" x="1841" y="2382">mA</text>
+    <text style="font-family: sans-serif; font-size: 9px; font-weight: bold; fill: #ffffff; text-anchor: middle;" x="1862.5" y="2371">A⎓</text>
+    <text style="font-family: sans-serif; font-size: 9px; font-weight: bold; fill: #f5b025; text-anchor: middle;" x="1884" y="2382">A~</text>
+    <text style="font-family: sans-serif; font-size: 8px; font-weight: bold; fill: #ff4d4d; text-anchor: middle;" x="1862.5" y="2421">OFF</text>
+
+    <!-- Bornes femelles de sécurité 4 mm en bas (COM et A) -->
+    <!-- Borne COM (noire, à gauche : centre x=1848, y=2445) -->
+    <circle cx="1848" cy="2445" r="8" fill="#181a1c" stroke="#000000" stroke-width="2" />
+    <circle cx="1848" cy="2445" r="4.5" fill="#333333" stroke="#000000" stroke-width="1.5" />
+    <circle cx="1848" cy="2445" r="2" fill="#000000" />
+    <text class="texte-multimetre" style="font-size: 9px; fill: #ffffff;" x="1848" y="2462">COM</text>
+
+    <!-- Borne A (rouge, à droite : centre x=1877, y=2445) -->
+    <circle cx="1877" cy="2445" r="8" fill="#e06358" stroke="#000000" stroke-width="2" />
+    <circle cx="1877" cy="2445" r="4.5" fill="#f28b82" stroke="#000000" stroke-width="1.5" />
+    <circle cx="1877" cy="2445" r="2" fill="#000000" />
+    <text class="texte-multimetre" style="font-size: 10px; fill: #e06358;" x="1877" y="2462">A</text>
   </g>
 </svg>
