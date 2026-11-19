@@ -240,8 +240,6 @@ export default class Grapher {
         events: {
           load : function () {
             const chart = this;
-            const drawAnnotationsBound = self.drawAnnotations.bind(self); // Lier `this`
-
 
             // Fonction pour dessiner les flèches
             function drawArrows() {
@@ -291,9 +289,11 @@ export default class Grapher {
               }
 
               // Mise à jour du label HTML à côté du dropdown
-              const unitLabel = document.getElementById('xaxis-unit-label');
-              if (unitLabel) {
-                unitLabel.innerHTML = unitText ? `(${unitText})` : '';
+              if (!chart.renderer?.forExport) {
+                const unitLabel = document.getElementById('xaxis-unit-label');
+                if (unitLabel) {
+                  unitLabel.innerHTML = unitText ? `(${unitText})` : '';
+                }
               }
 
               // Flèche Y (haut)
@@ -315,11 +315,11 @@ export default class Grapher {
 
             // Dessin initial
             drawArrows();
-            drawAnnotationsBound();
+            self.drawAnnotations(chart);
 
             // Re-dessiner à chaque redraw (resize, zoom, etc.)
             Highcharts.addEvent(chart, 'redraw', drawArrows);
-            Highcharts.addEvent(chart, 'redraw', drawAnnotationsBound); // Redessiner les annotations
+            Highcharts.addEvent(chart, 'redraw', () => self.drawAnnotations(chart)); // Redessiner les annotations
             Highcharts.addEvent(chart, 'redraw', () => self.uiManager?.updateModelToolVisibility());
 
           },
@@ -1383,8 +1383,8 @@ setDisableScientificNotation(disabled) {
   /**
    * Dessine une croix et ses labels en respectant le style original.
    */
-  _drawStyledCrosshair(pixelX, pixelY, valueX, valueY) {
-    const chart = this.chart;
+  _drawStyledCrosshair(pixelX, pixelY, valueX, valueY, targetChart = this.chart) {
+    const chart = targetChart;
     const renderer = chart.renderer;
     const significantDigits = this.data?.settings?.significantDigits ?? 4;
     const { plotLeft, plotTop, plotWidth, plotHeight } = chart;
@@ -1416,8 +1416,8 @@ setDisableScientificNotation(disabled) {
    * Dessine un simple point stylisé pour les extrémités des segments.
    * @private
    */
-  _drawEndpoint(pixelX, pixelY) {
-    const chart = this.chart;
+  _drawEndpoint(pixelX, pixelY, targetChart = this.chart) {
+    const chart = targetChart;
     const renderer = chart.renderer;
     
     const circle = renderer.circle(pixelX, pixelY, 4)
@@ -1457,24 +1457,30 @@ setDisableScientificNotation(disabled) {
   /**
    * Dessine toutes les annotations stockées dans this.data.annotations
    */
-  drawAnnotations() {
-    if (!this.chart || !this.chart.renderer) {
+  drawAnnotations(targetChart = this.chart) {
+    if (!targetChart || !targetChart.renderer) {
       return;
     }
-    const chart = this.chart;
+    const chart = targetChart;
     const xAxis = chart.xAxis[0];
     const yAxis = chart.yAxis[0];
     const significantDigits = this.data?.settings?.significantDigits ?? 4;
 
-    // Nettoyer les anciennes annotations
-    this.renderedAnnotations.forEach(rendered => {
-      if (Array.isArray(rendered)) {
-        rendered.forEach(el => el.destroy());
-      } else if (typeof rendered === 'object' && rendered !== null) {
-        Object.values(rendered).forEach(el => el.destroy());
-      }
-    });
-    this.renderedAnnotations = [];
+    // Supprimer les anciennes annotations sur ce graphique s’il y en a
+    if (Array.isArray(targetChart.renderedAnnotations)) {
+      targetChart.renderedAnnotations.forEach(rendered => {
+        if (Array.isArray(rendered)) {
+          rendered.forEach(el => el.destroy());
+        } else if (typeof rendered === 'object' && rendered !== null) {
+          Object.values(rendered).forEach(el => el.destroy());
+        }
+      });
+    }
+    targetChart.renderedAnnotations = [];
+
+    if (targetChart === this.chart) {
+      this.renderedAnnotations = targetChart.renderedAnnotations;
+    }
 
     // Dessiner chaque annotation
     this.data.annotations.forEach(annotation => {
@@ -1484,7 +1490,8 @@ setDisableScientificNotation(disabled) {
 
         if (pixelX >= chart.plotLeft && pixelX <= chart.plotLeft + chart.plotWidth &&
           pixelY >= chart.plotTop && pixelY <= chart.plotTop + chart.plotHeight) {
-          this.renderedAnnotations.push(this._drawStyledCrosshair(pixelX, pixelY, annotation.x, annotation.y));
+          const renderedCrosshair = this._drawStyledCrosshair(pixelX, pixelY, annotation.x, annotation.y, targetChart);
+          targetChart.renderedAnnotations.push(renderedCrosshair);
         }
       } else if (annotation.type === 'segment') {
         const [p1, p2] = annotation.points;
@@ -1498,7 +1505,7 @@ setDisableScientificNotation(disabled) {
           .attr({ 'stroke-width': 2, stroke: 'rgba(220, 53, 69, 0.9)', zIndex: 4 }).add());
 
         // 2. Points aux extrémités
-        segmentElements.push(...this._drawEndpoint(pixelX1, pixelY1), ...this._drawEndpoint(pixelX2, pixelY2));
+        segmentElements.push(...this._drawEndpoint(pixelX1, pixelY1, targetChart), ...this._drawEndpoint(pixelX2, pixelY2, targetChart));
 
         // 3. Lignes Delta
         const deltaLineAttr = { 'stroke-width': 1, stroke: 'rgba(0, 123, 255, 0.8)', 'stroke-dasharray': '4,4', zIndex: 3 };
@@ -1529,7 +1536,7 @@ setDisableScientificNotation(disabled) {
         dyLabel.translate(pixelX2 + (pixelX2 > pixelX1 ? 5 : -dyBBox.width - 5), (pixelY1 + pixelY2) / 2 - dyBBox.height / 2);
 
         segmentElements.push(dxLabel, dyLabel);
-        this.renderedAnnotations.push(segmentElements);
+        targetChart.renderedAnnotations.push(segmentElements);
       } else if (annotation.type === 'tangent') {
         const { point, slope } = annotation;
         if (!Number.isFinite(slope)) return;
@@ -1539,7 +1546,7 @@ setDisableScientificNotation(disabled) {
         const renderedTangent = {};
 
         // Point de tangence
-        Object.assign(renderedTangent, this._drawStyledCrosshair(pixelX, pixelY, point.x, point.y));
+        Object.assign(renderedTangent, this._drawStyledCrosshair(pixelX, pixelY, point.x, point.y, targetChart));
 
         // Ligne de tangente
         const { min: xMin, max: xMax } = chart.xAxis[0].getExtremes();
@@ -1573,7 +1580,7 @@ setDisableScientificNotation(disabled) {
         
         renderedTangent.slopeLabel.translate(labelX, labelY);
 
-        this.renderedAnnotations.push(renderedTangent);
+        targetChart.renderedAnnotations.push(renderedTangent);
       } else if (annotation.type === 'tangent-method') {
         const { point1, point2, slope, seriesName } = annotation;
         const pixelX1 = xAxis.toPixels(point1.x);
@@ -1584,8 +1591,8 @@ setDisableScientificNotation(disabled) {
         const renderedTangentMethod = {};
 
         // 1. Dessin des deux points de tangence avec le réticule
-        renderedTangentMethod.pt1 = this._drawEndpoint(pixelX1, pixelY1)[0];
-        renderedTangentMethod.pt2 = this._drawEndpoint(pixelX2, pixelY2)[0];
+        renderedTangentMethod.pt1 = this._drawEndpoint(pixelX1, pixelY1, targetChart)[0];
+        renderedTangentMethod.pt2 = this._drawEndpoint(pixelX2, pixelY2, targetChart)[0];
 
         // Fonction utilitaire pour dessiner une droite sur toute la largeur
         const { min: xMin, max: xMax } = chart.xAxis[0].getExtremes();
@@ -1658,12 +1665,6 @@ setDisableScientificNotation(disabled) {
                     distToMid: Math.abs(clampedX - xMid)
                   });
                 }
-
-
-
-
-
-
               }
             }
           }
@@ -1697,14 +1698,16 @@ setDisableScientificNotation(disabled) {
             const xCurveObj = this.data.getCurveByTitle(this.currentXCurve);
             const yCurveObj = this.data.getCurveByTitle(seriesName);
 
-            const xLabelName = (xCurveObj?.title || this.currentXCurve || 'V') + '<sub>eq</sub>';
-            const yLabelName = (yCurveObj?.title || seriesName || 'pH') + '<sub>eq</sub>';
+            const isExport = Boolean(targetChart.renderer?.forExport);
+            const eqSub = isExport ? '_eq' : '<sub>eq</sub>';
+            const xLabelName = (xCurveObj?.title || this.currentXCurve || 'V') + eqSub;
+            const yLabelName = (yCurveObj?.title || seriesName || 'pH') + eqSub;
 
             const xUnit = xCurveObj?.unit ? ` ${xCurveObj.unit}` : '';
             const yUnit = yCurveObj?.unit ? ` ${yCurveObj.unit}` : (series?.userOptions?.unit ? ` ${series.userOptions.unit}` : '');
 
             const eqText = `<b>${xLabelName}</b> = ${formatNumber(eqPoint.x, significantDigits)}${xUnit}<br/><b>${yLabelName}</b> = ${formatNumber(eqPoint.y, significantDigits)}${yUnit}`;
-            renderedTangentMethod.eqLabel = chart.renderer.label(eqText, pxEq + 12, pyEq - 20, 'callout', null, null, true)
+            renderedTangentMethod.eqLabel = chart.renderer.label(eqText, pxEq + 12, pyEq - 20, 'callout', null, null, !isExport)
               .attr({ 
                   fill: 'rgba(255, 255, 255, 0.95)', // Fond presque opaque
                   stroke: '#dbdbdb',                 // Bordure de l'étiquette
@@ -1720,7 +1723,7 @@ setDisableScientificNotation(disabled) {
           }
         }
 
-        this.renderedAnnotations.push(renderedTangentMethod);
+        targetChart.renderedAnnotations.push(renderedTangentMethod);
       }
     });
   }
