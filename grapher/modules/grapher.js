@@ -1,4 +1,4 @@
-import { formatNumber } from '../../common/formatter.js';
+import { formatNumber, toSuperscript } from '../../common/formatter.js';
 
 const $ = document.querySelector.bind(document);
 
@@ -278,7 +278,7 @@ export default class Grapher {
 
               let exponentPart = '';
               if (xExponent) {
-                exponentPart = `&times;10<sup>${xExponent}</sup>`;
+                exponentPart = `×10${toSuperscript(xExponent)}`;
               }
 
               let unitText = '';
@@ -360,11 +360,11 @@ export default class Grapher {
         labelFormatter: function () {
           const unit = this.userOptions.unit || '';
           const yAxis = this.chart.yAxis[0];
-          const yExponent = yAxis.exponent;
+          const yExponent = yAxis ? yAxis.exponent : 0;
 
           let exponentPart = '';
           if (yExponent) {
-            exponentPart = `&times;10<sup>${yExponent}</sup>`;
+            exponentPart = `×10${toSuperscript(yExponent)}`;
           }
 
           let content = '';
@@ -381,9 +381,11 @@ export default class Grapher {
             labelText += ` (${content})`;
           }
 
-          const topAdjustment = yExponent ? -5 : -2;
+          if (this.chart.renderer && this.chart.renderer.forExport) {
+            return labelText;
+          }
 
-          return `<span style="position: relative; top: ${topAdjustment}px;">${labelText}</span>`;
+          return `<span style="position: relative; top: -2px;">${labelText}</span>`;
         },
         layout: 'horizontal',
         align: 'left',

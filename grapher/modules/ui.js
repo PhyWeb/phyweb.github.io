@@ -1,10 +1,11 @@
-import { formatNumber } from '../../common/formatter.js';
+import { formatNumber, toSuperscript } from '../../common/formatter.js';
 import { alertModal, showToast, NavigationManager, setupGlobalShortcuts, FileDropManager} from '../../common/common.js';
 import { DEFAULT_SETTINGS, saveSettings, loadSettings, clearSavedSettings } from './settingsManager.js';
 
 const $ = document.querySelector.bind(document);
 
 export const MAX_PRINT_TABLE_POINTS = 500;
+export { toSuperscript };
 const EXTRA_CUSTOMIZATION_COLORS = ['#000000'];
 
 /**
@@ -32,11 +33,13 @@ export function populateColorSelect(selectElement) {
   colors.forEach((color) => {
     const option = document.createElement('option');
     option.value = color;
-    option.textContent = color;
+    option.style.color = color;
+    option.textContent = "■■■■■■■■■";
     selectElement.appendChild(option);
   });
 
   // Création ou récupération du wrapper dropdown personnalisé
+  if (!selectElement || typeof selectElement.closest !== 'function') return;
   const selectWrapper = selectElement.closest('.select');
   if (!selectWrapper) return;
 
@@ -4246,8 +4249,29 @@ export default class UIManager {
   getExportChartOptions(width, height, factor = 1) {
     if (!this.grapher || !this.grapher.chart) return {};
     
-    const xCurveObj = this.data.getCurveByTitle(this.grapher.currentXCurve);
-    const xUnit = xCurveObj && xCurveObj.unit ? ` (${xCurveObj.unit})` : '';
+    const xCurveObj = this.data?.getCurveByTitle ? this.data.getCurveByTitle(this.grapher.currentXCurve) : null;
+    const xUnit = xCurveObj && xCurveObj.unit ? xCurveObj.unit : '';
+    const xAxis = this.grapher.chart.xAxis && this.grapher.chart.xAxis[0];
+    const xExponent = (xAxis && xAxis.exponent) || 0;
+
+    let exponentPart = '';
+    if (xExponent) {
+      exponentPart = `×10${toSuperscript(xExponent)}`;
+    }
+
+    let unitText = '';
+    if (exponentPart && xUnit) {
+      unitText = `${exponentPart} ${xUnit}`;
+    } else if (exponentPart) {
+      unitText = exponentPart;
+    } else if (xUnit) {
+      unitText = xUnit;
+    }
+
+    const xCurveTitle = this.grapher.currentXCurve || '';
+    const xTitle = xCurveTitle ? `${xCurveTitle}${unitText ? ` (${unitText})` : ''}` : (unitText ? `(${unitText})` : '');
+
+    const currentYExponent = (this.grapher.chart.yAxis && this.grapher.chart.yAxis[0] && this.grapher.chart.yAxis[0].exponent) || 0;
 
     return {
       chart: { 
@@ -4258,7 +4282,7 @@ export default class UIManager {
       },
       xAxis: [{
         title: {
-          text: `${this.grapher.currentXCurve}${xUnit}`,
+          text: xTitle,
           align: 'high',
           style: { 
             color: '#000000', 
@@ -4267,6 +4291,35 @@ export default class UIManager {
           }
         }
       }],
+      legend: {
+        useHTML: false,
+        labelFormatter: function () {
+          const unit = this.userOptions.unit || '';
+          const yAxis = this.chart && this.chart.yAxis && this.chart.yAxis[0];
+          const yExponent = (yAxis && yAxis.exponent) || currentYExponent || 0;
+
+          let exponentPart = '';
+          if (yExponent) {
+            exponentPart = `×10${toSuperscript(yExponent)}`;
+          }
+
+          let content = '';
+          if (exponentPart && unit) {
+            content = `${exponentPart} ${unit}`;
+          } else if (exponentPart) {
+            content = exponentPart;
+          } else if (unit) {
+            content = unit;
+          }
+
+          let labelText = this.name || '';
+          if (content) {
+            labelText += ` (${content})`;
+          }
+
+          return labelText;
+        }
+      },
       series: this.grapher.chart.series.map(s => ({ 
         showInLegend: s.visible && s.options.showInLegend !== false 
       }))
