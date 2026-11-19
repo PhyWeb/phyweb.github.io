@@ -4178,13 +4178,15 @@ export default class UIManager {
         if (this.grapher && this.grapher.chart) {
            const exportChartOptions = this.getExportChartOptions(dims.w, dims.h, factor);
 
-           this.grapher.chart.exportChartLocal({
-               type: format,
-               filename: 'phyweb_graphe',
-               scale: scale,
-               sourceWidth: dims.w,
-               sourceHeight: dims.h
-           }, exportChartOptions);
+           this._withExportLegendState(() => {
+             this.grapher.chart.exportChartLocal({
+                 type: format,
+                 filename: 'phyweb_graphe',
+                 scale: scale,
+                 sourceWidth: dims.w,
+                 sourceHeight: dims.h
+             }, exportChartOptions);
+           });
         }
         this.common.modalManager.closeAllModals();
       } else {
@@ -4209,7 +4211,7 @@ export default class UIManager {
       if (this.grapher && this.grapher.chart) {
         // 1. Récupère le SVG brut
         const exportChartOptions = this.getExportChartOptions(dims.w, dims.h, factor);
-        const svg = this.grapher.chart.getSVG(exportChartOptions);
+        const svg = this._withExportLegendState(() => this.grapher.chart.getSVG(exportChartOptions));
         
         // 2. Prépare un canvas avec la résolution voulue (scale)
         const canvas = document.createElement('canvas');
@@ -4241,6 +4243,44 @@ export default class UIManager {
         img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
       }
     });
+  }
+
+  /**
+   * Ajuste temporairement showInLegend dans userOptions pour l'export,
+   * afin que les séries masquées n'apparaissent pas barrées dans la légende exportée.
+   * Restaure systématiquement l'état original après l'exécution du callback.
+   * @param {Function} callback
+   * @returns {*}
+   */
+  _withExportLegendState(callback) {
+    const series = this.grapher?.chart?.series || [];
+    const savedStates = [];
+
+    for (const s of series) {
+      if (!s) continue;
+      const createdUserOptions = !s.userOptions;
+      if (createdUserOptions) {
+        s.userOptions = {};
+      }
+      const hadProperty = Object.prototype.hasOwnProperty.call(s.userOptions, 'showInLegend');
+      const originalValue = s.userOptions.showInLegend;
+      savedStates.push({ series: s, createdUserOptions, hadProperty, originalValue });
+      s.userOptions.showInLegend = Boolean(s.visible && s.options?.showInLegend !== false);
+    }
+
+    try {
+      return callback();
+    } finally {
+      for (const { series: s, createdUserOptions, hadProperty, originalValue } of savedStates) {
+        if (createdUserOptions) {
+          delete s.userOptions;
+        } else if (hadProperty) {
+          s.userOptions.showInLegend = originalValue;
+        } else {
+          delete s.userOptions.showInLegend;
+        }
+      }
+    }
   }
 
   /**
@@ -4319,10 +4359,7 @@ export default class UIManager {
 
           return labelText;
         }
-      },
-      series: this.grapher.chart.series.map(s => ({ 
-        showInLegend: s.visible && s.options.showInLegend !== false 
-      }))
+      }
     };
   }
 
@@ -4333,7 +4370,7 @@ export default class UIManager {
     if (!this.grapher || !this.grapher.chart) return '';
     
     const exportChartOptions = this.getExportChartOptions(width, height, factor);
-    const svg = this.grapher.chart.getSVG(exportChartOptions);
+    const svg = this._withExportLegendState(() => this.grapher.chart.getSVG(exportChartOptions));
     
     let html = `
       <body style="background-color: white; font-family: sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; box-sizing: border-box;">
@@ -4427,7 +4464,7 @@ export default class UIManager {
 
     if (includeGraph && this.grapher.chart) {
       const exportChartOptions = this.getExportChartOptions(width, height, factor);
-      const svg = this.grapher.chart.getSVG(exportChartOptions);
+      const svg = this._withExportLegendState(() => this.grapher.chart.getSVG(exportChartOptions));
       html += `<div class="svg-container">${svg}</div>`;
     }
 
