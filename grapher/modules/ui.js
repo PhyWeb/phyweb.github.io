@@ -3039,8 +3039,9 @@ export default class UIManager {
 
     // Gère le calcul
     $('#compute-model-confirm-button').onclick = () => {
-      const xValue = parseFloat(xInput.value);
-      if (!isNaN(xValue)) {
+      const cleaned = (xInput.value || '').replace(/\s+/g, '').replace(',', '.');
+      const xValue = cleaned !== '' ? Number(cleaned) : NaN;
+      if (Number.isFinite(xValue)) {
         const yValue = model.calculate(xValue);
         yOutput.value = formatNumber(yValue, this.data?.settings?.significantDigits ?? 4);
       } else {

@@ -336,6 +336,50 @@ describe('IOManager - loadFile() et détection du format de fichier', () => {
       const pwText = io.generatePW();
       assert.ok(!pwText.startsWith('\uFEFF'));
     });
+
+    it('triggerDownload révoque l\'URL Blob via URL.revokeObjectURL avec setTimeout', async () => {
+      const originalCreateObjectURL = URL.createObjectURL;
+      const originalRevokeObjectURL = URL.revokeObjectURL;
+      const origRemoveChild = document.body.removeChild;
+      document.body.removeChild = () => {};
+
+      let createdUrl = null;
+      let revokedUrl = null;
+      let clickCalled = false;
+
+      URL.createObjectURL = () => {
+        createdUrl = 'blob:http://localhost/mock-uuid-grapher';
+        return createdUrl;
+      };
+      URL.revokeObjectURL = (url) => {
+        revokedUrl = url;
+      };
+
+      const mockLink = {
+        setAttribute: () => {},
+        style: {},
+        click: () => { clickCalled = true; }
+      };
+
+      const origCreateElement = global.__createElementOverride;
+      global.__createElementOverride = (tag) => (tag === 'a' ? mockLink : {});
+
+      try {
+        const io = new IOManager({ data: {} });
+        io.triggerDownload('content', 'test.csv');
+        assert.equal(clickCalled, true);
+        assert.equal(createdUrl, 'blob:http://localhost/mock-uuid-grapher');
+        assert.equal(revokedUrl, null);
+
+        await new Promise((resolve) => setTimeout(resolve, 1100));
+        assert.equal(revokedUrl, 'blob:http://localhost/mock-uuid-grapher');
+      } finally {
+        URL.createObjectURL = originalCreateObjectURL;
+        URL.revokeObjectURL = originalRevokeObjectURL;
+        global.__createElementOverride = origCreateElement;
+        document.body.removeChild = origRemoveChild;
+      }
+    });
   });
 });
 

@@ -1,7 +1,7 @@
 import '../helpers/setup.mjs';
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import Data, { Model, parseCellValue } from '../../grapher/modules/data.js';
+import Data, { Model, parseCellValue, COLOR_LIST } from '../../grapher/modules/data.js';
 
 describe('Model - calculateRMSE() et gestion des bornes', () => {
   const createMockData = () => ({
@@ -480,6 +480,26 @@ describe('Data - setValue() et parseCellValue()', () => {
       data.setValue(0, 1, '');
 
       assert.equal(curve[1], null);
+    });
+  });
+
+  describe('Data.addCurve()', () => {
+    it('attribue les couleurs uniques de COLOR_LIST puis cycle au-delà de COLOR_LIST.length', () => {
+      const data = new Data();
+      const curves = [];
+      for (let i = 0; i < COLOR_LIST.length; i++) {
+        curves.push(data.addCurve(`c_${i}`, 'm'));
+        assert.equal(curves[i].color, COLOR_LIST[i]);
+      }
+
+      // 11ème courbe (index 10) : doit cycler sur COLOR_LIST[0] et non pas #000000
+      const curve11 = data.addCurve('c_10', 'm');
+      assert.equal(curve11.color, COLOR_LIST[0]);
+      assert.notEqual(curve11.color, '#000000');
+
+      // 12ème courbe (index 11) : doit cycler sur COLOR_LIST[1]
+      const curve12 = data.addCurve('c_11', 'm');
+      assert.equal(curve12.color, COLOR_LIST[1]);
     });
   });
 });

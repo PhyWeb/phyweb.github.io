@@ -850,8 +850,11 @@ export default class Data {
       return null;
     }
 
-    // Recherche d'une couleur non attribuée
+    // Recherche d'une couleur non attribuée (avec repli cyclique si toutes sont déjà utilisées)
     let color = COLOR_LIST.find(color => !this.curves.some(curve => curve.color === color));
+    if (!color) {
+      color = COLOR_LIST[this.curves.length % COLOR_LIST.length];
+    }
 
     // Création de la grandeur
     let curve = new Curve(title, unit, color, line, markers);

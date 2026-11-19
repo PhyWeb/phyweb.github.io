@@ -208,4 +208,27 @@ describe('App - renameCurve (Mise à jour automatique des formules)', () => {
     assert.equal(updatedEditorContent, null);
     assert.equal(toasts.length, 0);
   });
+
+  it('met à jour les annotations tangent-method et lastSortVariable lors du renommage', () => {
+    app.data.annotations = [
+      { type: 'tangent-method', seriesName: 'x', id: 'ann-1' },
+      { type: 'tangent-method', seriesName: 'autre', id: 'ann-2' },
+      { type: 'free-text', seriesName: 'x', id: 'ann-3' }
+    ];
+    app.data.lastSortVariable = 'x';
+
+    app.renameCurve('x', 'x_new', 'm');
+
+    assert.equal(app.data.annotations[0].seriesName, 'x_new');
+    assert.equal(app.data.annotations[1].seriesName, 'autre');
+    assert.equal(app.data.lastSortVariable, 'x_new');
+  });
+
+  it('ne modifie pas lastSortVariable si une autre variable est renommée', () => {
+    app.data.lastSortVariable = 'y';
+
+    app.renameCurve('x', 'x_new', 'm');
+
+    assert.equal(app.data.lastSortVariable, 'y');
+  });
 });

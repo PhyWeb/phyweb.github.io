@@ -305,4 +305,52 @@ describe('UIManager & Data - Gestion des unités des paramètres de modèles', (
     assert.ok(appendedLi.innerHTML.includes('coeff =') && appendedLi.innerHTML.includes('m/s') && (appendedLi.innerHTML.includes('4,5') || appendedLi.innerHTML.includes('4.5')),
       `Le texte doit contenir le symbole, la valeur et l'unité : ${appendedLi.innerHTML}`);
   });
+
+  describe('openComputeModelModal', () => {
+    it('gère correctement la virgule décimale, les espaces et les entrées invalides', () => {
+      const mockCurve = { title: 'x', unit: 'm', length: 0 };
+      const model = new Model('affine', mockCurve, mockCurve);
+      model.calculate = (x) => x * 2;
+      const data = new Data();
+      const ui = new UIManager({}, data, {}, {}, {}, {});
+
+      const xInput = { value: '' };
+      const yOutput = { value: '' };
+      const confirmButton = {};
+      const modal = { classList: { add: () => {} } };
+
+      global.__querySelectorOverride = (sel) => {
+        if (sel === '#compute-model-x-input') return xInput;
+        if (sel === '#compute-model-y-output') return yOutput;
+        if (sel === '#compute-model-equation') return { innerHTML: '' };
+        if (sel === '#compute-model-x-label') return { textContent: '' };
+        if (sel === '#compute-model-y-label') return { textContent: '' };
+        if (sel === '#compute-model-confirm-button') return confirmButton;
+        if (sel === '#compute-model-modal') return modal;
+        return { value: '', style: {}, classList: { add: () => {} } };
+      };
+
+      ui.openComputeModelModal(model);
+
+      // Saisie avec virgule "1,5"
+      xInput.value = '1,5';
+      confirmButton.onclick();
+      assert.ok(yOutput.value.includes('3'));
+
+      // Saisie avec espaces et virgule "  2,5  "
+      xInput.value = '  2,5  ';
+      confirmButton.onclick();
+      assert.ok(yOutput.value.includes('5'));
+
+      // Saisie invalide
+      xInput.value = 'abc';
+      confirmButton.onclick();
+      assert.equal(yOutput.value, 'Entrée invalide');
+
+      // Saisie vide
+      xInput.value = '   ';
+      confirmButton.onclick();
+      assert.equal(yOutput.value, 'Entrée invalide');
+    });
+  });
 });

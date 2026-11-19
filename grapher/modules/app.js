@@ -95,6 +95,20 @@ export default class App {
         if (model.y.title === oldTitle) model.y.title = newTitle;
     });
 
+    // Mettre à jour les annotations associées à cette courbe
+    if (Array.isArray(this.data.annotations)) {
+        this.data.annotations.forEach(ann => {
+            if (ann && ann.type === 'tangent-method' && ann.seriesName === oldTitle) {
+                ann.seriesName = newTitle;
+            }
+        });
+    }
+
+    // Mettre à jour la variable de tri si elle correspond à la courbe renommée
+    if (this.data.lastSortVariable === oldTitle) {
+        this.data.lastSortVariable = newTitle;
+    }
+
     // Mettre à jour le nom de la série pour la légende
     const seriesToUpdate = this.grapher.chart.series.find(s => s.name === oldTitle);
     if (seriesToUpdate) {
