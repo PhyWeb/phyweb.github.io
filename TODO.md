@@ -60,6 +60,7 @@
 # Chromato
 # Spectres
 
+
 # MISC
  - tester le flatpak puis flathub
  - tester sous linux la préselection automatique de l'onglet linux dans la modale de téléchargement
