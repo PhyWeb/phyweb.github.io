@@ -1,0 +1,110 @@
+Oui, ton architecture est globalement propre et bien découpée, mais l’audit complet du code fait ressortir **plusieurs bugs concrets et erreurs de logique métier** — certains pouvant bloquer l’utilisateur ou fausser silencieusement des résultats physiques.
+
+Voici la liste classée par impact, avec les scénarios de reproduction et les pistes de correction.
+
+---
+
+### 1. Bugs critiques (résultats faux, blocages ou plantages)
+
+#### A. Le symbole `E` (Énergie, Champ électrique…) est bloqué, et les modèles amortis s’auto-bloquent (`symbolValidator.js`, `data.js`)
+* **Problème 1 :** Dans `SymbolValidator.isReserved()`, la vérification est **insensible à la casse** (`.toLowerCase()`) contre `RESERVED_SYMBOLS` qui contient `'e'` (constante d’Euler) et `'abs'`. Or `math.js` est sensible à la casse : `E` (majuscule) n’est pas réservé dans `math.js`. Résultat : dans une appli de physique, **un élève ne peut pas créer une grandeur ou écrire `E = Ec + Ep`** (ni `Abs` pour l’absorbance).
+* **Problème 2 :** Dans `data.js` (`Model._applyParams`), `baseNames = ['a', 'b', 'c', 'd', 'e', 'f']`. Pour les modèles à 5 paramètres (`dampedsin`, `dampedcos`), l’appli crée automatiquement un paramètre nommé **`e`** !
+  1. Cela écrase la constante d’Euler `e` dans le scope de calcul.
+  2. Quand l’utilisateur ouvre **« Modifier le modèle »** ne serait-ce que pour changer sa couleur et clique sur **Sauvegarder**, `symbolValidator.validate('e')` **bloque la sauvegarde** en disant que `e` est un mot réservé.
+* **Problème 3 :** `sanitizeSymbol()` (`ioManager.js`) ne vérifie pas `RESERVED_SYMBOLS`. Un CSV contenant une colonne `E` s’importe sans erreur, mais on ne peut ensuite plus modifier son unité dans le tableur car `renameCurve()` rejette `E`.
+* **Correction :** Rendre la réserve sensible à la casse pour `e` (n’interdire que `'e'` minuscule, et n’interdire les fonctions que pour leur nom exact ou éviter d’interdire `Abs` puisque `_normalizeFunctionCases` ne transforme que devant `(`) ; remplacer `'e'` dans `baseNames` (ex. `['a', 'b', 'c', 'd', 'k', 'f']` ou vérifier `isReserved` dans la boucle `while`).
+
+#### B. Erreur d’un facteur $10^n$ sur les graphiques exportés (PNG / JPEG / SVG / PDF) (`ui.js`, `grapher.js`)
+* **Problème :** Dans `getExportChartOptions()` (`ui.js`), tu injectes `×10³` (ou `×10⁻³`, etc.) dans le titre de l’axe X et dans la légende Y en reprenant `this.grapher.chart.xAxis[0].exponent` et `currentYExponent`.
+  Mais lorsque Highcharts crée le graphique temporaire pour `getSVG()` / `exportChartLocal()`, l’événement `afterSetExtremes` n’est pas déclenché sur le chart d’export : `this.axis.exponent` y vaut `undefined` (`0`).
+* **Conséquence :** Les graduations exportées affichent `1 000, 2 000, 3 000` **alors que le titre de l’axe ou la légende indique `(×10³)`** ! Le graphique exporté est scientifiquement faux d’un facteur $10^n$.
+* **Correction :** Passer aussi des `labels.formatter` (ou les exposants `currentXExponent` / `currentYExponent`) dans `getExportChartOptions()` pour `xAxis[0]` et `yAxis[0]`.
+
+#### C. Plusieurs bugs dans le moteur de calcul (`calculation.js`)
+1. **Opérateur unaire `-` (`unaryMinus`) qui plante sur les tableaux contenant `null` :**
+   `derivateEdges` vaut `false` par défaut (`settingsManager.js`), donc `v = diff(x, t)` contient toujours des `null` aux extrémités. `configureOperator` surcharge `add`, `subtract`, `multiply`, `divide`, `pow`, mais **pas `unaryMinus` ni `unaryPlus`**. Écrire `u = -v` ou `-(m * g * z)` lève `TypeError: Unexpected type of argument in function unaryMinus`.
+2. **Opérations entre colonnes de longueurs différentes :**
+   Si l’utilisateur a rempli 5 lignes pour `x` et seulement 3 pour `y`, `x + y` ou `x * y` échoue avec une `DimensionError` de `math.map`, alors que `diff` et `integrate` gèrent déjà des longueurs inégales.
+3. **Calculs silencieusement faux si un paramètre vaut `null` :**
+   Dans `configureOperator`, les signatures `'Array | Matrix, any'` font `valA + b` / `valA * b` / `valA / b` sans vérifier `b === null`. Si un paramètre `p` vaut `null` (ex. `p = sqrt(-1)`), `x + p` renvoie `x`, `x * p` renvoie `0` et `x / p` renvoie `Infinity` sans erreur !
+4. **Nombres complexes, `Infinity` et `NaN` non filtrés :**
+   Seuls `sqrt`, `log`, `ln` protègent contre les résultats complexes. `asin(1.5)`, `acos(2)`, `acosh(0.5)`, `atanh(2)` renvoient des objets `Complex` de math.js dans le tableau de la courbe (qui cassent ensuite les opérations suivantes en concaténation de chaînes `"[object Object]1"`). De même, une division par `0` met `Infinity`/`NaN` dans la courbe au lieu de `null`.
+5. **`preprocessDecimalCommas` découpe les virgules décimales françaises dans `min`/`max`/`hypot` :**
+   La branche `['min', 'max', 'hypot', 'gcd', 'lcm']` transforme `min(x, 0,5)` en **`min(x, 0, 5)`** et `max(1,5, 2,5)` en **`max(1, 5, 2, 5)`** car `topLevelCommas > 1` et les chiffres sont bordés par `'('`, `','`, `' '` ou `')'`.
+
+#### D. Bouton « Arrêter le calcul » (`#dynamic-stop-btn`) cassé lors de la création ou du recalcul de plusieurs modèles (`ui.js`)
+* **Cas 1 (crash à la création d’un modèle) :** Quand on clique sur « Arrêter le calcul » pendant `addModel()`, le listener dans `initGrapherControls()` appelle `this.updateModelPanel(activeModelToStop)`. Or `createModelPanel()` n’est appelé qu’*après* la résolution de `addModel()`. `panel` vaut `null` -> `TypeError: Cannot read properties of null (reading 'querySelector')`, ce qui interrompt le handler avant `hideLoading()`.
+* **Cas 2 (recalcul multiple) :** `recalculateAllModels()` lance tous les modèles en parallèle (`Promise.allSettled`). Comme `activeModelToStop` est une variable scalaire unique, chaque `model-fit-start` écrase le précédent et dès que le modèle le plus rapide se termine (`model-fit-end`), `activeModelToStop` repasse à `null` : le bouton « Arrêter » ne fait plus rien pour les modèles encore en cours.
+* **Correction :** Maintenir un `Set` de modèles actifs (`activeFittingModels`), arrêter tous les modèles du `Set` au clic, et protéger `updateModelPanel()` avec `if (!panel) return;`.
+
+#### E. Tableaux creux (`sparse arrays`) dans `Data.getTable()` et export CSV corrompu (`data.js`, `ioManager.js`)
+* **Problème :** Dans `Data.getTable()`, la longueur max `size` est calculée mais **jamais utilisée**. `curve.forEach(...)` saute les trous des tableaux creux (ex. si on saisit une valeur en ligne 5 en laissant les lignes 0–4 vides dans cette colonne) et laisse des lignes de longueurs différentes dans `table`.
+* **Conséquence :** `generateCSV()` produit un CSV avec un nombre incohérent de colonnes par ligne, voire plante (`row.map` sur un trou `undefined`).
+* **Correction :** Construire `table` avec une double boucle indexée `for (let j = 0; j < size; j++)` initialisant chaque cellule à `curve[j] ?? null`.
+
+---
+
+### 2. Erreurs de logique métier majeures
+
+#### A. Changer une courbe calculée en paramètre laisse une courbe « zombie » (`app.js`)
+* **Scénario :** L’utilisateur définit `E = 0.5 * m * v^2` (crée la courbe `E`), puis modifie la ligne en `E = 10` (qui devient un paramètre scalaire).
+* **Problème :** Dans `applyCalculation()`, `newCalculatedTitles` contient tous les noms de formules (`'E'`), sans distinguer courbes et paramètres. L’ancienne courbe calculée `E` n’est donc jamais supprimée de `data.curves` ni du graphique, ses modèles dépendants restent actifs, et `E` existe désormais en double (courbe + paramètre).
+
+#### B. `updateFormulasReferences()` corrompt les unités et commentaires lors d’un renommage (`ioManager.js`, `app.js`)
+* **Scénario :** Tu as une grandeur `s` (distance) et une formule `v_m/s = diff(s, t) # vitesse en m/s`. Tu renommes la courbe `s` en `d`.
+* **Problème :** La regex `(?<![a-zA-Z0-9À-ÿ_])s(?![a-zA-Z0-9À-ÿ_])` s’applique sur tout le texte brut : elle transforme `v_m/s` en **`v_m/d`** et modifie le commentaire !
+* **Problème inverse :** Si un fichier `.pw` ou `.rw3` renomme une variable calculée (ex. `v-1` -> `v1`), une ligne `v-1_m/s = ...` ne sera pas remplacée à gauche du `=` car `_` est interdit dans le lookahead `(?![a-zA-Z0-9À-ÿ_])`.
+
+#### C. Suppression d’un modèle pendant le mode « Ajuster les bornes » (`edit-bounds`) (`ui.js`, `grapher.js`)
+* Si le mode `edit-bounds` est actif sur un modèle et que l’utilisateur clique sur la corbeille de ce modèle (ou supprime une courbe dont il dépend), les poignées et la bande grise restent affichées sur le graphe avec `grapher.editingModel` pointant sur le modèle supprimé. Déplacer une poignée relance `fit()` sur le modèle détruit et plante ensuite dans `updateModelPanel()`.
+* De plus, dans `grapher.js` (`handleMouseUp` en mode `edit-bounds`) :
+  * Si on rapproche trop les poignées (< 2 points), `fit()` échoue **sans toast** et **sans restaurer** les anciennes bornes valides.
+  * Quand le recalcul réussit, `uiManager.updateCalculationUI()` n’est pas appelé : la barre latérale *Calculs* affiche encore les anciennes valeurs des paramètres.
+  * Zoomer ou redimensionner la fenêtre pendant `edit-bounds` laisse les poignées à leurs anciens pixels (`drawModelBounds` n’est pas rafraîchi sur `redraw`).
+
+#### D. Sauvegarder en `.csv` ou `.rw3` efface l’alerte de données non sauvegardées (`ui.js`)
+* Dans `initSaveModal()`, `#download-file-button` appelle systématiquement `this.markAsSaved()`, même pour un export `.csv` (qui prévient pourtant que *« Les courbes calculées, modèles et annotations seront perdus »*) ou `.rw3` (qui perd les modèles et annotations). Si l’utilisateur quitte ensuite la page, aucun avertissement ne lui signale qu’il perd son travail.
+* **Correction :** N’appeler `this.markAsSaved()` que si `selectedFormat === 'pw'` (ou s’il n’y a rien de perdu par le format choisi).
+
+#### E. Dérivée seconde (`diff(diff(x, t), t)`) avec `derivateEdges = false` (`calculation.js`)
+* Dans `numericalDerivative()`, `isEdgePoint(i)` vérifie uniquement la proximité aux indices `0` et `n - 1` du tableau, sans tenir compte des `null` en début/fin de `yArr`.
+* Sur une dérivée seconde (où `v = diff(x, t)` commence et finit déjà par des `null`), les vrais bords du domaine valide de `v` ne sont pas reconnus comme bords : le code saute les stencils 5 et 3 points et retombe silencieusement sur une différence finie à 2 points, contredisant le réglage `derivateEdges = false`.
+
+#### F. `Model.getHighResData()` envoie `NaN` et `±Infinity` à Highcharts (`data.js`)
+* Pour les modèles `ln` et `log`, comme `includeOriginOnAutoZoom` est `true` par défaut, `xAxis.min` vaut très souvent `0`. `Math.log(0)` produit `-Infinity` (et `NaN` si `minX < 0`). Même problème pour `power` (`x <= 0`), ou `exp1`/`exp2`/`damped*` si le paramètre de temps vaut `0`.
+* **Correction :** Remplacer tout `y` non fini (`!Number.isFinite(y)`) par `null` dans `getHighResData()`.
+
+#### G. Outils du grapheur (`grapher.js`) : plusieurs comportements incohérents
+1. **Mode `tangent` / `tangent-method` :** Si la souris bouge de ≥ 5 px pendant le clic, `handleMouseMove` tombe dans le `else` du mode libre et dessine un segment temporaire rouge avec lignes Δx/Δy bleues.
+2. **Clic lent ignoré :** La condition `if (distance < 5 && duration < 300)` dans `handleMouseUp` ignore complètement un clic immobile qui dure plus de 300 ms (fréquent sur trackpad).
+3. **Fallback involontaire en mode libre :** En mode `data` ou `model`, si `snappedDataPoint` / `snappedModelPoint` est `null`, `handleMouseUp` tombe dans le `else` du mode libre et pose une annotation libre. En mode libre, cliquer dans les marges (hors `plotBox`) crée quand même une annotation invisible et affiche le bouton « Effacer les annotations ».
+4. **Annotations non liées à l’axe X et non clippées :** Changer l’abscisse X laisse les anciennes annotations tracées aux anciennes coordonnées sur le nouveau repère. De plus, les segments, tangentes et méthodes des tangentes ne sont pas clippés à la zone de tracé (`plotBox`) : lors d’un zoom ou d’une tangente raide (saut de pH), la droite traverse les axes et la légende.
+
+#### H. Insertion d’une constante physique en cours de saisie (`ui.js`)
+* Dans `initCalculationControls()`, cliquer sur une constante (`g`, `c`, `NA`…) appelle immédiatement `this.app.applyCalculation(this.editor.getValue())` même si l’utilisateur était au milieu d’une ligne incomplète (ex. `v = sqrt(2 * `). Cela affiche une erreur rouge et **vide la courbe calculée en cours** (`existingCurve.length = 0`).
+* De plus, la détection d’une constante déjà déclarée compare `Number(cleanRhs)` sans remplacer la virgule par un point : si l’utilisateur avait écrit `g = 9,81`, l’appli refuse en affirmant que `g` a une autre valeur.
+
+---
+
+### 3. Bugs mineurs, désynchronisations d’UI et nettoyage
+
+1. **Modale « Courbes » (`ui.js`) :** Changer l’abscisse via `#choose-x-curve-select` n’appelle pas `this.updateXAxisSelector()` -> le menu déroulant `#xaxis-select` sous le graphe reste désynchronisé.
+2. **Effacement de tous les calculs (`app.js`) :** Quand `applyCalculation("")` supprime les courbes calculées, il filtre `this.data.curves` directement sans passer par `this.data.deleteCurve()`, et n’appelle ni `updateSortUI()` ni `updateXAxisSelector()`.
+3. **Suppression d’une courbe brute (`app.js`) :** `deleteCurve()` n’appelle pas `this.uiManager.setCalculationsStale(true)`. Une grandeur calculée qui dépendait de la courbe supprimée reste affichée sans proposer de recalculer.
+4. **Croissance infinie de lignes `null` dans Handsontable (`spreadsheet.js`) :** Appuyer sur `Suppr` sur la ligne vide du bas (`minSpareRows`) appelle `data.setValue(col, actualRow, null)`, ce qui augmente `curve.length` et recrée une nouvelle ligne vide. De plus, `handleAfterChange` ne filtre pas `oldVal === newVal`.
+5. **Redimensionnement (`main.js`, `ui.js`) :** `resize()` met Handsontable à `height: 0` si l’onglet Tableur est caché ; à l’inverse, cliquer sur `#grapheur-tab` n’appelle pas `this.grapher.chart.reflow()` (le graphique ne s’adapte pas si la fenêtre a été redimensionnée depuis un autre onglet).
+6. **Bouton « Exporter / Imprimer » sur l’écran d’accueil (`ui.js`) :** Contrairement à « Sauvegarder », aucun test ne vérifie si une session est ouverte : il révèle le panneau Grapheur sous `#empty-state-container`.
+7. **Import CSV & RW3 (`ioManager.js`) :**
+   * Dans `loadData()`, `parseFloat("1 200.5")` renvoie `1` au lieu de `1200.5` (les espaces ne sont pas retirés contrairement à `parseCellValue`).
+   * Un CSV à 1 seule colonne ne contient pas de `\t`, donc `splitFlexible` découpe sur les doubles espaces.
+   * Dans `loadRW3File()`, `setXCurve(chosenX, false)` est appelé après `loadData()` sans `resetZoom()`, donc si l’axe X du RW3 n’est pas la 1ère colonne, les bornes X peuvent rester sur celles de la 1ère colonne. De plus, `loadData()` exécute `applyCalculation()` *avant* que `this.app.pendingRW3` ne soit défini.
+   * `generateRW3()` utilise `leftPart.lastIndexOf('_')` alors que `app.js` utilise `leftPart.split('_')[0]` (incohérent si une unité contient `_`).
+8. **Modales (`ui.js`, HTML) :**
+   * `openEditModelModal` : `pointsDansIntervalle` ne vérifie que `model.x` sans vérifier `model.y[i]`.
+   * `openAddModelModal` : filtre les séries modèles par `!series.name.startsWith('Modèle')` au lieu de `!series.options.id?.startsWith('model-')`.
+   * `Data.addModel` : accède à `y.color` sans vérifier que `x` et `y` existent (rendant le `else` de `app.addModel` inatteignable).
+   * Plusieurs modales sont ouvertes via `.classList.add('is-active')` au lieu de `this.common.modalManager.openModal(...)`, ce qui court-circuite le hook `onModalOpen` (désélection Handsontable).
+   * `#download-modal` et `#init-session-modal` cumulent `data-modal-confirm` et un listener `keydown` sur `Enter` sans `stopPropagation()` : si ton `ModalManager` dans `common.js` gère aussi `Enter`, la confirmation se déclenche deux fois.
+   * Dans le HTML : attribut `style` dupliqué sur la `.box` de `#empty-state-container` (`width: 600px` est ignoré par le navigateur), une balise `</div>` fermante en trop après `#calculs-panel`, et attribut `step="any"` manquant sur `#parameter-value-input`, `#model-edit-borne-debut-input`, `#model-edit-borne-fin-input` et `#compute-model-x-input`.
+
+Si tu veux, je peux te proposer les correctifs précis fichier par fichier en commençant par les plus critiques (`symbolValidator.js` + `data.js`, `calculation.js`, et l’export `×10ⁿ` dans `ui.js`).
