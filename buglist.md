@@ -70,7 +70,6 @@ Voici la liste classée par impact, avec les scénarios de reproduction et les p
 
 ### 3. Bugs mineurs, désynchronisations d’UI et nettoyage
 
-1. **Modale « Courbes » (`ui.js`) :** Changer l’abscisse via `#choose-x-curve-select` n’appelle pas `this.updateXAxisSelector()` -> le menu déroulant `#xaxis-select` sous le graphe reste désynchronisé.
 2. **Effacement de tous les calculs (`app.js`) :** Quand `applyCalculation("")` supprime les courbes calculées, il filtre `this.data.curves` directement sans passer par `this.data.deleteCurve()`, et n’appelle ni `updateSortUI()` ni `updateXAxisSelector()`.
 3. **Suppression d’une courbe brute (`app.js`) :** `deleteCurve()` n’appelle pas `this.uiManager.setCalculationsStale(true)`. Une grandeur calculée qui dépendait de la courbe supprimée reste affichée sans proposer de recalculer.
 4. **Croissance infinie de lignes `null` dans Handsontable (`spreadsheet.js`) :** Appuyer sur `Suppr` sur la ligne vide du bas (`minSpareRows`) appelle `data.setValue(col, actualRow, null)`, ce qui augmente `curve.length` et recrée une nouvelle ligne vide. De plus, `handleAfterChange` ne filtre pas `oldVal === newVal`.
