@@ -529,6 +529,41 @@ describe('Calculation Module', () => {
       assert.equal(byName.z[2], 0);
       assert.equal(byName.z[3], 1);
     });
+
+    it('doit supporter unaryMinus (-) et unaryPlus (+) sur les tableaux contenant null', () => {
+      const calcNoEdges = new Calculation({ derivatePoints: 5, derivateEdges: false });
+      const scope = {
+        t: [0, 1, 2, 3, 4, 5],
+        x: [0, 1, 4, 9, 16, 25],
+        m: { value: 2, unit: 'kg' },
+        g: { value: 9.81, unit: 'm/s^2' },
+        z: [null, 10, 20, 30, null]
+      };
+
+      const formulas = [
+        { variableName: 'v', expression: 'diff(x, t)', unit: 'm/s' },
+        { variableName: 'u', expression: '-v', unit: 'm/s' },
+        { variableName: 'p', expression: '+v', unit: 'm/s' },
+        { variableName: 'Ep', expression: '-(m * g * z)', unit: 'J' }
+      ];
+
+      const { results, errors } = calcNoEdges.evaluateBlock(formulas, scope);
+      assert.equal(errors.length, 0, `Erreurs inattendues: ${JSON.stringify(errors)}`);
+
+      const byName = Object.fromEntries(results.map(r => [r.variableName, r.data]));
+      // v avec derivateEdges: false -> [null, null, 4, 6, null, null]
+      assert.deepEqual(byName.v, [null, null, 4, 6, null, null]);
+      // u = -v -> [null, null, -4, -6, null, null]
+      assert.deepEqual(byName.u, [null, null, -4, -6, null, null]);
+      // p = +v -> [null, null, 4, 6, null, null]
+      assert.deepEqual(byName.p, [null, null, 4, 6, null, null]);
+      // Ep = -(2 * 9.81 * z) avec z[0] et z[4] à null
+      assert.equal(byName.Ep[0], null);
+      assert.equal(byName.Ep[1], -(2 * 9.81 * 10));
+      assert.equal(byName.Ep[2], -(2 * 9.81 * 20));
+      assert.equal(byName.Ep[3], -(2 * 9.81 * 30));
+      assert.equal(byName.Ep[4], null);
+    });
   });
 
   describe('Prétraitement des virgules (preprocessDecimalCommas & preprocessExpression)', () => {

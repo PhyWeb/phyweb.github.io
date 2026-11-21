@@ -100,6 +100,20 @@ export default class Calculation {
     configureOperator('multiply', (a, b) => a * b);
     configureOperator('divide', (a, b) => a / b);
 
+    // Rendre les opérateurs unaires "null-aware"
+    const configureUnaryOperator = (name) => {
+      const originalFunc = mathInstance[name];
+      const typedFunc = mathInstance.typed(name, {
+        'Array | Matrix': (x) => mathInstance.map(x, val => (val === null ? null : originalFunc(val))),
+        'null': () => null,
+        'any': (x) => originalFunc(x)
+      });
+      mathInstance.import({ [name]: typedFunc }, { override: true });
+    };
+
+    configureUnaryOperator('unaryMinus');
+    configureUnaryOperator('unaryPlus');
+
     // Redéfinir la fonction de puissance (pour l'opérateur ^)
     const originalPow = mathInstance.pow;
     const typedPow = mathInstance.typed('pow', {

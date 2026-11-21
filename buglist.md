@@ -7,8 +7,6 @@ Voici la liste classée par impact, avec les scénarios de reproduction et les p
 ### 1. Bugs critiques (résultats faux, blocages ou plantages)
 
 #### C. Plusieurs bugs dans le moteur de calcul (`calculation.js`)
-1. **Opérateur unaire `-` (`unaryMinus`) qui plante sur les tableaux contenant `null` :**
-   `derivateEdges` vaut `false` par défaut (`settingsManager.js`), donc `v = diff(x, t)` contient toujours des `null` aux extrémités. `configureOperator` surcharge `add`, `subtract`, `multiply`, `divide`, `pow`, mais **pas `unaryMinus` ni `unaryPlus`**. Écrire `u = -v` ou `-(m * g * z)` lève `TypeError: Unexpected type of argument in function unaryMinus`.
 2. **Opérations entre colonnes de longueurs différentes :**
    Si l’utilisateur a rempli 5 lignes pour `x` et seulement 3 pour `y`, `x + y` ou `x * y` échoue avec une `DimensionError` de `math.map`, alors que `diff` et `integrate` gèrent déjà des longueurs inégales.
 3. **Calculs silencieusement faux si un paramètre vaut `null` :**
