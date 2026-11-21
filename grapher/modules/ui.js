@@ -2510,6 +2510,7 @@ export default class UIManager {
       // Mise à jour de l'axe X dans le grapheur
       this.grapher.setXCurve($("#choose-x-curve-select").value, true);
       this.updateAllModelPanelVisibilityIcons();
+      this.updateXAxisSelector();
       populateCurveMenu();
     });
 
