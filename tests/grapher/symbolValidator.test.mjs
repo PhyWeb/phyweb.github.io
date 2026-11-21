@@ -12,6 +12,9 @@ describe('SymbolValidator', () => {
       assert.equal(validator.validate('t').isValid, true);
       assert.equal(validator.validate('x').isValid, true);
       assert.equal(validator.validate('theta').isValid, true);
+      assert.equal(validator.validate('E').isValid, true);
+      assert.equal(validator.validate('Abs').isValid, true);
+      assert.equal(validator.validate('k').isValid, true);
     });
 
     it('doit accepter les variables avec des chiffres (sans underscore)', () => {
@@ -72,6 +75,11 @@ describe('SymbolValidator', () => {
       assert.equal(validator.validate('e').isValid, false);
       assert.equal(validator.validate('pi').isValid, false);
       assert.equal(validator.validate('PI').isValid, false);
+      assert.equal(validator.validate('E').isValid, true);
+      assert.equal(SymbolValidator.isReserved('e'), true);
+      assert.equal(SymbolValidator.isReserved('E'), false);
+      assert.equal(SymbolValidator.isReserved('abs'), true);
+      assert.equal(SymbolValidator.isReserved('Abs'), false);
     });
 
     it('doit refuser les fonctions mathématiques scalaires (sin, cos, exp, log, sqrt, etc.)', () => {

@@ -1,6 +1,7 @@
 import {Curve, Model, COLOR_LIST} from './data.js';
 import Papa from '../../common/papaparse/papaparse.esm.js';
 import {removeAccents, showToast} from '../../common/common.js';
+import SymbolValidator from './symbolValidator.js';
 
 // Fonctions utilitaires
 function splitFlexible(line, delimiter) {
@@ -64,10 +65,13 @@ function sanitizeSymbol(str, existingSymbols) {
     s = "v" + (s === "" ? "ar" : s);
   }
   
-  // 4. Garantit l'unicité
+  // 4. Garantit l'absence de mot réservé et l'unicité
   let finalSymbol = s;
-  let counter = 2;
-  while (existingSymbols && existingSymbols.has(finalSymbol)) {
+  let counter = SymbolValidator.isReserved(finalSymbol) ? 1 : 2;
+  while (
+    SymbolValidator.isReserved(finalSymbol) ||
+    (existingSymbols && existingSymbols.has(finalSymbol))
+  ) {
     finalSymbol = `${s}${counter}`;
     counter++;
   }

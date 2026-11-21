@@ -3,17 +3,27 @@
  */
 export default class SymbolValidator {
   /**
-   * Ensemble des mots réservés (fonctions, constantes mathématiques et mots-clés)
+   * Ensemble des mots réservés sensibles à la casse (casse exacte).
+   * 'e' (constante d'Euler) et 'abs' (valeur absolue) ne doivent pas interdire
+   * les grandeurs physiques fondamentales majuscules comme 'E' (Énergie) ou 'Abs' (Absorbance).
+   */
+  static EXACT_RESERVED_SYMBOLS = new Set([
+    'e',
+    'abs'
+  ]);
+
+  /**
+   * Ensemble des mots réservés insensibles à la casse (fonctions, constantes mathématiques et mots-clés)
    * incompatibles avec un nom de grandeur ou de paramètre dans math.js.
    */
   static RESERVED_SYMBOLS = new Set([
     // Constantes mathématiques et mots-clés
-    'e', 'pi',
+    'pi',
     'infinity', 'nan',
     'true', 'false', 'null', 'undefined',
 
     // Fonctions scalaires supportées par PhyWeb (Calculation.js)
-    'sqrt', 'cbrt', 'abs', 'exp', 'log', 'ln',
+    'sqrt', 'cbrt', 'exp', 'log', 'ln',
     'round', 'floor', 'ceil', 'fix', 'sign',
     'sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'atan2',
     'sinh', 'cosh', 'tanh', 'asinh', 'acosh', 'atanh',
@@ -40,13 +50,28 @@ export default class SymbolValidator {
   }
 
   /**
-   * Vérifie si un symbole correspond à un mot réservé (insensible à la casse).
+   * Vérifie si un symbole correspond à un mot réservé.
+   * La vérification est sensible à la casse pour les symboles de EXACT_RESERVED_SYMBOLS ('e', 'abs'),
+   * et insensible à la casse pour les autres mots réservés de RESERVED_SYMBOLS.
+   * @param {string} symbol - Le symbole à tester.
+   * @returns {boolean}
+   */
+  static isReserved(symbol) {
+    if (!symbol || typeof symbol !== 'string') return false;
+    const trimmed = symbol.trim();
+    if (SymbolValidator.EXACT_RESERVED_SYMBOLS.has(trimmed)) {
+      return true;
+    }
+    return SymbolValidator.RESERVED_SYMBOLS.has(trimmed.toLowerCase());
+  }
+
+  /**
+   * Vérifie si un symbole correspond à un mot réservé.
    * @param {string} symbol - Le symbole à tester.
    * @returns {boolean}
    */
   isReserved(symbol) {
-    if (!symbol || typeof symbol !== 'string') return false;
-    return SymbolValidator.RESERVED_SYMBOLS.has(symbol.trim().toLowerCase());
+    return SymbolValidator.isReserved(symbol);
   }
 
   /**
@@ -75,8 +100,11 @@ export default class SymbolValidator {
       };
     }
 
-    const isAlreadyUsed = this.data.curves.some(c => c.title === symbol && !ignoreList.includes(symbol)) ||
-      (this.data.parameters.hasOwnProperty(symbol) && !ignoreList.includes(symbol));
+    const curves = Array.isArray(this.data?.curves) ? this.data.curves : [];
+    const params = this.data?.parameters || {};
+
+    const isAlreadyUsed = curves.some(c => c.title === symbol && !ignoreList.includes(symbol)) ||
+      (Object.prototype.hasOwnProperty.call(params, symbol) && !ignoreList.includes(symbol));
 
     if (isAlreadyUsed) {
       return {

@@ -2,7 +2,8 @@ import '../helpers/setup.mjs';
 import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import App from '../../grapher/modules/app.js';
-import { updateFormulasReferences } from '../../grapher/modules/ioManager.js';
+import { updateFormulasReferences, sanitizeSymbol } from '../../grapher/modules/ioManager.js';
+import SymbolValidator from '../../grapher/modules/symbolValidator.js';
 
 describe('IOManager - updateFormulasReferences', () => {
   it('ne remplace pas les sous-mots (ex: x dans exp, flux, max)', () => {
@@ -230,5 +231,60 @@ describe('App - renameCurve (Mise à jour automatique des formules)', () => {
     app.renameCurve('x', 'x_new', 'm');
 
     assert.equal(app.data.lastSortVariable, 'y');
+  });
+
+  it('autorise le renommage ou la modification d\'unité avec le symbole E et Abs via un vrai SymbolValidator', () => {
+    app.symbolValidator = new SymbolValidator(app.data);
+    let curveE = { title: 'E', unit: '' };
+    app.data.getCurveByTitle = (title) => (title === 'E' ? curveE : null);
+
+    app.renameCurve('E', 'E', 'J');
+    assert.equal(curveE.unit, 'J');
+    assert.equal(toasts.length, 0);
+
+    let curveAbs = { title: 'Abs', unit: '' };
+    app.data.getCurveByTitle = (title) => (title === 'Abs' ? curveAbs : null);
+    app.renameCurve('Abs', 'Abs', 'ua');
+    assert.equal(curveAbs.unit, 'ua');
+    assert.equal(toasts.length, 0);
+  });
+
+  it('bloque le renommage si le nouveau symbole est e (minuscule) ou sin via un vrai SymbolValidator', () => {
+    app.symbolValidator = new SymbolValidator(app.data);
+    let curve = { title: 'v', unit: 'm/s' };
+    app.data.getCurveByTitle = (title) => (title === 'v' ? curve : null);
+
+    app.renameCurve('v', 'e', 'm/s');
+    assert.equal(curve.title, 'v');
+    assert.equal(toasts.length, 1);
+    assert.match(toasts[0].innerHTML, /mot réservé/i);
+
+    app.renameCurve('v', 'sin', 'm/s');
+    assert.equal(curve.title, 'v');
+    assert.equal(toasts.length, 2);
+    assert.match(toasts[1].innerHTML, /mot réservé/i);
+  });
+});
+
+describe('IOManager - sanitizeSymbol avec mots réservés', () => {
+  it('préserve les symboles non réservés usuels comme E et Abs', () => {
+    const existing = new Set();
+    assert.equal(sanitizeSymbol('E', existing), 'E');
+    assert.equal(sanitizeSymbol('Abs', existing), 'Abs');
+    assert.equal(sanitizeSymbol('Ec', existing), 'Ec');
+  });
+
+  it('transforme les mots réservés exacts ou insensibles en symboles valides non réservés', () => {
+    const existing = new Set();
+    assert.equal(sanitizeSymbol('e', existing), 'e1');
+    assert.equal(sanitizeSymbol('abs', existing), 'abs1');
+    assert.equal(sanitizeSymbol('sin', existing), 'sin1');
+    assert.equal(sanitizeSymbol('pi', existing), 'pi1');
+  });
+
+  it('incrémente correctement les doublons de symboles existants', () => {
+    const existing = new Set(['E']);
+    assert.equal(sanitizeSymbol('E', existing), 'E2');
+    assert.equal(sanitizeSymbol('E', existing), 'E3');
   });
 });

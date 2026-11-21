@@ -2,6 +2,7 @@ import '../helpers/setup.mjs';
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import Data, { Model, parseCellValue, COLOR_LIST } from '../../grapher/modules/data.js';
+import SymbolValidator from '../../grapher/modules/symbolValidator.js';
 
 describe('Model - calculateRMSE() et gestion des bornes', () => {
   const createMockData = () => ({
@@ -259,6 +260,26 @@ describe('Model - calculateRMSE() et gestion des bornes', () => {
       assert.equal(model.parameters[0].value, 3);
       assert.equal(mockData.parameters['vitesse'].value, 3);
       assert.equal(mockData.parameters['a'], undefined);
+    });
+
+    it('génère a, b, c, d, k pour un modèle à 5 paramètres (dampedsin) sans conflit avec le mot réservé e', () => {
+      const mockData = createMockData();
+      const x = [0, 1, 2, 3, 4];
+      const y = [1, 0, -1, 0, 1];
+      const model = new Model(x, y, 'dampedsin', mockData);
+      model._applyParams([1, 2, 3, 4, 5]);
+
+      const paramNames = model.parameters.map(p => p.name);
+      assert.deepEqual(paramNames, ['a', 'b', 'c', 'd', 'k']);
+      assert.equal(mockData.parameters['e'], undefined);
+      assert.equal(mockData.parameters['k'].value, 5);
+
+      const validator = new SymbolValidator(mockData);
+      const ignoreList = model.parameters.map(p => p.name);
+      for (const param of model.parameters) {
+        const valRes = validator.validate(param.name, { ignoreList });
+        assert.equal(valRes.isValid, true, `Paramètre ${param.name} doit être valide : ${valRes.message}`);
+      }
     });
   });
 });

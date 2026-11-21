@@ -1,4 +1,5 @@
 import {Serie} from "../../common/common.js"
+import SymbolValidator from "./symbolValidator.js";
 
 const $ = document.querySelector.bind(document);
 
@@ -526,12 +527,13 @@ class Model {
       }
       this.parameters.length = 0;
 
-      const baseNames = ['a', 'b', 'c', 'd', 'e', 'f'];
+      const baseNames = ['a', 'b', 'c', 'd', 'k', 'f'];
       params.forEach((paramValue, i) => {
         let baseName = baseNames[i] || `p${i}`;
         let finalName = baseName;
         let counter = 1;
         while (
+          SymbolValidator.isReserved(finalName) ||
           (this.data && this.data.parameters && this.data.parameters.hasOwnProperty(finalName)) ||
           (this.data && this.data.curves && this.data.curves.some(c => c.title === finalName))
         ) {

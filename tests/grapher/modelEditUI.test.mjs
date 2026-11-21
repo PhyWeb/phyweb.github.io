@@ -3,6 +3,7 @@ import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import Data, { Model } from '../../grapher/modules/data.js';
 import UIManager from '../../grapher/modules/ui.js';
+import SymbolValidator from '../../grapher/modules/symbolValidator.js';
 
 describe('UIManager - openEditModelModal & préservation/renommage des paramètres', () => {
   let elementsMap;
@@ -324,5 +325,25 @@ describe('UIManager - openEditModelModal & préservation/renommage des paramètr
     assert.equal(model.color, '#ff0000', 'La couleur ne doit pas avoir été modifiée');
     assert.equal(model.minX, null, 'minX ne doit pas avoir été modifié avant la validation');
     assert.equal(model.maxX, null, 'maxX ne doit pas avoir été modifié avant la validation');
+  });
+
+  it('permet de sauvegarder un modèle amorti à 5 paramètres (a, b, c, d, k) avec le vrai SymbolValidator sans être bloqué', async () => {
+    const { data, ui, mockApp } = setupEnv();
+    const dampedModel = new Model(data.curves[0], data.curves[1], 'dampedsin', data, '#ff0000', true, 2, 'Solid');
+    dampedModel._applyParams([1, 2, 3, 4, 5]);
+    data.models.push(dampedModel);
+
+    mockApp.symbolValidator = new SymbolValidator(data);
+
+    ui.openEditModelModal(dampedModel);
+
+    elementsMap['#model-edit-color-picker'].value = '#0000ff';
+    assert.ok(currentSaveButton && currentSaveButton.onclick);
+    await currentSaveButton.onclick();
+
+    assert.equal(closedModals, true, 'La modale doit se fermer après validation');
+    assert.equal(dampedModel.color, '#0000ff', 'La couleur doit avoir été modifiée');
+    assert.equal(dampedModel.parameters[4].name, 'k', 'Le 5e paramètre est k');
+    assert.equal(modelPanelUpdated, true, 'Le panneau du modèle doit avoir été mis à jour');
   });
 });
