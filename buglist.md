@@ -6,20 +6,6 @@ Voici la liste classée par impact, avec les scénarios de reproduction et les p
 
 ### 1. Bugs critiques (résultats faux, blocages ou plantages)
 
-#### A. Le symbole `E` (Énergie, Champ électrique…) est bloqué, et les modèles amortis s’auto-bloquent (`symbolValidator.js`, `data.js`)
-* **Problème 1 :** Dans `SymbolValidator.isReserved()`, la vérification est **insensible à la casse** (`.toLowerCase()`) contre `RESERVED_SYMBOLS` qui contient `'e'` (constante d’Euler) et `'abs'`. Or `math.js` est sensible à la casse : `E` (majuscule) n’est pas réservé dans `math.js`. Résultat : dans une appli de physique, **un élève ne peut pas créer une grandeur ou écrire `E = Ec + Ep`** (ni `Abs` pour l’absorbance).
-* **Problème 2 :** Dans `data.js` (`Model._applyParams`), `baseNames = ['a', 'b', 'c', 'd', 'e', 'f']`. Pour les modèles à 5 paramètres (`dampedsin`, `dampedcos`), l’appli crée automatiquement un paramètre nommé **`e`** !
-  1. Cela écrase la constante d’Euler `e` dans le scope de calcul.
-  2. Quand l’utilisateur ouvre **« Modifier le modèle »** ne serait-ce que pour changer sa couleur et clique sur **Sauvegarder**, `symbolValidator.validate('e')` **bloque la sauvegarde** en disant que `e` est un mot réservé.
-* **Problème 3 :** `sanitizeSymbol()` (`ioManager.js`) ne vérifie pas `RESERVED_SYMBOLS`. Un CSV contenant une colonne `E` s’importe sans erreur, mais on ne peut ensuite plus modifier son unité dans le tableur car `renameCurve()` rejette `E`.
-* **Correction :** Rendre la réserve sensible à la casse pour `e` (n’interdire que `'e'` minuscule, et n’interdire les fonctions que pour leur nom exact ou éviter d’interdire `Abs` puisque `_normalizeFunctionCases` ne transforme que devant `(`) ; remplacer `'e'` dans `baseNames` (ex. `['a', 'b', 'c', 'd', 'k', 'f']` ou vérifier `isReserved` dans la boucle `while`).
-
-#### B. Erreur d’un facteur $10^n$ sur les graphiques exportés (PNG / JPEG / SVG / PDF) (`ui.js`, `grapher.js`)
-* **Problème :** Dans `getExportChartOptions()` (`ui.js`), tu injectes `×10³` (ou `×10⁻³`, etc.) dans le titre de l’axe X et dans la légende Y en reprenant `this.grapher.chart.xAxis[0].exponent` et `currentYExponent`.
-  Mais lorsque Highcharts crée le graphique temporaire pour `getSVG()` / `exportChartLocal()`, l’événement `afterSetExtremes` n’est pas déclenché sur le chart d’export : `this.axis.exponent` y vaut `undefined` (`0`).
-* **Conséquence :** Les graduations exportées affichent `1 000, 2 000, 3 000` **alors que le titre de l’axe ou la légende indique `(×10³)`** ! Le graphique exporté est scientifiquement faux d’un facteur $10^n$.
-* **Correction :** Passer aussi des `labels.formatter` (ou les exposants `currentXExponent` / `currentYExponent`) dans `getExportChartOptions()` pour `xAxis[0]` et `yAxis[0]`.
-
 #### C. Plusieurs bugs dans le moteur de calcul (`calculation.js`)
 1. **Opérateur unaire `-` (`unaryMinus`) qui plante sur les tableaux contenant `null` :**
    `derivateEdges` vaut `false` par défaut (`settingsManager.js`), donc `v = diff(x, t)` contient toujours des `null` aux extrémités. `configureOperator` surcharge `add`, `subtract`, `multiply`, `divide`, `pow`, mais **pas `unaryMinus` ni `unaryPlus`**. Écrire `u = -v` ou `-(m * g * z)` lève `TypeError: Unexpected type of argument in function unaryMinus`.
