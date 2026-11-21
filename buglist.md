@@ -32,10 +32,6 @@ Voici la liste classée par impact, avec les scénarios de reproduction et les p
 
 ### 2. Erreurs de logique métier majeures
 
-#### A. Changer une courbe calculée en paramètre laisse une courbe « zombie » (`app.js`)
-* **Scénario :** L’utilisateur définit `E = 0.5 * m * v^2` (crée la courbe `E`), puis modifie la ligne en `E = 10` (qui devient un paramètre scalaire).
-* **Problème :** Dans `applyCalculation()`, `newCalculatedTitles` contient tous les noms de formules (`'E'`), sans distinguer courbes et paramètres. L’ancienne courbe calculée `E` n’est donc jamais supprimée de `data.curves` ni du graphique, ses modèles dépendants restent actifs, et `E` existe désormais en double (courbe + paramètre).
-
 #### B. `updateFormulasReferences()` corrompt les unités et commentaires lors d’un renommage (`ioManager.js`, `app.js`)
 * **Scénario :** Tu as une grandeur `s` (distance) et une formule `v_m/s = diff(s, t) # vitesse en m/s`. Tu renommes la courbe `s` en `d`.
 * **Problème :** La regex `(?<![a-zA-Z0-9À-ÿ_])s(?![a-zA-Z0-9À-ÿ_])` s’applique sur tout le texte brut : elle transforme `v_m/s` en **`v_m/d`** et modifie le commentaire !

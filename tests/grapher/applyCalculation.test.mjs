@@ -57,7 +57,7 @@ describe('App - applyCalculation() et interdiction de redéfinir les grandeurs e
       setXCurve: () => {},
       updateChart: () => {},
       deleteCurve: () => {},
-      chart: { series: [] }
+      chart: { series: [], get: () => null }
     };
 
     const calculation = new Calculation({ derivatePoints: 5, derivateEdges: true });
@@ -71,7 +71,9 @@ describe('App - applyCalculation() et interdiction de redéfinir les grandeurs e
       updateCalculationUI: () => {},
       updateSortUI: () => {},
       updateXAxisSelector: () => {},
-      setCalculationsStale: () => {}
+      setCalculationsStale: () => {},
+      updateRecalculateButtonVisibility: () => {},
+      updateModelToolVisibility: () => {}
     };
 
     app = new App(data, mockSpreadsheet, mockGrapher, calculation, mockEditor, mockUIManager);
@@ -295,5 +297,44 @@ describe('App - applyCalculation() et interdiction de redéfinir les grandeurs e
     const errorToast = toastLog.find(t => t.innerHTML.includes('la grandeur de dérivation contient deux valeurs identiques consécutives'));
     assert.ok(errorToast, 'Un toast d\'erreur de valeurs identiques consécutives doit être affiché');
     assert.ok(errorToast.className.includes('is-danger'));
+  });
+
+  it('doit supprimer une courbe calculée lorsqu\'elle est modifiée en paramètre scalaire (pas de courbe zombie)', () => {
+    // 1. L'utilisateur définit une courbe calculée E = 2 * x
+    app.applyCalculation('E = 2 * x');
+
+    const curveE = data.getCurveByTitle('E');
+    assert.ok(curveE, 'La courbe calculée E doit exister');
+    assert.equal(curveE.type, 'calculation');
+    assert.equal(data.parameters['E'], undefined, 'E ne doit pas être dans les paramètres');
+
+    // 2. L'utilisateur modifie la ligne en paramètre scalaire : E = 10
+    app.applyCalculation('E = 10');
+
+    // E doit être dans data.parameters
+    assert.ok(data.parameters['E'], 'E doit être dans data.parameters');
+    assert.equal(data.parameters['E'].value, 10);
+
+    // L'ancienne courbe calculée E ne doit plus exister dans data.curves
+    assert.equal(data.getCurveByTitle('E'), undefined, 'L\'ancienne courbe E ne doit plus exister dans data.curves');
+    assert.equal(data.curves.some(c => c.title === 'E'), false, 'data.curves ne doit pas contenir de courbe zombie E');
+  });
+
+  it('doit supprimer les modèles dépendant d\'une courbe calculée devenue paramètre', () => {
+    // 1. Création de la courbe calculée E
+    app.applyCalculation('E = 2 * x');
+
+    // Ajout d'un modèle dépendant de E
+    const mockModel = { id: 'model_1', x: { title: 't' }, y: { title: 'E' }, parameters: [] };
+    data.models.push(mockModel);
+    assert.equal(data.models.length, 1);
+
+    // 2. Conversion de E en paramètre scalaire
+    app.applyCalculation('E = 10');
+
+    // Le modèle dépendant de la courbe E doit être supprimé
+    assert.equal(data.models.length, 0, 'Le modèle dépendant de la courbe E doit être supprimé');
+    assert.equal(data.getCurveByTitle('E'), undefined, 'La courbe E doit être supprimée');
+    assert.equal(data.parameters['E'].value, 10);
   });
 });

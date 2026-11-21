@@ -42,7 +42,7 @@ export default class App {
     return curve;
   }
 
-  deleteCurve(curveTitle){
+  _deleteCalculatedCurve(curveTitle) {
     // Suppression des modèles dépendant de cette grandeur
     const modelsToDelete = this.data.models.filter(model => model.x.title === curveTitle || model.y.title === curveTitle);
 
@@ -59,9 +59,13 @@ export default class App {
       });
     }
 
-    // Suppression de la grandeur et rafraîchissement des vues
+    // Suppression de la grandeur dans les données puis dans le grapheur
     this.data.deleteCurve(curveTitle);
     this.grapher.deleteCurve(curveTitle);
+  }
+
+  deleteCurve(curveTitle){
+    this._deleteCalculatedCurve(curveTitle);
     this.spreadsheet.update();
     this.uiManager.updateCalculationUI();
     this.uiManager.updateSortUI();
@@ -267,19 +271,8 @@ export default class App {
     if (!text || text.trim() === "") {
       const calculationCurves = this.data.curves.filter(curve => curve.type === "calculation");
       calculationCurves.forEach(curve => {
-        this.grapher.deleteCurve(curve.title);
-        const modelsToDelete = this.data.models.filter(
-          model => model.x.title === curve.title || model.y.title === curve.title
-        );
-        modelsToDelete.forEach(model => {
-          this.deleteModel(model.id);
-          const modelPanel = document.querySelector(`article[data-model-id="${model.id}"]`);
-          if (modelPanel) {
-            modelPanel.remove();
-          }
-        });
+        this._deleteCalculatedCurve(curve.title);
       });
-      this.data.curves = this.data.curves.filter(curve => curve.type !== "calculation");
       // Conservation des paramètres de modèles existants
       const parametersToKeep = {};
       for (const key in this.data.parameters) {
@@ -295,6 +288,8 @@ export default class App {
       this.spreadsheet.update();
       this.grapher.updateChart();
       this.uiManager.updateCalculationUI();
+      this.uiManager.updateSortUI();
+      this.uiManager.updateXAxisSelector();
       if (this.uiManager && typeof this.uiManager.setCalculationsStale === 'function') {
         this.uiManager.setCalculationsStale(false);
       }
@@ -356,34 +351,6 @@ export default class App {
       formulasToEvaluate.push({ variableName, expression, unit });
     }
 
-    // Suppression des grandeurs calculées obsolètes et des modèles associés
-    const newCalculatedTitles = new Set(formulasToEvaluate.map(f => f.variableName));
-    const calculatedCurvesToDelete = this.data.curves.filter(
-      curve => curve.type === 'calculation' && !newCalculatedTitles.has(curve.title)
-    );
-
-    if (calculatedCurvesToDelete.length > 0) {
-      calculatedCurvesToDelete.forEach(curve => {
-        this.grapher.deleteCurve(curve.title);
-        console.log(`Deleting calculated curve "${curve.title}" as it is no longer defined.`);
-        const modelsToDelete = this.data.models.filter(
-          model => model.x.title === curve.title || model.y.title === curve.title
-        );
-
-        modelsToDelete.forEach(model => {
-          console.log(`Deleting model ${model.id} because it depends on the deleted calculated curve "${curve.title}".`);
-          this.deleteModel(model.id);
-
-          const modelPanel = document.querySelector(`article[data-model-id="${model.id}"]`);
-          if (modelPanel) {
-            modelPanel.remove();
-          }
-        });
-
-        this.data.deleteCurve(curve.title);
-      });
-    }
-
     // Évaluation des expressions
     const parametersToKeep = {};
     for (const key in this.data.parameters) {
@@ -411,10 +378,35 @@ export default class App {
     
     const { results, errors } = this.calculation.evaluateBlock(formulasToEvaluate, initialScope);
 
+    // Suppression des grandeurs calculées obsolètes et des modèles associés :
+    // Une courbe calculée est obsolète si elle n'est plus évaluée comme une courbe (soit supprimée, soit devenue un paramètre scalaire).
+    // Les grandeurs ayant échoué avec une erreur sont conservées (vidées plus bas) pour permettre à l'utilisateur de corriger.
+    const newCalculatedCurveTitles = new Set(
+      results.filter(r => r.type === 'curve').map(r => r.variableName)
+    );
+    const errorTitles = new Set(errors.map(e => e.variableName));
+
+    const calculatedCurvesToDelete = this.data.curves.filter(
+      curve => curve.type === 'calculation' &&
+               !newCalculatedCurveTitles.has(curve.title) &&
+               !errorTitles.has(curve.title)
+    );
+
+    if (calculatedCurvesToDelete.length > 0) {
+      calculatedCurvesToDelete.forEach(curve => {
+        console.log(`Deleting calculated curve "${curve.title}" as it is no longer defined as a curve.`);
+        this._deleteCalculatedCurve(curve.title);
+      });
+    }
+
     // Intégration des résultats dans les données (mise à jour in-place pour préserver l'ordre et le style)
     results.forEach(result => {
       if (result.type === 'parameter') {
         this.data.parameters[result.variableName] = result.data;
+        const existingCurve = this.data.getCurveByTitle(result.variableName);
+        if (existingCurve && existingCurve.type === 'calculation') {
+          this._deleteCalculatedCurve(existingCurve.title);
+        }
       } else {
         const existingCurve = this.data.getCurveByTitle(result.variableName);
         if (existingCurve && existingCurve.type === 'calculation') {
