@@ -726,6 +726,19 @@ evaluateBlock(formulas, initialScope) {
   console.log('Évaluation des formules avec le scope initial:', initialScope);
   const toArr = (v) => (v && v.toArray ? v.toArray() : v);
 
+  // Détermine la longueur maximale parmi les courbes présentes dans initialScope
+  let maxCurveLength = 0;
+  for (const key in initialScope) {
+    const value = initialScope[key];
+    const isParam = typeof value === 'object' && value !== null && !Array.isArray(value) && value.hasOwnProperty('value');
+    if (!isParam) {
+      const arr = toArr(value);
+      if (arr && typeof arr.length === 'number' && arr.length > maxCurveLength) {
+        maxCurveLength = arr.length;
+      }
+    }
+  }
+
   const scope = {};
   for (const key in initialScope) {
     const value = initialScope[key];
@@ -734,15 +747,22 @@ evaluateBlock(formulas, initialScope) {
     } else {
       const rawArray = toArr(value);
       const cleanedArray = [];
-      const len = rawArray.length;
-      for (let i = 0; i < len; i++) {
-        const val = rawArray[i];
-        if (val === null || val === undefined || String(val).trim() === '') {
-          cleanedArray.push(null);
-          continue;
+      const len = rawArray ? rawArray.length : 0;
+      if (len > 0) {
+        const targetLen = Math.max(len, maxCurveLength);
+        for (let i = 0; i < targetLen; i++) {
+          if (i >= len) {
+            cleanedArray.push(null);
+            continue;
+          }
+          const val = rawArray[i];
+          if (val === null || val === undefined || String(val).trim() === '') {
+            cleanedArray.push(null);
+            continue;
+          }
+          const num = Number(val);
+          cleanedArray.push(isNaN(num) ? null : num);
         }
-        const num = Number(val);
-        cleanedArray.push(isNaN(num) ? null : num);
       }
       scope[key] = cleanedArray;
     }
@@ -797,6 +817,14 @@ evaluateBlock(formulas, initialScope) {
           });
         } else {
           const resultAsArray = toArr(resultData);
+          if (maxCurveLength > 0 && resultAsArray.length < maxCurveLength) {
+            while (resultAsArray.length < maxCurveLength) {
+              resultAsArray.push(null);
+            }
+          }
+          if (resultAsArray.length > maxCurveLength) {
+            maxCurveLength = resultAsArray.length;
+          }
           scope[calc.variableName] = resultAsArray;
           successfulResults.push({ 
             variableName: calc.variableName, 

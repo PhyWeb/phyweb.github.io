@@ -7,8 +7,6 @@ Voici la liste classée par impact, avec les scénarios de reproduction et les p
 ### 1. Bugs critiques (résultats faux, blocages ou plantages)
 
 #### C. Plusieurs bugs dans le moteur de calcul (`calculation.js`)
-2. **Opérations entre colonnes de longueurs différentes :**
-   Si l’utilisateur a rempli 5 lignes pour `x` et seulement 3 pour `y`, `x + y` ou `x * y` échoue avec une `DimensionError` de `math.map`, alors que `diff` et `integrate` gèrent déjà des longueurs inégales.
 3. **Calculs silencieusement faux si un paramètre vaut `null` :**
    Dans `configureOperator`, les signatures `'Array | Matrix, any'` font `valA + b` / `valA * b` / `valA / b` sans vérifier `b === null`. Si un paramètre `p` vaut `null` (ex. `p = sqrt(-1)`), `x + p` renvoie `x`, `x * p` renvoie `0` et `x / p` renvoie `Infinity` sans erreur !
 4. **Nombres complexes, `Infinity` et `NaN` non filtrés :**

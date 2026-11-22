@@ -564,6 +564,30 @@ describe('Calculation Module', () => {
       assert.equal(byName.Ep[3], -(2 * 9.81 * 30));
       assert.equal(byName.Ep[4], null);
     });
+
+    it('doit supporter les opérations entre colonnes de longueurs inégales grâce au padding', () => {
+      const scope = {
+        x: [1, 2, 3, 4, 5],
+        y: [10, 20, 30]
+      };
+
+      const formulas = [
+        { variableName: 's', expression: 'x + y', unit: '' },
+        { variableName: 'p', expression: 'x * y', unit: '' },
+        { variableName: 'd', expression: 'x - y', unit: '' },
+        { variableName: 'q', expression: 'y / x', unit: '' }
+      ];
+
+      const { results, errors } = calc.evaluateBlock(formulas, scope);
+      assert.equal(errors.length, 0, `Erreurs inattendues: ${JSON.stringify(errors)}`);
+      assert.equal(results.length, 4);
+
+      const byName = Object.fromEntries(results.map(r => [r.variableName, r.data]));
+      assert.deepEqual(byName.s, [11, 22, 33, null, null]);
+      assert.deepEqual(byName.p, [10, 40, 90, null, null]);
+      assert.deepEqual(byName.d, [-9, -18, -27, null, null]);
+      assert.deepEqual(byName.q, [10, 10, 10, null, null]);
+    });
   });
 
   describe('Prétraitement des virgules (preprocessDecimalCommas & preprocessExpression)', () => {
