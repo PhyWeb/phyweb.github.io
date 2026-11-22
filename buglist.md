@@ -6,10 +6,6 @@ Voici la liste classée par impact, avec les scénarios de reproduction et les p
 
 ### 1. Bugs critiques (résultats faux, blocages ou plantages)
 
-#### C. Plusieurs bugs dans le moteur de calcul (`calculation.js`)
-5. **`preprocessDecimalCommas` découpe les virgules décimales françaises dans `min`/`max`/`hypot` :**
-   La branche `['min', 'max', 'hypot', 'gcd', 'lcm']` transforme `min(x, 0,5)` en **`min(x, 0, 5)`** et `max(1,5, 2,5)` en **`max(1, 5, 2, 5)`** car `topLevelCommas > 1` et les chiffres sont bordés par `'('`, `','`, `' '` ou `')'`.
-
 #### D. Bouton « Arrêter le calcul » (`#dynamic-stop-btn`) cassé lors de la création ou du recalcul de plusieurs modèles (`ui.js`)
 * **Cas 1 (crash à la création d’un modèle) :** Quand on clique sur « Arrêter le calcul » pendant `addModel()`, le listener dans `initGrapherControls()` appelle `this.updateModelPanel(activeModelToStop)`. Or `createModelPanel()` n’est appelé qu’*après* la résolution de `addModel()`. `panel` vaut `null` -> `TypeError: Cannot read properties of null (reading 'querySelector')`, ce qui interrompt le handler avant `hideLoading()`.
 * **Cas 2 (recalcul multiple) :** `recalculateAllModels()` lance tous les modèles en parallèle (`Promise.allSettled`). Comme `activeModelToStop` est une variable scalaire unique, chaque `model-fit-start` écrase le précédent et dès que le modèle le plus rapide se termine (`model-fit-end`), `activeModelToStop` repasse à `null` : le bouton « Arrêter » ne fait plus rien pour les modèles encore en cours.

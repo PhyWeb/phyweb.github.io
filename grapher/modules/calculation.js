@@ -673,21 +673,6 @@ export default class Calculation {
             continue;
           }
 
-          // Pour les fonctions variadiques à plusieurs entiers sans espace (ex: min(2,3,4))
-          if (currentContext && ['min', 'max', 'hypot', 'gcd', 'lcm'].includes(currentContext.name)) {
-            let p = i - 1;
-            while (p >= 0 && /\d/.test(expr[p])) p--;
-            let q = i + 1;
-            while (q < len && /\d/.test(expr[q])) q++;
-            const atStartOrAfterComma = p < 0 || expr[p] === '(' || expr[p] === ',' || expr[p] === ' ';
-            const atEndOrBeforeComma = q >= len || expr[q] === ')' || expr[q] === ',' || expr[q] === ' ';
-            if (atStartOrAfterComma && atEndOrBeforeComma && currentContext.topLevelCommas > 1) {
-              result += ', ';
-              i++;
-              continue;
-            }
-          }
-
           // Sinon, c'est une virgule décimale (ex: 0,5 * m, sin(0,5), pow(0,5, 2))
           result += '.';
           i++;

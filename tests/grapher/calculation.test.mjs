@@ -662,5 +662,19 @@ describe('Calculation Module', () => {
       assert.equal(calc.preprocessExpression('pow(0,5, 2)'), 'pow(0.5, 2)');
       assert.equal(calc.evaluate('pow(0,5, 2)', {}), 0.25);
     });
+
+    it('doit supporter les nombres décimaux dans les fonctions min, max et hypot (ex: min(x, 0,5), max(1,5; 2,5))', () => {
+      assert.equal(calc.preprocessExpression('min(x, 0,5)'), 'min(x, 0.5)');
+      assert.equal(calc.preprocessExpression('min(x; 0,5)'), 'min(x, 0.5)');
+      assert.equal(calc.evaluate('min(x, 0,5)', { x: 2 }), 0.5);
+      assert.equal(calc.evaluate('min(x; 0,5)', { x: 2 }), 0.5);
+
+      assert.equal(calc.preprocessExpression('max(1,5, 2,5)'), 'max(1.5, 2.5)');
+      assert.equal(calc.preprocessExpression('max(1,5; 2,5)'), 'max(1.5, 2.5)');
+      assert.equal(calc.evaluate('max(1,5; 2,5)', {}), 2.5);
+
+      assert.equal(calc.preprocessExpression('hypot(0,3; 0,4)'), 'hypot(0.3, 0.4)');
+      assert.equal(calc.evaluate('hypot(0,3; 0,4)', {}), 0.5);
+    });
   });
 });
