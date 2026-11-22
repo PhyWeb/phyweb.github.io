@@ -580,18 +580,18 @@ class Model {
             this._applyParams(message.params, data);
             worker.terminate();
             this.activeWorker = null;
-            document.dispatchEvent(new CustomEvent('model-fit-end'));
+            document.dispatchEvent(new CustomEvent('model-fit-end', { detail: { model: this } }));
             resolve(this);
           } else {
             worker.terminate();
             this.activeWorker = null;
-            document.dispatchEvent(new CustomEvent('model-fit-end'));
+            document.dispatchEvent(new CustomEvent('model-fit-end', { detail: { model: this } }));
             reject(new Error(message.error));
           }
         } else if (message.type === 'error') {
             worker.terminate();
             this.activeWorker = null;
-            document.dispatchEvent(new CustomEvent('model-fit-end'));
+            document.dispatchEvent(new CustomEvent('model-fit-end', { detail: { model: this } }));
             reject(new Error(message.error));
         }
       };
@@ -599,7 +599,7 @@ class Model {
       worker.onerror = (error) => {
         worker.terminate();
         this.activeWorker = null;
-        document.dispatchEvent(new CustomEvent('model-fit-end'));
+        document.dispatchEvent(new CustomEvent('model-fit-end', { detail: { model: this } }));
         reject(error);
       };
 
@@ -637,7 +637,7 @@ class Model {
       }
       
       // Notification de fin de calcul
-      document.dispatchEvent(new CustomEvent('model-fit-end'));
+      document.dispatchEvent(new CustomEvent('model-fit-end', { detail: { model: this } }));
       if (this.resolveFit) {
          this.resolveFit(this);
       }

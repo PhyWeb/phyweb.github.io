@@ -687,8 +687,11 @@ export default class UIManager {
    * @param {Object} model - L'objet modèle à mettre à jour.
    */
   updateModelPanel(model) {
-    const significantDigits = this.data?.settings?.significantDigits ?? 4;
+    if (!model) return;
     const panel = $(`#model-list article[data-model-id="${model.id}"]`);
+    if (!panel) return;
+
+    const significantDigits = this.data?.settings?.significantDigits ?? 4;
 
     // Mise a jour des couleurs et du style du panneau
     const header = panel.querySelector('.message-header');
@@ -2281,28 +2284,37 @@ export default class UIManager {
         this.grapher.clearAllAnnotations();
     });
 
-    let activeModelToStop = null; 
+    const activeFittingModels = new Set();
     
     document.addEventListener('model-fit-start', (e) => {
-      activeModelToStop = e.detail.model;
+      if (e.detail?.model) {
+        activeFittingModels.add(e.detail.model);
+      }
     });
 
-    document.addEventListener('model-fit-end', () => {
-      activeModelToStop = null;
+    document.addEventListener('model-fit-end', (e) => {
+      if (e.detail?.model) {
+        activeFittingModels.delete(e.detail.model);
+      } else {
+        activeFittingModels.clear();
+      }
     });
 
     document.addEventListener('click', (e) => {
       const stopBtn = e.target.closest('#dynamic-stop-btn');
-      if (stopBtn && activeModelToStop) {
+      if (stopBtn && activeFittingModels.size > 0) {
         stopBtn.classList.add('is-loading'); 
         
-        // Force l'arrêt du modèle actif
-        activeModelToStop.stopFit();
-        
-        // Met à jour l'UI avec le résultat partiel
-        if (typeof this.updateModelPanel === "function") {
-          this.updateModelPanel(activeModelToStop);
-        }
+        // Force l'arrêt de tous les modèles actifs
+        const modelsToStop = Array.from(activeFittingModels);
+        activeFittingModels.clear();
+
+        modelsToStop.forEach(model => {
+          model.stopFit();
+          if (typeof this.updateModelPanel === "function") {
+            this.updateModelPanel(model);
+          }
+        });
         
         // Redessine le graphe et on masque le chargement manuellement au cas où
         if (this.grapher) {
