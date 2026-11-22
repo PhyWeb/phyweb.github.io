@@ -56,6 +56,8 @@
     dans l'export il y a PAS les puissances de 10 en bas a droite.
 
     On empeche l'ouverture de la modale d'edition de nom de grandeur pour les grandeurs calculées... on pourrait peut etre trouver un moyen de laisser la possibilité de changer l'unité voir le nom quand meme
+
+    Bug graphique quand le "nom" d'un modele est trop long genre Amplitudestectrale = f(truclong)
     
 # Mendeleiev
 # Optique
