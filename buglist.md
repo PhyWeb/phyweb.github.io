@@ -7,8 +7,6 @@ Voici la liste classée par impact, avec les scénarios de reproduction et les p
 ### 1. Bugs critiques (résultats faux, blocages ou plantages)
 
 #### C. Plusieurs bugs dans le moteur de calcul (`calculation.js`)
-3. **Calculs silencieusement faux si un paramètre vaut `null` :**
-   Dans `configureOperator`, les signatures `'Array | Matrix, any'` font `valA + b` / `valA * b` / `valA / b` sans vérifier `b === null`. Si un paramètre `p` vaut `null` (ex. `p = sqrt(-1)`), `x + p` renvoie `x`, `x * p` renvoie `0` et `x / p` renvoie `Infinity` sans erreur !
 4. **Nombres complexes, `Infinity` et `NaN` non filtrés :**
    Seuls `sqrt`, `log`, `ln` protègent contre les résultats complexes. `asin(1.5)`, `acos(2)`, `acosh(0.5)`, `atanh(2)` renvoient des objets `Complex` de math.js dans le tableau de la courbe (qui cassent ensuite les opérations suivantes en concaténation de chaînes `"[object Object]1"`). De même, une division par `0` met `Infinity`/`NaN` dans la courbe au lieu de `null`.
 5. **`preprocessDecimalCommas` découpe les virgules décimales françaises dans `min`/`max`/`hypot` :**

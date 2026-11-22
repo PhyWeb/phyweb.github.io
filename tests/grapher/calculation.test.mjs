@@ -143,11 +143,12 @@ describe('Calculation Module', () => {
       assert.match(errors[0].error, /mathématique valide/);
     });
 
-    it('doit gérer proprement une formule renvoyant un paramètre null (ex: racine carrée d\'un nombre négatif)', () => {
+    it('doit rejeter une formule renvoyant un paramètre hors domaine (ex: racine carrée d\'un nombre négatif)', () => {
       const { results, errors } = calc.evaluateBlock([{ variableName: 'n', expression: 'sqrt(-1)', unit: '' }], {});
-      assert.equal(errors.length, 0);
-      assert.equal(results[0].type, 'parameter');
-      assert.equal(results[0].data.value, null);
+      assert.equal(results.length, 0);
+      assert.equal(errors.length, 1);
+      assert.equal(errors[0].variableName, 'n');
+      assert.match(errors[0].error, /pas défini dans les réels/);
     });
   });
 

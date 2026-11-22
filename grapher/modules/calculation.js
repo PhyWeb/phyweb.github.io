@@ -88,9 +88,9 @@ export default class Calculation {
       const originalFunc = mathInstance[name];
       const typedFunc = mathInstance.typed(name, {
         'Array | Matrix, Array | Matrix': (a, b) => mathInstance.map(a, b, (valA, valB) => (valA === null || valB === null) ? null : operation(valA, valB)),
-        'Array | Matrix, any': (a, b) => mathInstance.map(a, valA => (valA === null) ? null : operation(valA, b)),
-        'any, Array | Matrix': (a, b) => mathInstance.map(b, valB => (valB === null) ? null : operation(a, valB)),
-        'any, any': (a, b) => originalFunc(a, b)
+        'Array | Matrix, any': (a, b) => mathInstance.map(a, valA => (valA === null || b === null) ? null : operation(valA, b)),
+        'any, Array | Matrix': (a, b) => mathInstance.map(b, valB => (valB === null || a === null) ? null : operation(a, valB)),
+        'any, any': (a, b) => (a === null || b === null) ? null : originalFunc(a, b)
       });
       mathInstance.import({ [name]: typedFunc }, { override: true });
     };
@@ -132,15 +132,25 @@ export default class Calculation {
       // Signature pour le cas: Array ^ Nombre
       'Array | Matrix, any': function(base, exponent) {
         return mathInstance.map(base, (b) => {
-          if (b === null) return null;
+          if (b === null || exponent === null) return null;
           // Gère le cas des bases négatives avec exposants non-entiers qui donnerait un résultat complexe
           if (b < 0 && exponent % 1 !== 0) return null;
           return originalPow(b, exponent);
         });
       },
       
+      // Signature pour le cas: Nombre ^ Array
+      'any, Array | Matrix': function(base, exponent) {
+        return mathInstance.map(exponent, (e) => {
+          if (e === null || base === null) return null;
+          if (base < 0 && e % 1 !== 0) return null;
+          return originalPow(base, e);
+        });
+      },
+
       // Signature de base pour le cas: Nombre ^ Nombre
       'any, any': function(base, exponent) {
+        if (base === null || exponent === null) return null;
         return originalPow(base, exponent);
       }
     });
@@ -796,12 +806,23 @@ evaluateBlock(formulas, initialScope) {
             if (symbol in scope && Array.isArray(scope[symbol]) && scope[symbol].length === 0) {
               throw new Error(`La grandeur "${symbol}" ne contient aucune donnée.`);
             }
+            if (symbol in scope && scope[symbol] === null) {
+              throw new Error(`Le paramètre "${symbol}" n'a pas de valeur valide.`);
+            }
           }
         });
 
         const resultData = this.evaluate(cleanExpression, scope);
+
+        if (resultData === null) {
+          throw new Error(`Le résultat n'est pas défini dans les réels (hors du domaine de validité).`);
+        }
+
+        if (typeof resultData === 'number' && !Number.isFinite(resultData)) {
+          throw new Error(`Le calcul a produit une valeur non finie (${resultData}).`);
+        }
         
-        const isParameter = typeof resultData === 'number' || resultData === null;
+        const isParameter = typeof resultData === 'number';
         const isCurve = Array.isArray(resultData) || (resultData !== null && typeof resultData.toArray === 'function');
         
         if (!isParameter && !isCurve) {
