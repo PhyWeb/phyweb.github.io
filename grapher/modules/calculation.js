@@ -46,51 +46,49 @@ export default class Calculation {
       const originalFn = mathInstance[name];
       if (typeof originalFn !== 'function') return;
 
-      // Gestion spéciale pour les fonctions qui peuvent retourner des nombres complexes
-      if (['sqrt', 'log', 'ln'].includes(name)) {
-        const typedFn = mathInstance.typed(name, {
-          'Array | Matrix': function(x) {
-            return mathInstance.map(x, val => {
-              // Si la valeur est négative ou nulle, on ne calcule pas.
-              if (val === null || val < 0) {
-                return null;
-              }
-              // Pour le log, 0 n'est pas défini non plus.
-              if ((name === 'log' || name === 'ln') && val === 0) {
-                return null;
-              }
-              return originalFn(val);
-            });
-          },
-          'any': function(x) {
-            if (x === null || x < 0) return null;
-            if ((name === 'log' || name === 'ln') && x === 0) return null;
-            return originalFn(x);
-          }
-        });
-        mathInstance.import({ [name]: typedFn }, { override: true });
-      } else {
-        // Comportement standard pour les autres fonctions
-        const typedFn = mathInstance.typed(name, {
-          'Array | Matrix': function(x) {
-            return mathInstance.map(x, val => (val === null ? null : originalFn(val)));
-          },
-          'any': function(x) {
-            return originalFn(x);
-          }
-        });
-        mathInstance.import({ [name]: typedFn }, { override: true });
-      }
+      const sanitize = (val) => {
+        if (val === null || val === undefined) return null;
+        try {
+          const res = originalFn(val);
+          return (typeof res === 'number' && Number.isFinite(res)) ? res : null;
+        } catch {
+          return null;
+        }
+      };
+
+      const typedFn = mathInstance.typed(name, {
+        'Array | Matrix': (x) => mathInstance.map(x, sanitize),
+        'any': sanitize
+      });
+      mathInstance.import({ [name]: typedFn }, { override: true });
     });
 
-    // Rendre les opérateurs arithmétiques "null-aware"
+    // Rendre les opérateurs arithmétiques "null-aware" et finis dans R
     const configureOperator = (name, operation) => {
       const originalFunc = mathInstance[name];
+      const safeOp = (a, b) => {
+        if (a === null || b === null || a === undefined || b === undefined) return null;
+        try {
+          const res = operation(a, b);
+          return (typeof res === 'number' && Number.isFinite(res)) ? res : null;
+        } catch {
+          return null;
+        }
+      };
+
       const typedFunc = mathInstance.typed(name, {
-        'Array | Matrix, Array | Matrix': (a, b) => mathInstance.map(a, b, (valA, valB) => (valA === null || valB === null) ? null : operation(valA, valB)),
-        'Array | Matrix, any': (a, b) => mathInstance.map(a, valA => (valA === null || b === null) ? null : operation(valA, b)),
-        'any, Array | Matrix': (a, b) => mathInstance.map(b, valB => (valB === null || a === null) ? null : operation(a, valB)),
-        'any, any': (a, b) => (a === null || b === null) ? null : originalFunc(a, b)
+        'Array | Matrix, Array | Matrix': (a, b) => mathInstance.map(a, b, (valA, valB) => safeOp(valA, valB)),
+        'Array | Matrix, any': (a, b) => mathInstance.map(a, valA => safeOp(valA, b)),
+        'any, Array | Matrix': (a, b) => mathInstance.map(b, valB => safeOp(a, valB)),
+        'any, any': (a, b) => {
+          if (a === null || b === null || a === undefined || b === undefined) return null;
+          try {
+            const res = originalFunc(a, b);
+            return (typeof res === 'number' && Number.isFinite(res)) ? res : null;
+          } catch {
+            return null;
+          }
+        }
       });
       mathInstance.import({ [name]: typedFunc }, { override: true });
     };
@@ -100,13 +98,22 @@ export default class Calculation {
     configureOperator('multiply', (a, b) => a * b);
     configureOperator('divide', (a, b) => a / b);
 
-    // Rendre les opérateurs unaires "null-aware"
+    // Rendre les opérateurs unaires "null-aware" et finis dans R
     const configureUnaryOperator = (name) => {
       const originalFunc = mathInstance[name];
+      const safeUnary = (x) => {
+        if (x === null || x === undefined) return null;
+        try {
+          const res = originalFunc(x);
+          return (typeof res === 'number' && Number.isFinite(res)) ? res : null;
+        } catch {
+          return null;
+        }
+      };
       const typedFunc = mathInstance.typed(name, {
-        'Array | Matrix': (x) => mathInstance.map(x, val => (val === null ? null : originalFunc(val))),
+        'Array | Matrix': (x) => mathInstance.map(x, safeUnary),
         'null': () => null,
-        'any': (x) => originalFunc(x)
+        'any': safeUnary
       });
       mathInstance.import({ [name]: typedFunc }, { override: true });
     };
@@ -116,18 +123,18 @@ export default class Calculation {
 
     // Redéfinir la fonction de puissance (pour l'opérateur ^)
     const originalPow = mathInstance.pow;
+    const safePow = (base, exponent) => {
+      if (base === null || exponent === null || base === undefined || exponent === undefined) return null;
+      try {
+        const res = originalPow(base, exponent);
+        return (typeof res === 'number' && Number.isFinite(res)) ? res : null;
+      } catch {
+        return null;
+      }
+    };
     const typedPow = mathInstance.typed('pow', {
       // signature pour le cas: Array ^ Array
-      'Array | Matrix, Array | Matrix': function(base, exponent) {
-        return mathInstance.map(base, exponent, (b, e) => {
-          if (b === null || e === null) return null;
-          // Gère le cas des bases négatives avec exposants non-entiers qui donnerait un résultat complexe
-          if (b < 0 && e % 1 !== 0) {
-            return null;
-          }
-          return originalPow(b, e);
-        });
-      },
+      'Array | Matrix, Array | Matrix': (base, exponent) => mathInstance.map(base, exponent, (b, e) => safePow(b, e)),
 
       // Signature pour le cas: Array ^ Nombre
       'Array | Matrix, any': function(base, exponent) {
@@ -135,7 +142,7 @@ export default class Calculation {
           if (b === null || exponent === null) return null;
           // Gère le cas des bases négatives avec exposants non-entiers qui donnerait un résultat complexe
           if (b < 0 && exponent % 1 !== 0) return null;
-          return originalPow(b, exponent);
+          return safePow(b, exponent);
         });
       },
       
@@ -144,14 +151,14 @@ export default class Calculation {
         return mathInstance.map(exponent, (e) => {
           if (e === null || base === null) return null;
           if (base < 0 && e % 1 !== 0) return null;
-          return originalPow(base, e);
+          return safePow(base, e);
         });
       },
 
       // Signature de base pour le cas: Nombre ^ Nombre
       'any, any': function(base, exponent) {
         if (base === null || exponent === null) return null;
-        return originalPow(base, exponent);
+        return safePow(base, exponent);
       }
     });
     mathInstance.import({ pow: typedPow }, { override: true });
@@ -837,7 +844,8 @@ evaluateBlock(formulas, initialScope) {
             type: 'parameter' 
           });
         } else {
-          const resultAsArray = toArr(resultData);
+          const rawArray = toArr(resultData);
+          const resultAsArray = (rawArray || []).map(val => (typeof val === 'number' && Number.isFinite(val)) ? val : null);
           if (maxCurveLength > 0 && resultAsArray.length < maxCurveLength) {
             while (resultAsArray.length < maxCurveLength) {
               resultAsArray.push(null);

@@ -36,7 +36,7 @@ describe('Vérification et non-régression du bug 3 : Calculs avec paramètres e
     assert.equal(results.length, 0);
     assert.equal(errors.length, 1);
     assert.equal(errors[0].variableName, 'inf');
-    assert.match(errors[0].error, /valeur non finie/);
+    assert.match(errors[0].error, /pas défini dans les réels|valeur non finie/);
   });
 
   it('rejette l\'utilisation d\'un paramètre null existant dans le scope initial', () => {

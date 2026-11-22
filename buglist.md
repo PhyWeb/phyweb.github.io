@@ -7,8 +7,6 @@ Voici la liste classée par impact, avec les scénarios de reproduction et les p
 ### 1. Bugs critiques (résultats faux, blocages ou plantages)
 
 #### C. Plusieurs bugs dans le moteur de calcul (`calculation.js`)
-4. **Nombres complexes, `Infinity` et `NaN` non filtrés :**
-   Seuls `sqrt`, `log`, `ln` protègent contre les résultats complexes. `asin(1.5)`, `acos(2)`, `acosh(0.5)`, `atanh(2)` renvoient des objets `Complex` de math.js dans le tableau de la courbe (qui cassent ensuite les opérations suivantes en concaténation de chaînes `"[object Object]1"`). De même, une division par `0` met `Infinity`/`NaN` dans la courbe au lieu de `null`.
 5. **`preprocessDecimalCommas` découpe les virgules décimales françaises dans `min`/`max`/`hypot` :**
    La branche `['min', 'max', 'hypot', 'gcd', 'lcm']` transforme `min(x, 0,5)` en **`min(x, 0, 5)`** et `max(1,5, 2,5)` en **`max(1, 5, 2, 5)`** car `topLevelCommas > 1` et les chiffres sont bordés par `'('`, `','`, `' '` ou `')'`.
 
