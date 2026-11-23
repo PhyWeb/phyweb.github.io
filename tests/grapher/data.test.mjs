@@ -3,6 +3,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import Data, { Model, parseCellValue, COLOR_LIST } from '../../grapher/modules/data.js';
 import SymbolValidator from '../../grapher/modules/symbolValidator.js';
+import IOManager from '../../grapher/modules/ioManager.js';
 
 describe('Model - calculateRMSE() et gestion des bornes', () => {
   const createMockData = () => ({
@@ -731,5 +732,82 @@ describe('Model - _estimateInitialGuess() pour exp1 et exp2', () => {
       assert.ok(Number.isFinite(guess[0]), `a doit être fini (reçu: ${guess[0]})`);
       assert.ok(Number.isFinite(guess[1]), `b doit être fini (reçu: ${guess[1]})`);
     });
+  });
+});
+
+describe('Data - getTable() et export CSV sur courbes creuses ou de longueurs inégales', () => {
+  it('doit retourner un tableau rectangulaire dense rempli de null pour les trous et cellules manquantes', () => {
+    const data = new Data();
+    data.addCurve('t', 's');
+    data.addCurve('x', 'm');
+
+    for (let j = 0; j < 6; j++) {
+      data.setValue(0, j, j);
+    }
+    // Saisie en ligne 5 uniquement sur la 2e colonne -> tableau creux [ <5 empty>, 10 ]
+    data.setValue(1, 5, 10);
+
+    const table = data.getTable();
+    assert.equal(table.length, 6);
+    assert.deepEqual(table, [
+      [0, null],
+      [1, null],
+      [2, null],
+      [3, null],
+      [4, null],
+      [5, 10],
+    ]);
+  });
+
+  it('doit gérer une courbe entièrement creuse sans trous dans table', () => {
+    const data = new Data();
+    data.addCurve('x', 'm');
+    data.setValue(0, 3, 42);
+
+    const table = data.getTable();
+    assert.equal(table.length, 4);
+    for (let j = 0; j < 4; j++) {
+      assert.ok(j in table, `La ligne ${j} ne doit pas être un trou`);
+    }
+    assert.deepEqual(table, [[null], [null], [null], [42]]);
+  });
+
+  it('doit retourner [] quand aucune courbe ou aucune donnée n\'est présente', () => {
+    const data = new Data();
+    assert.deepEqual(data.getTable(), []);
+
+    data.addCurve('t', 's');
+    assert.deepEqual(data.getTable(), []);
+  });
+
+  it('doit permettre à IOManager.generateCSV() de produire un nombre cohérent de colonnes sans planter', () => {
+    const data = new Data();
+    data.addCurve('t', 's');
+    data.addCurve('x', 'm');
+    for (let j = 0; j < 4; j++) {
+      data.setValue(0, j, j * 0.5);
+    }
+    data.setValue(1, 3, 12.5);
+
+    const ioManager = new IOManager({ data });
+    const csv = ioManager.generateCSV(';', 'row');
+    const lines = csv.split(/\r?\n/);
+
+    assert.deepEqual(lines, [
+      't;x',
+      's;m',
+      '0;',
+      '0,5;',
+      '1;',
+      '1,5;12,5',
+    ]);
+
+    // Cas avec une seule courbe creuse (provoquait un crash dans Papa.unparse)
+    const sparseData = new Data();
+    sparseData.addCurve('x', 'm');
+    sparseData.setValue(0, 2, 7);
+    const sparseIo = new IOManager({ data: sparseData });
+    const sparseCsv = sparseIo.generateCSV(';', 'row');
+    assert.deepEqual(sparseCsv.split(/\r?\n/), ['x', 'm', '', '', '7']);
   });
 });
