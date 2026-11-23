@@ -268,7 +268,7 @@ describe('Bouton Recalculer les grandeurs dans le tableur (#recalculate-spreadsh
     });
   });
 
-  describe('Intégration App - deleteRow, applyCalculation, resetSession et staleness', () => {
+  describe('Intégration App - deleteRow, deleteCurve, applyCalculation, resetSession et staleness', () => {
     let app;
     let data;
     let staleCalls;
@@ -329,6 +329,17 @@ describe('Bouton Recalculer les grandeurs dans le tableur (#recalculate-spreadsh
 
       assert.equal(applyCalled, false, 'applyCalculation ne doit pas être appelé lors de deleteRow');
       assert.ok(staleCalls.includes(true), 'setCalculationsStale(true) doit être appelé');
+    });
+
+    it('deleteCurve doit appeler setCalculationsStale(true) et ne pas recalculer automatiquement', () => {
+      let applyCalled = false;
+      app.applyCalculation = () => { applyCalled = true; };
+
+      app.deleteCurve('x');
+
+      assert.equal(applyCalled, false, 'applyCalculation ne doit pas être appelé lors de deleteCurve');
+      assert.ok(staleCalls.includes(true), 'setCalculationsStale(true) doit être appelé');
+      assert.equal(data.getCurveByTitle('x'), undefined, 'La courbe x doit être supprimée');
     });
 
     it('applyCalculation avec formule doit appeler setCalculationsStale(false) en fin d\'exécution', () => {

@@ -71,6 +71,9 @@ export default class App {
     this.uiManager.updateCalculationUI();
     this.uiManager.updateSortUI();
     this.uiManager.updateXAxisSelector();
+    if (this.uiManager && typeof this.uiManager.setCalculationsStale === 'function') {
+      this.uiManager.setCalculationsStale(true);
+    }
   }
 
 
