@@ -642,9 +642,8 @@ describe('Contrôle Mega-Dropdown des Constantes dans l\'onglet Calculs', () => 
       assert.strictEqual(replaceRangeCalls[0].text, 'g_N/kg = 9.81\n');
       assert.deepStrictEqual(replaceRangeCalls[0].pos, { line: 0, ch: 0 });
 
-      // 3. Calcul appliqué immédiatement
-      assert.strictEqual(appliedCalculations.length, 1);
-      assert.ok(appliedCalculations[0].startsWith('g_N/kg = 9.81\n'));
+      // 3. Le calcul n'est pas appliqué automatiquement en cours de saisie
+      assert.strictEqual(appliedCalculations.length, 0);
 
       // 4. Dropdown fermé
       assert.strictEqual(constantsDropdownClasses.has('is-active'), false);
@@ -702,7 +701,7 @@ describe('Contrôle Mega-Dropdown des Constantes dans l\'onglet Calculs', () => 
       assert.strictEqual(replaceRangeCalls.length, 1);
       assert.strictEqual(replaceRangeCalls[0].text, 'c_m/s = 2.998e8\n');
       assert.deepStrictEqual(cursorPosition, { line: 1, ch: 0 }, 'Le curseur doit avoir été déplacé sur la ligne 1');
-      assert.strictEqual(appliedCalculations.length, 1);
+      assert.strictEqual(appliedCalculations.length, 0);
       assert.strictEqual(constantsDropdownClasses.has('is-active'), false);
     });
 
@@ -746,6 +745,78 @@ describe('Contrôle Mega-Dropdown des Constantes dans l\'onglet Calculs', () => 
       assert.strictEqual(insertedTexts.length, 0);
       assert.strictEqual(replaceRangeCalls.length, 0);
       assert.strictEqual(appliedCalculations.length, 0);
+    });
+
+    it('n\'appelle pas applyCalculation lors de l\'insertion d\'une constante dans une ligne incomplète (ex: v = sqrt(2 * )', () => {
+      ui.initCalculationControls();
+      constantsDropdownClasses.add('is-active');
+
+      editorLines = ['v = sqrt(2 * '];
+      cursorPosition = { line: 0, ch: 13 };
+
+      const fakeLink = {
+        dataset: { symbol: 'g', value: '9.81', unit: 'N/kg', native: 'false' },
+        getAttribute: (k) => fakeLink.dataset[k.replace('data-', '')]
+      };
+
+      constantsContentListener({
+        preventDefault: () => {},
+        target: { closest: (sel) => (sel === 'a[data-symbol]' ? fakeLink : null) }
+      });
+
+      assert.strictEqual(replaceRangeCalls.length, 1);
+      assert.strictEqual(replaceRangeCalls[0].text, 'g_N/kg = 9.81\n');
+      assert.deepStrictEqual(insertedTexts, ['g']);
+      assert.strictEqual(editorLines[1], 'v = sqrt(2 * g');
+      assert.strictEqual(appliedCalculations.length, 0);
+      assert.strictEqual(constantsDropdownClasses.has('is-active'), false);
+    });
+
+    it('reconnaît une constante déjà déclarée avec une virgule décimale (ex: g = 9,81) sans bloquer l\'insertion', () => {
+      ui.initCalculationControls();
+      constantsDropdownClasses.add('is-active');
+
+      editorLines = ['g = 9,81 # pesanteur', 'v = sqrt(2 * '];
+      cursorPosition = { line: 1, ch: 13 };
+
+      const fakeLink = {
+        dataset: { symbol: 'g', value: '9.81', unit: 'N/kg', native: 'false' },
+        getAttribute: (k) => fakeLink.dataset[k.replace('data-', '')]
+      };
+
+      constantsContentListener({
+        preventDefault: () => {},
+        target: { closest: (sel) => (sel === 'a[data-symbol]' ? fakeLink : null) }
+      });
+
+      assert.deepStrictEqual(insertedTexts, ['g']);
+      assert.strictEqual(replaceRangeCalls.length, 0);
+      assert.strictEqual(appliedCalculations.length, 0);
+      assert.strictEqual(editorLines[1], 'v = sqrt(2 * g');
+      assert.strictEqual(constantsDropdownClasses.has('is-active'), false);
+    });
+
+    it('reconnaît une constante en notation scientifique avec virgule décimale (ex: c = 2,998e8)', () => {
+      ui.initCalculationControls();
+      constantsDropdownClasses.add('is-active');
+
+      editorLines = ['c_m/s = 2,998e8', 'E = m * '];
+      cursorPosition = { line: 1, ch: 8 };
+
+      const fakeLink = {
+        dataset: { symbol: 'c', value: '2.998e8', unit: 'm/s', native: 'false' },
+        getAttribute: (k) => fakeLink.dataset[k.replace('data-', '')]
+      };
+
+      constantsContentListener({
+        preventDefault: () => {},
+        target: { closest: (sel) => (sel === 'a[data-symbol]' ? fakeLink : null) }
+      });
+
+      assert.deepStrictEqual(insertedTexts, ['c']);
+      assert.strictEqual(replaceRangeCalls.length, 0);
+      assert.strictEqual(appliedCalculations.length, 0);
+      assert.strictEqual(constantsDropdownClasses.has('is-active'), false);
     });
   });
 });

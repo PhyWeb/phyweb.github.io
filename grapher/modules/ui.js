@@ -3859,7 +3859,15 @@ export default class UIManager {
         if (declMatch) {
           const rhs = declMatch[1].trim();
           const cleanRhs = rhs.split(/(?:#|\/\/|')/)[0].trim();
-          const isSame = cleanRhs === value || (!isNaN(Number(cleanRhs)) && !isNaN(Number(value)) && Number(cleanRhs) === Number(value));
+          const normalizedRhs = cleanRhs.replace(/,/g, '.');
+          const normalizedValue = value.replace(/,/g, '.');
+          const isSame = normalizedRhs === normalizedValue || (
+            normalizedRhs !== '' &&
+            normalizedValue !== '' &&
+            !isNaN(Number(normalizedRhs)) &&
+            !isNaN(Number(normalizedValue)) &&
+            Number(normalizedRhs) === Number(normalizedValue)
+          );
           if (!isSame) {
             showToast(`Le symbole "${symbol}" est déjà défini dans l'éditeur avec une autre valeur.`, "is-warning");
             return;
@@ -3873,7 +3881,7 @@ export default class UIManager {
         const textBeforeCursor = currentLineText.slice(0, cursor.ch);
         const isWritingRightHandSide = textBeforeCursor.includes('=');
 
-        // Placement propre de la déclaration et du curseur
+        // Placement propre de la déclaration et du curseur (sans évaluer le bloc en cours de saisie)
         if (!alreadyDeclared) {
           const defLine = `${unit ? symbol + '_' + unit : symbol} = ${value}\n`;
           this.editor.replaceRange(defLine, { line: 0, ch: 0 });
@@ -3883,7 +3891,6 @@ export default class UIManager {
           } else if (cursor.line === 0 && cursor.ch === 0) {
             this.editor.setCursor({ line: 1, ch: 0 });
           }
-          this.app?.applyCalculation?.(this.editor.getValue());
         } else {
           if (isWritingRightHandSide) {
             insertTextInEditor(symbol);
