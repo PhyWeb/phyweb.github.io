@@ -2,18 +2,6 @@ Oui, ton architecture est globalement propre et bien découpée, mais l’audit 
 
 Voici la liste classée par impact, avec les scénarios de reproduction et les pistes de correction.
 
----
-
-### 1. Bugs critiques (résultats faux, blocages ou plantages)
-
-
-#### E. Tableaux creux (`sparse arrays`) dans `Data.getTable()` et export CSV corrompu (`data.js`, `ioManager.js`)
-* **Problème :** Dans `Data.getTable()`, la longueur max `size` est calculée mais **jamais utilisée**. `curve.forEach(...)` saute les trous des tableaux creux (ex. si on saisit une valeur en ligne 5 en laissant les lignes 0–4 vides dans cette colonne) et laisse des lignes de longueurs différentes dans `table`.
-* **Conséquence :** `generateCSV()` produit un CSV avec un nombre incohérent de colonnes par ligne, voire plante (`row.map` sur un trou `undefined`).
-* **Correction :** Construire `table` avec une double boucle indexée `for (let j = 0; j < size; j++)` initialisant chaque cellule à `curve[j] ?? null`.
-
----
-
 ### 2. Erreurs de logique métier majeures
 
 #### B. `updateFormulasReferences()` corrompt les unités et commentaires lors d’un renommage (`ioManager.js`, `app.js`)

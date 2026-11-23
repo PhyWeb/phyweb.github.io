@@ -929,20 +929,19 @@ export default class Data {
 
     // Recherche de la série la plus longue
     let size = 0;
-    this.curves.forEach((curve, i) => {
+    this.curves.forEach((curve) => {
       if(curve.length > size){
         size = curve.length;
       }
     });
 
-    this.curves.forEach((curve, i) => {
-      curve.forEach((value, j) => {
-        if(!table[j]){
-          table[j] = [];
-        }
-        table[j][i] = value;
-      });
-    });
+    for (let j = 0; j < size; j++) {
+      const row = [];
+      for (let i = 0; i < this.curves.length; i++) {
+        row[i] = this.curves[i][j] ?? null;
+      }
+      table.push(row);
+    }
 
     return table;
   }
