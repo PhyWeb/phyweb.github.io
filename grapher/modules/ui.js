@@ -799,7 +799,12 @@ export default class UIManager {
    */
   updateClearAnnotationsButtonVisibility() {
     const button = $("#clear-annotations-button");
-    if (this.data.annotations.length > 0) {
+    if (!button) return;
+    const currentX = this.grapher?.currentXCurve;
+    const hasVisibleAnnotations = this.data.annotations.some(
+      ann => !ann.xCurve || !currentX || ann.xCurve === currentX
+    );
+    if (hasVisibleAnnotations) {
       button.classList.remove('is-hidden');
     } else {
       button.classList.add('is-hidden');

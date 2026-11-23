@@ -716,10 +716,15 @@ generatePW() {
     calculationsText = updateFormulasReferences(calculationsText, nameMap);
     this.app.editor.setValue(calculationsText);
     this.app.data.annotations = (state.data.annotations ?? []).map(ann => {
-      if (ann && ann.type === 'tangent-method' && ann.seriesName && nameMap[ann.seriesName]) {
-        return { ...ann, seriesName: nameMap[ann.seriesName] };
+      if (!ann || typeof ann !== 'object') return ann;
+      const updated = { ...ann };
+      if (updated.type === 'tangent-method' && updated.seriesName && nameMap[updated.seriesName]) {
+        updated.seriesName = nameMap[updated.seriesName];
       }
-      return ann;
+      if (updated.xCurve && nameMap[updated.xCurve]) {
+        updated.xCurve = nameMap[updated.xCurve];
+      }
+      return updated;
     });
     this.app.uiManager.updateClearAnnotationsButtonVisibility();
     

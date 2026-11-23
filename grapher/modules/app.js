@@ -106,6 +106,9 @@ export default class App {
             if (ann && ann.type === 'tangent-method' && ann.seriesName === oldTitle) {
                 ann.seriesName = newTitle;
             }
+            if (ann && ann.xCurve === oldTitle) {
+                ann.xCurve = newTitle;
+            }
         });
     }
 

@@ -629,14 +629,22 @@ export default class Grapher {
 
     // Gestion du clic pour ajouter une annotation avec le réticule libre
     this.chart.container.addEventListener('mousedown', (e) => {
-    if (this.crosshairMode !== 'free' && this.crosshairMode !== 'model' && this.crosshairMode !== 'data' && this.crosshairMode !== 'tangent' && this.crosshairMode !== 'tangent-method' && this.crosshairMode !== 'edit-bounds') return;
+      if (this.crosshairMode !== 'free' && this.crosshairMode !== 'model' && this.crosshairMode !== 'data' && this.crosshairMode !== 'tangent' && this.crosshairMode !== 'tangent-method' && this.crosshairMode !== 'edit-bounds') return;
+
+      const pos = this.chart.pointer.getChartPosition();
+      const chartX = e.pageX - pos.left;
+      const chartY = e.pageY - pos.top;
+
+      // Ignorer les clics initiés hors de la zone de tracé (marges, axes, légende)
+      if (this.crosshairMode !== 'edit-bounds' && !this._isInsidePlotBox(chartX, chartY)) {
+        return;
+      }
 
       e.preventDefault(); // Empêche la sélection de texte pendant le glisser
 
-      const pos = this.chart.pointer.getChartPosition();
       this.mouseDownInfo = {
-        chartX: e.pageX - pos.left,
-        chartY: e.pageY - pos.top,
+        chartX,
+        chartY,
         time: Date.now()
       };
 
@@ -704,6 +712,8 @@ export default class Grapher {
 
     Highcharts.addEvent(this.chart.container, 'mouseleave', () => {
       this.hideFreeCrosshair(); // Cache toujours quand la souris sort
+      this.snappedModelPoint = null;
+      this.snappedDataPoint = null;
     });
 
     // Ajoute un écouteur pour l'événement redraw pour les modèles
@@ -748,6 +758,7 @@ setVisibilityFromList(titles) {
     this.currentXCurve = title;
     this.hasUserZoom = false;
     this.updateModelVisibility();
+    this.uiManager?.updateClearAnnotationsButtonVisibility();
 
     if(redraw){
       //Met à jour les données sans redessiner
@@ -763,6 +774,12 @@ setVisibilityFromList(titles) {
         seriesToRemove.remove();
     }
 
+    if (Array.isArray(this.data?.annotations)) {
+      this.data.annotations = this.data.annotations.filter(
+        ann => ann.xCurve !== title && !(ann.type === 'tangent-method' && ann.seriesName === title)
+      );
+    }
+
     if(this.currentXCurve === title){
       if(this.data.curves.length > 0){
         this.setXCurve(this.data.curves[0].title);
@@ -773,6 +790,8 @@ setVisibilityFromList(titles) {
     } else if (this.data.curves.length === 0) {
       this.hasUserZoom = false;
     }
+
+    this.uiManager?.updateClearAnnotationsButtonVisibility();
   }
 
   deleteAllCurves() {
@@ -994,21 +1013,30 @@ setDisableScientificNotation(disabled) {
   setCrosshairMode(mode) {
     this.crosshairMode = mode;
 
-
     const needsStickyTracking = (mode === 'data' || mode === 'tangent' || mode === 'tangent-method');
 
     this.hideFreeCrosshair();
+    this.snappedModelPoint = null;
+    this.snappedDataPoint = null;
+
+    if (this.tempAnnotation) {
+      this.tempAnnotation.forEach(el => el.destroy());
+      this.tempAnnotation = null;
+    }
+
+    if (this.isDragging) {
+      this.isDragging = false;
+      this.mouseDownInfo = null;
+      document.removeEventListener('mousemove', this.handleMouseMove);
+      document.removeEventListener('mouseup', this.handleMouseUp);
+    }
 
     if (mode !== 'edit-bounds') {
       this.hideModelBounds();
       this.editingModel = null;
       if (this.draggingBound) {
-        this.isDragging = false;
         this.draggingBound = null;
         this.previousModelBounds = null;
-        this.mouseDownInfo = null;
-        document.removeEventListener('mousemove', this.handleMouseMove);
-        document.removeEventListener('mouseup', this.handleMouseUp);
       }
     }
 
@@ -1047,10 +1075,7 @@ setDisableScientificNotation(disabled) {
     this.hideFreeCrosshair();
 
     const { chartX, chartY } = event;
-    const { plotLeft, plotTop, plotWidth, plotHeight } = chart;
-    
-    // Ne rien dessiner si la souris est hors de la zone de tracé
-    if (chartX < plotLeft || chartX > plotLeft + plotWidth || chartY < plotTop || chartY > plotTop + plotHeight) {
+    if (!this._isInsidePlotBox(chartX, chartY, chart)) {
       return;
     }
 
@@ -1059,13 +1084,12 @@ setDisableScientificNotation(disabled) {
 
     // Utiliser la fonction factorisée et stocker les éléments créés
     this.freeCrosshair = this._drawStyledCrosshair(chartX, chartY, xValue, yValue);
-
   }
 
   // MÉTHODE PRIVÉE pour cacher le réticule
   hideFreeCrosshair() {
     if (this.freeCrosshair) {
-      Object.values(this.freeCrosshair).forEach(el => el.destroy());
+      Object.values(this.freeCrosshair).forEach(el => el?.destroy?.());
       this.freeCrosshair = null;
     }
   }
@@ -1073,6 +1097,12 @@ setDisableScientificNotation(disabled) {
   // S’aimante au point de modèle visible le plus proche
   drawModelCrosshair(event) {
     const chart = this.chart;
+    if (!this._isInsidePlotBox(event.chartX, event.chartY, chart)) {
+      this.hideFreeCrosshair();
+      this.snappedModelPoint = null;
+      return;
+    }
+
     const best = this._findNearestModelPoint(event); // Trouve le point le plus proche
 
     if (!best) {
@@ -1081,12 +1111,17 @@ setDisableScientificNotation(disabled) {
       return;
     }
 
-    // Mémorise les coordonnées pour un éventuel clic
-    this.snappedModelPoint = { x: best.x, y: best.y };
-
     // Calcule les coordonnées en pixels sur le graphique
     const pixelX = best.plotX + chart.plotLeft;
     const pixelY = best.plotY + chart.plotTop;
+    if (!this._isInsidePlotBox(pixelX, pixelY, chart)) {
+      this.hideFreeCrosshair();
+      this.snappedModelPoint = null;
+      return;
+    }
+
+    // Mémorise les coordonnées pour un éventuel clic
+    this.snappedModelPoint = { x: best.x, y: best.y };
 
     // Cacher l'ancien réticule et dessiner le nouveau
     this.hideFreeCrosshair();
@@ -1458,22 +1493,186 @@ setDisableScientificNotation(disabled) {
     return [circle];
   }
 
+  _isInsidePlotBox(chartX, chartY, chart = this.chart) {
+    if (!chart || !Number.isFinite(chartX) || !Number.isFinite(chartY)) return false;
+    const { plotLeft, plotTop, plotWidth, plotHeight } = chart;
+    if (![plotLeft, plotTop, plotWidth, plotHeight].every(Number.isFinite)) return false;
+    return chartX >= plotLeft && chartX <= plotLeft + plotWidth &&
+           chartY >= plotTop && chartY <= plotTop + plotHeight;
+  }
+
+  _clampToPlotBox(chartX, chartY, chart = this.chart) {
+    if (!chart) return { chartX, chartY };
+    const { plotLeft, plotTop, plotWidth, plotHeight } = chart;
+    return {
+      chartX: Math.max(plotLeft, Math.min(plotLeft + plotWidth, chartX)),
+      chartY: Math.max(plotTop, Math.min(plotTop + plotHeight, chartY))
+    };
+  }
+
+  _getPlotClipRect(targetChart = this.chart) {
+    if (!targetChart?.renderer || typeof targetChart.renderer.clipRect !== 'function') {
+      return null;
+    }
+    const { plotLeft, plotTop, plotWidth, plotHeight } = targetChart;
+    if (![plotLeft, plotTop, plotWidth, plotHeight].every(Number.isFinite) || plotWidth <= 0 || plotHeight <= 0) {
+      return null;
+    }
+    if (!targetChart._annotationsClipRect || targetChart._annotationsClipRect.destroyed) {
+      targetChart._annotationsClipRect = targetChart.renderer.clipRect(plotLeft, plotTop, plotWidth, plotHeight);
+    } else {
+      targetChart._annotationsClipRect.attr({ x: plotLeft, y: plotTop, width: plotWidth, height: plotHeight });
+    }
+    return targetChart._annotationsClipRect;
+  }
+
+  _clipToPlot(element, targetChart = this.chart) {
+    if (!element || typeof element.clip !== 'function') return element;
+    const clipRect = this._getPlotClipRect(targetChart);
+    if (clipRect) {
+      element.clip(clipRect);
+    }
+    return element;
+  }
+
+  _getAxisDataBounds(chart = this.chart) {
+    const xExt = chart?.xAxis?.[0]?.getExtremes?.();
+    const yExt = chart?.yAxis?.[0]?.getExtremes?.();
+    if (!xExt || !yExt) return null;
+    const { min: xMin, max: xMax } = xExt;
+    const { min: yMin, max: yMax } = yExt;
+    if (![xMin, xMax, yMin, yMax].every(Number.isFinite) || xMin >= xMax || yMin >= yMax) {
+      return null;
+    }
+    return { xMin, xMax, yMin, yMax };
+  }
+
+  _isDataPointInBounds(pt, bounds) {
+    if (!pt || !Number.isFinite(pt.x) || !Number.isFinite(pt.y)) return false;
+    if (!bounds) return true;
+    return pt.x >= bounds.xMin && pt.x <= bounds.xMax &&
+           pt.y >= bounds.yMin && pt.y <= bounds.yMax;
+  }
+
+  _clipLineToAxisBounds(x1, y1, x2, y2, bounds) {
+    if (![x1, y1, x2, y2].every(Number.isFinite)) return null;
+    if (!bounds) return { x1, y1, x2, y2 };
+
+    const { xMin, xMax, yMin, yMax } = bounds;
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    let t0 = 0;
+    let t1 = 1;
+
+    const checks = [
+      [-dx, x1 - xMin],
+      [dx, xMax - x1],
+      [-dy, y1 - yMin],
+      [dy, yMax - y1]
+    ];
+
+    for (const [p, q] of checks) {
+      if (p === 0) {
+        if (q < 0) return null;
+      } else {
+        const r = q / p;
+        if (p < 0) {
+          if (r > t1) return null;
+          if (r > t0) t0 = r;
+        } else {
+          if (r < t0) return null;
+          if (r < t1) t1 = r;
+        }
+      }
+    }
+
+    return {
+      x1: x1 + t0 * dx,
+      y1: y1 + t0 * dy,
+      x2: x1 + t1 * dx,
+      y2: y1 + t1 * dy
+    };
+  }
+
+  _clipInfiniteLineToAxisBounds(px, py, slope, bounds) {
+    if (![px, py, slope].every(Number.isFinite) || !bounds) return null;
+    const { xMin, xMax, yMin, yMax } = bounds;
+
+    if (slope === 0) {
+      if (py < yMin || py > yMax) return null;
+      return { x1: xMin, y1: py, x2: xMax, y2: py };
+    }
+
+    const xAtYMin = px + (yMin - py) / slope;
+    const xAtYMax = px + (yMax - py) / slope;
+    const xLow = Math.max(xMin, Math.min(xAtYMin, xAtYMax));
+    const xHigh = Math.min(xMax, Math.max(xAtYMin, xAtYMax));
+
+    if (xLow > xHigh) return null;
+
+    const yLow = Math.max(yMin, Math.min(yMax, py + slope * (xLow - px)));
+    const yHigh = Math.max(yMin, Math.min(yMax, py + slope * (xHigh - px)));
+
+    return { x1: xLow, y1: yLow, x2: xHigh, y2: yHigh };
+  }
+
+  _drawSlopeLabel(pixelX, pixelY, slope, targetChart = this.chart) {
+    const significantDigits = this.data?.settings?.significantDigits ?? 4;
+    const slopeText = `pente = ${formatNumber(slope, significantDigits)}`;
+    const slopeLabel = targetChart.renderer.label(slopeText, 0, 0, 'callout')
+      .attr({ fill: 'white', stroke: '#dbdbdb', 'stroke-width': 1, r: 6, padding: 8, zIndex: 6 })
+      .css({ color: 'black', fontSize: '14px' })
+      .add();
+
+    const labelBBox = slopeLabel.getBBox();
+    let labelX = pixelX + 15 > targetChart.plotWidth + targetChart.plotLeft - labelBBox.width
+      ? pixelX - 15 - labelBBox.width
+      : pixelX + 15;
+    let labelY = slope > 0 ? pixelY + 15 : pixelY - 15 - labelBBox.height;
+
+    if (labelY < targetChart.plotTop) {
+      labelY = pixelY + 15;
+    }
+    if (labelY + labelBBox.height > targetChart.plotTop + targetChart.plotHeight) {
+      labelY = pixelY - 15 - labelBBox.height;
+    }
+
+    labelX = Math.max(targetChart.plotLeft, Math.min(labelX, targetChart.plotLeft + targetChart.plotWidth - labelBBox.width));
+    labelY = Math.max(targetChart.plotTop, Math.min(labelY, targetChart.plotTop + targetChart.plotHeight - labelBBox.height));
+
+    slopeLabel.translate(labelX, labelY);
+    return slopeLabel;
+  }
+
   /**
    * Dessine un réticule personnalisé en s'aimantant au point de donnée le plus proche.
    */
   drawDataCrosshair(event) {
     const chart = this.chart;
-    
+    if (!this._isInsidePlotBox(event.chartX, event.chartY, chart)) {
+      this.snappedDataPoint = null;
+      this.hideFreeCrosshair();
+      return;
+    }
+
     // Utilise l'événement natif de Highcharts pour trouver le point le plus proche
     const dataSeries = chart.series.filter(s => !s.options.id?.startsWith('model-'));
     const point = chart.pointer.findNearestKDPoint(dataSeries, false, event);
 
     if (point && point.plotX !== undefined && point.plotY !== undefined) {
+      const pixelX = point.plotX + chart.plotLeft;
+      const pixelY = point.plotY + chart.plotTop;
+      if (!this._isInsidePlotBox(pixelX, pixelY, chart)) {
+        this.snappedDataPoint = null;
+        this.hideFreeCrosshair();
+        return;
+      }
+
       this.snappedDataPoint = { x: point.x, y: point.y };
       this.hideFreeCrosshair(); // Cacher l'ancien
       
       // Dessiner le nouveau réticule à la position du point trouvé
-      this.freeCrosshair = this._drawStyledCrosshair(point.plotX + chart.plotLeft, point.plotY + chart.plotTop, point.x, point.y);
+      this.freeCrosshair = this._drawStyledCrosshair(pixelX, pixelY, point.x, point.y);
     } else {
       this.snappedDataPoint = null;
       this.hideFreeCrosshair();
@@ -1491,14 +1690,15 @@ setDisableScientificNotation(disabled) {
     const xAxis = chart.xAxis[0];
     const yAxis = chart.yAxis[0];
     const significantDigits = this.data?.settings?.significantDigits ?? 4;
+    const bounds = this._getAxisDataBounds(chart);
 
     // Supprimer les anciennes annotations sur ce graphique s’il y en a
     if (Array.isArray(targetChart.renderedAnnotations)) {
       targetChart.renderedAnnotations.forEach(rendered => {
         if (Array.isArray(rendered)) {
-          rendered.forEach(el => el.destroy());
+          rendered.forEach(el => el?.destroy?.());
         } else if (typeof rendered === 'object' && rendered !== null) {
-          Object.values(rendered).forEach(el => el.destroy());
+          Object.values(rendered).forEach(el => el?.destroy?.());
         }
       });
     }
@@ -1510,12 +1710,15 @@ setDisableScientificNotation(disabled) {
 
     // Dessiner chaque annotation
     this.data.annotations.forEach(annotation => {
+      if (annotation.xCurve && this.currentXCurve && annotation.xCurve !== this.currentXCurve) {
+        return;
+      }
+
       if (annotation.type === 'point') {
         const pixelX = xAxis.toPixels(annotation.x);
         const pixelY = yAxis.toPixels(annotation.y);
 
-        if (pixelX >= chart.plotLeft && pixelX <= chart.plotLeft + chart.plotWidth &&
-          pixelY >= chart.plotTop && pixelY <= chart.plotTop + chart.plotHeight) {
+        if (this._isInsidePlotBox(pixelX, pixelY, chart)) {
           const renderedCrosshair = this._drawStyledCrosshair(pixelX, pixelY, annotation.x, annotation.y, targetChart);
           targetChart.renderedAnnotations.push(renderedCrosshair);
         }
@@ -1526,43 +1729,81 @@ setDisableScientificNotation(disabled) {
         
         const segmentElements = [];
 
-        // 1. Ligne principale du segment
-        segmentElements.push(chart.renderer.path(['M', pixelX1, pixelY1, 'L', pixelX2, pixelY2])
-          .attr({ 'stroke-width': 2, stroke: 'rgba(220, 53, 69, 0.9)', zIndex: 4 }).add());
+        // 1. Ligne principale du segment (clippée à la zone de tracé)
+        const clippedSeg = this._clipLineToAxisBounds(p1.x, p1.y, p2.x, p2.y, bounds);
+        if (clippedSeg) {
+          const mainLine = chart.renderer.path([
+            'M', xAxis.toPixels(clippedSeg.x1), yAxis.toPixels(clippedSeg.y1),
+            'L', xAxis.toPixels(clippedSeg.x2), yAxis.toPixels(clippedSeg.y2)
+          ]).attr({ 'stroke-width': 2, stroke: 'rgba(220, 53, 69, 0.9)', zIndex: 4 }).add();
+          segmentElements.push(this._clipToPlot(mainLine, targetChart));
+        }
 
-        // 2. Points aux extrémités
-        segmentElements.push(...this._drawEndpoint(pixelX1, pixelY1, targetChart), ...this._drawEndpoint(pixelX2, pixelY2, targetChart));
+        // 2. Points aux extrémités visibles
+        if (this._isDataPointInBounds(p1, bounds)) {
+          const ep1 = this._drawEndpoint(pixelX1, pixelY1, targetChart);
+          ep1.forEach(el => this._clipToPlot(el, targetChart));
+          segmentElements.push(...ep1);
+        }
+        if (this._isDataPointInBounds(p2, bounds)) {
+          const ep2 = this._drawEndpoint(pixelX2, pixelY2, targetChart);
+          ep2.forEach(el => this._clipToPlot(el, targetChart));
+          segmentElements.push(...ep2);
+        }
 
-        // 3. Lignes Delta
+        // 3. Lignes Delta (clippées à la zone de tracé)
         const deltaLineAttr = { 'stroke-width': 1, stroke: 'rgba(0, 123, 255, 0.8)', 'stroke-dasharray': '4,4', zIndex: 3 };
-        segmentElements.push(chart.renderer.path(['M', pixelX1, pixelY1, 'L', pixelX2, pixelY1]).attr(deltaLineAttr).add());
-        segmentElements.push(chart.renderer.path(['M', pixelX2, pixelY1, 'L', pixelX2, pixelY2]).attr(deltaLineAttr).add());
+        const clippedDeltaX = this._clipLineToAxisBounds(p1.x, p1.y, p2.x, p1.y, bounds);
+        if (clippedDeltaX) {
+          const dxLine = chart.renderer.path([
+            'M', xAxis.toPixels(clippedDeltaX.x1), yAxis.toPixels(clippedDeltaX.y1),
+            'L', xAxis.toPixels(clippedDeltaX.x2), yAxis.toPixels(clippedDeltaX.y2)
+          ]).attr(deltaLineAttr).add();
+          segmentElements.push(this._clipToPlot(dxLine, targetChart));
+        }
+
+        const clippedDeltaY = this._clipLineToAxisBounds(p2.x, p1.y, p2.x, p2.y, bounds);
+        if (clippedDeltaY) {
+          const dyLine = chart.renderer.path([
+            'M', xAxis.toPixels(clippedDeltaY.x1), yAxis.toPixels(clippedDeltaY.y1),
+            'L', xAxis.toPixels(clippedDeltaY.x2), yAxis.toPixels(clippedDeltaY.y2)
+          ]).attr(deltaLineAttr).add();
+          segmentElements.push(this._clipToPlot(dyLine, targetChart));
+        }
 
         // 4. Labels Delta
         const xCurveObj = this.data.getCurveByTitle(this.currentXCurve);
-        const firstYSeries = chart.series.find(s => s.visible && s.yAxis.index === 0);
+        const firstYSeries = chart.series.find(s => s.visible && s.yAxis?.index === 0);
         const xUnit = xCurveObj?.unit ? ` ${xCurveObj.unit}` : '';
         const rawYUnit = annotation.yUnit !== undefined
           ? annotation.yUnit
           : (firstYSeries?.userOptions?.unit || '');
         const yUnit = rawYUnit ? ` ${rawYUnit}` : '';
 
-        const dxText = `Δx = ${formatNumber(p2.x - p1.x, significantDigits)}${xUnit}`;
-        const dyText = `Δy = ${formatNumber(p2.y - p1.y, significantDigits)}${yUnit}`;
-        
         const labelAttr = { fill: 'rgba(255, 255, 255, 0.85)', stroke: '#dbdbdb', 'stroke-width': 1, r: 4, padding: 5, zIndex: 6 };
         const labelCss = { color: 'black', fontSize: '12px' };
 
-        const dxLabel = chart.renderer.label(dxText, 0, 0).attr(labelAttr).css(labelCss).add();
-        const dxBBox = dxLabel.getBBox();
-        dxLabel.translate((pixelX1 + pixelX2) / 2 - dxBBox.width / 2, pixelY1 - (pixelY1 > pixelY2 ? 5 : dxBBox.height + 5));
-        
-        const dyLabel = chart.renderer.label(dyText, 0, 0).attr(labelAttr).css(labelCss).add();
-        const dyBBox = dyLabel.getBBox();
-        dyLabel.translate(pixelX2 + (pixelX2 > pixelX1 ? 5 : -dyBBox.width - 5), (pixelY1 + pixelY2) / 2 - dyBBox.height / 2);
+        if (clippedDeltaX) {
+          const dxText = `Δx = ${formatNumber(p2.x - p1.x, significantDigits)}${xUnit}`;
+          const dxLabel = chart.renderer.label(dxText, 0, 0).attr(labelAttr).css(labelCss).add();
+          const dxBBox = dxLabel.getBBox();
+          const midPixX = (xAxis.toPixels(clippedDeltaX.x1) + xAxis.toPixels(clippedDeltaX.x2)) / 2;
+          dxLabel.translate(midPixX - dxBBox.width / 2, pixelY1 - (pixelY1 > pixelY2 ? 5 : dxBBox.height + 5));
+          segmentElements.push(this._clipToPlot(dxLabel, targetChart));
+        }
 
-        segmentElements.push(dxLabel, dyLabel);
-        targetChart.renderedAnnotations.push(segmentElements);
+        if (clippedDeltaY) {
+          const dyText = `Δy = ${formatNumber(p2.y - p1.y, significantDigits)}${yUnit}`;
+          const dyLabel = chart.renderer.label(dyText, 0, 0).attr(labelAttr).css(labelCss).add();
+          const dyBBox = dyLabel.getBBox();
+          const midPixY = (yAxis.toPixels(clippedDeltaY.y1) + yAxis.toPixels(clippedDeltaY.y2)) / 2;
+          dyLabel.translate(pixelX2 + (pixelX2 > pixelX1 ? 5 : -dyBBox.width - 5), midPixY - dyBBox.height / 2);
+          segmentElements.push(this._clipToPlot(dyLabel, targetChart));
+        }
+
+        if (segmentElements.length > 0) {
+          targetChart.renderedAnnotations.push(segmentElements);
+        }
       } else if (annotation.type === 'tangent') {
         const { point, slope } = annotation;
         if (!Number.isFinite(slope)) return;
@@ -1570,45 +1811,36 @@ setDisableScientificNotation(disabled) {
         const pixelY = yAxis.toPixels(point.y);
 
         const renderedTangent = {};
+        const pointVisible = this._isDataPointInBounds(point, bounds) && this._isInsidePlotBox(pixelX, pixelY, chart);
 
-        // Point de tangence
-        Object.assign(renderedTangent, this._drawStyledCrosshair(pixelX, pixelY, point.x, point.y, targetChart));
-
-        // Ligne de tangente
-        const { min: xMin, max: xMax } = chart.xAxis[0].getExtremes();
-        const yAtMin = slope * (xMin - point.x) + point.y;
-        const yAtMax = slope * (xMax - point.x) + point.y;
-        const p1 = { x: xAxis.toPixels(xMin), y: yAxis.toPixels(yAtMin) };
-        const p2 = { x: xAxis.toPixels(xMax), y: yAxis.toPixels(yAtMax) };
-        renderedTangent.tangentLine = chart.renderer.path(['M', p1.x, p1.y, 'L', p2.x, p2.y])
-          .attr({ 'stroke-width': 2, stroke: 'rgba(0, 200, 100, 0.8)', zIndex: 4 }).add();
-
-        // Label de la pente
-        const slopeText = `pente = ${formatNumber(slope, significantDigits)}`;
-        renderedTangent.slopeLabel = chart.renderer.label(slopeText, 0, 0, 'callout')
-          .attr({ fill: 'white', stroke: '#dbdbdb', 'stroke-width': 1, r: 6, padding: 8, zIndex: 6 })
-          .css({ color: 'black', fontSize: '14px' }).add();
-
-        const labelBBox = renderedTangent.slopeLabel.getBBox();
-        const labelX = pixelX + 15 > chart.plotWidth + chart.plotLeft - labelBBox.width ? pixelX - 15 - labelBBox.width : pixelX + 15;
-        let labelY;
-        if (slope > 0) {
-            labelY = pixelY + 15;
-        } else {
-            labelY = pixelY - 15 - labelBBox.height;
+        // Point de tangence (uniquement s'il est dans la zone visible)
+        if (pointVisible) {
+          Object.assign(renderedTangent, this._drawStyledCrosshair(pixelX, pixelY, point.x, point.y, targetChart));
         }
-        if (labelY < chart.plotTop) {
-            labelY = pixelY + 15;
-        }
-        if (labelY + labelBBox.height > chart.plotTop + chart.plotHeight) {
-            labelY = pixelY - 15 - labelBBox.height;
-        }
-        
-        renderedTangent.slopeLabel.translate(labelX, labelY);
 
-        targetChart.renderedAnnotations.push(renderedTangent);
+        // Ligne de tangente clippée à la zone de tracé
+        const clippedTangent = this._clipInfiniteLineToAxisBounds(point.x, point.y, slope, bounds);
+        if (clippedTangent) {
+          const p1 = { x: xAxis.toPixels(clippedTangent.x1), y: yAxis.toPixels(clippedTangent.y1) };
+          const p2 = { x: xAxis.toPixels(clippedTangent.x2), y: yAxis.toPixels(clippedTangent.y2) };
+          renderedTangent.tangentLine = this._clipToPlot(
+            chart.renderer.path(['M', p1.x, p1.y, 'L', p2.x, p2.y])
+              .attr({ 'stroke-width': 2, stroke: 'rgba(0, 200, 100, 0.8)', zIndex: 4 }).add(),
+            targetChart
+          );
+        }
+
+        // Label de la pente (uniquement si le point de tangence est visible)
+        if (pointVisible) {
+          renderedTangent.slopeLabel = this._drawSlopeLabel(pixelX, pixelY, slope, targetChart);
+        }
+
+        if (Object.keys(renderedTangent).length > 0) {
+          targetChart.renderedAnnotations.push(renderedTangent);
+        }
       } else if (annotation.type === 'tangent-method') {
         const { point1, point2, slope, seriesName } = annotation;
+        if (!Number.isFinite(slope)) return;
         const pixelX1 = xAxis.toPixels(point1.x);
         const pixelY1 = yAxis.toPixels(point1.y);
         const pixelX2 = xAxis.toPixels(point2.x);
@@ -1616,31 +1848,40 @@ setDisableScientificNotation(disabled) {
 
         const renderedTangentMethod = {};
 
-        // 1. Dessin des deux points de tangence avec le réticule
-        renderedTangentMethod.pt1 = this._drawEndpoint(pixelX1, pixelY1, targetChart)[0];
-        renderedTangentMethod.pt2 = this._drawEndpoint(pixelX2, pixelY2, targetChart)[0];
+        // 1. Dessin des deux points de tangence s'ils sont dans la zone visible
+        if (this._isDataPointInBounds(point1, bounds)) {
+          renderedTangentMethod.pt1 = this._clipToPlot(this._drawEndpoint(pixelX1, pixelY1, targetChart)[0], targetChart);
+        }
+        if (this._isDataPointInBounds(point2, bounds)) {
+          renderedTangentMethod.pt2 = this._clipToPlot(this._drawEndpoint(pixelX2, pixelY2, targetChart)[0], targetChart);
+        }
 
-        // Fonction utilitaire pour dessiner une droite sur toute la largeur
-        const { min: xMin, max: xMax } = chart.xAxis[0].getExtremes();
+        // Fonction utilitaire pour dessiner une droite clippée à la zone de tracé
         const drawLine = (p, color, dashStyle = 'Solid') => {
-          const yAtMin = slope * (xMin - p.x) + p.y;
-          const yAtMax = slope * (xMax - p.x) + p.y;
-          const pMin = { x: xAxis.toPixels(xMin), y: yAxis.toPixels(yAtMin) };
-          const pMax = { x: xAxis.toPixels(xMax), y: yAxis.toPixels(yAtMax) };
-          return chart.renderer.path(['M', pMin.x, pMin.y, 'L', pMax.x, pMax.y])
-            .attr({ 'stroke-width': 2, stroke: color, dashstyle: dashStyle, zIndex: 4 }).add();
+          const clipped = this._clipInfiniteLineToAxisBounds(p.x, p.y, slope, bounds);
+          if (!clipped) return null;
+          const pMin = { x: xAxis.toPixels(clipped.x1), y: yAxis.toPixels(clipped.y1) };
+          const pMax = { x: xAxis.toPixels(clipped.x2), y: yAxis.toPixels(clipped.y2) };
+          return this._clipToPlot(
+            chart.renderer.path(['M', pMin.x, pMin.y, 'L', pMax.x, pMax.y])
+              .attr({ 'stroke-width': 2, stroke: color, dashstyle: dashStyle, zIndex: 4 }).add(),
+            targetChart
+          );
         };
 
         // 2. Droites parallèles
-        renderedTangentMethod.line1 = drawLine(point1, 'rgba(0, 200, 100, 0.8)');
-        renderedTangentMethod.line2 = drawLine(point2, 'rgba(0, 200, 100, 0.8)');
+        const line1 = drawLine(point1, 'rgba(0, 200, 100, 0.8)');
+        if (line1) renderedTangentMethod.line1 = line1;
+        const line2 = drawLine(point2, 'rgba(0, 200, 100, 0.8)');
+        if (line2) renderedTangentMethod.line2 = line2;
 
         // 3. Droite médiane
         const b1 = point1.y - slope * point1.x;
         const b2 = point2.y - slope * point2.x;
         const bMed = (b1 + b2) / 2;
         const pMed = { x: 0, y: bMed }; 
-        renderedTangentMethod.medianLine = drawLine(pMed, 'rgba(0, 200, 100, 0.5)', 'Dash');
+        const medianLine = drawLine(pMed, 'rgba(0, 200, 100, 0.5)', 'Dash');
+        if (medianLine) renderedTangentMethod.medianLine = medianLine;
 
         // 4. Calcul de l'intersection (Point d'équivalence)
         const series = chart.series.find(s => s.name === seriesName);
@@ -1714,12 +1955,15 @@ setDisableScientificNotation(disabled) {
             eqPoint = candidates[0].pt;
           }
 
-          // 5. Affichage du Point d'équivalence
-          if (eqPoint) {
+          // 5. Affichage du Point d'équivalence (si dans la zone visible)
+          if (eqPoint && this._isDataPointInBounds(eqPoint, bounds)) {
             const pxEq = xAxis.toPixels(eqPoint.x);
             const pyEq = yAxis.toPixels(eqPoint.y);
-            renderedTangentMethod.eqPoint = chart.renderer.circle(pxEq, pyEq, 4)
-              .attr({ fill: 'rgba(220, 53, 69, 0.9)', stroke: 'white', 'stroke-width': 1, zIndex: 6 }).add();
+            renderedTangentMethod.eqPoint = this._clipToPlot(
+              chart.renderer.circle(pxEq, pyEq, 4)
+                .attr({ fill: 'rgba(220, 53, 69, 0.9)', stroke: 'white', 'stroke-width': 1, zIndex: 6 }).add(),
+              targetChart
+            );
             
             const xCurveObj = this.data.getCurveByTitle(this.currentXCurve);
             const yCurveObj = this.data.getCurveByTitle(seriesName);
@@ -1733,7 +1977,7 @@ setDisableScientificNotation(disabled) {
             const yUnit = yCurveObj?.unit ? ` ${yCurveObj.unit}` : (series?.userOptions?.unit ? ` ${series.userOptions.unit}` : '');
 
             const eqText = `<b>${xLabelName}</b> = ${formatNumber(eqPoint.x, significantDigits)}${xUnit}<br/><b>${yLabelName}</b> = ${formatNumber(eqPoint.y, significantDigits)}${yUnit}`;
-            renderedTangentMethod.eqLabel = chart.renderer.label(eqText, pxEq + 12, pyEq - 20, 'callout', null, null, !isExport)
+            const eqLabel = chart.renderer.label(eqText, 0, 0, 'callout', null, null, !isExport)
               .attr({ 
                   fill: 'rgba(255, 255, 255, 0.95)', // Fond presque opaque
                   stroke: '#dbdbdb',                 // Bordure de l'étiquette
@@ -1746,10 +1990,24 @@ setDisableScientificNotation(disabled) {
                   color: 'black', 
                   fontSize: '14px' 
               }).add();
+
+            const eqBBox = eqLabel.getBBox();
+            let eqLabelX = pxEq + 12;
+            if (eqLabelX + eqBBox.width > chart.plotLeft + chart.plotWidth) {
+              eqLabelX = pxEq - 12 - eqBBox.width;
+            }
+            let eqLabelY = pyEq - 20;
+            eqLabelX = Math.max(chart.plotLeft, Math.min(eqLabelX, chart.plotLeft + chart.plotWidth - eqBBox.width));
+            eqLabelY = Math.max(chart.plotTop, Math.min(eqLabelY, chart.plotTop + chart.plotHeight - eqBBox.height));
+            eqLabel.translate(eqLabelX, eqLabelY);
+
+            renderedTangentMethod.eqLabel = eqLabel;
           }
         }
 
-        targetChart.renderedAnnotations.push(renderedTangentMethod);
+        if (Object.keys(renderedTangentMethod).length > 0) {
+          targetChart.renderedAnnotations.push(renderedTangentMethod);
+        }
       }
     });
   }
@@ -1803,11 +2061,15 @@ setDisableScientificNotation(disabled) {
 
     if (this.tempAnnotation) {
       this.tempAnnotation.forEach(el => el.destroy());
+      this.tempAnnotation = null;
+    }
+
+    if (this.crosshairMode !== 'free' && this.crosshairMode !== 'data' && this.crosshairMode !== 'model') {
+      return;
     }
 
     const distance = Math.sqrt(Math.pow(currentX - startInfo.chartX, 2) + Math.pow(currentY - startInfo.chartY, 2));
     if (distance < 5) {
-      this.tempAnnotation = null;
       return;
     }
     
@@ -1823,7 +2085,7 @@ setDisableScientificNotation(disabled) {
       if (!currentPoint) return; // Pas de point d'arrivée, on ne dessine rien
       p2_pix = { x: currentPoint.plotX + chart.plotLeft, y: currentPoint.plotY + chart.plotTop };
 
-    } else if (this.crosshairMode === 'model') { // Comportement pour mode data
+    } else if (this.crosshairMode === 'model') {
       if (!startInfo.snappedPoint) return;
       p1_pix = { x: chart.xAxis[0].toPixels(startInfo.snappedPoint.x), y: chart.yAxis[0].toPixels(startInfo.snappedPoint.y) };
 
@@ -1833,16 +2095,32 @@ setDisableScientificNotation(disabled) {
 
     } else { // Comportement du mode libre
       p1_pix = { x: startInfo.chartX, y: startInfo.chartY };
-      p2_pix = { x: currentX, y: currentY };
+      const clampedEnd = this._isInsidePlotBox(startInfo.chartX, startInfo.chartY, chart)
+        ? this._clampToPlotBox(currentX, currentY, chart)
+        : { chartX: currentX, chartY: currentY };
+      p2_pix = { x: clampedEnd.chartX, y: clampedEnd.chartY };
     }
     
     const tempElements = [];
-    tempElements.push(chart.renderer.path(['M', p1_pix.x, p1_pix.y, 'L', p2_pix.x, p2_pix.y])
-      .attr({ 'stroke-width': 2, stroke: 'rgba(220, 53, 69, 0.7)', 'stroke-dasharray': '5,5', zIndex: 10 }).add());
-    tempElements.push(...this._drawEndpoint(p1_pix.x, p1_pix.y), ...this._drawEndpoint(p2_pix.x, p2_pix.y));
+    tempElements.push(this._clipToPlot(
+      chart.renderer.path(['M', p1_pix.x, p1_pix.y, 'L', p2_pix.x, p2_pix.y])
+        .attr({ 'stroke-width': 2, stroke: 'rgba(220, 53, 69, 0.7)', 'stroke-dasharray': '5,5', zIndex: 10 }).add(),
+      chart
+    ));
+    const ep1 = this._drawEndpoint(p1_pix.x, p1_pix.y);
+    const ep2 = this._drawEndpoint(p2_pix.x, p2_pix.y);
+    ep1.forEach(el => this._clipToPlot(el, chart));
+    ep2.forEach(el => this._clipToPlot(el, chart));
+    tempElements.push(...ep1, ...ep2);
     const deltaLineAttr = { 'stroke-width': 1, stroke: 'rgba(0, 123, 255, 0.7)', 'stroke-dasharray': '4,4', zIndex: 9 };
-    tempElements.push(chart.renderer.path(['M', p1_pix.x, p1_pix.y, 'L', p2_pix.x, p1_pix.y]).attr(deltaLineAttr).add());
-    tempElements.push(chart.renderer.path(['M', p2_pix.x, p1_pix.y, 'L', p2_pix.x, p2_pix.y]).attr(deltaLineAttr).add());
+    tempElements.push(this._clipToPlot(
+      chart.renderer.path(['M', p1_pix.x, p1_pix.y, 'L', p2_pix.x, p1_pix.y]).attr(deltaLineAttr).add(),
+      chart
+    ));
+    tempElements.push(this._clipToPlot(
+      chart.renderer.path(['M', p2_pix.x, p1_pix.y, 'L', p2_pix.x, p2_pix.y]).attr(deltaLineAttr).add(),
+      chart
+    ));
 
     this.tempAnnotation = tempElements;
   }
@@ -1924,22 +2202,40 @@ setDisableScientificNotation(disabled) {
     const pos = chart.pointer.getChartPosition();
     const endX = e.pageX - pos.left;
     const endY = e.pageY - pos.top;
-    const { chartX: startX, chartY: startY, time: startTime, snappedPoint: startSnappedPoint } = this.mouseDownInfo;
+    const { chartX: startX, chartY: startY, snappedPoint: startSnappedPoint } = this.mouseDownInfo;
     const distance = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
-    const duration = Date.now() - startTime;
+    let annotationAdded = false;
 
-    if (distance < 5 && duration < 300) { // C'est un clic
+    if (distance < 5) { // C'est un clic (indépendant de la durée)
       let xValue, yValue;
 
-      if (this.crosshairMode === 'model' && this.snappedModelPoint) {
-        xValue = this.snappedModelPoint.x;
-        yValue = this.snappedModelPoint.y;
-        this.data.annotations.push({ id: Highcharts.uniqueKey(), type: 'point', x: xValue, y: yValue });
+      if (this.crosshairMode === 'model') {
+        if (this.snappedModelPoint) {
+          xValue = this.snappedModelPoint.x;
+          yValue = this.snappedModelPoint.y;
+          this.data.annotations.push({
+            id: Highcharts.uniqueKey(),
+            type: 'point',
+            x: xValue,
+            y: yValue,
+            xCurve: this.currentXCurve
+          });
+          annotationAdded = true;
+        }
 
-      } else if (this.crosshairMode === 'data' && this.snappedDataPoint) {
-        xValue = this.snappedDataPoint.x;
-        yValue = this.snappedDataPoint.y;
-        this.data.annotations.push({ id: Highcharts.uniqueKey(), type: 'point', x: xValue, y: yValue });
+      } else if (this.crosshairMode === 'data') {
+        if (this.snappedDataPoint) {
+          xValue = this.snappedDataPoint.x;
+          yValue = this.snappedDataPoint.y;
+          this.data.annotations.push({
+            id: Highcharts.uniqueKey(),
+            type: 'point',
+            x: xValue,
+            y: yValue,
+            xCurve: this.currentXCurve
+          });
+          annotationAdded = true;
+        }
 
       } else if (this.crosshairMode === 'tangent') {
         const point = this._findNearestPoint({ chartX: endX, chartY: endY });
@@ -1951,8 +2247,10 @@ setDisableScientificNotation(disabled) {
               id: Highcharts.uniqueKey(),
               type: 'tangent',
               point: { x: point.x, y: point.y },
-              slope: slope
+              slope: slope,
+              xCurve: this.currentXCurve
             });
+            annotationAdded = true;
           }
         }
       } else if (this.crosshairMode === 'tangent-method') {
@@ -1962,9 +2260,10 @@ setDisableScientificNotation(disabled) {
           if (slope1 !== null && Number.isFinite(slope1)) {
             const result = this._findTangentMethodPoints(point, slope1);
             if (result) {
-
-              // Supprime l'ancienne méthode des tangentes avant d'ajouter la nouvelle
-              this.data.annotations = this.data.annotations.filter(ann => ann.type !== 'tangent-method');
+              // Supprime l'ancienne méthode des tangentes de cet axe X avant d'ajouter la nouvelle
+              this.data.annotations = this.data.annotations.filter(
+                ann => ann.type !== 'tangent-method' || (ann.xCurve && ann.xCurve !== this.currentXCurve)
+              );
 
               this.data.annotations.push({
                 id: Highcharts.uniqueKey(),
@@ -1972,42 +2271,63 @@ setDisableScientificNotation(disabled) {
                 point1: result.p1,
                 point2: result.p2,
                 slope: slope1,
-                seriesName: point.series.name
+                seriesName: point.series.name,
+                xCurve: this.currentXCurve
               });
+              annotationAdded = true;
 
               // Désélection de l'outil
-              const silentClick = new MouseEvent('click', { bubbles: false });
-              $('#tool-tangent-method').dispatchEvent(silentClick);
+              const tangentMethodBtn = $('#tool-tangent-method');
+              if (tangentMethodBtn && typeof MouseEvent === 'function') {
+                const silentClick = new MouseEvent('click', { bubbles: false });
+                tangentMethodBtn.dispatchEvent(silentClick);
+              }
             }
           }
         }
-      } else { // Réticule libre
-        xValue = chart.xAxis[0].toValue(endX);
-        yValue = chart.yAxis[0].toValue(endY);
-        this.data.annotations.push({ id: Highcharts.uniqueKey(), type: 'point', x: xValue, y: yValue });
+      } else if (this.crosshairMode === 'free') {
+        if (this._isInsidePlotBox(endX, endY, chart)) {
+          xValue = chart.xAxis[0].toValue(endX);
+          yValue = chart.yAxis[0].toValue(endY);
+          this.data.annotations.push({
+            id: Highcharts.uniqueKey(),
+            type: 'point',
+            x: xValue,
+            y: yValue,
+            xCurve: this.currentXCurve
+          });
+          annotationAdded = true;
+        }
       }
       
     } else { // C'est un glisser-déposer
       let p1, p2;
       
       if (this.crosshairMode === 'data') {
-        if (!startSnappedPoint) return;
-        p1 = startSnappedPoint;
-        const dataSeries = chart.series.filter(s => !s.options.id?.startsWith('model-'));
-        const endPoint = chart.pointer.findNearestKDPoint(dataSeries, true, { chartX: endX, chartY: endY });
-        if (!endPoint) return;
-        p2 = { x: endPoint.x, y: endPoint.y };
+        if (startSnappedPoint) {
+          const dataSeries = chart.series.filter(s => !s.options.id?.startsWith('model-'));
+          const endPoint = chart.pointer.findNearestKDPoint(dataSeries, true, { chartX: endX, chartY: endY });
+          if (endPoint) {
+            p1 = startSnappedPoint;
+            p2 = { x: endPoint.x, y: endPoint.y };
+          }
+        }
 
       } else if (this.crosshairMode === 'model') {
-        if (!startSnappedPoint) return;
-        p1 = startSnappedPoint;
-        const endPoint = this._findNearestModelPoint({ chartX: endX, chartY: endY });
-        if (!endPoint) return;
-        p2 = { x: endPoint.x, y: endPoint.y };
+        if (startSnappedPoint) {
+          const endPoint = this._findNearestModelPoint({ chartX: endX, chartY: endY });
+          if (endPoint) {
+            p1 = startSnappedPoint;
+            p2 = { x: endPoint.x, y: endPoint.y };
+          }
+        }
 
       } else if (this.crosshairMode === 'free') {
+        const clampedEnd = this._isInsidePlotBox(startX, startY, chart)
+          ? this._clampToPlotBox(endX, endY, chart)
+          : { chartX: endX, chartY: endY };
         p1 = { x: chart.xAxis[0].toValue(startX), y: chart.yAxis[0].toValue(startY) };
-        p2 = { x: chart.xAxis[0].toValue(endX), y: chart.yAxis[0].toValue(endY) };
+        p2 = { x: chart.xAxis[0].toValue(clampedEnd.chartX), y: chart.yAxis[0].toValue(clampedEnd.chartY) };
       }
 
       if (p1 && p2) {
@@ -2026,17 +2346,21 @@ setDisableScientificNotation(disabled) {
           id: Highcharts.uniqueKey(),
           type: 'segment',
           points: [p1, p2],
-          yUnit: yUnit
+          yUnit: yUnit,
+          xCurve: this.currentXCurve
         });
+        annotationAdded = true;
       }
     }
 
-    if (this.uiManager) {
-      this.uiManager.updateClearAnnotationsButtonVisibility();
-    }
-
     this.mouseDownInfo = null;
-    chart.redraw();
+
+    if (annotationAdded) {
+      if (this.uiManager) {
+        this.uiManager.updateClearAnnotationsButtonVisibility();
+      }
+      chart.redraw();
+    }
   }
 
   /**
@@ -2285,10 +2609,14 @@ setDisableScientificNotation(disabled) {
   /**
    * Dessine le réticule, la tangente et le label de la pente.
    */
-drawTangent(event) {
+  drawTangent(event) {
     this.hideFreeCrosshair();
 
     const chart = this.chart;
+    if (!this._isInsidePlotBox(event.chartX, event.chartY, chart)) {
+      return;
+    }
+
     const point = this._findNearestPoint(event);
     if (!point) return;
 
@@ -2297,59 +2625,41 @@ drawTangent(event) {
 
     const pixelX = point.plotX + chart.plotLeft;
     const pixelY = point.plotY + chart.plotTop;
+    if (!this._isInsidePlotBox(pixelX, pixelY, chart)) {
+      return;
+    }
     
     let crosshairElements = {};
 
     // 1. Dessin conditionnel du point central ou du réticule complet selon le mode
     if (this.crosshairMode === 'tangent-method') {
         // Juste un point discret pour la méthode des tangentes
-        crosshairElements.centerPoint = this._drawEndpoint(pixelX, pixelY)[0];
+        crosshairElements.centerPoint = this._clipToPlot(this._drawEndpoint(pixelX, pixelY)[0], chart);
     } else {
         // Réticule complet pour la tangente classique
         crosshairElements = this._drawStyledCrosshair(pixelX, pixelY, point.x, point.y);
     }
 
-    // 2. Calculer et dessiner la ligne de tangente
-    const { min: xMin, max: xMax } = chart.xAxis[0].getExtremes();
-    const yAtMin = slope * (xMin - point.x) + point.y;
-    const yAtMax = slope * (xMax - point.x) + point.y;
-
-    const p1 = { x: chart.xAxis[0].toPixels(xMin), y: chart.yAxis[0].toPixels(yAtMin) };
-    const p2 = { x: chart.xAxis[0].toPixels(xMax), y: chart.yAxis[0].toPixels(yAtMax) };
-
-    const tangentLine = chart.renderer.path(['M', p1.x, p1.y, 'L', p2.x, p2.y])
-      .attr({ 'stroke-width': 2, stroke: 'rgba(0, 200, 100, 0.8)', zIndex: 4 }).add();
+    // 2. Calculer et dessiner la ligne de tangente clippée à la zone de tracé
+    const bounds = this._getAxisDataBounds(chart);
+    const clippedTangent = this._clipInfiniteLineToAxisBounds(point.x, point.y, slope, bounds);
+    let tangentLine = null;
+    if (clippedTangent) {
+      const p1 = { x: chart.xAxis[0].toPixels(clippedTangent.x1), y: chart.yAxis[0].toPixels(clippedTangent.y1) };
+      const p2 = { x: chart.xAxis[0].toPixels(clippedTangent.x2), y: chart.yAxis[0].toPixels(clippedTangent.y2) };
+      tangentLine = this._clipToPlot(
+        chart.renderer.path(['M', p1.x, p1.y, 'L', p2.x, p2.y])
+          .attr({ 'stroke-width': 2, stroke: 'rgba(0, 200, 100, 0.8)', zIndex: 4 }).add(),
+        chart
+      );
+    }
 
     // 3. Stocker les éléments de base
-    this.freeCrosshair = { ...crosshairElements, tangentLine };
+    this.freeCrosshair = tangentLine ? { ...crosshairElements, tangentLine } : { ...crosshairElements };
 
     // Affichage de la pente pour l'outil classique
     if (this.crosshairMode !== 'tangent-method') {
-        const slopeText = `pente = ${formatNumber(slope, this.data?.settings?.significantDigits ?? 4)}`;
-        const slopeLabel = chart.renderer.label(slopeText, 0, 0, 'callout')
-          .attr({ fill: 'white', stroke: '#dbdbdb', 'stroke-width': 1, r: 6, padding: 8, zIndex: 6 })
-          .css({ color: 'black', fontSize: '14px' })
-          .add();
-
-        const labelBBox = slopeLabel.getBBox();
-        const labelX = pixelX + 15 > chart.plotWidth + chart.plotLeft - labelBBox.width ? pixelX - 15 - labelBBox.width : pixelX + 15;
-        let labelY;
-        if (slope > 0) {
-            labelY = pixelY + 15;
-        } else {
-            labelY = pixelY - 15 - labelBBox.height;
-        }
-        if (labelY < chart.plotTop) {
-            labelY = pixelY + 15;
-        }
-        if (labelY + labelBBox.height > chart.plotTop + chart.plotHeight) {
-            labelY = pixelY - 15 - labelBBox.height;
-        }    
-
-        slopeLabel.translate(labelX, labelY);
-        
-        // On ajoute le label à la liste des éléments à nettoyer
-        this.freeCrosshair.slopeLabel = slopeLabel;
+        this.freeCrosshair.slopeLabel = this._drawSlopeLabel(pixelX, pixelY, slope, chart);
     }
   }
 }

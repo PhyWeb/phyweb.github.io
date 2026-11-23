@@ -2,16 +2,6 @@ Oui, ton architecture est globalement propre et bien découpée, mais l’audit 
 
 Voici la liste classée par impact, avec les scénarios de reproduction et les pistes de correction.
 
-### 2. Erreurs de logique métier majeures
-
-#### G. Outils du grapheur (`grapher.js`) : plusieurs comportements incohérents
-1. **Mode `tangent` / `tangent-method` :** Si la souris bouge de ≥ 5 px pendant le clic, `handleMouseMove` tombe dans le `else` du mode libre et dessine un segment temporaire rouge avec lignes Δx/Δy bleues.
-2. **Clic lent ignoré :** La condition `if (distance < 5 && duration < 300)` dans `handleMouseUp` ignore complètement un clic immobile qui dure plus de 300 ms (fréquent sur trackpad).
-3. **Fallback involontaire en mode libre :** En mode `data` ou `model`, si `snappedDataPoint` / `snappedModelPoint` est `null`, `handleMouseUp` tombe dans le `else` du mode libre et pose une annotation libre. En mode libre, cliquer dans les marges (hors `plotBox`) crée quand même une annotation invisible et affiche le bouton « Effacer les annotations ».
-4. **Annotations non liées à l’axe X et non clippées :** Changer l’abscisse X laisse les anciennes annotations tracées aux anciennes coordonnées sur le nouveau repère. De plus, les segments, tangentes et méthodes des tangentes ne sont pas clippés à la zone de tracé (`plotBox`) : lors d’un zoom ou d’une tangente raide (saut de pH), la droite traverse les axes et la légende.
-
----
-
 ### 3. Bugs mineurs, désynchronisations d’UI et nettoyage
 
 3. **Suppression d’une courbe brute (`app.js`) :** `deleteCurve()` n’appelle pas `this.uiManager.setCalculationsStale(true)`. Une grandeur calculée qui dépendait de la courbe supprimée reste affichée sans proposer de recalculer.
