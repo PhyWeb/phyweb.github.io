@@ -1,4 +1,5 @@
 import { formatNumber, toSuperscript } from '../../common/formatter.js';
+import { showToast } from '../../common/common.js';
 
 const $ = document.querySelector.bind(document);
 
@@ -180,6 +181,7 @@ export default class Grapher {
 
     this.editingModel = null;       // Modèle actuellement en cours d'édition
     this.draggingBound = null;      // 'min' ou 'max' selon la poignée attrapée
+    this.previousModelBounds = null; // Sauvegarde des bornes avant glissement
     this.modelBoundsElements = null; // Stockage des éléments SVG (bande et poignées)
   }
 
@@ -321,6 +323,11 @@ export default class Grapher {
             Highcharts.addEvent(chart, 'redraw', drawArrows);
             Highcharts.addEvent(chart, 'redraw', () => self.drawAnnotations(chart)); // Redessiner les annotations
             Highcharts.addEvent(chart, 'redraw', () => self.uiManager?.updateModelToolVisibility());
+            Highcharts.addEvent(chart, 'redraw', () => {
+              if (self.crosshairMode === 'edit-bounds' && self.editingModel) {
+                self.updateModelBoundsVisuals();
+              }
+            });
 
           },
           selection: (e) => {
@@ -662,6 +669,13 @@ export default class Grapher {
         } else if (Math.abs(pxVal - pxMax) < 20) {
           this.draggingBound = 'max';
         }
+
+        if (this.draggingBound) {
+          this.previousModelBounds = {
+            minX: this.editingModel.minX,
+            maxX: this.editingModel.maxX
+          };
+        }
       }
 
       this.isDragging = true;
@@ -988,6 +1002,14 @@ setDisableScientificNotation(disabled) {
     if (mode !== 'edit-bounds') {
       this.hideModelBounds();
       this.editingModel = null;
+      if (this.draggingBound) {
+        this.isDragging = false;
+        this.draggingBound = null;
+        this.previousModelBounds = null;
+        this.mouseDownInfo = null;
+        document.removeEventListener('mousemove', this.handleMouseMove);
+        document.removeEventListener('mouseup', this.handleMouseUp);
+      }
     }
 
     // Désélectionner immédiatement les éventuels points sélectionnés lors de l'activation d'un outil
@@ -1132,7 +1154,7 @@ setDisableScientificNotation(disabled) {
     const rectW = Math.abs(pxMax - pxMin);
 
     // Mise à jour de la bande
-    this.modelBoundsElements.band.attr({ x: rectX, width: rectW });
+    this.modelBoundsElements.band.attr({ x: rectX, y: pyTop, width: rectW, height: pyBottom - pyTop });
 
     // Chemins réutilisés pour la poignée et son tracker
     const leftPath = ['M', pxMin, pyTop, 'L', pxMin, pyBottom];
@@ -1825,19 +1847,42 @@ setDisableScientificNotation(disabled) {
     // --- MODE ÉDITION DES BORNES ---
     if (this.crosshairMode === 'edit-bounds') {
       if (this.isDragging && this.draggingBound && this.editingModel) {
-        
+        const targetModel = this.editingModel;
+        const prevBounds = this.previousModelBounds;
+
         // Affichage du message de chargement
         this.showLoading('Mise à jour du modèle...', 500, true);
 
         // 2. Relance le calcul mathématique Alglib via le Worker
-        this.editingModel.fit().then(() => {
+        targetModel.fit().then(() => {
+          // Si le modèle a été supprimé pendant le calcul asynchrone du worker
+          if (this.data?.models && !this.data.models.includes(targetModel)) {
+            if (this.data.parameters && Array.isArray(targetModel.parameters)) {
+              targetModel.parameters.forEach(param => {
+                delete this.data.parameters[param.name];
+              });
+            }
+            return;
+          }
+
           this.updateModels();
-          
+
           if (this.uiManager) {
-            this.uiManager.updateModelPanel(this.editingModel);
+            this.uiManager.updateModelPanel(targetModel);
+            this.uiManager.updateCalculationUI();
           }
         }).catch(error => {
           console.error("Erreur lors du recalcul des bornes :", error);
+
+          if (prevBounds) {
+            targetModel.minX = prevBounds.minX;
+            targetModel.maxX = prevBounds.maxX;
+            if (this.crosshairMode === 'edit-bounds' && this.editingModel === targetModel) {
+              this.updateModelBoundsVisuals();
+            }
+          }
+
+          showToast(`Impossible de recalculer le modèle : ${error?.message || 'données insuffisantes.'}`, 'is-warning');
         }).finally(() => {
           // Masquage du message de chargement
           this.hideLoading();
@@ -1847,6 +1892,7 @@ setDisableScientificNotation(disabled) {
       // On réinitialise l'état
       this.isDragging = false;
       this.draggingBound = null;
+      this.previousModelBounds = null;
       this.mouseDownInfo = null;
 
       // On retire les écouteurs globaux

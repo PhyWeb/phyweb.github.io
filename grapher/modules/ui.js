@@ -2908,6 +2908,7 @@ export default class UIManager {
 
       const modelId = modelArticle.dataset.modelId;
       const model = this.data.models.find(m => m.id === modelId);
+      if (!model) return;
 
       // Clic sur le bouton "éditer bornes"
       const editBoundsBtn = event.target.closest('.edit-bounds-button');

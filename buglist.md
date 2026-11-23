@@ -4,18 +4,6 @@ Voici la liste classée par impact, avec les scénarios de reproduction et les p
 
 ### 2. Erreurs de logique métier majeures
 
-#### B. `updateFormulasReferences()` corrompt les unités et commentaires lors d’un renommage (`ioManager.js`, `app.js`)
-* **Scénario :** Tu as une grandeur `s` (distance) et une formule `v_m/s = diff(s, t) # vitesse en m/s`. Tu renommes la courbe `s` en `d`.
-* **Problème :** La regex `(?<![a-zA-Z0-9À-ÿ_])s(?![a-zA-Z0-9À-ÿ_])` s’applique sur tout le texte brut : elle transforme `v_m/s` en **`v_m/d`** et modifie le commentaire !
-* **Problème inverse :** Si un fichier `.pw` ou `.rw3` renomme une variable calculée (ex. `v-1` -> `v1`), une ligne `v-1_m/s = ...` ne sera pas remplacée à gauche du `=` car `_` est interdit dans le lookahead `(?![a-zA-Z0-9À-ÿ_])`.
-
-#### C. Suppression d’un modèle pendant le mode « Ajuster les bornes » (`edit-bounds`) (`ui.js`, `grapher.js`)
-* Si le mode `edit-bounds` est actif sur un modèle et que l’utilisateur clique sur la corbeille de ce modèle (ou supprime une courbe dont il dépend), les poignées et la bande grise restent affichées sur le graphe avec `grapher.editingModel` pointant sur le modèle supprimé. Déplacer une poignée relance `fit()` sur le modèle détruit et plante ensuite dans `updateModelPanel()`.
-* De plus, dans `grapher.js` (`handleMouseUp` en mode `edit-bounds`) :
-  * Si on rapproche trop les poignées (< 2 points), `fit()` échoue **sans toast** et **sans restaurer** les anciennes bornes valides.
-  * Quand le recalcul réussit, `uiManager.updateCalculationUI()` n’est pas appelé : la barre latérale *Calculs* affiche encore les anciennes valeurs des paramètres.
-  * Zoomer ou redimensionner la fenêtre pendant `edit-bounds` laisse les poignées à leurs anciens pixels (`drawModelBounds` n’est pas rafraîchi sur `redraw`).
-
 #### D. Sauvegarder en `.csv` ou `.rw3` efface l’alerte de données non sauvegardées (`ui.js`)
 * Dans `initSaveModal()`, `#download-file-button` appelle systématiquement `this.markAsSaved()`, même pour un export `.csv` (qui prévient pourtant que *« Les courbes calculées, modèles et annotations seront perdus »*) ou `.rw3` (qui perd les modèles et annotations). Si l’utilisateur quitte ensuite la page, aucun avertissement ne lui signale qu’il perd son travail.
 * **Correction :** N’appeler `this.markAsSaved()` que si `selectedFormat === 'pw'` (ou s’il n’y a rien de perdu par le format choisi).

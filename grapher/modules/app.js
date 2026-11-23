@@ -249,6 +249,20 @@ export default class App {
     const model = this.data.models.find(m => m.id === modelID);
     if (!model) return;
 
+    // Si le modèle supprimé est en cours d'édition des bornes, quitter le mode edit-bounds
+    if (
+      this.grapher?.crosshairMode === 'edit-bounds' &&
+      (this.grapher.editingModel?.id === modelID || this.grapher.editingModel === model)
+    ) {
+      if (typeof this.grapher.setCrosshairMode === 'function') {
+        this.grapher.setCrosshairMode(null);
+      } else {
+        this.grapher.hideModelBounds?.();
+        this.grapher.editingModel = null;
+        this.grapher.crosshairMode = null;
+      }
+    }
+
     // Supprime la série du graphique
     const series = this.grapher.chart.get(`model-${model.id}`);
     if (series) {
