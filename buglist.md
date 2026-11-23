@@ -8,10 +8,6 @@ Voici la liste classée par impact, avec les scénarios de reproduction et les p
 * Dans `initSaveModal()`, `#download-file-button` appelle systématiquement `this.markAsSaved()`, même pour un export `.csv` (qui prévient pourtant que *« Les courbes calculées, modèles et annotations seront perdus »*) ou `.rw3` (qui perd les modèles et annotations). Si l’utilisateur quitte ensuite la page, aucun avertissement ne lui signale qu’il perd son travail.
 * **Correction :** N’appeler `this.markAsSaved()` que si `selectedFormat === 'pw'` (ou s’il n’y a rien de perdu par le format choisi).
 
-#### E. Dérivée seconde (`diff(diff(x, t), t)`) avec `derivateEdges = false` (`calculation.js`)
-* Dans `numericalDerivative()`, `isEdgePoint(i)` vérifie uniquement la proximité aux indices `0` et `n - 1` du tableau, sans tenir compte des `null` en début/fin de `yArr`.
-* Sur une dérivée seconde (où `v = diff(x, t)` commence et finit déjà par des `null`), les vrais bords du domaine valide de `v` ne sont pas reconnus comme bords : le code saute les stencils 5 et 3 points et retombe silencieusement sur une différence finie à 2 points, contredisant le réglage `derivateEdges = false`.
-
 #### F. `Model.getHighResData()` envoie `NaN` et `±Infinity` à Highcharts (`data.js`)
 * Pour les modèles `ln` et `log`, comme `includeOriginOnAutoZoom` est `true` par défaut, `xAxis.min` vaut très souvent `0`. `Math.log(0)` produit `-Infinity` (et `NaN` si `minX < 0`). Même problème pour `power` (`x <= 0`), ou `exp1`/`exp2`/`damped*` si le paramètre de temps vaut `0`.
 * **Correction :** Remplacer tout `y` non fini (`!Number.isFinite(y)`) par `null` dans `getHighResData()`.
@@ -21,10 +17,6 @@ Voici la liste classée par impact, avec les scénarios de reproduction et les p
 2. **Clic lent ignoré :** La condition `if (distance < 5 && duration < 300)` dans `handleMouseUp` ignore complètement un clic immobile qui dure plus de 300 ms (fréquent sur trackpad).
 3. **Fallback involontaire en mode libre :** En mode `data` ou `model`, si `snappedDataPoint` / `snappedModelPoint` est `null`, `handleMouseUp` tombe dans le `else` du mode libre et pose une annotation libre. En mode libre, cliquer dans les marges (hors `plotBox`) crée quand même une annotation invisible et affiche le bouton « Effacer les annotations ».
 4. **Annotations non liées à l’axe X et non clippées :** Changer l’abscisse X laisse les anciennes annotations tracées aux anciennes coordonnées sur le nouveau repère. De plus, les segments, tangentes et méthodes des tangentes ne sont pas clippés à la zone de tracé (`plotBox`) : lors d’un zoom ou d’une tangente raide (saut de pH), la droite traverse les axes et la légende.
-
-#### H. Insertion d’une constante physique en cours de saisie (`ui.js`)
-* Dans `initCalculationControls()`, cliquer sur une constante (`g`, `c`, `NA`…) appelle immédiatement `this.app.applyCalculation(this.editor.getValue())` même si l’utilisateur était au milieu d’une ligne incomplète (ex. `v = sqrt(2 * `). Cela affiche une erreur rouge et **vide la courbe calculée en cours** (`existingCurve.length = 0`).
-* De plus, la détection d’une constante déjà déclarée compare `Number(cleanRhs)` sans remplacer la virgule par un point : si l’utilisateur avait écrit `g = 9,81`, l’appli refuse en affirmant que `g` a une autre valeur.
 
 ---
 
