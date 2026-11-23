@@ -225,6 +225,34 @@ describe('App - applyCalculation() et interdiction de redéfinir les grandeurs e
     assert.equal(data.getCurveByTitle('v'), undefined);
   });
 
+  it('gère correctement les commentaires inline (#, // et \') lors de l\'évaluation des formules', () => {
+    // Cas signalé : enchaînement de dérivées avec commentaires inline
+    const script = [
+      '# Calcul cinématique',
+      'v_m/s = diff(x, t) # vitesse en m/s',
+      'a_m/s^2 = diff(v, t) // accélération en m/s^2',
+      'd_km = x / 1000 \' distance en km'
+    ].join('\n');
+
+    app.applyCalculation(script);
+
+    const curveV = data.getCurveByTitle('v');
+    const curveA = data.getCurveByTitle('a');
+    const curveD = data.getCurveByTitle('d');
+
+    assert.ok(curveV, 'La courbe v doit exister');
+    assert.equal(curveV.unit, 'm/s');
+    assert.ok(curveA, 'La courbe a doit exister sans planter sur //');
+    assert.equal(curveA.unit, 'm/s^2');
+    assert.ok(curveD, 'La courbe d doit exister sans planter sur \'');
+    assert.equal(curveD.unit, 'km');
+
+    // Vérifier les valeurs calculées
+    assert.equal(curveV[1], 2); // dx/dt = 2
+    assert.equal(curveA[1], 0); // dv/dt = 0 (v est constante = 2)
+    assert.equal(curveD[2], 4 / 1000); // 4 / 1000 = 0.004
+  });
+
   it('deleteRow doit supprimer la ligne des courbes et marquer les calculs obsolètes sans recalculer automatiquement', () => {
     app.editor.getValue = () => 'y = 2 * x';
     app.applyCalculation('y = 2 * x');

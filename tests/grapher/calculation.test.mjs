@@ -676,5 +676,15 @@ describe('Calculation Module', () => {
       assert.equal(calc.preprocessExpression('hypot(0,3; 0,4)'), 'hypot(0.3, 0.4)');
       assert.equal(calc.evaluate('hypot(0,3; 0,4)', {}), 0.5);
     });
+
+    it('ignore les commentaires inline (#, // et \') dans preprocessExpression et evaluate', () => {
+      assert.equal(calc.preprocessExpression('diff(v, t) // accélération en m/s^2'), 'diff(v, t)');
+      assert.equal(calc.preprocessExpression('diff(d, t) # vitesse en m/s'), 'diff(d, t)');
+      assert.equal(calc.preprocessExpression('d / 1000 \' distance en km'), 'd / 1000');
+      assert.equal(calc.preprocessExpression('x + 1 // commentaire avec virgule 2,5'), 'x + 1');
+      assert.equal(calc.evaluate('2 + 3 // addition', {}), 5);
+      assert.equal(calc.evaluate('10 * 2 # multiplication', {}), 20);
+      assert.equal(calc.evaluate('8 / 2 \' division', {}), 4);
+    });
   });
 });

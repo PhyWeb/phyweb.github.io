@@ -692,7 +692,18 @@ export default class Calculation {
   }
 
   /**
+   * Retire les commentaires inline (#, // et ' précédé d'un espace) d'une expression.
+   * Préserve le contenu à l'intérieur des chaînes de caractères ("...").
+   * @param {string} str - L'expression à nettoyer.
+   * @returns {string} - L'expression sans commentaire.
+   */
+  stripInlineComment(str) {
+    return stripInlineComment(str);
+  }
+
+  /**
    * Prétraite une formule pour la normaliser avant analyse syntaxique et évaluation :
+   * - Retire les commentaires inline (#, // et ' précédé d'un espace)
    * - Remplace les virgules décimales par des points tout en préservant les séparateurs d'arguments
    * - Remplace les caractères spéciaux (ex: '²' -> '^2')
    * - Normalise la casse des fonctions connues (ex: SQRT -> sqrt)
@@ -701,7 +712,8 @@ export default class Calculation {
    */
   preprocessExpression(expression) {
     if (!expression || typeof expression !== 'string') return expression;
-    let clean = this.preprocessDecimalCommas(expression);
+    let clean = stripInlineComment(expression);
+    clean = this.preprocessDecimalCommas(clean);
     clean = this.preprocessSpecialCharacters(clean);
     clean = this._normalizeFunctionCases(clean);
     return clean;
@@ -878,4 +890,41 @@ evaluateBlock(formulas, initialScope) {
   }
 }
 
-export { Calculation };
+/**
+ * Retire les commentaires inline (#, // et ' précédé d'un espace) d'une expression.
+ * Préserve le contenu à l'intérieur des chaînes de caractères ("...").
+ * @param {string} str - L'expression à nettoyer.
+ * @returns {string} - L'expression sans commentaire.
+ */
+function stripInlineComment(str) {
+  if (!str || typeof str !== 'string') return '';
+  let inString = false;
+  let stringChar = '';
+
+  for (let i = 0; i < str.length; i++) {
+    const ch = str[i];
+    if (inString) {
+      if (ch === stringChar && str[i - 1] !== '\\') {
+        inString = false;
+      }
+      continue;
+    }
+    if (ch === '"') {
+      inString = true;
+      stringChar = ch;
+      continue;
+    }
+    if (ch === '#') {
+      return str.slice(0, i).trim();
+    }
+    if (ch === '/' && i + 1 < str.length && str[i + 1] === '/') {
+      return str.slice(0, i).trim();
+    }
+    if (ch === "'" && (i === 0 || /\s/.test(str[i - 1]))) {
+      return str.slice(0, i).trim();
+    }
+  }
+  return str.trim();
+}
+
+export { Calculation, stripInlineComment };

@@ -1,4 +1,5 @@
 import IOManager, { updateFormulasReferences } from './ioManager.js';
+import { stripInlineComment } from './calculation.js';
 import { showToast } from '../../common/common.js';
 import SymbolValidator from './symbolValidator.js'; 
 
@@ -319,7 +320,8 @@ export default class App {
       }
 
       const leftPart = parts[0].trim();
-      const expression = parts.slice(1).join('=').trim();
+      const rawExpression = parts.slice(1).join('=').trim();
+      const expression = stripInlineComment(rawExpression);
       const leftParts = leftPart.split('_');
       
       const variableName = leftParts[0].trim().replace(/\s+/g, '');

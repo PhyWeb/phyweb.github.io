@@ -43,6 +43,47 @@ describe('IOManager - updateFormulasReferences', () => {
     assert.equal(result, 'E = m * temps');
   });
 
+  it('ne corrompt pas les unités dans le membre de gauche lors du renommage', () => {
+    const text = 'v_m/s = diff(s, t)';
+    const result = updateFormulasReferences(text, { s: 'd' });
+    assert.equal(result, 'v_m/s = diff(d, t)');
+  });
+
+  it('ne corrompt pas les commentaires lors du renommage', () => {
+    const text = [
+      '# Commentaire avec unité m/s et variable s',
+      '// Commentaire slash avec s',
+      '\' Commentaire regressi avec s',
+      'v_m/s = diff(s, t) # vitesse en m/s',
+      'a_m/s^2 = diff(v, t) // accélération en m/s^2',
+      'd_km = s / 1000 \' distance en km'
+    ].join('\n');
+
+    const expected = [
+      '# Commentaire avec unité m/s et variable s',
+      '// Commentaire slash avec s',
+      '\' Commentaire regressi avec s',
+      'v_m/s = diff(pos, t) # vitesse en m/s',
+      'a_m/s^2 = diff(v, t) // accélération en m/s^2',
+      'd_km = pos / 1000 \' distance en km'
+    ].join('\n');
+
+    const result = updateFormulasReferences(text, { s: 'pos' });
+    assert.equal(result, expected);
+  });
+
+  it('remplace correctement un nom assaini suivi d\'une unité au membre gauche (problème inverse v-1 -> v1)', () => {
+    const text = 'v-1_m/s = diff(x, t)';
+    const result = updateFormulasReferences(text, { 'v-1': 'v1' });
+    assert.equal(result, 'v1_m/s = diff(x, t)');
+  });
+
+  it('met à jour la variable définie au membre de gauche tout en préservant son unité', () => {
+    const text = 's_m = 2 * t';
+    const result = updateFormulasReferences(text, { s: 'd' });
+    assert.equal(result, 'd_m = 2 * t');
+  });
+
   it('retourne le texte d\'origine si text est vide ou null', () => {
     assert.equal(updateFormulasReferences('', { x: 'x_new' }), '');
     assert.equal(updateFormulasReferences(null, { x: 'x_new' }), null);
@@ -184,6 +225,20 @@ describe('App - renameCurve (Mise à jour automatique des formules)', () => {
 
     assert.equal(updatedEditorContent, 'y = exp(x_new)');
     assert.equal(toasts.length, 1);
+  });
+
+  it('préserve les unités et les commentaires lors de l\'appel à renameCurve (s -> d avec v_m/s)', () => {
+    app.editor = {
+      getValue: () => 'v_m/s = diff(s, t) # vitesse en m/s',
+      setValue: (val) => { updatedEditorContent = val; }
+    };
+
+    app.renameCurve('s', 'd', 'm');
+
+    assert.equal(updatedEditorContent, 'v_m/s = diff(d, t) # vitesse en m/s');
+    assert.equal(toasts.length, 1);
+    assert.ok(toasts[0].innerHTML.includes('Les formules utilisant &quot;s&quot; ont été mises à jour avec &quot;d&quot;.') ||
+              toasts[0].innerHTML.includes('Les formules utilisant "s" ont été mises à jour avec "d".'));
   });
 
   it('ne fait rien si oldTitle === newTitle', () => {
