@@ -266,6 +266,55 @@ describe('Calculation Module', () => {
       assert.equal(result[7], null, 'Index 7 doit être null');
     });
 
+    it('doit masquer les bords du domaine valide sur une dérivée seconde avec derivateEdges: false (5 points)', () => {
+      const calcNoEdges = new Calculation({ derivatePoints: 5, derivateEdges: false });
+      const t = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+      const x = t.map(v => v ** 3); // v = 3*t^2, a = 6*t
+      const result = calcNoEdges.evaluate('diff(diff(x, t), t)', { x, t });
+
+      assert.deepEqual(result, [null, null, null, null, 24, null, null, null, null]);
+    });
+
+    it('doit renvoyer uniquement null sur une dérivée seconde trop courte pour le stencil demandé avec derivateEdges: false', () => {
+      const calcNoEdges = new Calculation({ derivatePoints: 5, derivateEdges: false });
+      const t = [0, 1, 2, 3, 4, 5];
+      const x = t.map(v => v ** 3); // diff(x, t) n'a que 2 points valides -> aucun point à 5 points pour a
+      const result = calcNoEdges.evaluate('diff(diff(x, t), t)', { x, t });
+
+      assert.deepEqual(result, [null, null, null, null, null, null]);
+
+      const t7 = [0, 1, 2, 3, 4, 5, 6];
+      const x7 = t7.map(v => v ** 3); // diff(x, t) n'a que 3 points valides -> < 5
+      assert.deepEqual(calcNoEdges.evaluate('diff(diff(x, t), t)', { x: x7, t: t7 }), [null, null, null, null, null, null, null]);
+    });
+
+    it('doit masquer les bords du domaine valide sur une dérivée seconde avec derivateEdges: false (7 points)', () => {
+      const calcNoEdges7 = new Calculation({ derivatePoints: 7, derivateEdges: false });
+      const t = Array.from({ length: 13 }, (_, i) => i);
+      const x = t.map(v => v ** 3); // v = 3*t^2, a = 6*t
+      const result = calcNoEdges7.evaluate('diff(diff(x, t), t)', { x, t });
+
+      assert.deepEqual(result, [null, null, null, null, null, null, 36, null, null, null, null, null, null]);
+    });
+
+    it('doit calculer l\'intérieur de la dérivée seconde sur pas variable avec derivateEdges: false sans masquer les points 3 points valides', () => {
+      const calcNoEdges = new Calculation({ derivatePoints: 5, derivateEdges: false });
+      const t = [0, 1, 3, 6, 10, 15];
+      const x = t.map(v => v ** 2); // diff(x, t) = [null, 2, 6, 12, 20, null], diff2 = 2
+      const result = calcNoEdges.evaluate('diff(diff(x, t), t)', { x, t });
+
+      assert.deepEqual(result, [null, null, 2, 2, null, null]);
+    });
+
+    it('doit respecter derivateEdges: false aux abords d\'un null intérieur sans repli à 2 points', () => {
+      const calcNoEdges = new Calculation({ derivatePoints: 5, derivateEdges: false });
+      const t = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+      const y = [0, 1, 4, 9, 16, null, 36, 49, 64, 81, 100];
+      const result = calcNoEdges.evaluate('diff(y, t)', { y, t });
+
+      assert.deepEqual(result, [null, null, 4, null, null, null, null, null, 16, null, null]);
+    });
+
     it('doit utiliser le stencil uniforme à 7 points avec haute précision', () => {
       const calc7 = new Calculation({ derivatePoints: 7, derivateEdges: true });
       const t = [0, 1, 2, 3, 4, 5, 6];

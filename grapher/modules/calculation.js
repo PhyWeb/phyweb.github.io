@@ -232,18 +232,62 @@ export default class Calculation {
             return true;
         };
 
+        const isValidPoint = (idx) =>
+            idx >= 0 && idx < n &&
+            yArr[idx] !== null && yArr[idx] !== undefined && Number.isFinite(yArr[idx]) &&
+            xArr[idx] !== null && xArr[idx] !== undefined && Number.isFinite(xArr[idx]);
+
+        const hasValidWindow = (startIdx, count) => {
+            if (startIdx < 0 || startIdx + count > n) return false;
+            for (let k = 0; k < count; k++) {
+                if (!isValidPoint(startIdx + k)) return false;
+            }
+            return true;
+        };
+
+        // Repère les bornes [segStart[i], segEnd[i]] de chaque segment contigu de points valides
+        // afin d'identifier les vrais bords même lorsque yArr commence/finit par des null (ex: dérivée seconde)
+        // ou contient des valeurs manquantes.
+        const segStart = new Array(n).fill(-1);
+        const segEnd = new Array(n).fill(-1);
+        let currentStart = -1;
+        for (let i = 0; i < n; i++) {
+            if (isValidPoint(i)) {
+                if (currentStart === -1) currentStart = i;
+                segStart[i] = currentStart;
+            } else if (currentStart !== -1) {
+                for (let k = currentStart; k < i; k++) segEnd[k] = i - 1;
+                currentStart = -1;
+            }
+        }
+        if (currentStart !== -1) {
+            for (let k = currentStart; k < n; k++) segEnd[k] = n - 1;
+        }
+
         // Détermine si le point i est un bord devant être masqué lorsque calculateEdges est false.
         // Un point n'est considéré comme bord pour un stencil 5 ou 7 points que si ce stencil d'ordre supérieur
-        // est effectivement applicable sur les données avoisinantes.
+        // est effectivement applicable sur le segment valide avoisinant (ou si le segment uniforme est plus court que le stencil).
         const isEdgePoint = (i) => {
-            if (i === 0 || i === n - 1) return true;
+            const start = segStart[i];
+            const end = segEnd[i];
+            if (start === -1 || end === -1) return true;
+            if (i === start || i === end) return true;
+
+            const segLen = end - start + 1;
+            const distStart = i - start;
+            const distEnd = end - i;
+
             if (points >= 7) {
-                if ((i === 1 || i === 2) && isUniformSpacing(xArr, 0, 7)) return true;
-                if ((i === n - 2 || i === n - 3) && isUniformSpacing(xArr, n - 7, 7)) return true;
+                const startWin = Math.min(7, segLen);
+                const endWin = Math.min(7, segLen);
+                if ((distStart === 1 || distStart === 2) && isUniformSpacing(xArr, start, startWin)) return true;
+                if ((distEnd === 1 || distEnd === 2) && isUniformSpacing(xArr, end - endWin + 1, endWin)) return true;
             }
             if (points >= 5) {
-                if (i === 1 && isUniformSpacing(xArr, 0, 5)) return true;
-                if (i === n - 2 && isUniformSpacing(xArr, n - 5, 5)) return true;
+                const startWin = Math.min(5, segLen);
+                const endWin = Math.min(5, segLen);
+                if (distStart === 1 && isUniformSpacing(xArr, start, startWin)) return true;
+                if (distEnd === 1 && isUniformSpacing(xArr, end - endWin + 1, endWin)) return true;
             }
             return false;
         };
@@ -251,7 +295,7 @@ export default class Calculation {
         let warnedNonUniform = false;
 
         for (let i = 0; i < n; i++) {
-            if (yArr[i] === null || xArr[i] === null) {
+            if (!isValidPoint(i)) {
                 continue;
             }
 
@@ -265,15 +309,14 @@ export default class Calculation {
 
             // Stencil uniforme à 7 points (ordre 6)
             if (points >= 7 && i >= 3 && i < n - 3) {
-                const stencilY = [yArr[i - 3], yArr[i - 2], yArr[i - 1], yArr[i], yArr[i + 1], yArr[i + 2], yArr[i + 3]];
-                const stencilX = [xArr[i - 3], xArr[i - 2], xArr[i - 1], xArr[i], xArr[i + 1], xArr[i + 2], xArr[i + 3]];
-                if (!stencilY.includes(null) && !stencilX.includes(null) && isUniformSpacing(xArr, i - 3, 7)) {
+                const hasAllValues = hasValidWindow(i - 3, 7);
+                if (hasAllValues && isUniformSpacing(xArr, i - 3, 7)) {
                     const h = (xArr[i + 3] - xArr[i - 3]) / 6;
                     if (h !== 0) {
                         result[i] = (-yArr[i - 3] + 9 * yArr[i - 2] - 45 * yArr[i - 1] + 45 * yArr[i + 1] - 9 * yArr[i + 2] + yArr[i + 3]) / (60 * h);
                         computed = true;
                     }
-                } else if (!warnedNonUniform && points >= 7) {
+                } else if (hasAllValues && !warnedNonUniform && points >= 7) {
                     console.warn("Dérivation : pas variable détecté pour le stencil à 7 points. Utilisation du schéma adapté au pas variable.");
                     warnedNonUniform = true;
                 }
@@ -281,15 +324,14 @@ export default class Calculation {
 
             // Stencil uniforme à 5 points (ordre 4)
             if (!computed && points >= 5 && i >= 2 && i < n - 2) {
-                const stencilY = [yArr[i - 2], yArr[i - 1], yArr[i], yArr[i + 1], yArr[i + 2]];
-                const stencilX = [xArr[i - 2], xArr[i - 1], xArr[i], xArr[i + 1], xArr[i + 2]];
-                if (!stencilY.includes(null) && !stencilX.includes(null) && isUniformSpacing(xArr, i - 2, 5)) {
+                const hasAllValues = hasValidWindow(i - 2, 5);
+                if (hasAllValues && isUniformSpacing(xArr, i - 2, 5)) {
                     const h = (xArr[i + 2] - xArr[i - 2]) / 4;
                     if (h !== 0) {
                         result[i] = (yArr[i - 2] - 8 * yArr[i - 1] + 8 * yArr[i + 1] - yArr[i + 2]) / (12 * h);
                         computed = true;
                     }
-                } else if (!warnedNonUniform && points >= 5) {
+                } else if (hasAllValues && !warnedNonUniform && points >= 5) {
                     console.warn("Dérivation : pas variable détecté pour le stencil à 5 points. Utilisation du schéma adapté au pas variable.");
                     warnedNonUniform = true;
                 }
@@ -297,7 +339,7 @@ export default class Calculation {
 
             // Schéma non-uniforme à 3 points (Lagrange / différences finies d'ordre 2 pour pas variable)
             if (!computed && i >= 1 && i < n - 1) {
-                if (yArr[i - 1] !== null && xArr[i - 1] !== null && yArr[i + 1] !== null && xArr[i + 1] !== null) {
+                if (isValidPoint(i - 1) && isValidPoint(i + 1)) {
                     const h1 = xArr[i] - xArr[i - 1];
                     const h2 = xArr[i + 1] - xArr[i];
                     if (h1 !== 0 && h2 !== 0 && (h1 + h2) !== 0) {
@@ -308,14 +350,14 @@ export default class Calculation {
             }
 
             // Repli sur différences finies à 2 points aux extrémités ou près des points manquants
-            if (!computed) {
-                if (i + 1 < n && yArr[i + 1] !== null && xArr[i + 1] !== null) {
+            if (!computed && calculateEdges) {
+                if (i + 1 < n && isValidPoint(i + 1)) {
                     const dx = xArr[i + 1] - xArr[i];
                     if (dx !== 0) {
                         result[i] = (yArr[i + 1] - yArr[i]) / dx;
                         computed = true;
                     }
-                } else if (i - 1 >= 0 && yArr[i - 1] !== null && xArr[i - 1] !== null) {
+                } else if (i - 1 >= 0 && isValidPoint(i - 1)) {
                     const dx = xArr[i] - xArr[i - 1];
                     if (dx !== 0) {
                         result[i] = (yArr[i] - yArr[i - 1]) / dx;
