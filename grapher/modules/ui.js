@@ -1412,7 +1412,12 @@ export default class UIManager {
 
     // Ouvre la modale de sauvegarde
     $("#save-button").addEventListener("click", () => {
-      if (this.data.curves.length === 0 && this.editor.getValue().trim() === '') {
+      const emptyStateContainer = document.getElementById('empty-state-container');
+      const isEmptyState = emptyStateContainer && !emptyStateContainer.classList.contains('is-hidden');
+      const hasNoData = (!this.data?.curves || this.data.curves.length === 0) &&
+                        (!this.editor?.getValue || this.editor.getValue().trim() === '');
+
+      if (isEmptyState || hasNoData) {
         showToast("Aucune donnée à sauvegarder.", "is-warning");
         return;
       }
@@ -4146,6 +4151,16 @@ export default class UIManager {
     };
 
     $('#export-menu-button').addEventListener('click', () => {
+      const emptyStateContainer = document.getElementById('empty-state-container');
+      const isEmptyState = emptyStateContainer && !emptyStateContainer.classList.contains('is-hidden');
+      const hasNoData = (!this.data?.curves || this.data.curves.length === 0) &&
+                        (!this.editor?.getValue || this.editor.getValue().trim() === '');
+
+      if (isEmptyState || hasNoData) {
+        showToast("Aucune donnée à exporter.", "is-warning");
+        return;
+      }
+
       const graphTabButton = document.getElementById('grapheur-tab');
       const isAlreadyOnGraph = graphTabButton && graphTabButton.classList.contains('is-active');
 
