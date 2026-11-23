@@ -4,10 +4,6 @@ Voici la liste classée par impact, avec les scénarios de reproduction et les p
 
 ### 2. Erreurs de logique métier majeures
 
-#### D. Sauvegarder en `.csv` ou `.rw3` efface l’alerte de données non sauvegardées (`ui.js`)
-* Dans `initSaveModal()`, `#download-file-button` appelle systématiquement `this.markAsSaved()`, même pour un export `.csv` (qui prévient pourtant que *« Les courbes calculées, modèles et annotations seront perdus »*) ou `.rw3` (qui perd les modèles et annotations). Si l’utilisateur quitte ensuite la page, aucun avertissement ne lui signale qu’il perd son travail.
-* **Correction :** N’appeler `this.markAsSaved()` que si `selectedFormat === 'pw'` (ou s’il n’y a rien de perdu par le format choisi).
-
 #### G. Outils du grapheur (`grapher.js`) : plusieurs comportements incohérents
 1. **Mode `tangent` / `tangent-method` :** Si la souris bouge de ≥ 5 px pendant le clic, `handleMouseMove` tombe dans le `else` du mode libre et dessine un segment temporaire rouge avec lignes Δx/Δy bleues.
 2. **Clic lent ignoré :** La condition `if (distance < 5 && duration < 300)` dans `handleMouseUp` ignore complètement un clic immobile qui dure plus de 300 ms (fréquent sur trackpad).
