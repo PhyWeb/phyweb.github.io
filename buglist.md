@@ -8,10 +8,6 @@ Voici la liste classée par impact, avec les scénarios de reproduction et les p
 * Dans `initSaveModal()`, `#download-file-button` appelle systématiquement `this.markAsSaved()`, même pour un export `.csv` (qui prévient pourtant que *« Les courbes calculées, modèles et annotations seront perdus »*) ou `.rw3` (qui perd les modèles et annotations). Si l’utilisateur quitte ensuite la page, aucun avertissement ne lui signale qu’il perd son travail.
 * **Correction :** N’appeler `this.markAsSaved()` que si `selectedFormat === 'pw'` (ou s’il n’y a rien de perdu par le format choisi).
 
-#### F. `Model.getHighResData()` envoie `NaN` et `±Infinity` à Highcharts (`data.js`)
-* Pour les modèles `ln` et `log`, comme `includeOriginOnAutoZoom` est `true` par défaut, `xAxis.min` vaut très souvent `0`. `Math.log(0)` produit `-Infinity` (et `NaN` si `minX < 0`). Même problème pour `power` (`x <= 0`), ou `exp1`/`exp2`/`damped*` si le paramètre de temps vaut `0`.
-* **Correction :** Remplacer tout `y` non fini (`!Number.isFinite(y)`) par `null` dans `getHighResData()`.
-
 #### G. Outils du grapheur (`grapher.js`) : plusieurs comportements incohérents
 1. **Mode `tangent` / `tangent-method` :** Si la souris bouge de ≥ 5 px pendant le clic, `handleMouseMove` tombe dans le `else` du mode libre et dessine un segment temporaire rouge avec lignes Δx/Δy bleues.
 2. **Clic lent ignoré :** La condition `if (distance < 5 && duration < 300)` dans `handleMouseUp` ignore complètement un clic immobile qui dure plus de 300 ms (fréquent sur trackpad).

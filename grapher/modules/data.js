@@ -11,6 +11,12 @@ const DEFAULT_LINE_WIDTH = 2;
 
 const DEFAULT_MODEL_RESOLUTION = 400; // Nombre de points pour le tracé du modèle
 
+const SUPPORTED_MODEL_TYPES = new Set([
+  "linear", "affine", "quadratic", "power",
+  "exp1", "exp2", "ln", "log",
+  "sin", "cos", "dampedsin", "dampedcos"
+]);
+
 /**
  * Convertit une valeur de cellule ou de point de mesure en nombre ou null.
  * Gère les nombres existants, les virgules décimales (format FR), les espaces,
@@ -648,99 +654,26 @@ class Model {
     if (!Array.isArray(this.parameters) || this.parameters.length === 0) {
       return [];
     }
+    if (!Number.isFinite(minX) || !Number.isFinite(maxX)) {
+      return [];
+    }
+    if (!SUPPORTED_MODEL_TYPES.has(this.type)) {
+      console.error("Modèle non pris en charge pour la génération de données haute résolution.");
+      return [];
+    }
+
     const data = [];
     points = Math.max(2, points);
     const step = (maxX - minX) / (points - 1);
+    const f = this._getFunction();
+    const params = this.parameters.map(p => p.value);
 
     try {
-      switch(this.type){
-        case "linear":
-          for (let i = 0; i < points; i++) {
-            const x = minX + i * step;
-            const y = this.parameters[0].value * x;
-            data.push([x, y]);
-          }
-          break;
-        case "affine":
-          for (let i = 0; i < points; i++) {
-            const x = minX + i * step;
-            const y = this.parameters[0].value * x + this.parameters[1].value;
-            data.push([x, y]);
-          }
-          break;
-        case "quadratic":
-          for (let i = 0; i < points; i++) {
-            const x = minX + i * step;
-            const y = this.parameters[0].value * Math.pow(x, 2) + this.parameters[1].value * x + this.parameters[2].value;
-            data.push([x, y]);
-          }
-          break;
-        case "power":
-          for (let i = 0; i < points; i++) {
-            const x = minX + i * step;
-            const y = this.parameters[0].value * Math.pow(x, this.parameters[1].value);
-            data.push([x, y]);
-          }
-          break;
-        case "exp1":
-          for (let i = 0; i < points; i++) {
-            const x = minX + i * step;
-            const y = this.parameters[0].value * Math.exp(-x / this.parameters[1].value);
-            data.push([x, y]);
-          }
-          break;
-        case "exp2":
-          for (let i = 0; i < points; i++) {
-            const x = minX + i * step;
-            const y = this.parameters[0].value * (1 - Math.exp(-x / this.parameters[1].value));
-            data.push([x, y]);
-          }
-          break;
-        case "ln":
-          for (let i = 0; i < points; i++) {
-            const x = minX + i * step;
-            const y = this.parameters[0].value * Math.log(x) + this.parameters[1].value;
-            data.push([x, y]);
-          }
-          break;
-        case "log":
-          for (let i = 0; i < points; i++) {
-            const x = minX + i * step;
-            const y = this.parameters[0].value * Math.log10(x) + this.parameters[1].value;
-            data.push([x, y]);
-          }
-          break;
-        case "sin":
-          for (let i = 0; i < points; i++) {
-            const x = minX + i * step;
-            const y = this.parameters[0].value * Math.sin(this.parameters[1].value * x + this.parameters[2].value) + this.parameters[3].value;
-            data.push([x, y]);
-          }
-          break;
-        case "cos":
-          for (let i = 0; i < points; i++) {
-            const x = minX + i * step;
-            const y = this.parameters[0].value * Math.cos(this.parameters[1].value * x + this.parameters[2].value) + this.parameters[3].value;
-            data.push([x, y]);
-          }
-          break;
-        case "dampedsin":
-          for (let i = 0; i < points; i++) {
-            const x = minX + i * step;
-            const y = this.parameters[0].value * Math.sin(this.parameters[1].value * x + this.parameters[2].value) * Math.exp(-x / this.parameters[3].value) + this.parameters[4].value;
-            data.push([x, y]);
-          }
-          break;
-        case "dampedcos":
-          for (let i = 0; i < points; i++) {
-            const x = minX + i * step;
-            const y = this.parameters[0].value * Math.cos(this.parameters[1].value * x + this.parameters[2].value) * Math.exp(-x / this.parameters[3].value) + this.parameters[4].value;
-            data.push([x, y]);
-          }
-          break;
-        default:
-          console.error("Modèle non pris en charge pour la génération de données haute résolution.");
-          break;
+      for (let i = 0; i < points; i++) {
+        const x = minX + i * step;
+        const y = f(params, x);
+        // Highcharts attend null pour les points hors domaine (NaN / ±Infinity)
+        data.push([x, Number.isFinite(y) ? y : null]);
       }
       return data;
     } catch {

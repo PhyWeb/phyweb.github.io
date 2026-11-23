@@ -1376,6 +1376,9 @@ setDisableScientificNotation(disabled) {
       let closest = null, minDx = Infinity;
       for (let i = 0; i < pts.length; i++) {
         const point = pts[i];
+        if (!point || point.isNull || !Number.isFinite(point.x) || !Number.isFinite(point.y)) {
+          continue;
+        }
         const dx = Math.abs(point.x - xVal);
         if (dx < minDx) {
           minDx = dx;
@@ -1386,6 +1389,7 @@ setDisableScientificNotation(disabled) {
 
       const pixelX = xAxis.toPixels(closest.x);
       const pixelY = yAxis.toPixels(closest.y);
+      if (!Number.isFinite(pixelX) || !Number.isFinite(pixelY)) return;
       const dist2 = Math.pow(pixelX - event.chartX, 2) + Math.pow(pixelY - event.chartY, 2);
 
       if (!best || dist2 < best.dist2) {
