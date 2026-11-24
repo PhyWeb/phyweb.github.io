@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schémas de Chimie & Physique - PhyWeb</title>
+    <link rel="icon" href="../../assets/favicons/phyweb.ico" />
+    <link rel="stylesheet" href="../../common/bulma/bulma.min.css">
+    <link rel="preload" href="../../common/fontawesome/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="../../common/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="../../common/common.css">
+    <link rel="stylesheet" href="style.css">
+
+    <script>
+      if (navigator.userAgent.toLowerCase().indexOf('electron') > -1)
+        document.documentElement.classList.add('is-electron');
+    </script>
+</head>
+<body>
+<div id="app">
+    <div id="navbar-container"></div>
+
+    <div class="schemas-workspace">
+        <!-- Zone supérieure : Toolbar gauche + Canvas central + Propriétés droite -->
+        <div class="schemas-main">
+
+            <!-- TOOLBAR VERTICALE GAUCHE -->
+            <aside class="schemas-toolbar" aria-label="Outils de dessin">
+                <div class="toolbar-group">
+                    <button class="tool-btn is-active" data-tool="select" title="Sélectionner / Déplacer (V)">
+                        <i class="fas fa-arrow-pointer"></i>
+                    </button>
+                    <button class="tool-btn" data-tool="wire" title="Tracer un fil électrique (W)">
+                        <i class="fas fa-bolt"></i>
+                    </button>
+                    <button class="tool-btn" data-tool="hose" title="Tracer un tuyau de chimie (T)">
+                        <i class="fas fa-water"></i>
+                    </button>
+                    <button class="tool-btn" data-tool="label" title="Ajouter une légende avec flèche (L)">
+                        <i class="fas fa-font"></i>
+                    </button>
+                </div>
+
+                <div class="toolbar-divider"></div>
+
+                <div class="toolbar-group">
+                    <button class="tool-btn" id="btnUndo" title="Annuler (Ctrl+Z)" disabled>
+                        <i class="fas fa-rotate-left"></i>
+                    </button>
+                    <button class="tool-btn" id="btnRedo" title="Rétablir (Ctrl+Y)" disabled>
+                        <i class="fas fa-rotate-right"></i>
+                    </button>
+                </div>
+
+                <div class="toolbar-divider"></div>
+
+                <div class="toolbar-group">
+                    <button class="tool-btn is-toggled" id="btnToggleSnap" title="Aimantation (M)">
+                        <i class="fas fa-magnet"></i>
+                    </button>
+                    <button class="tool-btn is-toggled" id="btnToggleGrid" title="Afficher la grille (G)">
+                        <i class="fas fa-border-all"></i>
+                    </button>
+                    <button class="tool-btn" id="btnAddTable" title="Ajouter / Sélectionner une table (paillasse) en bas">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <rect x="2" y="6" width="20" height="4" rx="1" />
+                            <line x1="5" y1="10" x2="5" y2="20" />
+                            <line x1="19" y1="10" x2="19" y2="20" />
+                        </svg>
+                    </button>
+                    <button class="tool-btn" id="btnZoomIn" title="Zoomer (+)">
+                        <i class="fas fa-magnifying-glass-plus"></i>
+                    </button>
+                    <button class="tool-btn" id="btnZoomOut" title="Dézoomer (-)">
+                        <i class="fas fa-magnifying-glass-minus"></i>
+                    </button>
+                    <button class="tool-btn" id="btnZoomFit" title="Centrer / Adapter la vue">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                </div>
+
+                <div class="toolbar-divider"></div>
+
+                <div class="toolbar-group">
+                    <button class="tool-btn" id="btnCopyPNG" title="Copier l'image HD dans le presse-papier">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                    <button class="tool-btn" id="btnExportPNG" title="Télécharger en PNG HD">
+                        <i class="fas fa-image"></i>
+                    </button>
+                    <button class="tool-btn" id="btnExportSVG" title="Télécharger en SVG vectoriel">
+                        <i class="fas fa-bezier-curve"></i>
+                    </button>
+                    <button class="tool-btn" id="btnSaveJSON" title="Sauvegarder le projet (.json)">
+                        <i class="fas fa-floppy-disk"></i>
+                    </button>
+                    <button class="tool-btn" id="btnLoadJSON" title="Charger un projet (.json)">
+                        <i class="fas fa-folder-open"></i>
+                    </button>
+                    <input type="file" id="jsonFileInput" accept=".json,application/json" style="display:none">
+                </div>
+
+                <div class="toolbar-group toolbar-bottom">
+                    <button class="tool-btn is-danger-hover" id="btnClearScene" title="Effacer tout le schéma">
+                        <i class="fas fa-trash-can"></i>
+                    </button>
+                </div>
+            </aside>
+
+            <!-- ZONE DE DESSIN CENTRALE -->
+            <main class="schemas-stage" id="stageContainer">
+                <svg id="sceneSvg" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <pattern id="gridMinor" width="20" height="20" patternUnits="userSpaceOnUse">
+                            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#e9eef5" stroke-width="0.8" />
+                        </pattern>
+                        <pattern id="gridMajor" width="100" height="100" patternUnits="userSpaceOnUse">
+                            <rect width="100" height="100" fill="url(#gridMinor)" />
+                            <path d="M 100 0 L 0 0 0 100" fill="none" stroke="#d5dde8" stroke-width="1.2" />
+                        </pattern>
+                    </defs>
+                    <g id="viewportGroup">
+                        <rect id="gridRect" x="-5000" y="-5000" width="10000" height="10000" fill="url(#gridMajor)" />
+                        <g id="layerItems"></g>
+                        <g id="layerConnectors"></g>
+                        <g id="layerLabels"></g>
+                        <g id="layerOverlay"></g>
+                    </g>
+                </svg>
+
+                <!-- Badges d'état flottants -->
+                <div class="stage-status-bar">
+                    <span class="stage-pill" id="toolHint">Sélection · Glissez pour déplacer</span>
+                    <span class="stage-pill" id="zoomBadge">100%</span>
+                </div>
+
+                <!-- Raccourcis d'export rapides en haut à droite du canvas -->
+                <div class="stage-export-bar">
+                    <button class="button is-small is-info is-light is-rounded" id="btnQuickCopy" title="Copier l'image HD">
+                        <span class="icon is-small"><i class="fas fa-copy"></i></span><span>Copier</span>
+                    </button>
+                    <button class="button is-small is-success is-rounded" id="btnQuickPNG" title="Télécharger PNG HD">
+                        <span class="icon is-small"><i class="fas fa-download"></i></span><span>PNG</span>
+                    </button>
+                    <button class="button is-small is-link is-light is-rounded" id="btnQuickSVG" title="Télécharger SVG">
+                        <span class="icon is-small"><i class="fas fa-code"></i></span><span>SVG</span>
+                    </button>
+                </div>
+            </main>
+
+            <!-- PANNEAU DE PROPRIÉTÉS À DROITE -->
+            <aside class="schemas-inspector" id="inspectorPanel">
+                <div class="inspector-header">
+                    <span class="inspector-title" id="inspectorTitle">
+                        <i class="fas fa-sliders mr-1"></i> Propriétés
+                    </span>
+                </div>
+                <div class="inspector-body" id="inspectorBody"></div>
+            </aside>
+
+        </div>
+
+        <!-- DRAWER EN BAS DE L'ÉCRAN (BANQUE D'OBJETS) -->
+        <section class="schemas-drawer" id="objectDrawer">
+            <div class="drawer-delete-overlay" aria-hidden="true">
+                <i class="fas fa-trash-can"></i>
+                <span>Relâcher ici pour supprimer</span>
+            </div>
+            <div class="drawer-header">
+                <button class="drawer-toggle-btn" id="btnToggleDrawer" title="Replier / Déplier la banque d'objets">
+                    <i class="fas fa-chevron-down" id="drawerToggleIcon"></i>
+                    <span>Banque d'objets</span>
+                </button>
+
+                <div class="drawer-tabs" id="drawerTabs"></div>
+
+                <div class="drawer-search">
+                    <span class="icon is-small"><i class="fas fa-search"></i></span>
+                    <input type="text" id="drawerSearchInput" placeholder="Rechercher (bécher, ballon, multimètre...)" autocomplete="off">
+                </div>
+            </div>
+
+            <div class="drawer-grid" id="drawerGrid"></div>
+        </section>
+    </div>
+</div>
+
+<script type="module" src="main.js"></script>
+</body>
+</html>

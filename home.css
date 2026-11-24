@@ -34,6 +34,13 @@
   transform: translateY(-.5em)
 }
 
+/* Mise en avant des 3 applications principales */
+.app-tile.is-primary-app {
+  height: 100%;
+  border-color: hsla(var(--h), var(--s), var(--l), 0.45);
+  background: linear-gradient(145deg, var(--bulma-scheme-main) 60%, hsla(var(--h), var(--s), var(--l), 0.09));
+}
+
 /* --- MODALE DE TÉLÉCHARGEMENT --- */
 
 #download-modal-card {
@@ -58,6 +65,13 @@
   .grid.is-fixed-3 {
     grid-template-columns: repeat(3, 1fr);
   }
+}
+
+/* Mise en avant discrète d'une tuile secondaire */
+.app-tile.is-featured-small {
+  height: 100%;
+  border-color: hsla(var(--h), var(--s), var(--l), 0.45);
+  background: linear-gradient(145deg, var(--bulma-scheme-main) 60%, hsla(var(--h), var(--s), var(--l), 0.08));
 }
 
 /* Variante plus compacte pour les tuiles moins importantes */
