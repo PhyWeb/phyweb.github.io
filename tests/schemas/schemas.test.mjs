@@ -40,8 +40,16 @@ describe('Applet Schémas — Catalogue paramétrique', () => {
         const becher = getCatalogItem('becher');
         const svgVide = becher.render({ volume: '250', liquidLevel: 0, liquidColor: '#9ad1f5' }, 'b1');
         const svgPlein = becher.render({ volume: '250', liquidLevel: 60, liquidColor: '#b832a8' }, 'b2');
+        const svg100 = becher.render({ volume: '250', liquidLevel: 100, liquidColor: '#b832a8' }, 'b3');
         assert.ok(!svgVide.includes('#b832a8'));
         assert.ok(svgPlein.includes('#b832a8'));
+        assert.ok(svg100.includes('y="-98.0"'));
+
+        for (const id of ['becher', 'erlenmeyer', 'fiole-jaugee', 'eprouvette', 'tube-essais', 'ballon', 'burette', 'pipette']) {
+            const def = getCatalogItem(id);
+            const lvlField = def.propSchema.find(f => f.key === 'liquidLevel');
+            assert.equal(lvlField?.max, 100, `${id} devrait autoriser un remplissage à 100%`);
+        }
 
         const multi = getCatalogItem('multimetre');
         const svgVolt = multi.render({ selector: 'VDC', display: '4.50 V' }, 'm1');

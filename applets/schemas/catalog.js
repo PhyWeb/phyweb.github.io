@@ -97,7 +97,7 @@ function renderStopcock(cx, cy, open) {
 }
 
 const LIQUID_PROPS_SCHEMA = [
-    { key: 'liquidLevel', label: 'Niveau liquide', type: 'range', min: 0, max: 95, step: 5, unit: '%' },
+    { key: 'liquidLevel', label: 'Niveau liquide', type: 'range', min: 0, max: 100, step: 5, unit: '%' },
     { key: 'liquidColor', label: 'Couleur liquide', type: 'color', presets: LIQUID_PRESETS, showIf: p => (p.liquidLevel || 0) > 0 }
 ];
 
