@@ -1,5 +1,5 @@
 // Contrôleur principal de l'applet Schémas de Chimie & Physique
-import { initApplets, showToast } from '../../common/common.js';
+import { initApplets, showToast, alertModal } from '../../common/common.js';
 import { CATALOG, CATEGORIES, SVG_SHARED_STYLES, getCatalogItem } from './catalog.js';
 import {
     computeObjectSnap,
@@ -21,17 +21,82 @@ import {
 } from './export.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
+const SESSION_STORAGE_KEY = 'phyweb_schemas_session_v1';
 
 // Initialisation navbar PhyWeb
 const notify = (msg) => {
     if (typeof showToast === 'function') showToast(msg);
     else console.log(msg);
 };
+
+const store = new SceneStore();
+let savedSnapshot = store.snapshot();
+
+function hasSceneData() {
+    return (
+        store.scene.items.length > 0 ||
+        store.scene.connectors.length > 0 ||
+        store.scene.labels.length > 0
+    );
+}
+
+function hasUnsavedChanges() {
+    return hasSceneData() && store.snapshot() !== savedSnapshot;
+}
+
+function markAsSaved() {
+    savedSnapshot = store.snapshot();
+}
+
+function persistSession() {
+    try {
+        if (!hasSceneData()) {
+            sessionStorage.removeItem(SESSION_STORAGE_KEY);
+        } else {
+            sessionStorage.setItem(SESSION_STORAGE_KEY, store.exportJSON());
+        }
+    } catch (_) {
+        // Ignorer si sessionStorage est indisponible ou plein
+    }
+}
+
+function restoreSession() {
+    try {
+        const raw = sessionStorage.getItem(SESSION_STORAGE_KEY);
+        if (!raw) return false;
+        const parsed = JSON.parse(raw);
+        if (!parsed || !Array.isArray(parsed.items)) return false;
+        const hasAny =
+            parsed.items.length > 0 ||
+            (Array.isArray(parsed.connectors) && parsed.connectors.length > 0) ||
+            (Array.isArray(parsed.labels) && parsed.labels.length > 0);
+        if (!hasAny) return false;
+        store.scene = {
+            version: 1,
+            items: parsed.items || [],
+            connectors: Array.isArray(parsed.connectors) ? parsed.connectors : [],
+            labels: Array.isArray(parsed.labels) ? parsed.labels : []
+        };
+        store.clearSelection();
+        return true;
+    } catch (_) {
+        return false;
+    }
+}
+
 try {
-    initApplets('Schémas de Chimie & Physique', '../..');
+    initApplets('Schémas de Chimie & Physique', '../..', () => hasUnsavedChanges());
 } catch (e) {
     console.warn('initApplets ignoré:', e);
 }
+
+// Alerte navigateur en cas de fermeture d'onglet ou rechargement avec modifications non sauvegardées
+window.addEventListener('beforeunload', (e) => {
+    if (hasUnsavedChanges()) {
+        e.preventDefault();
+        e.returnValue = '';
+    }
+});
 
 /**
  * Ajoute un menu déroulant « Menu » dans la barre de navigation (à l'image de Grapher, Tracker et Audio)
@@ -91,10 +156,7 @@ function setupNavbarMenu() {
     });
 
     menuEl.querySelector('#menuSaveJSON').addEventListener('click', () => handleSaveJSON());
-    menuEl.querySelector('#menuLoadJSON').addEventListener('click', () => {
-        const input = document.getElementById('jsonFileInput');
-        if (input) input.click();
-    });
+    menuEl.querySelector('#menuLoadJSON').addEventListener('click', () => triggerLoadJSON());
     menuEl.querySelector('#menuCopyPNG').addEventListener('click', () => handleCopyPNG());
     menuEl.querySelector('#menuExportPNG').addEventListener('click', () => handleExportPNG());
     menuEl.querySelector('#menuExportSVG').addEventListener('click', () => handleExportSVG());
@@ -104,8 +166,6 @@ setupNavbarMenu();
 // =========================================================================
 // ÉTAT DE L'ÉDITEUR
 // =========================================================================
-const store = new SceneStore();
-
 const editor = {
     tool: 'select',          // 'select' | 'wire' | 'hose' | 'label'
     snapEnabled: true,
@@ -248,6 +308,7 @@ function renderScene() {
 
     renderOverlay();
     updateHistoryButtons();
+    persistSession();
 }
 
 function renderOverlay() {
@@ -1008,6 +1069,7 @@ function renderInspector() {
               <div><kbd>Shift+clic</kbd> / Cadre : Multi-sélection · <kbd>Ctrl+A</kbd> Tout</div>
               <div><kbd>M</kbd> Aimantation · <kbd>G</kbd> Grille · <kbd>Alt</kbd> Ignorer aimant</div>
               <div><kbd>Ctrl+Z</kbd> Annuler · <kbd>Ctrl+D</kbd> Dupliquer · <kbd>Suppr</kbd> Effacer</div>
+              <div><kbd>Ctrl+S</kbd> Sauvegarder · <kbd>Ctrl+O</kbd> Charger</div>
               <div><kbd>Flèches</kbd> Décalage fin · <kbd>Espace</kbd>/Clic droit : Vue</div>
             </div>
           </div>
@@ -1603,6 +1665,118 @@ function buildDrawerTabs() {
     });
 }
 
+let drawerDrag = null;
+let suppressDrawerClick = false;
+
+function isOverStage(clientX, clientY) {
+    const r = stageEl.getBoundingClientRect();
+    return clientX >= r.left && clientX <= r.right && clientY >= r.top && clientY <= r.bottom;
+}
+
+function startDrawerDragListeners(btn, typeId, e) {
+    const def = getCatalogItem(typeId);
+    if (!def) return;
+    const bb = def.getBBox(def.defaultProps || {});
+    const centerOffsetX = bb.x + bb.width / 2;
+    const centerOffsetY = bb.y + bb.height / 2;
+
+    drawerDrag = {
+        typeId,
+        startClientX: e.clientX,
+        startClientY: e.clientY,
+        active: false,
+        item: null,
+        ghostEl: null,
+        centerOffsetX,
+        centerOffsetY
+    };
+
+    const onMove = (ev) => {
+        if (!drawerDrag) return;
+        const dist = Math.hypot(ev.clientX - drawerDrag.startClientX, ev.clientY - drawerDrag.startClientY);
+        if (!drawerDrag.active) {
+            if (dist < 6) return;
+            drawerDrag.active = true;
+            suppressDrawerClick = true;
+            document.body.classList.add('is-dragging-from-drawer');
+            const ghost = document.createElement('div');
+            ghost.className = 'drawer-drag-ghost';
+            ghost.innerHTML = btn.innerHTML;
+            document.body.appendChild(ghost);
+            drawerDrag.ghostEl = ghost;
+        }
+
+        const overStage = isOverStage(ev.clientX, ev.clientY);
+        if (overStage) {
+            if (drawerDrag.ghostEl) drawerDrag.ghostEl.style.display = 'none';
+            const pt = clientToScene(ev.clientX, ev.clientY);
+            const rawX = pt.x - drawerDrag.centerOffsetX;
+            const rawY = pt.y - drawerDrag.centerOffsetY;
+
+            if (!drawerDrag.item) {
+                drawerDrag.item = store.addItem(drawerDrag.typeId, rawX, rawY);
+                setTool('select');
+            }
+            if (drawerDrag.item) {
+                const snap = computeObjectSnap(drawerDrag.item, rawX, rawY, store.scene.items, {
+                    snapEnabled: editor.snapEnabled && !ev.altKey,
+                    gridSize: editor.gridSize,
+                    snapToGrid: editor.showGrid,
+                    baseRotation: 0
+                });
+                drawerDrag.item.x = Math.round(snap.x);
+                drawerDrag.item.y = Math.round(snap.y);
+                drawerDrag.item.rotation = snap.rotation;
+                editor.activeGuides = snap.guides;
+                editor.snappedPort = snap.snappedPort;
+                renderScene();
+            }
+        } else {
+            if (drawerDrag.ghostEl) {
+                drawerDrag.ghostEl.style.display = 'flex';
+                drawerDrag.ghostEl.style.left = `${ev.clientX}px`;
+                drawerDrag.ghostEl.style.top = `${ev.clientY}px`;
+            }
+            editor.activeGuides = [];
+            editor.snappedPort = null;
+            if (drawerDrag.item) {
+                renderOverlay();
+            }
+        }
+    };
+
+    const onEnd = (ev) => {
+        window.removeEventListener('pointermove', onMove);
+        window.removeEventListener('pointerup', onEnd);
+        window.removeEventListener('pointercancel', onEnd);
+        document.body.classList.remove('is-dragging-from-drawer');
+
+        const drag = drawerDrag;
+        drawerDrag = null;
+        if (!drag) return;
+
+        if (drag.ghostEl) drag.ghostEl.remove();
+        editor.activeGuides = [];
+        editor.snappedPort = null;
+
+        if (drag.active) {
+            const droppedOnStage = ev.type !== 'pointercancel' && isOverStage(ev.clientX, ev.clientY);
+            if (drag.item && !droppedOnStage) {
+                // Annuler proprement l'ajout si l'objet est relâché hors de la zone de dessin
+                store.undo();
+                store.redoStack = [];
+            }
+            renderScene();
+            renderInspector();
+            setTimeout(() => { suppressDrawerClick = false; }, 0);
+        }
+    };
+
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onEnd);
+    window.addEventListener('pointercancel', onEnd);
+}
+
 function buildDrawerGrid() {
     const q = editor.searchQuery.trim().toLowerCase();
     const list = CATALOG.filter(item => {
@@ -1623,7 +1797,7 @@ function buildDrawerGrid() {
         const vb = `${bb.x - pad} ${bb.y - pad} ${bb.width + pad * 2} ${bb.height + pad * 2}`;
         const thumbSvg = `<svg viewBox="${vb}" xmlns="http://www.w3.org/2000/svg">${def.render(def.defaultProps || {}, 'thumb_' + def.id)}</svg>`;
         return `
-          <button class="drawer-card" data-add-type="${def.id}" title="Ajouter : ${def.name}">
+          <button class="drawer-card" data-add-type="${def.id}" title="Cliquer ou glisser sur le schéma : ${def.name}">
             <div class="drawer-card-thumb">${thumbSvg}</div>
             <div class="drawer-card-name">${def.name}</div>
           </button>
@@ -1631,7 +1805,12 @@ function buildDrawerGrid() {
     }).join('');
 
     drawerGridEl.querySelectorAll('[data-add-type]').forEach(btn => {
+        btn.addEventListener('pointerdown', (e) => {
+            if (e.button !== 0) return;
+            startDrawerDragListeners(btn, btn.dataset.addType, e);
+        });
         btn.addEventListener('click', () => {
+            if (suppressDrawerClick) return;
             const typeId = btn.dataset.addType;
             const center = getViewportCenterScene();
             // Léger décalage aligné sur la grille si plusieurs objets sont ajoutés au même endroit
@@ -1681,6 +1860,7 @@ function handleExportSVG() {
 function handleSaveJSON() {
     const json = store.exportJSON();
     downloadBlob(new Blob([json], { type: 'application/json;charset=utf-8' }), 'schema-phyweb.json');
+    markAsSaved();
     notify('Projet sauvegardé (.json) !');
 }
 
@@ -1765,6 +1945,28 @@ document.getElementById('btnQuickPNG').addEventListener('click', handleExportPNG
 document.getElementById('btnQuickSVG').addEventListener('click', handleExportSVG);
 
 const jsonFileInput = document.getElementById('jsonFileInput');
+function triggerLoadJSON() {
+    if (!jsonFileInput) return;
+    if (!hasUnsavedChanges()) {
+        jsonFileInput.click();
+        return;
+    }
+    alertModal({
+        id: 'load-scene-modal',
+        type: 'warning',
+        title: 'Charger un projet',
+        delete: true,
+        body: '<p>Charger un autre fichier remplacera le schéma actuel.</p><p class="has-text-grey is-size-7 mt-2">Les modifications non sauvegardées seront perdues (annulable avec Ctrl+Z).</p>',
+        confirm: {
+            label: 'Choisir un fichier',
+            type: 'warning',
+            cb: () => jsonFileInput.click()
+        },
+        cancel: 'Annuler',
+        width: '32rem'
+    });
+}
+
 if (jsonFileInput) {
     jsonFileInput.addEventListener('change', async (e) => {
         const file = e.target.files?.[0];
@@ -1772,6 +1974,7 @@ if (jsonFileInput) {
         try {
             const text = await file.text();
             store.importJSON(text);
+            markAsSaved();
             renderScene();
             renderInspector();
             fitViewToScene();
@@ -1784,11 +1987,28 @@ if (jsonFileInput) {
 }
 
 document.getElementById('btnClearScene').addEventListener('click', () => {
-    if (store.clearAll()) {
-        renderScene();
-        renderInspector();
-        notify('Schéma effacé.');
-    }
+    if (!hasSceneData()) return;
+    alertModal({
+        id: 'clear-scene-modal',
+        type: 'danger',
+        title: 'Effacer le schéma',
+        delete: true,
+        body: '<p>Êtes-vous sûr de vouloir effacer tout le schéma ?</p><p class="has-text-grey is-size-7 mt-2">Vous pourrez toujours annuler cette action avec Ctrl+Z.</p>',
+        confirm: {
+            label: 'Effacer',
+            type: 'danger',
+            cb: () => {
+                if (store.clearAll()) {
+                    markAsSaved();
+                    renderScene();
+                    renderInspector();
+                    notify('Schéma effacé.');
+                }
+            }
+        },
+        cancel: 'Annuler',
+        width: '32rem'
+    });
 });
 
 document.getElementById('btnToggleDrawer').addEventListener('click', () => {
@@ -1817,6 +2037,23 @@ if (btnClearSearch) {
 
 // Raccourcis clavier globaux
 window.addEventListener('keydown', (e) => {
+    // Si une modale PhyWeb est ouverte, lui laisser la priorité (Échap, Entrée, etc.)
+    if (document.querySelector('.modal.is-active')) return;
+
+    if ((e.ctrlKey || e.metaKey) && !e.altKey) {
+        const lower = e.key.toLowerCase();
+        if (lower === 's') {
+            e.preventDefault();
+            handleSaveJSON();
+            return;
+        }
+        if (lower === 'o') {
+            e.preventDefault();
+            triggerLoadJSON();
+            return;
+        }
+    }
+
     const tag = document.activeElement?.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
 
@@ -1912,9 +2149,17 @@ window.addEventListener('keyup', (e) => {
 // =========================================================================
 // INITIALISATION
 // =========================================================================
+const restoredFromSession = restoreSession();
 buildDrawerTabs();
 buildDrawerGrid();
 setTool('select');
 renderScene();
 renderInspector();
-requestAnimationFrame(centerInitialView);
+requestAnimationFrame(() => {
+    if (restoredFromSession) {
+        fitViewToScene();
+        notify('Schéma restauré pour cette session.');
+    } else {
+        centerInitialView();
+    }
+});
