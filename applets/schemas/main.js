@@ -826,6 +826,9 @@ function renderItemInspector(item) {
                 : (input.type === 'range' ? Number(input.value) : input.value);
             if (prevVal === newVal) return;
             item.props[key] = newVal;
+            if (key === 'fillToRim' && newVal === true && 'liquidLevel' in item.props) {
+                item.props.liquidLevel = 100;
+            }
             const valEl = inspectorBodyEl.querySelector(`[data-val-for="${key}"]`);
             if (valEl) valEl.textContent = `${newVal}${field?.unit || ''}`;
             renderScene();
@@ -1202,9 +1205,12 @@ function buildDrawerGrid() {
         btn.addEventListener('click', () => {
             const typeId = btn.dataset.addType;
             const center = getViewportCenterScene();
-            // Léger décalage si plusieurs objets sont ajoutés au même endroit
-            const jitter = (store.scene.items.length % 5) * 14 - 28;
-            store.addItem(typeId, center.x + jitter, center.y + 40);
+            // Léger décalage aligné sur la grille si plusieurs objets sont ajoutés au même endroit
+            const g = editor.gridSize || 10;
+            const jitter = ((store.scene.items.length % 5) - 2) * g * 2;
+            const sx = Math.round((center.x + jitter) / g) * g;
+            const sy = Math.round((center.y + 40) / g) * g;
+            store.addItem(typeId, sx, sy);
             setTool('select');
             renderScene();
             renderInspector();

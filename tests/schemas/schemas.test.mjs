@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { CATALOG, CATEGORIES, getCatalogItem } from '../../applets/schemas/catalog.js';
+import { CATALOG, CATEGORIES, SVG_SHARED_STYLES, getCatalogItem } from '../../applets/schemas/catalog.js';
 import {
     localToWorld,
     getWorldAnchors,
@@ -70,6 +70,65 @@ describe('Applet Schémas — Catalogue paramétrique', () => {
 
         const svgInclineFlip = tube.render({ liquidLevel: 50, liquidColor: '#9ad1f5', stopper: 'none' }, 't2', { rotation: 35, flipX: true });
         assert.ok(svgInclineFlip.includes('rotate(35.00, 0,'));
+    });
+
+    it('gère un niveau cohérent à l’horizontale (90°) et tête en bas (180°) selon ouvert/bouché', () => {
+        const extractRectY = (svg) => {
+            const m = svg.match(/<rect x="-800" y="([-\d.]+)"/);
+            return m ? Number(m[1]) : null;
+        };
+
+        // Tube bouché à 90° : 90% doit être plus haut (y plus petit) que 10%
+        const tube = getCatalogItem('tube-essais');
+        const y90Low = extractRectY(tube.render({ liquidLevel: 10, liquidColor: '#9ad1f5', stopper: 'solid' }, 't90a', { rotation: 90, flipX: false }));
+        const y90High = extractRectY(tube.render({ liquidLevel: 90, liquidColor: '#9ad1f5', stopper: 'solid' }, 't90b', { rotation: 90, flipX: false }));
+        assert.ok(y90Low !== null && y90High !== null && y90High < y90Low, `Attendu y90High (${y90High}) < y90Low (${y90Low})`);
+
+        // Tube bouché à 180° (retourné) : le niveau ne doit plus s'inverser (80% plus haut que 20%)
+        const y180Low = extractRectY(tube.render({ liquidLevel: 20, liquidColor: '#9ad1f5', stopper: 'solid' }, 't180a', { rotation: 180, flipX: false }));
+        const y180High = extractRectY(tube.render({ liquidLevel: 80, liquidColor: '#9ad1f5', stopper: 'solid' }, 't180b', { rotation: 180, flipX: false }));
+        assert.ok(y180Low !== null && y180High !== null && y180High < y180Low, `Attendu y180High (${y180High}) < y180Low (${y180Low})`);
+
+        // Bécher ouvert retourné à 180° : se vide complètement
+        const becher = getCatalogItem('becher');
+        const svgBecher180 = becher.render({ volume: '250', liquidLevel: 80, liquidColor: '#b832a8' }, 'b180', { rotation: 180, flipX: false });
+        assert.ok(!svgBecher180.includes('#b832a8'), 'Un bécher ouvert à 180° doit être vide');
+
+        // Option "À ras bord (dépl. d'eau)" : remplit intégralement même retourné à 180° et retient le liquide partiel
+        const eprouvette = getCatalogItem('eprouvette');
+        const svgEp180Full = eprouvette.render({ volume: '100', liquidLevel: 100, fillToRim: true, liquidColor: '#9ad1f5' }, 'ep1', { rotation: 180, flipX: false });
+        assert.ok(svgEp180Full.includes('y="-800"'), 'À ras bord + 100% doit remplir tout le clipPath');
+        const svgEp180Part = eprouvette.render({ volume: '100', liquidLevel: 60, fillToRim: true, liquidColor: '#9ad1f5' }, 'ep2', { rotation: 180, flipX: false });
+        assert.ok(svgEp180Part.includes('#9ad1f5'), 'En mode déplacement d’eau à 180°, le liquide partiel doit rester retenu');
+
+        // Fond de verrerie transparent et liquides en fusion darken (traits/électrodes intacts, pas d'assombrissement en superposition)
+        assert.ok(SVG_SHARED_STYLES.includes('.verre-fond { fill: transparent;'));
+        assert.ok(svgEp180Full.includes('mix-blend-mode: darken'));
+        assert.ok(svgEp180Part.includes('mix-blend-mode: darken'));
+
+        // Erlenmeyer ouvert à 90° : le liquide reste piégé dans la panse sous le col
+        const erlen = getCatalogItem('erlenmeyer');
+        const svgErlen90 = erlen.render({ volume: '250', liquidLevel: 50, liquidColor: '#b832a8' }, 'e90', { rotation: 90, flipX: false });
+        assert.ok(svgErlen90.includes('#b832a8'), 'Un erlenmeyer à 90° doit conserver du liquide dans sa panse');
+
+        // Ampoule à décanter bouchée vs ouverte à 180°
+        const amp = getCatalogItem('ampoule-decanter');
+        const svgAmpClosed = amp.render({ open: false, stopper: true, phase1Level: 35, phase1Color: '#9ad1f5', phase2Level: 30, phase2Color: '#f4d35e' }, 'a1', { rotation: 180, flipX: false });
+        const svgAmpOpen = amp.render({ open: false, stopper: false, phase1Level: 35, phase1Color: '#9ad1f5', phase2Level: 30, phase2Color: '#f4d35e' }, 'a2', { rotation: 180, flipX: false });
+        assert.ok(svgAmpClosed.includes('#9ad1f5') && svgAmpClosed.includes('#f4d35e'));
+        assert.ok(!svgAmpOpen.includes('#9ad1f5') && !svgAmpOpen.includes('#f4d35e'));
+    });
+
+    it('expose la catégorie Effets (écoulement, gouttes, bulles, vapeur, précipité)', () => {
+        assert.ok(CATEGORIES.some(c => c.id === 'effets'));
+        for (const id of ['ecoulement', 'gouttes', 'bulles', 'vapeur', 'precipite']) {
+            const def = getCatalogItem(id);
+            assert.ok(def && def.category === 'effets', `Effet manquant ou mauvaise catégorie: ${id}`);
+            const bb = def.getBBox(def.defaultProps);
+            assert.ok(bb.width > 0 && bb.height > 0);
+            const svg = def.render(def.defaultProps, `eff_${id}`);
+            assert.ok(svg.trim().length > 0);
+        }
     });
 });
 
@@ -252,6 +311,15 @@ describe('Applet Schémas — Aimantation cohérente & emboîtements hors angle 
         assert.equal(snapTrompe.x, bec.wx);
         assert.equal(snapTrompe.y, bec.wy + 145);
         assert.equal(snapTrompe.rotation, 0);
+
+        // Aimante et retourne automatiquement (180°) un tube à essais pile dans l'axe d'une électrode de l'électrolyseur
+        const elec = { id: 'el1', type: 'electrolyseur', x: 300, y: 500, rotation: 0, scale: 1, flipX: false, props: {} };
+        const tube = { id: 'tb_el', type: 'tube-essais', x: 0, y: 0, rotation: 180, scale: 1, flipX: false, props: {} };
+        // Électrode gauche à (280, 410) ; ouverture du tube retourné à y_local = +176 => item.y = 410 - 176 = 234
+        const snapTube = computeObjectSnap(tube, 284, 238, [elec, tube], { baseRotation: 180 });
+        assert.equal(snapTube.x, 280);
+        assert.equal(snapTube.y, 234);
+        assert.equal(snapTube.rotation, 180);
     });
 
     it('gère flipX et rotation dans localToWorld', () => {

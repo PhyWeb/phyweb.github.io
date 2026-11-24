@@ -7,7 +7,8 @@ export const CATEGORIES = [
     { id: 'prelevement', label: 'Prélèvement', icon: 'fa-eye-dropper' },
     { id: 'supports', label: 'Supports & Chauffage', icon: 'fa-fire-burner' },
     { id: 'distillation', label: 'Distillation & Vide', icon: 'fa-filter' },
-    { id: 'mesure', label: 'Mesure & Élec.', icon: 'fa-gauge-high' }
+    { id: 'mesure', label: 'Mesure & Élec.', icon: 'fa-gauge-high' },
+    { id: 'effets', label: 'Effets', icon: 'fa-droplet' }
 ];
 
 export const LIQUID_PRESETS = [
@@ -32,7 +33,7 @@ export const SOLID_PRESETS = [
 
 export const SVG_SHARED_STYLES = `
   .verre { fill: #ffffff; stroke: #000000; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
-  .verre-fond { fill: #ffffff; stroke: none; }
+  .verre-fond { fill: transparent; stroke: none; pointer-events: all; }
   .liquide { fill: #9ad1f5; stroke: none; }
   .solide { fill: #4ecdc4; stroke: none; }
   .propipette { fill: #e06358; stroke: #000000; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
@@ -60,21 +61,66 @@ function esc(str) {
         .replace(/"/g, '&quot;');
 }
 
-function renderClippedLiquid(uid, clipPathD, minY, maxY, level, color, ctx = {}, xMin = -500, width = 1000) {
+function projectWorldY(lx, ly, sinT, cosT, flipSign) {
+    return flipSign * sinT * lx + cosT * ly;
+}
+
+function getLiquidVerticalSpan(xMin, xMax, yMin, yMax, rot, flipX) {
+    const rad = (rot * Math.PI) / 180;
+    const sinT = Math.sin(rad);
+    const cosT = Math.cos(rad);
+    const flipSign = flipX ? -1 : 1;
+    const ys = [
+        projectWorldY(xMin, yMin, sinT, cosT, flipSign),
+        projectWorldY(xMax, yMin, sinT, cosT, flipSign),
+        projectWorldY(xMin, yMax, sinT, cosT, flipSign),
+        projectWorldY(xMax, yMax, sinT, cosT, flipSign)
+    ];
+    return {
+        sinT,
+        cosT,
+        flipSign,
+        wyTop: Math.min(...ys),
+        wyBottom: Math.max(...ys)
+    };
+}
+
+function renderClippedLiquid(uid, clipPathD, minY, maxY, level, color, ctx = {}, opts = {}) {
     const lvl = Math.max(0, Math.min(100, Number(level) || 0));
+    const fillToRim = Boolean(opts?.fillToRim);
+    if (lvl <= 0 && !fillToRim) return '';
+    if (fillToRim && lvl >= 100) {
+        return `
+      <defs><clipPath id="clip-${uid}"><path d="${clipPathD}" /></clipPath></defs>
+      <g clip-path="url(#clip-${uid})" style="mix-blend-mode: darken;">
+        <rect x="-800" y="-800" width="1600" height="1600" fill="${esc(color)}" />
+      </g>
+    `;
+    }
     if (lvl <= 0) return '';
-    const y = maxY - (lvl / 100) * (maxY - minY);
-    const h = 1000;
     const rot = Number(ctx?.rotation) || 0;
     const flipX = Boolean(ctx?.flipX);
+    const hw = Number(opts?.halfWidth) || 0;
+    const effectiveMinY = (fillToRim && Array.isArray(opts?.rimPoints) && opts.rimPoints.length > 0)
+        ? Math.min(minY, ...opts.rimPoints.map(([, ry]) => ry))
+        : minY;
+    const { sinT, cosT, flipSign, wyTop, wyBottom } = getLiquidVerticalSpan(-hw, hw, effectiveMinY, maxY, rot, flipX);
+    let wySurface = wyBottom - (lvl / 100) * (wyBottom - wyTop);
+
+    // Pour un récipient ouvert (hors déplacement d'eau), la surface libre ne peut jamais dépasser le bord d'ouverture le plus bas
+    if (!opts?.sealed && !fillToRim && Array.isArray(opts?.rimPoints) && opts.rimPoints.length > 0) {
+        const wyRim = Math.max(...opts.rimPoints.map(([rx, ry]) => projectWorldY(rx, ry, sinT, cosT, flipSign)));
+        if (wySurface < wyRim) wySurface = wyRim;
+        if (wySurface >= wyBottom - 0.5) return '';
+    }
+
     const counterRot = flipX ? rot : -rot;
-    const rotAttr = Math.abs(counterRot) > 0.01 ? ` transform="rotate(${counterRot.toFixed(2)}, 0, ${y.toFixed(1)})"` : '';
+    const rotAttr = Math.abs(counterRot) > 0.01 ? ` transform="rotate(${counterRot.toFixed(2)}, 0, 0)"` : '';
     return `
       <defs><clipPath id="clip-${uid}"><path d="${clipPathD}" /></clipPath></defs>
-      <g clip-path="url(#clip-${uid})">
+      <g clip-path="url(#clip-${uid})" style="mix-blend-mode: darken;">
         <g${rotAttr}>
-          <rect x="${xMin}" y="${y.toFixed(1)}" width="${width}" height="${h}" fill="${esc(color)}" />
-          <line x1="${xMin}" y1="${y.toFixed(1)}" x2="${xMin + width}" y2="${y.toFixed(1)}" stroke="rgba(0,0,0,0.2)" stroke-width="1.2" />
+          <rect x="-800" y="${wySurface.toFixed(1)}" width="1600" height="1600" fill="${esc(color)}" />
         </g>
       </g>
     `;
@@ -98,7 +144,8 @@ function renderStopcock(cx, cy, open) {
 
 const LIQUID_PROPS_SCHEMA = [
     { key: 'liquidLevel', label: 'Niveau liquide', type: 'range', min: 0, max: 100, step: 5, unit: '%' },
-    { key: 'liquidColor', label: 'Couleur liquide', type: 'color', presets: LIQUID_PRESETS, showIf: p => (p.liquidLevel || 0) > 0 }
+    { key: 'fillToRim', label: 'À ras bord (dépl. d’eau)', type: 'toggle' },
+    { key: 'liquidColor', label: 'Couleur liquide', type: 'color', presets: LIQUID_PRESETS, showIf: p => p.fillToRim || (p.liquidLevel || 0) > 0 }
 ];
 
 // =========================================================================
@@ -142,7 +189,7 @@ export const CATALOG = [
                 const clip = 'M -25.5,-73 L -25.5,-6 C -25.5,-2.5 -23,-1.5 -20,-1.5 L 20,-1.5 C 23,-1.5 25.5,-2.5 25.5,-6 L 25.5,-73 Z';
                 return `
                   <path class="verre-fond" d="${bg}" />
-                  ${renderClippedLiquid(uid, clip, -70, -1.5, p.liquidLevel, p.liquidColor, ctx)}
+                  ${renderClippedLiquid(uid, clip, -70, -1.5, p.liquidLevel, p.liquidColor, ctx, { halfWidth: 25.5, rimPoints: [[-25.5, -73], [25.5, -73]], fillToRim: Boolean(p.fillToRim) })}
                   <path class="verre" style="fill:none;" d="M -37,-75 L -27,-65 L -27,-6 C -27,-2 -24,0 -20,0 L 20,0 C 24,0 27,-2 27,-6 L 27,-75" />
                   <path class="trait" d="M 21,-50 L 26,-50 L 26,-20 L 21,-20" />
                   <line class="trait" x1="18" y1="-35" x2="26" y2="-35" />
@@ -153,7 +200,7 @@ export const CATALOG = [
                 const clip = 'M -48.5,-138 L -48.5,-10 C -48.5,-5 -44,-1.5 -38,-1.5 L 38,-1.5 C 44,-1.5 48.5,-5 48.5,-10 L 48.5,-138 Z';
                 return `
                   <path class="verre-fond" d="${bg}" />
-                  ${renderClippedLiquid(uid, clip, -132, -1.5, p.liquidLevel, p.liquidColor, ctx)}
+                  ${renderClippedLiquid(uid, clip, -132, -1.5, p.liquidLevel, p.liquidColor, ctx, { halfWidth: 48.5, rimPoints: [[-48.5, -138], [48.5, -138]], fillToRim: Boolean(p.fillToRim) })}
                   <path class="verre" style="fill:none;" d="M -64,-140 L -50,-126 L -50,-10 C -50,-4 -45,0 -38,0 L 38,0 C 45,0 50,-4 50,-10 L 50,-140" />
                   <path class="trait" d="M 42,-103 L 49,-103 L 49,-25 L 42,-25" />
                   <line class="trait" x1="39" y1="-77" x2="49" y2="-77" />
@@ -164,7 +211,7 @@ export const CATALOG = [
             const clip = 'M -35.5,-103 L -35.5,-8 C -35.5,-3.5 -32,-1.5 -27,-1.5 L 27,-1.5 C 32,-1.5 35.5,-3.5 35.5,-8 L 35.5,-103 Z';
             return `
               <path class="verre-fond" d="${bg}" />
-              ${renderClippedLiquid(uid, clip, -98, -1.5, p.liquidLevel, p.liquidColor, ctx)}
+              ${renderClippedLiquid(uid, clip, -98, -1.5, p.liquidLevel, p.liquidColor, ctx, { halfWidth: 35.5, rimPoints: [[-35.5, -103], [35.5, -103]], fillToRim: Boolean(p.fillToRim) })}
               <path class="verre" style="fill:none;" d="M -49,-105 L -37,-93 L -37,-8 C -37,-3 -33,0 -27,0 L 27,0 C 33,0 37,-3 37,-8 L 37,-105" />
               <path class="trait" d="M 30,-74 L 36,-74 L 36,-20 L 30,-20" />
               <line class="trait" x1="28" y1="-56" x2="36" y2="-56" />
@@ -205,7 +252,7 @@ export const CATALOG = [
                 const bg = 'M -14,-130 L -11,-126 L -11,-97 L -36,-19 C -39,-9 -33,0 -23,0 L 23,0 C 33,0 39,-9 36,-19 L 11,-97 L 11,-126 L 14,-130 Z';
                 return `
                   <path class="verre-fond" d="${bg}" />
-                  ${renderClippedLiquid(uid, bg, -97, -1.5, p.liquidLevel, p.liquidColor, ctx)}
+                  ${renderClippedLiquid(uid, bg, -97, -1.5, p.liquidLevel, p.liquidColor, ctx, { halfWidth: 35, rimPoints: [[-11, -126], [11, -126]], fillToRim: Boolean(p.fillToRim) })}
                   <path class="verre" style="fill:none;" d="M -14,-130 L -11,-126 L -11,-97 L -36,-19 C -39,-9 -33,0 -23,0 L 23,0 C 33,0 39,-9 36,-19 L 11,-97 L 11,-126 L 14,-130" />
                   <line class="trait" x1="6" y1="-63" x2="21" y2="-63" />
                   <line class="trait" x1="14" y1="-33" x2="31" y2="-33" />
@@ -215,7 +262,7 @@ export const CATALOG = [
                 const bg = 'M -20,-215 L -15,-209 L -15,-165 L -58,-27 C -63,-13 -54,0 -40,0 L 40,0 C 54,0 63,-13 58,-27 L 15,-165 L 15,-209 L 20,-215 Z';
                 return `
                   <path class="verre-fond" d="${bg}" />
-                  ${renderClippedLiquid(uid, bg, -165, -1.5, p.liquidLevel, p.liquidColor, ctx)}
+                  ${renderClippedLiquid(uid, bg, -165, -1.5, p.liquidLevel, p.liquidColor, ctx, { halfWidth: 56, rimPoints: [[-15, -209], [15, -209]], fillToRim: Boolean(p.fillToRim) })}
                   <path class="verre" style="fill:none;" d="M -20,-215 L -15,-209 L -15,-165 L -58,-27 C -63,-13 -54,0 -40,0 L 40,0 C 54,0 63,-13 58,-27 L 15,-165 L 15,-209 L 20,-215" />
                   <line class="trait" x1="8" y1="-120" x2="28" y2="-120" />
                   <line class="trait" x1="18" y1="-87" x2="39" y2="-87" />
@@ -226,7 +273,7 @@ export const CATALOG = [
             const bg = 'M -17,-175 L -13,-170 L -13,-133 L -47,-23 C -51,-11 -44,0 -32,0 L 32,0 C 44,0 51,-11 47,-23 L 13,-133 L 13,-170 L 17,-175 Z';
             return `
               <path class="verre-fond" d="${bg}" />
-              ${renderClippedLiquid(uid, bg, -133, -1.5, p.liquidLevel, p.liquidColor, ctx)}
+              ${renderClippedLiquid(uid, bg, -133, -1.5, p.liquidLevel, p.liquidColor, ctx, { halfWidth: 45, rimPoints: [[-13, -170], [13, -170]], fillToRim: Boolean(p.fillToRim) })}
               <path class="verre" style="fill:none;" d="M -17,-175 L -13,-170 L -13,-133 L -47,-23 C -51,-11 -44,0 -32,0 L 32,0 C 44,0 51,-11 47,-23 L 13,-133 L 13,-170 L 17,-175" />
               <line class="trait" x1="8" y1="-90" x2="25" y2="-90" />
               <line class="trait" x1="18" y1="-57" x2="36" y2="-57" />
@@ -247,7 +294,8 @@ export const CATALOG = [
                 { value: 'menisque', label: 'Zoom ménisque + œil' }
             ]},
             { key: 'liquidLevel', label: 'Niveau liquide', type: 'range', min: 0, max: 100, step: 5, unit: '%', showIf: p => p.mode === 'normal' },
-            { key: 'liquidColor', label: 'Couleur liquide', type: 'color', presets: LIQUID_PRESETS, showIf: p => p.mode === 'menisque' || (p.liquidLevel || 0) > 0 },
+            { key: 'fillToRim', label: 'À ras bord (dépl. d’eau)', type: 'toggle', showIf: p => p.mode === 'normal' },
+            { key: 'liquidColor', label: 'Couleur liquide', type: 'color', presets: LIQUID_PRESETS, showIf: p => p.mode === 'menisque' || p.fillToRim || (p.liquidLevel || 0) > 0 },
             { key: 'stopper', label: 'Bouchée', type: 'toggle', showIf: p => p.mode === 'normal' }
         ],
         getBBox(p) {
@@ -284,7 +332,7 @@ export const CATALOG = [
             // 100% correspond au trait de jauge (y = -162)
             return `
               <path class="verre-fond" d="${bg}" />
-              ${renderClippedLiquid(uid, bg, -162, -1.5, p.liquidLevel, p.liquidColor, ctx)}
+              ${renderClippedLiquid(uid, bg, -162, -1.5, p.liquidLevel, p.liquidColor, ctx, { halfWidth: 46, rimPoints: [[-10, -215], [10, -215]], sealed: Boolean(p.stopper), fillToRim: Boolean(p.fillToRim) })}
               ${stopperSvg}
               <path class="verre" style="fill:none;" d="M -10,-215 L -10,-118 C -10,-100 -48,-68 -48,-28 C -48,-10 -38,0 -23,0 L 23,0 C 38,0 48,-10 48,-28 C 48,-68 10,-100 10,-118 L 10,-215" />
               <line class="trait" x1="-10" y1="-162" x2="10" y2="-162" />
@@ -324,7 +372,7 @@ export const CATALOG = [
                 const clip = 'M -14.5,-215 L -14.5,-1.5 L 14.5,-1.5 L 14.5,-215 Z';
                 return `
                   <path class="verre-fond" d="${bg}" />
-                  ${renderClippedLiquid(uid, clip, -205, -1.5, p.liquidLevel, p.liquidColor, ctx)}
+                  ${renderClippedLiquid(uid, clip, -205, -1.5, p.liquidLevel, p.liquidColor, ctx, { halfWidth: 14.5, rimPoints: [[-14.5, -215], [14.5, -215]], fillToRim: Boolean(p.fillToRim) })}
                   <path class="verre" style="fill:none;" d="M -26,-225 L -16,-215 L -16,0 L 16,0 L 16,-225" />
                   <line class="verre" x1="-32" y1="0" x2="32" y2="0" />
                   ${[-180, -145, -110, -75, -40].map(y => `<line class="trait" x1="-2" y1="${y}" x2="16" y2="${y}" />`).join('')}
@@ -335,7 +383,7 @@ export const CATALOG = [
                 const clip = 'M -26.5,-360 L -26.5,-1.5 L 26.5,-1.5 L 26.5,-360 Z';
                 return `
                   <path class="verre-fond" d="${bg}" />
-                  ${renderClippedLiquid(uid, clip, -345, -1.5, p.liquidLevel, p.liquidColor, ctx)}
+                  ${renderClippedLiquid(uid, clip, -345, -1.5, p.liquidLevel, p.liquidColor, ctx, { halfWidth: 26.5, rimPoints: [[-26.5, -360], [26.5, -360]], fillToRim: Boolean(p.fillToRim) })}
                   <path class="verre" style="fill:none;" d="M -42,-375 L -28,-361 L -28,0 L 28,0 L 28,-375" />
                   <line class="verre" x1="-52" y1="0" x2="52" y2="0" />
                   ${[-315, -270, -225, -180, -135, -90, -45].map(y => `<line class="trait" x1="-3" y1="${y}" x2="28" y2="${y}" />`).join('')}
@@ -345,7 +393,7 @@ export const CATALOG = [
             const clip = 'M -20.5,-293 L -20.5,-1.5 L 20.5,-1.5 L 20.5,-293 Z';
             return `
               <path class="verre-fond" d="${bg}" />
-              ${renderClippedLiquid(uid, clip, -280, -1.5, p.liquidLevel, p.liquidColor, ctx)}
+              ${renderClippedLiquid(uid, clip, -280, -1.5, p.liquidLevel, p.liquidColor, ctx, { halfWidth: 20.5, rimPoints: [[-20.5, -293], [20.5, -293]], fillToRim: Boolean(p.fillToRim) })}
               <path class="verre" style="fill:none;" d="M -34,-305 L -22,-293 L -22,0 L 22,0 L 22,-305" />
               <line class="verre" x1="-42" y1="0" x2="42" y2="0" />
               ${[-250, -210, -170, -130, -90, -50].map(y => `<line class="trait" x1="-2" y1="${y}" x2="22" y2="${y}" />`).join('')}
@@ -389,15 +437,13 @@ export const CATALOG = [
                 stopperSvg = `<polygon class="bouchon" points="-13,-204 13,-204 10,-172 -10,-172" />`;
             } else if (p.stopper === 'pierced') {
                 stopperSvg = `
-                  <polygon class="bouchon" points="-13,-204 13,-204 10,-172 -10,-172" />
-                  <rect class="verre-fond" x="-4" y="-205" width="8" height="34" />
-                  <line class="trait" x1="-4" y1="-204" x2="-4" y2="-172" />
-                  <line class="trait" x1="4" y1="-204" x2="4" y2="-172" />
+                  <polygon class="bouchon" points="-13,-204 -4,-204 -4,-172 -10,-172" />
+                  <polygon class="bouchon" points="4,-204 13,-204 10,-172 4,-172" />
                 `;
             }
             return `
               <path class="verre-fond" d="${bg}" />
-              ${renderClippedLiquid(uid, bg, -175, -1, p.liquidLevel, p.liquidColor, ctx)}
+              ${renderClippedLiquid(uid, bg, -175, -1, p.liquidLevel, p.liquidColor, ctx, { halfWidth: 10, rimPoints: [[-11, -185], [11, -185]], sealed: p.stopper !== 'none', fillToRim: Boolean(p.fillToRim) })}
               ${stopperSvg}
               <path class="verre" style="fill:none;" d="M -11,-185 L -11,-11 A 11,11 0 0,0 11,-11 L 11,-185" />
             `;
@@ -451,17 +497,18 @@ export const CATALOG = [
                 const bg = 'M -14,-146 L -14,-96 A 53,53 0 0,0 -28,0 L 28,0 A 53,53 0 0,0 14,-96 L 14,-146 Z';
                 return `
                   <path class="verre-fond" d="${bg}" />
-                  ${renderClippedLiquid(uid, bg, -96, -1.5, p.liquidLevel, p.liquidColor, ctx)}
+                  ${renderClippedLiquid(uid, bg, -96, -1.5, p.liquidLevel, p.liquidColor, ctx, { halfWidth: 51, rimPoints: [[-14, -146], [14, -146]], fillToRim: Boolean(p.fillToRim) })}
                   <path class="verre" style="fill:none;" d="M -14,-146 L -14,-96 A 53,53 0 0,0 -28,0 L 28,0 A 53,53 0 0,0 14,-96 L 14,-146" />
                 `;
             }
             // Fond rond : centre cercle à y=-53, rayon 53, bas à y=0, col haut à y=-156
             const bgMain = 'M -14,-156 L -14,-106 A 53,53 0 1,0 14,-106 L 14,-156 Z';
+            const ballonOpts = { halfWidth: 51, rimPoints: [[-14, -156], [14, -156]], fillToRim: Boolean(p.fillToRim) };
             if (p.variant === 'bicol') {
                 return `
                   <path class="verre-fond" d="${bgMain}" />
                   <polygon class="verre-fond" points="50,-122 67,-105 45,-83 28,-100" />
-                  ${renderClippedLiquid(uid, bgMain, -104, -1.5, p.liquidLevel, p.liquidColor, ctx)}
+                  ${renderClippedLiquid(uid, bgMain, -104, -1.5, p.liquidLevel, p.liquidColor, ctx, ballonOpts)}
                   <line class="verre" x1="50" y1="-122" x2="28" y2="-100" />
                   <line class="verre" x1="67" y1="-105" x2="45" y2="-83" />
                   <path class="verre" style="fill:none;" d="M -14,-156 L -14,-106 A 53,53 0 1,0 45,-83" />
@@ -473,7 +520,7 @@ export const CATALOG = [
                   <path class="verre-fond" d="${bgMain}" />
                   <polygon class="verre-fond" points="-50,-122 -67,-105 -45,-83 -28,-100" />
                   <polygon class="verre-fond" points="50,-122 67,-105 45,-83 28,-100" />
-                  ${renderClippedLiquid(uid, bgMain, -104, -1.5, p.liquidLevel, p.liquidColor, ctx)}
+                  ${renderClippedLiquid(uid, bgMain, -104, -1.5, p.liquidLevel, p.liquidColor, ctx, ballonOpts)}
                   <line class="verre" x1="-50" y1="-122" x2="-28" y2="-100" />
                   <line class="verre" x1="-67" y1="-105" x2="-45" y2="-83" />
                   <line class="verre" x1="50" y1="-122" x2="28" y2="-100" />
@@ -485,7 +532,7 @@ export const CATALOG = [
             }
             return `
               <path class="verre-fond" d="${bgMain}" />
-              ${renderClippedLiquid(uid, bgMain, -104, -1.5, p.liquidLevel, p.liquidColor, ctx)}
+              ${renderClippedLiquid(uid, bgMain, -104, -1.5, p.liquidLevel, p.liquidColor, ctx, ballonOpts)}
               <path class="verre" style="fill:none;" d="M -14,-156 L -14,-106 A 53,53 0 1,0 14,-106 L 14,-156" />
             `;
         }
@@ -520,7 +567,7 @@ export const CATALOG = [
                 const clip = 'M -118.5,-118 L -118.5,-16 C -118.5,-8 -112,-1.5 -104,-1.5 L 104,-1.5 C 112,-1.5 118.5,-8 118.5,-16 L 118.5,-118 Z';
                 return `
                   <path class="verre-fond" d="${bg}" />
-                  ${renderClippedLiquid(uid, clip, -110, -1.5, p.liquidLevel, p.liquidColor, ctx)}
+                  ${renderClippedLiquid(uid, clip, -110, -1.5, p.liquidLevel, p.liquidColor, ctx, { halfWidth: 118.5, rimPoints: [[-118.5, -118], [118.5, -118]], fillToRim: Boolean(p.fillToRim) })}
                   <path class="verre" style="fill:none;" d="M -136,-120 L -120,-104 L -120,-16 C -120,-7 -113,0 -104,0 L 104,0 C 113,0 120,-7 120,-16 L 120,-120" />
                 `;
             }
@@ -528,7 +575,7 @@ export const CATALOG = [
             const clip = 'M -88.5,-88 L -88.5,-14 C -88.5,-7 -83,-1.5 -76,-1.5 L 76,-1.5 C 83,-1.5 88.5,-7 88.5,-14 L 88.5,-88 Z';
             return `
               <path class="verre-fond" d="${bg}" />
-              ${renderClippedLiquid(uid, clip, -82, -1.5, p.liquidLevel, p.liquidColor, ctx)}
+              ${renderClippedLiquid(uid, clip, -82, -1.5, p.liquidLevel, p.liquidColor, ctx, { halfWidth: 88.5, rimPoints: [[-88.5, -88], [88.5, -88]], fillToRim: Boolean(p.fillToRim) })}
               <path class="verre" style="fill:none;" d="M -104,-90 L -90,-76 L -90,-14 C -90,-6 -84,0 -76,0 L 76,0 C 84,0 90,-6 90,-14 L 90,-90" />
             `;
         }
@@ -563,7 +610,7 @@ export const CATALOG = [
             ` : '';
             return `
               <path class="verre-fond" d="${bg}" />
-              ${renderClippedLiquid(uid, clip, -170, -1.5, p.liquidLevel, p.liquidColor, ctx)}
+              ${renderClippedLiquid(uid, clip, -170, -1.5, p.liquidLevel, p.liquidColor, ctx, { halfWidth: 64.5, rimPoints: [[-64.5, -172], [64.5, -172]], sealed: Boolean(p.lidClosed) })}
               <path class="verre" style="fill:none;" d="M -74,-180 L -66,-172 L -66,-8 C -66,-3 -62,0 -57,0 L 57,0 C 62,0 66,-3 66,-8 L 66,-172 L 74,-180" />
               ${lid}
             `;
@@ -680,7 +727,7 @@ export const CATALOG = [
             }
             return `
               <path class="verre-fond" d="${bg}" />
-              ${renderClippedLiquid(uid, clip, -545, -3, p.liquidLevel, p.liquidColor, ctx)}
+              ${renderClippedLiquid(uid, clip, -545, -3, p.liquidLevel, p.liquidColor, ctx, { halfWidth: 7.5, rimPoints: [[-9, -600], [9, -600]], fillToRim: Boolean(p.fillToRim) })}
               <path class="verre" style="fill:none;" d="M -13,-610 L -9,-600 L -9,-55 L -4,-40 L -4,0" />
               <path class="verre" style="fill:none;" d="M 13,-610 L 9,-600 L 9,-55 L 4,-40 L 4,-8" />
               ${grads}
@@ -723,7 +770,7 @@ export const CATALOG = [
                 const bg = 'M 0,-150 C -6,-150 -7,-144 -7,-136 L -7,-118 C -7,-113 -4,-110 -3,-108 L -3,-45 L -1.5,-30 L -1.5,0 L 1.5,0 L 1.5,-30 L 3,-45 L 3,-108 C 4,-110 7,-113 7,-118 L 7,-136 C 7,-144 6,-150 0,-150 Z';
                 return `
                   <path class="verre-fond" d="${bg}" />
-                  ${renderClippedLiquid(uid, bg, -108, -1, p.liquidLevel, p.liquidColor, ctx)}
+                  ${renderClippedLiquid(uid, bg, -108, -1, p.liquidLevel, p.liquidColor, ctx, { halfWidth: 3, sealed: true, fillToRim: Boolean(p.fillToRim) })}
                   <path class="verre" style="fill:none;" d="${bg}" />
                   <line class="trait" x1="-5" y1="-112" x2="5" y2="-112" />
                   <line class="trait" style="stroke-width: 1.5;" x1="-1" y1="-90" x2="3" y2="-90" />
@@ -742,7 +789,7 @@ export const CATALOG = [
                 }
                 return `
                   <path class="verre-fond" d="${bg}" />
-                  ${renderClippedLiquid(uid, bg, -345, -1.5, p.liquidLevel, p.liquidColor, ctx)}
+                  ${renderClippedLiquid(uid, bg, -345, -1.5, p.liquidLevel, p.liquidColor, ctx, { halfWidth: 7, sealed: true, fillToRim: Boolean(p.fillToRim) })}
                   <path class="verre" style="fill:none;" d="M -4.5,-430 L -4.5,-402 C -12.5,-397 -12.5,-377 -4.5,-372 L -4.5,-360 L -7,-353 L -7,-75 L -4.5,-65 L -4.5,-17 L -2,0 L 2,0 L 4.5,-17 L 4.5,-65 L 7,-75 L 7,-353 L 4.5,-360 L 4.5,-372 C 12.5,-377 12.5,-397 4.5,-402 L 4.5,-430" />
                   ${grads}
                 `;
@@ -750,7 +797,7 @@ export const CATALOG = [
             const bg = 'M -4.5,-495 L -4.5,-467 C -12.5,-462 -12.5,-442 -4.5,-437 L -4.5,-317 C -13.5,-310 -13.5,-303 -13.5,-295 L -13.5,-209 C -13.5,-201 -13.5,-194 -4.5,-187 L -4.5,-17 L -2,0 L 2,0 L 4.5,-17 L 4.5,-187 C 13.5,-194 13.5,-201 13.5,-209 L 13.5,-295 C 13.5,-303 13.5,-310 4.5,-317 L 4.5,-437 C 12.5,-442 12.5,-462 4.5,-467 L 4.5,-495 Z';
             return `
               <path class="verre-fond" d="${bg}" />
-              ${renderClippedLiquid(uid, bg, -377, -1.5, p.liquidLevel, p.liquidColor, ctx)}
+              ${renderClippedLiquid(uid, bg, -377, -1.5, p.liquidLevel, p.liquidColor, ctx, { halfWidth: 13, sealed: true, fillToRim: Boolean(p.fillToRim) })}
               <path class="verre" style="fill:none;" d="M -4.5,-495 L -4.5,-467 C -12.5,-462 -12.5,-442 -4.5,-437 L -4.5,-317 C -13.5,-310 -13.5,-303 -13.5,-295 L -13.5,-209 C -13.5,-201 -13.5,-194 -4.5,-187 L -4.5,-17 L -2,0 L 2,0 L 4.5,-17 L 4.5,-187 C 13.5,-194 13.5,-201 13.5,-209 L 13.5,-295 C 13.5,-303 13.5,-310 4.5,-317 L 4.5,-437 C 12.5,-442 12.5,-462 4.5,-467 L 4.5,-495" />
               <line class="trait" x1="-4.5" y1="-377" x2="4.5" y2="-377" />
             `;
@@ -847,7 +894,7 @@ export const CATALOG = [
             const clip = 'M -36.5,-203.5 L 36.5,-203.5 L 36.5,-11 C 36.5,-5.5 32,-1.5 26.5,-1.5 L -26.5,-1.5 C -32,-1.5 -36.5,-5.5 -36.5,-11 Z';
             return `
               <rect class="verre-fond" x="-38" y="-205" width="76" height="205" rx="11" />
-              ${renderClippedLiquid(uid, clip, -195, -1.5, p.liquidLevel, p.liquidColor, ctx)}
+              ${renderClippedLiquid(uid, clip, -195, -1.5, p.liquidLevel, p.liquidColor, ctx, { halfWidth: 36.5, sealed: true, fillToRim: Boolean(p.fillToRim) })}
               <path class="verre" d="M 2.5,-13 L 2.5,-258 C 2.5,-270 -7,-272 -17,-264 L -52,-234 L -58,-225 L -54.5,-222.5 L -47,-230 L -13,-259 C -7,-264 -2.5,-262 -2.5,-256 L -2.5,-13 Z" />
               <rect class="verre" style="fill:none;" x="-38" y="-205" width="76" height="205" rx="11" />
               <rect class="verre" x="-14" y="-215" width="28" height="10" />
@@ -897,7 +944,7 @@ export const CATALOG = [
                 const bg = 'M -23,-142 L -23,-124 C -23,-112 -39,-102 -39,-84 L -39,-12 C -39,-5 -34,0 -27,0 L 27,0 C 34,0 39,-5 39,-12 L 39,-84 C 39,-102 23,-112 23,-124 L 23,-142 Z';
                 return `
                   <path class="verre-fond" d="${bg}" />
-                  ${renderClippedLiquid(uid, bg, -108, -1.5, p.liquidLevel, p.liquidColor, ctx)}
+                  ${renderClippedLiquid(uid, bg, -108, -1.5, p.liquidLevel, p.liquidColor, ctx, { halfWidth: 38, rimPoints: [[-23, -142], [23, -142]], sealed: Boolean(p.capped), fillToRim: Boolean(p.fillToRim) })}
                   <path class="verre" style="fill:none;" d="M -23,-142 L -23,-124 C -23,-112 -39,-102 -39,-84 L -39,-12 C -39,-5 -34,0 -27,0 L 27,0 C 34,0 39,-5 39,-12 L 39,-84 C 39,-102 23,-112 23,-124 L 23,-142" />
                   <path class="trait" d="M 23,-72 L 29,-72 L 29,-21 L 23,-21" />
                   <line class="trait" x1="21" y1="-46.5" x2="29" y2="-46.5" />
@@ -908,7 +955,7 @@ export const CATALOG = [
                 const bg = 'M -23,-230 L -23,-208 C -23,-192 -61,-174 -61,-148 L -61,-16 C -61,-7 -54,0 -45,0 L 45,0 C 54,0 61,-7 61,-16 L 61,-148 C 61,-174 23,-192 23,-208 L 23,-230 Z';
                 return `
                   <path class="verre-fond" d="${bg}" />
-                  ${renderClippedLiquid(uid, bg, -185, -1.5, p.liquidLevel, p.liquidColor, ctx)}
+                  ${renderClippedLiquid(uid, bg, -185, -1.5, p.liquidLevel, p.liquidColor, ctx, { halfWidth: 60, rimPoints: [[-23, -230], [23, -230]], sealed: Boolean(p.capped), fillToRim: Boolean(p.fillToRim) })}
                   <path class="verre" style="fill:none;" d="M -23,-230 L -23,-208 C -23,-192 -61,-174 -61,-148 L -61,-16 C -61,-7 -54,0 -45,0 L 45,0 C 54,0 61,-7 61,-16 L 61,-148 C 61,-174 23,-192 23,-208 L 23,-230" />
                   <path class="trait" d="M 39,-134 L 47,-134 L 47,-30 L 39,-30" />
                   <line class="trait" x1="36" y1="-108" x2="47" y2="-108" />
@@ -920,7 +967,7 @@ export const CATALOG = [
             const bg = 'M -23,-182 L -23,-162 C -23,-148 -49,-134 -49,-112 L -49,-14 C -49,-6 -43,0 -35,0 L 35,0 C 43,0 49,-6 49,-14 L 49,-112 C 49,-134 23,-148 23,-162 L 23,-182 Z';
             return `
               <path class="verre-fond" d="${bg}" />
-              ${renderClippedLiquid(uid, bg, -145, -1.5, p.liquidLevel, p.liquidColor, ctx)}
+              ${renderClippedLiquid(uid, bg, -145, -1.5, p.liquidLevel, p.liquidColor, ctx, { halfWidth: 48, rimPoints: [[-23, -182], [23, -182]], sealed: Boolean(p.capped), fillToRim: Boolean(p.fillToRim) })}
               <path class="verre" style="fill:none;" d="M -23,-182 L -23,-162 C -23,-148 -49,-134 -49,-112 L -49,-14 C -49,-6 -43,0 -35,0 L 35,0 C 43,0 49,-6 49,-14 L 49,-112 C 49,-134 23,-148 23,-162 L 23,-182" />
               <path class="trait" d="M 30,-100 L 37,-100 L 37,-25 L 30,-25" />
               <line class="trait" x1="27" y1="-75" x2="37" y2="-75" />
@@ -947,7 +994,7 @@ export const CATALOG = [
             const bg = 'M -10,-92 L -10,-82 C -10,-76 -21,-71 -21,-62 L -21,-6 C -21,-2 -18,0 -14,0 L 14,0 C 18,0 21,-2 21,-6 L 21,-62 C 21,-71 10,-76 10,-82 L 10,-92 Z';
             return `
               <path class="verre-fond" d="${bg}" />
-              ${renderClippedLiquid(uid, bg, -74, -1.5, p.liquidLevel, p.liquidColor, ctx)}
+              ${renderClippedLiquid(uid, bg, -74, -1.5, p.liquidLevel, p.liquidColor, ctx, { halfWidth: 20, sealed: true, fillToRim: Boolean(p.fillToRim) })}
               <path class="verre" style="stroke-width: 2;" d="M -2.5,-92 L -2.5,-24 L -1,-12 L 1,-12 L 2.5,-24 L 2.5,-92 Z" />
               <path class="verre" style="fill:none;" d="M -10,-92 L -10,-82 C -10,-76 -21,-71 -21,-62 L -21,-6 C -21,-2 -18,0 -14,0 L 14,0 C 18,0 21,-2 21,-6 L 21,-62 C 21,-71 10,-76 10,-82 L 10,-92" />
               <path class="propipette" d="M -7,-104 L -7,-121 C -7,-128 -4,-130 0,-130 C 4,-130 7,-128 7,-121 L 7,-104 Z" />
@@ -1041,22 +1088,31 @@ export const CATALOG = [
             const bg = 'M -14,-432 L -14,-390 C -60,-380 -62,-322 -40,-284 C -26,-260 -12,-244 -10,-230 L -10,-57 L -4,-44 L -4,0 L 4,-8 L 4,-44 L 10,-57 L 10,-230 C 12,-244 26,-260 40,-284 C 62,-322 60,-380 14,-390 L 14,-432 Z';
             const bodyClip = 'M -12.5,-390 C -58,-380 -60,-322 -38.5,-284 C -24.5,-260 -10.5,-244 -8.5,-230 L -8.5,-57 L 8.5,-57 L 8.5,-230 C 10.5,-244 24.5,-260 38.5,-284 C 60,-322 58,-380 12.5,-390 Z';
             const l1 = Math.max(0, Math.min(80, Number(p.phase1Level) || 0));
-            const l2 = Math.max(0, Math.min(95 - l1, Number(p.phase2Level) || 0));
-            const minY = -385, maxY = -225;
-            const y1 = maxY - (l1 / 100) * (maxY - minY);
-            const y2 = y1 - (l2 / 100) * (maxY - minY);
+            const l2 = Math.max(0, Math.min(100 - l1, Number(p.phase2Level) || 0));
             const rot = Number(ctx?.rotation) || 0;
-            const counterRot = ctx?.flipX ? rot : -rot;
-            const pivotY = l2 > 0 ? y2 : y1;
-            const rotAttr = Math.abs(counterRot) > 0.01 ? ` transform="rotate(${counterRot.toFixed(2)}, 0, ${pivotY.toFixed(1)})"` : '';
-            const liquids = (l1 > 0 || l2 > 0) ? `
+            const flipX = Boolean(ctx?.flipX);
+            const { sinT, cosT, flipSign, wyTop, wyBottom } = getLiquidVerticalSpan(-55, 55, -385, -225, rot, flipX);
+            let wy1 = wyBottom - (l1 / 100) * (wyBottom - wyTop);
+            let wy2 = wy1 - (l2 / 100) * (wyBottom - wyTop);
+            if (!p.stopper) {
+                const wyRim = Math.max(
+                    projectWorldY(-14, -432, sinT, cosT, flipSign),
+                    projectWorldY(14, -432, sinT, cosT, flipSign)
+                );
+                if (wy1 < wyRim) wy1 = wyRim;
+                if (wy2 < wyRim) wy2 = wyRim;
+            }
+            const showP1 = l1 > 0 && wy1 < wyBottom - 0.5;
+            const showP2 = l2 > 0 && wy2 < wy1 - 0.5;
+            const counterRot = flipX ? rot : -rot;
+            const rotAttr = Math.abs(counterRot) > 0.01 ? ` transform="rotate(${counterRot.toFixed(2)}, 0, 0)"` : '';
+            const liquids = (showP1 || showP2) ? `
               <defs><clipPath id="clip-${uid}"><path d="${bodyClip}" /></clipPath></defs>
-              <g clip-path="url(#clip-${uid})">
+              <g clip-path="url(#clip-${uid})" style="mix-blend-mode: darken;">
                 <g${rotAttr}>
-                  ${l1 > 0 ? `<rect x="-300" y="${y1.toFixed(1)}" width="600" height="500" fill="${esc(p.phase1Color)}" />` : ''}
-                  ${l2 > 0 ? `<rect x="-300" y="${y2.toFixed(1)}" width="600" height="${(y1 - y2).toFixed(1)}" fill="${esc(p.phase2Color)}" />` : ''}
-                  ${l1 > 0 ? `<line x1="-300" y1="${y1.toFixed(1)}" x2="300" y2="${y1.toFixed(1)}" stroke="rgba(0,0,0,0.25)" stroke-width="1.2" />` : ''}
-                  ${l2 > 0 ? `<line x1="-300" y1="${y2.toFixed(1)}" x2="300" y2="${y2.toFixed(1)}" stroke="rgba(0,0,0,0.2)" stroke-width="1.2" />` : ''}
+                  ${showP1 ? `<rect x="-800" y="${wy1.toFixed(1)}" width="1600" height="1600" fill="${esc(p.phase1Color)}" />` : ''}
+                  ${showP2 ? `<rect x="-800" y="${wy2.toFixed(1)}" width="1600" height="${(wy1 - wy2).toFixed(1)}" fill="${esc(p.phase2Color)}" />` : ''}
+                  ${showP1 && showP2 ? `<line x1="-800" y1="${wy1.toFixed(1)}" x2="800" y2="${wy1.toFixed(1)}" stroke="rgba(0,0,0,0.2)" stroke-width="1.2" />` : ''}
                 </g>
               </g>
             ` : '';
@@ -1100,7 +1156,7 @@ export const CATALOG = [
             const clip = 'M -21.5,-248 L 21.5,-248 L 21.5,-138 L 5.5,-118 L 5.5,-94 L -5.5,-94 L -5.5,-118 L -21.5,-138 Z';
             return `
               <path class="verre-fond" d="${bg}" />
-              ${renderClippedLiquid(uid, clip, -245, -100, p.liquidLevel, p.liquidColor, ctx)}
+              ${renderClippedLiquid(uid, clip, -245, -100, p.liquidLevel, p.liquidColor, ctx, { halfWidth: 21.5, rimPoints: [[-14, -295], [14, -295]], fillToRim: Boolean(p.fillToRim) })}
               <path class="verre" style="fill:none;" d="M -14,-295 L -14,-260 L -23,-248 L -23,-138 L -7,-118 L -7,-94 L -13,-85 L -13,-45 L -4,-35 L -4,0" />
               <path class="verre" style="fill:none;" d="M 14,-295 L 14,-260 L 23,-248 L 23,-138 L 7,-118 L 7,-94 L 13,-85 L 13,-45 L 4,-35 L 4,-8" />
               ${[-228, -213, -198, -183, -168, -153].map((y, i) => `<line class="trait" x1="${i % 2 === 0 ? 11 : 15}" y1="${y}" x2="23" y2="${y}" />`).join('')}
@@ -1616,14 +1672,12 @@ export const CATALOG = [
             ];
         },
         render() {
-            const xs = [-118, -76, -34, 8, 50, 92];
+            const segments = [[-135, 17], [-92, 16], [-50, 16], [-8, 16], [34, 16], [76, 16], [118, 17]];
             return `
               <rect class="metal" x="-140" y="-16" width="280" height="16" rx="2.5" />
               <rect class="metal" x="-131" y="-78" width="10" height="62" />
               <rect class="metal" x="121" y="-78" width="10" height="62" />
-              <rect class="metal" x="-135" y="-90" width="270" height="12" rx="2.5" />
-              ${xs.map(x => `<rect class="verre-fond" x="${x}" y="-92" width="26" height="16" />`).join('')}
-              ${xs.map(x => `<line class="trait" x1="${x}" y1="-90" x2="${x}" y2="-78" /><line class="trait" x1="${x + 26}" y1="-90" x2="${x + 26}" y2="-78" />`).join('')}
+              ${segments.map(([x, w]) => `<rect class="metal" x="${x}" y="-90" width="${w}" height="12" rx="1.5" />`).join('')}
             `;
         }
     },
@@ -1683,10 +1737,8 @@ export const CATALOG = [
             }
             if (p.variant === 'perce') {
                 return `
-                  <polygon class="bouchon" points="-13,-32 13,-32 10,0 -10,0" />
-                  <rect class="verre-fond" x="-4" y="-33" width="8" height="34" />
-                  <line class="trait" x1="-4" y1="-32" x2="-4" y2="0" />
-                  <line class="trait" x1="4" y1="-32" x2="4" y2="0" />
+                  <polygon class="bouchon" points="-13,-32 -4,-32 -4,0 -10,0" />
+                  <polygon class="bouchon" points="4,-32 13,-32 10,0 4,0" />
                 `;
             }
             return `<polygon class="bouchon" points="-12.5,-32 12.5,-32 9.5,0 -9.5,0" />`;
@@ -1804,10 +1856,8 @@ export const CATALOG = [
         },
         render(p) {
             const stopper = p.stopper ? `
-              <rect class="bouchon" x="-13" y="-173" width="26" height="32" rx="2" />
-              <rect class="verre-fond" x="-4" y="-174" width="8" height="34" />
-              <line class="trait" x1="-4" y1="-173" x2="-4" y2="-141" />
-              <line class="trait" x1="4" y1="-173" x2="4" y2="-141" />
+              <rect class="bouchon" x="-13" y="-173" width="9" height="32" rx="1.5" />
+              <rect class="bouchon" x="4" y="-173" width="9" height="32" rx="1.5" />
             ` : '';
             return `
               <path class="verre-fond" d="M -14,-155 L 14,-155 L 14,-108 L 108,-83 L 102,-58 L 13,-81 L 13,0 L -13,0 L -13,-108 Z" />
@@ -1865,7 +1915,7 @@ export const CATALOG = [
             const bg = 'M -20,-215 L -15,-209 L -15,-165 L -58,-27 C -63,-13 -54,0 -40,0 L 40,0 C 54,0 63,-13 58,-27 L 15,-165 L 15,-172 L 44,-172 L 44,-183 L 15,-183 L 15,-209 L 20,-215 Z';
             return `
               <path class="verre-fond" d="${bg}" />
-              ${renderClippedLiquid(uid, bg, -165, -1.5, p.liquidLevel, p.liquidColor, ctx)}
+              ${renderClippedLiquid(uid, bg, -165, -1.5, p.liquidLevel, p.liquidColor, ctx, { halfWidth: 56, rimPoints: [[-15, -209], [15, -209]], fillToRim: Boolean(p.fillToRim) })}
               <path class="verre" style="fill:none;" d="M -20,-215 L -15,-209 L -15,-165 L -58,-27 C -63,-13 -54,0 -40,0 L 40,0 C 54,0 63,-13 58,-27 L 15,-165 L 15,-172 L 44,-172" />
               <path class="verre" style="fill:none;" d="M 20,-215 L 15,-209 L 15,-183 L 44,-183" />
             `;
@@ -2263,17 +2313,19 @@ export const CATALOG = [
             return [
                 { id: 'base', x: 0, y: 0, type: 'base', dir: 'down', label: 'Base' },
                 { id: 'elec-left', x: -64, y: -44, type: 'elec', dir: 'left', label: 'Borne rouge' },
-                { id: 'elec-right', x: 64, y: -44, type: 'elec', dir: 'right', label: 'Borne noire' }
+                { id: 'elec-right', x: 64, y: -44, type: 'elec', dir: 'right', label: 'Borne noire' },
+                { id: 'electrode-left', x: -20, y: -90, type: 'neck-bottom', dir: 'up', angle: 0, label: 'Électrode gauche' },
+                { id: 'electrode-right', x: 20, y: -90, type: 'neck-bottom', dir: 'up', angle: 0, label: 'Électrode droite' }
             ];
         },
         render(p, uid, ctx = {}) {
             const clip = 'M -78,-180 L 78,-180 L 52,-70 L -52,-70 Z';
             const bubblesSvg = p.bubbles ? `
-              <circle cx="-23" cy="-126" r="2.5" fill="#fff" stroke="#333" stroke-width="1" />
-              <circle cx="-19" cy="-136" r="2" fill="#fff" stroke="#333" stroke-width="1" />
-              <circle cx="-25" cy="-146" r="3" fill="#fff" stroke="#333" stroke-width="1" />
-              <circle cx="23" cy="-128" r="2" fill="#fff" stroke="#333" stroke-width="1" />
-              <circle cx="27" cy="-139" r="2.5" fill="#fff" stroke="#333" stroke-width="1" />
+              <circle cx="-20" cy="-126" r="2.5" fill="#fff" stroke="#333" stroke-width="1" />
+              <circle cx="-16" cy="-136" r="2" fill="#fff" stroke="#333" stroke-width="1" />
+              <circle cx="-22" cy="-146" r="3" fill="#fff" stroke="#333" stroke-width="1" />
+              <circle cx="20" cy="-128" r="2" fill="#fff" stroke="#333" stroke-width="1" />
+              <circle cx="24" cy="-139" r="2.5" fill="#fff" stroke="#333" stroke-width="1" />
             ` : '';
             return `
               <rect x="-65" y="-18" width="130" height="18" rx="3" fill="#333333" stroke="#000000" stroke-width="3" stroke-linejoin="round" />
@@ -2283,10 +2335,10 @@ export const CATALOG = [
               <line class="trait" style="stroke-width: 3;" x1="45" y1="-44" x2="64" y2="-44" />
               <rect x="45" y="-51" width="14" height="14" rx="2" fill="#333333" stroke="#000000" stroke-width="2" />
               <polygon class="verre-fond" points="-78,-180 78,-180 52,-70 -52,-70" />
-              ${renderClippedLiquid(uid, clip, -172, -71.5, p.liquidLevel, p.liquidColor, ctx)}
+              ${renderClippedLiquid(uid, clip, -172, -71.5, p.liquidLevel, p.liquidColor, ctx, { halfWidth: 70, rimPoints: [[-78, -180], [78, -180]], fillToRim: Boolean(p.fillToRim) })}
               <path class="verre" style="fill:none;" d="M -78,-180 L -52,-70 L 52,-70 L 78,-180" />
-              <rect x="-26" y="-120" width="6" height="88" rx="1.5" fill="#44494d" stroke="#000000" stroke-width="2" />
-              <rect x="20" y="-120" width="6" height="88" rx="1.5" fill="#44494d" stroke="#000000" stroke-width="2" />
+              <rect x="-23" y="-120" width="6" height="88" rx="1.5" fill="#44494d" stroke="#000000" stroke-width="2" />
+              <rect x="17" y="-120" width="6" height="88" rx="1.5" fill="#44494d" stroke="#000000" stroke-width="2" />
               ${bubblesSvg}
             `;
         }
@@ -2317,7 +2369,7 @@ export const CATALOG = [
               <path class="verre" style="fill:none;" d="M -48,0 L -48,-8 L -8,-8 L -8,-22" />
               <line class="verre" style="stroke-width:2.5;" x1="-8" y1="-22" x2="8" y2="-22" />
               <path class="verre-fond" d="${bg}" />
-              ${renderClippedLiquid(uid, bg, -195, -22, p.liquidLevel, p.liquidColor, ctx)}
+              ${renderClippedLiquid(uid, bg, -195, -22, p.liquidLevel, p.liquidColor, ctx, { halfWidth: 56, rimPoints: [[-58, -200], [58, -200]], fillToRim: Boolean(p.fillToRim) })}
               <path class="verre" style="fill:none;" d="M -58,-200 L -58,-80 A 58,58 0 0,0 58,-80 L 58,-200" />
               <path class="verre" style="fill:none;" d="M -32,-200 L -32,-80 A 32,32 0 0,0 32,-80 L 32,-200" />
               <line class="verre" style="stroke-width:2.5;" x1="-60" y1="-200" x2="-30" y2="-200" />
@@ -2388,6 +2440,226 @@ export const CATALOG = [
               <rect x="-14" y="-135" width="28" height="135" rx="3" fill="${colors[p.metal] || '#c87a52'}" stroke="#000000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
               <circle cx="0" cy="-118" r="4" fill="#ffffff" stroke="#000000" stroke-width="2" />
               <text class="texte-metal" style="fill:${textColor}" x="0" y="-55">${esc(p.metal || 'Cu')}</text>
+            `;
+        }
+    },
+
+    // ---------------------------------------------------------------------
+    // 6. EFFETS (ÉCOULEMENTS, GOUTTES, BULLES, VAPEUR, PRÉCIPITÉ)
+    // ---------------------------------------------------------------------
+    {
+        id: 'ecoulement',
+        name: 'Filet de liquide',
+        category: 'effets',
+        keywords: 'ecoulement filet jet liquide verser transvasement eau',
+        defaultProps: { length: 120, width: 6, curve: 0, color: '#9ad1f5' },
+        propSchema: [
+            { key: 'length', label: 'Longueur', type: 'range', min: 25, max: 320, step: 5, unit: 'mm' },
+            { key: 'width', label: 'Épaisseur', type: 'range', min: 2, max: 16, step: 1, unit: 'mm' },
+            { key: 'curve', label: 'Courbure (jet)', type: 'range', min: -120, max: 120, step: 5, unit: 'mm' },
+            { key: 'color', label: 'Couleur', type: 'color', presets: LIQUID_PRESETS }
+        ],
+        getBBox(p) {
+            const len = Math.max(25, Number(p.length) || 120);
+            const w = Math.max(2, Number(p.width) || 6);
+            const c = Number(p.curve) || 0;
+            const minX = Math.min(0, c) - w;
+            const maxX = Math.max(0, c) + w;
+            return { x: minX, y: -w / 2, width: Math.max(12, maxX - minX), height: len + w };
+        },
+        getAnchors() {
+            return [{ id: 'origin', x: 0, y: 0, type: 'tip', dir: 'up', label: 'Origine filet' }];
+        },
+        render(p) {
+            const len = Math.max(25, Number(p.length) || 120);
+            const w = Math.max(2, Number(p.width) || 6);
+            const c = Number(p.curve) || 0;
+            const col = esc(p.color || '#9ad1f5');
+            const pathD = Math.abs(c) < 1
+                ? `M 0,0 L 0,${len}`
+                : `M 0,0 Q ${c},0 ${c},${len}`;
+            return `
+              <path d="${pathD}" fill="none" stroke="rgba(0,0,0,0.22)" stroke-width="${(w + 1.8).toFixed(1)}" stroke-linecap="round" />
+              <path d="${pathD}" fill="none" stroke="${col}" stroke-width="${w.toFixed(1)}" stroke-linecap="round" opacity="0.92" />
+              <path d="${pathD}" fill="none" stroke="rgba(255,255,255,0.45)" stroke-width="${Math.max(1, w * 0.28).toFixed(1)}" stroke-linecap="round" />
+            `;
+        }
+    },
+
+    {
+        id: 'gouttes',
+        name: 'Gouttes',
+        category: 'effets',
+        keywords: 'goutte gouttes goutte-a-goutte titrage burette pipette liquide',
+        defaultProps: { count: 3, spacing: 26, size: 1, color: '#9ad1f5' },
+        propSchema: [
+            { key: 'count', label: 'Nombre de gouttes', type: 'range', min: 1, max: 5, step: 1 },
+            { key: 'spacing', label: 'Espacement', type: 'range', min: 14, max: 50, step: 2, unit: 'mm' },
+            { key: 'size', label: 'Taille', type: 'range', min: 0.6, max: 1.8, step: 0.1 },
+            { key: 'color', label: 'Couleur', type: 'color', presets: LIQUID_PRESETS }
+        ],
+        getBBox(p) {
+            const count = Math.max(1, Math.min(5, Math.round(Number(p.count) || 3)));
+            const spacing = Math.max(14, Number(p.spacing) || 26);
+            const sz = Math.max(0.6, Number(p.size) || 1);
+            const r = 6 * sz;
+            const totalH = (count - 1) * spacing + 2.4 * r + 4;
+            return { x: -r - 2, y: -2, width: (r + 2) * 2, height: totalH };
+        },
+        getAnchors() {
+            return [{ id: 'origin', x: 0, y: 0, type: 'tip', dir: 'up', label: 'Origine gouttes' }];
+        },
+        render(p) {
+            const count = Math.max(1, Math.min(5, Math.round(Number(p.count) || 3)));
+            const spacing = Math.max(14, Number(p.spacing) || 26);
+            const sz = Math.max(0.6, Number(p.size) || 1);
+            const r = 5.5 * sz;
+            const col = esc(p.color || '#9ad1f5');
+            let svg = '';
+            for (let i = 0; i < count; i++) {
+                const y = i * spacing;
+                const yMid = y + r * 1.45;
+                const yBot = y + r * 2.3;
+                svg += `
+                  <path d="M 0,${y.toFixed(1)} C ${(-r).toFixed(1)},${yMid.toFixed(1)} ${(-r).toFixed(1)},${yBot.toFixed(1)} 0,${yBot.toFixed(1)} C ${r.toFixed(1)},${yBot.toFixed(1)} ${r.toFixed(1)},${yMid.toFixed(1)} 0,${y.toFixed(1)} Z"
+                        fill="${col}" stroke="rgba(0,0,0,0.45)" stroke-width="1.3" stroke-linejoin="round" />
+                  <circle cx="${(-r * 0.28).toFixed(1)}" cy="${(y + r * 1.45).toFixed(1)}" r="${Math.max(1, r * 0.22).toFixed(1)}" fill="rgba(255,255,255,0.7)" />
+                `;
+            }
+            return svg;
+        }
+    },
+
+    {
+        id: 'bulles',
+        name: 'Bulles / Effervescence',
+        category: 'effets',
+        keywords: 'bulles effervescence gaz ebullition degagement reaction',
+        defaultProps: { count: 8, spread: 38, height: 75, color: '#ffffff' },
+        propSchema: [
+            { key: 'count', label: 'Nombre de bulles', type: 'range', min: 3, max: 15, step: 1 },
+            { key: 'spread', label: 'Largeur', type: 'range', min: 14, max: 90, step: 2, unit: 'mm' },
+            { key: 'height', label: 'Hauteur', type: 'range', min: 25, max: 150, step: 5, unit: 'mm' },
+            { key: 'color', label: 'Couleur', type: 'color', presets: [
+                { label: 'Blanc (air / gaz)', color: '#ffffff' },
+                { label: 'Bleu pâle', color: '#dbeafe' },
+                { label: 'Vert pâle', color: '#d1fae5' },
+                { label: 'Jaune pâle', color: '#fef3c7' }
+            ]}
+        ],
+        getBBox(p) {
+            const spread = Math.max(14, Number(p.spread) || 38);
+            const h = Math.max(25, Number(p.height) || 75);
+            return { x: -spread / 2 - 6, y: -h - 6, width: spread + 12, height: h + 12 };
+        },
+        getAnchors() {
+            return [{ id: 'base', x: 0, y: 0, type: 'base', dir: 'down', label: 'Origine bulles' }];
+        },
+        render(p) {
+            const count = Math.max(3, Math.min(15, Math.round(Number(p.count) || 8)));
+            const spread = Math.max(14, Number(p.spread) || 38);
+            const h = Math.max(25, Number(p.height) || 75);
+            const col = esc(p.color || '#ffffff');
+            // Distribution déterministe (nombre d'or) pour un rendu naturel et reproductible
+            let svg = '';
+            for (let i = 0; i < count; i++) {
+                const t = (i + 0.5) / count;
+                const phase = ((i * 0.6180339887) % 1) - 0.5;
+                const cx = phase * spread;
+                const cy = -t * h;
+                const r = 2.0 + t * 2.6 + ((i % 3) * 0.45);
+                svg += `
+                  <circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${r.toFixed(1)}" fill="${col}" fill-opacity="0.88" stroke="#334155" stroke-width="1.3" />
+                  <circle cx="${(cx - r * 0.3).toFixed(1)}" cy="${(cy - r * 0.3).toFixed(1)}" r="${Math.max(0.7, r * 0.25).toFixed(1)}" fill="#ffffff" />
+                `;
+            }
+            return svg;
+        }
+    },
+
+    {
+        id: 'vapeur',
+        name: 'Vapeur / Fumée',
+        category: 'effets',
+        keywords: 'vapeur fumee gaz chauffage evaporation ebullition',
+        defaultProps: { waves: 3, height: 70, width: 46, color: '#94a3b8' },
+        propSchema: [
+            { key: 'waves', label: 'Nombre de volutes', type: 'range', min: 1, max: 5, step: 1 },
+            { key: 'height', label: 'Hauteur', type: 'range', min: 30, max: 130, step: 5, unit: 'mm' },
+            { key: 'width', label: 'Largeur', type: 'range', min: 18, max: 100, step: 4, unit: 'mm' },
+            { key: 'color', label: 'Couleur', type: 'color', presets: [
+                { label: 'Vapeur d’eau', color: '#94a3b8' },
+                { label: 'Vapeurs rousses (NO₂)', color: '#c96a2b' },
+                { label: 'Vapeurs violettes (I₂)', color: '#9b5de5' },
+                { label: 'Dichlore (Cl₂)', color: '#c9b428' }
+            ]}
+        ],
+        getBBox(p) {
+            const w = Math.max(18, Number(p.width) || 46);
+            const h = Math.max(30, Number(p.height) || 70);
+            return { x: -w / 2 - 8, y: -h - 4, width: w + 16, height: h + 8 };
+        },
+        getAnchors() {
+            return [{ id: 'base', x: 0, y: 0, type: 'base', dir: 'down', label: 'Base vapeur' }];
+        },
+        render(p) {
+            const waves = Math.max(1, Math.min(5, Math.round(Number(p.waves) || 3)));
+            const h = Math.max(30, Number(p.height) || 70);
+            const w = Math.max(18, Number(p.width) || 46);
+            const col = esc(p.color || '#94a3b8');
+            const amp = Math.min(8, Math.max(4, w / (waves * 2.5)));
+            let svg = '';
+            for (let i = 0; i < waves; i++) {
+                const x0 = waves === 1 ? 0 : (-w / 2 + (i / (waves - 1)) * w);
+                const hWave = h * (0.85 + 0.15 * ((i + 1) % 2));
+                const d = `M ${x0.toFixed(1)},0 C ${(x0 - amp).toFixed(1)},${(-hWave * 0.28).toFixed(1)} ${(x0 + amp).toFixed(1)},${(-hWave * 0.55).toFixed(1)} ${x0.toFixed(1)},${(-hWave * 0.72).toFixed(1)} S ${(x0 + amp).toFixed(1)},${(-hWave * 0.92).toFixed(1)} ${x0.toFixed(1)},${(-hWave).toFixed(1)}`;
+                svg += `<path d="${d}" fill="none" stroke="${col}" stroke-width="2.6" stroke-linecap="round" opacity="0.78" />`;
+            }
+            return svg;
+        }
+    },
+
+    {
+        id: 'precipite',
+        name: 'Précipité / Dépôt',
+        category: 'effets',
+        keywords: 'precipite depot solide fond ions reaction trouble',
+        defaultProps: { width: 54, height: 18, color: '#3b9eff' },
+        propSchema: [
+            { key: 'width', label: 'Largeur', type: 'range', min: 18, max: 120, step: 2, unit: 'mm' },
+            { key: 'height', label: 'Épaisseur', type: 'range', min: 8, max: 40, step: 2, unit: 'mm' },
+            { key: 'color', label: 'Couleur', type: 'color', presets: [
+                { label: 'Bleu (Cu(OH)₂)', color: '#3b9eff' },
+                { label: 'Rouille (Fe(OH)₃)', color: '#c85a2a' },
+                { label: 'Vert (Fe(OH)₂)', color: '#4ecdc4' },
+                { label: 'Blanc (AgCl / Zn(OH)₂)', color: '#e2e8f0' },
+                { label: 'Jaune (PbI₂)', color: '#f4d35e' }
+            ]}
+        ],
+        getBBox(p) {
+            const w = Math.max(18, Number(p.width) || 54);
+            const h = Math.max(8, Number(p.height) || 18);
+            return { x: -w / 2 - 2, y: -h - 4, width: w + 4, height: h + 6 };
+        },
+        getAnchors() {
+            return [{ id: 'base', x: 0, y: 0, type: 'base', dir: 'down', label: 'Base dépôt' }];
+        },
+        render(p) {
+            const w = Math.max(18, Number(p.width) || 54);
+            const h = Math.max(8, Number(p.height) || 18);
+            const hw = w / 2;
+            const col = esc(p.color || '#3b9eff');
+            const mound = `M ${(-hw).toFixed(1)},0 C ${(-hw * 0.92).toFixed(1)},${(-h * 0.65).toFixed(1)} ${(-hw * 0.55).toFixed(1)},${(-h * 0.95).toFixed(1)} ${(-hw * 0.25).toFixed(1)},${(-h * 0.78).toFixed(1)} C ${(-hw * 0.05).toFixed(1)},${(-h * 1.1).toFixed(1)} ${(hw * 0.22).toFixed(1)},${(-h * 1.05).toFixed(1)} ${(hw * 0.35).toFixed(1)},${(-h * 0.78).toFixed(1)} C ${(hw * 0.62).toFixed(1)},${(-h * 0.92).toFixed(1)} ${(hw * 0.92).toFixed(1)},${(-h * 0.6).toFixed(1)} ${hw.toFixed(1)},0 Z`;
+            // Quelques grains en suspension juste au-dessus du dépôt
+            const grains = [-0.62, -0.3, 0.05, 0.38, 0.64].map((f, i) => {
+                const gx = f * hw;
+                const gy = -h * (0.45 + 0.35 * ((i + 1) % 3) / 2) - 2;
+                const gr = 1.4 + (i % 2) * 0.7;
+                return `<circle cx="${gx.toFixed(1)}" cy="${gy.toFixed(1)}" r="${gr.toFixed(1)}" fill="${col}" stroke="rgba(0,0,0,0.35)" stroke-width="0.8" />`;
+            }).join('');
+            return `
+              <path d="${mound}" fill="${col}" stroke="rgba(0,0,0,0.4)" stroke-width="1.4" stroke-linejoin="round" />
+              ${grains}
             `;
         }
     }
