@@ -67,6 +67,7 @@
 # Optique
 # Chromato
 # Spectres
+# Schemas
 
 
 # MISC
