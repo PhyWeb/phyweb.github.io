@@ -5,238 +5,370 @@
 // ==========================================
 const SCENE_SVGS = {
     // --- TENNIS ---
-    tennis_air: `<svg viewBox="0 0 320 220">
-        <defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#e0f2fe"/><stop offset="100%" stop-color="#f0f9ff"/></linearGradient></defs>
-        <rect width="320" height="220" fill="url(#sky)"/>
-        <g transform="translate(210, 85) rotate(15)">
-            <ellipse cx="0" cy="0" rx="28" ry="38" fill="none" stroke="#334155" stroke-width="5"/>
-            <path d="M-20,-25 L20,-25 M-26,-10 L26,-10 M-27,5 L27,5 M-24,20 L24,20 M-12,-35 L-12,35 M0,-38 L0,38 M12,-35 L12,35" stroke="#94a3b8" stroke-width="1.2"/>
-            <path d="M-10,36 L0,60 L10,36" fill="none" stroke="#334155" stroke-width="4"/>
-            <rect x="-4" y="60" width="8" height="35" fill="#d97706" rx="2"/>
+    tennis_air: `<svg viewBox="0 0 320 220" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <linearGradient id="grad-tennis-sky" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#dbeafe"/>
+                <stop offset="100%" stop-color="#f8fafc"/>
+            </linearGradient>
+        </defs>
+        <rect width="320" height="220" fill="url(#grad-tennis-sky)"/>
+        <!-- Trajectoire de la balle -->
+        <path d="M35,112 Q65,84 85,78" fill="none" stroke="#94a3b8" stroke-width="2" stroke-dasharray="5,4"/>
+        <!-- Raquette (sans contact avec la balle) -->
+        <g transform="translate(222, 84) rotate(18)">
+            <ellipse cx="0" cy="0" rx="28" ry="38" fill="rgba(255,255,255,0.45)" stroke="#334155" stroke-width="5"/>
+            <path d="M-21,-22 L21,-22 M-26,-10 L26,-10 M-27,2 L27,2 M-25,14 L25,14 M-20,25 L20,25 M-14,-33 L-14,33 M0,-37 L0,37 M14,-33 L14,33" stroke="#94a3b8" stroke-width="1.2"/>
+            <path d="M-11,36 L-3,60 L3,60 L11,36" fill="none" stroke="#334155" stroke-width="4" stroke-linejoin="round"/>
+            <rect x="-4.5" y="59" width="9" height="36" fill="#b45309" stroke="#78350f" stroke-width="1.5" rx="2"/>
         </g>
-        <g transform="translate(95, 70)">
+        <!-- Balle de tennis -->
+        <g transform="translate(102, 74)">
             <circle cx="0" cy="0" r="20" fill="#bef264" stroke="#65a30d" stroke-width="2.5"/>
-            <path d="M-14,-14 Q0,0 -14,14 M14,-14 Q0,0 14,14" fill="none" stroke="white" stroke-width="2.5"/>
+            <path d="M-14,-14 Q-2,0 -14,14 M14,-14 Q2,0 14,14" fill="none" stroke="white" stroke-width="2.4" stroke-linecap="round"/>
         </g>
-        <text x="160" y="205" text-anchor="middle" fill="#475569" font-size="12" font-weight="bold">Balle en l'air (avant la frappe)</text>
+        <text x="160" y="206" text-anchor="middle" fill="#334155" font-size="12" font-weight="bold">Balle en l'air (avant la frappe)</text>
     </svg>`,
 
-    tennis_impact: `<svg viewBox="0 0 320 220">
+    tennis_impact: `<svg viewBox="0 0 320 220" xmlns="http://www.w3.org/2000/svg">
         <rect width="320" height="220" fill="#1e293b"/>
-        <g transform="translate(175, 105)">
-            <ellipse cx="0" cy="0" rx="45" ry="62" fill="none" stroke="#d97706" stroke-width="7"/>
-            <path d="M-38,-35 L38,-35 M-43,-15 L43,-15 M-45,5 Q-15,5 -15,5 L45,5 M-42,25 L42,25 M-34,45 L34,45" stroke="#cbd5e1" stroke-width="1.5" fill="none"/>
-            <path d="M-20,-55 L-20,55 M0,-62 Q12,0 0,62 M20,-55 L20,55" stroke="#cbd5e1" stroke-width="1.5" fill="none"/>
-            <rect x="-6" y="62" width="12" height="45" fill="#b45309"/>
+        <!-- Lignes de vitesse de la frappe vers la gauche -->
+        <path d="M232,76 L278,76 M240,100 L290,100 M232,124 L274,124" stroke="#fbbf24" stroke-width="2.5" stroke-dasharray="8,5" stroke-linecap="round" opacity="0.75"/>
+        <!-- Profil du tamis de la raquette + cordage déformé -->
+        <g transform="translate(196, 100)">
+            <!-- Cadre profil -->
+            <rect x="-5" y="-56" width="10" height="112" rx="5" fill="#d97706" stroke="#f59e0b" stroke-width="2"/>
+            <!-- Cordage tendu et légèrement enfoncé au contact -->
+            <path d="M-5,-48 L-5,-22 Q4,0 -5,22 L-5,48" fill="none" stroke="#e2e8f0" stroke-width="2.5"/>
+            <path d="M-4,-34 L4,-34 M-2,-16 L4,-16 M2,0 L4,0 M-2,16 L4,16 M-4,34 L4,34" stroke="#cbd5e1" stroke-width="1.4"/>
+            <!-- Manche -->
+            <rect x="-4" y="56" width="8" height="28" rx="2" fill="#b45309" stroke="#f59e0b" stroke-width="1.5"/>
         </g>
-        <g transform="translate(152, 105)">
-            <ellipse cx="0" cy="0" rx="19" ry="23" fill="#bef264" stroke="#65a30d" stroke-width="2.5"/>
-            <path d="M-12,-16 Q0,0 -12,16 M10,-16 Q0,0 10,16" fill="none" stroke="white" stroke-width="2.5"/>
+        <!-- Balle légèrement écrasée au contact du cordage -->
+        <g transform="translate(169, 100)">
+            <ellipse cx="0" cy="0" rx="22" ry="25" fill="#bef264" stroke="#65a30d" stroke-width="2.5"/>
+            <path d="M-13,-18 Q-1,0 -13,18 M12,-18 Q1,0 12,18" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
         </g>
-        <text x="160" y="208" text-anchor="middle" fill="#f8fafc" font-size="12" font-weight="bold">Impact : la raquette frappe la balle vers la gauche</text>
+        <!-- Éclats d'impact -->
+        <path d="M188,68 L178,56 M188,132 L178,144" stroke="#fde047" stroke-width="2.5" stroke-linecap="round"/>
+        <text x="160" y="206" text-anchor="middle" fill="#f8fafc" font-size="12" font-weight="bold">Impact : la raquette frappe la balle vers la gauche</text>
     </svg>`,
 
-    tennis_sol: `<svg viewBox="0 0 320 220">
+    tennis_sol: `<svg viewBox="0 0 320 220" xmlns="http://www.w3.org/2000/svg">
         <rect width="320" height="145" fill="#fef3c7"/>
         <rect y="145" width="320" height="75" fill="#c2410c"/>
-        <line x1="0" y1="165" x2="320" y2="152" stroke="white" stroke-width="5" opacity="0.85"/>
-        <ellipse cx="160" cy="147" rx="22" ry="6" fill="rgba(0,0,0,0.35)"/>
+        <line x1="0" y1="145" x2="320" y2="145" stroke="#9a3412" stroke-width="2"/>
+        <line x1="0" y1="168" x2="320" y2="156" stroke="white" stroke-width="5" opacity="0.85"/>
+        <ellipse cx="160" cy="147" rx="22" ry="5.5" fill="rgba(0,0,0,0.32)"/>
         <g transform="translate(160, 125)">
             <circle cx="0" cy="0" r="21" fill="#bef264" stroke="#65a30d" stroke-width="2.5"/>
-            <path d="M-14,-14 Q0,0 -14,14 M14,-14 Q0,0 14,14" fill="none" stroke="white" stroke-width="2.5"/>
+            <path d="M-14,-14 Q-2,0 -14,14 M14,-14 Q2,0 14,14" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
         </g>
-        <text x="160" y="205" text-anchor="middle" fill="white" font-size="12" font-weight="bold">Balle immobile posée sur la terre battue</text>
+        <text x="160" y="206" text-anchor="middle" fill="white" font-size="12" font-weight="bold">Balle immobile posée sur la terre battue</text>
     </svg>`,
 
     // --- HANDBALL ---
-    hand_passe: `<svg viewBox="0 0 320 220">
+    hand_passe: `<svg viewBox="0 0 320 220" xmlns="http://www.w3.org/2000/svg">
         <rect width="320" height="220" fill="#eff6ff"/>
-        <path d="M40,150 L115,95 L138,80" fill="none" stroke="#fdba74" stroke-width="18" stroke-linecap="round"/>
-        <circle cx="142" cy="82" r="12" fill="#fdba74"/>
-        <g transform="translate(168, 82)">
-            <circle cx="0" cy="0" r="24" fill="#3b82f6" stroke="#1d4ed8" stroke-width="2.5"/>
-            <path d="M-16,-16 L0,-5 L16,-16 M-22,4 L0,-5 L0,23 M22,4 L0,-5" fill="none" stroke="#93c5fd" stroke-width="2"/>
+        <!-- Maillot / épaule + avant-bras -->
+        <path d="M20,175 L78,132 L134,102" fill="none" stroke="#1d4ed8" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M78,132 L138,100" fill="none" stroke="#fdba74" stroke-width="18" stroke-linecap="round"/>
+        <!-- Main et doigts en contact avec le ballon -->
+        <path d="M132,90 C142,78 158,74 166,80 M138,98 C148,92 158,92 164,96 M136,108 C146,108 156,112 162,116" fill="none" stroke="#ea580c" stroke-width="5.5" stroke-linecap="round"/>
+        <circle cx="140" cy="100" r="11" fill="#fdba74"/>
+        <!-- Ballon de handball -->
+        <g transform="translate(182, 98)">
+            <circle cx="0" cy="0" r="25" fill="#3b82f6" stroke="#1d4ed8" stroke-width="2.5"/>
+            <polygon points="0,-10 9,-3 6,8 -6,8 -9,-3" fill="#1d4ed8" opacity="0.55"/>
+            <path d="M0,-25 L0,-10 M22,-10 L9,-3 M15,20 L6,8 M-15,20 L-6,8 M-22,-10 L-9,-3" stroke="#93c5fd" stroke-width="2"/>
         </g>
-        <text x="160" y="205" text-anchor="middle" fill="#1e3a8a" font-size="12" font-weight="bold">Nikola Karabatic pousse le ballon pour faire sa passe</text>
+        <!-- Flèche discrète de poussée -->
+        <path d="M216,90 L250,82 M220,104 L258,98" stroke="#60a5fa" stroke-width="2.5" stroke-dasharray="5,4" stroke-linecap="round"/>
+        <text x="160" y="206" text-anchor="middle" fill="#1e3a8a" font-size="11.5" font-weight="bold">Nikola Karabatic pousse le ballon pour faire sa passe</text>
     </svg>`,
 
-    hand_air: `<svg viewBox="0 0 320 220">
-        <rect width="320" height="175" fill="#eff6ff"/>
-        <rect y="175" width="320" height="45" fill="#fde68a"/>
-        <path d="M70,85 L125,85 M60,100 L115,100 M80,115 L125,115" stroke="#94a3b8" stroke-width="2.5" stroke-dasharray="6,4"/>
-        <g transform="translate(175, 95)">
-            <circle cx="0" cy="0" r="24" fill="#3b82f6" stroke="#1d4ed8" stroke-width="2.5"/>
-            <path d="M-16,-16 L0,-5 L16,-16 M-22,4 L0,-5 L0,23 M22,4 L0,-5" fill="none" stroke="#93c5fd" stroke-width="2"/>
+    hand_air: `<svg viewBox="0 0 320 220" xmlns="http://www.w3.org/2000/svg">
+        <rect width="320" height="172" fill="#eff6ff"/>
+        <rect y="172" width="320" height="48" fill="#fde68a"/>
+        <line x1="0" y1="172" x2="320" y2="172" stroke="#d97706" stroke-width="2"/>
+        <path d="M72,82 L134,82 M58,98 L128,98 M78,114 L134,114" stroke="#94a3b8" stroke-width="2.5" stroke-dasharray="6,4" stroke-linecap="round"/>
+        <g transform="translate(178, 96)">
+            <circle cx="0" cy="0" r="25" fill="#3b82f6" stroke="#1d4ed8" stroke-width="2.5"/>
+            <polygon points="0,-10 9,-3 6,8 -6,8 -9,-3" fill="#1d4ed8" opacity="0.55"/>
+            <path d="M0,-25 L0,-10 M22,-10 L9,-3 M15,20 L6,8 M-15,20 L-6,8 M-22,-10 L-9,-3" stroke="#93c5fd" stroke-width="2"/>
         </g>
-        <text x="160" y="205" text-anchor="middle" fill="#78350f" font-size="12" font-weight="bold">Le ballon vole dans les airs (entre les deux joueurs)</text>
+        <text x="160" y="204" text-anchor="middle" fill="#78350f" font-size="11.5" font-weight="bold">Le ballon vole dans les airs (entre les deux joueurs)</text>
     </svg>`,
 
-    hand_sol: `<svg viewBox="0 0 320 220">
+    hand_sol: `<svg viewBox="0 0 320 220" xmlns="http://www.w3.org/2000/svg">
         <rect width="320" height="150" fill="#eff6ff"/>
         <rect y="150" width="320" height="70" fill="#fcd34d"/>
         <line x1="0" y1="150" x2="320" y2="150" stroke="#b45309" stroke-width="3"/>
         <ellipse cx="160" cy="152" rx="24" ry="5" fill="rgba(0,0,0,0.25)"/>
-        <g transform="translate(160, 126)">
-            <circle cx="0" cy="0" r="24" fill="#3b82f6" stroke="#1d4ed8" stroke-width="2.5"/>
-            <path d="M-16,-16 L0,-5 L16,-16 M-22,4 L0,-5 L0,23 M22,4 L0,-5" fill="none" stroke="#93c5fd" stroke-width="2"/>
+        <g transform="translate(160, 125)">
+            <circle cx="0" cy="0" r="25" fill="#3b82f6" stroke="#1d4ed8" stroke-width="2.5"/>
+            <polygon points="0,-10 9,-3 6,8 -6,8 -9,-3" fill="#1d4ed8" opacity="0.55"/>
+            <path d="M0,-25 L0,-10 M22,-10 L9,-3 M15,20 L6,8 M-15,20 L-6,8 M-22,-10 L-9,-3" stroke="#93c5fd" stroke-width="2"/>
         </g>
-        <text x="160" y="205" text-anchor="middle" fill="#78350f" font-size="12" font-weight="bold">Le ballon est posé sur le parquet du gymnase</text>
+        <text x="160" y="204" text-anchor="middle" fill="#78350f" font-size="11.5" font-weight="bold">Le ballon est posé sur le parquet du gymnase</text>
     </svg>`,
 
     // --- NIVEAU VERT (6 CARTES) ---
-    vert_orbite: `<svg viewBox="0 0 320 200">
+    vert_orbite: `<svg viewBox="0 0 320 200" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <radialGradient id="grad-sun" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#fef08a"/>
+                <stop offset="65%" stop-color="#f59e0b"/>
+                <stop offset="100%" stop-color="#ea580c"/>
+            </radialGradient>
+        </defs>
         <rect width="320" height="200" fill="#0f172a"/>
-        <ellipse cx="230" cy="70" rx="180" ry="95" fill="none" stroke="#334155" stroke-dasharray="5,5" stroke-width="2"/>
-        <circle cx="245" cy="55" r="42" fill="#f59e0b" stroke="#fde047" stroke-width="4"/>
-        <circle cx="85" cy="125" r="18" fill="#2563eb" stroke="#93c5fd" stroke-width="2"/>
-        <path d="M78,115 Q88,125 80,135" stroke="#22c55e" stroke-width="5" fill="none"/>
-        <text x="85" y="160" text-anchor="middle" fill="#93c5fd" font-size="12" font-weight="bold">Terre</text>
-        <text x="245" y="115" text-anchor="middle" fill="#fde047" font-size="12" font-weight="bold">Soleil</text>
+        <!-- Étoiles -->
+        <circle cx="32" cy="28" r="1.5" fill="white" opacity="0.8"/>
+        <circle cx="115" cy="22" r="1.2" fill="white" opacity="0.6"/>
+        <circle cx="165" cy="175" r="1.5" fill="white" opacity="0.7"/>
+        <circle cx="290" cy="160" r="1.2" fill="white" opacity="0.8"/>
+        <circle cx="48" cy="172" r="1" fill="white" opacity="0.5"/>
+        <!-- Orbite passant par la Terre -->
+        <ellipse cx="215" cy="95" rx="145" ry="72" fill="none" stroke="#475569" stroke-dasharray="5,5" stroke-width="1.8"/>
+        <!-- Soleil -->
+        <circle cx="235" cy="78" r="36" fill="url(#grad-sun)" stroke="#fde047" stroke-width="2.5"/>
+        <!-- Terre -->
+        <g transform="translate(88, 128)">
+            <circle cx="0" cy="0" r="18" fill="#2563eb" stroke="#93c5fd" stroke-width="2"/>
+            <path d="M-8,-10 Q2,-4 -4,6 Q-10,4 -8,-10 Z M5,-4 Q12,0 9,10 Q2,8 5,-4 Z" fill="#22c55e"/>
+        </g>
+        <text x="88" y="164" text-anchor="middle" fill="#93c5fd" font-size="12" font-weight="bold">Terre</text>
+        <text x="235" y="132" text-anchor="middle" fill="#fde047" font-size="12" font-weight="bold">Soleil</text>
     </svg>`,
 
-    vert_plume: `<svg viewBox="0 0 320 200">
+    vert_plume: `<svg viewBox="0 0 320 200" xmlns="http://www.w3.org/2000/svg">
         <rect width="320" height="200" fill="#e0f2fe"/>
-        <rect x="120" y="35" width="140" height="18" rx="4" fill="#f8fafc" stroke="#64748b" stroke-width="2"/>
-        <text x="190" y="48" text-anchor="middle" fill="#dc2626" font-size="12" font-weight="bold">+   +   +   +</text>
-        <path d="M90,125 Q115,90 145,82 Q130,110 105,125 Z" fill="white" stroke="#475569" stroke-width="1.5"/>
-        <path d="M82,132 L145,82" stroke="#475569" stroke-width="2"/>
-        <text x="160" y="182" text-anchor="middle" fill="#1e293b" font-size="12" font-weight="bold">Plume attirée (sans contact) par un bâton électrisé</text>
+        <!-- Main tenant le bâton à droite -->
+        <path d="M250,48 L305,48" stroke="#fdba74" stroke-width="18" stroke-linecap="round"/>
+        <circle cx="252" cy="48" r="11" fill="#fdba74" stroke="#ea580c" stroke-width="1.5"/>
+        <!-- Bâton électrisé -->
+        <rect x="115" y="38" width="138" height="20" rx="5" fill="#f8fafc" stroke="#475569" stroke-width="2"/>
+        <text x="180" y="52" text-anchor="middle" fill="#dc2626" font-size="12" font-weight="bold">+   +   +   +</text>
+        <!-- Petits traits d'attraction à distance -->
+        <path d="M140,64 L132,80 M158,64 L152,78" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="3,3"/>
+        <!-- Plume -->
+        <g transform="translate(120, 114) rotate(-32)">
+            <path d="M-40,0 Q-10,-16 36,0 Q-10,16 -40,0 Z" fill="white" stroke="#475569" stroke-width="1.6"/>
+            <line x1="-48" y1="0" x2="36" y2="0" stroke="#64748b" stroke-width="1.8"/>
+            <path d="M-18,-6 L-12,0 M-4,-8 L2,0 M12,-6 L18,0 M-18,6 L-12,0 M-4,8 L2,0 M12,6 L18,0" stroke="#cbd5e1" stroke-width="1.2"/>
+        </g>
+        <text x="160" y="185" text-anchor="middle" fill="#1e293b" font-size="11.5" font-weight="bold">Plume attirée sans contact par un bâton électrisé</text>
     </svg>`,
 
-    vert_kite: `<svg viewBox="0 0 320 200">
-        <rect width="320" height="145" fill="#bae6fd"/>
-        <rect y="145" width="320" height="55" fill="#0284c7"/>
-        <path d="M245,25 Q285,40 270,75 Q255,55 245,25 Z" fill="#f97316" stroke="#c2410c" stroke-width="2"/>
-        <line x1="165" y1="88" x2="258" y2="52" stroke="#475569" stroke-width="1.5"/>
-        <line x1="158" y1="78" x2="172" y2="98" stroke="#1e293b" stroke-width="4"/>
-        <rect x="95" y="138" width="65" height="8" rx="4" fill="#fde047" stroke="#ca8a04" stroke-width="2"/>
-        <circle cx="132" cy="82" r="9" fill="#334155"/>
-        <path d="M132,91 L125,118 L112,138 M125,118 L140,138 M130,98 L164,88" fill="none" stroke="#16a34a" stroke-width="5" stroke-linecap="round"/>
+    vert_kite: `<svg viewBox="0 0 320 200" xmlns="http://www.w3.org/2000/svg">
+        <rect width="320" height="142" fill="#bae6fd"/>
+        <rect y="142" width="320" height="58" fill="#0284c7"/>
+        <!-- Vagues / écume -->
+        <path d="M0,142 Q25,137 50,142 T100,142 T150,142 T200,142 T250,142 T300,142 T320,142" fill="none" stroke="#e0f2fe" stroke-width="2.5"/>
+        <!-- Aile de kitesurf -->
+        <path d="M218,32 Q265,12 292,52 Q268,46 254,64 Q244,44 218,32 Z" fill="#f97316" stroke="#c2410c" stroke-width="2"/>
+        <!-- Lignes vers le manche (barre) -->
+        <line x1="168" y1="90" x2="225" y2="38" stroke="#475569" stroke-width="1.3"/>
+        <line x1="168" y1="90" x2="255" y2="62" stroke="#475569" stroke-width="1.3"/>
+        <!-- Manche / barre -->
+        <line x1="162" y1="82" x2="174" y2="98" stroke="#1e293b" stroke-width="4" stroke-linecap="round"/>
+        <!-- Planche -->
+        <path d="M88,139 Q122,144 158,136 L154,145 Q120,151 86,145 Z" fill="#fde047" stroke="#ca8a04" stroke-width="2"/>
+        <!-- Kitesurfeuse -->
+        <circle cx="122" cy="74" r="9" fill="#1e293b"/>
+        <path d="M122,84 L118,112 L106,138 M118,112 L138,137 M121,92 L166,90" fill="none" stroke="#15803d" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+        <text x="160" y="186" text-anchor="middle" fill="white" font-size="11.5" font-weight="bold">Kitesurfeuse sur sa planche tirée par sa voile</text>
     </svg>`,
 
-    vert_trombone: `<svg viewBox="0 0 320 200">
+    vert_trombone: `<svg viewBox="0 0 320 200" xmlns="http://www.w3.org/2000/svg">
         <rect width="320" height="200" fill="#f1f5f9"/>
-        <line x1="65" y1="20" x2="65" y2="180" stroke="#475569" stroke-width="6"/>
-        <rect x="65" y="80" width="35" height="24" fill="#dc2626" stroke="#991b1b" stroke-width="2"/>
-        <text x="82" y="96" text-anchor="middle" fill="white" font-size="11" font-weight="bold">N</text>
-        <rect x="122" y="86" width="36" height="12" rx="6" fill="none" stroke="#64748b" stroke-width="3"/>
-        <path d="M155,92 L225,78 L225,106 Z" fill="none" stroke="#ea580c" stroke-width="2.5"/>
-        <circle cx="245" cy="92" r="22" fill="#fdba74"/>
-        <text x="160" y="182" text-anchor="middle" fill="#334155" font-size="12" font-weight="bold">Trombone attiré à distance par l'aimant, retenu par un élastique</text>
+        <!-- Potence / support -->
+        <rect x="28" y="25" width="8" height="135" fill="#475569" rx="2"/>
+        <rect x="18" y="156" width="42" height="8" fill="#475569" rx="2"/>
+        <!-- Aimant droit (S + N) -->
+        <rect x="36" y="80" width="32" height="24" fill="#2563eb" stroke="#1e3a8a" stroke-width="2"/>
+        <rect x="68" y="80" width="32" height="24" fill="#dc2626" stroke="#991b1b" stroke-width="2"/>
+        <text x="52" y="96" text-anchor="middle" fill="white" font-size="11" font-weight="bold">S</text>
+        <text x="84" y="96" text-anchor="middle" fill="white" font-size="11" font-weight="bold">N</text>
+        <!-- Traits d'attraction magnétique -->
+        <path d="M105,86 L120,86 M105,98 L120,98" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="3,3"/>
+        <!-- Trombone réaliste -->
+        <path d="M126,90 L156,90 A5,5 0 0,1 156,100 L132,100 A3.5,3.5 0 0,1 132,93 L150,93" fill="none" stroke="#475569" stroke-width="2.6" stroke-linecap="round"/>
+        <!-- Élastique tendu -->
+        <path d="M161,95 L242,84 M161,95 L242,106" fill="none" stroke="#ea580c" stroke-width="2.5"/>
+        <!-- Main à droite tenant l'élastique -->
+        <path d="M244,95 L302,95" stroke="#fdba74" stroke-width="20" stroke-linecap="round"/>
+        <circle cx="246" cy="95" r="12" fill="#fdba74" stroke="#ea580c" stroke-width="1.5"/>
+        <text x="160" y="185" text-anchor="middle" fill="#334155" font-size="11" font-weight="bold">Trombone attiré par l'aimant, retenu par un élastique</text>
     </svg>`,
 
-    vert_iceberg: `<svg viewBox="0 0 320 200">
-        <rect width="320" height="95" fill="#bae6fd"/>
-        <rect y="95" width="320" height="105" fill="#0369a1"/>
-        <polygon points="110,95 135,45 165,65 185,40 210,95" fill="white" stroke="#cbd5e1" stroke-width="2"/>
-        <polygon points="110,95 95,145 145,175 195,160 210,95" fill="#7dd3fc" opacity="0.65"/>
-        <line x1="0" y1="95" x2="320" y2="95" stroke="#e0f2fe" stroke-width="2.5"/>
-        <text x="160" y="190" text-anchor="middle" fill="white" font-size="12" font-weight="bold">Un iceberg flottant sur l'océan</text>
+    vert_iceberg: `<svg viewBox="0 0 320 200" xmlns="http://www.w3.org/2000/svg">
+        <rect width="320" height="92" fill="#bae6fd"/>
+        <rect y="92" width="320" height="108" fill="#0369a1"/>
+        <!-- Partie émergée -->
+        <polygon points="106,92 132,40 162,60 186,34 214,92" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+        <polygon points="162,60 186,34 214,92 174,92" fill="#e2e8f0"/>
+        <!-- Partie immergée -->
+        <polygon points="106,92 92,140 144,168 198,154 214,92" fill="#7dd3fc" opacity="0.65" stroke="#38bdf8" stroke-width="1.5"/>
+        <!-- Ligne de flottaison -->
+        <path d="M0,92 Q40,88 80,92 T160,92 T240,92 T320,92" fill="none" stroke="#e0f2fe" stroke-width="2.5"/>
+        <text x="160" y="188" text-anchor="middle" fill="white" font-size="12" font-weight="bold">Un iceberg flottant sur l'océan</text>
     </svg>`,
 
-    vert_balancoire: `<svg viewBox="0 0 320 200">
+    vert_balancoire: `<svg viewBox="0 0 320 200" xmlns="http://www.w3.org/2000/svg">
         <rect width="320" height="200" fill="#e0f2fe"/>
-        <line x1="125" y1="10" x2="125" y2="135" stroke="#78350f" stroke-width="3"/>
-        <line x1="195" y1="10" x2="195" y2="135" stroke="#78350f" stroke-width="3"/>
-        <rect x="115" y="135" width="90" height="10" rx="3" fill="#92400e"/>
-        <circle cx="160" cy="75" r="14" fill="#334155"/>
-        <path d="M160,90 L160,135 M160,105 L125,115 M160,105 L195,115 M150,135 L145,165 M170,135 L175,165" stroke="#1e40af" stroke-width="7" stroke-linecap="round" fill="none"/>
-        <text x="160" y="190" text-anchor="middle" fill="#1e293b" font-size="12" font-weight="bold">Jeune homme assis sur une balançoire</text>
+        <!-- Cordes -->
+        <line x1="122" y1="8" x2="122" y2="132" stroke="#78350f" stroke-width="3"/>
+        <line x1="198" y1="8" x2="198" y2="132" stroke="#78350f" stroke-width="3"/>
+        <!-- Planche -->
+        <rect x="112" y="132" width="96" height="10" rx="3" fill="#92400e" stroke="#451a03" stroke-width="1.5"/>
+        <!-- Personnage assis -->
+        <circle cx="160" cy="64" r="13" fill="#334155"/>
+        <!-- Torse -->
+        <line x1="160" y1="78" x2="160" y2="126" stroke="#1d4ed8" stroke-width="14" stroke-linecap="round"/>
+        <!-- Bras tenant les cordes -->
+        <path d="M153,90 L122,102 M167,90 L198,102" stroke="#1d4ed8" stroke-width="6.5" stroke-linecap="round" fill="none"/>
+        <!-- Jambes devant la planche -->
+        <path d="M152,130 L146,162 M168,130 L174,162" stroke="#1e293b" stroke-width="7.5" stroke-linecap="round" fill="none"/>
+        <text x="160" y="188" text-anchor="middle" fill="#1e293b" font-size="12" font-weight="bold">Jeune homme assis sur une balançoire</text>
     </svg>`,
 
     // --- 6 SCHÉMAS CLASSIQUES (JAUNE & ORANGE) ---
-    schema_1_lampe: `<svg viewBox="0 0 360 260">
-        <line x1="110" y1="35" x2="250" y2="35" stroke="#1e293b" stroke-width="3"/>
-        <path d="M120,35 L130,20 M145,35 L155,20 M170,35 L180,20 M195,35 L205,20 M220,35 L230,20" stroke="#64748b" stroke-width="2"/>
-        <text x="260" y="38" fill="#475569" font-size="13">plafond</text>
-        <line x1="180" y1="35" x2="180" y2="115" stroke="#1e293b" stroke-width="2.5"/>
-        <text x="192" y="80" fill="#475569" font-size="13">fil</text>
-        <path d="M125,155 A55,40 0 0,1 235,155 Z" fill="#fef08a" stroke="#1e293b" stroke-width="2.5"/>
-        <text x="248" y="150" fill="#1e293b" font-size="14" font-weight="bold">lampe</text>
-        <text x="180" y="235" text-anchor="middle" fill="#0f172a" font-size="14" font-weight="bold">Système : la lampe</text>
+    schema_1_lampe: `<svg viewBox="0 0 360 260" xmlns="http://www.w3.org/2000/svg">
+        <line x1="105" y1="35" x2="255" y2="35" stroke="#1e293b" stroke-width="3"/>
+        <path d="M115,35 L125,20 M140,35 L150,20 M165,35 L175,20 M190,35 L200,20 M215,35 L225,20 M240,35 L250,20" stroke="#64748b" stroke-width="2"/>
+        <text x="262" y="39" fill="#475569" font-size="13">plafond</text>
+        <line x1="180" y1="35" x2="180" y2="110" stroke="#1e293b" stroke-width="2.5"/>
+        <text x="192" y="78" fill="#475569" font-size="13">fil</text>
+        <!-- Douille + abat-jour + ampoule -->
+        <rect x="172" y="108" width="16" height="10" rx="2" fill="#475569"/>
+        <circle cx="180" cy="158" r="11" fill="#fde047" stroke="#ca8a04" stroke-width="2"/>
+        <path d="M126,158 A54,42 0 0,1 234,158 Z" fill="#fef08a" stroke="#1e293b" stroke-width="2.5"/>
+        <text x="246" y="152" fill="#1e293b" font-size="14" font-weight="bold">lampe</text>
+        <text x="180" y="236" text-anchor="middle" fill="#0f172a" font-size="14" font-weight="bold">Système : la lampe</text>
     </svg>`,
 
-    schema_2_livre_table: `<svg viewBox="0 0 360 260">
-        <rect x="70" y="135" width="220" height="12" fill="#e2e8f0" stroke="#1e293b" stroke-width="2.5"/>
-        <rect x="100" y="147" width="12" height="68" fill="#e2e8f0" stroke="#1e293b" stroke-width="2.5"/>
-        <rect x="248" y="147" width="12" height="68" fill="#e2e8f0" stroke="#1e293b" stroke-width="2.5"/>
-        <text x="300" y="140" fill="#475569" font-size="13">table</text>
-        <rect x="130" y="95" width="100" height="40" fill="#94a3b8" stroke="#1e293b" stroke-width="2.5"/>
-        <text x="180" y="85" text-anchor="middle" fill="#1e293b" font-size="14" font-weight="bold">livre</text>
+    schema_2_livre_table: `<svg viewBox="0 0 360 260" xmlns="http://www.w3.org/2000/svg">
+        <!-- Table -->
+        <rect x="65" y="138" width="215" height="13" fill="#e2e8f0" stroke="#1e293b" stroke-width="2.5"/>
+        <rect x="92" y="151" width="12" height="62" fill="#e2e8f0" stroke="#1e293b" stroke-width="2.5"/>
+        <rect x="240" y="151" width="12" height="62" fill="#e2e8f0" stroke="#1e293b" stroke-width="2.5"/>
+        <text x="288" y="149" fill="#475569" font-size="13">table</text>
+        <!-- Livre -->
+        <rect x="122" y="98" width="102" height="40" rx="2" fill="#94a3b8" stroke="#1e293b" stroke-width="2.5"/>
+        <rect x="126" y="103" width="94" height="30" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+        <line x1="126" y1="113" x2="220" y2="113" stroke="#cbd5e1" stroke-width="1.2"/>
+        <line x1="126" y1="123" x2="220" y2="123" stroke="#cbd5e1" stroke-width="1.2"/>
+        <rect x="122" y="98" width="12" height="40" fill="#475569" stroke="#1e293b" stroke-width="2"/>
+        <text x="173" y="86" text-anchor="middle" fill="#1e293b" font-size="14" font-weight="bold">livre</text>
         <text x="180" y="240" text-anchor="middle" fill="#0f172a" font-size="14" font-weight="bold">Système : le livre</text>
     </svg>`,
 
-    schema_3_pomme: `<svg viewBox="0 0 360 260">
-        <path d="M150,45 L150,70 M180,35 L180,60 M210,45 L210,70" stroke="#64748b" stroke-width="2" stroke-dasharray="4,4"/>
-        <path d="M180,95 C155,80 135,105 140,135 C145,165 165,175 180,165 C195,175 215,165 220,135 C225,105 205,80 180,95 Z" fill="#fca5a5" stroke="#1e293b" stroke-width="2.5"/>
-        <path d="M180,95 L185,75" stroke="#78350f" stroke-width="3"/>
-        <path d="M183,82 Q200,72 205,85 Q192,92 183,82 Z" fill="#86efac" stroke="#1e293b" stroke-width="1.5"/>
-        <text x="235" y="125" fill="#1e293b" font-size="13">pomme en</text>
-        <text x="235" y="142" fill="#1e293b" font-size="13">chute libre</text>
-        <text x="180" y="235" text-anchor="middle" fill="#0f172a" font-size="14" font-weight="bold">Système : la pomme</text>
+    schema_3_pomme: `<svg viewBox="0 0 360 260" xmlns="http://www.w3.org/2000/svg">
+        <path d="M135,40 L135,68 M165,30 L165,58 M195,40 L195,68" stroke="#64748b" stroke-width="2" stroke-dasharray="4,4"/>
+        <g transform="translate(165, 132)">
+            <path d="M0,-35 C-25,-50 -45,-25 -40,5 C-35,35 -15,45 0,35 C15,45 35,35 40,5 C45,-25 25,-50 0,-35 Z" fill="#fca5a5" stroke="#1e293b" stroke-width="2.5"/>
+            <path d="M0,-35 L5,-55" stroke="#78350f" stroke-width="3" stroke-linecap="round"/>
+            <path d="M3,-48 Q20,-58 25,-45 Q12,-38 3,-48 Z" fill="#86efac" stroke="#1e293b" stroke-width="1.5"/>
+        </g>
+        <text x="224" y="124" fill="#1e293b" font-size="13">pomme en</text>
+        <text x="224" y="142" fill="#1e293b" font-size="13">chute libre</text>
+        <text x="180" y="236" text-anchor="middle" fill="#0f172a" font-size="14" font-weight="bold">Système : la pomme</text>
     </svg>`,
 
-    schema_4_clou: `<svg viewBox="0 0 360 260">
-        <line x1="60" y1="45" x2="140" y2="45" stroke="#1e293b" stroke-width="3"/>
-        <path d="M70,45 L80,30 M95,45 L105,30 M120,45 L130,30" stroke="#64748b" stroke-width="2"/>
-        <line x1="100" y1="45" x2="172" y2="109" stroke="#1e293b" stroke-width="2.5"/>
-        <text x="140" y="70" fill="#475569" font-size="13">fil</text>
-        <line x1="166" y1="117" x2="178" y2="101" stroke="#1e293b" stroke-width="3.5"/>
-        <line x1="172" y1="109" x2="190" y2="123" stroke="#1e293b" stroke-width="3"/>
-        <text x="180" y="97" fill="#1e293b" font-size="14" font-weight="bold">clou</text>
-        <rect x="225" y="103" width="75" height="24" fill="#fca5a5" stroke="#1e293b" stroke-width="2.5"/>
-        <text x="262" y="95" text-anchor="middle" fill="#1e293b" font-size="14" font-weight="bold">aimant</text>
-        <text x="180" y="235" text-anchor="middle" fill="#0f172a" font-size="14" font-weight="bold">Système : le clou</text>
+    schema_4_clou: `<svg viewBox="0 0 360 260" xmlns="http://www.w3.org/2000/svg">
+        <line x1="50" y1="38" x2="135" y2="38" stroke="#1e293b" stroke-width="3"/>
+        <path d="M60,38 L70,23 M85,38 L95,23 M110,38 L120,23" stroke="#64748b" stroke-width="2"/>
+        <!-- Fil incliné -->
+        <line x1="90" y1="38" x2="156" y2="100" stroke="#1e293b" stroke-width="2.5"/>
+        <text x="134" y="66" fill="#475569" font-size="13">fil</text>
+        <!-- Clou bien visible -->
+        <line x1="147" y1="110" x2="165" y2="90" stroke="#334155" stroke-width="5" stroke-linecap="round"/>
+        <polygon points="154,103 158,97 204,138 197,140" fill="#64748b" stroke="#1e293b" stroke-width="2" stroke-linejoin="round"/>
+        <text x="185" y="92" fill="#1e293b" font-size="14" font-weight="bold">clou</text>
+        <!-- Aimant N/S -->
+        <rect x="234" y="114" width="38" height="26" fill="#ef4444" stroke="#1e293b" stroke-width="2"/>
+        <rect x="272" y="114" width="38" height="26" fill="#3b82f6" stroke="#1e293b" stroke-width="2"/>
+        <text x="253" y="131" text-anchor="middle" fill="white" font-size="11" font-weight="bold">N</text>
+        <text x="291" y="131" text-anchor="middle" fill="white" font-size="11" font-weight="bold">S</text>
+        <text x="272" y="106" text-anchor="middle" fill="#1e293b" font-size="14" font-weight="bold">aimant</text>
+        <text x="180" y="236" text-anchor="middle" fill="#0f172a" font-size="14" font-weight="bold">Système : le clou</text>
     </svg>`,
 
-    schema_5_ressort: `<svg viewBox="0 0 360 260">
+    schema_5_ressort: `<svg viewBox="0 0 360 260" xmlns="http://www.w3.org/2000/svg">
         <line x1="130" y1="30" x2="230" y2="30" stroke="#1e293b" stroke-width="3"/>
         <path d="M145,30 L155,15 M175,30 L185,15 M205,30 L215,15" stroke="#64748b" stroke-width="2"/>
-        <polyline points="180,30 180,45 165,53 195,65 165,77 195,89 165,101 195,113 180,121 180,135" fill="none" stroke="#1e293b" stroke-width="2.5"/>
+        <polyline points="180,30 180,45 165,53 195,65 165,77 195,89 165,101 195,113 180,121 180,135" fill="none" stroke="#1e293b" stroke-width="2.5" stroke-linejoin="round"/>
         <text x="210" y="87" fill="#475569" font-size="13">ressort</text>
         <circle cx="180" cy="157" r="22" fill="#cbd5e1" stroke="#1e293b" stroke-width="2.5"/>
-        <text x="215" y="162" fill="#1e293b" font-size="14" font-weight="bold">solide</text>
-        <text x="180" y="235" text-anchor="middle" fill="#0f172a" font-size="14" font-weight="bold">Système : le solide</text>
+        <text x="214" y="162" fill="#1e293b" font-size="14" font-weight="bold">solide</text>
+        <text x="180" y="236" text-anchor="middle" fill="#0f172a" font-size="14" font-weight="bold">Système : le solide</text>
     </svg>`,
 
-    schema_6_livre_air: `<svg viewBox="0 0 360 260">
-        <path d="M135,165 L135,195 M165,175 L165,205 M195,165 L195,195" stroke="#64748b" stroke-width="2" stroke-dasharray="4,4"/>
-        <g transform="translate(165, 105) rotate(-35)">
-            <rect x="-40" y="-25" width="80" height="50" fill="#cbd5e1" stroke="#1e293b" stroke-width="2.5"/>
-            <line x1="-35" y1="-25" x2="-35" y2="25" stroke="#1e293b" stroke-width="2"/>
+    schema_6_livre_air: `<svg viewBox="0 0 360 260" xmlns="http://www.w3.org/2000/svg">
+        <path d="M105,165 L105,195 M135,175 L135,205 M165,165 L165,195" stroke="#64748b" stroke-width="2" stroke-dasharray="4,4"/>
+        <g transform="translate(135, 110) rotate(-30)">
+            <rect x="-40" y="-25" width="80" height="50" rx="2" fill="#94a3b8" stroke="#1e293b" stroke-width="2.5"/>
+            <rect x="-32" y="-21" width="68" height="42" fill="#f8fafc"/>
+            <rect x="-40" y="-25" width="10" height="50" fill="#475569" stroke="#1e293b" stroke-width="2"/>
         </g>
-        <text x="235" y="85" fill="#1e293b" font-size="12">livre lancé en l'air</text>
-        <text x="235" y="102" fill="#1e293b" font-size="12">par un élève excédé</text>
-        <text x="235" y="119" fill="#dc2626" font-size="12" font-weight="bold">(en train de monter)</text>
-        <text x="180" y="235" text-anchor="middle" fill="#0f172a" font-size="14" font-weight="bold">Système : le livre</text>
+        <text x="206" y="88" fill="#1e293b" font-size="12.5">livre lancé en l'air</text>
+        <text x="206" y="106" fill="#1e293b" font-size="12.5">par un élève excédé</text>
+        <text x="206" y="126" fill="#dc2626" font-size="12.5" font-weight="bold">(en train de monter ↑)</text>
+        <text x="180" y="236" text-anchor="middle" fill="#0f172a" font-size="14" font-weight="bold">Système : le livre</text>
     </svg>`,
 
     // --- NIVEAU ROUGE (SKIEUR & CERF-VOLANT) ---
-    rouge_skieur: `<svg viewBox="0 0 360 230">
-        <rect width="360" height="230" fill="#f8fafc"/>
-        <line x1="30" y1="205" x2="330" y2="85" stroke="#0f172a" stroke-width="4"/>
-        <g transform="translate(175, 145) rotate(-22)">
-            <line x1="-45" y1="0" x2="55" y2="0" stroke="#2563eb" stroke-width="6" stroke-linecap="round"/>
-            <polyline points="-10,0 5,-25 -15,-45 -5,-75" fill="none" stroke="#1e293b" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-            <circle cx="-5" cy="-92" r="12" fill="#1e293b"/>
-            <line x1="-5" y1="-65" x2="25" y2="-55" stroke="#1e293b" stroke-width="6" stroke-linecap="round"/>
+    rouge_skieur: `<svg viewBox="0 0 360 230" xmlns="http://www.w3.org/2000/svg">
+        <rect width="360" height="230" fill="#e0f2fe"/>
+        <!-- Pente enneigée -->
+        <polygon points="0,230 0,212 360,72 360,230" fill="#ffffff"/>
+        <line x1="0" y1="212" x2="360" y2="72" stroke="#64748b" stroke-width="3"/>
+        <!-- Câble aérien du tire-fesse (parallèle à la pente) -->
+        <line x1="0" y1="112" x2="360" y2="-28" stroke="#475569" stroke-width="2.5" stroke-dasharray="6,3"/>
+        <!-- Perche du tire-fesse reliée au câble et au skieur -->
+        <line x1="258" y1="12" x2="188" y2="108" stroke="#dc2626" stroke-width="3.5" stroke-linecap="round"/>
+        <circle cx="258" cy="12" r="4" fill="#dc2626"/>
+        <text x="270" y="28" fill="#dc2626" font-size="12" font-weight="bold">Tire-fesse</text>
+        <!-- Skieur aligné sur la pente (-21.25°) -->
+        <g transform="translate(178, 142) rotate(-21.25)">
+            <!-- Skis posés sur la neige -->
+            <line x1="-42" y1="-2" x2="48" y2="-2" stroke="#2563eb" stroke-width="5.5" stroke-linecap="round"/>
+            <path d="M48,-2 Q56,-4 58,-10" fill="none" stroke="#2563eb" stroke-width="4.5" stroke-linecap="round"/>
+            <!-- Jambes et buste -->
+            <polyline points="-6,-4 6,-26 -6,-48 2,-74" fill="none" stroke="#1e293b" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <!-- Bras tenant la perche -->
+            <line x1="1" y1="-64" x2="26" y2="-40" stroke="#1e293b" stroke-width="6" stroke-linecap="round"/>
+            <!-- Tête -->
+            <circle cx="4" cy="-88" r="10.5" fill="#1e293b"/>
         </g>
-        <line x1="175" y1="112" x2="265" y2="15" stroke="#dc2626" stroke-width="3.5"/>
-        <text x="275" y="40" fill="#dc2626" font-size="12" font-weight="bold">Tire-fesse</text>
+        <text x="250" y="212" text-anchor="middle" fill="#475569" font-size="11.5" font-weight="bold">Pente enneigée (sans frottements)</text>
     </svg>`,
 
-    rouge_cerfvolant: `<svg viewBox="0 0 360 230">
-        <rect width="360" height="230" fill="#e0f2fe"/>
-        <circle cx="85" cy="155" r="14" fill="#fdba74" stroke="#1e293b" stroke-width="2"/>
-        <path d="M85,170 L80,200 L60,220 M80,200 L105,220 M85,180 L120,165" stroke="#be185d" stroke-width="6" fill="none" stroke-linecap="round"/>
-        <path d="M120,165 Q180,125 235,65" fill="none" stroke="#1e293b" stroke-width="2"/>
-        <g transform="translate(235, 65)">
-            <polygon points="0,-35 30,0 0,40 -30,0" fill="#3b82f6" stroke="#1e293b" stroke-width="2"/>
-            <polygon points="0,-35 30,0 0,0" fill="#ef4444"/>
-            <polygon points="0,40 -30,0 0,0" fill="#ef4444"/>
-            <line x1="0" y1="-35" x2="0" y2="40" stroke="#1e293b" stroke-width="1.5"/>
-            <line x1="-30" y1="0" x2="30" y2="0" stroke="#1e293b" stroke-width="1.5"/>
-            <path d="M0,40 Q25,65 45,50 Q60,35 40,75" fill="none" stroke="#ef4444" stroke-width="3"/>
+    rouge_cerfvolant: `<svg viewBox="0 0 360 230" xmlns="http://www.w3.org/2000/svg">
+        <rect width="360" height="195" fill="#e0f2fe"/>
+        <rect y="195" width="360" height="35" fill="#86efac"/>
+        <line x1="0" y1="195" x2="360" y2="195" stroke="#16a34a" stroke-width="2"/>
+        <!-- Lignes de vent -->
+        <path d="M24,52 Q52,44 82,52 M36,74 Q64,66 94,74 M20,96 Q48,88 78,96" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round"/>
+        <text x="56" y="38" text-anchor="middle" fill="#0284c7" font-size="11.5" font-weight="bold">Vent →</text>
+        <!-- Enfant au sol tenant le fil -->
+        <circle cx="82" cy="134" r="11" fill="#fdba74" stroke="#1e293b" stroke-width="1.8"/>
+        <path d="M82,146 L82,174 L70,196 M82,174 L94,196 M82,154 L112,142" stroke="#be185d" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <!-- Fil tendu -->
+        <path d="M112,142 Q178,116 238,68" fill="none" stroke="#334155" stroke-width="2"/>
+        <!-- Cerf-volant -->
+        <g transform="translate(238, 68) rotate(12)">
+            <polygon points="0,-34 28,0 0,38 -28,0" fill="#3b82f6" stroke="#1e293b" stroke-width="2"/>
+            <polygon points="0,-34 28,0 0,0" fill="#ef4444"/>
+            <polygon points="0,38 -28,0 0,0" fill="#ef4444"/>
+            <line x1="0" y1="-34" x2="0" y2="38" stroke="#1e293b" stroke-width="1.5"/>
+            <line x1="-28" y1="0" x2="28" y2="0" stroke="#1e293b" stroke-width="1.5"/>
+            <!-- Queue flottant dans le vent vers la droite -->
+            <path d="M0,38 Q22,52 44,44 Q64,36 82,50" fill="none" stroke="#ef4444" stroke-width="2.8" stroke-linecap="round"/>
+            <polygon points="28,48 34,43 34,53" fill="#fde047"/>
+            <polygon points="56,42 62,37 62,47" fill="#fde047"/>
         </g>
     </svg>`
 };
@@ -523,7 +655,8 @@ const ORANGE_DATA = [
         ],
         modelShape: `<line x1="215" y1="40" x2="215" y2="220" stroke="#d97706" stroke-width="6" stroke-dasharray="8,4"/>
                      <text x="225" y="60" fill="#b45309" font-size="12" font-weight="bold">Cordage</text>
-                     <circle cx="170" cy="130" r="45" fill="#bef264" stroke="#65a30d" stroke-width="3"/>`,
+                     <circle cx="170" cy="130" r="45" fill="#bef264" stroke="#65a30d" stroke-width="3"/>
+                     <path d="M138,98 Q170,130 138,162 M202,98 Q170,130 202,162" fill="none" stroke="white" stroke-width="4" stroke-linecap="round"/>`,
         forces: [
             {
                 id: "P",
@@ -568,7 +701,8 @@ const ORANGE_DATA = [
         ],
         modelShape: `<rect x="40" y="170" width="280" height="25" fill="#c2410c"/>
                      <line x1="40" y1="170" x2="320" y2="170" stroke="#7c2d12" stroke-width="3"/>
-                     <circle cx="180" cy="125" r="45" fill="#bef264" stroke="#65a30d" stroke-width="3"/>`,
+                     <circle cx="180" cy="125" r="45" fill="#bef264" stroke="#65a30d" stroke-width="3"/>
+                     <path d="M148,93 Q180,125 148,157 M212,93 Q180,125 212,157" fill="none" stroke="white" stroke-width="4" stroke-linecap="round"/>`,
         forces: [
             {
                 id: "P",
@@ -612,7 +746,9 @@ const ORANGE_DATA = [
             { id: "Plafond", label: "Attache au plafond", x: 180, y: 35 }
         ],
         modelShape: `<line x1="110" y1="35" x2="250" y2="35" stroke="#1e293b" stroke-width="3"/>
+                     <path d="M120,35 L130,22 M145,35 L155,22 M170,35 L180,22 M195,35 L205,22 M220,35 L230,22" stroke="#64748b" stroke-width="2"/>
                      <line x1="180" y1="35" x2="180" y2="115" stroke="#1e293b" stroke-width="2.5"/>
+                     <circle cx="180" cy="155" r="10" fill="#fde047" stroke="#ca8a04" stroke-width="2"/>
                      <path d="M125,155 A55,40 0 0,1 235,155 Z" fill="#fef08a" stroke="#1e293b" stroke-width="2.5"/>`,
         forces: [
             {
@@ -697,11 +833,14 @@ const ORANGE_DATA = [
             { id: "Aimant", label: "Centre de l'aimant", x: 282, y: 123 }
         ],
         modelShape: `<line x1="50" y1="35" x2="130" y2="35" stroke="#1e293b" stroke-width="3"/>
+                     <path d="M60,35 L70,22 M85,35 L95,22 M110,35 L120,22" stroke="#64748b" stroke-width="2"/>
                      <line x1="85" y1="35" x2="160" y2="102" stroke="#1e293b" stroke-width="2.5"/>
-                     <line x1="150" y1="114" x2="170" y2="90" stroke="#1e293b" stroke-width="4.5"/>
-                     <line x1="160" y1="102" x2="208" y2="144" stroke="#1e293b" stroke-width="4"/>
-                     <rect x="245" y="111" width="75" height="24" fill="#fca5a5" stroke="#1e293b" stroke-width="2.5"/>
-                     <text x="282" y="128" text-anchor="middle" fill="#7f1d1d" font-size="12" font-weight="bold">Aimant</text>`,
+                     <line x1="150" y1="114" x2="170" y2="90" stroke="#334155" stroke-width="5" stroke-linecap="round"/>
+                     <polygon points="158,105 162,99 211,143 204,146" fill="#64748b" stroke="#1e293b" stroke-width="2" stroke-linejoin="round"/>
+                     <rect x="245" y="111" width="38" height="24" fill="#ef4444" stroke="#1e293b" stroke-width="2"/>
+                     <rect x="283" y="111" width="37" height="24" fill="#3b82f6" stroke="#1e293b" stroke-width="2"/>
+                     <text x="264" y="127" text-anchor="middle" fill="white" font-size="11" font-weight="bold">N</text>
+                     <text x="301" y="127" text-anchor="middle" fill="white" font-size="11" font-weight="bold">S</text>`,
         forces: [
             {
                 id: "P",
@@ -758,11 +897,12 @@ const ORANGE_DATA = [
         ],
         modelShape: `<path d="M145,175 L145,205 M175,182 L175,212 M205,175 L205,205" stroke="#64748b" stroke-width="2" stroke-dasharray="4,4"/>
                      <g transform="translate(175, 115) rotate(-25)">
-                         <rect x="-42" y="-26" width="84" height="52" fill="#cbd5e1" stroke="#1e293b" stroke-width="2.5"/>
-                         <line x1="-36" y1="-26" x2="-36" y2="26" stroke="#1e293b" stroke-width="2"/>
+                         <rect x="-42" y="-26" width="84" height="52" rx="2" fill="#94a3b8" stroke="#1e293b" stroke-width="2.5"/>
+                         <rect x="-32" y="-22" width="70" height="44" fill="#f8fafc"/>
+                         <rect x="-42" y="-26" width="11" height="52" fill="#475569" stroke="#1e293b" stroke-width="2"/>
                      </g>
-                     <text x="275" y="95" text-anchor="middle" fill="#dc2626" font-size="12" font-weight="bold">Mouvement</text>
-                     <text x="275" y="112" text-anchor="middle" fill="#dc2626" font-size="12" font-weight="bold">vers le haut ↑</text>`,
+                     <text x="285" y="95" text-anchor="middle" fill="#dc2626" font-size="12" font-weight="bold">Mouvement</text>
+                     <text x="285" y="112" text-anchor="middle" fill="#dc2626" font-size="12" font-weight="bold">vers le haut ↑</text>`,
         forces: [
             {
                 id: "P",
