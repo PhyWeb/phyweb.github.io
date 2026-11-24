@@ -1,6 +1,7 @@
 const $ = document.querySelector.bind(document);
 import { formatNumber } from '../../common/formatter.js';
 import { alertModal, showToast } from '../../common/common.js';
+import { parseCellValue } from './data.js';
 
 /*----------------------------------------------------------------------------------------------
 --------------------------------------------Spreadsheet-----------------------------------------
@@ -217,6 +218,45 @@ class Spreadsheet {
     }
   }
 
+  handleBeforeChange(changes, source) {
+    if (source === "loadData" || source === "updateData") {
+      return;
+    }
+
+    if (!changes || changes.length === 0) return;
+
+    let hasValidChange = false;
+
+    for (let i = 0; i < changes.length; i++) {
+      const entry = changes[i];
+      if (!entry) continue;
+
+      const [, col, oldVal, newVal] = entry;
+      const curve = this.data.getCurveByIndex(col);
+      if (!curve || curve.type === 'calculation') {
+        changes[i] = null;
+        continue;
+      }
+
+      const parsed = parseCellValue(newVal);
+      const isOldEmpty = oldVal === null || oldVal === undefined || oldVal === '';
+
+      // Annule la modification avant écriture si la cellule vide reçoit une saisie vide/invalide (ex: "abc")
+      // afin d'empêcher Handsontable (minSpareRows) d'ajouter une ligne vide supplémentaire.
+      if ((parsed === null && isOldEmpty) || oldVal === parsed) {
+        changes[i] = null;
+        continue;
+      }
+
+      entry[3] = parsed;
+      hasValidChange = true;
+    }
+
+    if (!hasValidChange) {
+      return false;
+    }
+  }
+
   handleAfterChange(change, source) {
     if (source === "loadData" || source === "updateData") {
       return; // Modification ignorée
@@ -275,6 +315,10 @@ class Spreadsheet {
 
     const container = document.querySelector('#table');
     const significantDigits = this.data?.settings?.significantDigits ?? 4;
+
+    const beforeChange = (changes, source) => {
+      return this.handleBeforeChange(changes, source);
+    };
 
     const afterChange = (change, source) => {
       this.handleAfterChange(change, source);
@@ -346,6 +390,7 @@ class Spreadsheet {
       height: 500,
       autoWrapRow: true,
       autoWrapCol: true,
+      beforeChange: beforeChange,
       afterChange: afterChange,
       outsideClickDeselects: false,
       licenseKey: 'non-commercial-and-evaluation', 

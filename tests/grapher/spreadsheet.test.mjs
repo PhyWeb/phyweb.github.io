@@ -629,5 +629,54 @@ describe('Spreadsheet - handleAfterChange() et correction du bug de pagination',
       assert.equal(curveX[3], 42.5);
       assert.equal(getCallbackStatus().callbackCalled, true);
     });
+
+    it('handleBeforeChange doit annuler une saisie invalide ("abc") sur une cellule vide (évite la création d\'une ligne spare Handsontable)', () => {
+      const { spreadsheet } = createTestContext(3, 10, 0);
+      const changes = [[3, 0, null, 'abc']];
+
+      const result = spreadsheet.handleBeforeChange(changes, 'edit');
+
+      assert.equal(result, false);
+      assert.equal(changes[0], null);
+    });
+
+    it('handleBeforeChange doit normaliser une saisie valide ("12,5") et convertir en null une saisie invalide sur une cellule déjà remplie', () => {
+      const { spreadsheet } = createTestContext(3, 10, 0);
+      const changes = [
+        [3, 0, null, '12,5'],
+        [1, 0, 1, 'abc'],
+        [3, 1, null, 'xyz']
+      ];
+
+      const result = spreadsheet.handleBeforeChange(changes, 'edit');
+
+      assert.equal(result, undefined);
+      assert.deepEqual(changes[0], [3, 0, null, 12.5]);
+      assert.deepEqual(changes[1], [1, 0, 1, null]);
+      assert.equal(changes[2], null);
+    });
+
+    it('build() doit transmettre un callback beforeChange branché sur handleBeforeChange', () => {
+      const { spreadsheet } = createTestContext(3, 10, 0);
+      let capturedOptions = null;
+
+      const originalHot = globalThis.Handsontable;
+      globalThis.Handsontable = class MockHandsontable {
+        constructor(container, options) {
+          capturedOptions = options;
+        }
+      };
+
+      try {
+        spreadsheet.build({});
+      } finally {
+        globalThis.Handsontable = originalHot;
+      }
+
+      assert.equal(typeof capturedOptions.beforeChange, 'function');
+      const changes = [[3, 0, null, 'abc']];
+      assert.equal(capturedOptions.beforeChange(changes, 'edit'), false);
+      assert.equal(changes[0], null);
+    });
   });
 });
