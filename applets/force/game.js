@@ -1,906 +1,1243 @@
-/* --- game.js : Moteur SPA, Routage Adaptatif & Composants Interactifs --- */
+/* --- game.js --- */
 
+// ==========================================
+// 1. ÉTAT GLOBAL & BARRE DES CEINTURES
+// ==========================================
+const SESSION_STORAGE_KEY = 'phyweb_force2_progress';
 let currentPart = "";
 let currentStepIndex = 0;
 let completedBelts = new Set();
+let bleuEvalFirstTrySuccess = true; // Passe à false si erreur sur les étapes 4 à 6 du niveau Bleu
+let vectorDragAbortController = null;
 
-// État courant des composants interactifs
-let activeDonneurState = {};
-let activeDOIState = {};
-let activeVectorInstances = {};
-
-// ============================================================================
-// PANNEAU LATÉRAL (MÉMENTO CONTEXTUEL)
-// ============================================================================
-function getMementoHTML(belt) {
-    let content = "";
-    if (belt === "bleu" || belt === "vert") {
-        content = `
-            <div class="info-item mb-3">
-                <span class="tag is-info is-light mb-1 has-text-weight-bold">Action mécanique</span>
-                <p class="is-size-7">Lorsqu'un objet agit sur un autre, l'objet qui agit est le <strong>donneur</strong>, celui qui subit l'action est le <strong>receveur</strong> (le système étudié).</p>
-            </div>
-            <div class="info-item mb-3">
-                <span class="tag is-success is-light mb-1 has-text-weight-bold">Action de contact</span>
-                <p class="is-size-7">Le donneur et le receveur doivent <strong>se toucher</strong>. Dès que le contact cesse, l'action disparaît !</p>
-            </div>
-            <div class="info-item">
-                <span class="tag is-warning is-light mb-1 has-text-weight-bold">Action à distance</span>
-                <p class="is-size-7">Agit sans contact (ex : attraction gravitationnelle de la <strong>Terre</strong>, aimant, corps électrisé).</p>
-            </div>`;
-    } else if (belt === "jaune") {
-        content = `
-            <div class="info-item mb-3">
-                <span class="tag is-warning is-light mb-1 has-text-weight-bold">Diagramme Objet-Interaction</span>
-                <p class="is-size-7">Le système étudié est placé au centre. On relie uniquement les objets qui agissent <strong>à cet instant précis</strong>.</p>
-            </div>
-            <div class="info-item mb-2">
-                <p class="is-size-7"><strong>Trait plein (⟷) :</strong> interaction de <strong>contact</strong>.</p>
-            </div>
-            <div class="info-item">
-                <p class="is-size-7"><strong>Trait pointillé (⇠⇢) :</strong> interaction à <strong>distance</strong>.</p>
-            </div>`;
-    } else {
-        content = `
-            <div class="info-item mb-2">
-                <span class="tag is-orange mb-1 has-text-weight-bold">Les 4 caractéristiques d'une force</span>
-                <ul class="is-size-7 pl-3" style="list-style-type: disc;">
-                    <li><strong>Point d'application :</strong>
-                        <br>• Action de contact : point de contact.
-                        <br>• Action à distance : centre de gravité <strong>G</strong>.
-                    </li>
-                    <li class="mt-1"><strong>Direction :</strong> la droite selon laquelle s'exerce l'action (verticale, horizontale, le long du fil...).</li>
-                    <li class="mt-1"><strong>Sens :</strong> vers le haut, le bas, la gauche, la droite...</li>
-                    <li class="mt-1"><strong>Valeur (Norme) :</strong> en Newton (<strong>N</strong>).</li>
-                </ul>
-            </div>
-            <div class="notification is-info is-light p-2 is-size-7 mt-2">
-                <strong>Poids d'un corps :</strong><br>
-                <code>P = m × g</code> avec <strong>m en kg</strong> et g = 9,81 N/kg.
-            </div>`;
+function saveProgress() {
+    try {
+        sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({
+            currentPart,
+            currentStepIndex,
+            completedBelts: Array.from(completedBelts),
+            bleuEvalFirstTrySuccess
+        }));
+    } catch (e) {
+        // Ignore si sessionStorage est indisponible
     }
-
-    return `
-    <div class="column is-narrow" style="width: 300px;">
-        <aside class="info-panel box p-4" style="position: sticky; top: 20px;">
-            <div class="mb-3 pb-2" style="border-bottom: 2px solid #006699;">
-                <div class="title is-5 mb-0 has-text-link"><i class="fas fa-book-open mr-2"></i>Mémento Cours</div>
-            </div>
-            ${content}
-        </aside>
-    </div>`;
 }
 
-// ============================================================================
-// COMPOSANT 1 : CONSTRUCTEUR DONNEUR / RECEVEUR (BLEU & VERT)
-// ============================================================================
-function renderDonneurStep(containerId, situations, belt) {
-    activeDonneurState = {};
-    const container = document.getElementById(containerId);
-    if (!container) return;
-
-    let cardsHTML = situations.map(sit => {
-        activeDonneurState[sit.id] = {}; // { actorName: 'contact' | 'distance' }
-        const chips = sit.actorsPool.map(act => `
-            <span class="actor-chip" id="chip-${sit.id}-${act}" onclick="toggleActor('${sit.id}', '${act.replace(/'/g, "\'")}')">
-                <i class="fas fa-plus-circle mr-1"></i>${act}
-            </span>
-        `).join('');
-
-        return `
-        <div class="situation-card" id="card-${sit.id}">
-            <div class="columns is-vcentered">
-                <div class="column is-4">
-                    <div class="scene-svg-box">${sit.svg}</div>
-                </div>
-                <div class="column is-8">
-                    <h4 class="title is-6 mb-2 has-text-dark">${sit.title}</h4>
-                    <p class="is-size-7 mb-2">
-                        <span class="tag is-dark is-light">Receveur (Système) : <strong>${sit.receveur}</strong></span>
-                        <span class="ml-2 has-text-grey">Cliquez sur le ou les donneur(s) qui agissent sur ${sit.receveur.toLowerCase()} :</span>
-                    </p>
-                    <div class="mb-2">${chips}</div>
-                    <div id="selected-list-${sit.id}"></div>
-                    <div id="feedback-${sit.id}" class="help mt-1"></div>
-                </div>
-            </div>
-        </div>`;
-    }).join('');
-
-    container.innerHTML = `
-        <div class="columns">
-            <div class="column">${cardsHTML}</div>
-            ${getMementoHTML(belt)}
-        </div>`;
-}
-
-window.toggleActor = function(sitId, actorName) {
-    const state = activeDonneurState[sitId];
-    if (state[actorName]) {
-        delete state[actorName];
-    } else {
-        state[actorName] = "contact"; // valeur par défaut
-    }
-    updateDonneurUI(sitId);
-};
-
-window.setActorType = function(sitId, actorName, typeVal) {
-    if (activeDonneurState[sitId] && activeDonneurState[sitId][actorName]) {
-        activeDonneurState[sitId][actorName] = typeVal;
-        updateDonneurUI(sitId);
-    }
-};
-
-function updateDonneurUI(sitId) {
-    const allSits = [...DATA_BLEU_VERT.bleu_entrainement, ...DATA_BLEU_VERT.bleu_test, ...DATA_BLEU_VERT.vert_entrainement, ...DATA_BLEU_VERT.vert_test];
-    const sit = allSits.find(s => s.id === sitId);
-    if (!sit) return;
-
-    sit.actorsPool.forEach(act => {
-        const chip = document.getElementById(`chip-${sitId}-${act}`);
-        if (chip) {
-            if (activeDonneurState[sitId][act]) chip.classList.add('selected');
-            else chip.classList.remove('selected');
+function loadProgress() {
+    try {
+        const raw = sessionStorage.getItem(SESSION_STORAGE_KEY);
+        if (!raw) return false;
+        const data = JSON.parse(raw);
+        if (Array.isArray(data.completedBelts)) {
+            completedBelts = new Set(data.completedBelts);
         }
-    });
+        if (typeof data.bleuEvalFirstTrySuccess === 'boolean') {
+            bleuEvalFirstTrySuccess = data.bleuEvalFirstTrySuccess;
+        }
+        if (data.currentPart && STRUCTURE_TP[data.currentPart]) {
+            const idx = Number(data.currentStepIndex);
+            if (Number.isInteger(idx) && idx >= 0 && idx < STRUCTURE_TP[data.currentPart].length) {
+                currentPart = data.currentPart;
+                currentStepIndex = idx;
+                return true;
+            }
+        }
+    } catch (e) {
+        // Ignore si données corrompues ou sessionStorage indisponible
+    }
+    return false;
+}
 
-    const listEl = document.getElementById(`selected-list-${sitId}`);
-    const entries = Object.entries(activeDonneurState[sitId]);
-    if (entries.length === 0) {
-        listEl.innerHTML = `<p class="is-size-7 has-text-grey-light is-italic">Aucun donneur sélectionné.</p>`;
+window.resetSessionProgress = function() {
+    completedBelts.clear();
+    bleuEvalFirstTrySuccess = true;
+    currentPart = "";
+    currentStepIndex = 0;
+    try {
+        sessionStorage.removeItem(SESSION_STORAGE_KEY);
+    } catch (e) {
+        // Ignore
+    }
+    renderHome();
+};
+
+function cleanupStepEvents() {
+    if (vectorDragAbortController) {
+        vectorDragAbortController.abort();
+        vectorDragAbortController = null;
+    }
+    window.isDraggingVector = false;
+}
+
+function updateBeltBar() {
+    const bar = document.getElementById('belt-tracker');
+    if (!currentPart) {
+        bar.style.display = 'none';
         return;
     }
-
-    listEl.innerHTML = entries.map(([act, type]) => {
-        const escAct = act.replace(/'/g, "\'");
-        return `
-        <div class="action-row-config">
-            <span>Action de <strong>${act}</strong> sur <strong>${sit.receveur.toLowerCase()}</strong></span>
-            <div class="buttons has-addons mb-0">
-                <button class="button is-small ${type === 'contact' ? 'is-info is-selected' : 'is-light'}" onclick="setActorType('${sitId}', '${escAct}', 'contact')">De contact</button>
-                <button class="button is-small ${type === 'distance' ? 'is-warning is-selected' : 'is-light'}" onclick="setActorType('${sitId}', '${escAct}', 'distance')">À distance</button>
-            </div>
-        </div>`;
-    }).join('');
+    bar.style.display = 'flex';
+    ['bleu', 'vert', 'jaune', 'orange', 'rouge'].forEach(b => {
+        const el = document.getElementById('belt-' + b);
+        if (!el) return;
+        el.classList.remove('active', 'completed');
+        if (completedBelts.has(b)) el.classList.add('completed');
+        if (currentPart === b) el.classList.add('active');
+    });
 }
 
-function validateDonneurStep(situations) {
-    let totalErrors = 0;
-    let firstHint = "";
+function jumpToBelt(belt) {
+    startPart(belt, 0);
+}
 
-    situations.forEach(sit => {
-        const card = document.getElementById(`card-${sit.id}`);
-        const fb = document.getElementById(`feedback-${sit.id}`);
-        const userMap = activeDonneurState[sit.id] || {};
-        let sitErrors = [];
-
-        // 1. Vérifier les donneurs attendus
-        sit.expected.forEach(exp => {
-            if (!userMap[exp.donneur]) {
-                if (exp.donneur === "La Terre" && sit.hints && sit.hints.missing_Terre) {
-                    sitErrors.push(sit.hints.missing_Terre);
-                } else {
-                    sitErrors.push(`Il manque un donneur qui agit sur ${sit.receveur.toLowerCase()}.`);
-                }
-            } else if (userMap[exp.donneur] !== exp.type) {
-                sitErrors.push(`L'action de <strong>${exp.donneur}</strong> n'est pas "${userMap[exp.donneur] === 'contact' ? 'de contact' : 'à distance'}" (vérifie s'il y a contact ou non).`);
-            }
-        });
-
-        // 2. Vérifier les intrus sélectionnés par erreur
-        Object.keys(userMap).forEach(userAct => {
-            if (!sit.expected.some(e => e.donneur === userAct)) {
-                if (sit.hints && sit.hints[userAct]) {
-                    sitErrors.push(sit.hints[userAct]);
-                } else {
-                    sitErrors.push(`<strong>${userAct}</strong> n'agit pas directement sur ${sit.receveur.toLowerCase()} à cet instant.`);
-                }
-            }
-        });
-
-        if (sitErrors.length === 0) {
-            card.className = "situation-card is-correct";
-            fb.className = "help is-success has-text-weight-bold";
-            fb.innerHTML = `<i class="fas fa-check-circle mr-1"></i>Parfait !`;
-        } else {
-            totalErrors++;
-            card.className = "situation-card is-incorrect";
-            fb.className = "help is-danger has-text-weight-bold";
-            fb.innerHTML = `<i class="fas fa-exclamation-circle mr-1"></i>${sitErrors[0]}`;
-            if (!firstHint) firstHint = sitErrors[0];
-        }
-    });
-
+// ==========================================
+// 2. MOTEUR INTERACTIF : NIVEAU BLEU
+// ==========================================
+function buildBleuStep(item, isLast = false) {
     return {
-        success: totalErrors === 0,
-        errors: totalErrors,
-        msg: totalErrors === 0
-            ? "Toutes les situations sont correctement analysées !"
-            : `Il reste <strong>${totalErrors} situation(s) à corriger</strong>. ${firstHint}`
-    };
-}
-
-// ============================================================================
-// COMPOSANT 2 : ÉDITEUR INTERACTIF DE D.O.I. (NIVEAU JAUNE)
-// ============================================================================
-function renderDOIStep(containerId, items) {
-    activeDOIState = {};
-    const container = document.getElementById(containerId);
-    if (!container) return;
-
-    const cardsHTML = items.map(item => {
-        activeDOIState[item.id] = {};
-        item.nodes.forEach(n => { activeDOIState[item.id][n.id] = "none"; });
-
-        return `
-        <div class="column is-6">
-            <div class="situation-card" id="doi-card-${item.id}">
-                <h4 class="title is-6 mb-2">${item.title}</h4>
-                <div class="columns is-mobile is-vcentered mb-2">
-                    <div class="column is-5">
-                        <div class="scene-svg-box" style="height: 125px;">${item.svg}</div>
-                    </div>
-                    <div class="column is-7 is-size-7 has-text-grey">
-                        <p class="mb-1"><i class="fas fa-mouse-pointer mr-1 has-text-info"></i><strong>Cliquez sur un objet périphérique</strong> (ou entre deux bulles) pour changer la flèche :</p>
-                        <p>• 1 clic : <strong>Trait plein</strong> (contact)<br>• 2 clics : <strong>Pointillés</strong> (distance)<br>• 3 clics : Aucune interaction</p>
+        type: "game",
+        title: item.title,
+        requirePaperConfirm: Boolean(item.paperNotice),
+        html: `
+            <div class="box content consigne-box">
+                <div class="is-flex is-justify-content-space-between is-align-items-center is-flex-wrap-wrap" style="gap: 8px;">
+                    <span class="is-size-6"><strong>Système étudié (Receveur) : <span class="tag is-link is-medium">${item.receveur}</span></strong> — Sélectionnez chaque donneur qui agit sur <em>${item.receveur}</em>, complétez sa carte, puis cliquez sur <strong>Valider</strong>.</span>
+                    ${item.evalMode
+                        ? `<span class="tag is-primary is-light is-normal has-text-weight-semibold"><i class="fas fa-star mr-1"></i>Test de passage direct → Jaune</span>`
+                        : `<span class="tag is-light is-normal"><i class="fas fa-graduation-cap mr-1"></i>Entraînement guidé</span>`}
+                    ${item.airNeglected ? `<span class="tag is-info is-light is-normal"><i class="fas fa-wind mr-1"></i>Hypothèse : on néglige l'action de l'air</span>` : ''}
+                    ${item.paperNotice ? `<span class="tag is-warning is-light is-medium has-text-weight-bold">${item.paperNotice}</span>` : ''}
+                </div>
+            </div>
+            <div class="columns is-variable is-4 mb-0">
+                <div class="column is-5">
+                    <div class="scene-box h-100">
+                        <div class="scene-svg-container mb-3">${SCENE_SVGS[item.svg]}</div>
+                        <p class="is-size-6 has-text-grey-dark has-text-weight-semibold has-text-centered mb-2">Qui agit sur <strong>${item.receveur}</strong> ? (Cliquez pour ajouter / retirer)</p>
+                        <div id="actors-pool" class="is-flex is-flex-wrap-wrap is-justify-content-center" style="gap: 8px;"></div>
+                        <div id="trap-feedback" class="notification is-danger is-light mt-3 py-2 px-3 is-size-6" style="display:none; width:100%;"></div>
                     </div>
                 </div>
-                <div class="doi-canvas-wrapper">
-                    <svg class="doi-svg" id="doi-svg-${item.id}" viewBox="0 0 300 280"></svg>
+                <div class="column is-7">
+                    <div class="box has-background-white-bis p-4" style="min-height: 330px; height: 100%;">
+                        <h4 class="title is-5 mb-3"><i class="fas fa-list-check has-text-info mr-2"></i>Actions mécaniques identifiées :</h4>
+                        <div id="actions-cards-container">
+                            <p class="has-text-grey is-italic is-size-6" id="empty-actions-hint">Cliquez sur un donneur sous l'image pour ajouter une action mécanique...</p>
+                        </div>
+                    </div>
                 </div>
-                <div id="doi-fb-${item.id}" class="help mt-1"></div>
-            </div>
-        </div>`;
-    }).join('');
+            </div>`,
+        onLoad: () => {
+            window.currentBleuSelected = new Set();
+            const pool = document.getElementById('actors-pool');
+            const container = document.getElementById('actions-cards-container');
+            const trapBox = document.getElementById('trap-feedback');
 
-    container.innerHTML = `
-        <div class="columns">
-            <div class="column">
-                <div class="columns is-multiline">${cardsHTML}</div>
-            </div>
-            ${getMementoHTML('jaune')}
-        </div>`;
+            const updateEmptyHint = () => {
+                const hint = document.getElementById('empty-actions-hint');
+                if (hint) hint.style.display = window.currentBleuSelected.size === 0 ? 'block' : 'none';
+            };
 
-    items.forEach(item => drawDOIGraph(item));
-}
+            const removeCandidate = (candId) => {
+                window.currentBleuSelected.delete(candId);
+                const chip = document.getElementById('chip-bleu-' + candId);
+                if (chip) chip.classList.remove('selected', 'trap-shake');
+                const card = document.getElementById('card-act-' + candId);
+                if (card) card.remove();
+                updateEmptyHint();
+            };
 
-function drawDOIGraph(item) {
-    const svg = document.getElementById(`doi-svg-${item.id}`);
-    if (!svg) return;
-    const cx = 150, cy = 150;
-    const state = activeDOIState[item.id];
+            item.candidates.forEach(cand => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.id = 'chip-bleu-' + cand.id;
+                btn.className = 'actor-chip';
+                btn.innerHTML = cand.label;
+                btn.onclick = () => {
+                    trapBox.style.display = 'none';
+                    btn.classList.remove('trap-shake');
+                    if (window.currentBleuSelected.has(cand.id)) {
+                        removeCandidate(cand.id);
+                        return;
+                    }
+                    window.currentBleuSelected.add(cand.id);
+                    btn.classList.add('selected');
+                    updateEmptyHint();
 
-    let defs = `<defs>
-        <marker id="arr-end-${item.id}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-            <path d="M 0 1 L 10 5 L 0 9 z" fill="#1e293b"/>
-        </marker>
-    </defs>`;
+                    const card = document.createElement('div');
+                    card.className = 'action-detail-card';
+                    card.id = 'card-act-' + cand.id;
+                    card.innerHTML = `
+                        <div class="is-flex is-justify-content-space-between is-align-items-center is-flex-wrap-wrap mb-2" style="gap: 6px;">
+                            <div class="is-flex is-align-items-center" style="gap: 6px;">
+                                <span class="tag is-dark is-normal">Donneur : ${cand.label}</span>
+                                <button type="button" class="delete is-small" aria-label="Retirer ${cand.id}" title="Retirer ce donneur"></button>
+                            </div>
+                            <div class="is-flex is-align-items-center" style="gap: 8px;">
+                                <span class="is-size-6 has-text-weight-bold">Type :</span>
+                                <div class="buttons has-addons m-0">
+                                    <button type="button" class="button is-small type-btn-${cand.id}" data-val="contact" onclick="selectBleuType('${cand.id}', 'contact')">De contact</button>
+                                    <button type="button" class="button is-small type-btn-${cand.id}" data-val="distance" onclick="selectBleuType('${cand.id}', 'distance')">À distance</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="is-size-6 is-flex is-align-items-center is-flex-wrap-wrap mt-2" style="gap: 6px;">
+                            <span><em>« C'est une action</em></span>
+                            <div class="select is-small">
+                                <select id="sel-prep-${cand.id}">
+                                    <option value="">-- choisir --</option>
+                                    ${item.candidates.map(c => `<option value="${c.prep || c.label}">${c.prep || ('de ' + c.label)}</option>`).join('')}
+                                    <option value="de ${item.receveur}">de ${item.receveur}</option>
+                                </select>
+                            </div>
+                            <span><em>sur</em></span>
+                            <div class="select is-small">
+                                <select id="sel-rec-${cand.id}">
+                                    <option value="">-- choisir --</option>
+                                    <option value="${item.receveur}">${item.receveur}</option>
+                                    <option value="la Terre">la Terre</option>
+                                    <option value="le sol">le sol</option>
+                                </select>
+                            </div>
+                            <span><em>»</em></span>
+                        </div>
+                    `;
+                    card.querySelector('.delete').addEventListener('click', () => {
+                        trapBox.style.display = 'none';
+                        removeCandidate(cand.id);
+                    });
+                    container.appendChild(card);
+                };
+                pool.appendChild(btn);
+            });
+        },
+        validate: () => {
+            const trapBox = document.getElementById('trap-feedback');
+            trapBox.style.display = 'none';
 
-    let linksHTML = "";
-    let nodesHTML = "";
-
-    item.nodes.forEach(n => {
-        const mode = state[n.id];
-        const dx = n.x - cx, dy = n.y - cy;
-        const dist = Math.hypot(dx, dy);
-        const ux = dx / dist, uy = dy / dist;
-        const x1 = cx + ux * 46, y1 = cy + uy * 30;
-        const x2 = n.x - ux * 46, y2 = n.y - uy * 26;
-
-        const escId = n.id.replace(/'/g, "\'");
-        linksHTML += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#e2e8f0" stroke-width="2"/>`;
-
-        if (mode !== "none") {
-            const dash = mode === "distance" ? 'stroke-dasharray="6,5"' : '';
-            const strokeCol = mode === "contact" ? "#0284c7" : "#d97706";
-            linksHTML += `<line class="doi-link-line" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${strokeCol}" stroke-width="3" ${dash} marker-start="url(#arr-end-${item.id})" marker-end="url(#arr-end-${item.id})"/>`;
-        }
-
-        linksHTML += `<line class="doi-link-hit" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" onclick="cycleDOILink('${item.id}', '${escId}')"/>`;
-
-        const strokeNode = mode === "contact" ? "#0284c7" : (mode === "distance" ? "#d97706" : "#94a3b8");
-        nodesHTML += `
-        <g class="doi-node" onclick="cycleDOILink('${item.id}', '${escId}')">
-            <ellipse cx="${n.x}" cy="${n.y}" rx="48" ry="24" fill="#ffffff" stroke="${strokeNode}" stroke-width="2.5"/>
-            <text x="${n.x}" y="${n.y + 4}" text-anchor="middle" font-size="12" font-weight="bold" fill="#1e293b">${n.label}</text>
-        </g>`;
-    });
-
-    const sysHTML = `
-    <g>
-        <ellipse cx="${cx}" cy="${cy}" rx="48" ry="28" fill="#fef08a" stroke="#ca8a04" stroke-width="3"/>
-        <text x="${cx}" y="${cy + 5}" text-anchor="middle" font-size="13" font-weight="bold" fill="#1e293b">${item.system}</text>
-    </g>`;
-
-    svg.innerHTML = defs + linksHTML + nodesHTML + sysHTML;
-}
-
-window.cycleDOILink = function(itemId, nodeId) {
-    const order = ["none", "contact", "distance"];
-    const curr = activeDOIState[itemId][nodeId];
-    activeDOIState[itemId][nodeId] = order[(order.indexOf(curr) + 1) % order.length];
-    const allItems = [...DATA_JAUNE.entrainement, ...DATA_JAUNE.test];
-    const item = allItems.find(i => i.id === itemId);
-    if (item) drawDOIGraph(item);
-};
-
-function validateDOIStep(items) {
-    let errCount = 0;
-    let firstMsg = "";
-
-    items.forEach(item => {
-        const card = document.getElementById(`doi-card-${item.id}`);
-        const fb = document.getElementById(`doi-fb-${item.id}`);
-        const user = activeDOIState[item.id];
-        let localErr = "";
-
-        for (const [nodeId, expMode] of Object.entries(item.expected)) {
-            if (user[nodeId] !== expMode) {
-                if (expMode === "none") {
-                    localErr = item.hint || `L'objet <strong>${nodeId}</strong> n'agit pas directement sur le système (${item.system}) à cet instant !`;
-                } else if (user[nodeId] === "none") {
-                    localErr = `Tu as oublié l'interaction avec <strong>${nodeId}</strong>.`;
-                } else {
-                    localErr = `Vérifie le type de flèche pour <strong>${nodeId}</strong> : est-ce une interaction de contact (plein) ou à distance (pointillés) ?`;
-                }
-                break;
+            // 1. Vérifier les intrus sélectionnés (validation différée anti-clic au hasard)
+            const selectedTraps = item.candidates.filter(c => !c.valid && window.currentBleuSelected.has(c.id));
+            if (selectedTraps.length > 0) {
+                if (item.evalMode) bleuEvalFirstTrySuccess = false;
+                selectedTraps.forEach(t => {
+                    const chip = document.getElementById('chip-bleu-' + t.id);
+                    if (chip) {
+                        chip.classList.remove('trap-shake');
+                        void chip.offsetWidth;
+                        chip.classList.add('trap-shake');
+                    }
+                    const card = document.getElementById('card-act-' + t.id);
+                    if (card) card.className = 'action-detail-card incorrect';
+                });
+                trapBox.innerHTML = `<i class="fas fa-exclamation-triangle mr-1"></i> ${selectedTraps[0].trapMsg}`;
+                trapBox.style.display = 'block';
+                return {
+                    success: false,
+                    msg: `Intrus sélectionné (${selectedTraps[0].label}) : retire-le en cliquant dessus ou sur la croix !`
+                };
             }
-        }
 
-        if (!localErr) {
-            card.className = "situation-card is-correct";
-            fb.className = "help is-success has-text-weight-bold";
-            fb.innerHTML = `<i class="fas fa-check-circle mr-1"></i>D.O.I. exact !`;
-        } else {
-            errCount++;
-            card.className = "situation-card is-incorrect";
-            fb.className = "help is-danger has-text-weight-bold";
-            fb.innerHTML = `<i class="fas fa-exclamation-triangle mr-1"></i>${localErr}`;
-            if (!firstMsg) firstMsg = localErr;
-        }
-    });
+            // 2. Vérifier qu'il ne manque pas de donneurs valides
+            const validCands = item.candidates.filter(c => c.valid);
+            const missingCount = validCands.filter(c => !window.currentBleuSelected.has(c.id)).length;
+            if (missingCount > 0) {
+                if (item.evalMode) bleuEvalFirstTrySuccess = false;
+                return {
+                    success: false,
+                    msg: `Il manque encore <strong>${missingCount} donneur(s)</strong> qui agissent sur ${item.receveur}.`
+                };
+            }
 
-    return {
-        success: errCount === 0,
-        msg: errCount === 0
-            ? "Bravo ! Tous tes Diagrammes Objet-Interaction sont justes."
-            : `Il y a <strong>${errCount} schéma(s) à corriger</strong>. ${firstMsg}`
+            // 3. Vérifier le détail de chaque carte (type, préposition, receveur)
+            let errors = 0;
+            validCands.forEach(cand => {
+                const card = document.getElementById('card-act-' + cand.id);
+                const chosenType = card.getAttribute('data-type');
+                const selPrep = document.getElementById('sel-prep-' + cand.id);
+                const selRec = document.getElementById('sel-rec-' + cand.id);
+
+                const typeOk = chosenType === cand.type;
+                const prepOk = selPrep.value === cand.prep;
+                const recOk = selRec.value === item.receveur;
+
+                selPrep.parentElement.classList.toggle('is-danger', !prepOk);
+                selPrep.parentElement.classList.toggle('is-success', prepOk);
+                selRec.parentElement.classList.toggle('is-danger', !recOk);
+                selRec.parentElement.classList.toggle('is-success', recOk);
+
+                if (typeOk && prepOk && recOk) {
+                    card.className = 'action-detail-card correct';
+                } else {
+                    card.className = 'action-detail-card incorrect';
+                    errors++;
+                }
+            });
+
+            if (errors > 0) {
+                if (item.evalMode) bleuEvalFirstTrySuccess = false;
+                return { success: false, msg: `Il y a <strong>${errors} erreur(s)</strong> dans les cartes en rouge (vérifie le type et la phrase).` };
+            }
+
+            if (isLast) {
+                completedBelts.add('bleu');
+                updateBeltBar();
+                if (bleuEvalFirstTrySuccess) {
+                    return {
+                        success: true,
+                        msg: `🎉 <strong>Niveau Bleu réussi sans erreur !</strong> Recopie ta trace écrite papier puis passe directement au <strong>Niveau JAUNE</strong> !`,
+                        nextOverride: { part: 'jaune', step: 0 }
+                    };
+                } else {
+                    return {
+                        success: true,
+                        msg: `👍 Niveau Bleu terminé ! Recopie ta trace écrite papier puis passons par le <strong>Niveau VERT</strong> pour consolider tout ça.`,
+                        nextOverride: { part: 'vert', step: 0 }
+                    };
+                }
+            }
+            return { success: true, msg: "Exact ! Toutes les actions mécaniques sur ce système sont bien identifiées." };
+        }
     };
 }
 
-// ============================================================================
-// COMPOSANT 3 : TRACEUR INTERACTIF DE VECTEURS FORCES (ORANGE & ROUGE)
-// ============================================================================
-function renderVectorStep(containerId, configs, belt) {
-    activeVectorInstances = {};
-    const container = document.getElementById(containerId);
-    if (!container) return;
-
-    const cardsHTML = configs.map(cfg => {
-        activeVectorInstances[cfg.id] = {
-            config: cfg,
-            selectedForceId: cfg.availableForces[0].id,
-            drawn: {} // { forceId: { anchorId, x1, y1, x2, y2, angle } }
-        };
-
-        const forceBtns = cfg.availableForces.map((f, idx) => `
-            <button class="button is-small ${idx === 0 ? 'is-dark' : 'is-light'}" id="fbtn-${cfg.id}-${f.id}" onclick="selectForceTool('${cfg.id}', '${f.id}')">
-                <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${f.color};margin-right:6px;"></span>
-                <strong>${f.label}</strong>
-            </button>
-        `).join('');
-
-        return `
-        <div class="column ${configs.length > 1 ? 'is-6' : 'is-12'}">
-            <div class="situation-card" id="veccard-${cfg.id}">
-                <h4 class="title is-6 mb-1">${cfg.title}</h4>
-                <p class="is-size-7 has-text-grey mb-2">${cfg.subtitle}</p>
-                
-                <div class="level is-mobile mb-2">
-                    <div class="level-left">
-                        <div class="buttons has-addons">${forceBtns}</div>
-                    </div>
-                    <div class="level-right">
-                        <button class="button is-small is-danger is-light" onclick="clearVectors('${cfg.id}')">
-                            <i class="fas fa-eraser mr-1"></i>Effacer
-                        </button>
-                    </div>
-                </div>
-
-                <div class="vector-stage" id="stage-${cfg.id}">
-                    <svg class="vector-svg" id="vecsvg-${cfg.id}" viewBox="0 0 300 260"></svg>
-                </div>
-                <div id="vecfb-${cfg.id}" class="help mt-2"></div>
-            </div>
-        </div>`;
-    }).join('');
-
-    container.innerHTML = `
-        <div class="columns">
-            <div class="column">
-                <div class="notification is-info is-light py-2 px-3 mb-3 is-size-7">
-                    <i class="fas fa-hand-pointer mr-1"></i><strong>Mode d'emploi :</strong> Sélectionnez la force à tracer au-dessus du schéma, puis <strong>cliquez sur un point d'application bleu et glissez la souris</strong> pour orienter la flèche.
-                </div>
-                <div class="columns is-multiline">${cardsHTML}</div>
-            </div>
-            ${getMementoHTML(belt)}
-        </div>`;
-
-    configs.forEach(cfg => initVectorCanvas(cfg));
-}
-
-window.selectForceTool = function(cfgId, forceId) {
-    const inst = activeVectorInstances[cfgId];
-    if (!inst) return;
-    inst.selectedForceId = forceId;
-    inst.config.availableForces.forEach(f => {
-        const btn = document.getElementById(`fbtn-${cfgId}-${f.id}`);
-        if (btn) btn.className = `button is-small ${f.id === forceId ? 'is-dark' : 'is-light'}`;
+window.selectBleuType = function(candId, val) {
+    const card = document.getElementById('card-act-' + candId);
+    if (!card) return;
+    card.setAttribute('data-type', val);
+    document.querySelectorAll('.type-btn-' + candId).forEach(b => {
+        if (b.getAttribute('data-val') === val) b.classList.add('is-info', 'is-selected');
+        else b.classList.remove('is-info', 'is-selected');
     });
 };
 
-window.clearVectors = function(cfgId) {
-    const inst = activeVectorInstances[cfgId];
-    if (!inst) return;
-    inst.drawn = {};
-    redrawVectorCanvas(cfgId);
+// ==========================================
+// 3. MOTEUR INTERACTIF : NIVEAU VERT
+// ==========================================
+function buildVertStep(batchIndex, items) {
+    return {
+        type: "game",
+        title: batchIndex === 0 ? "Niveau Vert — Situations 1 à 3" : "Niveau Vert — Situations 4 à 6",
+        html: `
+            <div class="box content consigne-box">
+                <p class="mb-0 is-size-6">Indiquez pour chaque objet proposé s'il agit <strong>par contact</strong>, <strong>à distance</strong>, ou s'il <strong>n'agit pas directement</strong> sur le receveur étudié.</p>
+            </div>
+            <div class="columns is-variable is-3 mb-0">
+                ${items.map(it => `
+                    <div class="column is-4">
+                        <div class="box h-100 p-3" id="vcard-${it.id}">
+                            <div class="is-flex is-justify-content-space-between is-align-items-center mb-2">
+                                <span class="has-text-weight-bold is-size-6">${it.title}</span>
+                                <span class="tag is-info is-light is-normal">Receveur : <strong>&nbsp;${it.receveur}</strong></span>
+                            </div>
+                            ${it.airNeglected ? `<p class="is-size-7 has-text-info mb-2"><i class="fas fa-wind mr-1"></i>Hypothèse : on néglige l'action de l'air.</p>` : ''}
+                            <div class="scene-svg-container mb-3" style="max-width:100%; height:150px;">${SCENE_SVGS[it.svg]}</div>
+                            ${it.options.map(opt => `
+                                <div class="is-flex is-justify-content-space-between is-align-items-center mb-2 pb-1" style="border-bottom: 1px solid #f1f5f9; gap: 6px;">
+                                    <span class="is-size-6 has-text-weight-semibold" style="line-height:1.15;">${opt.label}</span>
+                                    <div class="select is-small" style="flex-shrink:0;">
+                                        <select id="vsel-${it.id}-${opt.id}">
+                                            <option value="">-- Action ? --</option>
+                                            <option value="contact">Contact</option>
+                                            <option value="distance">À distance</option>
+                                            <option value="none">Aucune (Intrus)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `).join('')}
+            </div>`,
+        validate: () => {
+            let err = 0;
+            let unanswered = 0;
+            items.forEach(it => {
+                let cardOk = true;
+                it.options.forEach(opt => {
+                    const sel = document.getElementById(`vsel-${it.id}-${opt.id}`);
+                    if (!sel.value) { unanswered++; cardOk = false; }
+                    else if (sel.value !== opt.expected) {
+                        err++; cardOk = false;
+                        sel.parentElement.classList.add('is-danger');
+                        sel.parentElement.classList.remove('is-success');
+                    } else {
+                        sel.parentElement.classList.add('is-success');
+                        sel.parentElement.classList.remove('is-danger');
+                    }
+                });
+                const box = document.getElementById(`vcard-${it.id}`);
+                box.style.border = cardOk ? "2px solid var(--success-color)" : "2px solid var(--error-color)";
+            });
+
+            if (unanswered > 0) return { success: false, msg: `Veuillez renseigner toutes les listes déroulantes (${unanswered} restante(s)).` };
+            if (err > 0) return { success: false, msg: `Il reste <strong>${err} erreur(s)</strong> (encadrées en rouge).` };
+
+            if (batchIndex === 1) {
+                completedBelts.add('vert');
+                updateBeltBar();
+                return {
+                    success: true,
+                    msg: "Bravo ! Le niveau Vert est validé. Passons aux Diagrammes Objet-Interactions (Niveau Jaune) !",
+                    nextOverride: { part: 'jaune', step: 0 }
+                };
+            }
+            return { success: true, msg: "Parfait pour ces 3 premières situations !" };
+        }
+    };
+}
+
+// ==========================================
+// 4. MOTEUR INTERACTIF : NIVEAU JAUNE (OBJETS EN RECTANGLES DANS LE D.O.I)
+// ==========================================
+function buildJauneStep(item, isLast = false) {
+    return {
+        type: "game",
+        title: item.title,
+        requirePaperConfirm: Boolean(item.paperNotice),
+        actionLabel: "Réinitialiser",
+        onAction: () => {
+            window.doiActors = {};
+            renderDoiWorkspace(item);
+        },
+        html: `
+            <div class="box content consigne-box">
+                <div class="is-flex is-justify-content-space-between is-align-items-center is-flex-wrap-wrap" style="gap: 8px;">
+                    <span class="is-size-6"><strong>1.</strong> Cliquez sur un objet pour l'ajouter ou le retirer. &nbsp;|&nbsp; <strong>2. Cliquez sur une flèche</strong> pour basculer entre <strong>Trait plein (Contact)</strong> et <strong>Pointillés (À distance)</strong>.</span>
+                    ${item.airNeglected ? `<span class="tag is-info is-light is-normal"><i class="fas fa-wind mr-1"></i>Hypothèse : on néglige l'action de l'air</span>` : ''}
+                    ${item.paperNotice ? `<span class="tag is-warning is-light is-medium has-text-weight-bold">${item.paperNotice}</span>` : ''}
+                </div>
+            </div>
+            <div class="columns is-variable is-4 mb-0">
+                <div class="column is-4">
+                    <div class="scene-box h-100">
+                        <div class="scene-svg-container mb-3">${SCENE_SVGS[item.svg]}</div>
+                        <p class="is-size-6 has-text-weight-bold mb-2">Objets disponibles (Cliquez) :</p>
+                        <div id="doi-pool" class="is-flex is-flex-wrap-wrap is-justify-content-center" style="gap: 8px;"></div>
+                    </div>
+                </div>
+                <div class="column is-8">
+                    <div class="doi-workspace h-100">
+                        <div class="is-flex is-justify-content-space-between is-align-items-center mb-2">
+                            <span class="is-size-6 has-text-grey-dark"><i class="fas fa-mouse-pointer mr-1"></i> Cliquez sur une double flèche : Plein (Contact) ⟷ Pointillés (À distance)</span>
+                            <span class="tag is-warning is-light is-medium has-text-weight-bold">Système : ${item.systeme}</span>
+                        </div>
+                        <svg id="doi-canvas" class="doi-svg" viewBox="0 0 580 310"></svg>
+                    </div>
+                </div>
+            </div>`,
+        onLoad: () => {
+            window.doiActors = {};
+            renderDoiWorkspace(item);
+        },
+        validate: () => {
+            const placed = Object.keys(window.doiActors);
+            const expectedKeys = Object.keys(item.expected);
+
+            for (let p of placed) {
+                if (!expectedKeys.includes(p)) {
+                    return {
+                        success: false,
+                        msg: `L'objet <strong>« ${p} »</strong> n'interagit pas directement avec <em>${item.systeme}</em> ! ${item.trapHint || 'Clique dessus pour le retirer.'}`
+                    };
+                }
+            }
+            if (placed.length < expectedKeys.length) {
+                return {
+                    success: false,
+                    msg: `Diagramme incomplet : il manque <strong>${expectedKeys.length - placed.length} objet(s)</strong> en interaction avec <em>${item.systeme}</em>.`
+                };
+            }
+            for (let k of expectedKeys) {
+                if (window.doiActors[k] !== item.expected[k]) {
+                    const attendu = item.expected[k] === 'contact' ? 'un trait PLEIN (action de contact)' : 'des POINTILLÉS (action à distance)';
+                    return {
+                        success: false,
+                        msg: `Entre <strong>${k}</strong> et <strong>${item.systeme}</strong>, il faut ${attendu}. Clique sur la flèche pour la modifier !`
+                    };
+                }
+            }
+
+            if (isLast) {
+                completedBelts.add('jaune');
+                updateBeltBar();
+                return {
+                    success: true,
+                    msg: "🎉 Félicitations ! Tu maîtrises les D.O.I. Direction le <strong>Niveau ORANGE</strong> pour tracer les vecteurs forces !",
+                    nextOverride: { part: 'orange', step: 0 }
+                };
+            }
+            return { success: true, msg: "D.O.I parfait !" };
+        }
+    };
+}
+
+function renderDoiWorkspace(item) {
+    const pool = document.getElementById('doi-pool');
+    const svg = document.getElementById('doi-canvas');
+    if (!pool || !svg) return;
+
+    pool.innerHTML = '';
+    item.pool.forEach(actorName => {
+        const isPlaced = window.doiActors.hasOwnProperty(actorName);
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'actor-chip ' + (isPlaced ? 'selected' : '');
+        chip.innerHTML = (isPlaced ? '<i class="fas fa-check"></i> ' : '<i class="fas fa-plus"></i> ') + actorName;
+        chip.onclick = () => {
+            if (window.doiActors.hasOwnProperty(actorName)) {
+                delete window.doiActors[actorName];
+            } else {
+                window.doiActors[actorName] = 'contact';
+            }
+            renderDoiWorkspace(item);
+        };
+        pool.appendChild(chip);
+    });
+
+    const cx = 290, cy = 150;
+    const positions = [
+        { x: 115, y: 70 },
+        { x: 465, y: 70 },
+        { x: 290, y: 255 },
+        { x: 115, y: 235 },
+        { x: 465, y: 235 }
+    ];
+
+    let svgHTML = `
+        <defs>
+            <marker id="doi-arrow-end" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 1 L 10 5 L 0 9 z" fill="#1e293b"/>
+            </marker>
+        </defs>
+    `;
+
+    // Demi-hauteur des rectangles d'objets (largeur adaptée au texte)
+    const halfH = 27;
+
+    const placedNames = Object.keys(window.doiActors);
+    placedNames.forEach((name, idx) => {
+        const pos = positions[idx % positions.length];
+        const type = window.doiActors[name];
+        const dash = type === 'distance' ? 'stroke-dasharray="8,6"' : '';
+        const halfW = Math.max(68, Math.ceil(name.length * 4.5) + 14);
+
+        const dx = pos.x - cx;
+        const dy = pos.y - cy;
+        const angle = Math.atan2(dy, dx);
+
+        // Point de départ sur l'ovale central (Système : rx=70, ry=36)
+        const startX = cx + Math.cos(angle) * 72;
+        const startY = cy + Math.sin(angle) * 38;
+
+        // Point d'arrivée sur le bord du RECTANGLE de l'objet
+        const absCos = Math.abs(Math.cos(angle));
+        const absSin = Math.abs(Math.sin(angle));
+        const distRect = Math.min(
+            absCos > 0.001 ? (halfW + 3) / absCos : 1000,
+            absSin > 0.001 ? (halfH + 3) / absSin : 1000
+        );
+        const endX = pos.x - Math.cos(angle) * distRect;
+        const endY = pos.y - Math.sin(angle) * distRect;
+
+        // Objet représenté par un RECTANGLE et Système par un OVALE !
+        svgHTML += `
+            <g class="doi-line-group" data-doi-toggle="${idx}" style="cursor:pointer;">
+                <line x1="${startX}" y1="${startY}" x2="${endX}" y2="${endY}" class="doi-line-hit"/>
+                <line x1="${startX}" y1="${startY}" x2="${endX}" y2="${endY}" class="doi-line-vis" ${dash}
+                      marker-start="url(#doi-arrow-end)" marker-end="url(#doi-arrow-end)"/>
+            </g>
+            <g transform="translate(${pos.x}, ${pos.y})" data-doi-remove="${idx}" style="cursor:pointer;">
+                <title>Cliquer pour retirer du diagramme</title>
+                <rect x="${-halfW}" y="${-halfH}" width="${halfW * 2}" height="${halfH * 2}" rx="4" fill="#ffffff" stroke="#2563eb" stroke-width="2.5"/>
+                <text x="0" y="5" text-anchor="middle" fill="#1e293b" font-size="14" font-weight="bold">${name}</text>
+            </g>
+        `;
+    });
+
+    // Ovale central du Système étudié
+    svgHTML += `
+        <g transform="translate(${cx}, ${cy})">
+            <ellipse cx="0" cy="0" rx="70" ry="36" fill="#fef08a" stroke="#ca8a04" stroke-width="3"/>
+            <text x="0" y="6" text-anchor="middle" fill="#713f12" font-size="16" font-weight="bold">${item.systeme}</text>
+        </g>
+    `;
+
+    svg.innerHTML = svgHTML;
+
+    svg.querySelectorAll('[data-doi-toggle]').forEach(el => {
+        const name = placedNames[Number(el.getAttribute('data-doi-toggle'))];
+        el.addEventListener('click', () => window.toggleDoiArrow(name));
+    });
+    svg.querySelectorAll('[data-doi-remove]').forEach(el => {
+        const name = placedNames[Number(el.getAttribute('data-doi-remove'))];
+        el.addEventListener('click', () => window.removeDoiActor(name));
+    });
+}
+
+window.toggleDoiArrow = function(name) {
+    if (!window.doiActors || !window.doiActors[name]) return;
+    window.doiActors[name] = window.doiActors[name] === 'contact' ? 'distance' : 'contact';
+    const stepObj = STRUCTURE_TP[currentPart][currentStepIndex];
+    if (stepObj && stepObj.itemRef) renderDoiWorkspace(stepObj.itemRef);
 };
 
-function initVectorCanvas(cfg) {
-    const svg = document.getElementById(`vecsvg-${cfg.id}`);
+window.removeDoiActor = function(name) {
+    if (!window.doiActors) return;
+    delete window.doiActors[name];
+    const stepObj = STRUCTURE_TP[currentPart][currentStepIndex];
+    if (stepObj && stepObj.itemRef) renderDoiWorkspace(stepObj.itemRef);
+};
+
+// ==========================================
+// 5. MOTEUR INTERACTIF : NIVEAU ORANGE (VECTEURS FORCES)
+// ==========================================
+function buildOrangeStep(item, isLast = false) {
+    return {
+        type: "game",
+        title: item.title,
+        requirePaperConfirm: Boolean(item.paperNotice),
+        actionLabel: "Effacer les flèches",
+        onAction: () => {
+            window.drawnVectors = {};
+            renderVectorCanvas(item);
+        },
+        html: `
+            <div class="box content consigne-box">
+                <div class="is-flex is-justify-content-space-between is-align-items-center is-flex-wrap-wrap" style="gap: 8px;">
+                    <span class="is-size-6"><strong>${item.subtitle}</strong> Sélectionnez la force à droite puis tirez la flèche depuis un point d'ancrage bleu (●).</span>
+                    ${item.airNeglected ? `<span class="tag is-info is-light is-normal"><i class="fas fa-wind mr-1"></i>Hypothèse : on néglige l'action de l'air</span>` : ''}
+                    ${item.paperNotice ? `<span class="tag is-warning is-light is-medium has-text-weight-bold">${item.paperNotice}</span>` : ''}
+                </div>
+            </div>
+            <div class="columns is-variable is-4 mb-0">
+                <!-- VOLET GAUCHE : CARACTÉRISTIQUES -->
+                <div class="column is-6">
+                    ${item.forces.map(f => `
+                        <div class="box p-3 mb-3" id="fcard-${f.id}" style="border-left: 5px solid ${f.color};">
+                            <div class="is-flex is-justify-content-space-between is-align-items-center mb-2">
+                                <span class="is-size-5 has-text-weight-bold" style="color:${f.color};">Force ${f.htmlLabel}</span>
+                                ${f.givenValue ? `<span class="tag is-dark is-normal">Valeur : ${f.givenValue}</span>` : ''}
+                            </div>
+                            <div class="columns is-mobile is-multiline is-variable is-2 m-0">
+                                <div class="column is-12 py-1">
+                                    <label class="is-size-6 has-text-weight-semibold">Point d'application :</label>
+                                    <div class="select is-small is-fullwidth mt-1">
+                                        <select id="f-pt-${f.id}">
+                                            <option value="">-- Choisir le point d'application --</option>
+                                            ${f.pointOptions.map(o => `<option value="${o}">${o}</option>`).join('')}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="column is-6 py-1">
+                                    <label class="is-size-6 has-text-weight-semibold">Direction :</label>
+                                    <div class="select is-small is-fullwidth mt-1">
+                                        <select id="f-dir-${f.id}">
+                                            <option value="">-- Choisir --</option>
+                                            <option value="verticale">Verticale (↕)</option>
+                                            <option value="horizontale">Horizontale (↔)</option>
+                                            <option value="selon le fil (oblique)">Selon le fil (⤡)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="column is-6 py-1">
+                                    <label class="is-size-6 has-text-weight-semibold">Sens :</label>
+                                    <div class="select is-small is-fullwidth mt-1">
+                                        <select id="f-sens-${f.id}">
+                                            <option value="">-- Choisir --</option>
+                                            <option value="vers le bas">Vers le bas (↓)</option>
+                                            <option value="vers le haut">Vers le haut (↑)</option>
+                                            <option value="vers la gauche">Vers la gauche (←)</option>
+                                            <option value="vers la droite (vers l'aimant)">Vers la droite (→)</option>
+                                            <option value="vers le haut / vers le fil">Selon le fil (↖)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                ${f.askValue ? `
+                                    <div class="column is-12 py-1 mt-1">
+                                        <div class="is-flex is-align-items-center" style="gap: 8px;">
+                                            <label class="is-size-6 has-text-weight-bold">Valeur déduite :</label>
+                                            <input type="text" id="f-val-${f.id}" class="input is-small" style="max-width: 100px;" placeholder="ex: 0,56">
+                                            <span class="is-size-6 has-text-weight-bold">N</span>
+                                        </div>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+
+                <!-- VOLET DROIT : TRACEUR DE VECTEURS SUR SCHÉMA -->
+                <div class="column is-6">
+                    <div class="box p-3 h-100 is-flex is-flex-direction-column align-items-center justify-content-center">
+                        <div class="buttons is-centered mb-2" id="vector-tool-tabs">
+                            ${item.forces.map(f => `
+                                <button type="button" class="button is-normal force-tab-btn" id="vtab-${f.id}"
+                                        style="background-color: ${f.color}; color: white;"
+                                        onclick="selectVectorTool('${f.id}')">
+                                    <i class="fas fa-pen mr-2"></i>
+                                    <span class="force-btn-label">Tracer ${f.htmlLabel}</span>
+                                </button>
+                            `).join('')}
+                        </div>
+                        <div class="vector-canvas-wrap">
+                            <svg id="vector-svg" class="vector-svg" viewBox="0 0 360 250"></svg>
+                        </div>
+                        <div id="vector-live-info" class="is-size-6 has-text-grey-dark has-text-centered mt-2">
+                            Cliquez sur un point d'ancrage bleu (●) et glissez pour tracer le vecteur.
+                        </div>
+                    </div>
+                </div>
+            </div>`,
+        onLoad: () => {
+            window.activeForceId = item.forces[0].id;
+            window.drawnVectors = {};
+            window.isDraggingVector = false;
+            selectVectorTool(item.forces[0].id);
+            initVectorCanvasEvents(item);
+            renderVectorCanvas(item);
+        },
+        validate: () => {
+            let textErrors = 0;
+            const wrongFields = new Set();
+
+            for (let f of item.forces) {
+                const ptEl = document.getElementById('f-pt-' + f.id);
+                const dirEl = document.getElementById('f-dir-' + f.id);
+                const sensEl = document.getElementById('f-sens-' + f.id);
+                const card = document.getElementById('fcard-' + f.id);
+
+                const ptOk = ptEl.value === f.expectedPoint;
+                const dirOk = dirEl.value === f.expectedDirection;
+                const sensOk = sensEl.value === f.expectedSens;
+
+                ptEl.parentElement.classList.toggle('is-danger', !ptOk);
+                ptEl.parentElement.classList.toggle('is-success', ptOk);
+                dirEl.parentElement.classList.toggle('is-danger', !dirOk);
+                dirEl.parentElement.classList.toggle('is-success', dirOk);
+                sensEl.parentElement.classList.toggle('is-danger', !sensOk);
+                sensEl.parentElement.classList.toggle('is-success', sensOk);
+
+                if (!ptOk) wrongFields.add("le point d'application");
+                if (!dirOk) wrongFields.add("la direction");
+                if (!sensOk) wrongFields.add("le sens");
+
+                let valOk = true;
+                if (f.askValue) {
+                    const valEl = document.getElementById('f-val-' + f.id);
+                    const valStr = valEl.value.replace(',', '.').trim();
+                    const val = parseFloat(valStr);
+                    valOk = !(valStr === '' || isNaN(val) || Math.abs(val - f.expectedValue) > 0.02);
+                    valEl.classList.toggle('is-danger', !valOk);
+                    valEl.classList.toggle('is-success', valOk);
+                    if (!valOk) wrongFields.add("la valeur");
+                }
+
+                const ok = ptOk && dirOk && sensOk && valOk;
+                if (!ok) {
+                    textErrors++;
+                    card.style.backgroundColor = '#fef2f2';
+                } else {
+                    card.style.backgroundColor = '#f0fdf4';
+                }
+            }
+
+            if (textErrors > 0) {
+                const details = Array.from(wrongFields).join(', ');
+                return {
+                    success: false,
+                    msg: `Vérifie les champs en rouge à gauche : <strong>${details}</strong>.`
+                };
+            }
+
+            for (let f of item.forces) {
+                const vec = window.drawnVectors[f.id];
+                if (!vec || vec.length < 22) {
+                    return {
+                        success: false,
+                        msg: `Tu n'as pas encore tracé le vecteur <strong>${f.htmlLabel}</strong> sur le schéma à droite !`
+                    };
+                }
+                if (vec.anchorId !== f.expectedAnchor) {
+                    return {
+                        success: false,
+                        msg: `Le vecteur <strong>${f.htmlLabel}</strong> ne part pas du bon point d'application sur le schéma !`
+                    };
+                }
+                const diff = Math.abs((((vec.angle - f.expectedAngle) % 360) + 540) % 360 - 180);
+                const tol = f.angleTolerance || 18;
+                if (diff > tol) {
+                    if (Math.abs(diff - 180) <= tol) {
+                        return {
+                            success: false,
+                            msg: item.reverseSensHint
+                                ? item.reverseSensHint
+                                : `Bonne <strong>direction</strong> pour <strong>${f.htmlLabel}</strong>, mais le <strong>sens</strong> est inversé !`
+                        };
+                    }
+                    return {
+                        success: false,
+                        msg: `La <strong>direction</strong> (droite d'action) du vecteur <strong>${f.htmlLabel}</strong> tracé est incorrecte.`
+                    };
+                }
+            }
+
+            if (item.compareLengthRule === "Fraq_gt_P") {
+                const lenP = window.drawnVectors["P"].length;
+                const lenF = window.drawnVectors["Fraq"].length;
+                if (lenF <= lenP * 1.25) {
+                    return {
+                        success: false,
+                        msg: `F<sub>raquette/balle</sub> (10 N) est beaucoup plus grande que P (0,56 N) : la flèche bleue doit être nettement plus longue que la rouge !`
+                    };
+                }
+            }
+
+            if (item.equalLengthPair) {
+                const [idA, idB] = item.equalLengthPair;
+                const lenA = window.drawnVectors[idA].length;
+                const lenB = window.drawnVectors[idB].length;
+                if (Math.abs(lenA - lenB) > 16) {
+                    const fA = item.forces.find(f => f.id === idA);
+                    const fB = item.forces.find(f => f.id === idB);
+                    return {
+                        success: false,
+                        msg: `Le système est immobile (en équilibre) : ${fA.htmlLabel} et ${fB.htmlLabel} se compensent et doivent donc avoir la même longueur !`
+                    };
+                }
+            }
+
+            if (isLast) {
+                completedBelts.add('orange');
+                updateBeltBar();
+                return {
+                    success: true,
+                    msg: "🎉 Bravo ! Tu maîtrises le tracé des vecteurs forces. Tu débloques le <strong>Niveau ROUGE</strong> final !",
+                    nextOverride: { part: 'rouge', step: 0 }
+                };
+            }
+            return { success: true, msg: "Parfait ! Caractéristiques et représentation vectorielle exactes." };
+        }
+    };
+}
+
+window.selectVectorTool = function(forceId) {
+    window.activeForceId = forceId;
+    document.querySelectorAll('.force-tab-btn').forEach(btn => {
+        if (btn.id === 'vtab-' + forceId) btn.classList.add('is-active-tab');
+        else btn.classList.remove('is-active-tab');
+    });
+};
+
+function getSvgCoords(svg, clientX, clientY) {
+    const pt = svg.createSVGPoint();
+    pt.x = clientX;
+    pt.y = clientY;
+    return pt.matrixTransform(svg.getScreenCTM().inverse());
+}
+
+function initVectorCanvasEvents(item) {
+    cleanupStepEvents();
+    const svg = document.getElementById('vector-svg');
     if (!svg) return;
 
-    let isDragging = false;
-    let activeAnchor = null;
+    vectorDragAbortController = new AbortController();
+    const { signal } = vectorDragAbortController;
 
-    const getSVGCoords = (ev) => {
-        const rect = svg.getBoundingClientRect();
-        const clientX = ev.touches ? ev.touches[0].clientX : ev.clientX;
-        const clientY = ev.touches ? ev.touches[0].clientY : ev.clientY;
-        return {
-            x: (clientX - rect.left) * (300 / rect.width),
-            y: (clientY - rect.top) * (260 / rect.height)
-        };
-    };
-
-    const startDrag = (ev) => {
-        const pt = getSVGCoords(ev);
+    const startDrag = (clientX, clientY) => {
+        const coords = getSvgCoords(svg, clientX, clientY);
         let bestAnchor = null;
-        let minDist = 26;
-        cfg.anchors.forEach(a => {
-            const d = Math.hypot(pt.x - a.x, pt.y - a.y);
-            if (d < minDist) { minDist = d; bestAnchor = a; }
+        let minDist = 28;
+        item.anchors.forEach(a => {
+            const d = Math.hypot(coords.x - a.x, coords.y - a.y);
+            if (d < minDist) {
+                minDist = d;
+                bestAnchor = a;
+            }
         });
         if (!bestAnchor) return;
-        ev.preventDefault();
-        isDragging = true;
-        activeAnchor = bestAnchor;
+
+        window.isDraggingVector = true;
+        window.dragCurrentAnchor = bestAnchor;
+        window.drawnVectors[window.activeForceId] = {
+            anchorId: bestAnchor.id,
+            x1: bestAnchor.x,
+            y1: bestAnchor.y,
+            x2: coords.x,
+            y2: coords.y,
+            angle: 0,
+            length: 0
+        };
+        renderVectorCanvas(item);
     };
 
-    const moveDrag = (ev) => {
-        if (!isDragging || !activeAnchor) return;
-        ev.preventDefault();
-        const pt = getSVGCoords(ev);
-        const dx = pt.x - activeAnchor.x;
-        const dy = pt.y - activeAnchor.y;
-        const len = Math.hypot(dx, dy);
-        if (len < 15) return;
+    const moveDrag = (clientX, clientY) => {
+        if (!window.isDraggingVector) return;
+        const coords = getSvgCoords(svg, clientX, clientY);
+        const vec = window.drawnVectors[window.activeForceId];
+        if (!vec) return;
 
-        let rawDeg = Math.atan2(dy, dx) * (180 / Math.PI);
-        const keyAngles = [0, 90, -90, 180, -180, -135, -115, -55, -45, 139];
-        for (const ka of keyAngles) {
-            if (Math.abs(rawDeg - ka) < 7) { rawDeg = ka; break; }
+        let dx = coords.x - vec.x1;
+        let dy = coords.y - vec.y1;
+        let len = Math.min(Math.hypot(dx, dy), 115);
+        let rawAngle = Math.atan2(dy, dx) * (180 / Math.PI);
+
+        let snappedAngle = Math.round(rawAngle / 15) * 15;
+        let rad = snappedAngle * (Math.PI / 180);
+
+        vec.x2 = vec.x1 + Math.cos(rad) * len;
+        vec.y2 = vec.y1 + Math.sin(rad) * len;
+        vec.angle = snappedAngle;
+        vec.length = Math.round(len);
+
+        const info = document.getElementById('vector-live-info');
+        if (info) {
+            info.innerHTML = `Départ : <strong>${window.dragCurrentAnchor.label}</strong> | Longueur : <strong>${ (len / 25).toFixed(1) } cm</strong>`;
         }
-
-        const rad = rawDeg * (Math.PI / 180);
-        const fixedLen = Math.min(Math.max(len, 55), 85);
-        const x2 = activeAnchor.x + Math.cos(rad) * fixedLen;
-        const y2 = activeAnchor.y + Math.sin(rad) * fixedLen;
-
-        const inst = activeVectorInstances[cfg.id];
-        inst.drawn[inst.selectedForceId] = {
-            anchorId: activeAnchor.id,
-            x1: activeAnchor.x,
-            y1: activeAnchor.y,
-            x2: x2,
-            y2: y2,
-            angle: rawDeg
-        };
-        redrawVectorCanvas(cfg.id);
+        renderVectorCanvas(item);
     };
 
     const endDrag = () => {
-        if (isDragging) {
-            isDragging = false;
-            activeAnchor = null;
-            const inst = activeVectorInstances[cfg.id];
-            const nextF = cfg.availableForces.find(f => !inst.drawn[f.id]);
-            if (nextF) selectForceTool(cfg.id, nextF.id);
-        }
+        window.isDraggingVector = false;
     };
 
-    svg.addEventListener('mousedown', startDrag);
-    svg.addEventListener('mousemove', moveDrag);
-    window.addEventListener('mouseup', endDrag);
+    svg.addEventListener('mousedown', e => startDrag(e.clientX, e.clientY), { signal });
+    window.addEventListener('mousemove', e => moveDrag(e.clientX, e.clientY), { signal });
+    window.addEventListener('mouseup', endDrag, { signal });
 
-    svg.addEventListener('touchstart', startDrag, { passive: false });
-    svg.addEventListener('touchmove', moveDrag, { passive: false });
-    window.addEventListener('touchend', endDrag);
-
-    redrawVectorCanvas(cfg.id);
+    svg.addEventListener('touchstart', e => {
+        if (e.touches.length > 0) {
+            e.preventDefault();
+            startDrag(e.touches[0].clientX, e.touches[0].clientY);
+        }
+    }, { passive: false, signal });
+    window.addEventListener('touchmove', e => {
+        if (window.isDraggingVector && e.touches.length > 0) {
+            moveDrag(e.touches[0].clientX, e.touches[0].clientY);
+        }
+    }, { passive: false, signal });
+    window.addEventListener('touchend', endDrag, { signal });
 }
 
-function redrawVectorCanvas(cfgId) {
-    const inst = activeVectorInstances[cfgId];
-    if (!inst) return;
-    const cfg = inst.config;
-    const svg = document.getElementById(`vecsvg-${cfgId}`);
+function renderVectorCanvas(item) {
+    const svg = document.getElementById('vector-svg');
     if (!svg) return;
 
-    let defs = `<defs>`;
-    cfg.availableForces.forEach(f => {
-        defs += `
-        <marker id="vec-arr-${cfgId}-${f.id}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
-            <path d="M 0 1 L 10 5 L 0 9 z" fill="${f.color}"/>
-        </marker>`;
-    });
-    defs += `</defs>`;
-
-    let bgHTML = `<g id="bg-layer-${cfgId}">${cfg.svgBg}</g>`;
-
-    let anchorsHTML = cfg.anchors.map(a => `
-        <g>
-            <circle class="anchor-point" cx="${a.x}" cy="${a.y}" r="6">
-                <title>${a.label}</title>
-            </circle>
-        </g>
-    `).join('');
-
-    let vectorsHTML = "";
-    for (const [fId, vec] of Object.entries(inst.drawn)) {
-        const fMeta = cfg.availableForces.find(f => f.id === fId);
-        if (!fMeta) continue;
-        vectorsHTML += `
-        <g>
-            <line x1="${vec.x1}" y1="${vec.y1}" x2="${vec.x2}" y2="${vec.y2}" stroke="${fMeta.color}" stroke-width="3.5" marker-end="url(#vec-arr-${cfgId}-${fId})"/>
-            <rect x="${vec.x2 - 28}" y="${vec.y2 - 22}" width="56" height="16" rx="3" fill="rgba(255,255,255,0.85)"/>
-            <text x="${vec.x2}" y="${vec.y2 - 10}" text-anchor="middle" font-size="11" font-weight="bold" fill="${fMeta.color}">
-                ${fMeta.label.split(' ')[0]}
-            </text>
-        </g>`;
-    }
-
-    svg.innerHTML = defs + bgHTML + anchorsHTML + vectorsHTML;
-}
-
-function angleDiff(a, b) {
-    let d = Math.abs(a - b) % 360;
-    return d > 180 ? 360 - d : d;
-}
-
-function validateVectorStep(configs) {
-    let errCount = 0;
-    let firstErrorMsg = "";
-
-    configs.forEach(cfg => {
-        const inst = activeVectorInstances[cfg.id];
-        const card = document.getElementById(`veccard-${cfg.id}`);
-        const fb = document.getElementById(`vecfb-${cfg.id}`);
-        const bgLayer = document.getElementById(`bg-layer-${cfg.id}`);
-        let localError = "";
-
-        for (const exp of cfg.expectedVectors) {
-            const drawn = inst.drawn[exp.id];
-            const fMeta = cfg.availableForces.find(f => f.id === exp.id);
-            if (!drawn) {
-                localError = `Tu n'as pas encore tracé la force <strong>${fMeta.label}</strong>.`;
-                break;
-            }
-            if (drawn.anchorId !== exp.anchor) {
-                localError = exp.hintAnchor;
-                break;
-            }
-            if (angleDiff(drawn.angle, exp.angle) > exp.tol) {
-                localError = exp.hintDir;
-                break;
-            }
-        }
-
-        if (!localError) {
-            card.className = "situation-card is-correct";
-            fb.className = "help is-success has-text-weight-bold";
-            fb.innerHTML = `<i class="fas fa-check-circle mr-1"></i>Représentation vectorielle parfaite !`;
-        } else {
-            errCount++;
-            card.className = "situation-card is-incorrect";
-            fb.className = "help is-danger has-text-weight-bold";
-            fb.innerHTML = `<i class="fas fa-exclamation-triangle mr-1"></i>${localError}`;
-            if (!firstErrorMsg) firstErrorMsg = localError;
-
-            if (bgLayer) {
-                bgLayer.classList.remove('sim-fall', 'sim-fly');
-                void bgLayer.offsetWidth;
-                bgLayer.classList.add('sim-fall');
-            }
-        }
-    });
-
-    return {
-        success: errCount === 0,
-        msg: errCount === 0
-            ? "Excellent ! Tous les vecteurs forces ont le bon point d'application, la bonne direction et le bon sens."
-            : `Attention : ${firstErrorMsg}`
-    };
-}
-
-// ============================================================================
-// COMPOSANT 4 : SYNTHÈSE NIVEAU ROUGE (CALCUL P = m*g + VECTEURS)
-// ============================================================================
-function renderRougeStep(containerId, dataObj) {
-    const container = document.getElementById(containerId);
-    if (!container) return;
-
-    container.innerHTML = `
-        <div class="box consigne-box mb-4">
-            <h4 class="title is-5 mb-2">${dataObj.title}</h4>
-            <p class="mb-3">${dataObj.enonce}</p>
-            <div class="field is-horizontal is-align-items-center">
-                <div class="field-label is-normal" style="flex-grow: 0; white-space: nowrap; margin-right: 12px;">
-                    <label class="label mb-0">${dataObj.calcQuestion}</label>
-                </div>
-                <div class="field-body" style="max-width: 220px;">
-                    <div class="field has-addons mb-0">
-                        <p class="control">
-                            <input class="input has-text-weight-bold" type="text" id="input-p-${dataObj.id}" placeholder="Ex: 589">
-                        </p>
-                        <p class="control">
-                            <a class="button is-static">N</a>
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div id="rouge-vec-zone"></div>
+    let html = `
+        <defs>
+            ${item.forces.map(f => `
+                <marker id="vhead-${f.id}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                    <path d="M 0 1 L 10 5 L 0 9 z" fill="${f.color}"/>
+                </marker>
+            `).join('')}
+        </defs>
+        <pattern id="smallGrid" width="20" height="20" patternUnits="userSpaceOnUse">
+            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#f1f5f9" stroke-width="1"/>
+        </pattern>
+        <rect width="360" height="250" fill="url(#smallGrid)"/>
+        ${item.modelShape}
     `;
 
-    renderVectorStep("rouge-vec-zone", [dataObj.vectorConfig], "rouge");
+    item.anchors.forEach(a => {
+        html += `
+            <g>
+                <circle cx="${a.x}" cy="${a.y}" r="7" class="anchor-point">
+                    <title>${a.label}</title>
+                </circle>
+                <line x1="${a.x - 4}" y1="${a.y}" x2="${a.x + 4}" y2="${a.y}" stroke="#1e3a8a" stroke-width="1.5" pointer-events="none"/>
+                <line x1="${a.x}" y1="${a.y - 4}" x2="${a.x}" y2="${a.y + 4}" stroke="#1e3a8a" stroke-width="1.5" pointer-events="none"/>
+            </g>
+        `;
+    });
+
+    item.forces.forEach(f => {
+        const v = window.drawnVectors[f.id];
+        if (v && v.length > 8) {
+            const sym = f.svgSymbol || f.id;
+            const sub = f.svgSub || "";
+            const subWidth = sub ? sub.length * 5.2 + 2 : 0;
+            const boxW = Math.max(24, Math.ceil(16 + subWidth));
+            const boxH = 22;
+
+            let lx = (v.x1 + v.x2) / 2 + (v.angle === 90 || v.angle === -90 ? (boxW / 2 + 12) : 0);
+            let ly = (v.y1 + v.y2) / 2 + (v.angle === 0 || v.angle === 180 ? -16 : 0);
+            lx = Math.max(boxW / 2 + 4, Math.min(356 - boxW / 2, lx));
+            ly = Math.max(16, Math.min(238, ly));
+
+            const textStartX = lx - (subWidth / 2) - 4;
+            const arrowY = ly - 7;
+            html += `
+                <g pointer-events="none">
+                    <line x1="${v.x1}" y1="${v.y1}" x2="${v.x2}" y2="${v.y2}"
+                          stroke="${f.color}" stroke-width="4" stroke-linecap="round"
+                          marker-end="url(#vhead-${f.id})"/>
+                    <rect x="${lx - boxW / 2}" y="${ly - 13}" width="${boxW}" height="${boxH}" rx="4" fill="rgba(255,255,255,0.9)" stroke="${f.color}" stroke-opacity="0.25" stroke-width="1"/>
+                    <path d="M ${textStartX - 1} ${arrowY} L ${textStartX + 9} ${arrowY} M ${textStartX + 6.5} ${arrowY - 2} L ${textStartX + 9} ${arrowY} L ${textStartX + 6.5} ${arrowY + 2}"
+                          fill="none" stroke="${f.color}" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+                    <text x="${textStartX}" y="${ly + 4}" text-anchor="start" fill="${f.color}" font-size="12" font-weight="bold">${sym}${sub ? `<tspan dy="3" font-size="8.5" font-weight="600">${sub}</tspan>` : ''}</text>
+                </g>
+            `;
+        }
+    });
+
+    svg.innerHTML = html;
 }
 
-function validateRougeStep(dataObj) {
-    const inputEl = document.getElementById(`input-p-${dataObj.id}`);
-    if (!inputEl) return { success: false, msg: "Erreur interne." };
+// ==========================================
+// 6. NIVEAU ROUGE : ASSISTANT AUTONOMIE PAPIER
+// ==========================================
+const ROUGE_STEPS = [
+    {
+        type: "game",
+        title: "Niveau Rouge — Le Skieur et le Cerf-Volant (Sur Fiche Papier)",
+        html: `
+            <div class="box content paper-callout">
+                <p class="mb-0 is-size-6"><strong class="has-text-danger"><i class="fas fa-pencil-ruler mr-1"></i>Défi Final sur votre Fiche Papier :</strong> Réalisez les deux études complètes sur votre feuille. Utilisez cet écran pour <strong>vérifier vos calculs de poids P</strong> avant d'appeler le professeur.</p>
+            </div>
+            <div class="columns is-variable is-4 mb-0">
+                <!-- EXERCICE 1 : LE SKIEUR -->
+                <div class="column is-6">
+                    <div class="box p-4 h-100">
+                        <div class="is-flex is-justify-content-space-between is-align-items-center mb-3">
+                            <h4 class="title is-5 m-0">1. Le skieur sur le tire-fesse</h4>
+                            <span class="tag is-danger is-light is-normal">m = 60,0 kg | g = 9,81 N·kg⁻¹</span>
+                        </div>
+                        <div class="scene-svg-container mb-3" style="max-width:100%; height:180px;">${SCENE_SVGS.rouge_skieur}</div>
+                        <div class="notification is-light p-3 mb-2">
+                            <div class="is-flex is-align-items-center is-justify-content-space-between" style="gap: 8px;">
+                                <label class="is-size-6 has-text-weight-bold">Calcul du poids P<sub>skieur</sub> :</label>
+                                <div class="field has-addons m-0">
+                                    <div class="control">
+                                        <input type="text" id="inp-poids-skieur" class="input is-small" style="width:120px;" placeholder="P = ...">
+                                    </div>
+                                    <div class="control"><span class="button is-static is-small">N</span></div>
+                                </div>
+                            </div>
+                            <div id="fb-skieur" class="is-size-6 mt-1"></div>
+                        </div>
+                        <details class="is-size-6">
+                            <summary class="has-text-link has-text-weight-semibold" style="cursor:pointer;">💡 Coup de pouce : Force de la neige</summary>
+                            <p class="mt-1 p-2 has-background-info-light" style="border-radius:4px;">Sans frottements, l'action de la neige est <strong>perpendiculaire à la pente</strong> (vers le haut) !</p>
+                        </details>
+                    </div>
+                </div>
 
-    const rawVal = parseFloat(inputEl.value.trim().replace(',', '.'));
-    if (isNaN(rawVal)) {
-        inputEl.classList.add('is-danger');
-        return { success: false, msg: "Veuillez d'abord calculer et saisir la valeur numérique du poids <strong>P</strong> en Newton (N)." };
+                <!-- EXERCICE 2 : LE CERF-VOLANT -->
+                <div class="column is-6">
+                    <div class="box p-4 h-100">
+                        <div class="is-flex is-justify-content-space-between is-align-items-center mb-3">
+                            <h4 class="title is-5 m-0">2. Le cerf-volant</h4>
+                            <span class="tag is-danger is-normal">m = 200 g | g = 9,81 N·kg⁻¹</span>
+                        </div>
+                        <div class="scene-svg-container mb-3" style="max-width:100%; height:180px;">${SCENE_SVGS.rouge_cerfvolant}</div>
+                        <div class="notification is-light p-3 mb-2">
+                            <div class="is-flex is-align-items-center is-justify-content-space-between" style="gap: 8px;">
+                                <label class="is-size-6 has-text-weight-bold">Calcul du poids P<sub>cerf-volant</sub> :</label>
+                                <div class="field has-addons m-0">
+                                    <div class="control">
+                                        <input type="text" id="inp-poids-cv" class="input is-small" style="width:120px;" placeholder="P = ...">
+                                    </div>
+                                    <div class="control"><span class="button is-static is-small">N</span></div>
+                                </div>
+                            </div>
+                            <div id="fb-cv" class="is-size-6 mt-1"></div>
+                        </div>
+                        <details class="is-size-6">
+                            <summary class="has-text-link has-text-weight-semibold" style="cursor:pointer;">💡 Coup de pouce : Les 3 donneurs</summary>
+                            <p class="mt-1 p-2 has-background-info-light" style="border-radius:4px;">Le cerf-volant subit l'action de <strong>la Terre</strong> (à distance), du <strong>fil</strong> (contact) et du <strong>vent</strong> (contact).</p>
+                        </details>
+                    </div>
+                </div>
+            </div>`,
+        onLoad: () => {
+            ['inp-poids-skieur', 'inp-poids-cv'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener('keydown', e => {
+                        if (e.key === 'Enter') executeValidation();
+                    });
+                }
+            });
+        },
+        validate: () => {
+            const vSki = parseFloat(document.getElementById('inp-poids-skieur').value.replace(',', '.').trim());
+            const vCv = parseFloat(document.getElementById('inp-poids-cv').value.replace(',', '.').trim());
+            const fbSki = document.getElementById('fb-skieur');
+            const fbCv = document.getElementById('fb-cv');
+
+            let skiOk = false, cvOk = false;
+
+            if (isNaN(vSki)) {
+                fbSki.innerHTML = `<span class="has-text-danger">Entre une valeur numérique.</span>`;
+            } else if (Math.abs(vSki - 588.6) <= 1.5) {
+                skiOk = true;
+                fbSki.innerHTML = `<span class="has-text-success has-text-weight-bold"><i class="fas fa-check"></i> Exact ! P = 60,0 × 9,81 ≈ 589 N.</span>`;
+            } else {
+                fbSki.innerHTML = `<span class="has-text-danger">Erreur : utilise P = m × g avec m = 60,0 kg et g = 9,81 N·kg⁻¹.</span>`;
+            }
+
+            if (isNaN(vCv)) {
+                fbCv.innerHTML = `<span class="has-text-danger">Entre une valeur numérique.</span>`;
+            } else if (Math.abs(vCv - 1962) <= 15) {
+                fbCv.innerHTML = `<span class="has-text-danger has-text-weight-bold"><i class="fas fa-exclamation-circle"></i> Attention à l'unité ! Convertis m = 200 g en kilogrammes (0,200 kg) !</span>`;
+            } else if (Math.abs(vCv - 1.96) <= 0.05) {
+                cvOk = true;
+                fbCv.innerHTML = `<span class="has-text-success has-text-weight-bold"><i class="fas fa-check"></i> Bravo ! 200 g = 0,200 kg donc P = 1,96 N.</span>`;
+            } else {
+                fbCv.innerHTML = `<span class="has-text-danger">Vérifie ton calcul (convertis 200 g en kg).</span>`;
+            }
+
+            if (skiOk && cvOk) {
+                completedBelts.add('rouge');
+                updateBeltBar();
+                document.getElementById('global-btn-home').style.display = 'inline-flex';
+                return {
+                    success: true,
+                    msg: "🏆 <strong>Calculs du niveau Rouge validés !</strong> Appelle le professeur pour valider tes schémas sur ta fiche papier !"
+                };
+            }
+            return {
+                success: false,
+                msg: "Vérifie les indications sous les champs de calcul du poids."
+            };
+        }
     }
+];
 
-    if (dataObj.unitTrapVal && Math.abs(rawVal - dataObj.unitTrapVal) < 20) {
-        inputEl.classList.add('is-danger');
-        return {
-            success: false,
-            msg: `Un cerf-volant d'un poids de ${rawVal} N (soit 200 kg) ?! Attention : dans <code>P = m × g</code>, la masse <strong>m = 200 g</strong> doit d'abord être convertie en <strong>kilogrammes (kg)</strong> !`
-        };
-    }
-
-    if (Math.abs(rawVal - dataObj.expectedP) > dataObj.tolP) {
-        inputEl.classList.add('is-danger');
-        return {
-            success: false,
-            msg: `La valeur du poids P (${rawVal} N) est incorrecte. Utilisez la relation <strong>P = m × g</strong> avec g = 9,81 N/kg.`
-        };
-    }
-
-    inputEl.classList.remove('is-danger');
-    inputEl.classList.add('is-success');
-
-    const vecRes = validateVectorStep([dataObj.vectorConfig]);
-    if (!vecRes.success) return vecRes;
-
-    return {
-        success: true,
-        msg: `Bravo ! Le calcul du poids (P = ${dataObj.expectedP} N) et le tracé des 3 forces sont parfaitement exacts !`
-    };
-}
-
-// ============================================================================
-// STRUCTURE DU PARCOURS DIFFÉRENCIÉ (BLEU -> VERT -> JAUNE -> ORANGE -> ROUGE)
-// ============================================================================
+// ==========================================
+// 7. ASSEMBLAGE DE LA STRUCTURE DU TP UNIFIÉE
+// ==========================================
 const STRUCTURE_TP = {
-    bleu: [
-        {
-            title: "Niveau Bleu — Entraînement (Actions mécaniques)",
-            onLoad: () => renderDonneurStep("spa-container", DATA_BLEU_VERT.bleu_entrainement, "bleu"),
-            validate: () => validateDonneurStep(DATA_BLEU_VERT.bleu_entrainement)
-        },
-        {
-            title: "Niveau Bleu — Test d'autonomie",
-            onLoad: () => renderDonneurStep("spa-container", DATA_BLEU_VERT.bleu_test, "bleu"),
-            validate: () => {
-                const res = validateDonneurStep(DATA_BLEU_VERT.bleu_test);
-                if (res.success) {
-                    completedBelts.add("bleu");
-                    completedBelts.add("vert");
-                    res.msg = `<i class="fas fa-award mr-1"></i><strong>Test Bleu réussi !</strong> Comme tout est juste, vous passez directement au <strong>Niveau Jaune</strong> (le Niveau Vert est validé d'office) !`;
-                    res.nextOverride = { part: "jaune", step: 0 };
-                } else {
-                    res.msg += `<br><span class="is-size-7">Astuce : si ce test vous pose problème, cliquez sur le bouton <strong>Vert</strong> en haut pour faire l'étape de remédiation.</span>`;
-                }
-                return res;
-            },
-            actionLabel: "Aller au Niveau Vert (Remédiation)",
-            onAction: () => jumpToLevel("vert")
-        }
-    ],
+    bleu: BLEU_DATA.map((it, idx) => buildBleuStep(it, idx === BLEU_DATA.length - 1)),
     vert: [
-        {
-            title: "Niveau Vert — Entraînement (Remédiation)",
-            onLoad: () => renderDonneurStep("spa-container", DATA_BLEU_VERT.vert_entrainement, "vert"),
-            validate: () => validateDonneurStep(DATA_BLEU_VERT.vert_entrainement)
-        },
-        {
-            title: "Niveau Vert — Test",
-            onLoad: () => renderDonneurStep("spa-container", DATA_BLEU_VERT.vert_test, "vert"),
-            validate: () => {
-                const res = validateDonneurStep(DATA_BLEU_VERT.vert_test);
-                if (res.success) {
-                    completedBelts.add("vert");
-                    res.nextOverride = { part: "jaune", step: 0 };
-                }
-                return res;
-            }
-        }
+        buildVertStep(0, VERT_DATA.slice(0, 3)),
+        buildVertStep(1, VERT_DATA.slice(3, 6))
     ],
-    jaune: [
-        {
-            title: "Niveau Jaune — Entraînement (Diagramme Objet-Interaction)",
-            onLoad: () => renderDOIStep("spa-container", DATA_JAUNE.entrainement),
-            validate: () => validateDOIStep(DATA_JAUNE.entrainement)
-        },
-        {
-            title: "Niveau Jaune — Test (6 situations)",
-            onLoad: () => renderDOIStep("spa-container", DATA_JAUNE.test),
-            validate: () => {
-                const res = validateDOIStep(DATA_JAUNE.test);
-                if (res.success) {
-                    completedBelts.add("jaune");
-                    res.nextOverride = { part: "orange", step: 0 };
-                }
-                return res;
-            }
-        }
-    ],
-    orange: [
-        {
-            title: "Niveau Orange — Entraînement (Modélisation par des forces)",
-            onLoad: () => renderVectorStep("spa-container", DATA_ORANGE.entrainement, "orange"),
-            validate: () => validateVectorStep(DATA_ORANGE.entrainement)
-        },
-        {
-            title: "Niveau Orange — Test (Tracé des forces)",
-            onLoad: () => renderVectorStep("spa-container", DATA_ORANGE.test, "orange"),
-            validate: () => {
-                const res = validateVectorStep(DATA_ORANGE.test);
-                if (res.success) {
-                    completedBelts.add("orange");
-                    res.nextOverride = { part: "rouge", step: 0 };
-                }
-                return res;
-            }
-        }
-    ],
-    rouge: [
-        {
-            title: "Niveau Rouge — Entraînement (Le skieur sur le tire-fesse)",
-            onLoad: () => renderRougeStep("spa-container", DATA_ROUGE.entrainement),
-            validate: () => validateRougeStep(DATA_ROUGE.entrainement)
-        },
-        {
-            title: "Niveau Rouge — Test Final (Le cerf-volant)",
-            onLoad: () => renderRougeStep("spa-container", DATA_ROUGE.test),
-            validate: () => {
-                const res = validateRougeStep(DATA_ROUGE.test);
-                if (res.success) {
-                    completedBelts.add("rouge");
-                    document.getElementById('global-btn-home').style.display = 'inline-flex';
-                }
-                return res;
-            }
-        }
-    ]
+    jaune: JAUNE_DATA.map((it, idx) => {
+        const s = buildJauneStep(it, idx === JAUNE_DATA.length - 1);
+        s.itemRef = it;
+        return s;
+    }),
+    orange: ORANGE_DATA.map((it, idx) => buildOrangeStep(it, idx === ORANGE_DATA.length - 1)),
+    rouge: ROUGE_STEPS
 };
 
-// ============================================================================
-// ROUTEUR SPA & ACCUEIL
-// ============================================================================
-let pendingNextOverride = null;
-
+// ==========================================
+// 8. ROUTEUR SPA (ACCUEIL, NAVIGATION, RACCOURCIS)
+// ==========================================
 function renderHome() {
+    cleanupStepEvents();
     currentPart = "";
+    currentStepIndex = 0;
+    updateBeltBar();
+    saveProgress();
     document.getElementById('global-controls').style.display = 'none';
-    document.getElementById('level-Belt-bar').style.display = 'none';
+
+    const doneTag = (belt) => completedBelts.has(belt)
+        ? `<span class="tag is-success is-light is-small ml-2"><i class="fas fa-check mr-1"></i>Validé</span>`
+        : '';
 
     document.getElementById('spa-container').innerHTML = `
-        <div class="columns is-desktop is-variable is-5">
+        <div class="columns is-desktop is-variable is-5 mt-2">
             <div class="column is-7">
-                <div class="box content is-medium" style="height: 100%;">
-                    <h2 class="title is-4 has-text-primary"><i class="fas fa-compress-arrows-alt mr-2"></i>Séquence MI-2 : Modéliser une action par une force</h2>
-                    <p>En physique, lorsqu'un objet agit sur un autre (une raquette qui frappe une balle, un fil qui retient une lampe, la Terre qui nous attire), on parle d'<strong>action mécanique</strong>.</p>
-                    <p>Dans cette activité interactive par <strong>parcours de couleurs</strong>, vous allez apprendre à :</p>
-                    <ul>
-                        <li>Identifier le <strong>donneur</strong>, le <strong>receveur</strong> et distinguer une action <strong>de contact</strong> d'une action <strong>à distance</strong>.</li>
-                        <li>Construire un <strong>Diagramme Objet-Interaction (D.O.I.)</strong>.</li>
-                        <li>Modéliser une action mécanique par un <strong>vecteur force</strong> (point d'application, direction, sens, valeur en Newton).</li>
-                    </ul>
-                    <div class="notification is-info is-light mt-4 is-size-6">
-                        <i class="fas fa-route mr-2"></i><strong>Parcours adaptatif :</strong> Commencez au <strong>Niveau Bleu</strong>. Si vous réussissez le test Bleu du premier coup, vous sauterez directement au <strong>Niveau Jaune</strong> !
+                <div class="box content is-medium p-5" style="height: 100%;">
+                    <span class="tag is-link is-light is-medium mb-3">Seconde • Séquence MI-2 : Forces et lois de Newton</span>
+                    <h1 class="title is-3 has-text-primary mb-3">Découverte des Actions Mécaniques et des Forces</h1>
+                    <p>Cette activité interactive accompagne votre <strong>fiche papier</strong> pour apprendre à identifier les actions mécaniques, construire un Diagramme Objet-Interaction (D.O.I) et tracer des vecteurs forces.</p>
+                    
+                    <div class="notification is-info is-light my-4 py-3 px-4 is-size-6">
+                        <p class="has-text-weight-bold mb-2"><i class="fas fa-route mr-1"></i>Fonctionnement par ceintures de couleurs :</p>
+                        <ul class="mb-0" style="padding-left:18px;">
+                            <li>Vous démarrez au <strong>Niveau Bleu</strong>. Sans erreur sur la fin du niveau Bleu, vous passez directement au <strong>Niveau Jaune</strong> !</li>
+                            <li>Gardez votre <strong>fiche papier (avec les Mémentos Doc 1, 2 et 3)</strong> sous les yeux pour compléter les traces écrites demandées et le <strong>Niveau Rouge</strong>.</li>
+                        </ul>
+                    </div>
+
+                    <div class="has-text-centered mt-5">
+                        <button class="button is-link is-medium shadow" onclick="startPart('bleu', 0)">
+                            <span class="icon"><i class="fas fa-play"></i></span>
+                            <span>Démarrer au Niveau Bleu</span>
+                        </button>
+                        ${completedBelts.size > 0 ? `
+                            <div class="mt-3">
+                                <button type="button" class="button is-small is-light has-text-grey" onclick="resetSessionProgress()">
+                                    <span class="icon is-small"><i class="fas fa-rotate-left"></i></span>
+                                    <span>Réinitialiser la progression de cette session</span>
+                                </button>
+                            </div>
+                        ` : ''}
                     </div>
                 </div>
             </div>
 
             <div class="column is-5">
-                <h3 class="title is-5 mb-3 has-text-grey-dark"><i class="fas fa-flag-checkered mr-2"></i>Choisissez votre niveau</h3>
+                <h3 class="title is-4 mb-3 has-text-grey-dark"><i class="fas fa-layer-group mr-2"></i>Accès direct aux ceintures</h3>
                 <div class="is-flex is-flex-direction-column" style="gap: 10px;">
-                    <button class="button is-info is-light is-justify-content-flex-start p-4" style="height:auto;" onclick="jumpToLevel('bleu')">
+                    
+                    <button class="button is-white is-justify-content-flex-start p-4 shadow-sm" style="height:auto; border-left: 6px solid var(--c-bleu);" onclick="startPart('bleu', 0)">
                         <div class="has-text-left">
-                            <strong class="is-block is-size-6">1. Niveau BLEU — Actions mécaniques</strong>
-                            <span class="is-size-7">Identifier Donneur, Receveur, Contact et Distance (Tennis & Handball).</span>
+                            <strong class="is-block is-size-5" style="color:var(--c-bleu);">🔵 Niveau Bleu — Actions mécaniques ${doneTag('bleu')}</strong>
+                            <span class="is-size-7 has-text-grey">Donneur, Receveur, action de contact ou à distance (6 situations).</span>
                         </div>
                     </button>
-                    <button class="button is-success is-light is-justify-content-flex-start p-4" style="height:auto;" onclick="jumpToLevel('vert')">
+
+                    <button class="button is-white is-justify-content-flex-start p-4 shadow-sm" style="height:auto; border-left: 6px solid var(--c-vert);" onclick="startPart('vert', 0)">
                         <div class="has-text-left">
-                            <strong class="is-block is-size-6">2. Niveau VERT — Consolidation</strong>
-                            <span class="is-size-7">Situations complémentaires (Système solaire, aimant, kitesurf, iceberg).</span>
+                            <strong class="is-block is-size-5" style="color:var(--c-vert);">🟢 Niveau Vert — Renforcement ${doneTag('vert')}</strong>
+                            <span class="is-size-7 has-text-grey">Entraînement supplémentaire sur les types d'actions (6 situations).</span>
                         </div>
                     </button>
-                    <button class="button is-warning is-light is-justify-content-flex-start p-4" style="height:auto;" onclick="jumpToLevel('jaune')">
+
+                    <button class="button is-white is-justify-content-flex-start p-4 shadow-sm" style="height:auto; border-left: 6px solid var(--c-jaune);" onclick="startPart('jaune', 0)">
                         <div class="has-text-left">
-                            <strong class="is-block is-size-6">3. Niveau JAUNE — Diagramme Objet-Interaction</strong>
-                            <span class="is-size-7">Construire les D.O.I. interactifs pour faire le bilan des interactions.</span>
+                            <strong class="is-block is-size-5" style="color:#b45309;">🟡 Niveau Jaune — Diagramme D.O.I ${doneTag('jaune')}</strong>
+                            <span class="is-size-7 has-text-grey">Construire les D.O.I interactifs et éviter les intrus (9 situations).</span>
                         </div>
                     </button>
-                    <button class="button is-light is-justify-content-flex-start p-4" style="height:auto; border-left: 5px solid #ff7700;" onclick="jumpToLevel('orange')">
+
+                    <button class="button is-white is-justify-content-flex-start p-4 shadow-sm" style="height:auto; border-left: 6px solid var(--c-orange);" onclick="startPart('orange', 0)">
                         <div class="has-text-left">
-                            <strong class="is-block is-size-6" style="color:#d96000;">4. Niveau ORANGE — Vecteurs Forces</strong>
-                            <span class="is-size-7">Caractériser et tracer les vecteurs forces directement sur les schémas.</span>
+                            <strong class="is-block is-size-5" style="color:var(--c-orange);">🟠 Niveau Orange — Vecteurs Forces ${doneTag('orange')}</strong>
+                            <span class="is-size-7 has-text-grey">Caractéristiques et tracé des vecteurs sur schéma (7 situations).</span>
                         </div>
                     </button>
-                    <button class="button is-danger is-light is-justify-content-flex-start p-4" style="height:auto;" onclick="jumpToLevel('rouge')">
+
+                    <button class="button is-white is-justify-content-flex-start p-4 shadow-sm" style="height:auto; border-left: 6px solid var(--c-rouge);" onclick="startPart('rouge', 0)">
                         <div class="has-text-left">
-                            <strong class="is-block is-size-6">5. Niveau ROUGE — Synthèse & Calcul du poids</strong>
-                            <span class="is-size-7">Étude complète du skieur sur piste inclinée et du cerf-volant (P = m × g).</span>
+                            <strong class="is-block is-size-5" style="color:var(--c-rouge);">🔴 Niveau Rouge — Défi sur Papier ${doneTag('rouge')}</strong>
+                            <span class="is-size-7 has-text-grey">Skieur et Cerf-volant : vérification de P = m × g.</span>
                         </div>
                     </button>
+
                 </div>
             </div>
-        </div>`;
+        </div>
+    `;
 }
 
-window.jumpToLevel = function(partKey) {
+function startPart(partKey, stepIdx = 0) {
     currentPart = partKey;
-    currentStepIndex = 0;
+    currentStepIndex = stepIdx;
+    if (partKey === 'bleu' && stepIdx === 0) {
+        bleuEvalFirstTrySuccess = true;
+    }
+    updateBeltBar();
     renderStep();
-};
-
-function updateBeltBarUI() {
-    const bar = document.getElementById('level-Belt-bar');
-    bar.style.display = 'block';
-    document.querySelectorAll('.belt-btn').forEach(btn => {
-        const p = btn.getAttribute('data-part');
-        btn.classList.remove('active-belt', 'completed-belt');
-        if (p === currentPart) btn.classList.add('active-belt');
-        else if (completedBelts.has(p)) btn.classList.add('completed-belt');
-    });
-    const step = STRUCTURE_TP[currentPart][currentStepIndex];
-    document.getElementById('step-title-badge').textContent = step.title;
 }
 
 function renderStep() {
-    pendingNextOverride = null;
-    updateBeltBarUI();
-
+    cleanupStepEvents();
+    saveProgress();
     const step = STRUCTURE_TP[currentPart][currentStepIndex];
+    const totalSteps = STRUCTURE_TP[currentPart].length;
+
+    const headerBadge = `
+        <div class="is-flex is-justify-content-space-between is-align-items-center mb-2">
+            <h2 class="title is-5 m-0 has-text-primary">${step.title}</h2>
+            <span class="tag is-medium is-light has-text-weight-bold">Étape ${currentStepIndex + 1} / ${totalSteps}</span>
+        </div>
+    `;
+
+    document.getElementById('spa-container').innerHTML = headerBadge + step.html;
+
     const ctrl = document.getElementById('global-controls');
     ctrl.style.display = 'block';
 
@@ -912,43 +1249,70 @@ function renderStep() {
     msgBox.innerHTML = "";
     msgBox.className = "has-text-centered";
 
-    btnNext.style.display = 'none';
+    window.pendingNextOverride = null;
+
+    if (step.type === "game") {
+        btnNext.style.display = 'none';
+    } else {
+        btnNext.style.display = 'inline-flex';
+    }
+
     document.getElementById('global-btn-home').style.display = 'none';
 
-    btnVerif.style.display = "inline-flex";
-    btnVerif.onclick = executeValidation;
+    if (step.type === "game" && step.validate) {
+        btnVerif.style.display = "inline-flex";
+        btnVerif.disabled = false;
+        btnVerif.onclick = executeValidation;
+    } else {
+        btnVerif.style.display = "none";
+    }
 
     if (step.actionLabel && step.onAction) {
         btnAction.style.display = "inline-flex";
-        btnAction.textContent = step.actionLabel;
+        btnAction.innerHTML = `<i class="fas fa-undo mr-1"></i> ${step.actionLabel}`;
         btnAction.onclick = step.onAction;
     } else {
         btnAction.style.display = "none";
     }
 
     if (step.onLoad) step.onLoad();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function executeValidation() {
     const step = STRUCTURE_TP[currentPart][currentStepIndex];
     const res = step.validate();
+    saveProgress();
     const msgBox = document.getElementById('global-message-box');
 
     msgBox.innerHTML = res.msg;
     msgBox.className = res.success
-        ? "notification is-success is-light py-2 px-4 m-0"
-        : "notification is-danger is-light py-2 px-4 m-0";
+        ? "notification is-success is-light py-2 px-4 m-0 is-size-6"
+        : "notification is-danger is-light py-2 px-4 m-0 is-size-6";
 
     msgBox.classList.remove('feedback-anim');
     void msgBox.offsetWidth;
     msgBox.classList.add('feedback-anim');
 
     if (res.success) {
-        pendingNextOverride = res.nextOverride || null;
+        if (res.nextOverride) {
+            window.pendingNextOverride = res.nextOverride;
+        }
         const btnNext = document.getElementById('global-btn-next');
-        if (!(currentPart === 'rouge' && currentStepIndex === STRUCTURE_TP.rouge.length - 1)) {
+        if (currentPart !== 'rouge') {
             btnNext.style.display = 'inline-flex';
+            if (step.requirePaperConfirm) {
+                btnNext.disabled = true;
+                const confirmWrap = document.createElement('label');
+                confirmWrap.className = 'paper-confirm-wrap';
+                confirmWrap.innerHTML = `<input type="checkbox" id="paper-confirm-chk"> <span>J'ai bien recopié cette trace écrite sur ma fiche papier</span>`;
+                confirmWrap.querySelector('input').addEventListener('change', (e) => {
+                    btnNext.disabled = !e.target.checked;
+                });
+                msgBox.appendChild(document.createElement('br'));
+                msgBox.appendChild(confirmWrap);
+            } else {
+                btnNext.disabled = false;
+            }
         }
     }
 }
@@ -963,10 +1327,10 @@ document.getElementById('global-btn-prev').onclick = () => {
 };
 
 document.getElementById('global-btn-next').onclick = () => {
-    if (pendingNextOverride) {
-        currentPart = pendingNextOverride.part;
-        currentStepIndex = pendingNextOverride.step;
-        renderStep();
+    if (window.pendingNextOverride) {
+        const target = window.pendingNextOverride;
+        window.pendingNextOverride = null;
+        startPart(target.part, target.step || 0);
         return;
     }
     if (currentStepIndex < STRUCTURE_TP[currentPart].length - 1) {
@@ -977,24 +1341,49 @@ document.getElementById('global-btn-next').onclick = () => {
     }
 };
 
-document.getElementById('global-btn-home').onclick = () => renderHome();
-window.onload = () => renderHome();
+document.getElementById('global-btn-home').onclick = () => {
+    renderHome();
+};
 
-// Raccourcis clavier Enseignant (Ctrl + Flèches)
+function initApp() {
+    if (loadProgress()) {
+        updateBeltBar();
+        renderStep();
+    } else {
+        renderHome();
+    }
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initApp);
+} else {
+    initApp();
+}
+
+// Raccourcis clavier Enseignant / Debug (Ctrl + Flèches Gauche/Droite)
 document.addEventListener('keydown', (event) => {
-    if (event.ctrlKey && event.key === 'ArrowRight' && currentPart !== "") {
+    if (event.ctrlKey && event.key === 'ArrowRight') {
         event.preventDefault();
-        if (currentStepIndex < STRUCTURE_TP[currentPart].length - 1) {
-            currentStepIndex++;
-            renderStep();
+        if (currentPart !== "") {
+            if (currentStepIndex < STRUCTURE_TP[currentPart].length - 1) {
+                currentStepIndex++;
+                renderStep();
+            } else {
+                const order = ['bleu', 'vert', 'jaune', 'orange', 'rouge'];
+                const nextIdx = order.indexOf(currentPart) + 1;
+                if (nextIdx < order.length) startPart(order[nextIdx], 0);
+                else renderHome();
+            }
         }
-    } else if (event.ctrlKey && event.key === 'ArrowLeft' && currentPart !== "") {
+    } else if (event.ctrlKey && event.key === 'ArrowLeft') {
         event.preventDefault();
-        if (currentStepIndex > 0) {
-            currentStepIndex--;
-            renderStep();
-        } else {
-            renderHome();
+        if (currentPart !== "") {
+            if (currentStepIndex > 0) {
+                currentStepIndex--;
+                renderStep();
+            } else {
+                renderHome();
+            }
         }
     }
 });
