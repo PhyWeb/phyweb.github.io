@@ -1009,8 +1009,21 @@ svgEl.addEventListener('pointerup', (e) => {
     }
 });
 
-// Double-clic sur la poignée de rotation -> réinitialiser l'angle à 0° autour du centre visuel
+// Double-clic : sur une légende -> édition directe du texte ; sur la poignée de rotation -> réinitialiser à 0°
 svgEl.addEventListener('dblclick', (e) => {
+    const labelEl = e.target.closest('[data-kind="label"][data-id]');
+    if (labelEl) {
+        store.selection = { kind: 'label', id: labelEl.dataset.id };
+        renderOverlay();
+        renderInspector();
+        const ta = inspectorBodyEl.querySelector('textarea[data-prop="text"]');
+        if (ta) {
+            ta.focus();
+            ta.select();
+        }
+        return;
+    }
+
     const handleEl = e.target.closest('[data-handle="item-rotate"]');
     if (!handleEl || store.selection?.kind !== 'item') return;
     const item = store.getSelectedElement();
@@ -1540,8 +1553,32 @@ function renderConnectorInspector(conn) {
     }
 }
 
+const LABEL_SYMBOLS = [
+    { ch: '₀', title: 'Indice 0' },
+    { ch: '₁', title: 'Indice 1' },
+    { ch: '₂', title: 'Indice 2' },
+    { ch: '₃', title: 'Indice 3' },
+    { ch: '₄', title: 'Indice 4' },
+    { ch: '⁺', title: 'Charge +' },
+    { ch: '⁻', title: 'Charge −' },
+    { ch: '²', title: 'Exposant 2' },
+    { ch: '³', title: 'Exposant 3' },
+    { ch: '⁻¹', title: 'Exposant −1 (ex. mol·L⁻¹)' },
+    { ch: '°', title: 'Degré' },
+    { ch: 'µ', title: 'Micro (µ)' },
+    { ch: 'Ω', title: 'Ohm (Ω)' },
+    { ch: 'σ', title: 'Conductivité (σ)' },
+    { ch: 'λ', title: 'Longueur d’onde (λ)' },
+    { ch: '·', title: 'Point médian (mol·L⁻¹)' },
+    { ch: '→', title: 'Flèche réaction' },
+    { ch: '⇌', title: 'Équilibre chimique' }
+];
+
 function renderLabelInspector(lbl) {
     inspectorTitleEl.innerHTML = '<i class="fas fa-font mr-1"></i> Légende';
+    const symbolButtons = LABEL_SYMBOLS.map(s =>
+        `<button type="button" class="symbol-btn" data-symbol="${s.ch}" title="${s.title}">${s.ch}</button>`
+    ).join('');
     inspectorBodyEl.innerHTML = `
       <div class="prop-section">
         <div class="btn-row">
@@ -1552,6 +1589,7 @@ function renderLabelInspector(lbl) {
       <div class="prop-section">
         <div class="prop-section-title">Texte</div>
         <textarea class="prop-textarea" data-prop="text">${lbl.text || ''}</textarea>
+        <div class="symbol-palette" aria-label="Symboles scientifiques">${symbolButtons}</div>
         <div class="prop-row">
           <label>Taille police</label>
           <div class="prop-range-wrap">
@@ -1588,6 +1626,22 @@ function renderLabelInspector(lbl) {
     const ta = inspectorBodyEl.querySelector('textarea[data-prop="text"]');
     ta.addEventListener('input', () => { lbl.text = ta.value; renderScene(); });
     ta.addEventListener('change', () => store.pushHistory());
+
+    inspectorBodyEl.querySelectorAll('.symbol-btn').forEach(btn => {
+        btn.addEventListener('mousedown', (ev) => ev.preventDefault());
+        btn.addEventListener('click', () => {
+            const sym = btn.dataset.symbol || '';
+            const start = ta.selectionStart ?? ta.value.length;
+            const end = ta.selectionEnd ?? ta.value.length;
+            store.pushHistory();
+            ta.value = ta.value.slice(0, start) + sym + ta.value.slice(end);
+            lbl.text = ta.value;
+            renderScene();
+            ta.focus();
+            const pos = start + sym.length;
+            ta.setSelectionRange(pos, pos);
+        });
+    });
 
     const inpFs = inspectorBodyEl.querySelector('#inpFontSize');
     inpFs.addEventListener('input', () => {

@@ -439,6 +439,31 @@ input, select, textarea {
     font-family: inherit;
 }
 
+.symbol-palette {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 3px;
+}
+
+.symbol-btn {
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    background: #f8fafc;
+    color: var(--schemas-text);
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 3px 0;
+    cursor: pointer;
+    line-height: 1.2;
+    transition: background 0.1s, border-color 0.1s;
+}
+
+.symbol-btn:hover {
+    background: var(--schemas-accent-soft);
+    border-color: var(--schemas-accent);
+    color: var(--schemas-accent);
+}
+
 .color-swatches {
     display: flex;
     flex-wrap: wrap;
