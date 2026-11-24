@@ -3,10 +3,71 @@
 // ==========================================
 // 1. ÉTAT GLOBAL & BARRE DES CEINTURES
 // ==========================================
+const SESSION_STORAGE_KEY = 'phyweb_force2_progress';
 let currentPart = "";
 let currentStepIndex = 0;
 let completedBelts = new Set();
 let bleuEvalFirstTrySuccess = true; // Passe à false si erreur sur les étapes 4 à 6 du niveau Bleu
+let vectorDragAbortController = null;
+
+function saveProgress() {
+    try {
+        sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({
+            currentPart,
+            currentStepIndex,
+            completedBelts: Array.from(completedBelts),
+            bleuEvalFirstTrySuccess
+        }));
+    } catch (e) {
+        // Ignore si sessionStorage est indisponible
+    }
+}
+
+function loadProgress() {
+    try {
+        const raw = sessionStorage.getItem(SESSION_STORAGE_KEY);
+        if (!raw) return false;
+        const data = JSON.parse(raw);
+        if (Array.isArray(data.completedBelts)) {
+            completedBelts = new Set(data.completedBelts);
+        }
+        if (typeof data.bleuEvalFirstTrySuccess === 'boolean') {
+            bleuEvalFirstTrySuccess = data.bleuEvalFirstTrySuccess;
+        }
+        if (data.currentPart && STRUCTURE_TP[data.currentPart]) {
+            const idx = Number(data.currentStepIndex);
+            if (Number.isInteger(idx) && idx >= 0 && idx < STRUCTURE_TP[data.currentPart].length) {
+                currentPart = data.currentPart;
+                currentStepIndex = idx;
+                return true;
+            }
+        }
+    } catch (e) {
+        // Ignore si données corrompues ou sessionStorage indisponible
+    }
+    return false;
+}
+
+window.resetSessionProgress = function() {
+    completedBelts.clear();
+    bleuEvalFirstTrySuccess = true;
+    currentPart = "";
+    currentStepIndex = 0;
+    try {
+        sessionStorage.removeItem(SESSION_STORAGE_KEY);
+    } catch (e) {
+        // Ignore
+    }
+    renderHome();
+};
+
+function cleanupStepEvents() {
+    if (vectorDragAbortController) {
+        vectorDragAbortController.abort();
+        vectorDragAbortController = null;
+    }
+    window.isDraggingVector = false;
+}
 
 function updateBeltBar() {
     const bar = document.getElementById('belt-tracker');
@@ -35,10 +96,15 @@ function buildBleuStep(item, isLast = false) {
     return {
         type: "game",
         title: item.title,
+        requirePaperConfirm: Boolean(item.paperNotice),
         html: `
             <div class="box content consigne-box">
                 <div class="is-flex is-justify-content-space-between is-align-items-center is-flex-wrap-wrap" style="gap: 8px;">
-                    <span class="is-size-6"><strong>Système étudié (Receveur) : <span class="tag is-link is-medium">${item.receveur}</span></strong> — Cliquez sur chaque donneur qui agit sur <em>${item.receveur}</em> puis complétez sa carte.</span>
+                    <span class="is-size-6"><strong>Système étudié (Receveur) : <span class="tag is-link is-medium">${item.receveur}</span></strong> — Sélectionnez chaque donneur qui agit sur <em>${item.receveur}</em>, complétez sa carte, puis cliquez sur <strong>Valider</strong>.</span>
+                    ${item.evalMode
+                        ? `<span class="tag is-primary is-light is-normal has-text-weight-semibold"><i class="fas fa-star mr-1"></i>Test de passage direct → Jaune</span>`
+                        : `<span class="tag is-light is-normal"><i class="fas fa-graduation-cap mr-1"></i>Entraînement guidé</span>`}
+                    ${item.airNeglected ? `<span class="tag is-info is-light is-normal"><i class="fas fa-wind mr-1"></i>Hypothèse : on néglige l'action de l'air</span>` : ''}
                     ${item.paperNotice ? `<span class="tag is-warning is-light is-medium has-text-weight-bold">${item.paperNotice}</span>` : ''}
                 </div>
             </div>
@@ -46,7 +112,7 @@ function buildBleuStep(item, isLast = false) {
                 <div class="column is-5">
                     <div class="scene-box h-100">
                         <div class="scene-svg-container mb-3">${SCENE_SVGS[item.svg]}</div>
-                        <p class="is-size-6 has-text-grey-dark has-text-weight-semibold has-text-centered mb-2">Qui agit sur <strong>${item.receveur}</strong> ? (Cliquez)</p>
+                        <p class="is-size-6 has-text-grey-dark has-text-weight-semibold has-text-centered mb-2">Qui agit sur <strong>${item.receveur}</strong> ? (Cliquez pour ajouter / retirer)</p>
                         <div id="actors-pool" class="is-flex is-flex-wrap-wrap is-justify-content-center" style="gap: 8px;"></div>
                         <div id="trap-feedback" class="notification is-danger is-light mt-3 py-2 px-3 is-size-6" style="display:none; width:100%;"></div>
                     </div>
@@ -66,33 +132,46 @@ function buildBleuStep(item, isLast = false) {
             const container = document.getElementById('actions-cards-container');
             const trapBox = document.getElementById('trap-feedback');
 
+            const updateEmptyHint = () => {
+                const hint = document.getElementById('empty-actions-hint');
+                if (hint) hint.style.display = window.currentBleuSelected.size === 0 ? 'block' : 'none';
+            };
+
+            const removeCandidate = (candId) => {
+                window.currentBleuSelected.delete(candId);
+                const chip = document.getElementById('chip-bleu-' + candId);
+                if (chip) chip.classList.remove('selected', 'trap-shake');
+                const card = document.getElementById('card-act-' + candId);
+                if (card) card.remove();
+                updateEmptyHint();
+            };
+
             item.candidates.forEach(cand => {
-                const btn = document.createElement('div');
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.id = 'chip-bleu-' + cand.id;
                 btn.className = 'actor-chip';
                 btn.innerHTML = cand.label;
                 btn.onclick = () => {
                     trapBox.style.display = 'none';
-                    if (!cand.valid) {
-                        if (item.evalMode) bleuEvalFirstTrySuccess = false;
-                        btn.classList.remove('trap-shake');
-                        void btn.offsetWidth;
-                        btn.classList.add('trap-shake');
-                        trapBox.innerHTML = `<i class="fas fa-exclamation-triangle mr-1"></i> ${cand.trapMsg}`;
-                        trapBox.style.display = 'block';
+                    btn.classList.remove('trap-shake');
+                    if (window.currentBleuSelected.has(cand.id)) {
+                        removeCandidate(cand.id);
                         return;
                     }
-                    if (window.currentBleuSelected.has(cand.id)) return;
                     window.currentBleuSelected.add(cand.id);
                     btn.classList.add('selected');
-                    const hint = document.getElementById('empty-actions-hint');
-                    if (hint) hint.style.display = 'none';
+                    updateEmptyHint();
 
                     const card = document.createElement('div');
                     card.className = 'action-detail-card';
                     card.id = 'card-act-' + cand.id;
                     card.innerHTML = `
-                        <div class="is-flex is-justify-content-space-between is-align-items-center mb-2">
-                            <span class="tag is-dark is-normal">Donneur : ${cand.label}</span>
+                        <div class="is-flex is-justify-content-space-between is-align-items-center is-flex-wrap-wrap mb-2" style="gap: 6px;">
+                            <div class="is-flex is-align-items-center" style="gap: 6px;">
+                                <span class="tag is-dark is-normal">Donneur : ${cand.label}</span>
+                                <button type="button" class="delete is-small" aria-label="Retirer ${cand.id}" title="Retirer ce donneur"></button>
+                            </div>
                             <div class="is-flex is-align-items-center" style="gap: 8px;">
                                 <span class="is-size-6 has-text-weight-bold">Type :</span>
                                 <div class="buttons has-addons m-0">
@@ -122,28 +201,70 @@ function buildBleuStep(item, isLast = false) {
                             <span><em>»</em></span>
                         </div>
                     `;
+                    card.querySelector('.delete').addEventListener('click', () => {
+                        trapBox.style.display = 'none';
+                        removeCandidate(cand.id);
+                    });
                     container.appendChild(card);
                 };
                 pool.appendChild(btn);
             });
         },
         validate: () => {
+            const trapBox = document.getElementById('trap-feedback');
+            trapBox.style.display = 'none';
+
+            // 1. Vérifier les intrus sélectionnés (validation différée anti-clic au hasard)
+            const selectedTraps = item.candidates.filter(c => !c.valid && window.currentBleuSelected.has(c.id));
+            if (selectedTraps.length > 0) {
+                if (item.evalMode) bleuEvalFirstTrySuccess = false;
+                selectedTraps.forEach(t => {
+                    const chip = document.getElementById('chip-bleu-' + t.id);
+                    if (chip) {
+                        chip.classList.remove('trap-shake');
+                        void chip.offsetWidth;
+                        chip.classList.add('trap-shake');
+                    }
+                    const card = document.getElementById('card-act-' + t.id);
+                    if (card) card.className = 'action-detail-card incorrect';
+                });
+                trapBox.innerHTML = `<i class="fas fa-exclamation-triangle mr-1"></i> ${selectedTraps[0].trapMsg}`;
+                trapBox.style.display = 'block';
+                return {
+                    success: false,
+                    msg: `Intrus sélectionné (${selectedTraps[0].label}) : retire-le en cliquant dessus ou sur la croix !`
+                };
+            }
+
+            // 2. Vérifier qu'il ne manque pas de donneurs valides
             const validCands = item.candidates.filter(c => c.valid);
-            if (window.currentBleuSelected.size < validCands.length) {
+            const missingCount = validCands.filter(c => !window.currentBleuSelected.has(c.id)).length;
+            if (missingCount > 0) {
                 if (item.evalMode) bleuEvalFirstTrySuccess = false;
                 return {
                     success: false,
-                    msg: `Il manque encore <strong>${validCands.length - window.currentBleuSelected.size} donneur(s)</strong> qui agissent sur ${item.receveur}.`
+                    msg: `Il manque encore <strong>${missingCount} donneur(s)</strong> qui agissent sur ${item.receveur}.`
                 };
             }
+
+            // 3. Vérifier le détail de chaque carte (type, préposition, receveur)
             let errors = 0;
             validCands.forEach(cand => {
                 const card = document.getElementById('card-act-' + cand.id);
                 const chosenType = card.getAttribute('data-type');
-                const chosenPrep = document.getElementById('sel-prep-' + cand.id).value;
-                const chosenRec = document.getElementById('sel-rec-' + cand.id).value;
+                const selPrep = document.getElementById('sel-prep-' + cand.id);
+                const selRec = document.getElementById('sel-rec-' + cand.id);
 
-                if (chosenType === cand.type && chosenPrep === cand.prep && chosenRec === item.receveur) {
+                const typeOk = chosenType === cand.type;
+                const prepOk = selPrep.value === cand.prep;
+                const recOk = selRec.value === item.receveur;
+
+                selPrep.parentElement.classList.toggle('is-danger', !prepOk);
+                selPrep.parentElement.classList.toggle('is-success', prepOk);
+                selRec.parentElement.classList.toggle('is-danger', !recOk);
+                selRec.parentElement.classList.toggle('is-success', recOk);
+
+                if (typeOk && prepOk && recOk) {
                     card.className = 'action-detail-card correct';
                 } else {
                     card.className = 'action-detail-card incorrect';
@@ -153,7 +274,7 @@ function buildBleuStep(item, isLast = false) {
 
             if (errors > 0) {
                 if (item.evalMode) bleuEvalFirstTrySuccess = false;
-                return { success: false, msg: `Il y a <strong>${errors} erreur(s)</strong> dans les cartes en rouge.` };
+                return { success: false, msg: `Il y a <strong>${errors} erreur(s)</strong> dans les cartes en rouge (vérifie le type et la phrase).` };
             }
 
             if (isLast) {
@@ -162,13 +283,13 @@ function buildBleuStep(item, isLast = false) {
                 if (bleuEvalFirstTrySuccess) {
                     return {
                         success: true,
-                        msg: `🎉 <strong>Niveau Bleu réussi sans erreur !</strong> N'oublie pas ta trace écrite papier, puis passe directement au <strong>Niveau JAUNE</strong> !`,
+                        msg: `🎉 <strong>Niveau Bleu réussi sans erreur !</strong> Recopie ta trace écrite papier puis passe directement au <strong>Niveau JAUNE</strong> !`,
                         nextOverride: { part: 'jaune', step: 0 }
                     };
                 } else {
                     return {
                         success: true,
-                        msg: `👍 Niveau Bleu terminé ! Passons par le <strong>Niveau VERT</strong> pour consolider tout ça.`,
+                        msg: `👍 Niveau Bleu terminé ! Recopie ta trace écrite papier puis passons par le <strong>Niveau VERT</strong> pour consolider tout ça.`,
                         nextOverride: { part: 'vert', step: 0 }
                     };
                 }
@@ -207,6 +328,7 @@ function buildVertStep(batchIndex, items) {
                                 <span class="has-text-weight-bold is-size-6">${it.title}</span>
                                 <span class="tag is-info is-light is-normal">Receveur : <strong>&nbsp;${it.receveur}</strong></span>
                             </div>
+                            ${it.airNeglected ? `<p class="is-size-7 has-text-info mb-2"><i class="fas fa-wind mr-1"></i>Hypothèse : on néglige l'action de l'air.</p>` : ''}
                             <div class="scene-svg-container mb-3" style="max-width:100%; height:150px;">${SCENE_SVGS[it.svg]}</div>
                             ${it.options.map(opt => `
                                 <div class="is-flex is-justify-content-space-between is-align-items-center mb-2 pb-1" style="border-bottom: 1px solid #f1f5f9; gap: 6px;">
@@ -270,6 +392,7 @@ function buildJauneStep(item, isLast = false) {
     return {
         type: "game",
         title: item.title,
+        requirePaperConfirm: Boolean(item.paperNotice),
         actionLabel: "Réinitialiser",
         onAction: () => {
             window.doiActors = {};
@@ -279,6 +402,7 @@ function buildJauneStep(item, isLast = false) {
             <div class="box content consigne-box">
                 <div class="is-flex is-justify-content-space-between is-align-items-center is-flex-wrap-wrap" style="gap: 8px;">
                     <span class="is-size-6"><strong>1.</strong> Cliquez sur un objet pour l'ajouter ou le retirer. &nbsp;|&nbsp; <strong>2. Cliquez sur une flèche</strong> pour basculer entre <strong>Trait plein (Contact)</strong> et <strong>Pointillés (À distance)</strong>.</span>
+                    ${item.airNeglected ? `<span class="tag is-info is-light is-normal"><i class="fas fa-wind mr-1"></i>Hypothèse : on néglige l'action de l'air</span>` : ''}
                     ${item.paperNotice ? `<span class="tag is-warning is-light is-medium has-text-weight-bold">${item.paperNotice}</span>` : ''}
                 </div>
             </div>
@@ -354,7 +478,8 @@ function renderDoiWorkspace(item) {
     pool.innerHTML = '';
     item.pool.forEach(actorName => {
         const isPlaced = window.doiActors.hasOwnProperty(actorName);
-        const chip = document.createElement('div');
+        const chip = document.createElement('button');
+        chip.type = 'button';
         chip.className = 'actor-chip ' + (isPlaced ? 'selected' : '');
         chip.innerHTML = (isPlaced ? '<i class="fas fa-check"></i> ' : '<i class="fas fa-plus"></i> ') + actorName;
         chip.onclick = () => {
@@ -385,14 +510,15 @@ function renderDoiWorkspace(item) {
         </defs>
     `;
 
-    // Demi-dimensions des rectangles d'objets (136 x 54)
-    const halfW = 68, halfH = 27;
+    // Demi-hauteur des rectangles d'objets (largeur adaptée au texte)
+    const halfH = 27;
 
     const placedNames = Object.keys(window.doiActors);
     placedNames.forEach((name, idx) => {
         const pos = positions[idx % positions.length];
         const type = window.doiActors[name];
         const dash = type === 'distance' ? 'stroke-dasharray="8,6"' : '';
+        const halfW = Math.max(68, Math.ceil(name.length * 4.5) + 14);
 
         const dx = pos.x - cx;
         const dy = pos.y - cy;
@@ -402,7 +528,7 @@ function renderDoiWorkspace(item) {
         const startX = cx + Math.cos(angle) * 72;
         const startY = cy + Math.sin(angle) * 38;
 
-        // Point d'arrivée sur le bord du RECTANGLE de l'objet (halfW=68, halfH=27)
+        // Point d'arrivée sur le bord du RECTANGLE de l'objet
         const absCos = Math.abs(Math.cos(angle));
         const absSin = Math.abs(Math.sin(angle));
         const distRect = Math.min(
@@ -414,12 +540,12 @@ function renderDoiWorkspace(item) {
 
         // Objet représenté par un RECTANGLE et Système par un OVALE !
         svgHTML += `
-            <g class="doi-line-group" onclick="toggleDoiArrow('${name.replace(/'/g, "\'")}')" style="cursor:pointer;">
+            <g class="doi-line-group" data-doi-toggle="${idx}" style="cursor:pointer;">
                 <line x1="${startX}" y1="${startY}" x2="${endX}" y2="${endY}" class="doi-line-hit"/>
                 <line x1="${startX}" y1="${startY}" x2="${endX}" y2="${endY}" class="doi-line-vis" ${dash}
                       marker-start="url(#doi-arrow-end)" marker-end="url(#doi-arrow-end)"/>
             </g>
-            <g transform="translate(${pos.x}, ${pos.y})" onclick="removeDoiActor('${name.replace(/'/g, "\'")}')" style="cursor:pointer;">
+            <g transform="translate(${pos.x}, ${pos.y})" data-doi-remove="${idx}" style="cursor:pointer;">
                 <title>Cliquer pour retirer du diagramme</title>
                 <rect x="${-halfW}" y="${-halfH}" width="${halfW * 2}" height="${halfH * 2}" rx="4" fill="#ffffff" stroke="#2563eb" stroke-width="2.5"/>
                 <text x="0" y="5" text-anchor="middle" fill="#1e293b" font-size="14" font-weight="bold">${name}</text>
@@ -436,6 +562,15 @@ function renderDoiWorkspace(item) {
     `;
 
     svg.innerHTML = svgHTML;
+
+    svg.querySelectorAll('[data-doi-toggle]').forEach(el => {
+        const name = placedNames[Number(el.getAttribute('data-doi-toggle'))];
+        el.addEventListener('click', () => window.toggleDoiArrow(name));
+    });
+    svg.querySelectorAll('[data-doi-remove]').forEach(el => {
+        const name = placedNames[Number(el.getAttribute('data-doi-remove'))];
+        el.addEventListener('click', () => window.removeDoiActor(name));
+    });
 }
 
 window.toggleDoiArrow = function(name) {
@@ -459,6 +594,7 @@ function buildOrangeStep(item, isLast = false) {
     return {
         type: "game",
         title: item.title,
+        requirePaperConfirm: Boolean(item.paperNotice),
         actionLabel: "Effacer les flèches",
         onAction: () => {
             window.drawnVectors = {};
@@ -468,6 +604,7 @@ function buildOrangeStep(item, isLast = false) {
             <div class="box content consigne-box">
                 <div class="is-flex is-justify-content-space-between is-align-items-center is-flex-wrap-wrap" style="gap: 8px;">
                     <span class="is-size-6"><strong>${item.subtitle}</strong> Sélectionnez la force à droite puis tirez la flèche depuis un point d'ancrage bleu (●).</span>
+                    ${item.airNeglected ? `<span class="tag is-info is-light is-normal"><i class="fas fa-wind mr-1"></i>Hypothèse : on néglige l'action de l'air</span>` : ''}
                     ${item.paperNotice ? `<span class="tag is-warning is-light is-medium has-text-weight-bold">${item.paperNotice}</span>` : ''}
                 </div>
             </div>
@@ -560,17 +697,41 @@ function buildOrangeStep(item, isLast = false) {
         },
         validate: () => {
             let textErrors = 0;
+            const wrongFields = new Set();
+
             for (let f of item.forces) {
-                const pt = document.getElementById('f-pt-' + f.id).value;
-                const dir = document.getElementById('f-dir-' + f.id).value;
-                const sens = document.getElementById('f-sens-' + f.id).value;
+                const ptEl = document.getElementById('f-pt-' + f.id);
+                const dirEl = document.getElementById('f-dir-' + f.id);
+                const sensEl = document.getElementById('f-sens-' + f.id);
                 const card = document.getElementById('fcard-' + f.id);
 
-                let ok = (pt === f.expectedPoint && dir === f.expectedDirection && sens === f.expectedSens);
+                const ptOk = ptEl.value === f.expectedPoint;
+                const dirOk = dirEl.value === f.expectedDirection;
+                const sensOk = sensEl.value === f.expectedSens;
+
+                ptEl.parentElement.classList.toggle('is-danger', !ptOk);
+                ptEl.parentElement.classList.toggle('is-success', ptOk);
+                dirEl.parentElement.classList.toggle('is-danger', !dirOk);
+                dirEl.parentElement.classList.toggle('is-success', dirOk);
+                sensEl.parentElement.classList.toggle('is-danger', !sensOk);
+                sensEl.parentElement.classList.toggle('is-success', sensOk);
+
+                if (!ptOk) wrongFields.add("le point d'application");
+                if (!dirOk) wrongFields.add("la direction");
+                if (!sensOk) wrongFields.add("le sens");
+
+                let valOk = true;
                 if (f.askValue) {
-                    const valStr = document.getElementById('f-val-' + f.id).value.replace(',', '.').trim();
-                    if (Math.abs(parseFloat(valStr) - f.expectedValue) > 0.02) ok = false;
+                    const valEl = document.getElementById('f-val-' + f.id);
+                    const valStr = valEl.value.replace(',', '.').trim();
+                    const val = parseFloat(valStr);
+                    valOk = !(valStr === '' || isNaN(val) || Math.abs(val - f.expectedValue) > 0.02);
+                    valEl.classList.toggle('is-danger', !valOk);
+                    valEl.classList.toggle('is-success', valOk);
+                    if (!valOk) wrongFields.add("la valeur");
                 }
+
+                const ok = ptOk && dirOk && sensOk && valOk;
                 if (!ok) {
                     textErrors++;
                     card.style.backgroundColor = '#fef2f2';
@@ -580,9 +741,10 @@ function buildOrangeStep(item, isLast = false) {
             }
 
             if (textErrors > 0) {
+                const details = Array.from(wrongFields).join(', ');
                 return {
                     success: false,
-                    msg: `Vérifie les caractéristiques à gauche (${textErrors} force(s) comporte(nt) des erreurs).`
+                    msg: `Vérifie les champs en rouge à gauche : <strong>${details}</strong>.`
                 };
             }
 
@@ -600,13 +762,20 @@ function buildOrangeStep(item, isLast = false) {
                         msg: `Le vecteur <strong>${f.htmlLabel}</strong> ne part pas du bon point d'application sur le schéma !`
                     };
                 }
-                let diff = Math.abs(vec.angle - f.expectedAngle);
-                if (diff > 180) diff = 360 - diff;
+                const diff = Math.abs((((vec.angle - f.expectedAngle) % 360) + 540) % 360 - 180);
                 const tol = f.angleTolerance || 18;
                 if (diff > tol) {
+                    if (Math.abs(diff - 180) <= tol) {
+                        return {
+                            success: false,
+                            msg: item.reverseSensHint
+                                ? item.reverseSensHint
+                                : `Bonne <strong>direction</strong> pour <strong>${f.htmlLabel}</strong>, mais le <strong>sens</strong> est inversé !`
+                        };
+                    }
                     return {
                         success: false,
-                        msg: `L'orientation (direction ou sens) du vecteur <strong>${f.htmlLabel}</strong> tracé est incorrecte.`
+                        msg: `La <strong>direction</strong> (droite d'action) du vecteur <strong>${f.htmlLabel}</strong> tracé est incorrecte.`
                     };
                 }
             }
@@ -622,13 +791,16 @@ function buildOrangeStep(item, isLast = false) {
                 }
             }
 
-            if (item.id === "o_3") {
-                const lenP = window.drawnVectors["P"].length;
-                const lenS = window.drawnVectors["Fsol"].length;
-                if (Math.abs(lenP - lenS) > 35) {
+            if (item.equalLengthPair) {
+                const [idA, idB] = item.equalLengthPair;
+                const lenA = window.drawnVectors[idA].length;
+                const lenB = window.drawnVectors[idB].length;
+                if (Math.abs(lenA - lenB) > 16) {
+                    const fA = item.forces.find(f => f.id === idA);
+                    const fB = item.forces.find(f => f.id === idB);
                     return {
                         success: false,
-                        msg: `Comme P et F<sub>sol/balle</sub> ont la même valeur (0,56 N), leurs flèches doivent avoir environ la même longueur !`
+                        msg: `Le système est immobile (en équilibre) : ${fA.htmlLabel} et ${fB.htmlLabel} se compensent et doivent donc avoir la même longueur !`
                     };
                 }
             }
@@ -663,8 +835,12 @@ function getSvgCoords(svg, clientX, clientY) {
 }
 
 function initVectorCanvasEvents(item) {
+    cleanupStepEvents();
     const svg = document.getElementById('vector-svg');
     if (!svg) return;
+
+    vectorDragAbortController = new AbortController();
+    const { signal } = vectorDragAbortController;
 
     const startDrag = (clientX, clientY) => {
         const coords = getSvgCoords(svg, clientX, clientY);
@@ -723,22 +899,22 @@ function initVectorCanvasEvents(item) {
         window.isDraggingVector = false;
     };
 
-    svg.addEventListener('mousedown', e => startDrag(e.clientX, e.clientY));
-    window.addEventListener('mousemove', e => moveDrag(e.clientX, e.clientY));
-    window.addEventListener('mouseup', endDrag);
+    svg.addEventListener('mousedown', e => startDrag(e.clientX, e.clientY), { signal });
+    window.addEventListener('mousemove', e => moveDrag(e.clientX, e.clientY), { signal });
+    window.addEventListener('mouseup', endDrag, { signal });
 
     svg.addEventListener('touchstart', e => {
         if (e.touches.length > 0) {
             e.preventDefault();
             startDrag(e.touches[0].clientX, e.touches[0].clientY);
         }
-    }, { passive: false });
+    }, { passive: false, signal });
     window.addEventListener('touchmove', e => {
         if (window.isDraggingVector && e.touches.length > 0) {
             moveDrag(e.touches[0].clientX, e.touches[0].clientY);
         }
-    }, { passive: false });
-    window.addEventListener('touchend', endDrag);
+    }, { passive: false, signal });
+    window.addEventListener('touchend', endDrag, { signal });
 }
 
 function renderVectorCanvas(item) {
@@ -775,16 +951,28 @@ function renderVectorCanvas(item) {
     item.forces.forEach(f => {
         const v = window.drawnVectors[f.id];
         if (v && v.length > 8) {
-            const lx = (v.x1 + v.x2) / 2 + (v.angle === 90 || v.angle === -90 ? 34 : 0);
-            const ly = (v.y1 + v.y2) / 2 + (v.angle === 0 || v.angle === 180 ? -14 : 0);
-            const labelTxt = f.svgText || f.id;
+            const sym = f.svgSymbol || f.id;
+            const sub = f.svgSub || "";
+            const subWidth = sub ? sub.length * 5.2 + 2 : 0;
+            const boxW = Math.max(24, Math.ceil(16 + subWidth));
+            const boxH = 22;
+
+            let lx = (v.x1 + v.x2) / 2 + (v.angle === 90 || v.angle === -90 ? (boxW / 2 + 12) : 0);
+            let ly = (v.y1 + v.y2) / 2 + (v.angle === 0 || v.angle === 180 ? -16 : 0);
+            lx = Math.max(boxW / 2 + 4, Math.min(356 - boxW / 2, lx));
+            ly = Math.max(16, Math.min(238, ly));
+
+            const textStartX = lx - (subWidth / 2) - 4;
+            const arrowY = ly - 7;
             html += `
                 <g pointer-events="none">
                     <line x1="${v.x1}" y1="${v.y1}" x2="${v.x2}" y2="${v.y2}"
                           stroke="${f.color}" stroke-width="4" stroke-linecap="round"
                           marker-end="url(#vhead-${f.id})"/>
-                    <rect x="${lx - 32}" y="${ly - 11}" width="64" height="16" rx="4" fill="rgba(255,255,255,0.88)"/>
-                    <text x="${lx}" y="${ly + 1}" text-anchor="middle" fill="${f.color}" font-size="11" font-weight="bold">${labelTxt}</text>
+                    <rect x="${lx - boxW / 2}" y="${ly - 13}" width="${boxW}" height="${boxH}" rx="4" fill="rgba(255,255,255,0.9)" stroke="${f.color}" stroke-opacity="0.25" stroke-width="1"/>
+                    <path d="M ${textStartX - 1} ${arrowY} L ${textStartX + 9} ${arrowY} M ${textStartX + 6.5} ${arrowY - 2} L ${textStartX + 9} ${arrowY} L ${textStartX + 6.5} ${arrowY + 2}"
+                          fill="none" stroke="${f.color}" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+                    <text x="${textStartX}" y="${ly + 4}" text-anchor="start" fill="${f.color}" font-size="12" font-weight="bold">${sym}${sub ? `<tspan dy="3" font-size="8.5" font-weight="600">${sub}</tspan>` : ''}</text>
                 </g>
             `;
         }
@@ -810,7 +998,7 @@ const ROUGE_STEPS = [
                     <div class="box p-4 h-100">
                         <div class="is-flex is-justify-content-space-between is-align-items-center mb-3">
                             <h4 class="title is-5 m-0">1. Le skieur sur le tire-fesse</h4>
-                            <span class="tag is-danger is-light is-normal">m = 60,0 kg | g = 9,81 N/kg</span>
+                            <span class="tag is-danger is-light is-normal">m = 60,0 kg | g = 9,81 N·kg⁻¹</span>
                         </div>
                         <div class="scene-svg-container mb-3" style="max-width:100%; height:180px;">${SCENE_SVGS.rouge_skieur}</div>
                         <div class="notification is-light p-3 mb-2">
@@ -859,6 +1047,16 @@ const ROUGE_STEPS = [
                     </div>
                 </div>
             </div>`,
+        onLoad: () => {
+            ['inp-poids-skieur', 'inp-poids-cv'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener('keydown', e => {
+                        if (e.key === 'Enter') executeValidation();
+                    });
+                }
+            });
+        },
         validate: () => {
             const vSki = parseFloat(document.getElementById('inp-poids-skieur').value.replace(',', '.').trim());
             const vCv = parseFloat(document.getElementById('inp-poids-cv').value.replace(',', '.').trim());
@@ -873,7 +1071,7 @@ const ROUGE_STEPS = [
                 skiOk = true;
                 fbSki.innerHTML = `<span class="has-text-success has-text-weight-bold"><i class="fas fa-check"></i> Exact ! P = 60,0 × 9,81 ≈ 589 N.</span>`;
             } else {
-                fbSki.innerHTML = `<span class="has-text-danger">Erreur : utilise P = m × g avec m = 60,0 kg et g = 9,81 N/kg.</span>`;
+                fbSki.innerHTML = `<span class="has-text-danger">Erreur : utilise P = m × g avec m = 60,0 kg et g = 9,81 N·kg⁻¹.</span>`;
             }
 
             if (isNaN(vCv)) {
@@ -926,9 +1124,16 @@ const STRUCTURE_TP = {
 // 8. ROUTEUR SPA (ACCUEIL, NAVIGATION, RACCOURCIS)
 // ==========================================
 function renderHome() {
+    cleanupStepEvents();
     currentPart = "";
+    currentStepIndex = 0;
     updateBeltBar();
+    saveProgress();
     document.getElementById('global-controls').style.display = 'none';
+
+    const doneTag = (belt) => completedBelts.has(belt)
+        ? `<span class="tag is-success is-light is-small ml-2"><i class="fas fa-check mr-1"></i>Validé</span>`
+        : '';
 
     document.getElementById('spa-container').innerHTML = `
         <div class="columns is-desktop is-variable is-5 mt-2">
@@ -951,6 +1156,14 @@ function renderHome() {
                             <span class="icon"><i class="fas fa-play"></i></span>
                             <span>Démarrer au Niveau Bleu</span>
                         </button>
+                        ${completedBelts.size > 0 ? `
+                            <div class="mt-3">
+                                <button type="button" class="button is-small is-light has-text-grey" onclick="resetSessionProgress()">
+                                    <span class="icon is-small"><i class="fas fa-rotate-left"></i></span>
+                                    <span>Réinitialiser la progression de cette session</span>
+                                </button>
+                            </div>
+                        ` : ''}
                     </div>
                 </div>
             </div>
@@ -961,35 +1174,35 @@ function renderHome() {
                     
                     <button class="button is-white is-justify-content-flex-start p-4 shadow-sm" style="height:auto; border-left: 6px solid var(--c-bleu);" onclick="startPart('bleu', 0)">
                         <div class="has-text-left">
-                            <strong class="is-block is-size-5" style="color:var(--c-bleu);">🔵 Niveau Bleu — Actions mécaniques</strong>
+                            <strong class="is-block is-size-5" style="color:var(--c-bleu);">🔵 Niveau Bleu — Actions mécaniques ${doneTag('bleu')}</strong>
                             <span class="is-size-7 has-text-grey">Donneur, Receveur, action de contact ou à distance (6 situations).</span>
                         </div>
                     </button>
 
                     <button class="button is-white is-justify-content-flex-start p-4 shadow-sm" style="height:auto; border-left: 6px solid var(--c-vert);" onclick="startPart('vert', 0)">
                         <div class="has-text-left">
-                            <strong class="is-block is-size-5" style="color:var(--c-vert);">🟢 Niveau Vert — Renforcement</strong>
+                            <strong class="is-block is-size-5" style="color:var(--c-vert);">🟢 Niveau Vert — Renforcement ${doneTag('vert')}</strong>
                             <span class="is-size-7 has-text-grey">Entraînement supplémentaire sur les types d'actions (6 situations).</span>
                         </div>
                     </button>
 
                     <button class="button is-white is-justify-content-flex-start p-4 shadow-sm" style="height:auto; border-left: 6px solid var(--c-jaune);" onclick="startPart('jaune', 0)">
                         <div class="has-text-left">
-                            <strong class="is-block is-size-5" style="color:#b45309;">🟡 Niveau Jaune — Diagramme D.O.I</strong>
+                            <strong class="is-block is-size-5" style="color:#b45309;">🟡 Niveau Jaune — Diagramme D.O.I ${doneTag('jaune')}</strong>
                             <span class="is-size-7 has-text-grey">Construire les D.O.I interactifs et éviter les intrus (9 situations).</span>
                         </div>
                     </button>
 
                     <button class="button is-white is-justify-content-flex-start p-4 shadow-sm" style="height:auto; border-left: 6px solid var(--c-orange);" onclick="startPart('orange', 0)">
                         <div class="has-text-left">
-                            <strong class="is-block is-size-5" style="color:var(--c-orange);">🟠 Niveau Orange — Vecteurs Forces</strong>
-                            <span class="is-size-7 has-text-grey">Caractéristiques et tracé des vecteurs sur schéma (6 situations).</span>
+                            <strong class="is-block is-size-5" style="color:var(--c-orange);">🟠 Niveau Orange — Vecteurs Forces ${doneTag('orange')}</strong>
+                            <span class="is-size-7 has-text-grey">Caractéristiques et tracé des vecteurs sur schéma (7 situations).</span>
                         </div>
                     </button>
 
                     <button class="button is-white is-justify-content-flex-start p-4 shadow-sm" style="height:auto; border-left: 6px solid var(--c-rouge);" onclick="startPart('rouge', 0)">
                         <div class="has-text-left">
-                            <strong class="is-block is-size-5" style="color:var(--c-rouge);">🔴 Niveau Rouge — Défi sur Papier</strong>
+                            <strong class="is-block is-size-5" style="color:var(--c-rouge);">🔴 Niveau Rouge — Défi sur Papier ${doneTag('rouge')}</strong>
                             <span class="is-size-7 has-text-grey">Skieur et Cerf-volant : vérification de P = m × g.</span>
                         </div>
                     </button>
@@ -1011,6 +1224,8 @@ function startPart(partKey, stepIdx = 0) {
 }
 
 function renderStep() {
+    cleanupStepEvents();
+    saveProgress();
     const step = STRUCTURE_TP[currentPart][currentStepIndex];
     const totalSteps = STRUCTURE_TP[currentPart].length;
 
@@ -1064,7 +1279,9 @@ function renderStep() {
 }
 
 function executeValidation() {
-    const res = STRUCTURE_TP[currentPart][currentStepIndex].validate();
+    const step = STRUCTURE_TP[currentPart][currentStepIndex];
+    const res = step.validate();
+    saveProgress();
     const msgBox = document.getElementById('global-message-box');
 
     msgBox.innerHTML = res.msg;
@@ -1083,7 +1300,19 @@ function executeValidation() {
         const btnNext = document.getElementById('global-btn-next');
         if (currentPart !== 'rouge') {
             btnNext.style.display = 'inline-flex';
-            btnNext.disabled = false;
+            if (step.requirePaperConfirm) {
+                btnNext.disabled = true;
+                const confirmWrap = document.createElement('label');
+                confirmWrap.className = 'paper-confirm-wrap';
+                confirmWrap.innerHTML = `<input type="checkbox" id="paper-confirm-chk"> <span>J'ai bien recopié cette trace écrite sur ma fiche papier</span>`;
+                confirmWrap.querySelector('input').addEventListener('change', (e) => {
+                    btnNext.disabled = !e.target.checked;
+                });
+                msgBox.appendChild(document.createElement('br'));
+                msgBox.appendChild(confirmWrap);
+            } else {
+                btnNext.disabled = false;
+            }
         }
     }
 }
@@ -1116,9 +1345,20 @@ document.getElementById('global-btn-home').onclick = () => {
     renderHome();
 };
 
-window.onload = () => {
-    renderHome();
-};
+function initApp() {
+    if (loadProgress()) {
+        updateBeltBar();
+        renderStep();
+    } else {
+        renderHome();
+    }
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initApp);
+} else {
+    initApp();
+}
 
 // Raccourcis clavier Enseignant / Debug (Ctrl + Flèches Gauche/Droite)
 document.addEventListener('keydown', (event) => {

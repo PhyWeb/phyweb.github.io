@@ -252,11 +252,12 @@ const BLEU_DATA = [
         title: "Niveau Bleu — Balle de tennis avant la frappe",
         svg: "tennis_air",
         receveur: "la balle",
+        airNeglected: true,
         candidates: [
             { id: "Terre", label: "🌍 La Terre", valid: true, type: "distance", prep: "de la Terre" },
-            { id: "Raquette", label: "🎾 La raquette", valid: false, trapMsg: "Observe bien l'image : la balle touche-t-elle déjà le cordage de la raquette ?" },
-            { id: "Nadal", label: "🏃 Rafael Nadal", valid: false, trapMsg: "Nadal tient sa raquette, mais il ne touche pas la balle !" },
-            { id: "Sol", label: "🟫 Le sol", valid: false, trapMsg: "La balle est en l'air, elle ne touche pas le sol." }
+            { id: "Raquette", label: "🎾 La raquette", valid: false, prep: "de la raquette", trapMsg: "Observe bien l'image : la balle touche-t-elle déjà le cordage de la raquette ?" },
+            { id: "Nadal", label: "🏃 Rafael Nadal", valid: false, prep: "de Rafael Nadal", trapMsg: "Nadal tient sa raquette, mais il ne touche pas la balle !" },
+            { id: "Sol", label: "🟫 Le sol", valid: false, prep: "du sol", trapMsg: "La balle est en l'air, elle ne touche pas le sol." }
         ]
     },
     {
@@ -267,7 +268,7 @@ const BLEU_DATA = [
         candidates: [
             { id: "Terre", label: "🌍 La Terre", valid: true, type: "distance", prep: "de la Terre" },
             { id: "Raquette", label: "🎾 La raquette", valid: true, type: "contact", prep: "de la raquette" },
-            { id: "Sol", label: "🟫 Le sol", valid: false, trapMsg: "La balle est dans le tamis de la raquette, pas sur le sol." }
+            { id: "Sol", label: "🟫 Le sol", valid: false, prep: "du sol", trapMsg: "La balle est dans le tamis de la raquette, pas sur le sol." }
         ]
     },
     {
@@ -278,7 +279,7 @@ const BLEU_DATA = [
         candidates: [
             { id: "Terre", label: "🌍 La Terre", valid: true, type: "distance", prep: "de la Terre" },
             { id: "Sol", label: "🟫 Le sol", valid: true, type: "contact", prep: "du sol" },
-            { id: "Raquette", label: "🎾 La raquette", valid: false, trapMsg: "La raquette n'est plus en contact avec la balle." }
+            { id: "Raquette", label: "🎾 La raquette", valid: false, prep: "de la raquette", trapMsg: "La raquette n'est plus en contact avec la balle." }
         ]
     },
     {
@@ -290,7 +291,7 @@ const BLEU_DATA = [
         candidates: [
             { id: "Main", label: "✋ La main (Nikola)", valid: true, type: "contact", prep: "de Nikola" },
             { id: "Terre", label: "🌍 La Terre", valid: true, type: "distance", prep: "de la Terre" },
-            { id: "Sol", label: "🟫 Le sol", valid: false, trapMsg: "Le ballon est en hauteur dans la main du joueur, il ne touche pas le sol." }
+            { id: "Sol", label: "🟫 Le sol", valid: false, prep: "du sol", trapMsg: "Le ballon est en hauteur dans la main du joueur, il ne touche pas le sol." }
         ]
     },
     {
@@ -299,10 +300,11 @@ const BLEU_DATA = [
         svg: "hand_air",
         receveur: "le ballon",
         evalMode: true,
+        airNeglected: true,
         candidates: [
             { id: "Terre", label: "🌍 La Terre", valid: true, type: "distance", prep: "de la Terre" },
-            { id: "Main", label: "✋ La main (Nikola)", valid: false, trapMsg: "Piège classique ! Une fois que le ballon a quitté la main, la main n'agit plus sur lui." },
-            { id: "Sol", label: "🟫 Le sol", valid: false, trapMsg: "Le ballon est en plein vol." }
+            { id: "Main", label: "✋ La main (Nikola)", valid: false, prep: "de Nikola", trapMsg: "Piège classique ! Une fois que le ballon a quitté la main, la main n'agit plus sur lui." },
+            { id: "Sol", label: "🟫 Le sol", valid: false, prep: "du sol", trapMsg: "Le ballon est en plein vol." }
         ]
     },
     {
@@ -315,7 +317,7 @@ const BLEU_DATA = [
         candidates: [
             { id: "Terre", label: "🌍 La Terre", valid: true, type: "distance", prep: "de la Terre" },
             { id: "Sol", label: "🟫 Le sol", valid: true, type: "contact", prep: "du sol" },
-            { id: "Main", label: "✋ La main (Nikola)", valid: false, trapMsg: "Personne ne touche le ballon ici." }
+            { id: "Main", label: "✋ La main (Nikola)", valid: false, prep: "de Nikola", trapMsg: "Personne ne touche le ballon ici." }
         ]
     }
 ];
@@ -330,7 +332,7 @@ const VERT_DATA = [
         options: [
             { id: "Soleil", label: "☀️ Le Soleil", expected: "distance" },
             { id: "Espace", label: "🌌 Le vide spatial", expected: "none" },
-            { id: "Atmosphere", label: "☁️ Les nuages", expected: "none" }
+            { id: "Comete", label: "☄️ Une comète très lointaine", expected: "none" }
         ]
     },
     {
@@ -338,6 +340,7 @@ const VERT_DATA = [
         title: "2. Plume et bâton électrisé",
         svg: "vert_plume",
         receveur: "La plume",
+        airNeglected: true,
         options: [
             { id: "Baton", label: "⚡ Le bâton électrisé", expected: "distance" },
             { id: "Terre", label: "🌍 La Terre", expected: "distance" },
@@ -349,6 +352,7 @@ const VERT_DATA = [
         title: "3. Une kitesurfeuse",
         svg: "vert_kite",
         receveur: "La kitesurfeuse",
+        airNeglected: true,
         options: [
             { id: "Planche", label: "🏄 La planche", expected: "contact" },
             { id: "Manche", label: "🕹️ Le manche de la voile", expected: "contact" },
@@ -407,6 +411,7 @@ const JAUNE_DATA = [
         title: "Niveau Jaune — Le ballon est en vol pendant la passe",
         svg: "hand_air",
         systeme: "Ballon",
+        airNeglected: true,
         pool: ["Terre", "Main (Nikola)", "Sol"],
         expected: { "Terre": "distance" }
     },
@@ -441,6 +446,7 @@ const JAUNE_DATA = [
         title: "Niveau Jaune — 3°/ Pomme qui tombe de l'arbre (chute libre)",
         svg: "schema_3_pomme",
         systeme: "Pomme",
+        airNeglected: true,
         pool: ["Terre", "Branche de l'arbre", "Herbe"],
         expected: { "Terre": "distance" },
         trapHint: "La pomme s'est déjà détachée de la branche et n'a pas encore touché l'herbe."
@@ -467,6 +473,7 @@ const JAUNE_DATA = [
         title: "Niveau Jaune — 6°/ Livre de physique lancé en l'air (en train de monter)",
         svg: "schema_6_livre_air",
         systeme: "Livre",
+        airNeglected: true,
         pool: ["Terre", "Élève excédé (main)", "Sol"],
         expected: { "Terre": "distance" },
         trapHint: "Piège classique ! Dès que le livre a quitté la main de l'élève, la main n'exerce plus aucune action sur lui."
@@ -478,7 +485,8 @@ const ORANGE_DATA = [
     {
         id: "o_1",
         title: "Niveau Orange — Balle de tennis en l'air",
-        subtitle: "Valeur donnée : P = 0,56 N. Complétez les caractéristiques et tracez la force.",
+        subtitle: "Valeur donnée : P = 0,56 N. Complétez les caractéristiques et tracez le vecteur force.",
+        airNeglected: true,
         anchors: [
             { id: "G", label: "Centre de gravité de la balle", x: 180, y: 130 },
             { id: "Haut", label: "Haut de la balle", x: 180, y: 85 },
@@ -489,7 +497,8 @@ const ORANGE_DATA = [
         forces: [
             {
                 id: "P",
-                svgText: "P",
+                svgSymbol: "P",
+                svgSub: "",
                 htmlLabel: `<span class="force-btn-label"><span class="vec-arrow">P</span> (ou <span class="vec-arrow">F</span><sub>Terre/balle</sub>)</span>`,
                 color: "#dc2626",
                 givenValue: "0,56 N",
@@ -505,7 +514,8 @@ const ORANGE_DATA = [
     {
         id: "o_2",
         title: "Niveau Orange — Balle frappée par la raquette",
-        subtitle: "Valeurs : P = 0,56 N et F(raquette/balle) = 10 N (beaucoup plus intense !).",
+        subtitle: "Valeurs : P = 0,56 N et F<sub>raquette/balle</sub> = 10 N (sans souci d'échelle exacte : la flèche bleue doit être nettement plus longue que la rouge).",
+        airNeglected: true,
         anchors: [
             { id: "G", label: "Centre de gravité de la balle", x: 170, y: 130 },
             { id: "ContactDroit", label: "Point de contact avec la raquette", x: 215, y: 130 },
@@ -517,7 +527,8 @@ const ORANGE_DATA = [
         forces: [
             {
                 id: "P",
-                svgText: "P",
+                svgSymbol: "P",
+                svgSub: "",
                 htmlLabel: `<span class="force-btn-label"><span class="vec-arrow">P</span></span>`,
                 color: "#dc2626",
                 givenValue: "0,56 N",
@@ -530,7 +541,8 @@ const ORANGE_DATA = [
             },
             {
                 id: "Fraq",
-                svgText: "F(raq/balle)",
+                svgSymbol: "F",
+                svgSub: "raq/balle",
                 htmlLabel: `<span class="force-btn-label"><span class="vec-arrow">F</span><sub>raquette/balle</sub></span>`,
                 color: "#2563eb",
                 givenValue: "10 N",
@@ -547,7 +559,8 @@ const ORANGE_DATA = [
     {
         id: "o_3",
         title: "Niveau Orange — Balle immobile sur le sol",
-        subtitle: "La balle est immobile au sol : P = 0,56 N. Déduisez aussi la valeur de F(sol/balle) !",
+        subtitle: "La balle est immobile au sol : P = 0,56 N. Déduisez la valeur de F<sub>sol/balle</sub> et tracez deux flèches de même longueur.",
+        equalLengthPair: ["P", "Fsol"],
         anchors: [
             { id: "G", label: "Centre de gravité de la balle", x: 180, y: 125 },
             { id: "ContactSol", label: "Point de contact avec le sol", x: 180, y: 170 },
@@ -559,7 +572,8 @@ const ORANGE_DATA = [
         forces: [
             {
                 id: "P",
-                svgText: "P",
+                svgSymbol: "P",
+                svgSub: "",
                 htmlLabel: `<span class="force-btn-label"><span class="vec-arrow">P</span></span>`,
                 color: "#dc2626",
                 givenValue: "0,56 N",
@@ -572,7 +586,8 @@ const ORANGE_DATA = [
             },
             {
                 id: "Fsol",
-                svgText: "F(sol/balle)",
+                svgSymbol: "F",
+                svgSub: "sol/balle",
                 htmlLabel: `<span class="force-btn-label"><span class="vec-arrow">F</span><sub>sol/balle</sub></span>`,
                 color: "#16a34a",
                 askValue: true,
@@ -589,7 +604,8 @@ const ORANGE_DATA = [
     {
         id: "o_4",
         title: "Niveau Orange — 1°/ Système : la lampe suspendue",
-        subtitle: "Déterminez les caractéristiques des 2 forces et tracez-les sur le schéma.",
+        subtitle: "La lampe est immobile (en équilibre) : déterminez les caractéristiques des 2 forces et tracez-les avec la même longueur.",
+        equalLengthPair: ["P", "Ffil"],
         anchors: [
             { id: "ContactFil", label: "Point de contact avec le fil", x: 180, y: 115 },
             { id: "G", label: "Centre de gravité de la lampe", x: 180, y: 140 },
@@ -601,7 +617,8 @@ const ORANGE_DATA = [
         forces: [
             {
                 id: "P",
-                svgText: "P",
+                svgSymbol: "P",
+                svgSub: "",
                 htmlLabel: `<span class="force-btn-label"><span class="vec-arrow">P</span> (<span class="vec-arrow">F</span><sub>Terre/lampe</sub>)</span>`,
                 color: "#dc2626",
                 pointOptions: ["Centre de gravité de la lampe", "Point de contact avec le fil", "Point d'attache au plafond"],
@@ -613,7 +630,8 @@ const ORANGE_DATA = [
             },
             {
                 id: "Ffil",
-                svgText: "F(fil/lampe)",
+                svgSymbol: "F",
+                svgSub: "fil/lampe",
                 htmlLabel: `<span class="force-btn-label"><span class="vec-arrow">F</span><sub>fil/lampe</sub></span>`,
                 color: "#16a34a",
                 pointOptions: ["Centre de gravité de la lampe", "Point de contact avec le fil", "Point d'attache au plafond"],
@@ -628,7 +646,8 @@ const ORANGE_DATA = [
     {
         id: "o_5",
         title: "Niveau Orange — 2°/ Système : le livre sur la table",
-        subtitle: "Déterminez les caractéristiques des 2 forces et tracez-les sur le schéma.",
+        subtitle: "Le livre est immobile (en équilibre) : déterminez les caractéristiques des 2 forces et tracez-les avec la même longueur.",
+        equalLengthPair: ["P", "Ftable"],
         anchors: [
             { id: "G", label: "Centre de gravité du livre", x: 180, y: 115 },
             { id: "ContactTable", label: "Point de contact avec la table", x: 180, y: 135 },
@@ -641,7 +660,8 @@ const ORANGE_DATA = [
         forces: [
             {
                 id: "P",
-                svgText: "P",
+                svgSymbol: "P",
+                svgSub: "",
                 htmlLabel: `<span class="force-btn-label"><span class="vec-arrow">P</span> (<span class="vec-arrow">F</span><sub>Terre/livre</sub>)</span>`,
                 color: "#dc2626",
                 pointOptions: ["Centre de gravité du livre", "Point de contact avec la table"],
@@ -653,7 +673,8 @@ const ORANGE_DATA = [
             },
             {
                 id: "Ftable",
-                svgText: "F(table/livre)",
+                svgSymbol: "F",
+                svgSub: "table/livre",
                 htmlLabel: `<span class="force-btn-label"><span class="vec-arrow">F</span><sub>table/livre</sub></span>`,
                 color: "#16a34a",
                 pointOptions: ["Centre de gravité du livre", "Point de contact avec la table"],
@@ -668,23 +689,24 @@ const ORANGE_DATA = [
     {
         id: "o_6",
         title: "Niveau Orange — 4°/ Système : le clou attiré par l'aimant",
-        subtitle: "Cas à 3 forces ! Tracez P, F(fil/clou) et F(aimant/clou), puis reportez-les sur votre fiche papier !",
+        subtitle: "Cas à 3 forces ! Tracez <span class='vec-arrow'>P</span>, <span class='vec-arrow'>F</span><sub>fil/clou</sub> et <span class='vec-arrow'>F</span><sub>aimant/clou</sub> (par convention, les actions à distance s'appliquent en G), puis reportez-les sur votre fiche papier !",
         paperNotice: "📝 Reproduis les caractéristiques et le tracé des 3 forces du clou (4°/) sur ta fiche papier !",
         anchors: [
-            { id: "ContactFil", label: "Point de contact avec le fil", x: 170, y: 107 },
-            { id: "G", label: "Centre de gravité du clou", x: 180, y: 115 },
-            { id: "Aimant", label: "Centre de l'aimant", x: 250, y: 115 }
+            { id: "ContactFil", label: "Point de contact avec le fil", x: 160, y: 102 },
+            { id: "G", label: "Centre de gravité du clou", x: 184, y: 123 },
+            { id: "Aimant", label: "Centre de l'aimant", x: 282, y: 123 }
         ],
-        modelShape: `<line x1="60" y1="40" x2="140" y2="40" stroke="#1e293b" stroke-width="3"/>
-                     <line x1="95" y1="40" x2="170" y2="107" stroke="#1e293b" stroke-width="2.5"/>
-                     <line x1="163" y1="115" x2="177" y2="99" stroke="#1e293b" stroke-width="4"/>
-                     <line x1="170" y1="107" x2="192" y2="125" stroke="#1e293b" stroke-width="3.5"/>
-                     <rect x="230" y="103" width="75" height="24" fill="#fca5a5" stroke="#1e293b" stroke-width="2.5"/>
-                     <text x="267" y="120" text-anchor="middle" fill="#7f1d1d" font-size="12" font-weight="bold">Aimant</text>`,
+        modelShape: `<line x1="50" y1="35" x2="130" y2="35" stroke="#1e293b" stroke-width="3"/>
+                     <line x1="85" y1="35" x2="160" y2="102" stroke="#1e293b" stroke-width="2.5"/>
+                     <line x1="150" y1="114" x2="170" y2="90" stroke="#1e293b" stroke-width="4.5"/>
+                     <line x1="160" y1="102" x2="208" y2="144" stroke="#1e293b" stroke-width="4"/>
+                     <rect x="245" y="111" width="75" height="24" fill="#fca5a5" stroke="#1e293b" stroke-width="2.5"/>
+                     <text x="282" y="128" text-anchor="middle" fill="#7f1d1d" font-size="12" font-weight="bold">Aimant</text>`,
         forces: [
             {
                 id: "P",
-                svgText: "P",
+                svgSymbol: "P",
+                svgSub: "",
                 htmlLabel: `<span class="force-btn-label"><span class="vec-arrow">P</span> (<span class="vec-arrow">F</span><sub>Terre/clou</sub>)</span>`,
                 color: "#dc2626",
                 pointOptions: ["Centre de gravité du clou", "Point de contact avec le fil", "Centre de l'aimant"],
@@ -696,7 +718,8 @@ const ORANGE_DATA = [
             },
             {
                 id: "Ffil",
-                svgText: "F(fil/clou)",
+                svgSymbol: "F",
+                svgSub: "fil/clou",
                 htmlLabel: `<span class="force-btn-label"><span class="vec-arrow">F</span><sub>fil/clou</sub></span>`,
                 color: "#16a34a",
                 pointOptions: ["Centre de gravité du clou", "Point de contact avec le fil", "Centre de l'aimant"],
@@ -709,7 +732,8 @@ const ORANGE_DATA = [
             },
             {
                 id: "Faimant",
-                svgText: "F(aimant/clou)",
+                svgSymbol: "F",
+                svgSub: "aimant/clou",
                 htmlLabel: `<span class="force-btn-label"><span class="vec-arrow">F</span><sub>aimant/clou</sub></span>`,
                 color: "#2563eb",
                 pointOptions: ["Centre de gravité du clou", "Point de contact avec le fil", "Centre de l'aimant"],
@@ -718,6 +742,40 @@ const ORANGE_DATA = [
                 expectedSens: "vers la droite (vers l'aimant)",
                 expectedAnchor: "G",
                 expectedAngle: 0
+            }
+        ]
+    },
+    {
+        id: "o_7",
+        title: "Niveau Orange — 6°/ Système : le livre lancé en l'air (en train de monter)",
+        subtitle: "Piège classique ! Le livre a quitté la main et est en train de monter. Caractérisez et tracez la force qui s'exerce sur lui.",
+        airNeglected: true,
+        reverseSensHint: "Attention au piège : même si le livre est en train de monter, la Terre l'attire toujours vers le bas !",
+        anchors: [
+            { id: "G", label: "Centre de gravité du livre", x: 175, y: 115 },
+            { id: "Dessous", label: "Dessous du livre", x: 175, y: 155 },
+            { id: "Dessus", label: "Dessus du livre", x: 175, y: 75 }
+        ],
+        modelShape: `<path d="M145,175 L145,205 M175,182 L175,212 M205,175 L205,205" stroke="#64748b" stroke-width="2" stroke-dasharray="4,4"/>
+                     <g transform="translate(175, 115) rotate(-25)">
+                         <rect x="-42" y="-26" width="84" height="52" fill="#cbd5e1" stroke="#1e293b" stroke-width="2.5"/>
+                         <line x1="-36" y1="-26" x2="-36" y2="26" stroke="#1e293b" stroke-width="2"/>
+                     </g>
+                     <text x="275" y="95" text-anchor="middle" fill="#dc2626" font-size="12" font-weight="bold">Mouvement</text>
+                     <text x="275" y="112" text-anchor="middle" fill="#dc2626" font-size="12" font-weight="bold">vers le haut ↑</text>`,
+        forces: [
+            {
+                id: "P",
+                svgSymbol: "P",
+                svgSub: "",
+                htmlLabel: `<span class="force-btn-label"><span class="vec-arrow">P</span> (<span class="vec-arrow">F</span><sub>Terre/livre</sub>)</span>`,
+                color: "#dc2626",
+                pointOptions: ["Centre de gravité du livre", "Dessous du livre", "Point de contact avec la main"],
+                expectedPoint: "Centre de gravité du livre",
+                expectedDirection: "verticale",
+                expectedSens: "vers le bas",
+                expectedAnchor: "G",
+                expectedAngle: 90
             }
         ]
     }

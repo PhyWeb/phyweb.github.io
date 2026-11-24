@@ -61,6 +61,16 @@ sub { bottom: -0.25em; }
     padding: 6px 12px;
     border-radius: 6px;
     white-space: nowrap;
+    border: none;
+    background: transparent;
+    font: inherit;
+    color: inherit;
+}
+
+.belt-step:focus-visible,
+.actor-chip:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
 }
 
 .belt-step:hover {
@@ -183,11 +193,27 @@ sub { bottom: -0.25em; }
     border-radius: 18px;
     border: 2px solid #cbd5e1;
     background: white;
+    font-family: inherit;
+    color: var(--text-color);
     font-weight: 600;
     font-size: 0.92rem;
     cursor: pointer;
     transition: all 0.15s;
     user-select: none;
+}
+
+.paper-confirm-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: #fffbeb;
+    border: 1px solid #f59e0b;
+    color: #92400e;
+    font-weight: 700;
+    cursor: pointer;
 }
 
 .actor-chip:hover {
@@ -302,7 +328,7 @@ sub { bottom: -0.25em; }
 
 .anchor-point:hover, .anchor-point.active-anchor {
     fill: rgba(37, 99, 235, 0.45);
-    r: 10px;
+    stroke-width: 3.5px;
 }
 
 /* Boutons de sélection de force avec support propre des indices */
