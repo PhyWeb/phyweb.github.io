@@ -810,4 +810,16 @@ describe('Data - getTable() et export CSV sur courbes creuses ou de longueurs in
     const sparseCsv = sparseIo.generateCSV(';', 'row');
     assert.deepEqual(sparseCsv.split(/\r?\n/), ['x', 'm', '', '', '7']);
   });
+
+  it('setValue ne doit pas étendre curve.length lorsque null ou vide est écrit au-delà de la fin', () => {
+    const data = new Data();
+    const curve = data.addCurve('x', 'm');
+    curve.push(1, 2);
+
+    assert.equal(data.setValue(0, 2, null), null);
+    assert.equal(data.setValue(0, 5, ''), null);
+    assert.equal(data.setValue(0, 3, 'abc'), null);
+    assert.equal(curve.length, 2);
+    assert.deepEqual(Array.from(curve), [1, 2]);
+  });
 });

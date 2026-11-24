@@ -570,4 +570,64 @@ describe('Spreadsheet - handleAfterChange() et correction du bug de pagination',
       assert.equal(calcCurve[0], 42);
     });
   });
+
+  describe('Filtrage des changements nuls/identiques et protection de la ligne vide (minSpareRows)', () => {
+    it('ne doit pas augmenter curve.length ni appeler cb lors d\'un Suppr sur la ligne vide du bas (null -> null ou null -> "")', () => {
+      const { curveX, spreadsheet, getCallbackStatus } = createTestContext(3, 10, 0);
+      assert.equal(curveX.length, 3);
+
+      spreadsheet.handleAfterChange([[3, 0, null, null]], 'edit');
+      assert.equal(curveX.length, 3);
+      assert.equal(getCallbackStatus().callbackCalled, false);
+
+      spreadsheet.handleAfterChange([[3, 0, null, '']], 'edit');
+      assert.equal(curveX.length, 3);
+      assert.equal(getCallbackStatus().callbackCalled, false);
+    });
+
+    it('ne doit pas augmenter curve.length ni appeler cb si une saisie invalide ("abc") est faite sur la ligne vide', () => {
+      const { curveX, spreadsheet, getCallbackStatus } = createTestContext(3, 10, 0);
+      const cellUpdates = [];
+      spreadsheet.hot = {
+        setDataAtCell: (row, col, val, source) => {
+          cellUpdates.push({ row, col, val, source });
+        }
+      };
+
+      spreadsheet.handleAfterChange([[3, 0, null, 'abc']], 'edit');
+
+      assert.equal(curveX.length, 3);
+      assert.equal(getCallbackStatus().callbackCalled, false);
+      assert.deepEqual(cellUpdates, [{ row: 3, col: 0, val: null, source: 'updateData' }]);
+    });
+
+    it('doit ignorer oldVal === newVal sur une cellule existante sans appeler cb', () => {
+      const { curveX, spreadsheet, getCallbackStatus } = createTestContext(3, 10, 0);
+
+      spreadsheet.handleAfterChange([[1, 0, 1, 1]], 'edit');
+
+      assert.equal(curveX[1], 1);
+      assert.equal(getCallbackStatus().callbackCalled, false);
+    });
+
+    it('doit continuer à permettre l\'effacement d\'une cellule existante (valeur -> null)', () => {
+      const { curveX, spreadsheet, getCallbackStatus } = createTestContext(3, 10, 0);
+
+      spreadsheet.handleAfterChange([[1, 0, 1, null]], 'edit');
+
+      assert.equal(curveX[1], null);
+      assert.equal(curveX.length, 3);
+      assert.equal(getCallbackStatus().callbackCalled, true);
+    });
+
+    it('doit ajouter un point lorsque la ligne vide du bas reçoit une valeur valide', () => {
+      const { curveX, spreadsheet, getCallbackStatus } = createTestContext(3, 10, 0);
+
+      spreadsheet.handleAfterChange([[3, 0, null, '42,5']], 'edit');
+
+      assert.equal(curveX.length, 4);
+      assert.equal(curveX[3], 42.5);
+      assert.equal(getCallbackStatus().callbackCalled, true);
+    });
+  });
 });

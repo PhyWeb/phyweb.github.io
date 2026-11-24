@@ -225,23 +225,38 @@ class Spreadsheet {
     if (!change || change.length === 0) return;
 
     const pageOffset = this.getPageOffset();
+    let hasActualChange = false;
 
     change.forEach(element => {
       const [visualRow, col, oldVal, newVal] = element;
+      const isOldEmpty = oldVal === null || oldVal === undefined || oldVal === '';
+      const isNewEmpty = newVal === null || newVal === undefined || newVal === '';
+      if (oldVal === newVal || (isOldEmpty && isNewEmpty)) {
+        return; // Aucune modification effective (ex: Suppr sur une cellule déjà vide)
+      }
+
       const curve = this.data.getCurveByIndex(col);
-      if (curve && curve.type === 'calculation') {
+      if (!curve || curve.type === 'calculation') {
         return; // Les grandeurs calculées ne sont pas modifiables dans le tableur
       }
+
       const actualRow = pageOffset + visualRow;
+      const prevLength = curve.length;
+      const prevVal = actualRow < prevLength ? (curve[actualRow] ?? null) : null;
+
       const parsed = this.data.setValue(col, actualRow, newVal);
       // Si la valeur saisie (ex: "12,5" ou "abc") a été transformée ou nettoyée en null,
       // on met à jour la cellule Handsontable silencieusement ("updateData" est ignoré par handleAfterChange)
       if (newVal !== parsed && !(newVal === '' && parsed === null)) {
         this.hot?.setDataAtCell(visualRow, col, parsed, 'updateData');
       }
+
+      if (curve.length !== prevLength || prevVal !== parsed) {
+        hasActualChange = true;
+      }
     });
 
-    if (typeof this.cb === 'function') {
+    if (hasActualChange && typeof this.cb === 'function') {
       this.cb(change);
     }
   }

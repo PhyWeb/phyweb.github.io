@@ -890,8 +890,12 @@ export default class Data {
 
   setValue(curveIndex, index, value){
     const curve = this.curves[curveIndex];
-    if (!curve || curve.type === 'calculation') return null;
+    if (!curve || curve.type === 'calculation' || index < 0) return null;
     const parsedValue = parseCellValue(value);
+    // Ne pas étendre la série avec des null au-delà de sa longueur actuelle (ex: minSpareRows)
+    if (parsedValue === null && index >= curve.length) {
+      return null;
+    }
     curve[index] = parsedValue;
     return parsedValue;
   }
