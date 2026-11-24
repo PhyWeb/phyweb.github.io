@@ -33,6 +33,74 @@ try {
     console.warn('initApplets ignoré:', e);
 }
 
+/**
+ * Ajoute un menu déroulant « Menu » dans la barre de navigation (à l'image de Grapher, Tracker et Audio)
+ * pour regrouper sauvegarde, chargement et exports.
+ */
+function setupNavbarMenu() {
+    const navbarEnd = document.querySelector('#navbar-container .navbar-end');
+    if (!navbarEnd || document.getElementById('menu-dropdown-container')) return;
+
+    const menuEl = document.createElement('div');
+    menuEl.className = 'navbar-item has-dropdown';
+    menuEl.id = 'menu-dropdown-container';
+    menuEl.style.height = '100%';
+    menuEl.innerHTML = `
+      <a class="navbar-link" id="menu-dropdown-toggle" style="height: 100%;">
+        Menu
+      </a>
+      <div class="navbar-dropdown is-right is-size-6" id="menu-dropdown-content">
+        <a class="navbar-item" id="menuSaveJSON">
+          <span class="icon"><i class="fa-solid fa-floppy-disk"></i></span>
+          <span>Sauvegarder (.json)</span>
+        </a>
+        <a class="navbar-item" id="menuLoadJSON">
+          <span class="icon"><i class="fa-solid fa-folder-open"></i></span>
+          <span>Charger (.json)</span>
+        </a>
+        <hr class="navbar-divider">
+        <a class="navbar-item" id="menuCopyPNG">
+          <span class="icon"><i class="fa-solid fa-copy"></i></span>
+          <span>Copier l'image HD</span>
+        </a>
+        <a class="navbar-item" id="menuExportPNG">
+          <span class="icon"><i class="fa-solid fa-image"></i></span>
+          <span>Exporter en PNG HD</span>
+        </a>
+        <a class="navbar-item" id="menuExportSVG">
+          <span class="icon"><i class="fa-solid fa-bezier-curve"></i></span>
+          <span>Exporter en SVG</span>
+        </a>
+      </div>
+    `;
+
+    const divider = navbarEnd.querySelector('.vertical-divider.window-control');
+    if (divider) navbarEnd.insertBefore(menuEl, divider);
+    else navbarEnd.appendChild(menuEl);
+
+    const toggle = menuEl.querySelector('#menu-dropdown-toggle');
+    toggle.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        menuEl.classList.toggle('is-active');
+    });
+    document.addEventListener('click', () => {
+        menuEl.classList.remove('is-active');
+    });
+    menuEl.querySelectorAll('.navbar-dropdown .navbar-item').forEach(item => {
+        item.addEventListener('click', () => menuEl.classList.remove('is-active'));
+    });
+
+    menuEl.querySelector('#menuSaveJSON').addEventListener('click', () => handleSaveJSON());
+    menuEl.querySelector('#menuLoadJSON').addEventListener('click', () => {
+        const input = document.getElementById('jsonFileInput');
+        if (input) input.click();
+    });
+    menuEl.querySelector('#menuCopyPNG').addEventListener('click', () => handleCopyPNG());
+    menuEl.querySelector('#menuExportPNG').addEventListener('click', () => handleExportPNG());
+    menuEl.querySelector('#menuExportSVG').addEventListener('click', () => handleExportSVG());
+}
+setupNavbarMenu();
+
 // =========================================================================
 // ÉTAT DE L'ÉDITEUR
 // =========================================================================
@@ -214,11 +282,11 @@ function renderOverlay() {
         html += `<circle cx="${p1.x.toFixed(1)}" cy="${p1.y.toFixed(1)}" r="5" fill="${col}" pointer-events="none" />`;
     }
 
-    // Boîte de sélection et poignées
-    const sel = store.selection;
-    if (sel) {
-        const el = store.getSelectedElement();
-        if (el && sel.kind === 'item') {
+    // Boîte de sélection et poignées (simple ou multiple)
+    const selectedEntries = store.getSelectedElements();
+    if (selectedEntries.length === 1) {
+        const { kind, el } = selectedEntries[0];
+        if (kind === 'item') {
             const def = getCatalogItem(el.type);
             if (def) {
                 const bb = def.getBBox(el.props || {});
@@ -240,18 +308,63 @@ function renderOverlay() {
                     <path class="rotate-handle-icon" d="M ${(cx - rIcon).toFixed(2)},${handleY.toFixed(2)} A ${rIcon.toFixed(2)},${rIcon.toFixed(2)} 0 1,1 ${(cx + rIcon * 0.6).toFixed(2)},${(handleY + rIcon * 0.8).toFixed(2)}" style="stroke-width:${sw.toFixed(2)}" />
                 </g>`;
             }
-        } else if (el && sel.kind === 'connector') {
+        } else if (kind === 'connector') {
             const { p1, p2 } = resolveConnectorEndpoints(el, store.scene.items);
             const mid = getConnectorMidpoint(p1, p2, el.mode, el.bend, el.bendX || 0);
             html += `<circle class="handle-dot" data-handle="conn-start" cx="${p1.x.toFixed(1)}" cy="${p1.y.toFixed(1)}" r="6" />`;
             html += `<circle class="handle-dot" data-handle="conn-end" cx="${p2.x.toFixed(1)}" cy="${p2.y.toFixed(1)}" r="6" />`;
             html += `<circle class="handle-dot" data-handle="conn-bend" cx="${mid.x.toFixed(1)}" cy="${mid.y.toFixed(1)}" r="5.5" title="Glisser librement pour courber" />`;
-        } else if (el && sel.kind === 'label') {
+        } else if (kind === 'label') {
             html += `<circle class="handle-dot" data-handle="lbl-pos" cx="${(el.x - 10).toFixed(1)}" cy="${(el.y - 6).toFixed(1)}" r="5" />`;
             if (el.showLeader) {
                 html += `<circle class="handle-dot" data-handle="lbl-target" cx="${el.targetX.toFixed(1)}" cy="${el.targetY.toFixed(1)}" r="6" />`;
             }
         }
+    } else if (selectedEntries.length > 1) {
+        let gMinX = Infinity, gMinY = Infinity, gMaxX = -Infinity, gMaxY = -Infinity;
+        const swWorld = 1.4 / editor.zoom;
+        for (const { kind, el } of selectedEntries) {
+            const b = getElementWorldBounds(kind, el);
+            if (b) {
+                if (b.minX < gMinX) gMinX = b.minX;
+                if (b.minY < gMinY) gMinY = b.minY;
+                if (b.maxX > gMaxX) gMaxX = b.maxX;
+                if (b.maxY > gMaxY) gMaxY = b.maxY;
+            }
+            if (kind === 'item') {
+                const def = getCatalogItem(el.type);
+                if (!def) continue;
+                const bb = def.getBBox(el.props || {});
+                const pad = 4;
+                const scale = el.scale ?? 1;
+                const fx = el.flipX ? -scale : scale;
+                const transform = `translate(${el.x}, ${el.y}) rotate(${el.rotation ?? 0}) scale(${fx}, ${scale})`;
+                const sw = 1.4 / (scale * editor.zoom);
+                html += `<g transform="${transform}">
+                    <rect class="selection-box" x="${bb.x - pad}" y="${bb.y - pad}" width="${bb.width + pad * 2}" height="${bb.height + pad * 2}" rx="4" style="stroke-width:${sw.toFixed(2)}" />
+                </g>`;
+            } else if (kind === 'connector') {
+                const { p1, p2 } = resolveConnectorEndpoints(el, store.scene.items);
+                const d = buildConnectorPath(p1, p2, el.mode, el.bend, el.bendX || 0);
+                html += `<path d="${d}" fill="none" stroke="#2563eb" stroke-width="${((el.width || 4) + 4).toFixed(1)}" opacity="0.28" stroke-linecap="round" pointer-events="none" />`;
+            } else if (kind === 'label' && b) {
+                html += `<rect class="selection-box" x="${(b.minX - 4).toFixed(1)}" y="${(b.minY - 4).toFixed(1)}" width="${(b.maxX - b.minX + 8).toFixed(1)}" height="${(b.maxY - b.minY + 8).toFixed(1)}" rx="3" style="stroke-width:${swWorld.toFixed(2)}" />`;
+            }
+        }
+        if (isFinite(gMinX)) {
+            const gPad = 10 / editor.zoom;
+            html += `<rect class="selection-group-box" x="${(gMinX - gPad).toFixed(1)}" y="${(gMinY - gPad).toFixed(1)}" width="${(gMaxX - gMinX + gPad * 2).toFixed(1)}" height="${(gMaxY - gMinY + gPad * 2).toFixed(1)}" rx="6" style="stroke-width:${(1.6 / editor.zoom).toFixed(2)}" />`;
+        }
+    }
+
+    // Cadre de sélection (marquee)
+    if (editor.drag?.kind === 'marquee') {
+        const m = editor.drag;
+        const rx = Math.min(m.startX, m.currX);
+        const ry = Math.min(m.startY, m.currY);
+        const rw = Math.abs(m.currX - m.startX);
+        const rh = Math.abs(m.currY - m.startY);
+        html += `<rect class="marquee-box" x="${rx.toFixed(1)}" y="${ry.toFixed(1)}" width="${rw.toFixed(1)}" height="${rh.toFixed(1)}" style="stroke-width:${(1.4 / editor.zoom).toFixed(2)}" />`;
     }
 
     // Guides d'alignement et halo d'aimantation port-à-port
@@ -296,11 +409,158 @@ function updateHistoryButtons() {
 // CHANGEMENT D'OUTIL
 // =========================================================================
 const TOOL_HINTS = {
-    select: 'Sélection · Glissez pour déplacer, molette pour zoomer',
+    select: 'Sélection · Glissez pour cadrer, Shift+clic multi-sélection, Espace/clic droit pour déplacer la vue',
     wire: 'Fil électrique · Cliquez sur deux bornes (ou deux points)',
     hose: 'Tuyau de chimie · Cliquez sur deux embouts (ou deux points)',
     label: 'Légende · Cliquez sur le schéma pour placer une annotation'
 };
+
+// =========================================================================
+// BOÎTES ENGLOBANTES & UTILITAIRES DE MULTI-SÉLECTION
+// =========================================================================
+function getElementWorldBounds(kind, el) {
+    if (kind === 'item') {
+        const def = getCatalogItem(el.type);
+        if (!def) return null;
+        const bb = def.getBBox(el.props || {});
+        const corners = [
+            localToWorld(el, bb.x, bb.y),
+            localToWorld(el, bb.x + bb.width, bb.y),
+            localToWorld(el, bb.x, bb.y + bb.height),
+            localToWorld(el, bb.x + bb.width, bb.y + bb.height)
+        ];
+        return {
+            minX: Math.min(...corners.map(c => c.x)),
+            minY: Math.min(...corners.map(c => c.y)),
+            maxX: Math.max(...corners.map(c => c.x)),
+            maxY: Math.max(...corners.map(c => c.y))
+        };
+    }
+    if (kind === 'connector') {
+        const { p1, p2 } = resolveConnectorEndpoints(el, store.scene.items);
+        const mid = getConnectorMidpoint(p1, p2, el.mode, el.bend, el.bendX || 0);
+        return {
+            minX: Math.min(p1.x, p2.x, mid.x) - 6,
+            minY: Math.min(p1.y, p2.y, mid.y) - 6,
+            maxX: Math.max(p1.x, p2.x, mid.x) + 6,
+            maxY: Math.max(p1.y, p2.y, mid.y) + 6
+        };
+    }
+    if (kind === 'label') {
+        const fs = Number(el.fontSize) || 16;
+        const lines = String(el.text || '').split('\n');
+        const maxLen = Math.max(3, ...lines.map(l => l.length));
+        const approxW = maxLen * fs * 0.6;
+        const approxH = lines.length * fs * 1.25;
+        let minX = el.x - 4;
+        let minY = el.y - fs;
+        let maxX = el.x + approxW;
+        let maxY = el.y + approxH - fs * 0.7;
+        if (el.showLeader) {
+            minX = Math.min(minX, el.targetX);
+            minY = Math.min(minY, el.targetY);
+            maxX = Math.max(maxX, el.targetX);
+            maxY = Math.max(maxY, el.targetY);
+        }
+        return { minX, minY, maxX, maxY };
+    }
+    return null;
+}
+
+function rectsIntersect(a, b) {
+    return a.minX <= b.maxX && a.maxX >= b.minX && a.minY <= b.maxY && a.maxY >= b.minY;
+}
+
+function findElementsInRect(x1, y1, x2, y2) {
+    const rect = {
+        minX: Math.min(x1, x2),
+        minY: Math.min(y1, y2),
+        maxX: Math.max(x1, x2),
+        maxY: Math.max(y1, y2)
+    };
+    const found = [];
+    for (const item of store.scene.items) {
+        const b = getElementWorldBounds('item', item);
+        if (b && rectsIntersect(rect, b)) found.push({ kind: 'item', id: item.id });
+    }
+    for (const conn of store.scene.connectors) {
+        const b = getElementWorldBounds('connector', conn);
+        if (b && rectsIntersect(rect, b)) found.push({ kind: 'connector', id: conn.id });
+    }
+    for (const lbl of store.scene.labels) {
+        const b = getElementWorldBounds('label', lbl);
+        if (b && rectsIntersect(rect, b)) found.push({ kind: 'label', id: lbl.id });
+    }
+    return found;
+}
+
+function startMultiDrag(pt) {
+    const entries = store.getSelectedElements();
+    const origItems = [];
+    const origLabels = [];
+    const origConns = [];
+    for (const { kind, el } of entries) {
+        if (kind === 'item') {
+            origItems.push({ el, x: el.x, y: el.y });
+        } else if (kind === 'label') {
+            origLabels.push({ el, x: el.x, y: el.y, targetX: el.targetX, targetY: el.targetY });
+        } else if (kind === 'connector') {
+            origConns.push({
+                el,
+                startFree: !el.start.itemId,
+                endFree: !el.end.itemId,
+                startX: el.start.x,
+                startY: el.start.y,
+                endX: el.end.x,
+                endY: el.end.y
+            });
+        }
+    }
+    return {
+        kind: 'move-multi',
+        startX: pt.x,
+        startY: pt.y,
+        origItems,
+        origLabels,
+        origConns,
+        historyPushed: false
+    };
+}
+
+function alignSelectedElements(mode) {
+    const entries = store.getSelectedElements().filter(e => e.kind === 'item' || e.kind === 'label');
+    if (entries.length < 2) return;
+    const withBounds = entries
+        .map(e => ({ ...e, b: getElementWorldBounds(e.kind, e.el) }))
+        .filter(e => e.b);
+    if (withBounds.length < 2) return;
+
+    store.pushHistory();
+    const minX = Math.min(...withBounds.map(e => e.b.minX));
+    const maxX = Math.max(...withBounds.map(e => e.b.maxX));
+    const minY = Math.min(...withBounds.map(e => e.b.minY));
+    const maxY = Math.max(...withBounds.map(e => e.b.maxY));
+    const midX = (minX + maxX) / 2;
+    const midY = (minY + maxY) / 2;
+
+    for (const { kind, el, b } of withBounds) {
+        let dx = 0, dy = 0;
+        if (mode === 'left') dx = minX - b.minX;
+        else if (mode === 'centerX') dx = midX - (b.minX + b.maxX) / 2;
+        else if (mode === 'right') dx = maxX - b.maxX;
+        else if (mode === 'top') dy = minY - b.minY;
+        else if (mode === 'centerY') dy = midY - (b.minY + b.maxY) / 2;
+        else if (mode === 'bottom') dy = maxY - b.maxY;
+
+        el.x = Math.round(el.x + dx);
+        el.y = Math.round(el.y + dy);
+        if (kind === 'label') {
+            el.targetX = Math.round(el.targetX + dx);
+            el.targetY = Math.round(el.targetY + dy);
+        }
+    }
+    renderScene();
+}
 
 function setTool(tool) {
     editor.tool = tool;
@@ -317,9 +577,11 @@ function setTool(tool) {
 // =========================================================================
 // INTERACTIONS SOURIS / POINTEUR SUR LE CANVAS SVG
 // =========================================================================
+svgEl.addEventListener('contextmenu', (e) => e.preventDefault());
+
 svgEl.addEventListener('pointerdown', (e) => {
-    // Pan avec clic milieu ou Espace + clic gauche
-    if (e.button === 1 || (e.button === 0 && editor.spaceDown)) {
+    // Pan avec clic milieu, clic droit ou Espace + clic gauche
+    if (e.button === 1 || e.button === 2 || (e.button === 0 && editor.spaceDown)) {
         e.preventDefault();
         stageEl.classList.add('is-panning');
         editor.drag = {
@@ -421,9 +683,27 @@ svgEl.addEventListener('pointerdown', (e) => {
     if (hitEl) {
         const kind = hitEl.dataset.kind;
         const id = hitEl.dataset.id;
-        store.selection = { kind, id };
-        renderInspector();
-        renderOverlay();
+
+        if (e.shiftKey) {
+            // Shift+clic : ajouter ou retirer cet élément de la sélection multiple
+            store.toggleSelection(kind, id);
+            renderInspector();
+            renderOverlay();
+            return;
+        }
+
+        const alreadyInMulti = store.selected.length > 1 && store.isSelected(kind, id);
+        if (!alreadyInMulti) {
+            store.selection = { kind, id };
+            renderInspector();
+            renderOverlay();
+        }
+
+        if (store.selected.length > 1) {
+            editor.drag = startMultiDrag(pt);
+            svgEl.setPointerCapture(e.pointerId);
+            return;
+        }
 
         const el = store.getSelectedElement();
         if (kind === 'item' && el) {
@@ -453,18 +733,21 @@ svgEl.addEventListener('pointerdown', (e) => {
         return;
     }
 
-    // Clic dans le vide -> désélectionner + pan fluide si on glisse
-    store.selection = null;
-    renderInspector();
-    renderOverlay();
+    // Clic dans le vide -> cadre de sélection multiple (avec Shift pour cumuler)
+    const baseSelection = e.shiftKey ? store.selected.map(s => ({ ...s })) : [];
+    if (!e.shiftKey) {
+        store.clearSelection();
+        renderInspector();
+    }
     editor.drag = {
-        kind: 'pan',
-        startClientX: e.clientX,
-        startClientY: e.clientY,
-        origPanX: editor.panX,
-        origPanY: editor.panY
+        kind: 'marquee',
+        startX: pt.x,
+        startY: pt.y,
+        currX: pt.x,
+        currY: pt.y,
+        baseSelection
     };
-    stageEl.classList.add('is-panning');
+    renderOverlay();
     svgEl.setPointerCapture(e.pointerId);
 });
 
@@ -488,6 +771,55 @@ svgEl.addEventListener('pointermove', (e) => {
         editor.panX = editor.drag.origPanX + (e.clientX - editor.drag.startClientX);
         editor.panY = editor.drag.origPanY + (e.clientY - editor.drag.startClientY);
         applyViewportTransform();
+        return;
+    }
+
+    if (editor.drag.kind === 'marquee') {
+        editor.drag.currX = pt.x;
+        editor.drag.currY = pt.y;
+        const inside = findElementsInRect(editor.drag.startX, editor.drag.startY, pt.x, pt.y);
+        store.setSelection([...editor.drag.baseSelection, ...inside]);
+        renderOverlay();
+        return;
+    }
+
+    if (editor.drag.kind === 'move-multi') {
+        if (!editor.drag.historyPushed) {
+            store.pushHistory();
+            editor.drag.historyPushed = true;
+        }
+        const overDelete = isOverDeleteZone(e.clientX, e.clientY);
+        drawerEl.classList.toggle('is-drop-delete', overDelete);
+        let dx = pt.x - editor.drag.startX;
+        let dy = pt.y - editor.drag.startY;
+        if (editor.snapEnabled && editor.showGrid && !e.altKey && !overDelete && editor.gridSize > 0) {
+            dx = Math.round(dx / editor.gridSize) * editor.gridSize;
+            dy = Math.round(dy / editor.gridSize) * editor.gridSize;
+        } else {
+            dx = Math.round(dx);
+            dy = Math.round(dy);
+        }
+        for (const o of editor.drag.origItems) {
+            o.el.x = o.x + dx;
+            o.el.y = o.y + dy;
+        }
+        for (const o of editor.drag.origLabels) {
+            o.el.x = o.x + dx;
+            o.el.y = o.y + dy;
+            o.el.targetX = o.targetX + dx;
+            o.el.targetY = o.targetY + dy;
+        }
+        for (const o of editor.drag.origConns) {
+            if (o.startFree) {
+                o.el.start.x = o.startX + dx;
+                o.el.start.y = o.startY + dy;
+            }
+            if (o.endFree) {
+                o.el.end.x = o.endX + dx;
+                o.el.end.y = o.endY + dy;
+            }
+        }
+        renderScene();
         return;
     }
 
@@ -590,9 +922,11 @@ function isOverDeleteZone(clientX, clientY) {
 
 svgEl.addEventListener('pointerup', (e) => {
     if (editor.drag) {
-        const wasMovable = editor.drag.kind === 'move-item' || editor.drag.kind === 'move-label';
+        const wasMarquee = editor.drag.kind === 'marquee';
+        const wasMovable = editor.drag.kind === 'move-item' || editor.drag.kind === 'move-label' || editor.drag.kind === 'move-multi';
         const shouldDelete = wasMovable && isOverDeleteZone(e.clientX, e.clientY);
         const historyPushed = Boolean(editor.drag.historyPushed);
+        const delCount = store.selected.length;
 
         editor.drag = null;
         editor.activeGuides = [];
@@ -606,8 +940,9 @@ svgEl.addEventListener('pointerup', (e) => {
             store.deleteSelected(historyPushed);
             renderScene();
             renderInspector();
-            notify('Élément supprimé.');
+            notify(delCount > 1 ? `${delCount} éléments supprimés.` : 'Élément supprimé.');
         } else {
+            if (wasMarquee) renderInspector();
             renderOverlay();
         }
     }
@@ -643,10 +978,9 @@ svgEl.addEventListener('wheel', (e) => {
 // PANNEAU DE PROPRIÉTÉS À DROITE (INSPECTEUR)
 // =========================================================================
 function renderInspector() {
-    const sel = store.selection;
-    const el = store.getSelectedElement();
+    const entries = store.getSelectedElements();
 
-    if (!sel || !el) {
+    if (entries.length === 0) {
         inspectorTitleEl.innerHTML = '<i class="fas fa-sliders mr-1"></i> Scène';
         inspectorBodyEl.innerHTML = `
           <div class="prop-section">
@@ -671,9 +1005,10 @@ function renderInspector() {
             <div class="prop-section-title">Raccourcis clavier</div>
             <div class="shortcuts-list">
               <div><kbd>V</kbd> Sélection · <kbd>W</kbd> Fil · <kbd>T</kbd> Tuyau · <kbd>L</kbd> Légende</div>
+              <div><kbd>Shift+clic</kbd> / Cadre : Multi-sélection · <kbd>Ctrl+A</kbd> Tout</div>
               <div><kbd>M</kbd> Aimantation · <kbd>G</kbd> Grille · <kbd>Alt</kbd> Ignorer aimant</div>
               <div><kbd>Ctrl+Z</kbd> Annuler · <kbd>Ctrl+D</kbd> Dupliquer · <kbd>Suppr</kbd> Effacer</div>
-              <div><kbd>Flèches</kbd> Décalage fin · <kbd>Molette</kbd> Zoom</div>
+              <div><kbd>Flèches</kbd> Décalage fin · <kbd>Espace</kbd>/Clic droit : Vue</div>
             </div>
           </div>
         `;
@@ -693,12 +1028,98 @@ function renderInspector() {
         return;
     }
 
-    if (sel.kind === 'item') {
+    if (entries.length > 1) {
+        renderMultiInspector(entries);
+        return;
+    }
+
+    const { kind, el } = entries[0];
+    if (kind === 'item') {
         renderItemInspector(el);
-    } else if (sel.kind === 'connector') {
+    } else if (kind === 'connector') {
         renderConnectorInspector(el);
-    } else if (sel.kind === 'label') {
+    } else if (kind === 'label') {
         renderLabelInspector(el);
+    }
+}
+
+function renderMultiInspector(entries) {
+    const nItems = entries.filter(e => e.kind === 'item').length;
+    const nConns = entries.filter(e => e.kind === 'connector').length;
+    const nLbls = entries.filter(e => e.kind === 'label').length;
+    const parts = [];
+    if (nItems) parts.push(`${nItems} objet${nItems > 1 ? 's' : ''}`);
+    if (nConns) parts.push(`${nConns} connecteur${nConns > 1 ? 's' : ''}`);
+    if (nLbls) parts.push(`${nLbls} légende${nLbls > 1 ? 's' : ''}`);
+
+    inspectorTitleEl.innerHTML = `<i class="fas fa-object-group mr-1"></i> ${entries.length} éléments`;
+    inspectorBodyEl.innerHTML = `
+      <div class="prop-section">
+        <div class="prop-section-title">Sélection multiple</div>
+        <div style="font-size:0.78rem; color:var(--schemas-muted)">${parts.join(' · ')}</div>
+        <div class="btn-row">
+          <button class="mini-btn" id="btnDupMulti" title="Dupliquer la sélection (Ctrl+D)"><i class="fas fa-clone"></i> Dupliquer</button>
+          <button class="mini-btn is-danger" id="btnDelMulti" title="Supprimer la sélection (Suppr)"><i class="fas fa-trash"></i> Supprimer</button>
+        </div>
+      </div>
+      ${(nItems + nLbls) >= 2 ? `
+      <div class="prop-section">
+        <div class="prop-section-title">Alignement</div>
+        <div class="btn-row">
+          <button class="mini-btn" data-align="left" title="Aligner à gauche"><i class="fas fa-align-left"></i></button>
+          <button class="mini-btn" data-align="centerX" title="Centrer horizontalement"><i class="fas fa-align-center"></i></button>
+          <button class="mini-btn" data-align="right" title="Aligner à droite"><i class="fas fa-align-right"></i></button>
+        </div>
+        <div class="btn-row">
+          <button class="mini-btn" data-align="top" title="Aligner en haut"><i class="fas fa-arrow-up-to-line"></i> Haut</button>
+          <button class="mini-btn" data-align="centerY" title="Centrer verticalement">Milieu</button>
+          <button class="mini-btn" data-align="bottom" title="Aligner en bas">Bas</button>
+        </div>
+      </div>` : ''}
+      ${nItems > 0 ? `
+      <div class="prop-section">
+        <div class="prop-section-title">Ordre des calques</div>
+        <div class="btn-row">
+          <button class="mini-btn" id="btnMultiBack"><i class="fas fa-angles-down"></i> Arrière-plan</button>
+          <button class="mini-btn" id="btnMultiFront"><i class="fas fa-angles-up"></i> Premier plan</button>
+        </div>
+      </div>` : ''}
+    `;
+
+    inspectorBodyEl.querySelector('#btnDupMulti').addEventListener('click', () => {
+        store.duplicateSelected();
+        renderScene();
+        renderInspector();
+    });
+    inspectorBodyEl.querySelector('#btnDelMulti').addEventListener('click', () => {
+        store.deleteSelected();
+        renderScene();
+        renderInspector();
+    });
+    inspectorBodyEl.querySelectorAll('[data-align]').forEach(btn => {
+        btn.addEventListener('click', () => alignSelectedElements(btn.dataset.align));
+    });
+    const btnBack = inspectorBodyEl.querySelector('#btnMultiBack');
+    if (btnBack) {
+        btnBack.addEventListener('click', () => {
+            store.pushHistory();
+            const ids = new Set(entries.filter(e => e.kind === 'item').map(e => e.id));
+            const moved = store.scene.items.filter(i => ids.has(i.id));
+            const rest = store.scene.items.filter(i => !ids.has(i.id));
+            store.scene.items = [...moved, ...rest];
+            renderScene();
+        });
+    }
+    const btnFront = inspectorBodyEl.querySelector('#btnMultiFront');
+    if (btnFront) {
+        btnFront.addEventListener('click', () => {
+            store.pushHistory();
+            const ids = new Set(entries.filter(e => e.kind === 'item').map(e => e.id));
+            const moved = store.scene.items.filter(i => ids.has(i.id));
+            const rest = store.scene.items.filter(i => !ids.has(i.id));
+            store.scene.items = [...rest, ...moved];
+            renderScene();
+        });
     }
 }
 
@@ -829,6 +1250,13 @@ function renderItemInspector(item) {
             if (key === 'fillToRim' && newVal === true && 'liquidLevel' in item.props) {
                 item.props.liquidLevel = 100;
             }
+            if (item.type === 'appareil-mesure' && key === 'mode') {
+                const modeDefaults = { pH: '7.00', 'σ': '125 µS/cm', 'O₂': '8.5 mg/L', '': '0.00' };
+                const prevDefault = modeDefaults[prevVal];
+                if (!item.props.display || item.props.display === prevDefault) {
+                    item.props.display = modeDefaults[newVal] ?? '0.00';
+                }
+            }
             const valEl = inspectorBodyEl.querySelector(`[data-val-for="${key}"]`);
             if (valEl) valEl.textContent = `${newVal}${field?.unit || ''}`;
             renderScene();
@@ -910,9 +1338,10 @@ function renderConnectorInspector(conn) {
             { label: 'Jaune', color: '#f08c00' }
         ]
         : [
+            { label: 'Caoutchouc brun', color: '#9c5a2d' },
             { label: 'Eau froide', color: '#74c0fc' },
             { label: 'Eau chaude', color: '#ff8787' },
-            { label: 'Vide / Caoutchouc', color: '#adb5bd' },
+            { label: 'Vide / Gris', color: '#adb5bd' },
             { label: 'Gaz', color: '#ffd43b' },
             { label: 'Transparent', color: '#ffffff' }
         ];
@@ -1331,31 +1760,28 @@ document.getElementById('btnZoomOut').addEventListener('click', () => {
 });
 document.getElementById('btnZoomFit').addEventListener('click', fitViewToScene);
 
-document.getElementById('btnCopyPNG').addEventListener('click', handleCopyPNG);
 document.getElementById('btnQuickCopy').addEventListener('click', handleCopyPNG);
-document.getElementById('btnExportPNG').addEventListener('click', handleExportPNG);
 document.getElementById('btnQuickPNG').addEventListener('click', handleExportPNG);
-document.getElementById('btnExportSVG').addEventListener('click', handleExportSVG);
 document.getElementById('btnQuickSVG').addEventListener('click', handleExportSVG);
-document.getElementById('btnSaveJSON').addEventListener('click', handleSaveJSON);
 
 const jsonFileInput = document.getElementById('jsonFileInput');
-document.getElementById('btnLoadJSON').addEventListener('click', () => jsonFileInput.click());
-jsonFileInput.addEventListener('change', async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-        const text = await file.text();
-        store.importJSON(text);
-        renderScene();
-        renderInspector();
-        fitViewToScene();
-        notify('Projet chargé avec succès !');
-    } catch (err) {
-        notify('Erreur : fichier JSON invalide.');
-    }
-    jsonFileInput.value = '';
-});
+if (jsonFileInput) {
+    jsonFileInput.addEventListener('change', async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        try {
+            const text = await file.text();
+            store.importJSON(text);
+            renderScene();
+            renderInspector();
+            fitViewToScene();
+            notify('Projet chargé avec succès !');
+        } catch (err) {
+            notify('Erreur : fichier JSON invalide.');
+        }
+        jsonFileInput.value = '';
+    });
+}
 
 document.getElementById('btnClearScene').addEventListener('click', () => {
     if (store.clearAll()) {
@@ -1369,13 +1795,25 @@ document.getElementById('btnToggleDrawer').addEventListener('click', () => {
     drawerEl.classList.toggle('is-collapsed');
 });
 
+const btnClearSearch = document.getElementById('btnClearSearch');
 drawerSearchEl.addEventListener('input', () => {
     editor.searchQuery = drawerSearchEl.value;
+    if (btnClearSearch) btnClearSearch.hidden = !drawerSearchEl.value;
     if (drawerEl.classList.contains('is-collapsed')) {
         drawerEl.classList.remove('is-collapsed');
     }
     buildDrawerGrid();
 });
+
+if (btnClearSearch) {
+    btnClearSearch.addEventListener('click', () => {
+        drawerSearchEl.value = '';
+        editor.searchQuery = '';
+        btnClearSearch.hidden = true;
+        buildDrawerGrid();
+        drawerSearchEl.focus();
+    });
+}
 
 // Raccourcis clavier globaux
 window.addEventListener('keydown', (e) => {
@@ -1408,6 +1846,13 @@ window.addEventListener('keydown', (e) => {
         if (store.redo()) { renderScene(); renderInspector(); }
         return;
     }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
+        e.preventDefault();
+        store.selectAll();
+        renderOverlay();
+        renderInspector();
+        return;
+    }
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'd') {
         e.preventDefault();
         if (store.duplicateSelected()) { renderScene(); renderInspector(); }
@@ -1430,16 +1875,29 @@ window.addEventListener('keydown', (e) => {
     else if (k === 'l') setTool('label');
     else if (k === 'm') btnToggleSnap.click();
     else if (k === 'g') btnToggleGrid.click();
-    else if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key) && store.selection) {
-        const el = store.getSelectedElement();
-        if (!el || store.selection.kind === 'connector') return;
+    else if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key) && store.selected.length > 0) {
+        const entries = store.getSelectedElements();
+        const movable = entries.filter(en => en.kind === 'item' || en.kind === 'label' || (en.kind === 'connector' && (!en.el.start.itemId || !en.el.end.itemId)));
+        if (movable.length === 0) return;
         e.preventDefault();
         const step = e.shiftKey ? 10 : 1;
+        const dx = e.key === 'ArrowLeft' ? -step : (e.key === 'ArrowRight' ? step : 0);
+        const dy = e.key === 'ArrowUp' ? -step : (e.key === 'ArrowDown' ? step : 0);
         store.pushHistory();
-        if (e.key === 'ArrowUp') el.y -= step;
-        if (e.key === 'ArrowDown') el.y += step;
-        if (e.key === 'ArrowLeft') el.x -= step;
-        if (e.key === 'ArrowRight') el.x += step;
+        for (const { kind, el } of movable) {
+            if (kind === 'item') {
+                el.x += dx;
+                el.y += dy;
+            } else if (kind === 'label') {
+                el.x += dx;
+                el.y += dy;
+                el.targetX += dx;
+                el.targetY += dy;
+            } else if (kind === 'connector') {
+                if (!el.start.itemId) { el.start.x += dx; el.start.y += dy; }
+                if (!el.end.itemId) { el.end.x += dx; el.end.y += dy; }
+            }
+        }
         renderScene();
     }
 });

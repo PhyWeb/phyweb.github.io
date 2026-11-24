@@ -4,10 +4,11 @@
 export const CATEGORIES = [
     { id: 'all', label: 'Tous', icon: 'fa-border-all' },
     { id: 'verrerie', label: 'Verrerie', icon: 'fa-flask' },
-    { id: 'prelevement', label: 'Prélèvement', icon: 'fa-eye-dropper' },
-    { id: 'supports', label: 'Supports & Chauffage', icon: 'fa-fire-burner' },
-    { id: 'distillation', label: 'Distillation & Vide', icon: 'fa-filter' },
-    { id: 'mesure', label: 'Mesure & Élec.', icon: 'fa-gauge-high' },
+    { id: 'dosage', label: 'Dosage & Prélèvement', icon: 'fa-eye-dropper' },
+    { id: 'separation', label: 'Synthèse & Séparation', icon: 'fa-filter' },
+    { id: 'supports', label: 'Supports & Paillasse', icon: 'fa-fire-burner' },
+    { id: 'mesure', label: 'Mesure', icon: 'fa-gauge-high' },
+    { id: 'electricite', label: 'Électricité & Piles', icon: 'fa-bolt' },
     { id: 'effets', label: 'Effets', icon: 'fa-droplet' }
 ];
 
@@ -128,17 +129,13 @@ function renderClippedLiquid(uid, clipPathD, minY, maxY, level, color, ctx = {},
 
 function renderStopcock(cx, cy, open) {
     // Robinet fermé = poignée horizontale, ouvert = poignée verticale dans l'axe du tube
-    if (open) {
-        return `
-          <rect class="robinet-rouge" x="${cx - 16}" y="${cy - 5}" width="10" height="10" rx="1.5" />
-          <rect class="verre" style="stroke-width: 2.5;" x="${cx - 6}" y="${cy - 3.5}" width="22" height="7" />
-          <rect class="robinet-rouge" x="${cx + 16}" y="${cy - 16}" width="7" height="32" rx="2" />
-        `;
-    }
+    const handle = open
+        ? `<rect class="robinet-rouge" x="${cx + 16}" y="${cy - 16}" width="7" height="32" rx="2" />`
+        : `<rect class="robinet-rouge" x="${cx + 16}" y="${cy - 3.5}" width="24" height="7" rx="2" />`;
     return `
       <rect class="robinet-rouge" x="${cx - 26}" y="${cy - 5}" width="10" height="10" rx="1.5" />
       <rect class="verre" style="stroke-width: 2.5;" x="${cx - 16}" y="${cy - 3.5}" width="32" height="7" />
-      <rect class="robinet-rouge" x="${cx + 16}" y="${cy - 3.5}" width="24" height="7" rx="2" />
+      ${handle}
     `;
 }
 
@@ -698,7 +695,7 @@ export const CATALOG = [
     {
         id: 'burette',
         name: 'Burette graduée',
-        category: 'prelevement',
+        category: 'dosage',
         keywords: 'burette graduee titrage dosage robinet',
         defaultProps: { liquidLevel: 85, liquidColor: '#9ad1f5', open: false },
         propSchema: [
@@ -739,7 +736,7 @@ export const CATALOG = [
     {
         id: 'pipette',
         name: 'Pipette',
-        category: 'prelevement',
+        category: 'dosage',
         keywords: 'pipette jaugee graduee pasteur prelevement',
         defaultProps: { variant: 'jaugee', liquidLevel: 70, liquidColor: '#9ad1f5' },
         propSchema: [
@@ -807,7 +804,7 @@ export const CATALOG = [
     {
         id: 'propipette',
         name: 'Propipette',
-        category: 'prelevement',
+        category: 'dosage',
         keywords: 'propipette poire aspiration pipette',
         defaultProps: { color: '#e06358' },
         propSchema: [
@@ -836,7 +833,7 @@ export const CATALOG = [
     {
         id: 'seringue',
         name: 'Seringue graduée',
-        category: 'prelevement',
+        category: 'dosage',
         keywords: 'seringue piston gaz volume',
         defaultProps: { piston: 50, hasLiquid: true, liquidColor: '#9ad1f5' },
         propSchema: [
@@ -877,7 +874,7 @@ export const CATALOG = [
     {
         id: 'pissette',
         name: 'Pissette',
-        category: 'prelevement',
+        category: 'dosage',
         keywords: 'pissette eau distillee rincage',
         defaultProps: { liquidLevel: 55, liquidColor: '#9ad1f5' },
         propSchema: [...LIQUID_PROPS_SCHEMA],
@@ -906,7 +903,7 @@ export const CATALOG = [
     {
         id: 'flacon',
         name: 'Flacon de laboratoire',
-        category: 'prelevement',
+        category: 'dosage',
         keywords: 'flacon bouteille reactif gl45 bouchon',
         defaultProps: { volume: '500', capped: true, capColor: '#2554b0', liquidLevel: 60, liquidColor: '#9ad1f5' },
         propSchema: [
@@ -980,7 +977,7 @@ export const CATALOG = [
     {
         id: 'flacon-gouttes',
         name: 'Flacon compte-gouttes',
-        category: 'prelevement',
+        category: 'dosage',
         keywords: 'flacon compte gouttes indicateur colore',
         defaultProps: { liquidLevel: 55, liquidColor: '#f4d35e' },
         propSchema: [...LIQUID_PROPS_SCHEMA],
@@ -1006,7 +1003,7 @@ export const CATALOG = [
     {
         id: 'entonnoir',
         name: 'Entonnoir',
-        category: 'prelevement',
+        category: 'separation',
         keywords: 'entonnoir filtre filtration buchner',
         defaultProps: { variant: 'simple' },
         propSchema: [
@@ -1025,12 +1022,14 @@ export const CATALOG = [
             if (p.variant === 'buchner') {
                 return [
                     { id: 'neck-bottom', x: 0, y: -48, type: 'neck-bottom', dir: 'down', angle: 180, label: 'Joint conique' },
+                    { id: 'clamp-target', x: 0, y: -70, type: 'clamp-target', dir: 'any', angle: 0, label: 'Cône (anneau)' },
                     { id: 'tip', x: 0, y: 0, type: 'tip', dir: 'down', label: 'Pointe' }
                 ];
             }
             const coneY = p.variant === 'filtre' ? -52 : -50;
             return [
                 { id: 'neck-bottom', x: 0, y: coneY, type: 'neck-bottom', dir: 'down', angle: 180, label: 'Base cône' },
+                { id: 'clamp-target', x: 0, y: coneY - 12, type: 'clamp-target', dir: 'any', angle: 0, label: 'Cône (anneau)' },
                 { id: 'tip', x: 0, y: 0, type: 'tip', dir: 'down', label: 'Pointe' }
             ];
         },
@@ -1063,7 +1062,7 @@ export const CATALOG = [
     {
         id: 'ampoule-decanter',
         name: 'Ampoule à décanter',
-        category: 'prelevement',
+        category: 'separation',
         keywords: 'ampoule decanter extraction liquide phase robinet',
         defaultProps: { open: false, stopper: true, phase1Level: 35, phase1Color: '#9ad1f5', phase2Level: 30, phase2Color: '#f4d35e' },
         propSchema: [
@@ -1075,7 +1074,7 @@ export const CATALOG = [
             { key: 'phase2Color', label: 'Couleur phase sup.', type: 'color', presets: LIQUID_PRESETS, showIf: p => (p.phase2Level || 0) > 0 }
         ],
         getBBox(p) {
-            return { x: -58, y: p.stopper ? -460 : -432, width: 116, height: p.stopper ? 460 : 432 };
+            return { x: -58, y: p.stopper ? -456 : -432, width: 116, height: p.stopper ? 456 : 432 };
         },
         getAnchors() {
             return [
@@ -1086,7 +1085,7 @@ export const CATALOG = [
         },
         render(p, uid, ctx = {}) {
             const bg = 'M -14,-432 L -14,-390 C -60,-380 -62,-322 -40,-284 C -26,-260 -12,-244 -10,-230 L -10,-57 L -4,-44 L -4,0 L 4,-8 L 4,-44 L 10,-57 L 10,-230 C 12,-244 26,-260 40,-284 C 62,-322 60,-380 14,-390 L 14,-432 Z';
-            const bodyClip = 'M -12.5,-390 C -58,-380 -60,-322 -38.5,-284 C -24.5,-260 -10.5,-244 -8.5,-230 L -8.5,-57 L 8.5,-57 L 8.5,-230 C 10.5,-244 24.5,-260 38.5,-284 C 60,-322 58,-380 12.5,-390 Z';
+            const bodyClip = 'M -12.5,-390 C -58,-380 -60,-322 -38.5,-284 C -24.5,-260 -10.5,-244 -8.5,-230 L -8.5,-57 L -2.5,-44 L -2.5,-33 L 2.5,-33 L 2.5,-44 L 8.5,-57 L 8.5,-230 C 10.5,-244 24.5,-260 38.5,-284 C 60,-322 58,-380 12.5,-390 Z';
             const l1 = Math.max(0, Math.min(80, Number(p.phase1Level) || 0));
             const l2 = Math.max(0, Math.min(100 - l1, Number(p.phase2Level) || 0));
             const rot = Number(ctx?.rotation) || 0;
@@ -1111,15 +1110,14 @@ export const CATALOG = [
               <g clip-path="url(#clip-${uid})" style="mix-blend-mode: darken;">
                 <g${rotAttr}>
                   ${showP1 ? `<rect x="-800" y="${wy1.toFixed(1)}" width="1600" height="1600" fill="${esc(p.phase1Color)}" />` : ''}
-                  ${showP2 ? `<rect x="-800" y="${wy2.toFixed(1)}" width="1600" height="${(wy1 - wy2).toFixed(1)}" fill="${esc(p.phase2Color)}" />` : ''}
+                  ${showP2 ? `<rect x="-800" y="${wy2.toFixed(1)}" width="1600" height="${showP1 ? (wy1 - wy2).toFixed(1) : '1600'}" fill="${esc(p.phase2Color)}" />` : ''}
                   ${showP1 && showP2 ? `<line x1="-800" y1="${wy1.toFixed(1)}" x2="800" y2="${wy1.toFixed(1)}" stroke="rgba(0,0,0,0.2)" stroke-width="1.2" />` : ''}
                 </g>
               </g>
             ` : '';
-            const stopperSvg = p.stopper ? `
-              <rect class="verre" x="-17" y="-456" width="34" height="8" rx="3" />
-              <rect class="verre" x="-13" y="-448" width="26" height="32" rx="2" />
-            ` : '';
+            const stopperSvg = p.stopper
+                ? `<polygon class="bouchon" points="-17,-454 17,-454 13,-416 -13,-416" />`
+                : '';
             return `
               <path class="verre-fond" d="${bg}" />
               ${liquids}
@@ -1134,15 +1132,19 @@ export const CATALOG = [
     {
         id: 'ampoule-coulee',
         name: 'Ampoule de coulée',
-        category: 'prelevement',
-        keywords: 'ampoule coulee addition goutte synthese',
-        defaultProps: { open: false, liquidLevel: 60, liquidColor: '#9ad1f5' },
+        category: 'separation',
+        keywords: 'ampoule coulee isobare addition goutte synthese equilibrage bouchon',
+        defaultProps: { open: false, isobare: false, stopper: false, liquidLevel: 60, liquidColor: '#9ad1f5' },
         propSchema: [
+            { key: 'isobare', label: 'Ampoule isobare', type: 'toggle' },
+            { key: 'stopper', label: 'Bouchon en place', type: 'toggle' },
             { key: 'open', label: 'Robinet ouvert', type: 'toggle' },
             ...LIQUID_PROPS_SCHEMA
         ],
-        getBBox() {
-            return { x: -28, y: -295, width: 68, height: 295 };
+        getBBox(p) {
+            const minX = p.isobare ? -38 : -28;
+            const topY = p.stopper ? -319 : -295;
+            return { x: minX, y: topY, width: 40 - minX, height: -topY };
         },
         getAnchors() {
             return [
@@ -1153,11 +1155,23 @@ export const CATALOG = [
         },
         render(p, uid, ctx = {}) {
             const bg = 'M -14,-295 L 14,-295 L 14,-260 L 23,-248 L 23,-138 L 7,-118 L 7,-94 L 13,-85 L 13,-45 L 4,-35 L 4,-8 L -4,0 L -4,-35 L -13,-45 L -13,-85 L -7,-94 L -7,-118 L -23,-138 L -23,-248 L -14,-260 Z';
-            const clip = 'M -21.5,-248 L 21.5,-248 L 21.5,-138 L 5.5,-118 L 5.5,-94 L -5.5,-94 L -5.5,-118 L -21.5,-138 Z';
+            const clip = 'M -12.5,-295 L 12.5,-295 L 12.5,-260 L 21.5,-248 L 21.5,-138 L 5.5,-118 L 5.5,-106 L -5.5,-106 L -5.5,-118 L -21.5,-138 L -21.5,-248 L -12.5,-260 Z';
+            const stopperSvg = p.stopper
+                ? `<polygon class="bouchon" points="-17,-317 17,-317 13,-279 -13,-279" />`
+                : '';
+            const leftWallSvg = p.isobare
+                ? `
+                  <path class="verre-fond" d="M -14,-278 L -28,-278 Q -36,-278 -36,-270 L -36,-78 Q -36,-70 -28,-70 L -13,-70 L -13,-76 L -28,-76 Q -30,-76 -30,-78 L -30,-270 Q -30,-272 -28,-272 L -14,-272 Z" />
+                  <path class="verre" style="fill:none;" d="M -14,-295 L -14,-278 L -28,-278 Q -36,-278 -36,-270 L -36,-78 Q -36,-70 -28,-70 L -13,-70 L -13,-45 L -4,-35 L -4,0" />
+                  <path class="verre" style="fill:none;" d="M -14,-272 L -28,-272 Q -30,-272 -30,-270 L -30,-78 Q -30,-76 -28,-76 L -13,-76" />
+                  <path class="verre" style="fill:none;" d="M -14,-272 L -14,-260 L -23,-248 L -23,-138 L -7,-118 L -7,-94 L -13,-85 L -13,-76" />
+                `
+                : `<path class="verre" style="fill:none;" d="M -14,-295 L -14,-260 L -23,-248 L -23,-138 L -7,-118 L -7,-94 L -13,-85 L -13,-45 L -4,-35 L -4,0" />`;
             return `
               <path class="verre-fond" d="${bg}" />
-              ${renderClippedLiquid(uid, clip, -245, -100, p.liquidLevel, p.liquidColor, ctx, { halfWidth: 21.5, rimPoints: [[-14, -295], [14, -295]], fillToRim: Boolean(p.fillToRim) })}
-              <path class="verre" style="fill:none;" d="M -14,-295 L -14,-260 L -23,-248 L -23,-138 L -7,-118 L -7,-94 L -13,-85 L -13,-45 L -4,-35 L -4,0" />
+              ${renderClippedLiquid(uid, clip, -245, -106, p.liquidLevel, p.liquidColor, ctx, { halfWidth: 21.5, rimPoints: [[-12.5, -295], [12.5, -295]], sealed: Boolean(p.stopper), fillToRim: Boolean(p.fillToRim) })}
+              ${stopperSvg}
+              ${leftWallSvg}
               <path class="verre" style="fill:none;" d="M 14,-295 L 14,-260 L 23,-248 L 23,-138 L 7,-118 L 7,-94 L 13,-85 L 13,-45 L 4,-35 L 4,-8" />
               ${[-228, -213, -198, -183, -168, -153].map((y, i) => `<line class="trait" x1="${i % 2 === 0 ? 11 : 15}" y1="${y}" x2="23" y2="${y}" />`).join('')}
               ${renderStopcock(0, -106, p.open)}
@@ -1168,7 +1182,7 @@ export const CATALOG = [
     {
         id: 'coupelle-pesee',
         name: 'Coupelle de pesée',
-        category: 'prelevement',
+        category: 'dosage',
         keywords: 'coupelle pesee balance solide poudre',
         defaultProps: { hasSolid: true, solidColor: '#4ecdc4' },
         propSchema: [
@@ -1195,7 +1209,7 @@ export const CATALOG = [
     {
         id: 'spatule',
         name: 'Spatule',
-        category: 'prelevement',
+        category: 'dosage',
         keywords: 'spatule prelever solide poudre',
         defaultProps: {},
         propSchema: [],
@@ -1213,7 +1227,7 @@ export const CATALOG = [
     {
         id: 'baguette-verre',
         name: 'Baguette en verre',
-        category: 'prelevement',
+        category: 'dosage',
         keywords: 'baguette verre agitateur tige',
         defaultProps: {},
         propSchema: [],
@@ -1255,8 +1269,8 @@ export const CATALOG = [
         ],
         getBBox(p) {
             const w = Math.max(250, Number(p.width) || 760);
-            const h = p.style === 'pieds' ? 95 : (p.style === 'ligne' ? 16 : 24);
-            return { x: -w / 2, y: -2, width: w, height: h };
+            const h = p.style === 'pieds' ? 98 : (p.style === 'ligne' ? 16 : 26);
+            return { x: -w / 2, y: 0, width: w, height: h };
         },
         getAnchors(p) {
             const w = Math.max(250, Number(p.width) || 760);
@@ -1267,13 +1281,14 @@ export const CATALOG = [
         render(p) {
             const w = Math.max(250, Number(p.width) || 760);
             const hw = w / 2;
+            // Décalage de 3 px vers le bas afin que les objets posés sur y=0 (stroke-width 3) reposent sur le dessus du plateau sans s'y enfoncer
             if (p.style === 'ligne') {
                 let hatches = '';
                 for (let x = -hw + 12; x <= hw - 6; x += 18) {
-                    hatches += `<line x1="${x}" y1="0" x2="${x - 8}" y2="10" stroke="#64748b" stroke-width="1.6" stroke-linecap="round" />`;
+                    hatches += `<line x1="${x}" y1="3" x2="${x - 8}" y2="13" stroke="#64748b" stroke-width="1.6" stroke-linecap="round" />`;
                 }
                 return `
-                  <line x1="${-hw}" y1="0" x2="${hw}" y2="0" stroke="#000000" stroke-width="3.5" stroke-linecap="round" />
+                  <line x1="${-hw}" y1="3" x2="${hw}" y2="3" stroke="#000000" stroke-width="3.5" stroke-linecap="round" />
                   ${hatches}
                 `;
             }
@@ -1281,15 +1296,15 @@ export const CATALOG = [
             if (p.style === 'pieds') {
                 const legOffset = Math.max(40, hw - 48);
                 return `
-                  <rect x="${-legOffset}" y="20" width="16" height="72" fill="#94a3b8" stroke="#000000" stroke-width="2.5" stroke-linejoin="round" />
-                  <rect x="${legOffset - 16}" y="20" width="16" height="72" fill="#94a3b8" stroke="#000000" stroke-width="2.5" stroke-linejoin="round" />
-                  <rect x="${-legOffset + 16}" y="20" width="${(legOffset - 16) * 2}" height="14" fill="#cbd5e1" stroke="#000000" stroke-width="2.5" stroke-linejoin="round" />
-                  <rect x="${-hw}" y="0" width="${w}" height="20" rx="3" fill="${col}" stroke="#000000" stroke-width="3" stroke-linejoin="round" />
+                  <rect x="${-legOffset}" y="23" width="16" height="72" fill="#94a3b8" stroke="#000000" stroke-width="2.5" stroke-linejoin="round" />
+                  <rect x="${legOffset - 16}" y="23" width="16" height="72" fill="#94a3b8" stroke="#000000" stroke-width="2.5" stroke-linejoin="round" />
+                  <rect x="${-legOffset + 16}" y="23" width="${(legOffset - 16) * 2}" height="14" fill="#cbd5e1" stroke="#000000" stroke-width="2.5" stroke-linejoin="round" />
+                  <rect x="${-hw}" y="3" width="${w}" height="20" rx="3" fill="${col}" stroke="#000000" stroke-width="3" stroke-linejoin="round" />
                 `;
             }
             return `
-              <rect x="${-hw}" y="0" width="${w}" height="20" rx="3" fill="${col}" stroke="#000000" stroke-width="3" stroke-linejoin="round" />
-              <line x1="${-hw + 6}" y1="14" x2="${hw - 6}" y2="14" stroke="rgba(0,0,0,0.12)" stroke-width="2" />
+              <rect x="${-hw}" y="3" width="${w}" height="20" rx="3" fill="${col}" stroke="#000000" stroke-width="3" stroke-linejoin="round" />
+              <line x1="${-hw + 6}" y1="17" x2="${hw - 6}" y2="17" stroke="rgba(0,0,0,0.12)" stroke-width="2" />
             `;
         }
     },
@@ -1297,7 +1312,7 @@ export const CATALOG = [
     {
         id: 'robinet',
         name: 'Robinet d’eau',
-        category: 'distillation',
+        category: 'supports',
         fixedUpright: true,
         keywords: 'robinet eau evier alimentation col cygne refrigerant trompe',
         defaultProps: { variant: 'paillasse', open: false, showStream: false, handleColor: '#3b82f6' },
@@ -1383,6 +1398,59 @@ export const CATALOG = [
     },
 
     {
+        id: 'evier',
+        name: 'Évier',
+        category: 'supports',
+        fixedUpright: true,
+        keywords: 'evier bac eau vidange rejet lavabo refrigerant paillasse encastre',
+        defaultProps: { width: 140, hasWater: true, waterColor: '#9ad1f5' },
+        propSchema: [
+            { key: 'width', label: 'Largeur', type: 'range', min: 100, max: 220, step: 10, unit: 'mm' },
+            { key: 'hasWater', label: 'Eau au fond', type: 'toggle' },
+            { key: 'waterColor', label: 'Couleur eau', type: 'color', presets: LIQUID_PRESETS, showIf: p => p.hasWater }
+        ],
+        getBBox(p) {
+            const w = Math.max(100, Math.min(220, Number(p.width) || 140));
+            return { x: -w / 2 - 10, y: 0, width: w + 20, height: 92 };
+        },
+        getAnchors() {
+            return [
+                { id: 'base', x: 0, y: 0, type: 'base', dir: 'down', label: 'Niveau paillasse' },
+                { id: 'drain-in', x: 0, y: 14, type: 'hose', dir: 'up', angle: 0, label: 'Évacuation eau' }
+            ];
+        },
+        render(p) {
+            const w = Math.max(100, Math.min(220, Number(p.width) || 140));
+            const hw = w / 2;
+            const water = p.hasWater
+                ? `<path d="M ${-hw + 9},50 Q ${(-hw / 3).toFixed(1)},47 0,50 T ${hw - 9},50 L ${hw - 9},58 C ${hw - 9},62.5 ${hw - 12.5},65 ${hw - 18},65 L ${-hw + 18},65 C ${-hw + 12.5},65 ${-hw + 9},62.5 ${-hw + 9},58 Z" fill="${esc(p.waterColor || '#9ad1f5')}" opacity="0.85" />`
+                : '';
+            return `
+              <!-- Masque de découpe encastré à niveau dans la paillasse -->
+              <path d="M ${-hw},1 L ${-hw},62 C ${-hw},69 ${-hw + 6},74 ${-hw + 14},74 L ${hw - 14},74 C ${hw - 6},74 ${hw},69 ${hw},62 L ${hw},1 Z" fill="#f1f5f9" stroke="none" />
+              <!-- Cuve intérieure ouverte vers le haut -->
+              <path d="M ${-hw + 8},2 L ${-hw + 8},58 C ${-hw + 8},63 ${-hw + 12},66 ${-hw + 18},66 L ${hw - 18},66 C ${hw - 12},66 ${hw - 8},63 ${hw - 8},58 L ${hw - 8},2 Z" fill="#ffffff" stroke="none" />
+              ${water}
+              <!-- Conduit d'évacuation sous l'évier -->
+              <path d="M -7,74 L -7,92 L 7,92 L 7,74 Z" fill="#94a3b8" stroke="none" />
+              <line x1="-7" y1="74" x2="-7" y2="92" stroke="#000000" stroke-width="2.5" stroke-linecap="round" />
+              <line x1="7" y1="74" x2="7" y2="92" stroke="#000000" stroke-width="2.5" stroke-linecap="round" />
+              <!-- Contours de la cuve (ouverts en haut) -->
+              <path d="M ${-hw + 8},3 L ${-hw + 8},58 C ${-hw + 8},63 ${-hw + 12},66 ${-hw + 18},66 L ${hw - 18},66 C ${hw - 12},66 ${hw - 8},63 ${hw - 8},58 L ${hw - 8},3" fill="none" stroke="#000000" stroke-width="2" stroke-linejoin="round" />
+              <path d="M ${-hw},6 L ${-hw},62 C ${-hw},69 ${-hw + 6},74 ${-hw + 14},74 L ${hw - 14},74 C ${hw - 6},74 ${hw},69 ${hw},62 L ${hw},6" fill="none" stroke="#000000" stroke-width="3" stroke-linejoin="round" />
+              <!-- Bonde au fond -->
+              <rect x="-12" y="64" width="24" height="4" rx="1.5" fill="#94a3b8" stroke="#000000" stroke-width="1.8" />
+              <line x1="-6" y1="64" x2="-6" y2="68" stroke="#000000" stroke-width="1.3" />
+              <line x1="0" y1="64" x2="0" y2="68" stroke="#000000" stroke-width="1.3" />
+              <line x1="6" y1="64" x2="6" y2="68" stroke="#000000" stroke-width="1.3" />
+              <!-- Rebords d'encastrement posés à niveau sur la paillasse -->
+              <path d="M ${-hw - 10},6 L ${-hw - 10},1.5 L ${-hw + 8},1.5 L ${-hw + 8},6 Z" fill="#cbd5e1" stroke="#000000" stroke-width="2.5" stroke-linejoin="round" />
+              <path d="M ${hw - 8},6 L ${hw - 8},1.5 L ${hw + 10},1.5 L ${hw + 10},6 Z" fill="#cbd5e1" stroke="#000000" stroke-width="2.5" stroke-linejoin="round" />
+            `;
+        }
+    },
+
+    {
         id: 'potence',
         name: 'Potence',
         category: 'supports',
@@ -1434,6 +1502,67 @@ export const CATALOG = [
               <line class="potence" x1="-98" y1="${c1}" x2="40" y2="${c1}" />
               <circle cx="0" cy="${c1}" r="8" fill="#000000" />
               <path class="potence" d="M -130,${c1 - 10} L -98,${c1 - 10} L -98,${c1 + 10} L -130,${c1 + 10}" />
+            `;
+        }
+    },
+
+    {
+        id: 'support-entonnoir',
+        name: 'Support à entonnoir (bois)',
+        category: 'supports',
+        fixedUpright: true,
+        keywords: 'potence support entonnoir ampoule decanter bois anneau filtration decantation',
+        defaultProps: { variant: 'double', armY: 250 },
+        propSchema: [
+            { key: 'variant', label: 'Configuration', type: 'select', options: [
+                { value: 'double', label: 'Double (2 anneaux)' },
+                { value: 'simple', label: 'Simple (1 anneau)' }
+            ]},
+            { key: 'armY', label: 'Hauteur du support', type: 'range', min: 130, max: 330, step: 10, unit: 'mm' }
+        ],
+        getBBox(p) {
+            if (p.variant === 'simple') return { x: -115, y: -386, width: 215, height: 386 };
+            return { x: -115, y: -386, width: 230, height: 386 };
+        },
+        getAnchors(p) {
+            const ay = -(Number(p.armY) || 250);
+            const anchors = [
+                { id: 'base', x: 0, y: 0, type: 'base', dir: 'down', label: 'Socle bois' },
+                { id: 'ring-left', x: -72, y: ay, type: 'clamp', dir: 'up', angle: 180, label: 'Anneau gauche' }
+            ];
+            if (p.variant !== 'simple') {
+                anchors.push({ id: 'ring-right', x: 72, y: ay, type: 'clamp', dir: 'up', angle: 180, label: 'Anneau droit' });
+            }
+            return anchors;
+        },
+        render(p) {
+            const ay = -(Number(p.armY) || 250);
+            const isDouble = p.variant !== 'simple';
+            const armSvg = isDouble
+                ? `
+                  <!-- Bras double à 2 anneaux en bois -->
+                  <path class="bois" d="M -115,${ay - 10} L 115,${ay - 10} C 115,${ay + 2} 105,${ay + 6} 72,${ay + 6} C 42,${ay + 6} 28,${ay + 2} 18,${ay + 2} L -18,${ay + 2} C -28,${ay + 2} -42,${ay + 6} -72,${ay + 6} C -105,${ay + 6} -115,${ay + 2} -115,${ay - 10} Z" />
+                  <ellipse cx="-72" cy="${ay - 5}" rx="28" ry="4.5" fill="#ffffff" stroke="#000000" stroke-width="2" />
+                  <ellipse cx="72" cy="${ay - 5}" rx="28" ry="4.5" fill="#ffffff" stroke="#000000" stroke-width="2" />
+                `
+                : `
+                  <!-- Bras simple à 1 anneau en bois -->
+                  <path class="bois" d="M -115,${ay - 10} L 18,${ay - 10} L 18,${ay + 2} L -18,${ay + 2} C -28,${ay + 2} -42,${ay + 6} -72,${ay + 6} C -105,${ay + 6} -115,${ay + 2} -115,${ay - 10} Z" />
+                  <ellipse cx="-72" cy="${ay - 5}" rx="28" ry="4.5" fill="#ffffff" stroke="#000000" stroke-width="2" />
+                `;
+            return `
+              <!-- Socle rectangulaire en bois -->
+              <rect class="bois" x="-100" y="-18" width="200" height="18" rx="2.5" />
+              <!-- Tige verticale en bois + renfort bas + pommeau haut -->
+              <rect class="bois" x="-7" y="-366" width="14" height="348" rx="3" />
+              <rect class="bois" x="-10" y="-96" width="20" height="78" rx="2.5" />
+              <circle class="bois" cx="0" cy="-374" r="8.5" />
+              <!-- Bloc de serrage coulissant + vis papillon -->
+              <rect class="bois" x="-18" y="${ay + 2}" width="36" height="24" rx="3" />
+              <line class="trait" style="stroke-width:1.8;" x1="-18" y1="${ay + 22}" x2="18" y2="${ay + 22}" />
+              <path class="bois" style="fill:#b98850;" d="M -14,${ay + 18} L 4,${ay + 7} L 9,${ay + 14} L -9,${ay + 25} Z" />
+              <circle cx="0" cy="${ay + 14}" r="3" fill="#8b5e34" stroke="#000000" stroke-width="1.5" />
+              ${armSvg}
             `;
         }
     },
@@ -1708,7 +1837,7 @@ export const CATALOG = [
     {
         id: 'bouchon',
         name: 'Bouchon',
-        category: 'supports',
+        category: 'separation',
         keywords: 'bouchon conique cylindrique perce caoutchouc',
         defaultProps: { variant: 'conique' },
         propSchema: [
@@ -1751,7 +1880,7 @@ export const CATALOG = [
     {
         id: 'refrigerant',
         name: 'Réfrigérant',
-        category: 'distillation',
+        category: 'separation',
         keywords: 'refrigerant boules allihn droit liebig reflux distillation eau',
         defaultProps: { variant: 'boules', hasWater: false, waterColor: '#cbe8fb' },
         propSchema: [
@@ -1776,11 +1905,13 @@ export const CATALOG = [
         },
         render(p) {
             if (p.variant === 'droit') {
-                const water = p.hasWater ? `<rect x="-18" y="-366" width="36" height="296" fill="${esc(p.waterColor)}" />` : '';
+                const jacketWater = 'M -14,-380 L 14,-380 L 19,-367 L 19,-88 L 41,-88 L 41,-80 L 19,-80 L 19,-63 L 13,-50 L -13,-50 L -19,-63 L -19,-342 L -41,-342 L -41,-350 L -19,-350 L -19,-367 Z';
+                const innerTube = 'M -14,-380 L -7,-355 L -7,-75 L -13,-50 L 13,-50 L 7,-75 L 7,-355 L 14,-380 Z';
+                const water = p.hasWater ? `<path fill="${esc(p.waterColor)}" d="${jacketWater}" />` : '';
                 return `
                   <path class="verre-fond" d="M -14,-430 L 14,-430 L 14,-380 L 19,-367 L 19,-88 L 41,-88 L 41,-80 L 19,-80 L 19,-63 L 13,-50 L 13,0 L -13,0 L -13,-50 L -19,-63 L -19,-342 L -41,-342 L -41,-350 L -19,-350 L -19,-367 L -14,-380 Z" />
                   ${water}
-                  <rect x="-7" y="-366" width="14" height="296" fill="#ffffff" />
+                  ${p.hasWater ? `<path fill="#ffffff" d="${innerTube}" />` : ''}
                   <path class="verre" style="fill:none;" d="M -14,-430 L -14,-380 L -19,-367 L -19,-350 L -41,-350" />
                   <path class="verre" style="fill:none;" d="M -41,-342 L -19,-342 L -19,-63 L -13,-50 L -13,0" />
                   <path class="verre" style="fill:none;" d="M 14,-430 L 14,-380 L 19,-367 L 19,-88 L 41,-88" />
@@ -1789,7 +1920,8 @@ export const CATALOG = [
                   <path class="trait" d="M 14,-380 L 7,-355 L 7,-75 L 13,-50" />
                 `;
             }
-            const water = p.hasWater ? `<rect x="-20" y="-366" width="40" height="296" fill="${esc(p.waterColor)}" />` : '';
+            const jacketWater = 'M -14,-380 L 14,-380 L 21,-367 L 21,-88 L 43,-88 L 43,-80 L 21,-80 L 21,-63 L 13,-50 L -13,-50 L -21,-63 L -21,-342 L -43,-342 L -43,-350 L -21,-350 L -21,-367 Z';
+            const water = p.hasWater ? `<path fill="${esc(p.waterColor)}" d="${jacketWater}" />` : '';
             const innerTube = `M -14,-380 L -6,-355 L -6,-335 C -14,-329 -14,-311 -6,-305 L -6,-287 C -14,-281 -14,-263 -6,-257 L -6,-239 C -14,-233 -14,-215 -6,-209 L -6,-191 C -14,-185 -14,-167 -6,-161 L -6,-143 C -14,-137 -14,-119 -6,-113 L -6,-75 L -13,-50 L 13,-50 L 6,-75 L 6,-113 C 14,-119 14,-137 6,-143 L 6,-161 C 14,-167 14,-185 6,-191 L 6,-209 C 14,-215 14,-233 6,-239 L 6,-257 C 14,-263 14,-281 6,-287 L 6,-305 C 14,-311 14,-329 6,-335 L 6,-355 L 14,-380 Z`;
             return `
               <path class="verre-fond" d="M -14,-430 L 14,-430 L 14,-380 L 21,-367 L 21,-88 L 43,-88 L 43,-80 L 21,-80 L 21,-63 L 13,-50 L 13,0 L -13,0 L -13,-50 L -21,-63 L -21,-342 L -43,-342 L -43,-350 L -21,-350 L -21,-367 L -14,-380 Z" />
@@ -1808,7 +1940,7 @@ export const CATALOG = [
     {
         id: 'colonne-vigreux',
         name: 'Colonne de Vigreux',
-        category: 'distillation',
+        category: 'separation',
         keywords: 'colonne vigreux distillation fractionnee',
         defaultProps: {},
         propSchema: [],
@@ -1838,7 +1970,7 @@ export const CATALOG = [
     {
         id: 'tete-distillation',
         name: 'Tête de distillation',
-        category: 'distillation',
+        category: 'separation',
         keywords: 'tete distillation thermometre bouchon',
         defaultProps: { stopper: true },
         propSchema: [{ key: 'stopper', label: 'Bouchon percé', type: 'toggle' }],
@@ -1872,7 +2004,7 @@ export const CATALOG = [
     {
         id: 'allonge-coudee',
         name: 'Allonge coudée',
-        category: 'distillation',
+        category: 'separation',
         keywords: 'allonge coudee distillation distillat',
         defaultProps: {},
         propSchema: [],
@@ -1897,7 +2029,7 @@ export const CATALOG = [
     {
         id: 'fiole-vide',
         name: 'Fiole à vide',
-        category: 'distillation',
+        category: 'separation',
         keywords: 'fiole vide buchner filtration aspiration',
         defaultProps: { liquidLevel: 25, liquidColor: '#9ad1f5' },
         propSchema: [...LIQUID_PROPS_SCHEMA],
@@ -1925,7 +2057,7 @@ export const CATALOG = [
     {
         id: 'trompe-eau',
         name: 'Trompe à eau',
-        category: 'distillation',
+        category: 'separation',
         keywords: 'trompe eau vide venturi aspiration robinet',
         defaultProps: {},
         propSchema: [],
@@ -1955,7 +2087,7 @@ export const CATALOG = [
     {
         id: 'tube-degagement',
         name: 'Tube à dégagement',
-        category: 'distillation',
+        category: 'separation',
         keywords: 'tube degagement gaz bulles',
         defaultProps: {},
         propSchema: [],
@@ -2000,16 +2132,19 @@ export const CATALOG = [
             ];
         },
         render(p) {
+            const shown = String(p.display ?? '0.00 g');
+            const fontSize = shown.length <= 7 ? 24 : (shown.length <= 10 ? 20 : 17);
+            const textY = shown.length <= 7 ? -40 : (shown.length <= 10 ? -41 : -42);
             return `
               <rect class="bouchon" x="-102" y="-9" width="22" height="9" rx="2" />
               <rect class="bouchon" x="80" y="-9" width="22" height="9" rx="2" />
               <path class="verre" d="M -114,-85 L 114,-85 L 122,-19 C 122,-13 117,-9 110,-9 L -110,-9 C -117,-9 -122,-13 -122,-19 Z" />
               <rect class="bouchon" x="-12" y="-98" width="24" height="13" />
               <rect class="verre" x="-74" y="-106" width="148" height="8" rx="2.5" />
-              <rect class="ecran" x="-98" y="-66" width="122" height="36" rx="4" />
-              <text class="texte-ecran" x="15" y="-42">${esc(p.display ?? '0.00 g')}</text>
-              <rect class="bouton" x="38" y="-66" width="26" height="36" rx="3" />
-              <rect class="bouton" x="72" y="-66" width="26" height="36" rx="3" />
+              <rect class="ecran" x="-98" y="-68" width="122" height="40" rx="4" />
+              <text class="texte-ecran" style="font-size:${fontSize}px;" x="18" y="${textY}">${esc(shown)}</text>
+              <rect class="bouton" x="38" y="-68" width="26" height="40" rx="3" />
+              <rect class="bouton" x="72" y="-68" width="26" height="40" rx="3" />
             `;
         }
     },
@@ -2017,7 +2152,7 @@ export const CATALOG = [
     {
         id: 'multimetre',
         name: 'Multimètre',
-        category: 'mesure',
+        category: 'electricite',
         keywords: 'multimetre voltmetre amperemetre ohmmetre tension courant',
         defaultProps: { selector: 'VDC', display: '1.10 V' },
         propSchema: [
@@ -2081,11 +2216,15 @@ export const CATALOG = [
     {
         id: 'generateur',
         name: 'Générateur de tension',
-        category: 'mesure',
+        category: 'electricite',
         fixedUpright: true,
-        keywords: 'generateur alimentation tension continu pile courant',
-        defaultProps: { selector: '6V', display: '6.0 V', on: true },
+        keywords: 'generateur alimentation tension continu alternatif dc ac pile courant',
+        defaultProps: { currentType: 'DC', selector: '6V', display: '6.0 V', on: true },
         propSchema: [
+            { key: 'currentType', label: 'Type de courant', type: 'select', options: [
+                { value: 'DC', label: 'Continu (DC ⎓)' },
+                { value: 'AC', label: 'Alternatif (AC ~)' }
+            ]},
             { key: 'on', label: 'Interrupteur ON/OFF', type: 'toggle' },
             { key: 'selector', label: 'Sélecteur tension', type: 'select', options: [
                 { value: '3V', label: '3 V' },
@@ -2102,34 +2241,48 @@ export const CATALOG = [
         getAnchors() {
             return [
                 { id: 'base', x: 0, y: 0, type: 'base', dir: 'down', label: 'Base' },
-                { id: 'pos', x: -34, y: -32, type: 'elec', dir: 'down', label: 'Borne +' },
-                { id: 'neg', x: 4, y: -32, type: 'elec', dir: 'down', label: 'Borne −' }
+                { id: 'pos', x: -34, y: -32, type: 'elec', dir: 'down', label: 'Borne + / ~' },
+                { id: 'neg', x: 4, y: -32, type: 'elec', dir: 'down', label: 'Borne − / ~' }
             ];
         },
         render(p) {
+            const isAC = p.currentType === 'AC';
             const angles = { '3V': -70, '6V': -25, '9V': 25, '12V': 70, 'VAR': 120 };
             const angle = angles[p.selector] ?? 0;
             const ledColor = p.on ? '#4ecdc4' : '#cccccc';
-            const txt = p.on ? (p.display ?? '6.0 V') : 'OFF';
+            const txt = String(p.on ? (p.display ?? '6.0 V') : 'OFF');
+            const fontSize = txt.length <= 6 ? 22 : (txt.length <= 8 ? 18 : 15);
+            const textY = txt.length <= 6 ? -80 : -82;
+            const terminalsSvg = isAC
+                ? `
+                  <circle cx="-34" cy="-32" r="8" fill="#f5b025" stroke="#000000" stroke-width="2" />
+                  <circle cx="-34" cy="-32" r="3" fill="#000000" />
+                  <text style="font-family:sans-serif;font-size:20px;font-weight:bold;fill:#1e293b;text-anchor:middle;" x="-15" y="-25">~</text>
+                  <circle cx="4" cy="-32" r="8" fill="#f5b025" stroke="#000000" stroke-width="2" />
+                  <circle cx="4" cy="-32" r="3" fill="#000000" />
+                `
+                : `
+                  <text style="font-family:sans-serif;font-size:20px;font-weight:bold;fill:#e03131;text-anchor:middle;" x="-54" y="-25">+</text>
+                  <circle cx="-34" cy="-32" r="8" fill="#e06358" stroke="#000000" stroke-width="2" />
+                  <circle cx="-34" cy="-32" r="3" fill="#000000" />
+                  <text style="font-family:sans-serif;font-size:20px;font-weight:bold;fill:#000000;text-anchor:middle;" x="-15" y="-25">−</text>
+                  <circle cx="4" cy="-32" r="8" fill="#181a1c" stroke="#000000" stroke-width="2" />
+                  <circle cx="4" cy="-32" r="3" fill="#000000" />
+                `;
             return `
               <rect class="bouchon" x="-72" y="-8" width="18" height="8" rx="2" />
               <rect class="bouchon" x="54" y="-8" width="18" height="8" rx="2" />
               <rect class="verre" x="-85" y="-120" width="170" height="112" rx="8" />
               <rect x="-78" y="-113" width="156" height="98" rx="4" fill="#f1f3f5" stroke="#000000" stroke-width="1.5" />
-              <rect class="ecran" x="-68" y="-104" width="82" height="32" rx="3" />
-              <text class="texte-ecran" style="font-size: 15px;" x="8" y="-82">${esc(txt)}</text>
-              <circle cx="62" cy="-98" r="5" fill="${ledColor}" stroke="#000000" stroke-width="2" />
-              <text style="font-family:sans-serif;font-size:9px;font-weight:bold;fill:#333;text-anchor:middle;" x="-28" y="-58">GÉNÉRATEUR DC</text>
-              <g transform="translate(46, -48)">
-                <circle class="bouton" cx="0" cy="0" r="18" />
-                <line class="trait" x1="0" y1="0" x2="0" y2="-15" transform="rotate(${angle})" />
+              <rect class="ecran" x="-70" y="-106" width="96" height="36" rx="3" />
+              <text class="texte-ecran" style="font-size:${fontSize}px;" x="20" y="${textY}">${esc(txt)}</text>
+              <circle cx="62" cy="-96" r="5" fill="${ledColor}" stroke="#000000" stroke-width="2" />
+              <text style="font-family:sans-serif;font-size:11.5px;font-weight:bold;fill:#1e293b;text-anchor:middle;" x="-26" y="-54">GÉNÉRATEUR ${isAC ? 'AC' : 'DC'}</text>
+              <g transform="translate(53, -44)">
+                <circle class="bouton" cx="0" cy="0" r="16" />
+                <line class="trait" x1="0" y1="0" x2="0" y2="-13" transform="rotate(${angle})" />
               </g>
-              <circle cx="-34" cy="-32" r="8" fill="#e06358" stroke="#000000" stroke-width="2" />
-              <circle cx="-34" cy="-32" r="3" fill="#000000" />
-              <text style="font-family:sans-serif;font-size:11px;font-weight:bold;fill:#e06358;text-anchor:middle;" x="-34" y="-16">+</text>
-              <circle cx="4" cy="-32" r="8" fill="#181a1c" stroke="#000000" stroke-width="2" />
-              <circle cx="4" cy="-32" r="3" fill="#000000" />
-              <text style="font-family:sans-serif;font-size:11px;font-weight:bold;fill:#000000;text-anchor:middle;" x="4" y="-16">−</text>
+              ${terminalsSvg}
             `;
         }
     },
@@ -2160,17 +2313,34 @@ export const CATALOG = [
             ];
         },
         render(p) {
-            const title = p.mode ? `<text style="font-family:sans-serif;font-size:11px;font-weight:bold;fill:#333;text-anchor:middle;" x="0" y="-70">${esc(p.mode)}</text>` : '';
+            const labels = {
+                pH: 'pH-mètre',
+                'σ': 'Conductimètre',
+                'O₂': 'Oxymètre'
+            };
+            const defaultDisplays = {
+                pH: '7.00',
+                'σ': '125 µS/cm',
+                'O₂': '8.5 mg/L',
+                '': '0.00'
+            };
+            const titleText = labels[p.mode] ?? (p.mode || '');
+            const title = titleText
+                ? `<text style="font-family:sans-serif;font-size:15px;font-weight:bold;fill:#1e293b;text-anchor:middle;" x="0" y="-66">${esc(titleText)}</text>`
+                : '';
+            const shown = String(p.display ?? defaultDisplays[p.mode] ?? '7.00');
+            const fontSize = shown.length <= 6 ? 26 : (shown.length <= 9 ? 21 : 18.5);
+            const textY = shown.length <= 6 ? -100 : (shown.length <= 9 ? -102 : -103);
             return `
               <rect class="bouchon" x="-65" y="-8" width="18" height="8" rx="2" />
               <rect class="bouchon" x="47" y="-8" width="18" height="8" rx="2" />
               <rect class="verre" x="-75" y="-148" width="150" height="140" rx="10" />
               <rect class="bouchon" x="-7" y="-162" width="14" height="14" rx="2" />
-              <rect class="ecran" x="-57" y="-130" width="114" height="44" rx="4" />
-              <text class="texte-ecran" x="47" y="-102">${esc(p.display ?? '7.00')}</text>
+              <rect class="ecran" x="-64" y="-132" width="128" height="46" rx="4" />
+              <text class="texte-ecran" style="font-size:${fontSize}px;" x="58" y="${textY}">${esc(shown)}</text>
               ${title}
-              <circle class="bouton" cx="-29" cy="-48" r="12" />
-              <circle class="bouton" cx="29" cy="-48" r="12" />
+              <circle class="bouton" cx="-29" cy="-40" r="11" />
+              <circle class="bouton" cx="29" cy="-40" r="11" />
             `;
         }
     },
@@ -2299,7 +2469,7 @@ export const CATALOG = [
     {
         id: 'electrolyseur',
         name: 'Électrolyseur',
-        category: 'mesure',
+        category: 'electricite',
         keywords: 'electrolyseur electrolyse cuve electrodes gaz',
         defaultProps: { liquidLevel: 60, liquidColor: '#9ad1f5', bubbles: false },
         propSchema: [
@@ -2347,7 +2517,7 @@ export const CATALOG = [
     {
         id: 'tube-en-u',
         name: 'Tube en U',
-        category: 'mesure',
+        category: 'electricite',
         keywords: 'tube u electrolyse pile',
         defaultProps: { liquidLevel: 65, liquidColor: '#9ad1f5' },
         propSchema: [...LIQUID_PROPS_SCHEMA],
@@ -2381,7 +2551,7 @@ export const CATALOG = [
     {
         id: 'pont-salin',
         name: 'Pont salin',
-        category: 'mesure',
+        category: 'electricite',
         keywords: 'pont salin pile electrochimie daniell',
         defaultProps: { gelColor: '#9ad1f5' },
         propSchema: [
@@ -2411,7 +2581,7 @@ export const CATALOG = [
     {
         id: 'electrode',
         name: 'Lame métallique',
-        category: 'mesure',
+        category: 'electricite',
         keywords: 'lame electrode cuivre zinc fer argent graphite pile',
         defaultProps: { metal: 'Cu' },
         propSchema: [

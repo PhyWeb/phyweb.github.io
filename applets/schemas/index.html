@@ -79,32 +79,12 @@
                     </button>
                 </div>
 
-                <div class="toolbar-divider"></div>
-
-                <div class="toolbar-group">
-                    <button class="tool-btn" id="btnCopyPNG" title="Copier l'image HD dans le presse-papier">
-                        <i class="fas fa-copy"></i>
-                    </button>
-                    <button class="tool-btn" id="btnExportPNG" title="Télécharger en PNG HD">
-                        <i class="fas fa-image"></i>
-                    </button>
-                    <button class="tool-btn" id="btnExportSVG" title="Télécharger en SVG vectoriel">
-                        <i class="fas fa-bezier-curve"></i>
-                    </button>
-                    <button class="tool-btn" id="btnSaveJSON" title="Sauvegarder le projet (.json)">
-                        <i class="fas fa-floppy-disk"></i>
-                    </button>
-                    <button class="tool-btn" id="btnLoadJSON" title="Charger un projet (.json)">
-                        <i class="fas fa-folder-open"></i>
-                    </button>
-                    <input type="file" id="jsonFileInput" accept=".json,application/json" style="display:none">
-                </div>
-
                 <div class="toolbar-group toolbar-bottom">
                     <button class="tool-btn is-danger-hover" id="btnClearScene" title="Effacer tout le schéma">
                         <i class="fas fa-trash-can"></i>
                     </button>
                 </div>
+                <input type="file" id="jsonFileInput" accept=".json,application/json" style="display:none">
             </aside>
 
             <!-- ZONE DE DESSIN CENTRALE -->
@@ -177,6 +157,9 @@
                 <div class="drawer-search">
                     <span class="icon is-small"><i class="fas fa-search"></i></span>
                     <input type="text" id="drawerSearchInput" placeholder="Rechercher (bécher, ballon, multimètre...)" autocomplete="off">
+                    <button type="button" class="drawer-search-clear" id="btnClearSearch" title="Effacer la recherche" aria-label="Effacer la recherche" hidden>
+                        <i class="fas fa-xmark"></i>
+                    </button>
                 </div>
             </div>
 

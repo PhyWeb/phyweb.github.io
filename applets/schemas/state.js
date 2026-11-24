@@ -22,7 +22,52 @@ export class SceneStore {
         this.undoStack = [];
         this.redoStack = [];
         this.maxHistory = 60;
-        this.selection = null; // { kind: 'item'|'connector'|'label', id: string } | null
+        this.selected = []; // Liste d'éléments sélectionnés : { kind: 'item'|'connector'|'label', id: string }[]
+    }
+
+    get selection() {
+        return this.selected.length > 0 ? this.selected[this.selected.length - 1] : null;
+    }
+
+    set selection(val) {
+        this.selected = val ? [{ kind: val.kind, id: val.id }] : [];
+    }
+
+    isSelected(kind, id) {
+        return this.selected.some(s => s.kind === kind && s.id === id);
+    }
+
+    setSelection(list) {
+        const seen = new Set();
+        this.selected = [];
+        for (const s of list || []) {
+            if (!s || !s.kind || !s.id) continue;
+            const k = `${s.kind}:${s.id}`;
+            if (seen.has(k)) continue;
+            seen.add(k);
+            this.selected.push({ kind: s.kind, id: s.id });
+        }
+    }
+
+    toggleSelection(kind, id) {
+        const idx = this.selected.findIndex(s => s.kind === kind && s.id === id);
+        if (idx >= 0) {
+            this.selected.splice(idx, 1);
+        } else {
+            this.selected.push({ kind, id });
+        }
+    }
+
+    selectAll() {
+        this.selected = [
+            ...this.scene.items.map(i => ({ kind: 'item', id: i.id })),
+            ...this.scene.connectors.map(c => ({ kind: 'connector', id: c.id })),
+            ...this.scene.labels.map(l => ({ kind: 'label', id: l.id }))
+        ];
+    }
+
+    clearSelection() {
+        this.selected = [];
     }
 
     snapshot() {
@@ -65,19 +110,30 @@ export class SceneStore {
         return true;
     }
 
-    ensureValidSelection() {
-        if (!this.selection) return;
-        const el = this.getSelectedElement();
-        if (!el) this.selection = null;
-    }
-
-    getSelectedElement() {
-        if (!this.selection) return null;
-        const { kind, id } = this.selection;
+    _findElement(kind, id) {
         if (kind === 'item') return this.scene.items.find(i => i.id === id) || null;
         if (kind === 'connector') return this.scene.connectors.find(c => c.id === id) || null;
         if (kind === 'label') return this.scene.labels.find(l => l.id === id) || null;
         return null;
+    }
+
+    ensureValidSelection() {
+        this.selected = this.selected.filter(s => Boolean(this._findElement(s.kind, s.id)));
+    }
+
+    getSelectedElement() {
+        const sel = this.selection;
+        if (!sel) return null;
+        return this._findElement(sel.kind, sel.id);
+    }
+
+    getSelectedElements() {
+        const out = [];
+        for (const s of this.selected) {
+            const el = this._findElement(s.kind, s.id);
+            if (el) out.push({ kind: s.kind, id: s.id, el });
+        }
+        return out;
     }
 
     addItem(typeId, x, y) {
@@ -148,54 +204,96 @@ export class SceneStore {
     }
 
     deleteSelected(skipHistory = false) {
-        if (!this.selection) return false;
-        const { kind, id } = this.selection;
+        if (this.selected.length === 0) return false;
         if (!skipHistory) this.pushHistory();
-        if (kind === 'item') {
-            // Détacher les connecteurs reliés à cet objet en figeant leurs coordonnées courantes
+
+        const itemIds = new Set(this.selected.filter(s => s.kind === 'item').map(s => s.id));
+        const connIds = new Set(this.selected.filter(s => s.kind === 'connector').map(s => s.id));
+        const lblIds = new Set(this.selected.filter(s => s.kind === 'label').map(s => s.id));
+
+        if (itemIds.size > 0) {
+            // Détacher les connecteurs conservés qui étaient reliés aux objets supprimés
             for (const c of this.scene.connectors) {
+                if (connIds.has(c.id)) continue;
                 const ep = resolveConnectorEndpoints(c, this.scene.items);
-                if (c.start.itemId === id) {
+                if (c.start.itemId && itemIds.has(c.start.itemId)) {
                     c.start = { x: ep.p1.x, y: ep.p1.y };
                 }
-                if (c.end.itemId === id) {
+                if (c.end.itemId && itemIds.has(c.end.itemId)) {
                     c.end = { x: ep.p2.x, y: ep.p2.y };
                 }
             }
-            this.scene.items = this.scene.items.filter(i => i.id !== id);
-        } else if (kind === 'connector') {
-            this.scene.connectors = this.scene.connectors.filter(c => c.id !== id);
-        } else if (kind === 'label') {
-            this.scene.labels = this.scene.labels.filter(l => l.id !== id);
+            this.scene.items = this.scene.items.filter(i => !itemIds.has(i.id));
         }
-        this.selection = null;
+        if (connIds.size > 0) {
+            this.scene.connectors = this.scene.connectors.filter(c => !connIds.has(c.id));
+        }
+        if (lblIds.size > 0) {
+            this.scene.labels = this.scene.labels.filter(l => !lblIds.has(l.id));
+        }
+        this.selected = [];
         return true;
     }
 
     duplicateSelected() {
-        const el = this.getSelectedElement();
-        if (!el) return null;
+        const entries = this.getSelectedElements();
+        if (entries.length === 0) return null;
         this.pushHistory();
-        const copy = JSON.parse(JSON.stringify(el));
-        copy.id = nextId(this.selection.kind === 'item' ? 'obj' : this.selection.kind);
-        if (this.selection.kind === 'item') {
+
+        const newSelection = [];
+        const itemIdMap = new Map();
+        const created = [];
+
+        // 1. Dupliquer d'abord les objets pour pouvoir remapper les connecteurs internes
+        for (const { kind, el } of entries) {
+            if (kind !== 'item') continue;
+            const copy = JSON.parse(JSON.stringify(el));
+            copy.id = nextId('obj');
             copy.x += 30;
             copy.y += 30;
             this.scene.items.push(copy);
-        } else if (this.selection.kind === 'connector') {
+            itemIdMap.set(el.id, copy.id);
+            newSelection.push({ kind: 'item', id: copy.id });
+            created.push(copy);
+        }
+
+        // 2. Dupliquer les connecteurs (en conservant les liaisons entre objets dupliqués)
+        for (const { kind, el } of entries) {
+            if (kind !== 'connector') continue;
+            const copy = JSON.parse(JSON.stringify(el));
+            copy.id = nextId(el.kind === 'wire' ? 'wire' : 'hose');
             const ep = resolveConnectorEndpoints(el, this.scene.items);
-            copy.start = { x: ep.p1.x + 30, y: ep.p1.y + 30 };
-            copy.end = { x: ep.p2.x + 30, y: ep.p2.y + 30 };
+            if (el.start.itemId && itemIdMap.has(el.start.itemId)) {
+                copy.start = { ...el.start, itemId: itemIdMap.get(el.start.itemId), x: ep.p1.x + 30, y: ep.p1.y + 30 };
+            } else {
+                copy.start = { x: ep.p1.x + 30, y: ep.p1.y + 30 };
+            }
+            if (el.end.itemId && itemIdMap.has(el.end.itemId)) {
+                copy.end = { ...el.end, itemId: itemIdMap.get(el.end.itemId), x: ep.p2.x + 30, y: ep.p2.y + 30 };
+            } else {
+                copy.end = { x: ep.p2.x + 30, y: ep.p2.y + 30 };
+            }
             this.scene.connectors.push(copy);
-        } else if (this.selection.kind === 'label') {
+            newSelection.push({ kind: 'connector', id: copy.id });
+            created.push(copy);
+        }
+
+        // 3. Dupliquer les légendes
+        for (const { kind, el } of entries) {
+            if (kind !== 'label') continue;
+            const copy = JSON.parse(JSON.stringify(el));
+            copy.id = nextId('lbl');
             copy.x += 25;
             copy.y += 25;
             copy.targetX += 25;
             copy.targetY += 25;
             this.scene.labels.push(copy);
+            newSelection.push({ kind: 'label', id: copy.id });
+            created.push(copy);
         }
-        this.selection = { kind: this.selection.kind, id: copy.id };
-        return copy;
+
+        this.selected = newSelection;
+        return created.length === 1 ? created[0] : created;
     }
 
     moveItemZOrder(id, direction) {

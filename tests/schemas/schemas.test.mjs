@@ -61,6 +61,77 @@ describe('Applet Schémas — Catalogue paramétrique', () => {
         const bbBas = boy.getBBox({ height: 70 });
         const bbHaut = boy.getBBox({ height: 160 });
         assert.ok(bbHaut.height > bbBas.height);
+
+        // Réfrigérants (droit & boules) : remplissage complet incluant les raccords latéraux
+        const refrig = getCatalogItem('refrigerant');
+        const svgDroit = refrig.render({ variant: 'droit', hasWater: true, waterColor: '#9ad1f5' }, 'rd1');
+        const svgBoules = refrig.render({ variant: 'boules', hasWater: true, waterColor: '#9ad1f5' }, 'rb1');
+        assert.ok(svgDroit.includes('41,-88') && svgDroit.includes('-41,-350'), 'Le réfrigérant droit doit remplir ses raccords');
+        assert.ok(svgBoules.includes('43,-88') && svgBoules.includes('-43,-350'), 'Le réfrigérant à boules doit remplir ses raccords');
+
+        // Robinet (burette & ampoule à décanter) : largeur constante du corps entre ouvert et fermé
+        const burette = getCatalogItem('burette');
+        const svgBurClosed = burette.render({ liquidLevel: 50, liquidColor: '#9ad1f5', open: false }, 'bur1');
+        const svgBurOpen = burette.render({ liquidLevel: 50, liquidColor: '#9ad1f5', open: true }, 'bur2');
+        assert.ok(svgBurClosed.includes('width="32"') && svgBurOpen.includes('width="32"'), 'Le corps du robinet de la burette doit garder la même largeur');
+
+        // Ampoule à décanter : remplissage jusqu'au robinet (-33), bouchon uniformisé (.bouchon) et robinet de largeur constante
+        const amp = getCatalogItem('ampoule-decanter');
+        const svgAmpClosed = amp.render({ open: false, stopper: true, phase1Level: 35, phase1Color: '#9ad1f5', phase2Level: 30, phase2Color: '#f4d35e' }, 'amp1');
+        const svgAmpOpen = amp.render({ open: true, stopper: true, phase1Level: 35, phase1Color: '#9ad1f5', phase2Level: 30, phase2Color: '#f4d35e' }, 'amp2');
+        assert.ok(svgAmpClosed.includes('-2.5,-33 L 2.5,-33'), 'Le clip liquide de l’ampoule à décanter doit descendre jusqu’au robinet');
+        assert.ok(svgAmpClosed.includes('<polygon class="bouchon"'), 'Le bouchon de l’ampoule à décanter doit utiliser le style .bouchon');
+        assert.ok(svgAmpClosed.includes('width="32"') && svgAmpOpen.includes('width="32"'), 'Le corps du robinet de l’ampoule à décanter doit garder la même largeur');
+
+        // Ampoule de coulée : liquide arrêté au niveau du robinet (-106), clip jusqu'au col (-295), options isobare & bouchon
+        const coulee = getCatalogItem('ampoule-coulee');
+        const svgCoulee = coulee.render({ open: false, isobare: false, stopper: false, liquidLevel: 60, liquidColor: '#9ad1f5' }, 'coul1');
+        assert.ok(svgCoulee.includes('5.5,-106 L -5.5,-106') && !svgCoulee.includes('5.5,-94'), 'Le liquide de l’ampoule de coulée doit s’arrêter au robinet (-106)');
+        assert.ok(svgCoulee.includes('M -12.5,-295 L 12.5,-295'), 'Le clip de l’ampoule de coulée doit inclure l’épaulement et le col');
+        assert.ok(!svgCoulee.includes('<polygon class="bouchon"') && !svgCoulee.includes('-36,-270'));
+
+        const svgCouleeIso = coulee.render({ open: false, isobare: true, stopper: true, liquidLevel: 60, liquidColor: '#9ad1f5' }, 'coul2');
+        assert.ok(svgCouleeIso.includes('<polygon class="bouchon"'), 'L’option bouchon doit afficher un bouchon .bouchon');
+        assert.ok(svgCouleeIso.includes('-36,-270') && svgCouleeIso.includes('-36,-78'), 'L’option isobare doit dessiner le tube d’équilibrage latéral');
+        const bbIso = coulee.getBBox({ isobare: true, stopper: true });
+        assert.ok(bbIso.x === -38 && bbIso.y === -319);
+
+        // Paillasse : plateau décalé sous y=0 pour que les objets posés ne s'enfoncent pas dedans
+        const paillasse = getCatalogItem('paillasse');
+        const svgPlateau = paillasse.render({ width: 760, style: 'plateau', color: '#e2e8f0' }, 'p1');
+        assert.ok(svgPlateau.includes('y="3"'), 'Le plateau de paillasse doit commencer à y=3 sous le plan d’aimantation y=0');
+
+        // Évier présent dans le catalogue (Supports & Paillasse), encastré à niveau (y >= 0) avec ancre base (y=0) et tuyau
+        const evier = getCatalogItem('evier');
+        assert.ok(evier && evier.category === 'supports');
+        const evierBB = evier.getBBox(evier.defaultProps);
+        assert.equal(evierBB.y, 0, 'L’évier doit être encastré sous le niveau de la paillasse (y >= 0)');
+        const evierAnchors = evier.getAnchors(evier.defaultProps);
+        assert.ok(evierAnchors.some(a => a.type === 'base' && a.y === 0) && evierAnchors.some(a => a.type === 'hose'));
+
+        // Support à entonnoir en bois (1 ou 2 anneaux) avec ancre base et anneaux clamp
+        const supEnt = getCatalogItem('support-entonnoir');
+        assert.ok(supEnt && supEnt.category === 'supports');
+        assert.equal(supEnt.getAnchors({ variant: 'double', armY: 250 }).filter(a => a.type === 'clamp').length, 2);
+        assert.equal(supEnt.getAnchors({ variant: 'simple', armY: 250 }).filter(a => a.type === 'clamp').length, 1);
+
+        // pH-mètre / Conductimètre : titre lisible, écran agrandi et valeur par défaut avec unité pour le conductimètre
+        const mesure = getCatalogItem('appareil-mesure');
+        const svgPh = mesure.render({ mode: 'pH', display: '7.00' }, 'mes1');
+        const svgCond = mesure.render({ mode: 'σ' }, 'mes2');
+        assert.ok(svgPh.includes('pH-mètre') && svgPh.includes('font-size:26px'));
+        assert.ok(svgCond.includes('Conductimètre') && svgCond.includes('125 µS/cm') && svgCond.includes('font-size:21px'));
+
+        // Balance & Générateur : texte agrandi, version AC et gros signes + / − en DC
+        const balance = getCatalogItem('balance');
+        const svgBal = balance.render({ display: '12.50 g' }, 'bal1');
+        assert.ok(svgBal.includes('font-size:24px'));
+
+        const gen = getCatalogItem('generateur');
+        const svgGenDC = gen.render({ currentType: 'DC', selector: '6V', display: '6.0 V', on: true }, 'g1');
+        const svgGenAC = gen.render({ currentType: 'AC', selector: '6V', display: '6.0 V', on: true }, 'g2');
+        assert.ok(svgGenDC.includes('GÉNÉRATEUR DC') && svgGenDC.includes('font-size:22px') && svgGenDC.includes('font-size:20px'));
+        assert.ok(svgGenAC.includes('GÉNÉRATEUR AC') && svgGenAC.includes('>~</text>'));
     });
 
     it('maintient la surface du liquide horizontale par contre-rotation quand un récipient est incliné', () => {
@@ -379,5 +450,46 @@ describe('Applet Schémas — État, connecteurs dynamiques, Undo/Redo et Export
         store.selection = { kind: 'label', id: lbl.id };
         assert.ok(store.deleteSelected());
         assert.equal(store.scene.labels.length, 0);
+    });
+
+    it('gère la sélection multiple (toggle, selectAll, duplication avec connecteurs internes, suppression groupée)', () => {
+        const store = new SceneStore();
+        const gen = store.addItem('generateur', 100, 300);
+        const multi = store.addItem('multimetre', 350, 300);
+        const genPos = getWorldAnchors(gen).find(a => a.id === 'pos');
+        const multiPos = getWorldAnchors(multi).find(a => a.id === 'pos');
+        const wire = store.addConnector(
+            'wire',
+            { x: genPos.wx, y: genPos.wy, itemId: gen.id, anchorId: 'pos' },
+            { x: multiPos.wx, y: multiPos.wy, itemId: multi.id, anchorId: 'pos' }
+        );
+        const lbl = store.addLabel(200, 120, 'Montage', 180, 200);
+
+        // selectAll sélectionne les 4 éléments
+        store.selectAll();
+        assert.equal(store.selected.length, 4);
+        assert.ok(store.isSelected('item', gen.id) && store.isSelected('connector', wire.id));
+
+        // toggleSelection retire la légende
+        store.toggleSelection('label', lbl.id);
+        assert.equal(store.selected.length, 3);
+        assert.ok(!store.isSelected('label', lbl.id));
+
+        // Duplication groupée : les 2 objets + le fil sont dupliqués et le fil copié reste relié aux nouveaux objets
+        const copies = store.duplicateSelected();
+        assert.equal(Array.isArray(copies) && copies.length, 3);
+        assert.equal(store.scene.items.length, 4);
+        assert.equal(store.scene.connectors.length, 2);
+        const copiedWire = store.scene.connectors[1];
+        assert.notEqual(copiedWire.start.itemId, gen.id);
+        assert.notEqual(copiedWire.end.itemId, multi.id);
+        assert.ok(store.scene.items.some(i => i.id === copiedWire.start.itemId));
+        assert.ok(store.scene.items.some(i => i.id === copiedWire.end.itemId));
+
+        // Suppression groupée des copies sélectionnées
+        assert.ok(store.deleteSelected());
+        assert.equal(store.scene.items.length, 2);
+        assert.equal(store.scene.connectors.length, 1);
+        assert.equal(store.selected.length, 0);
     });
 });
