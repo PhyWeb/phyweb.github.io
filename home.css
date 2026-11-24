@@ -75,6 +75,26 @@
   font-size: 0.85rem;
 }
 
+.app-tile-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.app-tile-header .title {
+  margin-bottom: 0 !important;
+}
+
+.tile-level-tag {
+  flex-shrink: 0;
+  font-size: 0.7rem !important;
+  font-weight: 600;
+  height: auto !important;
+  padding: 0.2em 0.65em !important;
+  line-height: 1.3;
+}
+
 /* --- COMPACTAGE VERTICAL POUR ÉCRANS < 780px --- */
 @media screen and (max-height: 780px) {
 
