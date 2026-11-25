@@ -34,7 +34,7 @@
 
     mettre un sous titres dans les colonnes calculées
 
-    bug avecle mode afficher tous les chiffres
+    bug avec le mode afficher tous les chiffres
 
     z-index des points selectionnés quand les points sont très serrés.
 
@@ -46,16 +46,7 @@
 
     ajouter un color picker dans la liste des couleurs pour donner acces a toutes les couleurs possibles.
 
-    une option pour renommer les grandeurs dans les exports afin de mettre des espaces par exemple.
-
     améliorer la grille (voir géogebra)
-    
-    
-    dans l'export, les puissances de 10 ont l'exposant cassé.
-
-    dans l'export il y a parfois des grandeurs rayés ? genre import audio avec fft
-
-    dans l'export il y a PAS les puissances de 10 en bas a droite.
 
     On empeche l'ouverture de la modale d'edition de nom de grandeur pour les grandeurs calculées... on pourrait peut etre trouver un moyen de laisser la possibilité de changer l'unité voir le nom quand meme
 
@@ -64,6 +55,8 @@
     intercepter les erreurs de mathsjs en anglais et les traduire en langage clair
 
     othogonalité depuis tracker ???? Essayer le pointage du velo on voit pas le accéléré
+
+    possibilité de facilement écrire des exposants
     
 # Mendeleiev
 # Optique

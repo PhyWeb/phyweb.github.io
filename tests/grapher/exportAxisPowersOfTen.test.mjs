@@ -65,10 +65,12 @@ describe('Export Grapher - Puissances de 10 et exposants en abscisses et ordonn�
     };
 
     it('doit inclure la puissance de 10 en exposant dans le titre des abscisses quand un exposant et une unité sont présents', () => {
-      const { uiManager } = createMockUIManager({ xCurve: 't', xUnit: 's', xExponent: 3 });
+      const { uiManager } = createMockUIManager({ xCurve: 't', xUnit: 's', xExponent: 3, yExponent: -6 });
       const options = uiManager.getExportChartOptions(800, 500, 1);
 
       assert.equal(options.xAxis[0].title.text, 't (×10³ s)');
+      assert.equal(options.chart.exportXExponent, 3);
+      assert.equal(options.chart.exportYExponent, -6);
       assert.ok(!options.xAxis[0].title.text.includes('<sup>'), 'Ne doit pas contenir de balise <sup> cassée');
     });
 

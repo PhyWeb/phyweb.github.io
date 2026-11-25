@@ -255,14 +255,18 @@ export default class Grapher {
               const xAxis = chart.xAxis[0];
               const yAxis = chart.yAxis[0];
 
+              const arrowScale = chart.renderer?.forExport ? (chart.options?.chart?.exportTextScale || 1) : 1;
+              const arrowLen = Math.round(10 * arrowScale);
+              const arrowHalfW = Math.round(5 * arrowScale);
+
               // Flèche X (droite)
               const xEnd = xAxis.toPixels(xAxis.max);
               const yPos = chart.plotHeight + chart.plotTop;
 
               const arrowX = chart.renderer.path([
                 'M', xEnd, yPos,
-                'L', xEnd - 10, yPos - 5,
-                'L', xEnd - 10, yPos + 5,
+                'L', xEnd - arrowLen, yPos - arrowHalfW,
+                'L', xEnd - arrowLen, yPos + arrowHalfW,
                 'Z'
               ]).attr({ 
                 fill: 'black',
@@ -304,8 +308,8 @@ export default class Grapher {
 
               const arrowY = chart.renderer.path([
                   'M', xPos, yEnd,
-                  'L', xPos - 5, yEnd + 10,
-                  'L', xPos + 5, yEnd + 10,
+                  'L', xPos - arrowHalfW, yEnd + arrowLen,
+                  'L', xPos + arrowHalfW, yEnd + arrowLen,
                   'Z'
               ]).attr({ 
                 fill: 'black',
@@ -517,7 +521,8 @@ export default class Grapher {
         },
         labels: {
           formatter: function () {
-            const exponent = this.axis.exponent || 0;
+            const exportExp = this.chart?.renderer?.forExport ? this.chart?.options?.chart?.exportXExponent : undefined;
+            const exponent = exportExp !== undefined ? exportExp : (this.axis.exponent || 0);
             const value = this.value / Math.pow(10, exponent);
             const tickInterval = this.axis.tickInterval;
             const scaledTickInterval = tickInterval / Math.pow(10, exponent);
@@ -580,7 +585,8 @@ export default class Grapher {
         },
         labels: {
           formatter: function () {
-            const exponent = this.axis.exponent || 0;
+            const exportExp = this.chart?.renderer?.forExport ? this.chart?.options?.chart?.exportYExponent : undefined;
+            const exponent = exportExp !== undefined ? exportExp : (this.axis.exponent || 0);
             const value = this.value / Math.pow(10, exponent);
             const tickInterval = this.axis.tickInterval;
             const scaledTickInterval = tickInterval / Math.pow(10, exponent);
@@ -1618,10 +1624,11 @@ setDisableScientificNotation(disabled) {
 
   _drawSlopeLabel(pixelX, pixelY, slope, targetChart = this.chart) {
     const significantDigits = this.data?.settings?.significantDigits ?? 4;
+    const exportScale = targetChart.renderer?.forExport ? (targetChart.options?.chart?.exportTextScale || 1) : 1;
     const slopeText = `pente = ${formatNumber(slope, significantDigits)}`;
     const slopeLabel = targetChart.renderer.label(slopeText, 0, 0, 'callout')
-      .attr({ fill: 'white', stroke: '#dbdbdb', 'stroke-width': 1, r: 6, padding: 8, zIndex: 6 })
-      .css({ color: 'black', fontSize: '14px' })
+      .attr({ fill: 'white', stroke: '#dbdbdb', 'stroke-width': 1, r: 6, padding: Math.round(8 * exportScale), zIndex: 6 })
+      .css({ color: 'black', fontSize: `${Math.round(14 * exportScale)}px` })
       .add();
 
     const labelBBox = slopeLabel.getBBox();
@@ -1774,14 +1781,22 @@ setDisableScientificNotation(disabled) {
         // 4. Labels Delta
         const xCurveObj = this.data.getCurveByTitle(this.currentXCurve);
         const firstYSeries = chart.series.find(s => s.visible && s.yAxis?.index === 0);
-        const xUnit = xCurveObj?.unit ? ` ${xCurveObj.unit}` : '';
-        const rawYUnit = annotation.yUnit !== undefined
-          ? annotation.yUnit
-          : (firstYSeries?.userOptions?.unit || '');
+        const exportLabels = targetChart.renderer?.forExport ? targetChart.options?.chart?.exportCurveLabels : null;
+        const xOverride = exportLabels && this.currentXCurve ? exportLabels[this.currentXCurve] : null;
+        const yOverride = exportLabels && firstYSeries?.name ? exportLabels[firstYSeries.name] : null;
+
+        const resolvedXUnit = (xOverride && typeof xOverride.unit === 'string') ? xOverride.unit : (xCurveObj?.unit || '');
+        const xUnit = resolvedXUnit ? ` ${resolvedXUnit}` : '';
+        const rawYUnit = (yOverride && typeof yOverride.unit === 'string')
+          ? yOverride.unit
+          : (annotation.yUnit !== undefined
+              ? annotation.yUnit
+              : (firstYSeries?.userOptions?.unit || ''));
         const yUnit = rawYUnit ? ` ${rawYUnit}` : '';
 
-        const labelAttr = { fill: 'rgba(255, 255, 255, 0.85)', stroke: '#dbdbdb', 'stroke-width': 1, r: 4, padding: 5, zIndex: 6 };
-        const labelCss = { color: 'black', fontSize: '12px' };
+        const exportScale = targetChart.renderer?.forExport ? (targetChart.options?.chart?.exportTextScale || 1) : 1;
+        const labelAttr = { fill: 'rgba(255, 255, 255, 0.85)', stroke: '#dbdbdb', 'stroke-width': 1, r: 4, padding: Math.round(5 * exportScale), zIndex: 6 };
+        const labelCss = { color: 'black', fontSize: `${Math.round(12 * exportScale)}px` };
 
         if (clippedDeltaX) {
           const dxText = `Δx = ${formatNumber(p2.x - p1.x, significantDigits)}${xUnit}`;
@@ -1969,12 +1984,27 @@ setDisableScientificNotation(disabled) {
             const yCurveObj = this.data.getCurveByTitle(seriesName);
 
             const isExport = Boolean(targetChart.renderer?.forExport);
-            const eqSub = isExport ? '_eq' : '<sub>eq</sub>';
-            const xLabelName = (xCurveObj?.title || this.currentXCurve || 'V') + eqSub;
-            const yLabelName = (yCurveObj?.title || seriesName || 'pH') + eqSub;
+            const exportScale = isExport ? (targetChart.options?.chart?.exportTextScale || 1) : 1;
+            const exportLabels = isExport ? targetChart.options?.chart?.exportCurveLabels : null;
+            const xKey = xCurveObj?.title || this.currentXCurve || '';
+            const yKey = yCurveObj?.title || seriesName || '';
+            const xOverride = exportLabels && xKey ? exportLabels[xKey] : null;
+            const yOverride = exportLabels && yKey ? exportLabels[yKey] : null;
 
-            const xUnit = xCurveObj?.unit ? ` ${xCurveObj.unit}` : '';
-            const yUnit = yCurveObj?.unit ? ` ${yCurveObj.unit}` : (series?.userOptions?.unit ? ` ${series.userOptions.unit}` : '');
+            const eqSub = isExport
+              ? '<tspan style="font-size: 0.72em; baseline-shift: sub;">eq</tspan>'
+              : '<sub>eq</sub>';
+            const xBaseName = (xOverride && xOverride.title) ? xOverride.title : (xKey || 'V');
+            const yBaseName = (yOverride && yOverride.title) ? yOverride.title : (yKey || 'pH');
+            const xLabelName = xBaseName + eqSub;
+            const yLabelName = yBaseName + eqSub;
+
+            const resolvedXUnit = (xOverride && typeof xOverride.unit === 'string') ? xOverride.unit : (xCurveObj?.unit || '');
+            const resolvedYUnit = (yOverride && typeof yOverride.unit === 'string')
+              ? yOverride.unit
+              : (yCurveObj?.unit || series?.userOptions?.unit || '');
+            const xUnit = resolvedXUnit ? ` ${resolvedXUnit}` : '';
+            const yUnit = resolvedYUnit ? ` ${resolvedYUnit}` : '';
 
             const eqText = `<b>${xLabelName}</b> = ${formatNumber(eqPoint.x, significantDigits)}${xUnit}<br/><b>${yLabelName}</b> = ${formatNumber(eqPoint.y, significantDigits)}${yUnit}`;
             const eqLabel = chart.renderer.label(eqText, 0, 0, 'callout', null, null, !isExport)
@@ -1983,12 +2013,12 @@ setDisableScientificNotation(disabled) {
                   stroke: '#dbdbdb',                 // Bordure de l'étiquette
                   'stroke-width': 1, 
                   r: 6,                              // Bords arrondis
-                  padding: 8, 
+                  padding: Math.round(8 * exportScale), 
                   zIndex: 6 
               })
               .css({ 
                   color: 'black', 
-                  fontSize: '14px' 
+                  fontSize: `${Math.round(14 * exportScale)}px` 
               }).add();
 
             const eqBBox = eqLabel.getBBox();
