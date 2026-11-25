@@ -1,6 +1,7 @@
 import { formatNumber, toSuperscript } from '../../common/formatter.js';
 import { alertModal, showToast, NavigationManager, setupGlobalShortcuts, FileDropManager} from '../../common/common.js';
 import { DEFAULT_SETTINGS, saveSettings, loadSettings, clearSavedSettings } from './settingsManager.js';
+import { stripInlineComment } from './calculation.js';
 
 const $ = document.querySelector.bind(document);
 
@@ -652,6 +653,54 @@ export default class UIManager {
       const variableName = leftPart.split('_')[0].trim().replace(/\s+/g, '');
 
       if (variableName.length > 0 && expression.length > 0) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Vérifie si le script de l'éditeur de calculs contient au moins une formule
+   * dont le résultat dépend de l'ordre des lignes (dérivation, intégration, lissage,
+   * somme cumulée ou indexation directe).
+   * @param {string} [text] - Texte optionnel à analyser (par défaut le contenu de l'éditeur)
+   * @returns {boolean}
+   */
+  hasOrderDependentFormulas(text) {
+    const rawText = typeof text === 'string'
+      ? text
+      : (typeof this.editor?.getValue === 'function' ? this.editor.getValue() : '');
+
+    if (!rawText || typeof rawText !== 'string') {
+      return false;
+    }
+
+    const orderDependentPattern = /(?:\b(?:diff|integrate|smooth|cumsum)\s*\()|(?:[\w)]\s*\[)/i;
+    const lines = rawText.split('\n');
+
+    for (const line of lines) {
+      const trimmedLine = line.trim();
+      if (
+        trimmedLine === '' ||
+        trimmedLine.startsWith('#') ||
+        trimmedLine.startsWith('//') ||
+        trimmedLine.startsWith("'")
+      ) {
+        continue;
+      }
+
+      const parts = trimmedLine.split('=');
+      if (parts.length < 2) {
+        continue;
+      }
+
+      const leftPart = parts[0].trim();
+      const rawExpression = parts.slice(1).join('=').trim();
+      const expression = stripInlineComment(rawExpression);
+      const variableName = leftPart.split('_')[0].trim().replace(/\s+/g, '');
+
+      if (variableName.length > 0 && expression.length > 0 && orderDependentPattern.test(expression)) {
         return true;
       }
     }
@@ -1492,10 +1541,15 @@ export default class UIManager {
     $('#sort-button').addEventListener('click', () => {
       const selectedVariable = $('#sort-variable-select').value;
       if (selectedVariable) {
-        this.data.sortDataBy(selectedVariable);
+        const orderChanged = this.data.sortDataBy(selectedVariable);
         this.spreadsheet.update();
         this.grapher.updateChart();
-        this.setCalculationsStale(true);
+        const hasEmptyCalcCurve = Boolean(
+          this.data?.curves && this.data.curves.some(c => c.type === 'calculation' && c.length === 0)
+        );
+        if ((orderChanged || hasEmptyCalcCurve) && this.hasOrderDependentFormulas()) {
+          this.setCalculationsStale(true);
+        }
       }
     });
 

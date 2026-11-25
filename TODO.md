@@ -59,8 +59,6 @@
 
     Bug graphique quand le "nom" d'un modele est trop long genre Amplitudestectrale = f(truclong)
 
-    faire un trier par... trigger le bouton de recalcul...
-
     intercepter les erreurs de mathsjs en anglais et les traduire en langage clair
     
 # Mendeleiev
