@@ -346,7 +346,39 @@ export function findNearestConnectorPort(wx, wy, allItems, portType, radius = 26
 }
 
 /**
- * Calcule la géométrie complète d'un connecteur (tracé SVG `d` + point milieu/angle)
+ * Calcule la boîte englobante d'une liste de points.
+ */
+function pointsBounds(pts) {
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const p of pts) {
+        if (p.x < minX) minX = p.x;
+        if (p.y < minY) minY = p.y;
+        if (p.x > maxX) maxX = p.x;
+        if (p.y > maxY) maxY = p.y;
+    }
+    return { minX, minY, maxX, maxY };
+}
+
+/**
+ * Échantillonne une courbe de Bézier cubique (P0, C1, C2, P3) pour obtenir sa boîte englobante exacte.
+ */
+function sampleCubicBezier(p0, c1, c2, p3, steps = 16) {
+    const pts = [];
+    for (let i = 0; i <= steps; i++) {
+        const t = i / steps;
+        const mt = 1 - t;
+        const mt2 = mt * mt;
+        const t2 = t * t;
+        pts.push({
+            x: mt2 * mt * p0.x + 3 * mt2 * t * c1.x + 3 * mt * t2 * c2.x + t2 * t * p3.x,
+            y: mt2 * mt * p0.y + 3 * mt2 * t * c1.y + 3 * mt * t2 * c2.y + t2 * t * p3.y
+        });
+    }
+    return pts;
+}
+
+/**
+ * Calcule la géométrie complète d'un connecteur (tracé SVG `d`, point milieu/angle et boîte englobante `bounds`)
  * en respectant les tangentes sortantes exactes (`p1.angle`, `p2.angle`) des bornes et olivettes.
  */
 export function computeConnectorGeometry(p1, p2, mode = 'bezier', bend = 0, bendX = 0) {
@@ -376,14 +408,15 @@ export function computeConnectorGeometry(p1, p2, mode = 'bezier', bend = 0, bend
 
         const d = pts.map((pt, i) => `${i === 0 ? 'M' : 'L'} ${pt.x.toFixed(1)},${pt.y.toFixed(1)}`).join(' ');
         const angle = (s2.y - s1.y) >= 0 ? 90 : -90;
-        return { d, mid: { x: midX, y: midY, angle } };
+        return { d, mid: { x: midX, y: midY, angle }, bounds: pointsBounds(pts) };
     }
 
     // Mode courbe souple (Bézier)
     if (dist < 1) {
         return {
             d: `M ${p1.x.toFixed(1)},${p1.y.toFixed(1)} L ${p2.x.toFixed(1)},${p2.y.toFixed(1)}`,
-            mid: { x: p1.x, y: p1.y, angle: 0 }
+            mid: { x: p1.x, y: p1.y, angle: 0 },
+            bounds: pointsBounds([p1, p2])
         };
     }
 
@@ -417,12 +450,14 @@ export function computeConnectorGeometry(p1, p2, mode = 'bezier', bend = 0, bend
             const tx = 0.75 * (c1Base.x - p1.x) + 1.5 * (c2Base.x - c1Base.x) + 0.75 * (p2.x - c2Base.x);
             const ty = 0.75 * (c1Base.y - p1.y) + 1.5 * (c2Base.y - c1Base.y) + 0.75 * (p2.y - c2Base.y);
             const d = `M ${p1.x.toFixed(1)},${p1.y.toFixed(1)} C ${c1Base.x.toFixed(1)},${c1Base.y.toFixed(1)} ${c2Base.x.toFixed(1)},${c2Base.y.toFixed(1)} ${p2.x.toFixed(1)},${p2.y.toFixed(1)}`;
-            return { d, mid: { x: m0x, y: m0y, angle: (Math.atan2(ty, tx) * 180) / Math.PI } };
+            const bounds = pointsBounds(sampleCubicBezier(p1, c1Base, c2Base, p2));
+            return { d, mid: { x: m0x, y: m0y, angle: (Math.atan2(ty, tx) * 180) / Math.PI }, bounds };
         }
 
         // Courbe 2 segments C¹ passant exactement par M = M0 + (bendX, bend) tout en restant strictement tangente à u1 et u2
         const mx = m0x + bendX;
         const my = m0y + bend;
+        const midPt = { x: mx, y: my };
         const d1 = Math.hypot(mx - p1.x, my - p1.y);
         const d2 = Math.hypot(p2.x - mx, p2.y - my);
         const l1 = Math.max(26, Math.min(115, d1 * 0.45));
@@ -443,21 +478,24 @@ export function computeConnectorGeometry(p1, p2, mode = 'bezier', bend = 0, bend
         const m2 = { x: mx + ux * lm2, y: my + uy * lm2 };
 
         const d = `M ${p1.x.toFixed(1)},${p1.y.toFixed(1)} C ${c1.x.toFixed(1)},${c1.y.toFixed(1)} ${m1.x.toFixed(1)},${m1.y.toFixed(1)} ${mx.toFixed(1)},${my.toFixed(1)} C ${m2.x.toFixed(1)},${m2.y.toFixed(1)} ${c2.x.toFixed(1)},${c2.y.toFixed(1)} ${p2.x.toFixed(1)},${p2.y.toFixed(1)}`;
-        return { d, mid: { x: mx, y: my, angle: (Math.atan2(uy, ux) * 180) / Math.PI } };
+        const bounds = pointsBounds([
+            ...sampleCubicBezier(p1, c1, m1, midPt),
+            ...sampleCubicBezier(midPt, m2, c2, p2)
+        ]);
+        return { d, mid: { x: mx, y: my, angle: (Math.atan2(uy, ux) * 180) / Math.PI }, bounds };
     }
 
     // Extrémités 100% libres (non attachées) : Bézier souple classique
-    const cx1 = p1.x + dx * 0.25 + bendX * 0.7;
-    const cy1 = p1.y + dy * 0.1 + bend;
-    const cx2 = p1.x + dx * 0.75 + bendX * 0.7;
-    const cy2 = p2.y - dy * 0.1 + bend;
-    const d = `M ${p1.x.toFixed(1)},${p1.y.toFixed(1)} C ${cx1.toFixed(1)},${cy1.toFixed(1)} ${cx2.toFixed(1)},${cy2.toFixed(1)} ${p2.x.toFixed(1)},${p2.y.toFixed(1)}`;
+    const c1Free = { x: p1.x + dx * 0.25 + bendX * 0.7, y: p1.y + dy * 0.1 + bend };
+    const c2Free = { x: p1.x + dx * 0.75 + bendX * 0.7, y: p2.y - dy * 0.1 + bend };
+    const d = `M ${p1.x.toFixed(1)},${p1.y.toFixed(1)} C ${c1Free.x.toFixed(1)},${c1Free.y.toFixed(1)} ${c2Free.x.toFixed(1)},${c2Free.y.toFixed(1)} ${p2.x.toFixed(1)},${p2.y.toFixed(1)}`;
 
-    const x = 0.125 * p1.x + 0.375 * cx1 + 0.375 * cx2 + 0.125 * p2.x;
-    const y = 0.125 * p1.y + 0.375 * cy1 + 0.375 * cy2 + 0.125 * p2.y;
-    const tx = 0.75 * (cx1 - p1.x) + 1.5 * (cx2 - cx1) + 0.75 * (p2.x - cx2);
-    const ty = 0.75 * (cy1 - p1.y) + 1.5 * (cy2 - cy1) + 0.75 * (p2.y - cy2);
-    return { d, mid: { x, y, angle: (Math.atan2(ty, tx) * 180) / Math.PI } };
+    const x = 0.125 * p1.x + 0.375 * c1Free.x + 0.375 * c2Free.x + 0.125 * p2.x;
+    const y = 0.125 * p1.y + 0.375 * c1Free.y + 0.375 * c2Free.y + 0.125 * p2.y;
+    const tx = 0.75 * (c1Free.x - p1.x) + 1.5 * (c2Free.x - c1Free.x) + 0.75 * (p2.x - c2Free.x);
+    const ty = 0.75 * (c1Free.y - p1.y) + 1.5 * (c2Free.y - c1Free.y) + 0.75 * (p2.y - c2Free.y);
+    const bounds = pointsBounds(sampleCubicBezier(p1, c1Free, c2Free, p2));
+    return { d, mid: { x, y, angle: (Math.atan2(ty, tx) * 180) / Math.PI }, bounds };
 }
 
 /**
@@ -472,4 +510,43 @@ export function buildConnectorPath(p1, p2, mode = 'bezier', bend = 0, bendX = 0)
  */
 export function getConnectorMidpoint(p1, p2, mode = 'bezier', bend = 0, bendX = 0) {
     return computeConnectorGeometry(p1, p2, mode, bend, bendX).mid;
+}
+
+/**
+ * Calcule les décalages (dx ou dy) pour distribuer régulièrement >= 3 boîtes englobantes
+ * entre les deux éléments extrêmes sur l'axe horizontal ('horizontal') ou vertical ('vertical').
+ * Retourne une Map<id, { dx, dy }>.
+ */
+export function computeDistributionDeltas(entries, axis = 'horizontal') {
+    const result = new Map();
+    if (!Array.isArray(entries) || entries.length < 3) return result;
+
+    const isHoriz = axis === 'horizontal';
+    const sorted = [...entries].sort((a, b) => {
+        const ca = isHoriz ? (a.b.minX + a.b.maxX) / 2 : (a.b.minY + a.b.maxY) / 2;
+        const cb = isHoriz ? (b.b.minX + b.b.maxX) / 2 : (b.b.minY + b.b.maxY) / 2;
+        return ca - cb;
+    });
+
+    const first = sorted[0];
+    const last = sorted[sorted.length - 1];
+    const totalSpan = isHoriz ? (last.b.maxX - first.b.minX) : (last.b.maxY - first.b.minY);
+    const sumSizes = sorted.reduce(
+        (acc, e) => acc + (isHoriz ? (e.b.maxX - e.b.minX) : (e.b.maxY - e.b.minY)),
+        0
+    );
+    const gap = (totalSpan - sumSizes) / (sorted.length - 1);
+
+    let cursor = (isHoriz ? first.b.maxX : first.b.maxY) + gap;
+    for (let i = 1; i < sorted.length - 1; i++) {
+        const cur = sorted[i];
+        const size = isHoriz ? (cur.b.maxX - cur.b.minX) : (cur.b.maxY - cur.b.minY);
+        if (isHoriz) {
+            result.set(cur.id, { dx: cursor - cur.b.minX, dy: 0 });
+        } else {
+            result.set(cur.id, { dx: 0, dy: cursor - cur.b.minY });
+        }
+        cursor += size + gap;
+    }
+    return result;
 }

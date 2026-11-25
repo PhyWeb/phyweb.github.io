@@ -7,6 +7,8 @@ import {
     getWorldAnchors,
     buildConnectorPath,
     getConnectorMidpoint,
+    computeConnectorGeometry,
+    computeDistributionDeltas,
     localToWorld,
     snapRotationAngle,
     normalizeAngle
@@ -16,12 +18,21 @@ import {
     buildStandaloneSVG,
     renderConnectorSVG,
     renderLabelSVG,
+    getLabelMetrics,
     renderSceneToPNGBlob,
     computeSceneBounds
 } from './export.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const SESSION_STORAGE_KEY = 'phyweb_schemas_session_v1';
+
+function escHtml(str) {
+    return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
 
 // Initialisation navbar PhyWeb
 const notify = (msg) => {
@@ -48,7 +59,13 @@ function markAsSaved() {
     savedSnapshot = store.snapshot();
 }
 
-function persistSession() {
+let persistSessionTimer = null;
+
+function persistSessionImmediate() {
+    if (persistSessionTimer !== null) {
+        clearTimeout(persistSessionTimer);
+        persistSessionTimer = null;
+    }
     try {
         if (!hasSceneData()) {
             sessionStorage.removeItem(SESSION_STORAGE_KEY);
@@ -58,6 +75,11 @@ function persistSession() {
     } catch (_) {
         // Ignorer si sessionStorage est indisponible ou plein
     }
+}
+
+function persistSession() {
+    if (persistSessionTimer !== null) clearTimeout(persistSessionTimer);
+    persistSessionTimer = setTimeout(persistSessionImmediate, 250);
 }
 
 function restoreSession() {
@@ -92,6 +114,7 @@ try {
 
 // Alerte navigateur en cas de fermeture d'onglet ou rechargement avec modifications non sauvegardées
 window.addEventListener('beforeunload', (e) => {
+    persistSessionImmediate();
     if (hasUnsavedChanges()) {
         e.preventDefault();
         e.returnValue = '';
@@ -183,6 +206,7 @@ const editor = {
     activeGuides: [],
     snappedPort: null,
     rotateFeedback: null,    // { x, y, angle, snapped }
+    scaleFeedback: null,     // { x, y, pct }
     spaceDown: false
 };
 
@@ -362,23 +386,34 @@ function renderOverlay() {
                 const r = 7 / (scale * editor.zoom);
                 const rIcon = 3.2 / (scale * editor.zoom);
                 const sw = 1.6 / (scale * editor.zoom);
+                const hs = 8.5 / (scale * editor.zoom);
+                const hHalf = hs / 2;
+                const bx1 = bb.x - pad;
+                const by1 = topY;
+                const bx2 = bb.x + bb.width + pad;
+                const by2 = bb.y + bb.height + pad;
                 html += `<g transform="${transform}">
-                    <rect class="selection-box" x="${bb.x - pad}" y="${topY}" width="${bb.width + pad * 2}" height="${bb.height + pad * 2}" rx="4" style="stroke-width:${sw.toFixed(2)}" />
-                    <line class="rotate-stem" x1="${cx.toFixed(1)}" y1="${topY.toFixed(1)}" x2="${cx.toFixed(1)}" y2="${(handleY + r).toFixed(1)}" style="stroke-width:${sw.toFixed(2)}" />
-                    <circle class="rotate-handle" data-handle="item-rotate" cx="${cx.toFixed(1)}" cy="${handleY.toFixed(1)}" r="${r.toFixed(2)}" style="stroke-width:${sw.toFixed(2)}" title="Glisser pour pivoter (double-clic : 0°)" />
+                    <rect class="selection-box" x="${bx1}" y="${by1}" width="${bb.width + pad * 2}" height="${bb.height + pad * 2}" rx="4" style="stroke-width:${sw.toFixed(2)}" />
+                    <line class="rotate-stem" x1="${cx.toFixed(1)}" y1="${by1.toFixed(1)}" x2="${cx.toFixed(1)}" y2="${(handleY + r).toFixed(1)}" style="stroke-width:${sw.toFixed(2)}" />
+                    <circle class="rotate-handle" data-handle="item-rotate" cx="${cx.toFixed(1)}" cy="${handleY.toFixed(1)}" r="${r.toFixed(2)}" style="stroke-width:${sw.toFixed(2)}"><title>Glisser pour pivoter (double-clic : 0°)</title></circle>
                     <path class="rotate-handle-icon" d="M ${(cx - rIcon).toFixed(2)},${handleY.toFixed(2)} A ${rIcon.toFixed(2)},${rIcon.toFixed(2)} 0 1,1 ${(cx + rIcon * 0.6).toFixed(2)},${(handleY + rIcon * 0.8).toFixed(2)}" style="stroke-width:${sw.toFixed(2)}" />
+                    <rect class="resize-handle is-nw" data-handle="item-resize" data-corner="nw" x="${(bx1 - hHalf).toFixed(2)}" y="${(by1 - hHalf).toFixed(2)}" width="${hs.toFixed(2)}" height="${hs.toFixed(2)}" rx="${(1.5 / (scale * editor.zoom)).toFixed(2)}" style="stroke-width:${sw.toFixed(2)}"><title>Glisser pour redimensionner</title></rect>
+                    <rect class="resize-handle is-ne" data-handle="item-resize" data-corner="ne" x="${(bx2 - hHalf).toFixed(2)}" y="${(by1 - hHalf).toFixed(2)}" width="${hs.toFixed(2)}" height="${hs.toFixed(2)}" rx="${(1.5 / (scale * editor.zoom)).toFixed(2)}" style="stroke-width:${sw.toFixed(2)}"><title>Glisser pour redimensionner</title></rect>
+                    <rect class="resize-handle is-sw" data-handle="item-resize" data-corner="sw" x="${(bx1 - hHalf).toFixed(2)}" y="${(by2 - hHalf).toFixed(2)}" width="${hs.toFixed(2)}" height="${hs.toFixed(2)}" rx="${(1.5 / (scale * editor.zoom)).toFixed(2)}" style="stroke-width:${sw.toFixed(2)}"><title>Glisser pour redimensionner</title></rect>
+                    <rect class="resize-handle is-se" data-handle="item-resize" data-corner="se" x="${(bx2 - hHalf).toFixed(2)}" y="${(by2 - hHalf).toFixed(2)}" width="${hs.toFixed(2)}" height="${hs.toFixed(2)}" rx="${(1.5 / (scale * editor.zoom)).toFixed(2)}" style="stroke-width:${sw.toFixed(2)}"><title>Glisser pour redimensionner</title></rect>
                 </g>`;
             }
         } else if (kind === 'connector') {
             const { p1, p2 } = resolveConnectorEndpoints(el, store.scene.items);
             const mid = getConnectorMidpoint(p1, p2, el.mode, el.bend, el.bendX || 0);
-            html += `<circle class="handle-dot" data-handle="conn-start" cx="${p1.x.toFixed(1)}" cy="${p1.y.toFixed(1)}" r="6" />`;
-            html += `<circle class="handle-dot" data-handle="conn-end" cx="${p2.x.toFixed(1)}" cy="${p2.y.toFixed(1)}" r="6" />`;
-            html += `<circle class="handle-dot" data-handle="conn-bend" cx="${mid.x.toFixed(1)}" cy="${mid.y.toFixed(1)}" r="5.5" title="Glisser librement pour courber" />`;
+            html += `<circle class="handle-dot" data-handle="conn-start" cx="${p1.x.toFixed(1)}" cy="${p1.y.toFixed(1)}" r="6"><title>Déplacer le point de départ</title></circle>`;
+            html += `<circle class="handle-dot" data-handle="conn-end" cx="${p2.x.toFixed(1)}" cy="${p2.y.toFixed(1)}" r="6"><title>Déplacer le point d’arrivée</title></circle>`;
+            html += `<circle class="handle-dot" data-handle="conn-bend" cx="${mid.x.toFixed(1)}" cy="${mid.y.toFixed(1)}" r="5.5"><title>Glisser librement pour courber</title></circle>`;
         } else if (kind === 'label') {
-            html += `<circle class="handle-dot" data-handle="lbl-pos" cx="${(el.x - 10).toFixed(1)}" cy="${(el.y - 6).toFixed(1)}" r="5" />`;
+            const m = getLabelMetrics(el);
+            html += `<circle class="handle-dot" data-handle="lbl-pos" cx="${(m.boxX - 8).toFixed(1)}" cy="${(el.y - m.fs * 0.35).toFixed(1)}" r="5"><title>Déplacer la légende (Shift : avec la pointe)</title></circle>`;
             if (el.showLeader) {
-                html += `<circle class="handle-dot" data-handle="lbl-target" cx="${el.targetX.toFixed(1)}" cy="${el.targetY.toFixed(1)}" r="6" />`;
+                html += `<circle class="handle-dot" data-handle="lbl-target" cx="${el.targetX.toFixed(1)}" cy="${el.targetY.toFixed(1)}" r="6"><title>Déplacer la pointe de la flèche</title></circle>`;
             }
         }
     } else if (selectedEntries.length > 1) {
@@ -458,6 +493,15 @@ function renderOverlay() {
         </g>`;
     }
 
+    if (editor.scaleFeedback) {
+        const sf = editor.scaleFeedback;
+        const s = 1 / editor.zoom;
+        html += `<g transform="translate(${(sf.x + 28 * s).toFixed(1)}, ${(sf.y - 18 * s).toFixed(1)}) scale(${s.toFixed(3)})">
+            <rect class="angle-badge-bg" x="-26" y="-11" width="52" height="20" rx="10" />
+            <text class="angle-badge-text" x="0" y="3">${sf.pct}%</text>
+        </g>`;
+    }
+
     layerOverlay.innerHTML = html;
 }
 
@@ -499,24 +543,20 @@ function getElementWorldBounds(kind, el) {
     }
     if (kind === 'connector') {
         const { p1, p2 } = resolveConnectorEndpoints(el, store.scene.items);
-        const mid = getConnectorMidpoint(p1, p2, el.mode, el.bend, el.bendX || 0);
+        const { bounds } = computeConnectorGeometry(p1, p2, el.mode, el.bend, el.bendX || 0);
         return {
-            minX: Math.min(p1.x, p2.x, mid.x) - 6,
-            minY: Math.min(p1.y, p2.y, mid.y) - 6,
-            maxX: Math.max(p1.x, p2.x, mid.x) + 6,
-            maxY: Math.max(p1.y, p2.y, mid.y) + 6
+            minX: bounds.minX - 6,
+            minY: bounds.minY - 6,
+            maxX: bounds.maxX + 6,
+            maxY: bounds.maxY + 6
         };
     }
     if (kind === 'label') {
-        const fs = Number(el.fontSize) || 16;
-        const lines = String(el.text || '').split('\n');
-        const maxLen = Math.max(3, ...lines.map(l => l.length));
-        const approxW = maxLen * fs * 0.6;
-        const approxH = lines.length * fs * 1.25;
-        let minX = el.x - 4;
-        let minY = el.y - fs;
-        let maxX = el.x + approxW;
-        let maxY = el.y + approxH - fs * 0.7;
+        const m = getLabelMetrics(el);
+        let minX = m.boxX - 4;
+        let minY = m.boxY - 4;
+        let maxX = m.boxX + m.boxW + 4;
+        let maxY = m.boxY + m.boxH + 4;
         if (el.showLeader) {
             minX = Math.min(minX, el.targetX);
             minY = Math.min(minY, el.targetY);
@@ -623,6 +663,47 @@ function alignSelectedElements(mode) {
     renderScene();
 }
 
+function distributeSelectedElements(axis) {
+    const entries = store.getSelectedElements().filter(e => e.kind === 'item' || e.kind === 'label');
+    if (entries.length < 3) return;
+    const withBounds = entries
+        .map(e => ({ ...e, b: getElementWorldBounds(e.kind, e.el) }))
+        .filter(e => e.b);
+    if (withBounds.length < 3) return;
+
+    const deltas = computeDistributionDeltas(withBounds, axis);
+    if (deltas.size === 0) return;
+
+    store.pushHistory();
+    for (const { id, kind, el } of withBounds) {
+        const d = deltas.get(id);
+        if (!d) continue;
+        el.x = Math.round(el.x + d.dx);
+        el.y = Math.round(el.y + d.dy);
+        if (kind === 'label') {
+            el.targetX = Math.round(el.targetX + d.dx);
+            el.targetY = Math.round(el.targetY + d.dy);
+        }
+    }
+    renderScene();
+}
+
+function rotateItemBy(item, deltaDeg) {
+    const def = getCatalogItem(item.type);
+    if (!def) return;
+    const bb = def.getBBox(item.props || {});
+    const cx = bb.x + bb.width / 2;
+    const cy = bb.y + bb.height / 2;
+    const pivot = localToWorld(item, cx, cy);
+    store.pushHistory();
+    item.rotation = deltaDeg === 0 ? 0 : normalizeAngle((item.rotation || 0) + deltaDeg);
+    const newCenter = localToWorld(item, cx, cy);
+    item.x = Math.round(item.x + (pivot.x - newCenter.x));
+    item.y = Math.round(item.y + (pivot.y - newCenter.y));
+    renderScene();
+    renderInspector();
+}
+
 function setTool(tool) {
     editor.tool = tool;
     editor.pendingConnector = null;
@@ -636,17 +717,284 @@ function setTool(tool) {
 }
 
 // =========================================================================
+// MENU CONTEXTUEL (CLIC DROIT COURT SANS DRAG)
+// =========================================================================
+const contextMenuEl = document.createElement('div');
+contextMenuEl.className = 'schemas-context-menu';
+contextMenuEl.setAttribute('role', 'menu');
+contextMenuEl.hidden = true;
+document.body.appendChild(contextMenuEl);
+
+function closeContextMenu() {
+    if (!contextMenuEl.hidden) {
+        contextMenuEl.hidden = true;
+        contextMenuEl.innerHTML = '';
+    }
+}
+
+document.addEventListener('pointerdown', (e) => {
+    if (!contextMenuEl.hidden && !contextMenuEl.contains(e.target)) {
+        closeContextMenu();
+    }
+});
+window.addEventListener('blur', closeContextMenu);
+window.addEventListener('resize', closeContextMenu);
+
+function handleCopySelection() {
+    const n = store.copySelected();
+    if (!n) return false;
+    notify(n > 1 ? `${n} éléments copiés.` : 'Élément copié.');
+    return true;
+}
+
+function handleCutSelection() {
+    const n = store.cutSelected();
+    if (!n) return false;
+    renderScene();
+    renderInspector();
+    notify(n > 1 ? `${n} éléments coupés.` : 'Élément coupé.');
+    return true;
+}
+
+function handlePasteSelection(atPoint = null) {
+    const created = store.pasteClipboard(atPoint ? { atPoint } : {});
+    if (!created || created.length === 0) return false;
+    renderScene();
+    renderInspector();
+    notify(created.length > 1 ? `${created.length} éléments collés.` : 'Élément collé.');
+    return true;
+}
+
+function openContextMenu(clientX, clientY, hitEl) {
+    const scenePt = clientToScene(clientX, clientY);
+    if (hitEl) {
+        const kind = hitEl.dataset.kind;
+        const id = hitEl.dataset.id;
+        if (!store.isSelected(kind, id)) {
+            store.selection = { kind, id };
+            renderOverlay();
+            renderInspector();
+        }
+    }
+
+    const entries = store.getSelectedElements();
+    const actions = [];
+
+    if (hitEl && entries.length > 0) {
+        const isSingleItem = entries.length === 1 && entries[0].kind === 'item';
+        const hasItems = entries.some(en => en.kind === 'item');
+        const singleItem = isSingleItem ? entries[0].el : null;
+
+        actions.push({ label: 'Copier', icon: 'fa-copy', kbd: 'Ctrl+C', onClick: () => handleCopySelection() });
+        actions.push({ label: 'Couper', icon: 'fa-scissors', kbd: 'Ctrl+X', onClick: () => handleCutSelection() });
+        actions.push({ label: 'Dupliquer', icon: 'fa-clone', kbd: 'Ctrl+D', onClick: () => { store.duplicateSelected(); renderScene(); renderInspector(); } });
+
+        if (isSingleItem) {
+            actions.push({ divider: true });
+            actions.push({ label: 'Pivoter −90°', icon: 'fa-rotate-left', onClick: () => rotateItemBy(singleItem, -90) });
+            actions.push({ label: 'Pivoter +90°', icon: 'fa-rotate-right', onClick: () => rotateItemBy(singleItem, 90) });
+            actions.push({
+                label: 'Inverser horizontalement',
+                icon: 'fa-left-right',
+                onClick: () => {
+                    store.pushHistory();
+                    singleItem.flipX = !singleItem.flipX;
+                    renderScene();
+                    renderInspector();
+                }
+            });
+            actions.push({ divider: true });
+            actions.push({ label: 'Premier plan', icon: 'fa-angles-up', onClick: () => { store.moveItemZOrder(singleItem.id, 'front'); renderScene(); } });
+            actions.push({ label: 'Avancer d’un plan', icon: 'fa-angle-up', onClick: () => { store.moveItemZOrder(singleItem.id, 'forward'); renderScene(); } });
+            actions.push({ label: 'Reculer d’un plan', icon: 'fa-angle-down', onClick: () => { store.moveItemZOrder(singleItem.id, 'backward'); renderScene(); } });
+            actions.push({ label: 'Arrière-plan', icon: 'fa-angles-down', onClick: () => { store.moveItemZOrder(singleItem.id, 'back'); renderScene(); } });
+        } else if (hasItems) {
+            actions.push({ divider: true });
+            actions.push({
+                label: 'Mettre au premier plan',
+                icon: 'fa-angles-up',
+                onClick: () => {
+                    store.pushHistory();
+                    const ids = new Set(entries.filter(en => en.kind === 'item').map(en => en.id));
+                    store.scene.items = [
+                        ...store.scene.items.filter(i => !ids.has(i.id)),
+                        ...store.scene.items.filter(i => ids.has(i.id))
+                    ];
+                    renderScene();
+                }
+            });
+            actions.push({
+                label: 'Mettre à l’arrière-plan',
+                icon: 'fa-angles-down',
+                onClick: () => {
+                    store.pushHistory();
+                    const ids = new Set(entries.filter(en => en.kind === 'item').map(en => en.id));
+                    store.scene.items = [
+                        ...store.scene.items.filter(i => ids.has(i.id)),
+                        ...store.scene.items.filter(i => !ids.has(i.id))
+                    ];
+                    renderScene();
+                }
+            });
+        }
+
+        actions.push({ divider: true });
+        actions.push({
+            label: 'Supprimer',
+            icon: 'fa-trash',
+            kbd: 'Suppr',
+            danger: true,
+            onClick: () => {
+                store.deleteSelected();
+                renderScene();
+                renderInspector();
+            }
+        });
+    } else {
+        actions.push({
+            label: 'Coller ici',
+            icon: 'fa-paste',
+            kbd: 'Ctrl+V',
+            disabled: !store.hasClipboard(),
+            onClick: () => handlePasteSelection(scenePt)
+        });
+        actions.push({
+            label: 'Tout sélectionner',
+            icon: 'fa-object-group',
+            kbd: 'Ctrl+A',
+            disabled: !hasSceneData(),
+            onClick: () => {
+                store.selectAll();
+                renderOverlay();
+                renderInspector();
+            }
+        });
+        actions.push({ divider: true });
+        actions.push({
+            label: 'Centrer / Adapter la vue',
+            icon: 'fa-expand',
+            kbd: '0',
+            onClick: () => fitViewToScene()
+        });
+    }
+
+    contextMenuEl.innerHTML = '';
+    for (const act of actions) {
+        if (act.divider) {
+            const div = document.createElement('div');
+            div.className = 'context-menu-divider';
+            contextMenuEl.appendChild(div);
+            continue;
+        }
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `context-menu-item${act.danger ? ' is-danger' : ''}`;
+        btn.disabled = Boolean(act.disabled);
+        btn.innerHTML = `<i class="fas ${act.icon}"></i><span>${act.label}</span>${act.kbd ? `<span class="context-menu-kbd">${act.kbd}</span>` : ''}`;
+        btn.addEventListener('click', () => {
+            closeContextMenu();
+            act.onClick();
+        });
+        contextMenuEl.appendChild(btn);
+    }
+
+    contextMenuEl.hidden = false;
+    const rect = contextMenuEl.getBoundingClientRect();
+    const x = Math.min(clientX, Math.max(8, window.innerWidth - rect.width - 8));
+    const y = Math.min(clientY, Math.max(8, window.innerHeight - rect.height - 8));
+    contextMenuEl.style.left = `${x}px`;
+    contextMenuEl.style.top = `${y}px`;
+}
+
+// =========================================================================
+// ÉDITION DIRECTE DE LÉGENDE SUR LE CANVAS
+// =========================================================================
+let inlineEditorEl = null;
+
+function closeInlineLabelEditor() {
+    if (inlineEditorEl) {
+        const el = inlineEditorEl;
+        inlineEditorEl = null;
+        el.remove();
+    }
+}
+
+function openInlineLabelEditor(lbl) {
+    closeInlineLabelEditor();
+    if (!lbl) return;
+
+    const m = getLabelMetrics(lbl);
+    const left = m.boxX * editor.zoom + editor.panX - 6;
+    const top = m.boxY * editor.zoom + editor.panY - 4;
+    const fontSizePx = Math.max(11, Math.round(m.fs * editor.zoom));
+
+    const ta = document.createElement('textarea');
+    ta.className = 'inline-label-editor';
+    ta.value = lbl.text || '';
+    ta.rows = Math.max(1, m.lines.length);
+    ta.style.left = `${Math.round(left)}px`;
+    ta.style.top = `${Math.round(top)}px`;
+    ta.style.width = `${Math.max(110, Math.round(m.boxW * editor.zoom + 34))}px`;
+    ta.style.fontSize = `${fontSizePx}px`;
+    ta.style.fontWeight = lbl.bold ? 'bold' : 'normal';
+    ta.style.fontStyle = lbl.italic ? 'italic' : 'normal';
+    ta.style.textAlign = m.align;
+    ta.style.color = lbl.color || '#1e293b';
+    if (lbl.bgEnabled) ta.style.background = lbl.bgColor || '#ffffff';
+
+    let historyPushed = false;
+    ta.addEventListener('input', () => {
+        if (!historyPushed) {
+            store.pushHistory();
+            historyPushed = true;
+        }
+        lbl.text = ta.value;
+        const lines = ta.value.split('\n');
+        ta.rows = Math.max(1, lines.length);
+        const maxLen = Math.max(4, ...lines.map(l => l.length));
+        ta.style.width = `${Math.max(110, Math.round(maxLen * fontSizePx * 0.62 + 34))}px`;
+        renderScene();
+        const inspTa = inspectorBodyEl.querySelector('textarea[data-prop="text"]');
+        if (inspTa && inspTa.value !== ta.value) inspTa.value = ta.value;
+    });
+
+    ta.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Escape' || (ev.key === 'Enter' && (ev.ctrlKey || ev.metaKey))) {
+            ev.preventDefault();
+            ev.stopPropagation();
+            closeInlineLabelEditor();
+        }
+    });
+
+    ta.addEventListener('blur', () => {
+        closeInlineLabelEditor();
+    });
+
+    stageEl.appendChild(ta);
+    inlineEditorEl = ta;
+    ta.focus();
+    ta.select();
+}
+
+// =========================================================================
 // INTERACTIONS SOURIS / POINTEUR SUR LE CANVAS SVG
 // =========================================================================
 svgEl.addEventListener('contextmenu', (e) => e.preventDefault());
 
 svgEl.addEventListener('pointerdown', (e) => {
-    // Pan avec clic milieu, clic droit ou Espace + clic gauche
+    closeContextMenu();
+    closeInlineLabelEditor();
+
+    // Pan avec clic milieu, clic droit (drag >= 4px ; clic court = menu contextuel) ou Espace + clic gauche
     if (e.button === 1 || e.button === 2 || (e.button === 0 && editor.spaceDown)) {
         e.preventDefault();
-        stageEl.classList.add('is-panning');
+        const isRightClick = e.button === 2;
+        if (!isRightClick) stageEl.classList.add('is-panning');
         editor.drag = {
             kind: 'pan',
+            isRightClick,
+            moved: false,
+            hitEl: isRightClick ? e.target.closest('[data-kind][data-id]') : null,
             startClientX: e.clientX,
             startClientY: e.clientY,
             origPanX: editor.panX,
@@ -689,15 +1037,12 @@ svgEl.addEventListener('pointerdown', (e) => {
 
     // 2. Outil Légende
     if (editor.tool === 'label') {
-        store.addLabel(pt.x + 55, pt.y - 25, 'Légende', pt.x, pt.y);
+        e.preventDefault();
+        const lbl = store.addLabel(pt.x + 55, pt.y - 25, 'Légende', pt.x, pt.y);
         setTool('select');
         renderScene();
         renderInspector();
-        const txtArea = inspectorBodyEl.querySelector('textarea[data-prop="text"]');
-        if (txtArea) {
-            txtArea.focus();
-            txtArea.select();
-        }
+        requestAnimationFrame(() => openInlineLabelEditor(lbl));
         return;
     }
 
@@ -726,12 +1071,50 @@ svgEl.addEventListener('pointerdown', (e) => {
                 return;
             }
         }
+        if (handleType === 'item-resize' && store.selection.kind === 'item') {
+            const item = store.getSelectedElement();
+            const def = item ? getCatalogItem(item.type) : null;
+            if (item && def) {
+                const bb = def.getBBox(item.props || {});
+                const pad = 6;
+                const corner = handleEl.dataset.corner || 'se';
+                const bx1 = bb.x - pad;
+                const by1 = bb.y - pad;
+                const bx2 = bb.x + bb.width + pad;
+                const by2 = bb.y + bb.height + pad;
+                const grabLocalX = (corner === 'nw' || corner === 'sw') ? bx1 : bx2;
+                const grabLocalY = (corner === 'nw' || corner === 'ne') ? by1 : by2;
+                const oppLocalX = (corner === 'nw' || corner === 'sw') ? bx2 : bx1;
+                const oppLocalY = (corner === 'nw' || corner === 'ne') ? by2 : by1;
+                const anchorWorld = localToWorld(item, oppLocalX, oppLocalY);
+                const grabWorld = localToWorld(item, grabLocalX, grabLocalY);
+                const origDist = Math.hypot(grabWorld.x - anchorWorld.x, grabWorld.y - anchorWorld.y) || 1;
+                editor.drag = {
+                    kind: 'resize-item',
+                    id: item.id,
+                    oppLocalX,
+                    oppLocalY,
+                    anchorX: anchorWorld.x,
+                    anchorY: anchorWorld.y,
+                    ux: (grabWorld.x - anchorWorld.x) / origDist,
+                    uy: (grabWorld.y - anchorWorld.y) / origDist,
+                    origDist,
+                    origScale: item.scale ?? 1
+                };
+                svgEl.setPointerCapture(e.pointerId);
+                return;
+            }
+        }
         const currentEl = store.getSelectedElement();
         editor.drag = {
             kind: 'handle',
             handleType,
             startX: pt.x,
             startY: pt.y,
+            origX: currentEl?.x ?? 0,
+            origY: currentEl?.y ?? 0,
+            origTargetX: currentEl?.targetX ?? 0,
+            origTargetY: currentEl?.targetY ?? 0,
             origBend: currentEl?.bend ?? 0,
             origBendX: currentEl?.bendX ?? 0
         };
@@ -778,6 +1161,11 @@ svgEl.addEventListener('pointerdown', (e) => {
             };
             svgEl.setPointerCapture(e.pointerId);
         } else if (kind === 'label' && el) {
+            if (e.detail >= 2) {
+                e.preventDefault();
+                requestAnimationFrame(() => openInlineLabelEditor(el));
+                return;
+            }
             editor.drag = {
                 kind: 'move-label',
                 id,
@@ -829,8 +1217,15 @@ svgEl.addEventListener('pointermove', (e) => {
     if (!editor.drag) return;
 
     if (editor.drag.kind === 'pan') {
-        editor.panX = editor.drag.origPanX + (e.clientX - editor.drag.startClientX);
-        editor.panY = editor.drag.origPanY + (e.clientY - editor.drag.startClientY);
+        const dxClient = e.clientX - editor.drag.startClientX;
+        const dyClient = e.clientY - editor.drag.startClientY;
+        if (editor.drag.isRightClick && !editor.drag.moved) {
+            if (Math.hypot(dxClient, dyClient) < 4) return;
+            editor.drag.moved = true;
+            stageEl.classList.add('is-panning');
+        }
+        editor.panX = editor.drag.origPanX + dxClient;
+        editor.panY = editor.drag.origPanY + dyClient;
         applyViewportTransform();
         return;
     }
@@ -928,6 +1323,27 @@ svgEl.addEventListener('pointermove', (e) => {
         return;
     }
 
+    if (editor.drag.kind === 'resize-item') {
+        const item = store.scene.items.find(i => i.id === editor.drag.id);
+        if (!item) return;
+        const { anchorX, anchorY, ux, uy, origDist, origScale, oppLocalX, oppLocalY } = editor.drag;
+        const proj = (pt.x - anchorX) * ux + (pt.y - anchorY) * uy;
+        let nextScale = Math.max(0.4, Math.min(2.0, origScale * (proj / origDist)));
+        if (editor.snapEnabled && !e.altKey) {
+            nextScale = Math.round(nextScale / 0.05) * 0.05;
+        }
+        nextScale = Math.round(nextScale * 100) / 100;
+        item.scale = Math.max(0.4, Math.min(2.0, nextScale));
+        // Garder le coin opposé fixe pendant le redimensionnement
+        const newAnchor = localToWorld(item, oppLocalX, oppLocalY);
+        item.x = Math.round(item.x + (anchorX - newAnchor.x));
+        item.y = Math.round(item.y + (anchorY - newAnchor.y));
+        editor.scaleFeedback = { x: pt.x, y: pt.y, pct: Math.round(item.scale * 100) };
+        renderScene();
+        syncInspectorValues();
+        return;
+    }
+
     if (editor.drag.kind === 'move-label') {
         const lbl = store.scene.labels.find(l => l.id === editor.drag.id);
         if (!lbl) return;
@@ -968,6 +1384,16 @@ svgEl.addEventListener('pointermove', (e) => {
             el.bend = Math.round((editor.drag.origBend || 0) + (pt.y - editor.drag.startY));
             renderScene();
             syncInspectorValues();
+        } else if (h === 'lbl-pos') {
+            const dx = pt.x - editor.drag.startX;
+            const dy = pt.y - editor.drag.startY;
+            el.x = Math.round(editor.drag.origX + dx);
+            el.y = Math.round(editor.drag.origY + dy);
+            if (e.shiftKey) {
+                el.targetX = Math.round(editor.drag.origTargetX + dx);
+                el.targetY = Math.round(editor.drag.origTargetY + dy);
+            }
+            renderScene();
         } else if (h === 'lbl-target') {
             el.targetX = Math.round(pt.x);
             el.targetY = Math.round(pt.y);
@@ -983,6 +1409,8 @@ function isOverDeleteZone(clientX, clientY) {
 
 svgEl.addEventListener('pointerup', (e) => {
     if (editor.drag) {
+        const wasRightClickMenu = editor.drag.kind === 'pan' && editor.drag.isRightClick && !editor.drag.moved;
+        const rightClickHitEl = editor.drag.hitEl;
         const wasMarquee = editor.drag.kind === 'marquee';
         const wasMovable = editor.drag.kind === 'move-item' || editor.drag.kind === 'move-label' || editor.drag.kind === 'move-multi';
         const shouldDelete = wasMovable && isOverDeleteZone(e.clientX, e.clientY);
@@ -993,9 +1421,15 @@ svgEl.addEventListener('pointerup', (e) => {
         editor.activeGuides = [];
         editor.snappedPort = null;
         editor.rotateFeedback = null;
+        editor.scaleFeedback = null;
         drawerEl.classList.remove('is-drop-delete');
         stageEl.classList.remove('is-panning');
         try { svgEl.releasePointerCapture(e.pointerId); } catch (_) {}
+
+        if (wasRightClickMenu) {
+            openContextMenu(e.clientX, e.clientY, rightClickHitEl);
+            return;
+        }
 
         if (shouldDelete) {
             store.deleteSelected(historyPushed);
@@ -1009,18 +1443,22 @@ svgEl.addEventListener('pointerup', (e) => {
     }
 });
 
-// Double-clic : sur une légende -> édition directe du texte ; sur la poignée de rotation -> réinitialiser à 0°
+// Double-clic : sur une légende -> édition directe sur le canvas ; sur la poignée de rotation -> réinitialiser à 0°
 svgEl.addEventListener('dblclick', (e) => {
-    const labelEl = e.target.closest('[data-kind="label"][data-id]');
+    let labelEl = e.target.closest('[data-kind="label"][data-id]');
+    if (!labelEl && typeof document.elementsFromPoint === 'function') {
+        for (const node of document.elementsFromPoint(e.clientX, e.clientY)) {
+            const found = node.closest?.('[data-kind="label"][data-id]');
+            if (found) { labelEl = found; break; }
+        }
+    }
     if (labelEl) {
+        e.preventDefault();
         store.selection = { kind: 'label', id: labelEl.dataset.id };
         renderOverlay();
         renderInspector();
-        const ta = inspectorBodyEl.querySelector('textarea[data-prop="text"]');
-        if (ta) {
-            ta.focus();
-            ta.select();
-        }
+        const lbl = store.getSelectedElement();
+        if (lbl) openInlineLabelEditor(lbl);
         return;
     }
 
@@ -1044,6 +1482,8 @@ svgEl.addEventListener('dblclick', (e) => {
 
 svgEl.addEventListener('wheel', (e) => {
     e.preventDefault();
+    closeContextMenu();
+    closeInlineLabelEditor();
     const factor = e.deltaY < 0 ? 1.12 : 1 / 1.12;
     zoomAt(factor, e.clientX, e.clientY);
 }, { passive: false });
@@ -1081,9 +1521,9 @@ function renderInspector() {
               <div><kbd>V</kbd> Sélection · <kbd>W</kbd> Fil · <kbd>T</kbd> Tuyau · <kbd>L</kbd> Légende</div>
               <div><kbd>Shift+clic</kbd> / Cadre : Multi-sélection · <kbd>Ctrl+A</kbd> Tout</div>
               <div><kbd>M</kbd> Aimantation · <kbd>G</kbd> Grille · <kbd>Alt</kbd> Ignorer aimant</div>
-              <div><kbd>Ctrl+Z</kbd> Annuler · <kbd>Ctrl+D</kbd> Dupliquer · <kbd>Suppr</kbd> Effacer</div>
-              <div><kbd>Ctrl+S</kbd> Sauvegarder · <kbd>Ctrl+O</kbd> Charger</div>
-              <div><kbd>Flèches</kbd> Décalage fin · <kbd>Espace</kbd>/Clic droit : Vue</div>
+              <div><kbd>Ctrl+Z</kbd> Annuler · <kbd>Ctrl+C/X/V</kbd> Copier/Coller · <kbd>Ctrl+D</kbd> Dupliquer</div>
+              <div><kbd>Suppr</kbd> Effacer · <kbd>Ctrl+S</kbd> Sauvegarder · <kbd>Ctrl+O</kbd> Charger</div>
+              <div><kbd>Flèches</kbd> Décalage fin · <kbd>+/−/0</kbd> Zoom · <kbd>Clic droit</kbd> Menu / Vue</div>
             </div>
           </div>
         `;
@@ -1150,6 +1590,11 @@ function renderMultiInspector(entries) {
           <button class="mini-btn" data-align="centerY" title="Centrer verticalement">Milieu</button>
           <button class="mini-btn" data-align="bottom" title="Aligner en bas">Bas</button>
         </div>
+        ${(nItems + nLbls) >= 3 ? `
+        <div class="btn-row" style="margin-top:2px">
+          <button class="mini-btn" data-distribute="horizontal" title="Espacer régulièrement horizontalement"><i class="fas fa-arrows-left-right"></i> Espacer H</button>
+          <button class="mini-btn" data-distribute="vertical" title="Espacer régulièrement verticalement"><i class="fas fa-arrows-up-down"></i> Espacer V</button>
+        </div>` : ''}
       </div>` : ''}
       ${nItems > 0 ? `
       <div class="prop-section">
@@ -1173,6 +1618,9 @@ function renderMultiInspector(entries) {
     });
     inspectorBodyEl.querySelectorAll('[data-align]').forEach(btn => {
         btn.addEventListener('click', () => alignSelectedElements(btn.dataset.align));
+    });
+    inspectorBodyEl.querySelectorAll('[data-distribute]').forEach(btn => {
+        btn.addEventListener('click', () => distributeSelectedElements(btn.dataset.distribute));
     });
     const btnBack = inspectorBodyEl.querySelector('#btnMultiBack');
     if (btnBack) {
@@ -1224,7 +1672,7 @@ function renderItemInspector(item) {
             } else if (field.type === 'toggle') {
                 specificHtml += `<div class="prop-row"><label>${field.label}</label><input type="checkbox" data-prop="${field.key}" ${val ? 'checked' : ''}></div>`;
             } else if (field.type === 'text') {
-                specificHtml += `<div class="prop-row"><label>${field.label}</label><input type="text" class="prop-input" style="max-width:130px" data-prop="${field.key}" value="${String(val ?? '').replace(/"/g, '&quot;')}" placeholder="${field.placeholder || ''}"></div>`;
+                specificHtml += `<div class="prop-row"><label>${field.label}</label><input type="text" class="prop-input" style="max-width:130px" data-prop="${field.key}" value="${escHtml(val ?? '')}" placeholder="${escHtml(field.placeholder || '')}"></div>`;
             } else if (field.type === 'color') {
                 const swatches = (field.presets || []).map(pr =>
                     `<button type="button" class="color-swatch ${val === pr.color ? 'is-selected' : ''}" data-color-prop="${field.key}" data-color-val="${pr.color}" style="background:${pr.color}" title="${pr.label}"></button>`
@@ -1314,13 +1762,19 @@ function renderItemInspector(item) {
     inspectorBodyEl.querySelectorAll('[data-prop]').forEach(input => {
         const key = input.dataset.prop;
         const field = schema.find(f => f.key === key);
-        const eventName = (input.type === 'range' || input.type === 'text' || input.type === 'color') ? 'input' : 'change';
+        const isContinuous = input.type === 'range' || input.type === 'text' || input.type === 'color';
+        const eventName = isContinuous ? 'input' : 'change';
+        let historyPushed = false;
         input.addEventListener(eventName, () => {
             const prevVal = item.props[key];
             const newVal = input.type === 'checkbox'
                 ? input.checked
                 : (input.type === 'range' ? Number(input.value) : input.value);
             if (prevVal === newVal) return;
+            if (!historyPushed) {
+                store.pushHistory();
+                historyPushed = isContinuous;
+            }
             item.props[key] = newVal;
             if (key === 'fillToRim' && newVal === true && 'liquidLevel' in item.props) {
                 item.props.liquidLevel = 100;
@@ -1340,9 +1794,12 @@ function renderItemInspector(item) {
                 renderInspector();
             }
         });
-        input.addEventListener('change', () => {
-            store.pushHistory();
-        });
+        if (isContinuous) {
+            input.addEventListener('change', () => { historyPushed = false; });
+            if (input.type === 'text') {
+                input.addEventListener('blur', () => { historyPushed = false; });
+            }
+        }
     });
 
     inspectorBodyEl.querySelectorAll('[data-color-prop]').forEach(btn => {
@@ -1357,12 +1814,17 @@ function renderItemInspector(item) {
     // Rotation / Symétrie / Échelle
     const inpRot = inspectorBodyEl.querySelector('#inpRotation');
     const valRot = inspectorBodyEl.querySelector('#valRotation');
+    let rotHistoryPushed = false;
     inpRot.addEventListener('input', () => {
+        if (!rotHistoryPushed) {
+            store.pushHistory();
+            rotHistoryPushed = true;
+        }
         item.rotation = Number(inpRot.value);
         valRot.textContent = `${item.rotation}°`;
         renderScene();
     });
-    inpRot.addEventListener('change', () => store.pushHistory());
+    inpRot.addEventListener('change', () => { rotHistoryPushed = false; });
 
     inspectorBodyEl.querySelectorAll('[data-rot]').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -1390,12 +1852,17 @@ function renderItemInspector(item) {
 
     const inpScale = inspectorBodyEl.querySelector('#inpScale');
     const valScale = inspectorBodyEl.querySelector('#valScale');
+    let scaleHistoryPushed = false;
     inpScale.addEventListener('input', () => {
+        if (!scaleHistoryPushed) {
+            store.pushHistory();
+            scaleHistoryPushed = true;
+        }
         item.scale = Number(inpScale.value);
         valScale.textContent = `${Math.round(item.scale * 100)}%`;
         renderScene();
     });
-    inpScale.addEventListener('change', () => store.pushHistory());
+    inpScale.addEventListener('change', () => { scaleHistoryPushed = false; });
 }
 
 function renderConnectorInspector(conn) {
@@ -1491,12 +1958,17 @@ function renderConnectorInspector(conn) {
         renderScene();
     });
     const inpBend = inspectorBodyEl.querySelector('#inpConnBend');
+    let bendHistoryPushed = false;
     inpBend.addEventListener('input', () => {
+        if (!bendHistoryPushed) {
+            store.pushHistory();
+            bendHistoryPushed = true;
+        }
         conn.bend = Number(inpBend.value);
         inspectorBodyEl.querySelector('#valConnBend').textContent = conn.bend;
         renderScene();
     });
-    inpBend.addEventListener('change', () => store.pushHistory());
+    inpBend.addEventListener('change', () => { bendHistoryPushed = false; });
 
     inspectorBodyEl.querySelector('#btnResetBend').addEventListener('click', () => {
         store.pushHistory();
@@ -1507,12 +1979,17 @@ function renderConnectorInspector(conn) {
     });
 
     const inpWidth = inspectorBodyEl.querySelector('#inpConnWidth');
+    let widthHistoryPushed = false;
     inpWidth.addEventListener('input', () => {
+        if (!widthHistoryPushed) {
+            store.pushHistory();
+            widthHistoryPushed = true;
+        }
         conn.width = Number(inpWidth.value);
         inspectorBodyEl.querySelector('#valConnWidth').textContent = conn.width;
         renderScene();
     });
-    inpWidth.addEventListener('change', () => store.pushHistory());
+    inpWidth.addEventListener('change', () => { widthHistoryPushed = false; });
 
     inspectorBodyEl.querySelector('#chkConnDashed').addEventListener('change', (ev) => {
         store.pushHistory();
@@ -1521,11 +1998,16 @@ function renderConnectorInspector(conn) {
     });
 
     const inpColor = inspectorBodyEl.querySelector('#inpConnColor');
+    let colorHistoryPushed = false;
     inpColor.addEventListener('input', () => {
+        if (!colorHistoryPushed) {
+            store.pushHistory();
+            colorHistoryPushed = true;
+        }
         conn.color = inpColor.value;
         renderScene();
     });
-    inpColor.addEventListener('change', () => { store.pushHistory(); renderInspector(); });
+    inpColor.addEventListener('change', () => { colorHistoryPushed = false; renderInspector(); });
 
     inspectorBodyEl.querySelectorAll('[data-c]').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -1559,23 +2041,39 @@ const LABEL_SYMBOLS = [
     { ch: '₂', title: 'Indice 2' },
     { ch: '₃', title: 'Indice 3' },
     { ch: '₄', title: 'Indice 4' },
+    { ch: '₅', title: 'Indice 5' },
+    { ch: '₆', title: 'Indice 6' },
+    { ch: '₇', title: 'Indice 7' },
+    { ch: '₈', title: 'Indice 8' },
+    { ch: '₉', title: 'Indice 9' },
     { ch: '⁺', title: 'Charge +' },
     { ch: '⁻', title: 'Charge −' },
     { ch: '²', title: 'Exposant 2' },
     { ch: '³', title: 'Exposant 3' },
     { ch: '⁻¹', title: 'Exposant −1 (ex. mol·L⁻¹)' },
     { ch: '°', title: 'Degré' },
+    { ch: '°C', title: 'Degré Celsius' },
     { ch: 'µ', title: 'Micro (µ)' },
     { ch: 'Ω', title: 'Ohm (Ω)' },
     { ch: 'σ', title: 'Conductivité (σ)' },
     { ch: 'λ', title: 'Longueur d’onde (λ)' },
+    { ch: 'Δ', title: 'Variation (Δ)' },
+    { ch: 'θ', title: 'Angle / Température (θ)' },
+    { ch: 'α', title: 'Alpha (α)' },
+    { ch: '±', title: 'Plus ou moins (±)' },
+    { ch: '≈', title: 'Environ égal (≈)' },
+    { ch: '×', title: 'Multiplication (×)' },
     { ch: '·', title: 'Point médian (mol·L⁻¹)' },
     { ch: '→', title: 'Flèche réaction' },
-    { ch: '⇌', title: 'Équilibre chimique' }
+    { ch: '⇌', title: 'Équilibre chimique' },
+    { ch: '↑', title: 'Dégagement gazeux (↑)' },
+    { ch: '↓', title: 'Précipité (↓)' }
 ];
 
 function renderLabelInspector(lbl) {
     inspectorTitleEl.innerHTML = '<i class="fas fa-font mr-1"></i> Légende';
+    const align = lbl.align === 'center' || lbl.align === 'right' ? lbl.align : 'left';
+    const leaderStyle = lbl.leaderStyle === 'elbow' ? 'elbow' : 'straight';
     const symbolButtons = LABEL_SYMBOLS.map(s =>
         `<button type="button" class="symbol-btn" data-symbol="${s.ch}" title="${s.title}">${s.ch}</button>`
     ).join('');
@@ -1588,7 +2086,7 @@ function renderLabelInspector(lbl) {
       </div>
       <div class="prop-section">
         <div class="prop-section-title">Texte</div>
-        <textarea class="prop-textarea" data-prop="text">${lbl.text || ''}</textarea>
+        <textarea class="prop-textarea" data-prop="text">${escHtml(lbl.text || '')}</textarea>
         <div class="symbol-palette" aria-label="Symboles scientifiques">${symbolButtons}</div>
         <div class="prop-row">
           <label>Taille police</label>
@@ -1605,16 +2103,42 @@ function renderLabelInspector(lbl) {
           <button class="mini-btn ${lbl.bold ? 'is-active' : ''}" id="btnBold"><i class="fas fa-bold"></i> Gras</button>
           <button class="mini-btn ${lbl.italic ? 'is-active' : ''}" id="btnItalic"><i class="fas fa-italic"></i> Italique</button>
         </div>
+        <div class="btn-row">
+          <button class="mini-btn ${align === 'left' ? 'is-active' : ''}" data-lbl-align="left" title="Aligner à gauche"><i class="fas fa-align-left"></i></button>
+          <button class="mini-btn ${align === 'center' ? 'is-active' : ''}" data-lbl-align="center" title="Centrer"><i class="fas fa-align-center"></i></button>
+          <button class="mini-btn ${align === 'right' ? 'is-active' : ''}" data-lbl-align="right" title="Aligner à droite"><i class="fas fa-align-right"></i></button>
+        </div>
+      </div>
+      <div class="prop-section">
+        <div class="prop-section-title">Étiquette (Fond & Cadre)</div>
+        <div class="prop-row">
+          <label for="chkLblBg">Fond</label>
+          <div style="display:flex; align-items:center; gap:6px">
+            ${lbl.bgEnabled ? `<input type="color" class="color-picker-native" id="inpLblBgColor" value="${lbl.bgColor || '#ffffff'}" title="Couleur du fond">` : ''}
+            <input type="checkbox" id="chkLblBg" ${lbl.bgEnabled ? 'checked' : ''}>
+          </div>
+        </div>
+        <div class="prop-row">
+          <label for="chkLblBorder">Cadre</label>
+          <input type="checkbox" id="chkLblBorder" ${lbl.borderEnabled ? 'checked' : ''}>
+        </div>
       </div>
       <div class="prop-section">
         <div class="prop-section-title">Ligne de rappel</div>
         <div class="prop-row">
-          <label>Afficher la ligne</label>
+          <label for="chkLeader">Afficher la ligne</label>
           <input type="checkbox" id="chkLeader" ${lbl.showLeader ? 'checked' : ''}>
         </div>
         ${lbl.showLeader ? `
         <div class="prop-row">
-          <label>Embout flèche</label>
+          <label for="selLeaderStyle">Style</label>
+          <select class="prop-select" id="selLeaderStyle">
+            <option value="straight" ${leaderStyle === 'straight' ? 'selected' : ''}>Droite</option>
+            <option value="elbow" ${leaderStyle === 'elbow' ? 'selected' : ''}>Coudée</option>
+          </select>
+        </div>
+        <div class="prop-row">
+          <label for="chkArrowHead">Embout flèche</label>
           <input type="checkbox" id="chkArrowHead" ${lbl.arrowHead ? 'checked' : ''}>
         </div>` : ''}
       </div>
@@ -1624,8 +2148,17 @@ function renderLabelInspector(lbl) {
     inspectorBodyEl.querySelector('#btnDelEl').addEventListener('click', () => { store.deleteSelected(); renderScene(); renderInspector(); });
 
     const ta = inspectorBodyEl.querySelector('textarea[data-prop="text"]');
-    ta.addEventListener('input', () => { lbl.text = ta.value; renderScene(); });
-    ta.addEventListener('change', () => store.pushHistory());
+    let taHistoryPushed = false;
+    ta.addEventListener('input', () => {
+        if (!taHistoryPushed) {
+            store.pushHistory();
+            taHistoryPushed = true;
+        }
+        lbl.text = ta.value;
+        renderScene();
+    });
+    ta.addEventListener('change', () => { taHistoryPushed = false; });
+    ta.addEventListener('blur', () => { taHistoryPushed = false; });
 
     inspectorBodyEl.querySelectorAll('.symbol-btn').forEach(btn => {
         btn.addEventListener('mousedown', (ev) => ev.preventDefault());
@@ -1634,6 +2167,7 @@ function renderLabelInspector(lbl) {
             const start = ta.selectionStart ?? ta.value.length;
             const end = ta.selectionEnd ?? ta.value.length;
             store.pushHistory();
+            taHistoryPushed = false;
             ta.value = ta.value.slice(0, start) + sym + ta.value.slice(end);
             lbl.text = ta.value;
             renderScene();
@@ -1644,16 +2178,29 @@ function renderLabelInspector(lbl) {
     });
 
     const inpFs = inspectorBodyEl.querySelector('#inpFontSize');
+    let fsHistoryPushed = false;
     inpFs.addEventListener('input', () => {
+        if (!fsHistoryPushed) {
+            store.pushHistory();
+            fsHistoryPushed = true;
+        }
         lbl.fontSize = Number(inpFs.value);
         inspectorBodyEl.querySelector('#valFontSize').textContent = `${lbl.fontSize}px`;
         renderScene();
     });
-    inpFs.addEventListener('change', () => store.pushHistory());
+    inpFs.addEventListener('change', () => { fsHistoryPushed = false; });
 
     const inpCol = inspectorBodyEl.querySelector('#inpLblColor');
-    inpCol.addEventListener('input', () => { lbl.color = inpCol.value; renderScene(); });
-    inpCol.addEventListener('change', () => store.pushHistory());
+    let colHistoryPushed = false;
+    inpCol.addEventListener('input', () => {
+        if (!colHistoryPushed) {
+            store.pushHistory();
+            colHistoryPushed = true;
+        }
+        lbl.color = inpCol.value;
+        renderScene();
+    });
+    inpCol.addEventListener('change', () => { colHistoryPushed = false; });
 
     inspectorBodyEl.querySelector('#btnBold').addEventListener('click', () => {
         store.pushHistory();
@@ -1667,12 +2214,56 @@ function renderLabelInspector(lbl) {
         renderScene();
         renderInspector();
     });
+    inspectorBodyEl.querySelectorAll('[data-lbl-align]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (lbl.align === btn.dataset.lblAlign) return;
+            store.pushHistory();
+            lbl.align = btn.dataset.lblAlign;
+            renderScene();
+            renderInspector();
+        });
+    });
+
+    inspectorBodyEl.querySelector('#chkLblBg').addEventListener('change', (ev) => {
+        store.pushHistory();
+        lbl.bgEnabled = ev.target.checked;
+        if (lbl.bgEnabled && !lbl.bgColor) lbl.bgColor = '#ffffff';
+        renderScene();
+        renderInspector();
+    });
+    const inpBgCol = inspectorBodyEl.querySelector('#inpLblBgColor');
+    if (inpBgCol) {
+        let bgColHistoryPushed = false;
+        inpBgCol.addEventListener('input', () => {
+            if (!bgColHistoryPushed) {
+                store.pushHistory();
+                bgColHistoryPushed = true;
+            }
+            lbl.bgColor = inpBgCol.value;
+            renderScene();
+        });
+        inpBgCol.addEventListener('change', () => { bgColHistoryPushed = false; });
+    }
+    inspectorBodyEl.querySelector('#chkLblBorder').addEventListener('change', (ev) => {
+        store.pushHistory();
+        lbl.borderEnabled = ev.target.checked;
+        renderScene();
+    });
+
     inspectorBodyEl.querySelector('#chkLeader').addEventListener('change', (ev) => {
         store.pushHistory();
         lbl.showLeader = ev.target.checked;
         renderScene();
         renderInspector();
     });
+    const selLeaderStyle = inspectorBodyEl.querySelector('#selLeaderStyle');
+    if (selLeaderStyle) {
+        selLeaderStyle.addEventListener('change', (ev) => {
+            store.pushHistory();
+            lbl.leaderStyle = ev.target.value;
+            renderScene();
+        });
+    }
     const chkAh = inspectorBodyEl.querySelector('#chkArrowHead');
     if (chkAh) {
         chkAh.addEventListener('change', (ev) => {
@@ -1696,6 +2287,10 @@ function syncInspectorValues() {
         const valRot = inspectorBodyEl.querySelector('#valRotation');
         if (inpRot) inpRot.value = el.rotation ?? 0;
         if (valRot) valRot.textContent = `${el.rotation ?? 0}°`;
+        const inpScale = inspectorBodyEl.querySelector('#inpScale');
+        const valScale = inspectorBodyEl.querySelector('#valScale');
+        if (inpScale) inpScale.value = el.scale ?? 1;
+        if (valScale) valScale.textContent = `${Math.round((el.scale ?? 1) * 100)}%`;
     }
 }
 
@@ -1841,7 +2436,7 @@ function buildDrawerGrid() {
     });
 
     if (list.length === 0) {
-        drawerGridEl.innerHTML = `<span class="has-text-grey is-size-7 ml-2">Aucun objet trouvé pour « ${editor.searchQuery} ».</span>`;
+        drawerGridEl.innerHTML = `<span class="has-text-grey is-size-7 ml-2">Aucun objet trouvé pour « ${escHtml(editor.searchQuery)} ».</span>`;
         return;
     }
 
@@ -2094,7 +2689,11 @@ window.addEventListener('keydown', (e) => {
     // Si une modale PhyWeb est ouverte, lui laisser la priorité (Échap, Entrée, etc.)
     if (document.querySelector('.modal.is-active')) return;
 
-    if ((e.ctrlKey || e.metaKey) && !e.altKey) {
+    const isAltGr = Boolean(e.getModifierState && e.getModifierState('AltGraph'));
+    const isCtrlOrCmd = (e.ctrlKey || e.metaKey) && !isAltGr;
+    const isAlt = e.altKey && !isAltGr;
+
+    if (isCtrlOrCmd && !isAlt) {
         const lower = e.key.toLowerCase();
         if (lower === 's') {
             e.preventDefault();
@@ -2112,12 +2711,14 @@ window.addEventListener('keydown', (e) => {
     if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
 
     if (e.code === 'Space') {
+        e.preventDefault();
         editor.spaceDown = true;
         stageEl.classList.add('is-panning');
         return;
     }
 
     if (e.key === 'Escape') {
+        closeContextMenu();
         editor.pendingConnector = null;
         setTool('select');
         store.selection = null;
@@ -2126,25 +2727,46 @@ window.addEventListener('keydown', (e) => {
         return;
     }
 
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+    if (isCtrlOrCmd && e.key.toLowerCase() === 'z') {
         e.preventDefault();
         if (e.shiftKey) { if (store.redo()) { renderScene(); renderInspector(); } }
         else { if (store.undo()) { renderScene(); renderInspector(); } }
         return;
     }
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+    if (isCtrlOrCmd && e.key.toLowerCase() === 'y') {
         e.preventDefault();
         if (store.redo()) { renderScene(); renderInspector(); }
         return;
     }
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
+    if (isCtrlOrCmd && e.key.toLowerCase() === 'a') {
         e.preventDefault();
         store.selectAll();
         renderOverlay();
         renderInspector();
         return;
     }
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'd') {
+    if (isCtrlOrCmd && e.key.toLowerCase() === 'c') {
+        if (store.selected.length > 0) {
+            e.preventDefault();
+            handleCopySelection();
+        }
+        return;
+    }
+    if (isCtrlOrCmd && e.key.toLowerCase() === 'x') {
+        if (store.selected.length > 0) {
+            e.preventDefault();
+            handleCutSelection();
+        }
+        return;
+    }
+    if (isCtrlOrCmd && e.key.toLowerCase() === 'v') {
+        if (store.hasClipboard()) {
+            e.preventDefault();
+            handlePasteSelection();
+        }
+        return;
+    }
+    if (isCtrlOrCmd && e.key.toLowerCase() === 'd') {
         e.preventDefault();
         if (store.duplicateSelected()) { renderScene(); renderInspector(); }
         return;
@@ -2158,6 +2780,28 @@ window.addEventListener('keydown', (e) => {
         }
         return;
     }
+
+    if (!isAlt) {
+        if (e.key === '+' || e.key === '=') {
+            e.preventDefault();
+            const r = svgEl.getBoundingClientRect();
+            zoomAt(1.2, r.left + r.width / 2, r.top + r.height / 2);
+            return;
+        }
+        if (e.key === '-') {
+            e.preventDefault();
+            const r = svgEl.getBoundingClientRect();
+            zoomAt(1 / 1.2, r.left + r.width / 2, r.top + r.height / 2);
+            return;
+        }
+        if (e.key === '0') {
+            e.preventDefault();
+            fitViewToScene();
+            return;
+        }
+    }
+
+    if (isCtrlOrCmd || isAlt) return;
 
     const k = e.key.toLowerCase();
     if (k === 'v') setTool('select');

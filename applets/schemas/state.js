@@ -23,6 +23,8 @@ export class SceneStore {
         this.redoStack = [];
         this.maxHistory = 60;
         this.selected = []; // Liste d'éléments sélectionnés : { kind: 'item'|'connector'|'label', id: string }[]
+        this.clipboard = null;
+        this.pasteCount = 0;
     }
 
     get selection() {
@@ -193,7 +195,12 @@ export class SceneStore {
             color: '#1e293b',
             bold: false,
             italic: false,
+            align: 'left',
+            bgEnabled: false,
+            bgColor: '#ffffff',
+            borderEnabled: false,
             showLeader: targetX !== null && targetY !== null,
+            leaderStyle: 'straight',
             targetX: targetX !== null ? Math.round(targetX) : Math.round(x - 60),
             targetY: targetY !== null ? Math.round(targetY) : Math.round(y + 35),
             arrowHead: true
@@ -294,6 +301,140 @@ export class SceneStore {
 
         this.selected = newSelection;
         return created.length === 1 ? created[0] : created;
+    }
+
+    hasClipboard() {
+        return Boolean(
+            this.clipboard &&
+            (this.clipboard.items.length > 0 ||
+                this.clipboard.connectors.length > 0 ||
+                this.clipboard.labels.length > 0)
+        );
+    }
+
+    copySelected() {
+        const entries = this.getSelectedElements();
+        if (entries.length === 0) return 0;
+
+        const items = [];
+        const connectors = [];
+        const labels = [];
+
+        for (const { kind, el } of entries) {
+            if (kind === 'item') {
+                items.push(JSON.parse(JSON.stringify(el)));
+            } else if (kind === 'connector') {
+                const ep = resolveConnectorEndpoints(el, this.scene.items);
+                connectors.push({
+                    data: JSON.parse(JSON.stringify(el)),
+                    resolvedP1: { x: ep.p1.x, y: ep.p1.y },
+                    resolvedP2: { x: ep.p2.x, y: ep.p2.y }
+                });
+            } else if (kind === 'label') {
+                labels.push(JSON.parse(JSON.stringify(el)));
+            }
+        }
+
+        this.clipboard = { items, connectors, labels };
+        this.pasteCount = 0;
+        return entries.length;
+    }
+
+    cutSelected() {
+        const count = this.copySelected();
+        if (count === 0) return 0;
+        this.deleteSelected();
+        return count;
+    }
+
+    pasteClipboard(options = {}) {
+        if (!this.hasClipboard()) return null;
+        this.pushHistory();
+
+        let dx = 0;
+        let dy = 0;
+        if (options.atPoint && Number.isFinite(options.atPoint.x) && Number.isFinite(options.atPoint.y)) {
+            const xs = [];
+            const ys = [];
+            for (const it of this.clipboard.items) { xs.push(it.x); ys.push(it.y); }
+            for (const l of this.clipboard.labels) { xs.push(l.x); ys.push(l.y); }
+            for (const c of this.clipboard.connectors) {
+                xs.push((c.resolvedP1.x + c.resolvedP2.x) / 2);
+                ys.push((c.resolvedP1.y + c.resolvedP2.y) / 2);
+            }
+            if (xs.length > 0) {
+                const cx = (Math.min(...xs) + Math.max(...xs)) / 2;
+                const cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+                dx = Math.round(options.atPoint.x - cx);
+                dy = Math.round(options.atPoint.y - cy);
+            }
+            this.pasteCount = 0;
+        } else {
+            const step = Number(options.offsetStep) || 24;
+            this.pasteCount += 1;
+            dx = step * this.pasteCount;
+            dy = step * this.pasteCount;
+        }
+
+        const newSelection = [];
+        const itemIdMap = new Map();
+        const created = [];
+
+        for (const src of this.clipboard.items) {
+            const copy = JSON.parse(JSON.stringify(src));
+            copy.id = nextId('obj');
+            copy.x = Math.round(copy.x + dx);
+            copy.y = Math.round(copy.y + dy);
+            const def = getCatalogItem(copy.type);
+            if (def?.insertAtBack) this.scene.items.unshift(copy);
+            else this.scene.items.push(copy);
+            itemIdMap.set(src.id, copy.id);
+            newSelection.push({ kind: 'item', id: copy.id });
+            created.push(copy);
+        }
+
+        for (const { data, resolvedP1, resolvedP2 } of this.clipboard.connectors) {
+            const copy = JSON.parse(JSON.stringify(data));
+            copy.id = nextId(copy.kind === 'wire' ? 'wire' : 'hose');
+            if (data.start.itemId && itemIdMap.has(data.start.itemId)) {
+                copy.start = {
+                    ...data.start,
+                    itemId: itemIdMap.get(data.start.itemId),
+                    x: Math.round(resolvedP1.x + dx),
+                    y: Math.round(resolvedP1.y + dy)
+                };
+            } else {
+                copy.start = { x: Math.round(resolvedP1.x + dx), y: Math.round(resolvedP1.y + dy) };
+            }
+            if (data.end.itemId && itemIdMap.has(data.end.itemId)) {
+                copy.end = {
+                    ...data.end,
+                    itemId: itemIdMap.get(data.end.itemId),
+                    x: Math.round(resolvedP2.x + dx),
+                    y: Math.round(resolvedP2.y + dy)
+                };
+            } else {
+                copy.end = { x: Math.round(resolvedP2.x + dx), y: Math.round(resolvedP2.y + dy) };
+            }
+            this.scene.connectors.push(copy);
+            newSelection.push({ kind: 'connector', id: copy.id });
+            created.push(copy);
+        }
+
+        for (const src of this.clipboard.labels) {
+            const copy = JSON.parse(JSON.stringify(src));
+            copy.id = nextId('lbl');
+            copy.x = Math.round(copy.x + dx);
+            copy.y = Math.round(copy.y + dy);
+            copy.targetX = Math.round(copy.targetX + dx);
+            copy.targetY = Math.round(copy.targetY + dy);
+            this.scene.labels.push(copy);
+            newSelection.push({ kind: 'label', id: copy.id });
+            created.push(copy);
+        }
+
+        this.selected = newSelection;
+        return created;
     }
 
     moveItemZOrder(id, direction) {

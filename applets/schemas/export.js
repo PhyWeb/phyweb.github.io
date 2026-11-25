@@ -1,6 +1,6 @@
 // Rendu SVG autonome et fonctions d'export (SVG, PNG HD, Presse-papier, JSON)
 import { getCatalogItem, SVG_SHARED_STYLES } from './catalog.js';
-import { localToWorld, buildConnectorPath, getConnectorMidpoint } from './snapping.js';
+import { localToWorld, computeConnectorGeometry } from './snapping.js';
 import { resolveConnectorEndpoints } from './state.js';
 
 function esc(str) {
@@ -39,22 +39,16 @@ export function computeSceneBounds(scene, padding = 36) {
 
     for (const conn of scene.connectors) {
         const { p1, p2 } = resolveConnectorEndpoints(conn, scene.items);
-        const mid = getConnectorMidpoint(p1, p2, conn.mode, conn.bend, conn.bendX || 0);
-        expand(p1.x - 10, p1.y - 10);
-        expand(p1.x + 10, p1.y + 10);
-        expand(p2.x - 10, p2.y - 10);
-        expand(p2.x + 10, p2.y + 10);
-        expand(mid.x - 15, mid.y - 15);
-        expand(mid.x + 15, mid.y + 15);
+        const geom = computeConnectorGeometry(p1, p2, conn.mode, conn.bend, conn.bendX || 0);
+        const margin = Math.max(12, (Number(conn.width) || 4) + 6);
+        expand(geom.bounds.minX - margin, geom.bounds.minY - margin);
+        expand(geom.bounds.maxX + margin, geom.bounds.maxY + margin);
     }
 
     for (const lbl of scene.labels) {
-        const lines = String(lbl.text || '').split('\n');
-        const maxLen = Math.max(4, ...lines.map(l => l.length));
-        const approxW = maxLen * (lbl.fontSize || 16) * 0.62;
-        const approxH = lines.length * (lbl.fontSize || 16) * 1.3;
-        expand(lbl.x - 6, lbl.y - (lbl.fontSize || 16));
-        expand(lbl.x + approxW + 6, lbl.y + approxH);
+        const m = getLabelMetrics(lbl);
+        expand(m.boxX - 4, m.boxY - 4);
+        expand(m.boxX + m.boxW + 4, m.boxY + m.boxH + 4);
         if (lbl.showLeader) {
             expand(lbl.targetX, lbl.targetY);
         }
@@ -77,8 +71,7 @@ export function computeSceneBounds(scene, padding = 36) {
  */
 export function renderConnectorSVG(conn, items) {
     const { p1, p2 } = resolveConnectorEndpoints(conn, items);
-    const d = buildConnectorPath(p1, p2, conn.mode, conn.bend, conn.bendX || 0);
-    const mid = getConnectorMidpoint(p1, p2, conn.mode, conn.bend, conn.bendX || 0);
+    const { d, mid } = computeConnectorGeometry(p1, p2, conn.mode, conn.bend, conn.bendX || 0);
     const arrowAngle = conn.reverseArrow ? mid.angle + 180 : mid.angle;
     const dashAttr = conn.dashed ? 'stroke-dasharray="8 6"' : '';
 
@@ -112,38 +105,136 @@ export function renderConnectorSVG(conn, items) {
 }
 
 /**
- * Construit le markup SVG d'une légende (texte + ligne de rappel optionnelle).
+ * Calcule la géométrie estimée d'une légende (boîte texte, alignement, fond/cadre).
+ */
+export function getLabelMetrics(lbl) {
+    const fs = Number(lbl.fontSize) || 16;
+    const lines = String(lbl.text || '').split('\n');
+    const maxLen = Math.max(1, ...lines.map(l => l.length));
+    const lineHeight = fs * 1.25;
+    const textW = maxLen * fs * 0.58;
+    const textH = (lines.length - 1) * lineHeight + fs;
+    const align = lbl.align === 'center' || lbl.align === 'right' ? lbl.align : 'left';
+    const hasBox = Boolean(lbl.bgEnabled || lbl.borderEnabled);
+    const padX = hasBox ? 8 : 0;
+    const padY = hasBox ? 5 : 0;
+
+    let textLeft = lbl.x;
+    if (align === 'center') textLeft = lbl.x - textW / 2;
+    else if (align === 'right') textLeft = lbl.x - textW;
+
+    const textTop = lbl.y - fs * 0.88;
+    const boxX = textLeft - padX;
+    const boxY = textTop - padY;
+    const boxW = textW + padX * 2;
+    const boxH = textH + padY * 2;
+
+    return {
+        fs,
+        lines,
+        lineHeight,
+        align,
+        textAnchor: align === 'center' ? 'middle' : (align === 'right' ? 'end' : 'start'),
+        textLeft,
+        textTop,
+        textW,
+        textH,
+        hasBox,
+        boxX,
+        boxY,
+        boxW,
+        boxH
+    };
+}
+
+/**
+ * Construit le markup SVG d'une légende (texte, fond/cadre optionnel + ligne de rappel droite ou coudée).
  */
 export function renderLabelSVG(lbl) {
-    const fs = Number(lbl.fontSize) || 16;
+    const m = getLabelMetrics(lbl);
+    const { fs, lines, lineHeight, textAnchor, hasBox, boxX, boxY, boxW, boxH } = m;
     const weight = lbl.bold ? 'bold' : 'normal';
     const style = lbl.italic ? 'italic' : 'normal';
     const color = esc(lbl.color || '#1e293b');
-    const lines = String(lbl.text || '').split('\n');
 
     let leaderSvg = '';
     if (lbl.showLeader) {
-        const startX = lbl.x - 6;
-        const startY = lbl.y - fs * 0.35;
-        const dx = lbl.targetX - startX;
-        const dy = lbl.targetY - startY;
+        const gap = hasBox ? 0 : 6;
+        const midY = lbl.y - fs * 0.35;
+        let startX;
+        let startY;
+        let side;
+        if (lbl.targetX < boxX) {
+            side = 'left';
+            startX = boxX - gap;
+            startY = midY;
+        } else if (lbl.targetX > boxX + boxW) {
+            side = 'right';
+            startX = boxX + boxW + gap;
+            startY = midY;
+        } else if (lbl.targetY < lbl.y - fs * 0.5) {
+            side = 'top';
+            startX = boxX + boxW / 2;
+            startY = boxY - (hasBox ? 0 : 4);
+        } else {
+            side = 'bottom';
+            startX = boxX + boxW / 2;
+            startY = boxY + boxH + (hasBox ? 0 : 4);
+        }
+
+        const isElbow = lbl.leaderStyle === 'elbow';
+        let lineSvg = '';
+        let fromX = startX;
+        let fromY = startY;
+
+        if (isElbow && (side === 'left' || side === 'right')) {
+            const distH = Math.abs(lbl.targetX - startX);
+            const stub = Math.min(22, Math.max(8, distH * 0.35));
+            const elbowX = side === 'left' ? startX - stub : startX + stub;
+            const elbowY = startY;
+            fromX = elbowX;
+            fromY = elbowY;
+            lineSvg = `<polyline points="${startX.toFixed(1)},${startY.toFixed(1)} ${elbowX.toFixed(1)},${elbowY.toFixed(1)} ${lbl.targetX.toFixed(1)},${lbl.targetY.toFixed(1)}" fill="none" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />`;
+        } else if (isElbow && (side === 'top' || side === 'bottom') && Math.abs(lbl.targetX - startX) > 6) {
+            const distV = Math.abs(lbl.targetY - startY);
+            const stub = Math.min(20, Math.max(8, distV * 0.35));
+            const elbowX = startX;
+            const elbowY = side === 'top' ? startY - stub : startY + stub;
+            fromX = elbowX;
+            fromY = elbowY;
+            lineSvg = `<polyline points="${startX.toFixed(1)},${startY.toFixed(1)} ${elbowX.toFixed(1)},${elbowY.toFixed(1)} ${lbl.targetX.toFixed(1)},${lbl.targetY.toFixed(1)}" fill="none" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />`;
+        } else {
+            lineSvg = `<line x1="${startX.toFixed(1)}" y1="${startY.toFixed(1)}" x2="${lbl.targetX.toFixed(1)}" y2="${lbl.targetY.toFixed(1)}" stroke="${color}" stroke-width="1.8" stroke-linecap="round" />`;
+        }
+
+        const dx = lbl.targetX - fromX;
+        const dy = lbl.targetY - fromY;
         const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
         const head = lbl.arrowHead
             ? `<polygon points="0,0 -10,-4.2 -7.5,0 -10,4.2" fill="${color}" transform="translate(${lbl.targetX.toFixed(1)}, ${lbl.targetY.toFixed(1)}) rotate(${angle.toFixed(1)})" />`
-            : `<circle cx="${lbl.targetX.toFixed(1)}" cy="${lbl.targetY.toFixed(1)}" r="3.5" fill="${color}" />`;
+            : '';
         leaderSvg = `
-          <line x1="${startX.toFixed(1)}" y1="${startY.toFixed(1)}" x2="${lbl.targetX.toFixed(1)}" y2="${lbl.targetY.toFixed(1)}" stroke="${color}" stroke-width="1.8" stroke-linecap="round" />
+          ${lineSvg}
           ${head}
         `;
     }
 
+    let boxSvg = '';
+    if (hasBox) {
+        const fillAttr = lbl.bgEnabled ? esc(lbl.bgColor || '#ffffff') : 'none';
+        const strokeAttr = lbl.borderEnabled ? color : 'none';
+        const strokeWidthAttr = lbl.borderEnabled ? '1.5' : '0';
+        boxSvg = `<rect x="${boxX.toFixed(1)}" y="${boxY.toFixed(1)}" width="${boxW.toFixed(1)}" height="${boxH.toFixed(1)}" rx="5" fill="${fillAttr}" stroke="${strokeAttr}" stroke-width="${strokeWidthAttr}" />`;
+    }
+
     const tspans = lines.map((line, i) =>
-        `<tspan x="${lbl.x}" dy="${i === 0 ? 0 : (fs * 1.25).toFixed(1)}">${esc(line)}</tspan>`
+        `<tspan x="${lbl.x}" dy="${i === 0 ? 0 : lineHeight.toFixed(1)}">${esc(line)}</tspan>`
     ).join('');
 
     return `
       ${leaderSvg}
-      <text x="${lbl.x}" y="${lbl.y}" fill="${color}" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="${fs}" font-weight="${weight}" font-style="${style}">${tspans}</text>
+      ${boxSvg}
+      <text x="${lbl.x}" y="${lbl.y}" text-anchor="${textAnchor}" fill="${color}" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="${fs}" font-weight="${weight}" font-style="${style}">${tspans}</text>
     `;
 }
 
@@ -154,7 +245,7 @@ export function buildStandaloneSVG(scene, options = {}) {
     const { transparent = false, padding = 36 } = options;
     const bounds = computeSceneBounds(scene, padding);
 
-    const itemsMarkup = scene.items.map(item => {
+    const rawItemsMarkup = scene.items.map(item => {
         const def = getCatalogItem(item.type);
         if (!def) return '';
         const scale = item.scale ?? 1;
@@ -162,6 +253,10 @@ export function buildStandaloneSVG(scene, options = {}) {
         const transform = `translate(${item.x}, ${item.y}) rotate(${item.rotation ?? 0}) scale(${fx}, ${scale})`;
         return `<g transform="${transform}">${def.render(item.props || {}, item.id, { rotation: item.rotation ?? 0, flipX: !!item.flipX })}</g>`;
     }).join('\n');
+    // Sur fond transparent, mix-blend-mode: darken peut altérer ou masquer les liquides lors de la rasterisation SVG → Canvas
+    const itemsMarkup = transparent
+        ? rawItemsMarkup.replaceAll('style="mix-blend-mode: darken;"', 'opacity="0.88"')
+        : rawItemsMarkup;
 
     const connectorsMarkup = scene.connectors.map(c => `<g>${renderConnectorSVG(c, scene.items)}</g>`).join('\n');
     const labelsMarkup = scene.labels.map(l => `<g>${renderLabelSVG(l)}</g>`).join('\n');

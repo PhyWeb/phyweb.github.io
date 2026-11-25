@@ -204,6 +204,22 @@ input, select, textarea {
     fill: #2563eb;
 }
 
+.resize-handle {
+    fill: #ffffff;
+    stroke: #2563eb;
+    stroke-width: 1.8;
+    cursor: nwse-resize;
+}
+
+.resize-handle.is-ne,
+.resize-handle.is-sw {
+    cursor: nesw-resize;
+}
+
+.resize-handle:hover {
+    fill: #2563eb;
+}
+
 .rotate-stem {
     stroke: #2563eb;
     stroke-width: 1.5;
@@ -821,4 +837,110 @@ body.is-dragging-from-drawer * {
     line-height: 1.15;
     max-height: 2.3em;
     overflow: hidden;
+}
+
+/* ========================================================= */
+/* MENU CONTEXTUEL (CLIC DROIT SUR LE CANVAS)                */
+/* ========================================================= */
+.schemas-context-menu {
+    position: fixed;
+    min-width: 210px;
+    background: #ffffff;
+    border: 1px solid var(--schemas-border);
+    border-radius: 8px;
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.16), 0 2px 6px rgba(15, 23, 42, 0.08);
+    padding: 5px;
+    z-index: 1200;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.schemas-context-menu[hidden] {
+    display: none;
+}
+
+.context-menu-item {
+    border: none;
+    background: transparent;
+    width: 100%;
+    padding: 6px 10px;
+    border-radius: 5px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--schemas-text);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-align: left;
+    transition: background 0.1s, color 0.1s;
+}
+
+.context-menu-item i {
+    width: 15px;
+    text-align: center;
+    color: var(--schemas-muted);
+    font-size: 0.78rem;
+}
+
+.context-menu-item:hover:not(:disabled) {
+    background: var(--schemas-accent-soft);
+    color: var(--schemas-accent);
+}
+
+.context-menu-item:hover:not(:disabled) i {
+    color: var(--schemas-accent);
+}
+
+.context-menu-item:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.context-menu-item.is-danger {
+    color: #dc2626;
+}
+
+.context-menu-item.is-danger i {
+    color: #dc2626;
+}
+
+.context-menu-item.is-danger:hover:not(:disabled) {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.context-menu-kbd {
+    margin-left: auto;
+    font-size: 0.69rem;
+    color: var(--schemas-muted);
+    font-family: system-ui, -apple-system, sans-serif;
+}
+
+.context-menu-divider {
+    height: 1px;
+    background: #eef2f6;
+    margin: 3px 4px;
+}
+
+/* ========================================================= */
+/* ÉDITEUR DE LÉGENDE INLINE SUR LE CANVAS                   */
+/* ========================================================= */
+.inline-label-editor {
+    position: absolute;
+    z-index: 30;
+    min-width: 90px;
+    min-height: 28px;
+    padding: 3px 6px;
+    border: 2px solid var(--schemas-accent);
+    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.18);
+    font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    line-height: 1.25;
+    outline: none;
+    resize: both;
+    overflow: hidden;
+    white-space: pre;
 }

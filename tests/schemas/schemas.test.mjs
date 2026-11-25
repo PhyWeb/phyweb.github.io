@@ -9,11 +9,13 @@ import {
     computeObjectSnap,
     findNearestConnectorPort,
     buildConnectorPath,
+    computeConnectorGeometry,
+    computeDistributionDeltas,
     snapRotationAngle,
     normalizeAngle
 } from '../../applets/schemas/snapping.js';
 import { SceneStore, resolveConnectorEndpoints } from '../../applets/schemas/state.js';
-import { buildStandaloneSVG, computeSceneBounds } from '../../applets/schemas/export.js';
+import { buildStandaloneSVG, computeSceneBounds, renderLabelSVG, getLabelMetrics } from '../../applets/schemas/export.js';
 
 describe('Applet Schémas — Catalogue paramétrique', () => {
     it('contient toutes les familles unifiées et des catégories valides', () => {
@@ -491,5 +493,157 @@ describe('Applet Schémas — État, connecteurs dynamiques, Undo/Redo et Export
         assert.equal(store.scene.items.length, 2);
         assert.equal(store.scene.connectors.length, 1);
         assert.equal(store.selected.length, 0);
+    });
+
+    it('ancre la ligne de rappel des légendes à gauche, à droite, au-dessus ou en dessous sans traverser le texte', () => {
+        const extractX1Y1 = (svg) => {
+            const m = svg.match(/<line x1="([-\d.]+)" y1="([-\d.]+)"/);
+            return m ? { x1: Number(m[1]), y1: Number(m[2]) } : null;
+        };
+
+        // Cible à gauche du texte -> départ à gauche (x - 6)
+        const left = extractX1Y1(renderLabelSVG({ text: 'Bécher', x: 200, y: 100, fontSize: 16, showLeader: true, targetX: 100, targetY: 100, arrowHead: true }));
+        assert.equal(left.x1, 194);
+
+        // Cible à droite du texte -> départ à droite (> x + 40), sans barrer le texte
+        const right = extractX1Y1(renderLabelSVG({ text: 'Bécher', x: 100, y: 100, fontSize: 16, showLeader: true, targetX: 300, targetY: 100, arrowHead: true }));
+        assert.ok(right.x1 > 140, `Attendu départ à droite du texte (> 140), obtenu ${right.x1}`);
+
+        // Cible directement sous le texte -> départ en bas du texte (y1 > y)
+        const below = extractX1Y1(renderLabelSVG({ text: 'Bécher', x: 100, y: 100, fontSize: 16, showLeader: true, targetX: 120, targetY: 220, arrowHead: true }));
+        assert.ok(below.y1 > 100, `Attendu départ sous le texte (> 100), obtenu ${below.y1}`);
+    });
+
+    it('calcule la boîte englobante complète des connecteurs courbés/orthogonaux et adapte les liquides en export transparent', () => {
+        const store = new SceneStore();
+        const becher = store.addItem('becher', 100, 200);
+        assert.ok(becher);
+        const wire = store.addConnector('wire', { x: 100, y: 100 }, { x: 200, y: 100 });
+        wire.mode = 'orthogonal';
+        wire.bendX = 250; // Décalage horizontal vers x = 400
+
+        const geom = computeConnectorGeometry({ x: 100, y: 100 }, { x: 200, y: 100 }, 'orthogonal', 0, 250);
+        assert.ok(geom.bounds.maxX >= 400);
+
+        const bounds = computeSceneBounds(store.scene, 0);
+        assert.ok(bounds.x + bounds.width >= 400, `Le cadre export doit inclure le coude orthogonal (maxX=${bounds.x + bounds.width})`);
+
+        // Export fond blanc : conserve mix-blend-mode: darken
+        const svgOpaque = buildStandaloneSVG(store.scene, { transparent: false });
+        assert.ok(svgOpaque.includes('mix-blend-mode: darken'));
+
+        // Export fond transparent : remplace mix-blend-mode: darken par opacity="0.88"
+        const svgTransparent = buildStandaloneSVG(store.scene, { transparent: true });
+        assert.ok(!svgTransparent.includes('mix-blend-mode: darken'));
+        assert.ok(svgTransparent.includes('opacity="0.88"'));
+    });
+
+    it('gère le presse-papier interne (Copier / Couper / Coller avec remapping des connecteurs et collage à une position)', () => {
+        const store = new SceneStore();
+        assert.equal(store.hasClipboard(), false);
+
+        const gen = store.addItem('generateur', 100, 300);
+        const multi = store.addItem('multimetre', 350, 300);
+        const genPos = getWorldAnchors(gen).find(a => a.id === 'pos');
+        const multiPos = getWorldAnchors(multi).find(a => a.id === 'pos');
+        store.addConnector(
+            'wire',
+            { x: genPos.wx, y: genPos.wy, itemId: gen.id, anchorId: 'pos' },
+            { x: multiPos.wx, y: multiPos.wy, itemId: multi.id, anchorId: 'pos' }
+        );
+        store.addLabel(200, 120, 'Circuit', 180, 200);
+
+        store.selectAll();
+        assert.equal(store.copySelected(), 4);
+        assert.equal(store.hasClipboard(), true);
+
+        // Coller avec décalage par défaut
+        const pasted1 = store.pasteClipboard();
+        assert.equal(pasted1.length, 4);
+        assert.equal(store.scene.items.length, 4);
+        assert.equal(store.scene.connectors.length, 2);
+        assert.equal(store.scene.labels.length, 2);
+        const pastedWire = store.scene.connectors[1];
+        assert.notEqual(pastedWire.start.itemId, gen.id);
+        assert.notEqual(pastedWire.end.itemId, multi.id);
+
+        // Couper la sélection collée puis la recoller à un point précis
+        assert.equal(store.cutSelected(), 4);
+        assert.equal(store.scene.items.length, 2);
+        const pastedAt = store.pasteClipboard({ atPoint: { x: 600, y: 400 } });
+        assert.equal(pastedAt.length, 4);
+        assert.equal(store.scene.items.length, 4);
+    });
+
+    it('distribue régulièrement 3 éléments ou plus horizontalement et verticalement', () => {
+        const boxesH = [
+            { id: 'a', b: { minX: 0, maxX: 40, minY: 0, maxY: 40 } },
+            { id: 'b', b: { minX: 50, maxX: 90, minY: 0, maxY: 40 } },
+            { id: 'c', b: { minX: 200, maxX: 240, minY: 0, maxY: 40 } }
+        ];
+        // Span = 240, sumSizes = 120, gap = 60 -> b doit démarrer à 40 + 60 = 100 (dx = +50)
+        const dH = computeDistributionDeltas(boxesH, 'horizontal');
+        assert.equal(dH.size, 1);
+        assert.equal(dH.get('b').dx, 50);
+        assert.equal(dH.get('b').dy, 0);
+
+        const boxesV = [
+            { id: 't', b: { minX: 0, maxX: 20, minY: 10, maxY: 30 } },
+            { id: 'm', b: { minX: 0, maxX: 20, minY: 110, maxY: 130 } },
+            { id: 'b', b: { minX: 0, maxX: 20, minY: 150, maxY: 170 } }
+        ];
+        // Span = 160, sumSizes = 60, gap = 50 -> m doit démarrer à 30 + 50 = 80 (dy = -30)
+        const dV = computeDistributionDeltas(boxesV, 'vertical');
+        assert.equal(dV.get('m').dx, 0);
+        assert.equal(dV.get('m').dy, -30);
+
+        // Moins de 3 éléments -> aucun déplacement
+        assert.equal(computeDistributionDeltas(boxesH.slice(0, 2), 'horizontal').size, 0);
+    });
+
+    it('gère les légendes enrichies (alignement, fond/cadre et ligne de rappel coudée)', () => {
+        // Alignement centré et à droite
+        const mCenter = getLabelMetrics({ text: 'Solution', x: 200, y: 100, fontSize: 16, align: 'center' });
+        const mRight = getLabelMetrics({ text: 'Solution', x: 200, y: 100, fontSize: 16, align: 'right' });
+        assert.equal(mCenter.textAnchor, 'middle');
+        assert.ok(mCenter.boxX < 200 && mCenter.boxX + mCenter.boxW > 200);
+        assert.equal(mRight.textAnchor, 'end');
+        assert.ok(Math.abs(mRight.boxX + mRight.boxW - 200) < 0.01);
+
+        // Fond + cadre + ligne coudée
+        const svg = renderLabelSVG({
+            text: 'H₂SO₄',
+            x: 220,
+            y: 120,
+            fontSize: 16,
+            color: '#1e293b',
+            align: 'center',
+            bgEnabled: true,
+            bgColor: '#fef9c3',
+            borderEnabled: true,
+            showLeader: true,
+            leaderStyle: 'elbow',
+            targetX: 80,
+            targetY: 180,
+            arrowHead: true
+        });
+        assert.ok(svg.includes('text-anchor="middle"'));
+        assert.ok(svg.includes('fill="#fef9c3"') && svg.includes('stroke="#1e293b" stroke-width="1.5"'));
+        assert.ok(svg.includes('<polyline points='), 'Le style coudé doit générer un <polyline>');
+
+        // Sans embout flèche : ni pointe <polygon> ni boule <circle>
+        const svgNoArrow = renderLabelSVG({
+            text: 'Ligne simple',
+            x: 200,
+            y: 100,
+            fontSize: 16,
+            showLeader: true,
+            targetX: 100,
+            targetY: 120,
+            arrowHead: false
+        });
+        assert.ok(svgNoArrow.includes('<line '));
+        assert.ok(!svgNoArrow.includes('<polygon'), 'Ne doit pas dessiner de flèche si arrowHead=false');
+        assert.ok(!svgNoArrow.includes('<circle'), 'Ne doit pas dessiner de boule si arrowHead=false');
     });
 });

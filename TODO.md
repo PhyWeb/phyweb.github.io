@@ -68,6 +68,8 @@
 # Chromato
 # Spectres
 # Schemas
+    possibilité de grouper des objets
+    possibiliter de verouiller un objet
 
 
 # MISC
