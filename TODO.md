@@ -28,6 +28,8 @@
 
     des fonctions non prévues existent (pow, min etc de math.js)
 
+    ajouter des synonymes aux fonctions mathematique genre derivee()
+
     parametre? pour angles en degrés
 
     mettre un sous titres dans les colonnes calculées
