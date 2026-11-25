@@ -411,6 +411,16 @@ describe('Data - sortDataBy()', () => {
     assert.deepEqual([...data.curves[0]], [1, 2, 3, '', null]);
     assert.deepEqual([...data.curves[1]], [10, 20, 30, 99, 88]);
   });
+
+  it('doit retourner true si l\'ordre des lignes a changé et false sinon', () => {
+    const data = createTestData();
+    const curveA = data.addCurve('A', 'm');
+    curveA.push(30, 10, 20);
+
+    assert.equal(data.sortDataBy('Inexistante'), false);
+    assert.equal(data.sortDataBy('A'), true);
+    assert.equal(data.sortDataBy('A'), false);
+  });
 });
 
 describe('Model - _buildData() et robustesse face aux chaînes et virgules', () => {

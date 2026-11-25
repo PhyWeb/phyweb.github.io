@@ -28,6 +28,8 @@
 
     des fonctions non prévues existent (pow, min etc de math.js)
 
+    ajouter des synonymes aux fonctions mathematique genre derivee()
+
     parametre? pour angles en degrés
 
     mettre un sous titres dans les colonnes calculées
@@ -59,9 +61,9 @@
 
     Bug graphique quand le "nom" d'un modele est trop long genre Amplitudestectrale = f(truclong)
 
-    faire un trier par... trigger le bouton de recalcul...
-
     intercepter les erreurs de mathsjs en anglais et les traduire en langage clair
+
+    othogonalité depuis tracker ???? Essayer le pointage du velo on voit pas le accéléré
     
 # Mendeleiev
 # Optique

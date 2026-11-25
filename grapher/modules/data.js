@@ -911,13 +911,14 @@ export default class Data {
   /**
    * Trie toutes les données de courbe en fonction des valeurs d'une variable spécifiée.
    * @param {string} variableTitle - Le titre de la courbe à utiliser pour le tri.
+   * @returns {boolean} true si l'ordre des lignes a été modifié, false sinon.
    */
   sortDataBy(variableTitle) {
     const sortCurveIndex = this.curves.findIndex(c => c.title === variableTitle);
 
     if (sortCurveIndex === -1) {
       console.warn(`Curve "${variableTitle}" not found for sorting.`);
-      return;
+      return false;
     }
 
     this.lastSortVariable = variableTitle;
@@ -959,6 +960,8 @@ export default class Data {
       return String(valA).localeCompare(String(valB));
     });
 
+    const orderChanged = indices.some((origIndex, newIndex) => origIndex !== newIndex);
+
     // Réorganisation des données de chaque grandeur
     this.curves.forEach(curve => {
       // Ajustement de la longueur du tableau
@@ -970,6 +973,8 @@ export default class Data {
         curve[i] = originalValues[indices[i]];
       }
     });
+
+    return orderChanged;
   }
 
   /**

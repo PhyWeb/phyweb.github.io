@@ -166,6 +166,23 @@ describe('Bouton Recalculer les grandeurs dans le tableur (#recalculate-spreadsh
       assert.equal(uiManager.hasCalculationFormulas(null), false);
     });
 
+    it('hasOrderDependentFormulas() doit détecter uniquement les formules sensibles à l\'ordre', () => {
+      assert.equal(uiManager.hasOrderDependentFormulas('y = 2 * x'), false);
+      assert.equal(uiManager.hasOrderDependentFormulas('Ec = 0.5 * m * v^2'), false);
+      assert.equal(uiManager.hasOrderDependentFormulas('diff_x = x2 - x1'), false);
+      assert.equal(uiManager.hasOrderDependentFormulas('a = [1, 2, 3]'), false);
+      assert.equal(uiManager.hasOrderDependentFormulas('// v = diff(x, t)'), false);
+      assert.equal(uiManager.hasOrderDependentFormulas('y = 2 * x // pas de diff(x, t)'), false);
+      assert.equal(uiManager.hasOrderDependentFormulas('v_m/s = diff(x, t)'), true);
+      assert.equal(uiManager.hasOrderDependentFormulas('v = DIFF(x, t)'), true);
+      assert.equal(uiManager.hasOrderDependentFormulas('x_m = integrate(v, t, 0)'), true);
+      assert.equal(uiManager.hasOrderDependentFormulas('ys = smooth(y, 5)'), true);
+      assert.equal(uiManager.hasOrderDependentFormulas('s = cumsum(x)'), true);
+      assert.equal(uiManager.hasOrderDependentFormulas('dx = x - x[1]'), true);
+      assert.equal(uiManager.hasOrderDependentFormulas(''), false);
+      assert.equal(uiManager.hasOrderDependentFormulas(null), false);
+    });
+
     it('setCalculationsStale(false) doit masquer le bouton et repasser calculationsStale à false', () => {
       mockEditor.getValue = () => 'y = 2 * x';
       uiManager.setCalculationsStale(true);
@@ -221,7 +238,8 @@ describe('Bouton Recalculer les grandeurs dans le tableur (#recalculate-spreadsh
       uiManager = new UIManager(
         {},
         {
-          sortDataBy: () => {},
+          curves: [],
+          sortDataBy: () => true,
           getTable: () => []
         },
         { updateChart: () => {} },
@@ -255,7 +273,7 @@ describe('Bouton Recalculer les grandeurs dans le tableur (#recalculate-spreadsh
       assert.equal(passedText, 'v = diff(x, t)');
     });
 
-    it('le clic sur #sort-button doit appeler setCalculationsStale(true)', () => {
+    it('le clic sur #sort-button doit appeler setCalculationsStale(true) si l\'ordre change et qu\'une formule dépend de l\'ordre', () => {
       let staleCalled = false;
       uiManager.setCalculationsStale = (val) => { if (val) staleCalled = true; };
 
@@ -264,7 +282,42 @@ describe('Bouton Recalculer les grandeurs dans le tableur (#recalculate-spreadsh
       assert.ok(typeof sortBtn.clickHandler === 'function', 'Un écouteur de tri doit être enregistré');
       sortBtn.clickHandler();
 
-      assert.equal(staleCalled, true, 'setCalculationsStale(true) doit être appelé après tri');
+      assert.equal(staleCalled, true, 'setCalculationsStale(true) doit être appelé après tri avec formule sensible à l\'ordre');
+    });
+
+    it('le clic sur #sort-button ne doit pas appeler setCalculationsStale(true) si les formules sont indépendantes de l\'ordre', () => {
+      let staleCalled = false;
+      uiManager.editor.getValue = () => 'y = 2 * x\nEc = 0.5 * m * v^2';
+      uiManager.setCalculationsStale = (val) => { if (val) staleCalled = true; };
+
+      uiManager.initSpreadsheetControls();
+      sortBtn.clickHandler();
+
+      assert.equal(staleCalled, false, 'setCalculationsStale(true) ne doit pas être appelé pour des calculs point par point');
+    });
+
+    it('le clic sur #sort-button ne doit pas appeler setCalculationsStale(true) si le tableau était déjà trié', () => {
+      let staleCalled = false;
+      uiManager.data.sortDataBy = () => false;
+      uiManager.data.curves = [{ title: 'v', type: 'calculation', length: 3 }];
+      uiManager.setCalculationsStale = (val) => { if (val) staleCalled = true; };
+
+      uiManager.initSpreadsheetControls();
+      sortBtn.clickHandler();
+
+      assert.equal(staleCalled, false, 'setCalculationsStale(true) ne doit pas être appelé si l\'ordre n\'a pas changé');
+    });
+
+    it('le clic sur #sort-button doit appeler setCalculationsStale(true) si une grandeur calculée est vide et qu\'une formule dépend de l\'ordre', () => {
+      let staleCalled = false;
+      uiManager.data.sortDataBy = () => false;
+      uiManager.data.curves = [{ title: 'v', type: 'calculation', length: 0 }];
+      uiManager.setCalculationsStale = (val) => { if (val) staleCalled = true; };
+
+      uiManager.initSpreadsheetControls();
+      sortBtn.clickHandler();
+
+      assert.equal(staleCalled, true, 'setCalculationsStale(true) doit être appelé si une courbe calculée est vide suite à une erreur précédente');
     });
   });
 
