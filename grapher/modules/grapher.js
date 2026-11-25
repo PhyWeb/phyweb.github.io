@@ -362,7 +362,7 @@ export default class Grapher {
             this.chart.redraw();
 
             // 4. Affichage du bouton contextuel personnalisé.
-            $("#auto-zoom-button").classList.remove("is-hidden");
+            this.updateAutoZoomButtonVisibility();
           },
           // Cet événement se déclenche lorsqu'on clique sur le fond du graphique
           click: function () {
@@ -1272,7 +1272,17 @@ setDisableScientificNotation(disabled) {
     this.chart.redraw();
 
     // Afficher le bouton de "reset zoom"
-    $("#auto-zoom-button").classList.remove("is-hidden");
+    this.updateAutoZoomButtonVisibility();
+  }
+
+  /**
+   * Synchronise la visibilité du bouton Zoom auto avec l'état `hasUserZoom`.
+   */
+  updateAutoZoomButtonVisibility() {
+    const autoZoomBtn = $("#auto-zoom-button");
+    if (autoZoomBtn) {
+      autoZoomBtn.classList.toggle("is-hidden", !this.hasUserZoom);
+    }
   }
 
   /**
@@ -1281,6 +1291,7 @@ setDisableScientificNotation(disabled) {
    */
   resetZoom(redraw = true) {
     this.hasUserZoom = false;
+    this.updateAutoZoomButtonVisibility();
     // Réinitialise les extrêmes des axes de Highcharts
     if (this.chart?.xAxis?.[0] && this.chart?.yAxis?.[0]) {
       this.chart.xAxis[0].setExtremes(null, null, false);
@@ -1321,10 +1332,7 @@ setDisableScientificNotation(disabled) {
     this.chart.yAxis[0].setExtremes(yMin ?? null, yMax ?? null, false);
     this.chart.redraw();
 
-    const autoZoomBtn = $("#auto-zoom-button");
-    if (autoZoomBtn) {
-      autoZoomBtn.classList.remove("is-hidden");
-    }
+    this.updateAutoZoomButtonVisibility();
 
     return true;
   }

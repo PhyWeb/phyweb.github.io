@@ -115,10 +115,31 @@ describe('Grapher - Bornes numériques des axes (parse, format, setAxisBounds, p
       assert.ok(yAxis.min < -10, `yAxis.min (${yAxis.min}) doit être strictement inférieur à yMax`);
     });
 
-    it('réinitialise le zoom lorsque toutes les bornes sont null', () => {
-      grapher.hasUserZoom = true;
+    it('réinitialise le zoom lorsque toutes les bornes sont null et masque le bouton Zoom auto', () => {
+      const classes = new Set();
+      global.__querySelectorOverride = (sel) => {
+        if (sel === '#auto-zoom-button') {
+          return {
+            classList: {
+              add: (c) => classes.add(c),
+              remove: (c) => classes.delete(c),
+              contains: (c) => classes.has(c),
+              toggle: (c, force) => {
+                if (force) classes.add(c); else classes.delete(c);
+                return force;
+              }
+            }
+          };
+        }
+        return null;
+      };
+
+      grapher.setAxisBounds({ xMin: 5, xMax: 25, yMin: 0, yMax: 20 });
+      assert.equal(classes.has('is-hidden'), false, 'Zoom auto doit être visible quand des bornes manuelles sont actives');
+
       grapher.setAxisBounds({ xMin: null, xMax: null, yMin: null, yMax: null });
       assert.equal(grapher.hasUserZoom, false);
+      assert.equal(classes.has('is-hidden'), true, 'Zoom auto doit être masqué après réinitialisation');
       assert.equal(xAxis.min, 0);
       assert.equal(yAxis.min, 0);
     });

@@ -543,11 +543,3 @@ fieldset[disabled] .button {
 #axis-bounds-dropdown .axis-bounds-auto-btn:hover {
   text-decoration: underline;
 }
-
-/* Compacité de la barre d'outils du grapheur sur petit écran */
-@media (max-width: 1100px) {
-  #grapheur-panel #zoom-button > span:not(.icon),
-  #grapheur-panel #auto-zoom-button > span:not(.icon) {
-    display: none;
-  }
-}
