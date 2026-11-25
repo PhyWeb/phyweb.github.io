@@ -320,13 +320,13 @@
             <span>Courbes</span>
           </button>
           <div style="border-left: 1px solid #dbdbdb; height: 24px;"></div>
-          <button class="button is-white" id="zoom-button">
+          <button class="button is-white" id="zoom-button" title="Zoomer sur une zone">
             <span class="icon">
               <i class="fa-solid fa-magnifying-glass"></i>
             </span>
             <span>Zoom</span>
           </button>
-          <button class="button is-white" id="zoom-in-button">
+          <button class="button is-white" id="zoom-in-button" title="Zoom avant">
             <span class="icon">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true">
                 <path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376C296.3 401.1 253.9 416 208 416 93.1 416 0 322.9 0 208S93.1 0 208 0 416 93.1 416 208zM208 352a144 144 0 1 0 0-288 144 144 0 1 0 0 288z"/>
@@ -334,7 +334,7 @@
               </svg>
             </span>
           </button>
-          <button class="button is-white" id="zoom-out-button">
+          <button class="button is-white" id="zoom-out-button" title="Zoom arrière">
             <span class="icon">
               <svg viewBox="0 0 512 512" fill="currentColor" aria-hidden="true">
                 <path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376C296.3 401.1 253.9 416 208 416 93.1 416 0 322.9 0 208S93.1 0 208 0 416 93.1 416 208zM208 352a144 144 0 1 0 0-288 144 144 0 1 0 0 288z"/>
@@ -342,12 +342,63 @@
               </svg>
             </span>
           </button>
-          <button class="button is-white" id="auto-zoom-button">
+          <button class="button is-white" id="auto-zoom-button" title="Zoom automatique">
             <span class="icon">
               <i class="fa-solid fa-maximize"></i>
             </span>
             <span>Zoom auto</span>
           </button>
+          <div class="dropdown" id="axis-bounds-dropdown">
+            <div class="dropdown-trigger">
+              <button class="button is-white" id="axis-bounds-button" type="button" title="Définir les bornes des axes" aria-label="Définir les bornes des axes" aria-haspopup="true" aria-controls="axis-bounds-popover">
+                <span class="icon">
+                  <i class="fa-solid fa-sliders"></i>
+                </span>
+              </button>
+            </div>
+            <div class="dropdown-menu" id="axis-bounds-popover" role="menu">
+              <div class="dropdown-content p-3">
+                <p class="is-size-7 has-text-weight-semibold has-text-grey-dark mb-2">Bornes des axes</p>
+                <form id="axis-bounds-form" novalidate>
+                  <div class="axis-bounds-group mb-2">
+                    <div class="is-flex is-justify-content-space-between is-align-items-center mb-1">
+                      <span class="is-size-7 has-text-weight-semibold" id="axis-bounds-x-label">Abscisse (X)</span>
+                      <button type="button" class="button is-ghost is-small p-0 axis-bounds-auto-btn" id="axis-bounds-x-auto" title="Remettre l'axe X en automatique">Auto</button>
+                    </div>
+                    <div class="axis-bounds-row">
+                      <div class="control is-expanded">
+                        <input class="input is-small" type="text" inputmode="decimal" id="axis-bounds-x-min" placeholder="Min (auto)" aria-label="Abscisse minimale">
+                      </div>
+                      <span class="axis-bounds-sep">à</span>
+                      <div class="control is-expanded">
+                        <input class="input is-small" type="text" inputmode="decimal" id="axis-bounds-x-max" placeholder="Max (auto)" aria-label="Abscisse maximale">
+                      </div>
+                    </div>
+                  </div>
+                  <div class="axis-bounds-group mb-2">
+                    <div class="is-flex is-justify-content-space-between is-align-items-center mb-1">
+                      <span class="is-size-7 has-text-weight-semibold" id="axis-bounds-y-label">Ordonnée (Y)</span>
+                      <button type="button" class="button is-ghost is-small p-0 axis-bounds-auto-btn" id="axis-bounds-y-auto" title="Remettre l'axe Y en automatique">Auto</button>
+                    </div>
+                    <div class="axis-bounds-row">
+                      <div class="control is-expanded">
+                        <input class="input is-small" type="text" inputmode="decimal" id="axis-bounds-y-min" placeholder="Min (auto)" aria-label="Ordonnée minimale">
+                      </div>
+                      <span class="axis-bounds-sep">à</span>
+                      <div class="control is-expanded">
+                        <input class="input is-small" type="text" inputmode="decimal" id="axis-bounds-y-max" placeholder="Max (auto)" aria-label="Ordonnée maximale">
+                      </div>
+                    </div>
+                  </div>
+                  <p class="help is-danger is-hidden mb-2" id="axis-bounds-error"></p>
+                  <div class="is-flex is-justify-content-space-between is-align-items-center pt-1">
+                    <button type="button" class="button is-small is-light" id="axis-bounds-reset-btn">Tout auto</button>
+                    <button type="submit" class="button is-small is-primary" id="axis-bounds-apply-btn">Appliquer</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
           <div style="border-left: 1px solid #dbdbdb; height: 24px;"></div>
           <button class="button is-light is-hidden" id="clear-annotations-button">
             <span class="icon">

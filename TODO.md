@@ -65,6 +65,7 @@
 # Schemas
     possibilité de grouper des objets
     possibiliter de verouiller un objet
+    outil pour déplacer la vue la ca selectionne avec clique gauche
 
 
 # MISC

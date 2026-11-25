@@ -12,9 +12,10 @@ const PADDING = 0.02; // 2% de padding pour le zoom auto
   H.wrap(H.Axis.prototype, 'setExtremes', function (proceed, newMin, newMax, redraw, animation, eventArgs) {
     const chart = this.chart;
     
-    // Vérifie si c'est un reset zoom (newMin et newMax null ou undefined)
-    const isResetZoom = (newMin === null || newMin === undefined) && (newMax === null || newMax === undefined);
-    if (isResetZoom && chart?.options?.customGrapherInstance){
+    // Vérifie si au moins une borne est en mode automatique (null ou undefined)
+    const minIsAuto = newMin === null || newMin === undefined;
+    const maxIsAuto = newMax === null || newMax === undefined;
+    if ((minIsAuto || maxIsAuto) && chart?.options?.customGrapherInstance){
       const includeOrigin = !!chart.options.customGrapherInstance.includeOriginOnAutoZoom;
 
       // Calcule manuellement les extrêmes globaux pour cet axe
@@ -89,11 +90,23 @@ const PADDING = 0.02; // 2% de padding pour le zoom auto
           }
         }
         
+        let targetMin = minIsAuto ? finalMin : newMin;
+        let targetMax = maxIsAuto ? finalMax : newMax;
+
+        // Sécurité si une borne manuelle dépasse la borne automatique calculée
+        if (targetMin >= targetMax) {
+          if (maxIsAuto) {
+            targetMax = targetMin + Math.max(Math.abs(targetMin) * 0.1, 1);
+          } else if (minIsAuto) {
+            targetMin = targetMax - Math.max(Math.abs(targetMax) * 0.1, 1);
+          }
+        }
+        
         // Appel original avec bornes calculées
-        proceed.call(this, finalMin, finalMax, redraw, animation, eventArgs);
+        proceed.call(this, targetMin, targetMax, redraw, animation, eventArgs);
       } else {
-        // Pas de données : reset par défaut
-        proceed.call(this, null, null, redraw, animation, eventArgs);
+        // Pas de données : reset ou bornes fournies par défaut
+        proceed.call(this, minIsAuto ? null : newMin, maxIsAuto ? null : newMax, redraw, animation, eventArgs);
       }
     } else {
       // Autres cas : appel original
@@ -1281,6 +1294,39 @@ setDisableScientificNotation(disabled) {
     
     // Mise à jour UI
     this.uiManager?.resetZoomUI();
+  }
+
+  /**
+   * Définit numériquement les bornes des axes X et Y.
+   * Une valeur `null` ou `undefined` laisse la borne correspondante en automatique.
+   * @param {{ xMin?: number|null, xMax?: number|null, yMin?: number|null, yMax?: number|null }} bounds
+   * @returns {boolean}
+   */
+  setAxisBounds({ xMin = null, xMax = null, yMin = null, yMax = null } = {}) {
+    if (!this.chart?.xAxis?.[0] || !this.chart?.yAxis?.[0]) return false;
+
+    const allAuto = (xMin === null || xMin === undefined) &&
+                    (xMax === null || xMax === undefined) &&
+                    (yMin === null || yMin === undefined) &&
+                    (yMax === null || yMax === undefined);
+
+    if (allAuto) {
+      this.resetZoom();
+      return true;
+    }
+
+    this.hasUserZoom = true;
+
+    this.chart.xAxis[0].setExtremes(xMin ?? null, xMax ?? null, false);
+    this.chart.yAxis[0].setExtremes(yMin ?? null, yMax ?? null, false);
+    this.chart.redraw();
+
+    const autoZoomBtn = $("#auto-zoom-button");
+    if (autoZoomBtn) {
+      autoZoomBtn.classList.remove("is-hidden");
+    }
+
+    return true;
   }
 
   /**

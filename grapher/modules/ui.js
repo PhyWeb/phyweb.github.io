@@ -12,6 +12,35 @@ import ExportManager, {
 const $ = document.querySelector.bind(document);
 
 export { MAX_PRINT_TABLE_POINTS, EXPORT_RATIO_DIMENSIONS, sanitizeExportFilename, escapeHTML, toSuperscript };
+
+/**
+ * Parse une saisie utilisateur de borne numérique (virgule ou point, notation scientifique).
+ * Une chaîne vide correspond à une borne automatique (`null`).
+ * @param {string} rawValue
+ * @returns {{ empty: boolean, value: number|null, valid: boolean }}
+ */
+export function parseAxisBoundInput(rawValue) {
+  const cleaned = String(rawValue ?? '').replace(/[\s\u00A0\u202F]+/g, '').replace(',', '.');
+  if (cleaned === '') {
+    return { empty: true, value: null, valid: true };
+  }
+  const num = Number(cleaned);
+  if (Number.isFinite(num)) {
+    return { empty: false, value: num, valid: true };
+  }
+  return { empty: false, value: null, valid: false };
+}
+
+/**
+ * Formate une borne numérique pour pré-remplir les champs du popover sans bruit flottant.
+ * @param {number} value
+ * @returns {string}
+ */
+export function formatAxisBoundValue(value) {
+  if (!Number.isFinite(value)) return '';
+  const rounded = Number(value.toPrecision(8));
+  return Object.is(rounded, -0) ? '0' : String(rounded);
+}
 const EXTRA_CUSTOMIZATION_COLORS = ['#000000'];
 
 /**
@@ -228,6 +257,11 @@ export default class UIManager {
         const constantsDropdown = document.getElementById('constants-dropdown');
         if (constantsDropdown) {
           constantsDropdown.classList.remove('is-active');
+        }
+        // Ferme le popover des bornes des axes s'il est ouvert
+        const axisBoundsDropdown = document.getElementById('axis-bounds-dropdown');
+        if (axisBoundsDropdown) {
+          axisBoundsDropdown.classList.remove('is-active');
         }
         // Désactive les outils du grapheur (réticule, etc.)
         this.clearActiveTool(); 
@@ -2866,6 +2900,181 @@ export default class UIManager {
       this.grapher.zoom('out');
     });
 
+    this.initAxisBoundsPopover();
+
+  }
+
+  /**
+   * Initialise le popover compact permettant de définir numériquement les bornes des axes X et Y.
+   */
+  initAxisBoundsPopover() {
+    const dropdown = $('#axis-bounds-dropdown');
+    const triggerBtn = $('#axis-bounds-button');
+    const popover = $('#axis-bounds-popover');
+    const form = $('#axis-bounds-form');
+    const xLabel = $('#axis-bounds-x-label');
+    const xMinInput = $('#axis-bounds-x-min');
+    const xMaxInput = $('#axis-bounds-x-max');
+    const yMinInput = $('#axis-bounds-y-min');
+    const yMaxInput = $('#axis-bounds-y-max');
+    const xAutoBtn = $('#axis-bounds-x-auto');
+    const yAutoBtn = $('#axis-bounds-y-auto');
+    const resetBtn = $('#axis-bounds-reset-btn');
+    const errorEl = $('#axis-bounds-error');
+
+    if (!dropdown || !triggerBtn || !form) return;
+
+    const allInputs = [xMinInput, xMaxInput, yMinInput, yMaxInput].filter(Boolean);
+
+    const clearValidationState = () => {
+      allInputs.forEach(input => input.classList.remove('is-danger'));
+      if (errorEl) {
+        errorEl.textContent = '';
+        errorEl.classList.add('is-hidden');
+      }
+    };
+
+    const showValidationError = (message, invalidInputs = []) => {
+      clearValidationState();
+      invalidInputs.forEach(input => input?.classList.add('is-danger'));
+      if (errorEl) {
+        errorEl.textContent = message;
+        errorEl.classList.remove('is-hidden');
+      }
+    };
+
+    const populateBoundsInputs = () => {
+      clearValidationState();
+
+      // Affiche le nom et l'unité de l'abscisse courante si disponible
+      if (xLabel) {
+        const xTitle = this.grapher?.currentXCurve;
+        const xCurve = xTitle ? this.data?.getCurveByTitle?.(xTitle) : null;
+        if (xTitle) {
+          xLabel.textContent = xCurve?.unit ? `Abscisse : ${xTitle} (${xCurve.unit})` : `Abscisse : ${xTitle}`;
+        } else {
+          xLabel.textContent = 'Abscisse (X)';
+        }
+      }
+
+      const xAxis = this.grapher?.chart?.xAxis?.[0];
+      const yAxis = this.grapher?.chart?.yAxis?.[0];
+      const xEx = xAxis?.getExtremes?.();
+      const yEx = yAxis?.getExtremes?.();
+
+      if (xMinInput) xMinInput.value = formatAxisBoundValue(xEx?.min);
+      if (xMaxInput) xMaxInput.value = formatAxisBoundValue(xEx?.max);
+      if (yMinInput) yMinInput.value = formatAxisBoundValue(yEx?.min);
+      if (yMaxInput) yMaxInput.value = formatAxisBoundValue(yEx?.max);
+    };
+
+    const updatePopoverAlignment = () => {
+      if (typeof window === 'undefined' || typeof triggerBtn.getBoundingClientRect !== 'function') return;
+      const rect = triggerBtn.getBoundingClientRect();
+      const estimatedWidth = 280;
+      const overflowsRight = rect.left + estimatedWidth > window.innerWidth - 12;
+      dropdown.classList.toggle('is-right', overflowsRight);
+    };
+
+    triggerBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const willOpen = !dropdown.classList.contains('is-active');
+
+      // Ferme le menu Outils s'il est ouvert
+      const toolsDropdown = $('#tools-dropdown');
+      if (toolsDropdown) toolsDropdown.classList.remove('is-active');
+
+      if (willOpen) {
+        this.clearActiveTool();
+        populateBoundsInputs();
+        updatePopoverAlignment();
+        dropdown.classList.add('is-active');
+        xMinInput?.focus?.();
+        xMinInput?.select?.();
+      } else {
+        dropdown.classList.remove('is-active');
+      }
+    });
+
+    if (popover) {
+      popover.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+    }
+
+    document.addEventListener('click', () => {
+      dropdown.classList.remove('is-active');
+    });
+
+    if (xAutoBtn) {
+      xAutoBtn.addEventListener('click', () => {
+        if (xMinInput) xMinInput.value = '';
+        if (xMaxInput) xMaxInput.value = '';
+        clearValidationState();
+      });
+    }
+
+    if (yAutoBtn) {
+      yAutoBtn.addEventListener('click', () => {
+        if (yMinInput) yMinInput.value = '';
+        if (yMaxInput) yMaxInput.value = '';
+        clearValidationState();
+      });
+    }
+
+    if (resetBtn) {
+      resetBtn.addEventListener('click', () => {
+        this.grapher?.resetZoom();
+        dropdown.classList.remove('is-active');
+      });
+    }
+
+    allInputs.forEach(input => {
+      input.addEventListener('input', () => {
+        input.classList.remove('is-danger');
+        if (errorEl) errorEl.classList.add('is-hidden');
+      });
+    });
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (!this.grapher?.chart) return;
+
+      const xMinParsed = parseAxisBoundInput(xMinInput?.value);
+      const xMaxParsed = parseAxisBoundInput(xMaxInput?.value);
+      const yMinParsed = parseAxisBoundInput(yMinInput?.value);
+      const yMaxParsed = parseAxisBoundInput(yMaxInput?.value);
+
+      const invalidInputs = [];
+      if (!xMinParsed.valid) invalidInputs.push(xMinInput);
+      if (!xMaxParsed.valid) invalidInputs.push(xMaxInput);
+      if (!yMinParsed.valid) invalidInputs.push(yMinInput);
+      if (!yMaxParsed.valid) invalidInputs.push(yMaxInput);
+
+      if (invalidInputs.length > 0) {
+        showValidationError('Veuillez saisir des valeurs numériques valides.', invalidInputs);
+        return;
+      }
+
+      if (!xMinParsed.empty && !xMaxParsed.empty && xMinParsed.value >= xMaxParsed.value) {
+        showValidationError('En abscisse, la borne min doit être strictement inférieure à la borne max.', [xMinInput, xMaxInput]);
+        return;
+      }
+
+      if (!yMinParsed.empty && !yMaxParsed.empty && yMinParsed.value >= yMaxParsed.value) {
+        showValidationError('En ordonnée, la borne min doit être strictement inférieure à la borne max.', [yMinInput, yMaxInput]);
+        return;
+      }
+
+      this.grapher.setAxisBounds({
+        xMin: xMinParsed.value,
+        xMax: xMaxParsed.value,
+        yMin: yMinParsed.value,
+        yMax: yMaxParsed.value
+      });
+
+      dropdown.classList.remove('is-active');
+    });
   }
 
   /**
