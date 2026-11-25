@@ -1,30 +1,29 @@
 // Contrôleur principal de l'applet Schémas de Chimie & Physique
-import { initApplets, showToast, alertModal } from '../../common/common.js';
-import { CATALOG, CATEGORIES, SVG_SHARED_STYLES, getCatalogItem } from './catalog.js';
+import { initApplets, showToast } from '../../common/common.js';
+import { SVG_SHARED_STYLES, getCatalogItem } from './catalog.js';
 import {
-    computeObjectSnap,
-    findNearestConnectorPort,
     getWorldAnchors,
     buildConnectorPath,
     getConnectorMidpoint,
     computeConnectorGeometry,
     computeDistributionDeltas,
     localToWorld,
-    snapRotationAngle,
     normalizeAngle
 } from './snapping.js';
 import { SceneStore, resolveConnectorEndpoints } from './state.js';
 import {
-    buildStandaloneSVG,
     renderConnectorSVG,
     renderLabelSVG,
     getLabelMetrics,
-    renderSceneToPNGBlob,
     computeSceneBounds
 } from './export.js';
+import { createIOController } from './modules/io.js';
+import { createDrawerController } from './modules/drawer.js';
+import { createInspectorController } from './modules/inspector.js';
+import { createInteractionsController } from './modules/interactions.js';
+import { createExportModalController } from './modules/exportModal.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
-const SESSION_STORAGE_KEY = 'phyweb_schemas_session_v1';
 
 function escHtml(str) {
     return String(str ?? '')
@@ -34,161 +33,16 @@ function escHtml(str) {
         .replace(/"/g, '&quot;');
 }
 
-// Initialisation navbar PhyWeb
 const notify = (msg) => {
     if (typeof showToast === 'function') showToast(msg);
     else console.log(msg);
 };
 
+// =========================================================================
+// ÉTAT DU STORE & DE L'ÉDITEUR
+// =========================================================================
 const store = new SceneStore();
-let savedSnapshot = store.snapshot();
 
-function hasSceneData() {
-    return (
-        store.scene.items.length > 0 ||
-        store.scene.connectors.length > 0 ||
-        store.scene.labels.length > 0
-    );
-}
-
-function hasUnsavedChanges() {
-    return hasSceneData() && store.snapshot() !== savedSnapshot;
-}
-
-function markAsSaved() {
-    savedSnapshot = store.snapshot();
-}
-
-let persistSessionTimer = null;
-
-function persistSessionImmediate() {
-    if (persistSessionTimer !== null) {
-        clearTimeout(persistSessionTimer);
-        persistSessionTimer = null;
-    }
-    try {
-        if (!hasSceneData()) {
-            sessionStorage.removeItem(SESSION_STORAGE_KEY);
-        } else {
-            sessionStorage.setItem(SESSION_STORAGE_KEY, store.exportJSON());
-        }
-    } catch (_) {
-        // Ignorer si sessionStorage est indisponible ou plein
-    }
-}
-
-function persistSession() {
-    if (persistSessionTimer !== null) clearTimeout(persistSessionTimer);
-    persistSessionTimer = setTimeout(persistSessionImmediate, 250);
-}
-
-function restoreSession() {
-    try {
-        const raw = sessionStorage.getItem(SESSION_STORAGE_KEY);
-        if (!raw) return false;
-        const parsed = JSON.parse(raw);
-        if (!parsed || !Array.isArray(parsed.items)) return false;
-        const hasAny =
-            parsed.items.length > 0 ||
-            (Array.isArray(parsed.connectors) && parsed.connectors.length > 0) ||
-            (Array.isArray(parsed.labels) && parsed.labels.length > 0);
-        if (!hasAny) return false;
-        store.scene = {
-            version: 1,
-            items: parsed.items || [],
-            connectors: Array.isArray(parsed.connectors) ? parsed.connectors : [],
-            labels: Array.isArray(parsed.labels) ? parsed.labels : []
-        };
-        store.clearSelection();
-        return true;
-    } catch (_) {
-        return false;
-    }
-}
-
-try {
-    initApplets('Schémas de Chimie & Physique', '../..', () => hasUnsavedChanges());
-} catch (e) {
-    console.warn('initApplets ignoré:', e);
-}
-
-// Alerte navigateur en cas de fermeture d'onglet ou rechargement avec modifications non sauvegardées
-window.addEventListener('beforeunload', (e) => {
-    persistSessionImmediate();
-    if (hasUnsavedChanges()) {
-        e.preventDefault();
-        e.returnValue = '';
-    }
-});
-
-/**
- * Ajoute un menu déroulant « Menu » dans la barre de navigation (à l'image de Grapher, Tracker et Audio)
- * pour regrouper sauvegarde, chargement et exports.
- */
-function setupNavbarMenu() {
-    const navbarEnd = document.querySelector('#navbar-container .navbar-end');
-    if (!navbarEnd || document.getElementById('menu-dropdown-container')) return;
-
-    const menuEl = document.createElement('div');
-    menuEl.className = 'navbar-item has-dropdown';
-    menuEl.id = 'menu-dropdown-container';
-    menuEl.style.height = '100%';
-    menuEl.innerHTML = `
-      <a class="navbar-link" id="menu-dropdown-toggle" style="height: 100%;">
-        Menu
-      </a>
-      <div class="navbar-dropdown is-right is-size-6" id="menu-dropdown-content">
-        <a class="navbar-item" id="menuSaveJSON">
-          <span class="icon"><i class="fa-solid fa-floppy-disk"></i></span>
-          <span>Sauvegarder (.json)</span>
-        </a>
-        <a class="navbar-item" id="menuLoadJSON">
-          <span class="icon"><i class="fa-solid fa-folder-open"></i></span>
-          <span>Charger (.json)</span>
-        </a>
-        <hr class="navbar-divider">
-        <a class="navbar-item" id="menuCopyPNG">
-          <span class="icon"><i class="fa-solid fa-copy"></i></span>
-          <span>Copier l'image HD</span>
-        </a>
-        <a class="navbar-item" id="menuExportPNG">
-          <span class="icon"><i class="fa-solid fa-image"></i></span>
-          <span>Exporter en PNG HD</span>
-        </a>
-        <a class="navbar-item" id="menuExportSVG">
-          <span class="icon"><i class="fa-solid fa-bezier-curve"></i></span>
-          <span>Exporter en SVG</span>
-        </a>
-      </div>
-    `;
-
-    const divider = navbarEnd.querySelector('.vertical-divider.window-control');
-    if (divider) navbarEnd.insertBefore(menuEl, divider);
-    else navbarEnd.appendChild(menuEl);
-
-    const toggle = menuEl.querySelector('#menu-dropdown-toggle');
-    toggle.addEventListener('click', (ev) => {
-        ev.stopPropagation();
-        menuEl.classList.toggle('is-active');
-    });
-    document.addEventListener('click', () => {
-        menuEl.classList.remove('is-active');
-    });
-    menuEl.querySelectorAll('.navbar-dropdown .navbar-item').forEach(item => {
-        item.addEventListener('click', () => menuEl.classList.remove('is-active'));
-    });
-
-    menuEl.querySelector('#menuSaveJSON').addEventListener('click', () => handleSaveJSON());
-    menuEl.querySelector('#menuLoadJSON').addEventListener('click', () => triggerLoadJSON());
-    menuEl.querySelector('#menuCopyPNG').addEventListener('click', () => handleCopyPNG());
-    menuEl.querySelector('#menuExportPNG').addEventListener('click', () => handleExportPNG());
-    menuEl.querySelector('#menuExportSVG').addEventListener('click', () => handleExportSVG());
-}
-setupNavbarMenu();
-
-// =========================================================================
-// ÉTAT DE L'ÉDITEUR
-// =========================================================================
 const editor = {
     tool: 'select',          // 'select' | 'wire' | 'hose' | 'label'
     snapEnabled: true,
@@ -207,32 +61,55 @@ const editor = {
     snappedPort: null,
     rotateFeedback: null,    // { x, y, angle, snapped }
     scaleFeedback: null,     // { x, y, pct }
-    spaceDown: false
+    spaceDown: false,
+    connectorDefaults: {
+        wire: { mode: 'bezier', color: '#e03131', width: 3.5, dashed: false, showArrow: false, behindItems: false },
+        hose: { mode: 'bezier', color: '#74c0fc', width: 8, dashed: false, showArrow: true, behindItems: false }
+    }
 };
 
 // Références DOM
-const stageEl = document.getElementById('stageContainer');
-const svgEl = document.getElementById('sceneSvg');
-const viewportGroup = document.getElementById('viewportGroup');
-const gridRect = document.getElementById('gridRect');
-const layerItems = document.getElementById('layerItems');
-const layerConnectors = document.getElementById('layerConnectors');
-const layerLabels = document.getElementById('layerLabels');
-const layerOverlay = document.getElementById('layerOverlay');
+const dom = {
+    stageEl: document.getElementById('stageContainer'),
+    svgEl: document.getElementById('sceneSvg'),
+    viewportGroup: document.getElementById('viewportGroup'),
+    gridRect: document.getElementById('gridRect'),
+    layerConnectorsBack: document.getElementById('layerConnectorsBack'),
+    layerItems: document.getElementById('layerItems'),
+    layerConnectors: document.getElementById('layerConnectors'),
+    layerLabels: document.getElementById('layerLabels'),
+    layerOverlay: document.getElementById('layerOverlay'),
+    toolHintEl: document.getElementById('toolHint'),
+    zoomBadgeEl: document.getElementById('zoomBadge'),
+    inspectorTitleEl: document.getElementById('inspectorTitle'),
+    inspectorBodyEl: document.getElementById('inspectorBody'),
+    drawerEl: document.getElementById('objectDrawer'),
+    drawerTabsEl: document.getElementById('drawerTabs'),
+    drawerGridEl: document.getElementById('drawerGrid'),
+    drawerSearchEl: document.getElementById('drawerSearchInput'),
+    btnUndo: document.getElementById('btnUndo'),
+    btnRedo: document.getElementById('btnRedo'),
+    btnToggleSnap: document.getElementById('btnToggleSnap'),
+    btnToggleGrid: document.getElementById('btnToggleGrid')
+};
 
-const toolHintEl = document.getElementById('toolHint');
-const zoomBadgeEl = document.getElementById('zoomBadge');
-const inspectorTitleEl = document.getElementById('inspectorTitle');
-const inspectorBodyEl = document.getElementById('inspectorBody');
-const drawerEl = document.getElementById('objectDrawer');
-const drawerTabsEl = document.getElementById('drawerTabs');
-const drawerGridEl = document.getElementById('drawerGrid');
-const drawerSearchEl = document.getElementById('drawerSearchInput');
-
-const btnUndo = document.getElementById('btnUndo');
-const btnRedo = document.getElementById('btnRedo');
-const btnToggleSnap = document.getElementById('btnToggleSnap');
-const btnToggleGrid = document.getElementById('btnToggleGrid');
+const {
+    stageEl,
+    svgEl,
+    viewportGroup,
+    gridRect,
+    layerConnectorsBack,
+    layerItems,
+    layerConnectors,
+    layerLabels,
+    layerOverlay,
+    toolHintEl,
+    zoomBadgeEl,
+    btnUndo,
+    btnRedo,
+    btnToggleSnap,
+    btnToggleGrid
+} = dom;
 
 // Injecter les styles SVG partagés dans le SVG principal
 const styleEl = document.createElementNS(SVG_NS, 'style');
@@ -286,11 +163,7 @@ function zoomAt(factor, clientX, clientY) {
 
 function fitViewToScene() {
     const rect = svgEl.getBoundingClientRect();
-    if (
-        store.scene.items.length === 0 &&
-        store.scene.connectors.length === 0 &&
-        store.scene.labels.length === 0
-    ) {
+    if (!io.hasSceneData()) {
         centerInitialView();
         return;
     }
@@ -304,224 +177,7 @@ function fitViewToScene() {
 }
 
 // =========================================================================
-// RENDU DE LA SCÈNE
-// =========================================================================
-function renderScene() {
-    // 1. Objets
-    layerItems.innerHTML = store.scene.items.map(item => {
-        const def = getCatalogItem(item.type);
-        if (!def) return '';
-        const scale = item.scale ?? 1;
-        const fx = item.flipX ? -scale : scale;
-        const transform = `translate(${item.x}, ${item.y}) rotate(${item.rotation ?? 0}) scale(${fx}, ${scale})`;
-        return `<g class="scene-item" data-kind="item" data-id="${item.id}" transform="${transform}">${def.render(item.props || {}, item.id, { rotation: item.rotation ?? 0, flipX: !!item.flipX })}</g>`;
-    }).join('');
-
-    // 2. Connecteurs (fils & tuyaux)
-    layerConnectors.innerHTML = store.scene.connectors.map(conn => {
-        const { p1, p2 } = resolveConnectorEndpoints(conn, store.scene.items);
-        const d = buildConnectorPath(p1, p2, conn.mode, conn.bend, conn.bendX || 0);
-        const hitStroke = `<path d="${d}" fill="none" stroke="transparent" stroke-width="18" />`;
-        return `<g class="scene-connector" data-kind="connector" data-id="${conn.id}">${hitStroke}${renderConnectorSVG(conn, store.scene.items)}</g>`;
-    }).join('');
-
-    // 3. Légendes
-    layerLabels.innerHTML = store.scene.labels.map(lbl => {
-        return `<g class="scene-label" data-kind="label" data-id="${lbl.id}">${renderLabelSVG(lbl)}</g>`;
-    }).join('');
-
-    renderOverlay();
-    updateHistoryButtons();
-    persistSession();
-}
-
-function renderOverlay() {
-    let html = '';
-
-    // Afficher les bornes/olivettes quand on utilise l'outil fil ou tuyau
-    if (editor.tool === 'wire' || editor.tool === 'hose') {
-        const targetType = editor.tool === 'wire' ? 'elec' : 'hose';
-        const isHose = targetType === 'hose';
-        for (const item of store.scene.items) {
-            for (const a of getWorldAnchors(item)) {
-                if (a.type !== targetType) continue;
-                const hot = editor.pendingConnector?.hoveredPort &&
-                    editor.pendingConnector.hoveredPort.itemId === a.itemId &&
-                    editor.pendingConnector.hoveredPort.id === a.id;
-                html += `<circle class="port-indicator ${isHose ? 'is-hose' : ''} ${hot ? 'is-hot' : ''}" cx="${a.wx.toFixed(1)}" cy="${a.wy.toFixed(1)}" r="${hot ? 9 : 6}" />`;
-            }
-        }
-    }
-
-    // Tracé en cours d'un fil ou tuyau
-    if (editor.pendingConnector) {
-        const pc = editor.pendingConnector;
-        const p1 = { x: pc.start.x, y: pc.start.y, angle: pc.startAngle ?? null };
-        const p2 = pc.hoveredPort
-            ? { x: pc.hoveredPort.wx, y: pc.hoveredPort.wy, angle: pc.hoveredPort.worldAngle ?? null }
-            : { x: pc.cursorX, y: pc.cursorY, angle: null };
-        const defaultBend = (p1.angle !== null || p2.angle !== null) ? 0 : (pc.kind === 'wire' ? 40 : 30);
-        const d = buildConnectorPath(p1, p2, 'bezier', defaultBend, 0);
-        const col = pc.kind === 'wire' ? '#e03131' : '#0284c7';
-        html += `<path d="${d}" fill="none" stroke="${col}" stroke-width="${pc.kind === 'wire' ? 3 : 6}" stroke-dasharray="6 4" opacity="0.8" pointer-events="none" />`;
-        html += `<circle cx="${p1.x.toFixed(1)}" cy="${p1.y.toFixed(1)}" r="5" fill="${col}" pointer-events="none" />`;
-    }
-
-    // Boîte de sélection et poignées (simple ou multiple)
-    const selectedEntries = store.getSelectedElements();
-    if (selectedEntries.length === 1) {
-        const { kind, el } = selectedEntries[0];
-        if (kind === 'item') {
-            const def = getCatalogItem(el.type);
-            if (def) {
-                const bb = def.getBBox(el.props || {});
-                const pad = 6;
-                const scale = el.scale ?? 1;
-                const fx = el.flipX ? -scale : scale;
-                const transform = `translate(${el.x}, ${el.y}) rotate(${el.rotation ?? 0}) scale(${fx}, ${scale})`;
-                const cx = bb.x + bb.width / 2;
-                const topY = bb.y - pad;
-                const stemLen = 26 / (scale * editor.zoom);
-                const handleY = topY - stemLen;
-                const r = 7 / (scale * editor.zoom);
-                const rIcon = 3.2 / (scale * editor.zoom);
-                const sw = 1.6 / (scale * editor.zoom);
-                const hs = 8.5 / (scale * editor.zoom);
-                const hHalf = hs / 2;
-                const bx1 = bb.x - pad;
-                const by1 = topY;
-                const bx2 = bb.x + bb.width + pad;
-                const by2 = bb.y + bb.height + pad;
-                html += `<g transform="${transform}">
-                    <rect class="selection-box" x="${bx1}" y="${by1}" width="${bb.width + pad * 2}" height="${bb.height + pad * 2}" rx="4" style="stroke-width:${sw.toFixed(2)}" />
-                    <line class="rotate-stem" x1="${cx.toFixed(1)}" y1="${by1.toFixed(1)}" x2="${cx.toFixed(1)}" y2="${(handleY + r).toFixed(1)}" style="stroke-width:${sw.toFixed(2)}" />
-                    <circle class="rotate-handle" data-handle="item-rotate" cx="${cx.toFixed(1)}" cy="${handleY.toFixed(1)}" r="${r.toFixed(2)}" style="stroke-width:${sw.toFixed(2)}"><title>Glisser pour pivoter (double-clic : 0°)</title></circle>
-                    <path class="rotate-handle-icon" d="M ${(cx - rIcon).toFixed(2)},${handleY.toFixed(2)} A ${rIcon.toFixed(2)},${rIcon.toFixed(2)} 0 1,1 ${(cx + rIcon * 0.6).toFixed(2)},${(handleY + rIcon * 0.8).toFixed(2)}" style="stroke-width:${sw.toFixed(2)}" />
-                    <rect class="resize-handle is-nw" data-handle="item-resize" data-corner="nw" x="${(bx1 - hHalf).toFixed(2)}" y="${(by1 - hHalf).toFixed(2)}" width="${hs.toFixed(2)}" height="${hs.toFixed(2)}" rx="${(1.5 / (scale * editor.zoom)).toFixed(2)}" style="stroke-width:${sw.toFixed(2)}"><title>Glisser pour redimensionner</title></rect>
-                    <rect class="resize-handle is-ne" data-handle="item-resize" data-corner="ne" x="${(bx2 - hHalf).toFixed(2)}" y="${(by1 - hHalf).toFixed(2)}" width="${hs.toFixed(2)}" height="${hs.toFixed(2)}" rx="${(1.5 / (scale * editor.zoom)).toFixed(2)}" style="stroke-width:${sw.toFixed(2)}"><title>Glisser pour redimensionner</title></rect>
-                    <rect class="resize-handle is-sw" data-handle="item-resize" data-corner="sw" x="${(bx1 - hHalf).toFixed(2)}" y="${(by2 - hHalf).toFixed(2)}" width="${hs.toFixed(2)}" height="${hs.toFixed(2)}" rx="${(1.5 / (scale * editor.zoom)).toFixed(2)}" style="stroke-width:${sw.toFixed(2)}"><title>Glisser pour redimensionner</title></rect>
-                    <rect class="resize-handle is-se" data-handle="item-resize" data-corner="se" x="${(bx2 - hHalf).toFixed(2)}" y="${(by2 - hHalf).toFixed(2)}" width="${hs.toFixed(2)}" height="${hs.toFixed(2)}" rx="${(1.5 / (scale * editor.zoom)).toFixed(2)}" style="stroke-width:${sw.toFixed(2)}"><title>Glisser pour redimensionner</title></rect>
-                </g>`;
-            }
-        } else if (kind === 'connector') {
-            const { p1, p2 } = resolveConnectorEndpoints(el, store.scene.items);
-            const mid = getConnectorMidpoint(p1, p2, el.mode, el.bend, el.bendX || 0);
-            html += `<circle class="handle-dot" data-handle="conn-start" cx="${p1.x.toFixed(1)}" cy="${p1.y.toFixed(1)}" r="6"><title>Déplacer le point de départ</title></circle>`;
-            html += `<circle class="handle-dot" data-handle="conn-end" cx="${p2.x.toFixed(1)}" cy="${p2.y.toFixed(1)}" r="6"><title>Déplacer le point d’arrivée</title></circle>`;
-            html += `<circle class="handle-dot" data-handle="conn-bend" cx="${mid.x.toFixed(1)}" cy="${mid.y.toFixed(1)}" r="5.5"><title>Glisser librement pour courber</title></circle>`;
-        } else if (kind === 'label') {
-            const m = getLabelMetrics(el);
-            html += `<circle class="handle-dot" data-handle="lbl-pos" cx="${(m.boxX - 8).toFixed(1)}" cy="${(el.y - m.fs * 0.35).toFixed(1)}" r="5"><title>Déplacer la légende (Shift : avec la pointe)</title></circle>`;
-            if (el.showLeader) {
-                html += `<circle class="handle-dot" data-handle="lbl-target" cx="${el.targetX.toFixed(1)}" cy="${el.targetY.toFixed(1)}" r="6"><title>Déplacer la pointe de la flèche</title></circle>`;
-            }
-        }
-    } else if (selectedEntries.length > 1) {
-        let gMinX = Infinity, gMinY = Infinity, gMaxX = -Infinity, gMaxY = -Infinity;
-        const swWorld = 1.4 / editor.zoom;
-        for (const { kind, el } of selectedEntries) {
-            const b = getElementWorldBounds(kind, el);
-            if (b) {
-                if (b.minX < gMinX) gMinX = b.minX;
-                if (b.minY < gMinY) gMinY = b.minY;
-                if (b.maxX > gMaxX) gMaxX = b.maxX;
-                if (b.maxY > gMaxY) gMaxY = b.maxY;
-            }
-            if (kind === 'item') {
-                const def = getCatalogItem(el.type);
-                if (!def) continue;
-                const bb = def.getBBox(el.props || {});
-                const pad = 4;
-                const scale = el.scale ?? 1;
-                const fx = el.flipX ? -scale : scale;
-                const transform = `translate(${el.x}, ${el.y}) rotate(${el.rotation ?? 0}) scale(${fx}, ${scale})`;
-                const sw = 1.4 / (scale * editor.zoom);
-                html += `<g transform="${transform}">
-                    <rect class="selection-box" x="${bb.x - pad}" y="${bb.y - pad}" width="${bb.width + pad * 2}" height="${bb.height + pad * 2}" rx="4" style="stroke-width:${sw.toFixed(2)}" />
-                </g>`;
-            } else if (kind === 'connector') {
-                const { p1, p2 } = resolveConnectorEndpoints(el, store.scene.items);
-                const d = buildConnectorPath(p1, p2, el.mode, el.bend, el.bendX || 0);
-                html += `<path d="${d}" fill="none" stroke="#2563eb" stroke-width="${((el.width || 4) + 4).toFixed(1)}" opacity="0.28" stroke-linecap="round" pointer-events="none" />`;
-            } else if (kind === 'label' && b) {
-                html += `<rect class="selection-box" x="${(b.minX - 4).toFixed(1)}" y="${(b.minY - 4).toFixed(1)}" width="${(b.maxX - b.minX + 8).toFixed(1)}" height="${(b.maxY - b.minY + 8).toFixed(1)}" rx="3" style="stroke-width:${swWorld.toFixed(2)}" />`;
-            }
-        }
-        if (isFinite(gMinX)) {
-            const gPad = 10 / editor.zoom;
-            html += `<rect class="selection-group-box" x="${(gMinX - gPad).toFixed(1)}" y="${(gMinY - gPad).toFixed(1)}" width="${(gMaxX - gMinX + gPad * 2).toFixed(1)}" height="${(gMaxY - gMinY + gPad * 2).toFixed(1)}" rx="6" style="stroke-width:${(1.6 / editor.zoom).toFixed(2)}" />`;
-        }
-    }
-
-    // Cadre de sélection (marquee)
-    if (editor.drag?.kind === 'marquee') {
-        const m = editor.drag;
-        const rx = Math.min(m.startX, m.currX);
-        const ry = Math.min(m.startY, m.currY);
-        const rw = Math.abs(m.currX - m.startX);
-        const rh = Math.abs(m.currY - m.startY);
-        html += `<rect class="marquee-box" x="${rx.toFixed(1)}" y="${ry.toFixed(1)}" width="${rw.toFixed(1)}" height="${rh.toFixed(1)}" style="stroke-width:${(1.4 / editor.zoom).toFixed(2)}" />`;
-    }
-
-    // Guides d'alignement et halo d'aimantation port-à-port
-    for (const g of editor.activeGuides) {
-        if (g.type === 'v') {
-            html += `<line class="snap-guide" x1="${g.x.toFixed(1)}" y1="${g.y1.toFixed(1)}" x2="${g.x.toFixed(1)}" y2="${g.y2.toFixed(1)}" />`;
-        } else {
-            html += `<line class="snap-guide" x1="${g.x1.toFixed(1)}" y1="${g.y.toFixed(1)}" x2="${g.x2.toFixed(1)}" y2="${g.y.toFixed(1)}" />`;
-        }
-    }
-    if (editor.snappedPort) {
-        html += `<circle class="snap-port-halo" cx="${editor.snappedPort.x.toFixed(1)}" cy="${editor.snappedPort.y.toFixed(1)}" r="10" />`;
-        if (editor.snappedPort.alignedAngle !== null && editor.snappedPort.alignedAngle !== undefined) {
-            const bx = editor.snappedPort.x + 26 / editor.zoom;
-            const by = editor.snappedPort.y - 18 / editor.zoom;
-            const s = 1 / editor.zoom;
-            html += `<g transform="translate(${bx.toFixed(1)}, ${by.toFixed(1)}) scale(${s.toFixed(3)})">
-                <rect class="angle-badge-bg is-snapped" x="-24" y="-11" width="48" height="20" rx="10" />
-                <text class="angle-badge-text" x="0" y="3">${editor.snappedPort.alignedAngle}°</text>
-            </g>`;
-        }
-    }
-
-    if (editor.rotateFeedback) {
-        const rf = editor.rotateFeedback;
-        const s = 1 / editor.zoom;
-        html += `<g transform="translate(${(rf.x + 28 * s).toFixed(1)}, ${(rf.y - 18 * s).toFixed(1)}) scale(${s.toFixed(3)})">
-            <rect class="angle-badge-bg ${rf.snapped ? 'is-snapped' : ''}" x="-24" y="-11" width="48" height="20" rx="10" />
-            <text class="angle-badge-text" x="0" y="3">${rf.angle}°</text>
-        </g>`;
-    }
-
-    if (editor.scaleFeedback) {
-        const sf = editor.scaleFeedback;
-        const s = 1 / editor.zoom;
-        html += `<g transform="translate(${(sf.x + 28 * s).toFixed(1)}, ${(sf.y - 18 * s).toFixed(1)}) scale(${s.toFixed(3)})">
-            <rect class="angle-badge-bg" x="-26" y="-11" width="52" height="20" rx="10" />
-            <text class="angle-badge-text" x="0" y="3">${sf.pct}%</text>
-        </g>`;
-    }
-
-    layerOverlay.innerHTML = html;
-}
-
-function updateHistoryButtons() {
-    btnUndo.disabled = !store.canUndo();
-    btnRedo.disabled = !store.canRedo();
-}
-
-// =========================================================================
-// CHANGEMENT D'OUTIL
-// =========================================================================
-const TOOL_HINTS = {
-    select: 'Sélection · Glissez pour cadrer, Shift+clic multi-sélection, Espace/clic droit pour déplacer la vue',
-    wire: 'Fil électrique · Cliquez sur deux bornes (ou deux points)',
-    hose: 'Tuyau de chimie · Cliquez sur deux embouts (ou deux points)',
-    label: 'Légende · Cliquez sur le schéma pour placer une annotation'
-};
-
-// =========================================================================
-// BOÎTES ENGLOBANTES & UTILITAIRES DE MULTI-SÉLECTION
+// BOÎTES ENGLOBANTES & UTILITAIRES GÉOMÉTRIQUES
 // =========================================================================
 function getElementWorldBounds(kind, el) {
     if (kind === 'item') {
@@ -593,39 +249,6 @@ function findElementsInRect(x1, y1, x2, y2) {
         if (b && rectsIntersect(rect, b)) found.push({ kind: 'label', id: lbl.id });
     }
     return found;
-}
-
-function startMultiDrag(pt) {
-    const entries = store.getSelectedElements();
-    const origItems = [];
-    const origLabels = [];
-    const origConns = [];
-    for (const { kind, el } of entries) {
-        if (kind === 'item') {
-            origItems.push({ el, x: el.x, y: el.y });
-        } else if (kind === 'label') {
-            origLabels.push({ el, x: el.x, y: el.y, targetX: el.targetX, targetY: el.targetY });
-        } else if (kind === 'connector') {
-            origConns.push({
-                el,
-                startFree: !el.start.itemId,
-                endFree: !el.end.itemId,
-                startX: el.start.x,
-                startY: el.start.y,
-                endX: el.end.x,
-                endY: el.end.y
-            });
-        }
-    }
-    return {
-        kind: 'move-multi',
-        startX: pt.x,
-        startY: pt.y,
-        origItems,
-        origLabels,
-        origConns,
-        historyPushed: false
-    };
 }
 
 function alignSelectedElements(mode) {
@@ -701,8 +324,231 @@ function rotateItemBy(item, deltaDeg) {
     item.x = Math.round(item.x + (pivot.x - newCenter.x));
     item.y = Math.round(item.y + (pivot.y - newCenter.y));
     renderScene();
-    renderInspector();
+    inspector.renderInspector();
 }
+
+// =========================================================================
+// RENDU DE LA SCÈNE & OVERLAY
+// =========================================================================
+function updateHistoryButtons() {
+    btnUndo.disabled = !store.canUndo();
+    btnRedo.disabled = !store.canRedo();
+}
+
+function renderScene() {
+    layerItems.innerHTML = store.scene.items.map(item => {
+        const def = getCatalogItem(item.type);
+        if (!def) return '';
+        const scale = item.scale ?? 1;
+        const fx = item.flipX ? -scale : scale;
+        const transform = `translate(${item.x}, ${item.y}) rotate(${item.rotation ?? 0}) scale(${fx}, ${scale})`;
+        return `<g class="scene-item" data-kind="item" data-id="${item.id}" transform="${transform}">${def.render(item.props || {}, item.id, { rotation: item.rotation ?? 0, flipX: !!item.flipX })}</g>`;
+    }).join('');
+
+    const renderConnectorGroup = (conn) => {
+        const { p1, p2 } = resolveConnectorEndpoints(conn, store.scene.items);
+        const d = buildConnectorPath(p1, p2, conn.mode, conn.bend, conn.bendX || 0);
+        const hitStroke = `<path d="${d}" fill="none" stroke="transparent" stroke-width="18" />`;
+        return `<g class="scene-connector" data-kind="connector" data-id="${conn.id}">${hitStroke}${renderConnectorSVG(conn, store.scene.items)}</g>`;
+    };
+
+    if (layerConnectorsBack) {
+        layerConnectorsBack.innerHTML = store.scene.connectors
+            .filter(conn => conn.behindItems)
+            .map(renderConnectorGroup)
+            .join('');
+    }
+    layerConnectors.innerHTML = store.scene.connectors
+        .filter(conn => !conn.behindItems)
+        .map(renderConnectorGroup)
+        .join('');
+
+    layerLabels.innerHTML = store.scene.labels.map(lbl => {
+        return `<g class="scene-label" data-kind="label" data-id="${lbl.id}">${renderLabelSVG(lbl)}</g>`;
+    }).join('');
+
+    renderOverlay();
+    updateHistoryButtons();
+    io.updateDocumentStatus();
+    io.persistSession();
+}
+
+function renderOverlay() {
+    let html = '';
+
+    if (editor.tool === 'wire' || editor.tool === 'hose') {
+        const targetType = editor.tool === 'wire' ? 'elec' : 'hose';
+        const isHose = targetType === 'hose';
+        for (const item of store.scene.items) {
+            for (const a of getWorldAnchors(item)) {
+                if (a.type !== targetType) continue;
+                const hot = editor.pendingConnector?.hoveredPort &&
+                    editor.pendingConnector.hoveredPort.itemId === a.itemId &&
+                    editor.pendingConnector.hoveredPort.id === a.id;
+                html += `<circle class="port-indicator ${isHose ? 'is-hose' : ''} ${hot ? 'is-hot' : ''}" cx="${a.wx.toFixed(1)}" cy="${a.wy.toFixed(1)}" r="${hot ? 9 : 6}" />`;
+            }
+        }
+    }
+
+    if (editor.pendingConnector) {
+        const pc = editor.pendingConnector;
+        const defs = editor.connectorDefaults[pc.kind] || {};
+        const mode = defs.mode || 'bezier';
+        const p1 = { x: pc.start.x, y: pc.start.y, angle: pc.startAngle ?? null };
+        const p2 = pc.hoveredPort
+            ? { x: pc.hoveredPort.wx, y: pc.hoveredPort.wy, angle: pc.hoveredPort.worldAngle ?? null }
+            : { x: pc.cursorX, y: pc.cursorY, angle: null };
+        const defaultBend = mode === 'straight' ? 0 : ((p1.angle !== null || p2.angle !== null) ? 0 : (pc.kind === 'wire' ? 40 : 30));
+        const d = buildConnectorPath(p1, p2, mode, defaultBend, 0);
+        const col = defs.color || (pc.kind === 'wire' ? '#e03131' : '#0284c7');
+        const sw = Number(defs.width) || (pc.kind === 'wire' ? 3.5 : 6);
+        html += `<path d="${d}" fill="none" stroke="${col}" stroke-width="${sw}" stroke-dasharray="6 4" opacity="0.82" pointer-events="none" />`;
+        html += `<circle cx="${p1.x.toFixed(1)}" cy="${p1.y.toFixed(1)}" r="5" fill="${col}" pointer-events="none" />`;
+    }
+
+    const selectedEntries = store.getSelectedElements();
+    if (selectedEntries.length === 1) {
+        const { kind, el } = selectedEntries[0];
+        if (kind === 'item') {
+            const def = getCatalogItem(el.type);
+            if (def) {
+                const bb = def.getBBox(el.props || {});
+                const pad = 6;
+                const scale = el.scale ?? 1;
+                const fx = el.flipX ? -scale : scale;
+                const transform = `translate(${el.x}, ${el.y}) rotate(${el.rotation ?? 0}) scale(${fx}, ${scale})`;
+                const cx = bb.x + bb.width / 2;
+                const topY = bb.y - pad;
+                const stemLen = 26 / (scale * editor.zoom);
+                const handleY = topY - stemLen;
+                const r = 7 / (scale * editor.zoom);
+                const rIcon = 3.2 / (scale * editor.zoom);
+                const sw = 1.6 / (scale * editor.zoom);
+                const hs = 8.5 / (scale * editor.zoom);
+                const hHalf = hs / 2;
+                const bx1 = bb.x - pad;
+                const by1 = topY;
+                const bx2 = bb.x + bb.width + pad;
+                const by2 = bb.y + bb.height + pad;
+                html += `<g transform="${transform}">
+                    <rect class="selection-box" x="${bx1}" y="${by1}" width="${bb.width + pad * 2}" height="${bb.height + pad * 2}" rx="4" style="stroke-width:${sw.toFixed(2)}" />
+                    <line class="rotate-stem" x1="${cx.toFixed(1)}" y1="${by1.toFixed(1)}" x2="${cx.toFixed(1)}" y2="${(handleY + r).toFixed(1)}" style="stroke-width:${sw.toFixed(2)}" />
+                    <circle class="rotate-handle" data-handle="item-rotate" cx="${cx.toFixed(1)}" cy="${handleY.toFixed(1)}" r="${r.toFixed(2)}" style="stroke-width:${sw.toFixed(2)}"><title>Glisser pour pivoter (double-clic : 0°)</title></circle>
+                    <path class="rotate-handle-icon" d="M ${(cx - rIcon).toFixed(2)},${handleY.toFixed(2)} A ${rIcon.toFixed(2)},${rIcon.toFixed(2)} 0 1,1 ${(cx + rIcon * 0.6).toFixed(2)},${(handleY + rIcon * 0.8).toFixed(2)}" style="stroke-width:${sw.toFixed(2)}" />
+                    <rect class="resize-handle is-nw" data-handle="item-resize" data-corner="nw" x="${(bx1 - hHalf).toFixed(2)}" y="${(by1 - hHalf).toFixed(2)}" width="${hs.toFixed(2)}" height="${hs.toFixed(2)}" rx="${(1.5 / (scale * editor.zoom)).toFixed(2)}" style="stroke-width:${sw.toFixed(2)}"><title>Glisser pour redimensionner</title></rect>
+                    <rect class="resize-handle is-ne" data-handle="item-resize" data-corner="ne" x="${(bx2 - hHalf).toFixed(2)}" y="${(by1 - hHalf).toFixed(2)}" width="${hs.toFixed(2)}" height="${hs.toFixed(2)}" rx="${(1.5 / (scale * editor.zoom)).toFixed(2)}" style="stroke-width:${sw.toFixed(2)}"><title>Glisser pour redimensionner</title></rect>
+                    <rect class="resize-handle is-sw" data-handle="item-resize" data-corner="sw" x="${(bx1 - hHalf).toFixed(2)}" y="${(by2 - hHalf).toFixed(2)}" width="${hs.toFixed(2)}" height="${hs.toFixed(2)}" rx="${(1.5 / (scale * editor.zoom)).toFixed(2)}" style="stroke-width:${sw.toFixed(2)}"><title>Glisser pour redimensionner</title></rect>
+                    <rect class="resize-handle is-se" data-handle="item-resize" data-corner="se" x="${(bx2 - hHalf).toFixed(2)}" y="${(by2 - hHalf).toFixed(2)}" width="${hs.toFixed(2)}" height="${hs.toFixed(2)}" rx="${(1.5 / (scale * editor.zoom)).toFixed(2)}" style="stroke-width:${sw.toFixed(2)}"><title>Glisser pour redimensionner</title></rect>
+                </g>`;
+            }
+        } else if (kind === 'connector') {
+            const { p1, p2 } = resolveConnectorEndpoints(el, store.scene.items);
+            html += `<circle class="handle-dot" data-handle="conn-start" cx="${p1.x.toFixed(1)}" cy="${p1.y.toFixed(1)}" r="6"><title>Déplacer le point de départ</title></circle>`;
+            html += `<circle class="handle-dot" data-handle="conn-end" cx="${p2.x.toFixed(1)}" cy="${p2.y.toFixed(1)}" r="6"><title>Déplacer le point d’arrivée</title></circle>`;
+            if (el.mode !== 'straight') {
+                const mid = getConnectorMidpoint(p1, p2, el.mode, el.bend, el.bendX || 0);
+                html += `<circle class="handle-dot" data-handle="conn-bend" cx="${mid.x.toFixed(1)}" cy="${mid.y.toFixed(1)}" r="5.5"><title>Glisser librement pour courber</title></circle>`;
+            }
+        } else if (kind === 'label') {
+            const m = getLabelMetrics(el);
+            html += `<circle class="handle-dot" data-handle="lbl-pos" cx="${(m.boxX - 8).toFixed(1)}" cy="${(el.y - m.fs * 0.35).toFixed(1)}" r="5"><title>Déplacer la légende (Shift : avec la pointe)</title></circle>`;
+            if (el.showLeader) {
+                html += `<circle class="handle-dot" data-handle="lbl-target" cx="${el.targetX.toFixed(1)}" cy="${el.targetY.toFixed(1)}" r="6"><title>Déplacer la pointe de la flèche</title></circle>`;
+            }
+        }
+    } else if (selectedEntries.length > 1) {
+        let gMinX = Infinity, gMinY = Infinity, gMaxX = -Infinity, gMaxY = -Infinity;
+        const swWorld = 1.4 / editor.zoom;
+        for (const { kind, el } of selectedEntries) {
+            const b = getElementWorldBounds(kind, el);
+            if (b) {
+                if (b.minX < gMinX) gMinX = b.minX;
+                if (b.minY < gMinY) gMinY = b.minY;
+                if (b.maxX > gMaxX) gMaxX = b.maxX;
+                if (b.maxY > gMaxY) gMaxY = b.maxY;
+            }
+            if (kind === 'item') {
+                const def = getCatalogItem(el.type);
+                if (!def) continue;
+                const bb = def.getBBox(el.props || {});
+                const pad = 4;
+                const scale = el.scale ?? 1;
+                const fx = el.flipX ? -scale : scale;
+                const transform = `translate(${el.x}, ${el.y}) rotate(${el.rotation ?? 0}) scale(${fx}, ${scale})`;
+                const sw = 1.4 / (scale * editor.zoom);
+                html += `<g transform="${transform}">
+                    <rect class="selection-box" x="${bb.x - pad}" y="${bb.y - pad}" width="${bb.width + pad * 2}" height="${bb.height + pad * 2}" rx="4" style="stroke-width:${sw.toFixed(2)}" />
+                </g>`;
+            } else if (kind === 'connector') {
+                const { p1, p2 } = resolveConnectorEndpoints(el, store.scene.items);
+                const d = buildConnectorPath(p1, p2, el.mode, el.bend, el.bendX || 0);
+                html += `<path d="${d}" fill="none" stroke="#2563eb" stroke-width="${((el.width || 4) + 4).toFixed(1)}" opacity="0.28" stroke-linecap="round" pointer-events="none" />`;
+            } else if (kind === 'label' && b) {
+                html += `<rect class="selection-box" x="${(b.minX - 4).toFixed(1)}" y="${(b.minY - 4).toFixed(1)}" width="${(b.maxX - b.minX + 8).toFixed(1)}" height="${(b.maxY - b.minY + 8).toFixed(1)}" rx="3" style="stroke-width:${swWorld.toFixed(2)}" />`;
+            }
+        }
+        if (isFinite(gMinX)) {
+            const gPad = 10 / editor.zoom;
+            html += `<rect class="selection-group-box" x="${(gMinX - gPad).toFixed(1)}" y="${(gMinY - gPad).toFixed(1)}" width="${(gMaxX - gMinX + gPad * 2).toFixed(1)}" height="${(gMaxY - gMinY + gPad * 2).toFixed(1)}" rx="6" style="stroke-width:${(1.6 / editor.zoom).toFixed(2)}" />`;
+        }
+    }
+
+    if (editor.drag?.kind === 'marquee') {
+        const m = editor.drag;
+        const rx = Math.min(m.startX, m.currX);
+        const ry = Math.min(m.startY, m.currY);
+        const rw = Math.abs(m.currX - m.startX);
+        const rh = Math.abs(m.currY - m.startY);
+        html += `<rect class="marquee-box" x="${rx.toFixed(1)}" y="${ry.toFixed(1)}" width="${rw.toFixed(1)}" height="${rh.toFixed(1)}" style="stroke-width:${(1.4 / editor.zoom).toFixed(2)}" />`;
+    }
+
+    for (const g of editor.activeGuides) {
+        if (g.type === 'v') {
+            html += `<line class="snap-guide" x1="${g.x.toFixed(1)}" y1="${g.y1.toFixed(1)}" x2="${g.x.toFixed(1)}" y2="${g.y2.toFixed(1)}" />`;
+        } else {
+            html += `<line class="snap-guide" x1="${g.x1.toFixed(1)}" y1="${g.y.toFixed(1)}" x2="${g.x2.toFixed(1)}" y2="${g.y.toFixed(1)}" />`;
+        }
+    }
+    if (editor.snappedPort) {
+        html += `<circle class="snap-port-halo" cx="${editor.snappedPort.x.toFixed(1)}" cy="${editor.snappedPort.y.toFixed(1)}" r="10" />`;
+        if (editor.snappedPort.alignedAngle !== null && editor.snappedPort.alignedAngle !== undefined) {
+            const bx = editor.snappedPort.x + 26 / editor.zoom;
+            const by = editor.snappedPort.y - 18 / editor.zoom;
+            const s = 1 / editor.zoom;
+            html += `<g transform="translate(${bx.toFixed(1)}, ${by.toFixed(1)}) scale(${s.toFixed(3)})">
+                <rect class="angle-badge-bg is-snapped" x="-24" y="-11" width="48" height="20" rx="10" />
+                <text class="angle-badge-text" x="0" y="3">${editor.snappedPort.alignedAngle}°</text>
+            </g>`;
+        }
+    }
+
+    if (editor.rotateFeedback) {
+        const rf = editor.rotateFeedback;
+        const s = 1 / editor.zoom;
+        html += `<g transform="translate(${(rf.x + 28 * s).toFixed(1)}, ${(rf.y - 18 * s).toFixed(1)}) scale(${s.toFixed(3)})">
+            <rect class="angle-badge-bg ${rf.snapped ? 'is-snapped' : ''}" x="-24" y="-11" width="48" height="20" rx="10" />
+            <text class="angle-badge-text" x="0" y="3">${rf.angle}°</text>
+        </g>`;
+    }
+
+    if (editor.scaleFeedback) {
+        const sf = editor.scaleFeedback;
+        const s = 1 / editor.zoom;
+        html += `<g transform="translate(${(sf.x + 28 * s).toFixed(1)}, ${(sf.y - 18 * s).toFixed(1)}) scale(${s.toFixed(3)})">
+            <rect class="angle-badge-bg" x="-26" y="-11" width="52" height="20" rx="10" />
+            <text class="angle-badge-text" x="0" y="3">${sf.pct}%</text>
+        </g>`;
+    }
+
+    layerOverlay.innerHTML = html;
+}
+
+const TOOL_HINTS = {
+    select: 'Sélection · Glissez pour cadrer, Shift+clic multi-sélection, Espace/clic droit pour déplacer la vue',
+    wire: 'Fil électrique · Cliquez sur deux bornes pour tracer en chaîne (Échap pour quitter)',
+    hose: 'Tuyau de chimie · Cliquez sur deux embouts pour tracer en chaîne (Échap pour quitter)',
+    label: 'Légende · Cliquez sur le schéma pour placer une annotation'
+};
 
 function setTool(tool) {
     editor.tool = tool;
@@ -716,1844 +562,13 @@ function setTool(tool) {
     renderOverlay();
 }
 
-// =========================================================================
-// MENU CONTEXTUEL (CLIC DROIT COURT SANS DRAG)
-// =========================================================================
-const contextMenuEl = document.createElement('div');
-contextMenuEl.className = 'schemas-context-menu';
-contextMenuEl.setAttribute('role', 'menu');
-contextMenuEl.hidden = true;
-document.body.appendChild(contextMenuEl);
-
-function closeContextMenu() {
-    if (!contextMenuEl.hidden) {
-        contextMenuEl.hidden = true;
-        contextMenuEl.innerHTML = '';
-    }
-}
-
-document.addEventListener('pointerdown', (e) => {
-    if (!contextMenuEl.hidden && !contextMenuEl.contains(e.target)) {
-        closeContextMenu();
-    }
-});
-window.addEventListener('blur', closeContextMenu);
-window.addEventListener('resize', closeContextMenu);
-
-function handleCopySelection() {
-    const n = store.copySelected();
-    if (!n) return false;
-    notify(n > 1 ? `${n} éléments copiés.` : 'Élément copié.');
-    return true;
-}
-
-function handleCutSelection() {
-    const n = store.cutSelected();
-    if (!n) return false;
-    renderScene();
-    renderInspector();
-    notify(n > 1 ? `${n} éléments coupés.` : 'Élément coupé.');
-    return true;
-}
-
-function handlePasteSelection(atPoint = null) {
-    const created = store.pasteClipboard(atPoint ? { atPoint } : {});
-    if (!created || created.length === 0) return false;
-    renderScene();
-    renderInspector();
-    notify(created.length > 1 ? `${created.length} éléments collés.` : 'Élément collé.');
-    return true;
-}
-
-function openContextMenu(clientX, clientY, hitEl) {
-    const scenePt = clientToScene(clientX, clientY);
-    if (hitEl) {
-        const kind = hitEl.dataset.kind;
-        const id = hitEl.dataset.id;
-        if (!store.isSelected(kind, id)) {
-            store.selection = { kind, id };
-            renderOverlay();
-            renderInspector();
-        }
-    }
-
-    const entries = store.getSelectedElements();
-    const actions = [];
-
-    if (hitEl && entries.length > 0) {
-        const isSingleItem = entries.length === 1 && entries[0].kind === 'item';
-        const hasItems = entries.some(en => en.kind === 'item');
-        const singleItem = isSingleItem ? entries[0].el : null;
-
-        actions.push({ label: 'Copier', icon: 'fa-copy', kbd: 'Ctrl+C', onClick: () => handleCopySelection() });
-        actions.push({ label: 'Couper', icon: 'fa-scissors', kbd: 'Ctrl+X', onClick: () => handleCutSelection() });
-        actions.push({ label: 'Dupliquer', icon: 'fa-clone', kbd: 'Ctrl+D', onClick: () => { store.duplicateSelected(); renderScene(); renderInspector(); } });
-
-        if (isSingleItem) {
-            actions.push({ divider: true });
-            actions.push({ label: 'Pivoter −90°', icon: 'fa-rotate-left', onClick: () => rotateItemBy(singleItem, -90) });
-            actions.push({ label: 'Pivoter +90°', icon: 'fa-rotate-right', onClick: () => rotateItemBy(singleItem, 90) });
-            actions.push({
-                label: 'Inverser horizontalement',
-                icon: 'fa-left-right',
-                onClick: () => {
-                    store.pushHistory();
-                    singleItem.flipX = !singleItem.flipX;
-                    renderScene();
-                    renderInspector();
-                }
-            });
-            actions.push({ divider: true });
-            actions.push({ label: 'Premier plan', icon: 'fa-angles-up', onClick: () => { store.moveItemZOrder(singleItem.id, 'front'); renderScene(); } });
-            actions.push({ label: 'Avancer d’un plan', icon: 'fa-angle-up', onClick: () => { store.moveItemZOrder(singleItem.id, 'forward'); renderScene(); } });
-            actions.push({ label: 'Reculer d’un plan', icon: 'fa-angle-down', onClick: () => { store.moveItemZOrder(singleItem.id, 'backward'); renderScene(); } });
-            actions.push({ label: 'Arrière-plan', icon: 'fa-angles-down', onClick: () => { store.moveItemZOrder(singleItem.id, 'back'); renderScene(); } });
-        } else if (hasItems) {
-            actions.push({ divider: true });
-            actions.push({
-                label: 'Mettre au premier plan',
-                icon: 'fa-angles-up',
-                onClick: () => {
-                    store.pushHistory();
-                    const ids = new Set(entries.filter(en => en.kind === 'item').map(en => en.id));
-                    store.scene.items = [
-                        ...store.scene.items.filter(i => !ids.has(i.id)),
-                        ...store.scene.items.filter(i => ids.has(i.id))
-                    ];
-                    renderScene();
-                }
-            });
-            actions.push({
-                label: 'Mettre à l’arrière-plan',
-                icon: 'fa-angles-down',
-                onClick: () => {
-                    store.pushHistory();
-                    const ids = new Set(entries.filter(en => en.kind === 'item').map(en => en.id));
-                    store.scene.items = [
-                        ...store.scene.items.filter(i => ids.has(i.id)),
-                        ...store.scene.items.filter(i => !ids.has(i.id))
-                    ];
-                    renderScene();
-                }
-            });
-        }
-
-        actions.push({ divider: true });
-        actions.push({
-            label: 'Supprimer',
-            icon: 'fa-trash',
-            kbd: 'Suppr',
-            danger: true,
-            onClick: () => {
-                store.deleteSelected();
-                renderScene();
-                renderInspector();
-            }
-        });
-    } else {
-        actions.push({
-            label: 'Coller ici',
-            icon: 'fa-paste',
-            kbd: 'Ctrl+V',
-            disabled: !store.hasClipboard(),
-            onClick: () => handlePasteSelection(scenePt)
-        });
-        actions.push({
-            label: 'Tout sélectionner',
-            icon: 'fa-object-group',
-            kbd: 'Ctrl+A',
-            disabled: !hasSceneData(),
-            onClick: () => {
-                store.selectAll();
-                renderOverlay();
-                renderInspector();
-            }
-        });
-        actions.push({ divider: true });
-        actions.push({
-            label: 'Centrer / Adapter la vue',
-            icon: 'fa-expand',
-            kbd: '0',
-            onClick: () => fitViewToScene()
-        });
-    }
-
-    contextMenuEl.innerHTML = '';
-    for (const act of actions) {
-        if (act.divider) {
-            const div = document.createElement('div');
-            div.className = 'context-menu-divider';
-            contextMenuEl.appendChild(div);
-            continue;
-        }
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = `context-menu-item${act.danger ? ' is-danger' : ''}`;
-        btn.disabled = Boolean(act.disabled);
-        btn.innerHTML = `<i class="fas ${act.icon}"></i><span>${act.label}</span>${act.kbd ? `<span class="context-menu-kbd">${act.kbd}</span>` : ''}`;
-        btn.addEventListener('click', () => {
-            closeContextMenu();
-            act.onClick();
-        });
-        contextMenuEl.appendChild(btn);
-    }
-
-    contextMenuEl.hidden = false;
-    const rect = contextMenuEl.getBoundingClientRect();
-    const x = Math.min(clientX, Math.max(8, window.innerWidth - rect.width - 8));
-    const y = Math.min(clientY, Math.max(8, window.innerHeight - rect.height - 8));
-    contextMenuEl.style.left = `${x}px`;
-    contextMenuEl.style.top = `${y}px`;
-}
-
-// =========================================================================
-// ÉDITION DIRECTE DE LÉGENDE SUR LE CANVAS
-// =========================================================================
-let inlineEditorEl = null;
-
-function closeInlineLabelEditor() {
-    if (inlineEditorEl) {
-        const el = inlineEditorEl;
-        inlineEditorEl = null;
-        el.remove();
-    }
-}
-
-function openInlineLabelEditor(lbl) {
-    closeInlineLabelEditor();
-    if (!lbl) return;
-
-    const m = getLabelMetrics(lbl);
-    const left = m.boxX * editor.zoom + editor.panX - 6;
-    const top = m.boxY * editor.zoom + editor.panY - 4;
-    const fontSizePx = Math.max(11, Math.round(m.fs * editor.zoom));
-
-    const ta = document.createElement('textarea');
-    ta.className = 'inline-label-editor';
-    ta.value = lbl.text || '';
-    ta.rows = Math.max(1, m.lines.length);
-    ta.style.left = `${Math.round(left)}px`;
-    ta.style.top = `${Math.round(top)}px`;
-    ta.style.width = `${Math.max(110, Math.round(m.boxW * editor.zoom + 34))}px`;
-    ta.style.fontSize = `${fontSizePx}px`;
-    ta.style.fontWeight = lbl.bold ? 'bold' : 'normal';
-    ta.style.fontStyle = lbl.italic ? 'italic' : 'normal';
-    ta.style.textAlign = m.align;
-    ta.style.color = lbl.color || '#1e293b';
-    if (lbl.bgEnabled) ta.style.background = lbl.bgColor || '#ffffff';
-
-    let historyPushed = false;
-    ta.addEventListener('input', () => {
-        if (!historyPushed) {
-            store.pushHistory();
-            historyPushed = true;
-        }
-        lbl.text = ta.value;
-        const lines = ta.value.split('\n');
-        ta.rows = Math.max(1, lines.length);
-        const maxLen = Math.max(4, ...lines.map(l => l.length));
-        ta.style.width = `${Math.max(110, Math.round(maxLen * fontSizePx * 0.62 + 34))}px`;
-        renderScene();
-        const inspTa = inspectorBodyEl.querySelector('textarea[data-prop="text"]');
-        if (inspTa && inspTa.value !== ta.value) inspTa.value = ta.value;
-    });
-
-    ta.addEventListener('keydown', (ev) => {
-        if (ev.key === 'Escape' || (ev.key === 'Enter' && (ev.ctrlKey || ev.metaKey))) {
-            ev.preventDefault();
-            ev.stopPropagation();
-            closeInlineLabelEditor();
-        }
-    });
-
-    ta.addEventListener('blur', () => {
-        closeInlineLabelEditor();
-    });
-
-    stageEl.appendChild(ta);
-    inlineEditorEl = ta;
-    ta.focus();
-    ta.select();
-}
-
-// =========================================================================
-// INTERACTIONS SOURIS / POINTEUR SUR LE CANVAS SVG
-// =========================================================================
-svgEl.addEventListener('contextmenu', (e) => e.preventDefault());
-
-svgEl.addEventListener('pointerdown', (e) => {
-    closeContextMenu();
-    closeInlineLabelEditor();
-
-    // Pan avec clic milieu, clic droit (drag >= 4px ; clic court = menu contextuel) ou Espace + clic gauche
-    if (e.button === 1 || e.button === 2 || (e.button === 0 && editor.spaceDown)) {
-        e.preventDefault();
-        const isRightClick = e.button === 2;
-        if (!isRightClick) stageEl.classList.add('is-panning');
-        editor.drag = {
-            kind: 'pan',
-            isRightClick,
-            moved: false,
-            hitEl: isRightClick ? e.target.closest('[data-kind][data-id]') : null,
-            startClientX: e.clientX,
-            startClientY: e.clientY,
-            origPanX: editor.panX,
-            origPanY: editor.panY
-        };
-        svgEl.setPointerCapture(e.pointerId);
-        return;
-    }
-
-    if (e.button !== 0) return;
-    const pt = clientToScene(e.clientX, e.clientY);
-
-    // 1. Outil Fil électrique ou Tuyau
-    if (editor.tool === 'wire' || editor.tool === 'hose') {
-        const portType = editor.tool === 'wire' ? 'elec' : 'hose';
-        const nearPort = editor.snapEnabled ? findNearestConnectorPort(pt.x, pt.y, store.scene.items, portType) : null;
-        const snappedPoint = nearPort
-            ? { x: nearPort.wx, y: nearPort.wy, itemId: nearPort.itemId, anchorId: nearPort.id }
-            : { x: Math.round(pt.x), y: Math.round(pt.y) };
-
-        if (!editor.pendingConnector) {
-            editor.pendingConnector = {
-                kind: editor.tool,
-                start: snappedPoint,
-                startAngle: nearPort ? (nearPort.worldAngle ?? null) : null,
-                cursorX: snappedPoint.x,
-                cursorY: snappedPoint.y,
-                hoveredPort: nearPort
-            };
-            renderOverlay();
-        } else {
-            store.addConnector(editor.tool, editor.pendingConnector.start, snappedPoint);
-            editor.pendingConnector = null;
-            setTool('select');
-            renderScene();
-            renderInspector();
-        }
-        return;
-    }
-
-    // 2. Outil Légende
-    if (editor.tool === 'label') {
-        e.preventDefault();
-        const lbl = store.addLabel(pt.x + 55, pt.y - 25, 'Légende', pt.x, pt.y);
-        setTool('select');
-        renderScene();
-        renderInspector();
-        requestAnimationFrame(() => openInlineLabelEditor(lbl));
-        return;
-    }
-
-    // 3. Outil Sélection : vérifier d'abord les poignées
-    const handleEl = e.target.closest('[data-handle]');
-    if (handleEl && store.selection) {
-        const handleType = handleEl.dataset.handle;
-        store.pushHistory();
-        if (handleType === 'item-rotate' && store.selection.kind === 'item') {
-            const item = store.getSelectedElement();
-            const def = item ? getCatalogItem(item.type) : null;
-            if (item && def) {
-                const bb = def.getBBox(item.props || {});
-                const cx = bb.x + bb.width / 2;
-                const cy = bb.y + bb.height / 2;
-                const pivotWorld = localToWorld(item, cx, cy);
-                editor.drag = {
-                    kind: 'rotate-item',
-                    id: item.id,
-                    localCenterX: cx,
-                    localCenterY: cy,
-                    pivotX: pivotWorld.x,
-                    pivotY: pivotWorld.y
-                };
-                svgEl.setPointerCapture(e.pointerId);
-                return;
-            }
-        }
-        if (handleType === 'item-resize' && store.selection.kind === 'item') {
-            const item = store.getSelectedElement();
-            const def = item ? getCatalogItem(item.type) : null;
-            if (item && def) {
-                const bb = def.getBBox(item.props || {});
-                const pad = 6;
-                const corner = handleEl.dataset.corner || 'se';
-                const bx1 = bb.x - pad;
-                const by1 = bb.y - pad;
-                const bx2 = bb.x + bb.width + pad;
-                const by2 = bb.y + bb.height + pad;
-                const grabLocalX = (corner === 'nw' || corner === 'sw') ? bx1 : bx2;
-                const grabLocalY = (corner === 'nw' || corner === 'ne') ? by1 : by2;
-                const oppLocalX = (corner === 'nw' || corner === 'sw') ? bx2 : bx1;
-                const oppLocalY = (corner === 'nw' || corner === 'ne') ? by2 : by1;
-                const anchorWorld = localToWorld(item, oppLocalX, oppLocalY);
-                const grabWorld = localToWorld(item, grabLocalX, grabLocalY);
-                const origDist = Math.hypot(grabWorld.x - anchorWorld.x, grabWorld.y - anchorWorld.y) || 1;
-                editor.drag = {
-                    kind: 'resize-item',
-                    id: item.id,
-                    oppLocalX,
-                    oppLocalY,
-                    anchorX: anchorWorld.x,
-                    anchorY: anchorWorld.y,
-                    ux: (grabWorld.x - anchorWorld.x) / origDist,
-                    uy: (grabWorld.y - anchorWorld.y) / origDist,
-                    origDist,
-                    origScale: item.scale ?? 1
-                };
-                svgEl.setPointerCapture(e.pointerId);
-                return;
-            }
-        }
-        const currentEl = store.getSelectedElement();
-        editor.drag = {
-            kind: 'handle',
-            handleType,
-            startX: pt.x,
-            startY: pt.y,
-            origX: currentEl?.x ?? 0,
-            origY: currentEl?.y ?? 0,
-            origTargetX: currentEl?.targetX ?? 0,
-            origTargetY: currentEl?.targetY ?? 0,
-            origBend: currentEl?.bend ?? 0,
-            origBendX: currentEl?.bendX ?? 0
-        };
-        svgEl.setPointerCapture(e.pointerId);
-        return;
-    }
-
-    // Vérifier clic sur un élément de scène
-    const hitEl = e.target.closest('[data-kind][data-id]');
-    if (hitEl) {
-        const kind = hitEl.dataset.kind;
-        const id = hitEl.dataset.id;
-
-        if (e.shiftKey) {
-            // Shift+clic : ajouter ou retirer cet élément de la sélection multiple
-            store.toggleSelection(kind, id);
-            renderInspector();
-            renderOverlay();
-            return;
-        }
-
-        const alreadyInMulti = store.selected.length > 1 && store.isSelected(kind, id);
-        if (!alreadyInMulti) {
-            store.selection = { kind, id };
-            renderInspector();
-            renderOverlay();
-        }
-
-        if (store.selected.length > 1) {
-            editor.drag = startMultiDrag(pt);
-            svgEl.setPointerCapture(e.pointerId);
-            return;
-        }
-
-        const el = store.getSelectedElement();
-        if (kind === 'item' && el) {
-            editor.drag = {
-                kind: 'move-item',
-                id,
-                offsetX: pt.x - el.x,
-                offsetY: pt.y - el.y,
-                origRotation: el.rotation ?? 0,
-                historyPushed: false
-            };
-            svgEl.setPointerCapture(e.pointerId);
-        } else if (kind === 'label' && el) {
-            if (e.detail >= 2) {
-                e.preventDefault();
-                requestAnimationFrame(() => openInlineLabelEditor(el));
-                return;
-            }
-            editor.drag = {
-                kind: 'move-label',
-                id,
-                startX: pt.x,
-                startY: pt.y,
-                origX: el.x,
-                origY: el.y,
-                origTargetX: el.targetX,
-                origTargetY: el.targetY,
-                historyPushed: false
-            };
-            svgEl.setPointerCapture(e.pointerId);
-        }
-        return;
-    }
-
-    // Clic dans le vide -> cadre de sélection multiple (avec Shift pour cumuler)
-    const baseSelection = e.shiftKey ? store.selected.map(s => ({ ...s })) : [];
-    if (!e.shiftKey) {
-        store.clearSelection();
-        renderInspector();
-    }
-    editor.drag = {
-        kind: 'marquee',
-        startX: pt.x,
-        startY: pt.y,
-        currX: pt.x,
-        currY: pt.y,
-        baseSelection
-    };
-    renderOverlay();
-    svgEl.setPointerCapture(e.pointerId);
-});
-
-svgEl.addEventListener('pointermove', (e) => {
-    const pt = clientToScene(e.clientX, e.clientY);
-
-    if (editor.pendingConnector) {
-        const portType = editor.pendingConnector.kind === 'wire' ? 'elec' : 'hose';
-        editor.pendingConnector.cursorX = pt.x;
-        editor.pendingConnector.cursorY = pt.y;
-        editor.pendingConnector.hoveredPort = editor.snapEnabled
-            ? findNearestConnectorPort(pt.x, pt.y, store.scene.items, portType)
-            : null;
-        renderOverlay();
-        return;
-    }
-
-    if (!editor.drag) return;
-
-    if (editor.drag.kind === 'pan') {
-        const dxClient = e.clientX - editor.drag.startClientX;
-        const dyClient = e.clientY - editor.drag.startClientY;
-        if (editor.drag.isRightClick && !editor.drag.moved) {
-            if (Math.hypot(dxClient, dyClient) < 4) return;
-            editor.drag.moved = true;
-            stageEl.classList.add('is-panning');
-        }
-        editor.panX = editor.drag.origPanX + dxClient;
-        editor.panY = editor.drag.origPanY + dyClient;
-        applyViewportTransform();
-        return;
-    }
-
-    if (editor.drag.kind === 'marquee') {
-        editor.drag.currX = pt.x;
-        editor.drag.currY = pt.y;
-        const inside = findElementsInRect(editor.drag.startX, editor.drag.startY, pt.x, pt.y);
-        store.setSelection([...editor.drag.baseSelection, ...inside]);
-        renderOverlay();
-        return;
-    }
-
-    if (editor.drag.kind === 'move-multi') {
-        if (!editor.drag.historyPushed) {
-            store.pushHistory();
-            editor.drag.historyPushed = true;
-        }
-        const overDelete = isOverDeleteZone(e.clientX, e.clientY);
-        drawerEl.classList.toggle('is-drop-delete', overDelete);
-        let dx = pt.x - editor.drag.startX;
-        let dy = pt.y - editor.drag.startY;
-        if (editor.snapEnabled && editor.showGrid && !e.altKey && !overDelete && editor.gridSize > 0) {
-            dx = Math.round(dx / editor.gridSize) * editor.gridSize;
-            dy = Math.round(dy / editor.gridSize) * editor.gridSize;
-        } else {
-            dx = Math.round(dx);
-            dy = Math.round(dy);
-        }
-        for (const o of editor.drag.origItems) {
-            o.el.x = o.x + dx;
-            o.el.y = o.y + dy;
-        }
-        for (const o of editor.drag.origLabels) {
-            o.el.x = o.x + dx;
-            o.el.y = o.y + dy;
-            o.el.targetX = o.targetX + dx;
-            o.el.targetY = o.targetY + dy;
-        }
-        for (const o of editor.drag.origConns) {
-            if (o.startFree) {
-                o.el.start.x = o.startX + dx;
-                o.el.start.y = o.startY + dy;
-            }
-            if (o.endFree) {
-                o.el.end.x = o.endX + dx;
-                o.el.end.y = o.endY + dy;
-            }
-        }
-        renderScene();
-        return;
-    }
-
-    if (editor.drag.kind === 'move-item') {
-        const item = store.scene.items.find(i => i.id === editor.drag.id);
-        if (!item) return;
-        if (!editor.drag.historyPushed) {
-            store.pushHistory();
-            editor.drag.historyPushed = true;
-        }
-        const overDelete = isOverDeleteZone(e.clientX, e.clientY);
-        drawerEl.classList.toggle('is-drop-delete', overDelete);
-        const rawX = pt.x - editor.drag.offsetX;
-        const rawY = pt.y - editor.drag.offsetY;
-        const snap = computeObjectSnap(item, rawX, rawY, store.scene.items, {
-            snapEnabled: editor.snapEnabled && !e.altKey && !overDelete,
-            gridSize: editor.gridSize,
-            snapToGrid: editor.showGrid,
-            baseRotation: editor.drag.origRotation
-        });
-        item.x = Math.round(snap.x);
-        item.y = Math.round(snap.y);
-        item.rotation = snap.rotation;
-        editor.activeGuides = snap.guides;
-        editor.snappedPort = snap.snappedPort;
-        renderScene();
-        syncInspectorValues();
-        return;
-    }
-
-    if (editor.drag.kind === 'rotate-item') {
-        const item = store.scene.items.find(i => i.id === editor.drag.id);
-        if (!item) return;
-        const { pivotX, pivotY, localCenterX, localCenterY } = editor.drag;
-        const rawAngle = (Math.atan2(pt.y - pivotY, pt.x - pivotX) * 180) / Math.PI + 90;
-        const res = snapRotationAngle(rawAngle, editor.snapEnabled && !e.altKey);
-        item.rotation = res.angle;
-        // Maintenir le centre visuel fixe pendant la rotation
-        const newCenter = localToWorld(item, localCenterX, localCenterY);
-        item.x = Math.round(item.x + (pivotX - newCenter.x));
-        item.y = Math.round(item.y + (pivotY - newCenter.y));
-        editor.rotateFeedback = { x: pt.x, y: pt.y, angle: res.angle, snapped: res.snapped };
-        renderScene();
-        syncInspectorValues();
-        return;
-    }
-
-    if (editor.drag.kind === 'resize-item') {
-        const item = store.scene.items.find(i => i.id === editor.drag.id);
-        if (!item) return;
-        const { anchorX, anchorY, ux, uy, origDist, origScale, oppLocalX, oppLocalY } = editor.drag;
-        const proj = (pt.x - anchorX) * ux + (pt.y - anchorY) * uy;
-        let nextScale = Math.max(0.4, Math.min(2.0, origScale * (proj / origDist)));
-        if (editor.snapEnabled && !e.altKey) {
-            nextScale = Math.round(nextScale / 0.05) * 0.05;
-        }
-        nextScale = Math.round(nextScale * 100) / 100;
-        item.scale = Math.max(0.4, Math.min(2.0, nextScale));
-        // Garder le coin opposé fixe pendant le redimensionnement
-        const newAnchor = localToWorld(item, oppLocalX, oppLocalY);
-        item.x = Math.round(item.x + (anchorX - newAnchor.x));
-        item.y = Math.round(item.y + (anchorY - newAnchor.y));
-        editor.scaleFeedback = { x: pt.x, y: pt.y, pct: Math.round(item.scale * 100) };
-        renderScene();
-        syncInspectorValues();
-        return;
-    }
-
-    if (editor.drag.kind === 'move-label') {
-        const lbl = store.scene.labels.find(l => l.id === editor.drag.id);
-        if (!lbl) return;
-        if (!editor.drag.historyPushed) {
-            store.pushHistory();
-            editor.drag.historyPushed = true;
-        }
-        drawerEl.classList.toggle('is-drop-delete', isOverDeleteZone(e.clientX, e.clientY));
-        const dx = pt.x - editor.drag.startX;
-        const dy = pt.y - editor.drag.startY;
-        lbl.x = Math.round(editor.drag.origX + dx);
-        lbl.y = Math.round(editor.drag.origY + dy);
-        // Maintenir la pointe sur la cible si Shift n'est pas enfoncé, ou déplacer tout ensemble avec Shift
-        if (e.shiftKey) {
-            lbl.targetX = Math.round(editor.drag.origTargetX + dx);
-            lbl.targetY = Math.round(editor.drag.origTargetY + dy);
-        }
-        renderScene();
-        return;
-    }
-
-    if (editor.drag.kind === 'handle') {
-        const el = store.getSelectedElement();
-        if (!el) return;
-        const h = editor.drag.handleType;
-        if (h === 'conn-start' || h === 'conn-end') {
-            const portType = el.kind === 'wire' ? 'elec' : 'hose';
-            const near = editor.snapEnabled ? findNearestConnectorPort(pt.x, pt.y, store.scene.items, portType) : null;
-            const endpoint = near
-                ? { x: near.wx, y: near.wy, itemId: near.itemId, anchorId: near.id }
-                : { x: Math.round(pt.x), y: Math.round(pt.y) };
-            if (h === 'conn-start') el.start = endpoint;
-            else el.end = endpoint;
-            editor.snappedPort = near ? { x: near.wx, y: near.wy } : null;
-            renderScene();
-        } else if (h === 'conn-bend') {
-            el.bendX = Math.round((editor.drag.origBendX || 0) + (pt.x - editor.drag.startX));
-            el.bend = Math.round((editor.drag.origBend || 0) + (pt.y - editor.drag.startY));
-            renderScene();
-            syncInspectorValues();
-        } else if (h === 'lbl-pos') {
-            const dx = pt.x - editor.drag.startX;
-            const dy = pt.y - editor.drag.startY;
-            el.x = Math.round(editor.drag.origX + dx);
-            el.y = Math.round(editor.drag.origY + dy);
-            if (e.shiftKey) {
-                el.targetX = Math.round(editor.drag.origTargetX + dx);
-                el.targetY = Math.round(editor.drag.origTargetY + dy);
-            }
-            renderScene();
-        } else if (h === 'lbl-target') {
-            el.targetX = Math.round(pt.x);
-            el.targetY = Math.round(pt.y);
-            renderScene();
-        }
-    }
-});
-
-function isOverDeleteZone(clientX, clientY) {
-    const r = drawerEl.getBoundingClientRect();
-    return clientX >= r.left && clientX <= r.right && clientY >= r.top && clientY <= r.bottom;
-}
-
-svgEl.addEventListener('pointerup', (e) => {
-    if (editor.drag) {
-        const wasRightClickMenu = editor.drag.kind === 'pan' && editor.drag.isRightClick && !editor.drag.moved;
-        const rightClickHitEl = editor.drag.hitEl;
-        const wasMarquee = editor.drag.kind === 'marquee';
-        const wasMovable = editor.drag.kind === 'move-item' || editor.drag.kind === 'move-label' || editor.drag.kind === 'move-multi';
-        const shouldDelete = wasMovable && isOverDeleteZone(e.clientX, e.clientY);
-        const historyPushed = Boolean(editor.drag.historyPushed);
-        const delCount = store.selected.length;
-
-        editor.drag = null;
-        editor.activeGuides = [];
-        editor.snappedPort = null;
-        editor.rotateFeedback = null;
-        editor.scaleFeedback = null;
-        drawerEl.classList.remove('is-drop-delete');
-        stageEl.classList.remove('is-panning');
-        try { svgEl.releasePointerCapture(e.pointerId); } catch (_) {}
-
-        if (wasRightClickMenu) {
-            openContextMenu(e.clientX, e.clientY, rightClickHitEl);
-            return;
-        }
-
-        if (shouldDelete) {
-            store.deleteSelected(historyPushed);
-            renderScene();
-            renderInspector();
-            notify(delCount > 1 ? `${delCount} éléments supprimés.` : 'Élément supprimé.');
-        } else {
-            if (wasMarquee) renderInspector();
-            renderOverlay();
-        }
-    }
-});
-
-// Double-clic : sur une légende -> édition directe sur le canvas ; sur la poignée de rotation -> réinitialiser à 0°
-svgEl.addEventListener('dblclick', (e) => {
-    let labelEl = e.target.closest('[data-kind="label"][data-id]');
-    if (!labelEl && typeof document.elementsFromPoint === 'function') {
-        for (const node of document.elementsFromPoint(e.clientX, e.clientY)) {
-            const found = node.closest?.('[data-kind="label"][data-id]');
-            if (found) { labelEl = found; break; }
-        }
-    }
-    if (labelEl) {
-        e.preventDefault();
-        store.selection = { kind: 'label', id: labelEl.dataset.id };
-        renderOverlay();
-        renderInspector();
-        const lbl = store.getSelectedElement();
-        if (lbl) openInlineLabelEditor(lbl);
-        return;
-    }
-
-    const handleEl = e.target.closest('[data-handle="item-rotate"]');
-    if (!handleEl || store.selection?.kind !== 'item') return;
-    const item = store.getSelectedElement();
-    const def = item ? getCatalogItem(item.type) : null;
-    if (!item || !def) return;
-    const bb = def.getBBox(item.props || {});
-    const cx = bb.x + bb.width / 2;
-    const cy = bb.y + bb.height / 2;
-    const pivot = localToWorld(item, cx, cy);
-    store.pushHistory();
-    item.rotation = 0;
-    const newCenter = localToWorld(item, cx, cy);
-    item.x = Math.round(item.x + (pivot.x - newCenter.x));
-    item.y = Math.round(item.y + (pivot.y - newCenter.y));
-    renderScene();
-    renderInspector();
-});
-
-svgEl.addEventListener('wheel', (e) => {
-    e.preventDefault();
-    closeContextMenu();
-    closeInlineLabelEditor();
-    const factor = e.deltaY < 0 ? 1.12 : 1 / 1.12;
-    zoomAt(factor, e.clientX, e.clientY);
-}, { passive: false });
-
-// =========================================================================
-// PANNEAU DE PROPRIÉTÉS À DROITE (INSPECTEUR)
-// =========================================================================
-function renderInspector() {
-    const entries = store.getSelectedElements();
-
-    if (entries.length === 0) {
-        inspectorTitleEl.innerHTML = '<i class="fas fa-sliders mr-1"></i> Scène';
-        inspectorBodyEl.innerHTML = `
-          <div class="prop-section">
-            <div class="prop-section-title">Affichage & Aimantation</div>
-            <div class="prop-row">
-              <label for="chkSnap">Aimantation</label>
-              <input type="checkbox" id="chkSnap" ${editor.snapEnabled ? 'checked' : ''}>
-            </div>
-            <div class="prop-row">
-              <label for="chkGrid">Grille millimétrée</label>
-              <input type="checkbox" id="chkGrid" ${editor.showGrid ? 'checked' : ''}>
-            </div>
-            <div class="prop-row">
-              <label for="chkTransparent">Fond transparent (export)</label>
-              <input type="checkbox" id="chkTransparent" ${editor.transparentExport ? 'checked' : ''}>
-            </div>
-            <div class="btn-row" style="margin-top:4px">
-              <button class="mini-btn" id="btnInspectorTable"><i class="fas fa-table"></i> ${store.scene.items.some(i => i.type === 'paillasse') ? 'Sélectionner la paillasse' : 'Ajouter une paillasse en bas'}</button>
-            </div>
-          </div>
-          <div class="prop-section">
-            <div class="prop-section-title">Raccourcis clavier</div>
-            <div class="shortcuts-list">
-              <div><kbd>V</kbd> Sélection · <kbd>W</kbd> Fil · <kbd>T</kbd> Tuyau · <kbd>L</kbd> Légende</div>
-              <div><kbd>Shift+clic</kbd> / Cadre : Multi-sélection · <kbd>Ctrl+A</kbd> Tout</div>
-              <div><kbd>M</kbd> Aimantation · <kbd>G</kbd> Grille · <kbd>Alt</kbd> Ignorer aimant</div>
-              <div><kbd>Ctrl+Z</kbd> Annuler · <kbd>Ctrl+C/X/V</kbd> Copier/Coller · <kbd>Ctrl+D</kbd> Dupliquer</div>
-              <div><kbd>Suppr</kbd> Effacer · <kbd>Ctrl+S</kbd> Sauvegarder · <kbd>Ctrl+O</kbd> Charger</div>
-              <div><kbd>Flèches</kbd> Décalage fin · <kbd>+/−/0</kbd> Zoom · <kbd>Clic droit</kbd> Menu / Vue</div>
-            </div>
-          </div>
-        `;
-        inspectorBodyEl.querySelector('#chkSnap').addEventListener('change', (ev) => {
-            editor.snapEnabled = ev.target.checked;
-            btnToggleSnap.classList.toggle('is-toggled', editor.snapEnabled);
-        });
-        inspectorBodyEl.querySelector('#chkGrid').addEventListener('change', (ev) => {
-            editor.showGrid = ev.target.checked;
-            btnToggleGrid.classList.toggle('is-toggled', editor.showGrid);
-            applyViewportTransform();
-        });
-        inspectorBodyEl.querySelector('#chkTransparent').addEventListener('change', (ev) => {
-            editor.transparentExport = ev.target.checked;
-        });
-        inspectorBodyEl.querySelector('#btnInspectorTable').addEventListener('click', addOrSelectPaillasse);
-        return;
-    }
-
-    if (entries.length > 1) {
-        renderMultiInspector(entries);
-        return;
-    }
-
-    const { kind, el } = entries[0];
-    if (kind === 'item') {
-        renderItemInspector(el);
-    } else if (kind === 'connector') {
-        renderConnectorInspector(el);
-    } else if (kind === 'label') {
-        renderLabelInspector(el);
-    }
-}
-
-function renderMultiInspector(entries) {
-    const nItems = entries.filter(e => e.kind === 'item').length;
-    const nConns = entries.filter(e => e.kind === 'connector').length;
-    const nLbls = entries.filter(e => e.kind === 'label').length;
-    const parts = [];
-    if (nItems) parts.push(`${nItems} objet${nItems > 1 ? 's' : ''}`);
-    if (nConns) parts.push(`${nConns} connecteur${nConns > 1 ? 's' : ''}`);
-    if (nLbls) parts.push(`${nLbls} légende${nLbls > 1 ? 's' : ''}`);
-
-    inspectorTitleEl.innerHTML = `<i class="fas fa-object-group mr-1"></i> ${entries.length} éléments`;
-    inspectorBodyEl.innerHTML = `
-      <div class="prop-section">
-        <div class="prop-section-title">Sélection multiple</div>
-        <div style="font-size:0.78rem; color:var(--schemas-muted)">${parts.join(' · ')}</div>
-        <div class="btn-row">
-          <button class="mini-btn" id="btnDupMulti" title="Dupliquer la sélection (Ctrl+D)"><i class="fas fa-clone"></i> Dupliquer</button>
-          <button class="mini-btn is-danger" id="btnDelMulti" title="Supprimer la sélection (Suppr)"><i class="fas fa-trash"></i> Supprimer</button>
-        </div>
-      </div>
-      ${(nItems + nLbls) >= 2 ? `
-      <div class="prop-section">
-        <div class="prop-section-title">Alignement</div>
-        <div class="btn-row">
-          <button class="mini-btn" data-align="left" title="Aligner à gauche"><i class="fas fa-align-left"></i></button>
-          <button class="mini-btn" data-align="centerX" title="Centrer horizontalement"><i class="fas fa-align-center"></i></button>
-          <button class="mini-btn" data-align="right" title="Aligner à droite"><i class="fas fa-align-right"></i></button>
-        </div>
-        <div class="btn-row">
-          <button class="mini-btn" data-align="top" title="Aligner en haut"><i class="fas fa-arrow-up-to-line"></i> Haut</button>
-          <button class="mini-btn" data-align="centerY" title="Centrer verticalement">Milieu</button>
-          <button class="mini-btn" data-align="bottom" title="Aligner en bas">Bas</button>
-        </div>
-        ${(nItems + nLbls) >= 3 ? `
-        <div class="btn-row" style="margin-top:2px">
-          <button class="mini-btn" data-distribute="horizontal" title="Espacer régulièrement horizontalement"><i class="fas fa-arrows-left-right"></i> Espacer H</button>
-          <button class="mini-btn" data-distribute="vertical" title="Espacer régulièrement verticalement"><i class="fas fa-arrows-up-down"></i> Espacer V</button>
-        </div>` : ''}
-      </div>` : ''}
-      ${nItems > 0 ? `
-      <div class="prop-section">
-        <div class="prop-section-title">Ordre des calques</div>
-        <div class="btn-row">
-          <button class="mini-btn" id="btnMultiBack"><i class="fas fa-angles-down"></i> Arrière-plan</button>
-          <button class="mini-btn" id="btnMultiFront"><i class="fas fa-angles-up"></i> Premier plan</button>
-        </div>
-      </div>` : ''}
-    `;
-
-    inspectorBodyEl.querySelector('#btnDupMulti').addEventListener('click', () => {
-        store.duplicateSelected();
-        renderScene();
-        renderInspector();
-    });
-    inspectorBodyEl.querySelector('#btnDelMulti').addEventListener('click', () => {
-        store.deleteSelected();
-        renderScene();
-        renderInspector();
-    });
-    inspectorBodyEl.querySelectorAll('[data-align]').forEach(btn => {
-        btn.addEventListener('click', () => alignSelectedElements(btn.dataset.align));
-    });
-    inspectorBodyEl.querySelectorAll('[data-distribute]').forEach(btn => {
-        btn.addEventListener('click', () => distributeSelectedElements(btn.dataset.distribute));
-    });
-    const btnBack = inspectorBodyEl.querySelector('#btnMultiBack');
-    if (btnBack) {
-        btnBack.addEventListener('click', () => {
-            store.pushHistory();
-            const ids = new Set(entries.filter(e => e.kind === 'item').map(e => e.id));
-            const moved = store.scene.items.filter(i => ids.has(i.id));
-            const rest = store.scene.items.filter(i => !ids.has(i.id));
-            store.scene.items = [...moved, ...rest];
-            renderScene();
-        });
-    }
-    const btnFront = inspectorBodyEl.querySelector('#btnMultiFront');
-    if (btnFront) {
-        btnFront.addEventListener('click', () => {
-            store.pushHistory();
-            const ids = new Set(entries.filter(e => e.kind === 'item').map(e => e.id));
-            const moved = store.scene.items.filter(i => ids.has(i.id));
-            const rest = store.scene.items.filter(i => !ids.has(i.id));
-            store.scene.items = [...rest, ...moved];
-            renderScene();
-        });
-    }
-}
-
-function renderItemInspector(item) {
-    const def = getCatalogItem(item.type);
-    if (!def) return;
-    inspectorTitleEl.innerHTML = `<i class="fas fa-flask mr-1"></i> ${def.name}`;
-
-    let specificHtml = '';
-    const schema = def.propSchema || [];
-    if (schema.length > 0) {
-        specificHtml = `<div class="prop-section"><div class="prop-section-title">Propriétés de l'objet</div>`;
-        for (const field of schema) {
-            if (field.showIf && !field.showIf(item.props || {})) continue;
-            const val = item.props?.[field.key];
-            if (field.type === 'select') {
-                const opts = field.options.map(o => `<option value="${o.value}" ${String(val) === String(o.value) ? 'selected' : ''}>${o.label}</option>`).join('');
-                specificHtml += `<div class="prop-row"><label>${field.label}</label><select class="prop-select" data-prop="${field.key}">${opts}</select></div>`;
-            } else if (field.type === 'range') {
-                specificHtml += `<div class="prop-row">
-                  <label>${field.label}</label>
-                  <div class="prop-range-wrap">
-                    <input type="range" data-prop="${field.key}" min="${field.min}" max="${field.max}" step="${field.step || 1}" value="${val ?? field.min}">
-                    <span class="prop-val" data-val-for="${field.key}">${val ?? field.min}${field.unit || ''}</span>
-                  </div>
-                </div>`;
-            } else if (field.type === 'toggle') {
-                specificHtml += `<div class="prop-row"><label>${field.label}</label><input type="checkbox" data-prop="${field.key}" ${val ? 'checked' : ''}></div>`;
-            } else if (field.type === 'text') {
-                specificHtml += `<div class="prop-row"><label>${field.label}</label><input type="text" class="prop-input" style="max-width:130px" data-prop="${field.key}" value="${escHtml(val ?? '')}" placeholder="${escHtml(field.placeholder || '')}"></div>`;
-            } else if (field.type === 'color') {
-                const swatches = (field.presets || []).map(pr =>
-                    `<button type="button" class="color-swatch ${val === pr.color ? 'is-selected' : ''}" data-color-prop="${field.key}" data-color-val="${pr.color}" style="background:${pr.color}" title="${pr.label}"></button>`
-                ).join('');
-                specificHtml += `
-                  <div>
-                    <div class="prop-row" style="margin-bottom:4px"><label>${field.label}</label>
-                      <input type="color" class="color-picker-native" data-prop="${field.key}" value="${val || '#9ad1f5'}">
-                    </div>
-                    <div class="color-swatches">${swatches}</div>
-                  </div>
-                `;
-            }
-        }
-        specificHtml += `</div>`;
-    }
-
-    inspectorBodyEl.innerHTML = `
-      <div class="prop-section">
-        <div class="btn-row">
-          <button class="mini-btn" id="btnDupEl" title="Dupliquer (Ctrl+D)"><i class="fas fa-clone"></i> Dupliquer</button>
-          <button class="mini-btn is-danger" id="btnDelEl" title="Supprimer (Suppr)"><i class="fas fa-trash"></i> Supprimer</button>
-        </div>
-        <div class="btn-row">
-          <button class="mini-btn" data-z="back" title="Arrière-plan"><i class="fas fa-angles-down"></i></button>
-          <button class="mini-btn" data-z="backward" title="Reculer"><i class="fas fa-angle-down"></i></button>
-          <button class="mini-btn" data-z="forward" title="Avancer"><i class="fas fa-angle-up"></i></button>
-          <button class="mini-btn" data-z="front" title="Premier plan"><i class="fas fa-angles-up"></i></button>
-        </div>
-      </div>
-
-      ${specificHtml}
-
-      <div class="prop-section">
-        <div class="prop-section-title">Orientation & Taille</div>
-        <div class="prop-row">
-          <label>Rotation</label>
-          <div class="prop-range-wrap">
-            <input type="range" id="inpRotation" min="-180" max="180" step="1" value="${item.rotation ?? 0}">
-            <span class="prop-val" id="valRotation">${item.rotation ?? 0}°</span>
-          </div>
-        </div>
-        <div class="btn-row">
-          <button class="mini-btn" data-rot="-90">-90°</button>
-          <button class="mini-btn" data-rot="-45">-45°</button>
-          <button class="mini-btn" data-rot="-15">-15°</button>
-          <button class="mini-btn" data-rot="0">0°</button>
-          <button class="mini-btn" data-rot="15">+15°</button>
-          <button class="mini-btn" data-rot="45">+45°</button>
-          <button class="mini-btn" data-rot="90">+90°</button>
-        </div>
-        <div class="prop-row">
-          <label>Symétrie horizontale</label>
-          <button class="mini-btn ${item.flipX ? 'is-active' : ''}" id="btnFlipX" style="flex:0 0 auto; padding:3px 10px">
-            <i class="fas fa-left-right"></i> Inverser
-          </button>
-        </div>
-        <div class="prop-row">
-          <label>Échelle</label>
-          <div class="prop-range-wrap">
-            <input type="range" id="inpScale" min="0.4" max="2.0" step="0.05" value="${item.scale ?? 1}">
-            <span class="prop-val" id="valScale">${Math.round((item.scale ?? 1) * 100)}%</span>
-          </div>
-        </div>
-      </div>
-    `;
-
-    // Actions
-    inspectorBodyEl.querySelector('#btnDupEl').addEventListener('click', () => {
-        store.duplicateSelected();
-        renderScene();
-        renderInspector();
-    });
-    inspectorBodyEl.querySelector('#btnDelEl').addEventListener('click', () => {
-        store.deleteSelected();
-        renderScene();
-        renderInspector();
-    });
-    inspectorBodyEl.querySelectorAll('[data-z]').forEach(btn => {
-        btn.addEventListener('click', () => {
-            store.moveItemZOrder(item.id, btn.dataset.z);
-            renderScene();
-        });
-    });
-
-    // Propriétés spécifiques
-    inspectorBodyEl.querySelectorAll('[data-prop]').forEach(input => {
-        const key = input.dataset.prop;
-        const field = schema.find(f => f.key === key);
-        const isContinuous = input.type === 'range' || input.type === 'text' || input.type === 'color';
-        const eventName = isContinuous ? 'input' : 'change';
-        let historyPushed = false;
-        input.addEventListener(eventName, () => {
-            const prevVal = item.props[key];
-            const newVal = input.type === 'checkbox'
-                ? input.checked
-                : (input.type === 'range' ? Number(input.value) : input.value);
-            if (prevVal === newVal) return;
-            if (!historyPushed) {
-                store.pushHistory();
-                historyPushed = isContinuous;
-            }
-            item.props[key] = newVal;
-            if (key === 'fillToRim' && newVal === true && 'liquidLevel' in item.props) {
-                item.props.liquidLevel = 100;
-            }
-            if (item.type === 'appareil-mesure' && key === 'mode') {
-                const modeDefaults = { pH: '7.00', 'σ': '125 µS/cm', 'O₂': '8.5 mg/L', '': '0.00' };
-                const prevDefault = modeDefaults[prevVal];
-                if (!item.props.display || item.props.display === prevDefault) {
-                    item.props.display = modeDefaults[newVal] ?? '0.00';
-                }
-            }
-            const valEl = inspectorBodyEl.querySelector(`[data-val-for="${key}"]`);
-            if (valEl) valEl.textContent = `${newVal}${field?.unit || ''}`;
-            renderScene();
-            // Si un showIf dépend de cette propriété (ex: level 0 <-> >0, mode, variant), re-rendre l'inspecteur sur change
-            if (eventName === 'change' || (prevVal === 0 && newVal > 0) || (prevVal > 0 && newVal === 0)) {
-                renderInspector();
-            }
-        });
-        if (isContinuous) {
-            input.addEventListener('change', () => { historyPushed = false; });
-            if (input.type === 'text') {
-                input.addEventListener('blur', () => { historyPushed = false; });
-            }
-        }
-    });
-
-    inspectorBodyEl.querySelectorAll('[data-color-prop]').forEach(btn => {
-        btn.addEventListener('click', () => {
-            store.pushHistory();
-            item.props[btn.dataset.colorProp] = btn.dataset.colorVal;
-            renderScene();
-            renderInspector();
-        });
-    });
-
-    // Rotation / Symétrie / Échelle
-    const inpRot = inspectorBodyEl.querySelector('#inpRotation');
-    const valRot = inspectorBodyEl.querySelector('#valRotation');
-    let rotHistoryPushed = false;
-    inpRot.addEventListener('input', () => {
-        if (!rotHistoryPushed) {
-            store.pushHistory();
-            rotHistoryPushed = true;
-        }
-        item.rotation = Number(inpRot.value);
-        valRot.textContent = `${item.rotation}°`;
-        renderScene();
-    });
-    inpRot.addEventListener('change', () => { rotHistoryPushed = false; });
-
-    inspectorBodyEl.querySelectorAll('[data-rot]').forEach(btn => {
-        btn.addEventListener('click', () => {
-            store.pushHistory();
-            const delta = Number(btn.dataset.rot);
-            const bb = def.getBBox(item.props || {});
-            const cx = bb.x + bb.width / 2;
-            const cy = bb.y + bb.height / 2;
-            const pivot = localToWorld(item, cx, cy);
-            item.rotation = delta === 0 ? 0 : normalizeAngle((item.rotation || 0) + delta);
-            const newCenter = localToWorld(item, cx, cy);
-            item.x = Math.round(item.x + (pivot.x - newCenter.x));
-            item.y = Math.round(item.y + (pivot.y - newCenter.y));
-            renderScene();
-            renderInspector();
-        });
-    });
-
-    inspectorBodyEl.querySelector('#btnFlipX').addEventListener('click', () => {
-        store.pushHistory();
-        item.flipX = !item.flipX;
-        renderScene();
-        renderInspector();
-    });
-
-    const inpScale = inspectorBodyEl.querySelector('#inpScale');
-    const valScale = inspectorBodyEl.querySelector('#valScale');
-    let scaleHistoryPushed = false;
-    inpScale.addEventListener('input', () => {
-        if (!scaleHistoryPushed) {
-            store.pushHistory();
-            scaleHistoryPushed = true;
-        }
-        item.scale = Number(inpScale.value);
-        valScale.textContent = `${Math.round(item.scale * 100)}%`;
-        renderScene();
-    });
-    inpScale.addEventListener('change', () => { scaleHistoryPushed = false; });
-}
-
-function renderConnectorInspector(conn) {
-    const isWire = conn.kind === 'wire';
-    inspectorTitleEl.innerHTML = isWire
-        ? '<i class="fas fa-bolt mr-1"></i> Fil électrique'
-        : '<i class="fas fa-water mr-1"></i> Tuyau de chimie';
-
-    const presets = isWire
-        ? [
-            { label: 'Rouge (+)', color: '#e03131' },
-            { label: 'Noir (COM/−)', color: '#1e1e1e' },
-            { label: 'Bleu', color: '#1971c2' },
-            { label: 'Vert', color: '#2f9e44' },
-            { label: 'Jaune', color: '#f08c00' }
-        ]
-        : [
-            { label: 'Caoutchouc brun', color: '#9c5a2d' },
-            { label: 'Eau froide', color: '#74c0fc' },
-            { label: 'Eau chaude', color: '#ff8787' },
-            { label: 'Vide / Gris', color: '#adb5bd' },
-            { label: 'Gaz', color: '#ffd43b' },
-            { label: 'Transparent', color: '#ffffff' }
-        ];
-
-    inspectorBodyEl.innerHTML = `
-      <div class="prop-section">
-        <div class="btn-row">
-          <button class="mini-btn" id="btnDupEl"><i class="fas fa-clone"></i> Dupliquer</button>
-          <button class="mini-btn is-danger" id="btnDelEl"><i class="fas fa-trash"></i> Supprimer</button>
-        </div>
-      </div>
-
-      <div class="prop-section">
-        <div class="prop-section-title">Tracé</div>
-        <div class="prop-row">
-          <label>Style de tracé</label>
-          <select class="prop-select" id="selConnMode">
-            <option value="bezier" ${conn.mode === 'bezier' ? 'selected' : ''}>Courbe souple</option>
-            <option value="orthogonal" ${conn.mode === 'orthogonal' ? 'selected' : ''}>Angles droits</option>
-          </select>
-        </div>
-        <div class="prop-row">
-          <label>Courbure / Décalage</label>
-          <div class="prop-range-wrap">
-            <input type="range" id="inpConnBend" min="-220" max="220" step="5" value="${conn.bend ?? 0}">
-            <span class="prop-val" id="valConnBend">${conn.bend ?? 0}</span>
-          </div>
-        </div>
-        <div class="btn-row">
-          <button class="mini-btn" id="btnResetBend" title="Remettre la courbure naturelle tangente aux raccords"><i class="fas fa-wand-magic-sparkles"></i> Courbure auto</button>
-        </div>
-        <div class="prop-row">
-          <label>Épaisseur</label>
-          <div class="prop-range-wrap">
-            <input type="range" id="inpConnWidth" min="2" max="14" step="0.5" value="${conn.width ?? (isWire ? 3.5 : 8)}">
-            <span class="prop-val" id="valConnWidth">${conn.width ?? (isWire ? 3.5 : 8)}</span>
-          </div>
-        </div>
-        <div class="prop-row">
-          <label>Pointillés</label>
-          <input type="checkbox" id="chkConnDashed" ${conn.dashed ? 'checked' : ''}>
-        </div>
-      </div>
-
-      <div class="prop-section">
-        <div class="prop-section-title">Couleur & Sens</div>
-        <div class="prop-row">
-          <label>Couleur</label>
-          <input type="color" class="color-picker-native" id="inpConnColor" value="${conn.color || '#e03131'}">
-        </div>
-        <div class="color-swatches">
-          ${presets.map(p => `<button type="button" class="color-swatch ${conn.color === p.color ? 'is-selected' : ''}" data-c="${p.color}" style="background:${p.color}" title="${p.label}"></button>`).join('')}
-        </div>
-        <div class="prop-row" style="margin-top:4px">
-          <label>${isWire ? 'Flèche sens courant' : 'Flèche circulation'}</label>
-          <input type="checkbox" id="chkConnArrow" ${conn.showArrow ? 'checked' : ''}>
-        </div>
-        ${conn.showArrow ? `
-        <div class="prop-row">
-          <label>Inverser la flèche</label>
-          <button class="mini-btn" id="btnReverseArrow" style="flex:0 0 auto; padding:3px 10px"><i class="fas fa-arrows-left-right"></i> Inverser</button>
-        </div>` : ''}
-      </div>
-    `;
-
-    inspectorBodyEl.querySelector('#btnDupEl').addEventListener('click', () => { store.duplicateSelected(); renderScene(); renderInspector(); });
-    inspectorBodyEl.querySelector('#btnDelEl').addEventListener('click', () => { store.deleteSelected(); renderScene(); renderInspector(); });
-
-    inspectorBodyEl.querySelector('#selConnMode').addEventListener('change', (ev) => {
-        store.pushHistory();
-        conn.mode = ev.target.value;
-        renderScene();
-    });
-    const inpBend = inspectorBodyEl.querySelector('#inpConnBend');
-    let bendHistoryPushed = false;
-    inpBend.addEventListener('input', () => {
-        if (!bendHistoryPushed) {
-            store.pushHistory();
-            bendHistoryPushed = true;
-        }
-        conn.bend = Number(inpBend.value);
-        inspectorBodyEl.querySelector('#valConnBend').textContent = conn.bend;
-        renderScene();
-    });
-    inpBend.addEventListener('change', () => { bendHistoryPushed = false; });
-
-    inspectorBodyEl.querySelector('#btnResetBend').addEventListener('click', () => {
-        store.pushHistory();
-        conn.bend = 0;
-        conn.bendX = 0;
-        renderScene();
-        renderInspector();
-    });
-
-    const inpWidth = inspectorBodyEl.querySelector('#inpConnWidth');
-    let widthHistoryPushed = false;
-    inpWidth.addEventListener('input', () => {
-        if (!widthHistoryPushed) {
-            store.pushHistory();
-            widthHistoryPushed = true;
-        }
-        conn.width = Number(inpWidth.value);
-        inspectorBodyEl.querySelector('#valConnWidth').textContent = conn.width;
-        renderScene();
-    });
-    inpWidth.addEventListener('change', () => { widthHistoryPushed = false; });
-
-    inspectorBodyEl.querySelector('#chkConnDashed').addEventListener('change', (ev) => {
-        store.pushHistory();
-        conn.dashed = ev.target.checked;
-        renderScene();
-    });
-
-    const inpColor = inspectorBodyEl.querySelector('#inpConnColor');
-    let colorHistoryPushed = false;
-    inpColor.addEventListener('input', () => {
-        if (!colorHistoryPushed) {
-            store.pushHistory();
-            colorHistoryPushed = true;
-        }
-        conn.color = inpColor.value;
-        renderScene();
-    });
-    inpColor.addEventListener('change', () => { colorHistoryPushed = false; renderInspector(); });
-
-    inspectorBodyEl.querySelectorAll('[data-c]').forEach(btn => {
-        btn.addEventListener('click', () => {
-            store.pushHistory();
-            conn.color = btn.dataset.c;
-            renderScene();
-            renderInspector();
-        });
-    });
-
-    inspectorBodyEl.querySelector('#chkConnArrow').addEventListener('change', (ev) => {
-        store.pushHistory();
-        conn.showArrow = ev.target.checked;
-        renderScene();
-        renderInspector();
-    });
-
-    const btnRev = inspectorBodyEl.querySelector('#btnReverseArrow');
-    if (btnRev) {
-        btnRev.addEventListener('click', () => {
-            store.pushHistory();
-            conn.reverseArrow = !conn.reverseArrow;
-            renderScene();
-        });
-    }
-}
-
-const LABEL_SYMBOLS = [
-    { ch: '₀', title: 'Indice 0' },
-    { ch: '₁', title: 'Indice 1' },
-    { ch: '₂', title: 'Indice 2' },
-    { ch: '₃', title: 'Indice 3' },
-    { ch: '₄', title: 'Indice 4' },
-    { ch: '₅', title: 'Indice 5' },
-    { ch: '₆', title: 'Indice 6' },
-    { ch: '₇', title: 'Indice 7' },
-    { ch: '₈', title: 'Indice 8' },
-    { ch: '₉', title: 'Indice 9' },
-    { ch: '⁺', title: 'Charge +' },
-    { ch: '⁻', title: 'Charge −' },
-    { ch: '²', title: 'Exposant 2' },
-    { ch: '³', title: 'Exposant 3' },
-    { ch: '⁻¹', title: 'Exposant −1 (ex. mol·L⁻¹)' },
-    { ch: '°', title: 'Degré' },
-    { ch: '°C', title: 'Degré Celsius' },
-    { ch: 'µ', title: 'Micro (µ)' },
-    { ch: 'Ω', title: 'Ohm (Ω)' },
-    { ch: 'σ', title: 'Conductivité (σ)' },
-    { ch: 'λ', title: 'Longueur d’onde (λ)' },
-    { ch: 'Δ', title: 'Variation (Δ)' },
-    { ch: 'θ', title: 'Angle / Température (θ)' },
-    { ch: 'α', title: 'Alpha (α)' },
-    { ch: '±', title: 'Plus ou moins (±)' },
-    { ch: '≈', title: 'Environ égal (≈)' },
-    { ch: '×', title: 'Multiplication (×)' },
-    { ch: '·', title: 'Point médian (mol·L⁻¹)' },
-    { ch: '→', title: 'Flèche réaction' },
-    { ch: '⇌', title: 'Équilibre chimique' },
-    { ch: '↑', title: 'Dégagement gazeux (↑)' },
-    { ch: '↓', title: 'Précipité (↓)' }
-];
-
-function renderLabelInspector(lbl) {
-    inspectorTitleEl.innerHTML = '<i class="fas fa-font mr-1"></i> Légende';
-    const align = lbl.align === 'center' || lbl.align === 'right' ? lbl.align : 'left';
-    const leaderStyle = lbl.leaderStyle === 'elbow' ? 'elbow' : 'straight';
-    const symbolButtons = LABEL_SYMBOLS.map(s =>
-        `<button type="button" class="symbol-btn" data-symbol="${s.ch}" title="${s.title}">${s.ch}</button>`
-    ).join('');
-    inspectorBodyEl.innerHTML = `
-      <div class="prop-section">
-        <div class="btn-row">
-          <button class="mini-btn" id="btnDupEl"><i class="fas fa-clone"></i> Dupliquer</button>
-          <button class="mini-btn is-danger" id="btnDelEl"><i class="fas fa-trash"></i> Supprimer</button>
-        </div>
-      </div>
-      <div class="prop-section">
-        <div class="prop-section-title">Texte</div>
-        <textarea class="prop-textarea" data-prop="text">${escHtml(lbl.text || '')}</textarea>
-        <div class="symbol-palette" aria-label="Symboles scientifiques">${symbolButtons}</div>
-        <div class="prop-row">
-          <label>Taille police</label>
-          <div class="prop-range-wrap">
-            <input type="range" id="inpFontSize" min="10" max="36" step="1" value="${lbl.fontSize ?? 16}">
-            <span class="prop-val" id="valFontSize">${lbl.fontSize ?? 16}px</span>
-          </div>
-        </div>
-        <div class="prop-row">
-          <label>Couleur</label>
-          <input type="color" class="color-picker-native" id="inpLblColor" value="${lbl.color || '#1e293b'}">
-        </div>
-        <div class="btn-row">
-          <button class="mini-btn ${lbl.bold ? 'is-active' : ''}" id="btnBold"><i class="fas fa-bold"></i> Gras</button>
-          <button class="mini-btn ${lbl.italic ? 'is-active' : ''}" id="btnItalic"><i class="fas fa-italic"></i> Italique</button>
-        </div>
-        <div class="btn-row">
-          <button class="mini-btn ${align === 'left' ? 'is-active' : ''}" data-lbl-align="left" title="Aligner à gauche"><i class="fas fa-align-left"></i></button>
-          <button class="mini-btn ${align === 'center' ? 'is-active' : ''}" data-lbl-align="center" title="Centrer"><i class="fas fa-align-center"></i></button>
-          <button class="mini-btn ${align === 'right' ? 'is-active' : ''}" data-lbl-align="right" title="Aligner à droite"><i class="fas fa-align-right"></i></button>
-        </div>
-      </div>
-      <div class="prop-section">
-        <div class="prop-section-title">Étiquette (Fond & Cadre)</div>
-        <div class="prop-row">
-          <label for="chkLblBg">Fond</label>
-          <div style="display:flex; align-items:center; gap:6px">
-            ${lbl.bgEnabled ? `<input type="color" class="color-picker-native" id="inpLblBgColor" value="${lbl.bgColor || '#ffffff'}" title="Couleur du fond">` : ''}
-            <input type="checkbox" id="chkLblBg" ${lbl.bgEnabled ? 'checked' : ''}>
-          </div>
-        </div>
-        <div class="prop-row">
-          <label for="chkLblBorder">Cadre</label>
-          <input type="checkbox" id="chkLblBorder" ${lbl.borderEnabled ? 'checked' : ''}>
-        </div>
-      </div>
-      <div class="prop-section">
-        <div class="prop-section-title">Ligne de rappel</div>
-        <div class="prop-row">
-          <label for="chkLeader">Afficher la ligne</label>
-          <input type="checkbox" id="chkLeader" ${lbl.showLeader ? 'checked' : ''}>
-        </div>
-        ${lbl.showLeader ? `
-        <div class="prop-row">
-          <label for="selLeaderStyle">Style</label>
-          <select class="prop-select" id="selLeaderStyle">
-            <option value="straight" ${leaderStyle === 'straight' ? 'selected' : ''}>Droite</option>
-            <option value="elbow" ${leaderStyle === 'elbow' ? 'selected' : ''}>Coudée</option>
-          </select>
-        </div>
-        <div class="prop-row">
-          <label for="chkArrowHead">Embout flèche</label>
-          <input type="checkbox" id="chkArrowHead" ${lbl.arrowHead ? 'checked' : ''}>
-        </div>` : ''}
-      </div>
-    `;
-
-    inspectorBodyEl.querySelector('#btnDupEl').addEventListener('click', () => { store.duplicateSelected(); renderScene(); renderInspector(); });
-    inspectorBodyEl.querySelector('#btnDelEl').addEventListener('click', () => { store.deleteSelected(); renderScene(); renderInspector(); });
-
-    const ta = inspectorBodyEl.querySelector('textarea[data-prop="text"]');
-    let taHistoryPushed = false;
-    ta.addEventListener('input', () => {
-        if (!taHistoryPushed) {
-            store.pushHistory();
-            taHistoryPushed = true;
-        }
-        lbl.text = ta.value;
-        renderScene();
-    });
-    ta.addEventListener('change', () => { taHistoryPushed = false; });
-    ta.addEventListener('blur', () => { taHistoryPushed = false; });
-
-    inspectorBodyEl.querySelectorAll('.symbol-btn').forEach(btn => {
-        btn.addEventListener('mousedown', (ev) => ev.preventDefault());
-        btn.addEventListener('click', () => {
-            const sym = btn.dataset.symbol || '';
-            const start = ta.selectionStart ?? ta.value.length;
-            const end = ta.selectionEnd ?? ta.value.length;
-            store.pushHistory();
-            taHistoryPushed = false;
-            ta.value = ta.value.slice(0, start) + sym + ta.value.slice(end);
-            lbl.text = ta.value;
-            renderScene();
-            ta.focus();
-            const pos = start + sym.length;
-            ta.setSelectionRange(pos, pos);
-        });
-    });
-
-    const inpFs = inspectorBodyEl.querySelector('#inpFontSize');
-    let fsHistoryPushed = false;
-    inpFs.addEventListener('input', () => {
-        if (!fsHistoryPushed) {
-            store.pushHistory();
-            fsHistoryPushed = true;
-        }
-        lbl.fontSize = Number(inpFs.value);
-        inspectorBodyEl.querySelector('#valFontSize').textContent = `${lbl.fontSize}px`;
-        renderScene();
-    });
-    inpFs.addEventListener('change', () => { fsHistoryPushed = false; });
-
-    const inpCol = inspectorBodyEl.querySelector('#inpLblColor');
-    let colHistoryPushed = false;
-    inpCol.addEventListener('input', () => {
-        if (!colHistoryPushed) {
-            store.pushHistory();
-            colHistoryPushed = true;
-        }
-        lbl.color = inpCol.value;
-        renderScene();
-    });
-    inpCol.addEventListener('change', () => { colHistoryPushed = false; });
-
-    inspectorBodyEl.querySelector('#btnBold').addEventListener('click', () => {
-        store.pushHistory();
-        lbl.bold = !lbl.bold;
-        renderScene();
-        renderInspector();
-    });
-    inspectorBodyEl.querySelector('#btnItalic').addEventListener('click', () => {
-        store.pushHistory();
-        lbl.italic = !lbl.italic;
-        renderScene();
-        renderInspector();
-    });
-    inspectorBodyEl.querySelectorAll('[data-lbl-align]').forEach(btn => {
-        btn.addEventListener('click', () => {
-            if (lbl.align === btn.dataset.lblAlign) return;
-            store.pushHistory();
-            lbl.align = btn.dataset.lblAlign;
-            renderScene();
-            renderInspector();
-        });
-    });
-
-    inspectorBodyEl.querySelector('#chkLblBg').addEventListener('change', (ev) => {
-        store.pushHistory();
-        lbl.bgEnabled = ev.target.checked;
-        if (lbl.bgEnabled && !lbl.bgColor) lbl.bgColor = '#ffffff';
-        renderScene();
-        renderInspector();
-    });
-    const inpBgCol = inspectorBodyEl.querySelector('#inpLblBgColor');
-    if (inpBgCol) {
-        let bgColHistoryPushed = false;
-        inpBgCol.addEventListener('input', () => {
-            if (!bgColHistoryPushed) {
-                store.pushHistory();
-                bgColHistoryPushed = true;
-            }
-            lbl.bgColor = inpBgCol.value;
-            renderScene();
-        });
-        inpBgCol.addEventListener('change', () => { bgColHistoryPushed = false; });
-    }
-    inspectorBodyEl.querySelector('#chkLblBorder').addEventListener('change', (ev) => {
-        store.pushHistory();
-        lbl.borderEnabled = ev.target.checked;
-        renderScene();
-    });
-
-    inspectorBodyEl.querySelector('#chkLeader').addEventListener('change', (ev) => {
-        store.pushHistory();
-        lbl.showLeader = ev.target.checked;
-        renderScene();
-        renderInspector();
-    });
-    const selLeaderStyle = inspectorBodyEl.querySelector('#selLeaderStyle');
-    if (selLeaderStyle) {
-        selLeaderStyle.addEventListener('change', (ev) => {
-            store.pushHistory();
-            lbl.leaderStyle = ev.target.value;
-            renderScene();
-        });
-    }
-    const chkAh = inspectorBodyEl.querySelector('#chkArrowHead');
-    if (chkAh) {
-        chkAh.addEventListener('change', (ev) => {
-            store.pushHistory();
-            lbl.arrowHead = ev.target.checked;
-            renderScene();
-        });
-    }
-}
-
-function syncInspectorValues() {
-    const el = store.getSelectedElement();
-    if (!el) return;
-    if (store.selection?.kind === 'connector') {
-        const inpBend = inspectorBodyEl.querySelector('#inpConnBend');
-        const valBend = inspectorBodyEl.querySelector('#valConnBend');
-        if (inpBend) inpBend.value = el.bend;
-        if (valBend) valBend.textContent = el.bend;
-    } else if (store.selection?.kind === 'item') {
-        const inpRot = inspectorBodyEl.querySelector('#inpRotation');
-        const valRot = inspectorBodyEl.querySelector('#valRotation');
-        if (inpRot) inpRot.value = el.rotation ?? 0;
-        if (valRot) valRot.textContent = `${el.rotation ?? 0}°`;
-        const inpScale = inspectorBodyEl.querySelector('#inpScale');
-        const valScale = inspectorBodyEl.querySelector('#valScale');
-        if (inpScale) inpScale.value = el.scale ?? 1;
-        if (valScale) valScale.textContent = `${Math.round((el.scale ?? 1) * 100)}%`;
-    }
-}
-
-// =========================================================================
-// DRAWER EN BAS (BANQUE D'OBJETS AVEC APERÇUS SVG)
-// =========================================================================
-function buildDrawerTabs() {
-    drawerTabsEl.innerHTML = CATEGORIES.map(cat => `
-      <button class="drawer-tab ${editor.activeCategory === cat.id ? 'is-active' : ''}" data-cat="${cat.id}">
-        <i class="fas ${cat.icon}"></i>
-        <span>${cat.label}</span>
-      </button>
-    `).join('');
-
-    drawerTabsEl.querySelectorAll('.drawer-tab').forEach(btn => {
-        btn.addEventListener('click', () => {
-            editor.activeCategory = btn.dataset.cat;
-            buildDrawerTabs();
-            buildDrawerGrid();
-        });
-    });
-}
-
-let drawerDrag = null;
-let suppressDrawerClick = false;
-
-function isOverStage(clientX, clientY) {
-    const r = stageEl.getBoundingClientRect();
-    return clientX >= r.left && clientX <= r.right && clientY >= r.top && clientY <= r.bottom;
-}
-
-function startDrawerDragListeners(btn, typeId, e) {
-    const def = getCatalogItem(typeId);
-    if (!def) return;
-    const bb = def.getBBox(def.defaultProps || {});
-    const centerOffsetX = bb.x + bb.width / 2;
-    const centerOffsetY = bb.y + bb.height / 2;
-
-    drawerDrag = {
-        typeId,
-        startClientX: e.clientX,
-        startClientY: e.clientY,
-        active: false,
-        item: null,
-        ghostEl: null,
-        centerOffsetX,
-        centerOffsetY
-    };
-
-    const onMove = (ev) => {
-        if (!drawerDrag) return;
-        const dist = Math.hypot(ev.clientX - drawerDrag.startClientX, ev.clientY - drawerDrag.startClientY);
-        if (!drawerDrag.active) {
-            if (dist < 6) return;
-            drawerDrag.active = true;
-            suppressDrawerClick = true;
-            document.body.classList.add('is-dragging-from-drawer');
-            const ghost = document.createElement('div');
-            ghost.className = 'drawer-drag-ghost';
-            ghost.innerHTML = btn.innerHTML;
-            document.body.appendChild(ghost);
-            drawerDrag.ghostEl = ghost;
-        }
-
-        const overStage = isOverStage(ev.clientX, ev.clientY);
-        if (overStage) {
-            if (drawerDrag.ghostEl) drawerDrag.ghostEl.style.display = 'none';
-            const pt = clientToScene(ev.clientX, ev.clientY);
-            const rawX = pt.x - drawerDrag.centerOffsetX;
-            const rawY = pt.y - drawerDrag.centerOffsetY;
-
-            if (!drawerDrag.item) {
-                drawerDrag.item = store.addItem(drawerDrag.typeId, rawX, rawY);
-                setTool('select');
-            }
-            if (drawerDrag.item) {
-                const snap = computeObjectSnap(drawerDrag.item, rawX, rawY, store.scene.items, {
-                    snapEnabled: editor.snapEnabled && !ev.altKey,
-                    gridSize: editor.gridSize,
-                    snapToGrid: editor.showGrid,
-                    baseRotation: 0
-                });
-                drawerDrag.item.x = Math.round(snap.x);
-                drawerDrag.item.y = Math.round(snap.y);
-                drawerDrag.item.rotation = snap.rotation;
-                editor.activeGuides = snap.guides;
-                editor.snappedPort = snap.snappedPort;
-                renderScene();
-            }
-        } else {
-            if (drawerDrag.ghostEl) {
-                drawerDrag.ghostEl.style.display = 'flex';
-                drawerDrag.ghostEl.style.left = `${ev.clientX}px`;
-                drawerDrag.ghostEl.style.top = `${ev.clientY}px`;
-            }
-            editor.activeGuides = [];
-            editor.snappedPort = null;
-            if (drawerDrag.item) {
-                renderOverlay();
-            }
-        }
-    };
-
-    const onEnd = (ev) => {
-        window.removeEventListener('pointermove', onMove);
-        window.removeEventListener('pointerup', onEnd);
-        window.removeEventListener('pointercancel', onEnd);
-        document.body.classList.remove('is-dragging-from-drawer');
-
-        const drag = drawerDrag;
-        drawerDrag = null;
-        if (!drag) return;
-
-        if (drag.ghostEl) drag.ghostEl.remove();
-        editor.activeGuides = [];
-        editor.snappedPort = null;
-
-        if (drag.active) {
-            const droppedOnStage = ev.type !== 'pointercancel' && isOverStage(ev.clientX, ev.clientY);
-            if (drag.item && !droppedOnStage) {
-                // Annuler proprement l'ajout si l'objet est relâché hors de la zone de dessin
-                store.undo();
-                store.redoStack = [];
-            }
-            renderScene();
-            renderInspector();
-            setTimeout(() => { suppressDrawerClick = false; }, 0);
-        }
-    };
-
-    window.addEventListener('pointermove', onMove);
-    window.addEventListener('pointerup', onEnd);
-    window.addEventListener('pointercancel', onEnd);
-}
-
-function buildDrawerGrid() {
-    const q = editor.searchQuery.trim().toLowerCase();
-    const list = CATALOG.filter(item => {
-        const catOk = editor.activeCategory === 'all' || item.category === editor.activeCategory;
-        if (!catOk) return false;
-        if (!q) return true;
-        return item.name.toLowerCase().includes(q) || (item.keywords || '').toLowerCase().includes(q);
-    });
-
-    if (list.length === 0) {
-        drawerGridEl.innerHTML = `<span class="has-text-grey is-size-7 ml-2">Aucun objet trouvé pour « ${escHtml(editor.searchQuery)} ».</span>`;
-        return;
-    }
-
-    drawerGridEl.innerHTML = list.map(def => {
-        const bb = def.getBBox(def.defaultProps || {});
-        const pad = 10;
-        const vb = `${bb.x - pad} ${bb.y - pad} ${bb.width + pad * 2} ${bb.height + pad * 2}`;
-        const thumbSvg = `<svg viewBox="${vb}" xmlns="http://www.w3.org/2000/svg">${def.render(def.defaultProps || {}, 'thumb_' + def.id)}</svg>`;
-        return `
-          <button class="drawer-card" data-add-type="${def.id}" title="Cliquer ou glisser sur le schéma : ${def.name}">
-            <div class="drawer-card-thumb">${thumbSvg}</div>
-            <div class="drawer-card-name">${def.name}</div>
-          </button>
-        `;
-    }).join('');
-
-    drawerGridEl.querySelectorAll('[data-add-type]').forEach(btn => {
-        btn.addEventListener('pointerdown', (e) => {
-            if (e.button !== 0) return;
-            startDrawerDragListeners(btn, btn.dataset.addType, e);
-        });
-        btn.addEventListener('click', () => {
-            if (suppressDrawerClick) return;
-            const typeId = btn.dataset.addType;
-            const center = getViewportCenterScene();
-            // Léger décalage aligné sur la grille si plusieurs objets sont ajoutés au même endroit
-            const g = editor.gridSize || 10;
-            const jitter = ((store.scene.items.length % 5) - 2) * g * 2;
-            const sx = Math.round((center.x + jitter) / g) * g;
-            const sy = Math.round((center.y + 40) / g) * g;
-            store.addItem(typeId, sx, sy);
-            setTool('select');
-            renderScene();
-            renderInspector();
-        });
-    });
-}
-
-// =========================================================================
-// EXPORTS & SAUVEGARDE / CHARGEMENT
-// =========================================================================
-async function handleCopyPNG() {
-    try {
-        const blob = await renderSceneToPNGBlob(store.scene, { scale: 3, transparent: editor.transparentExport });
-        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-        notify('Schéma HD copié dans le presse-papier !');
-    } catch (err) {
-        console.error(err);
-        notify('Impossible de copier automatiquement : utilisez le bouton PNG.');
-    }
-}
-
-async function handleExportPNG() {
-    try {
-        const blob = await renderSceneToPNGBlob(store.scene, { scale: 3, transparent: editor.transparentExport });
-        downloadBlob(blob, 'schema-phyweb.png');
-        notify('Image PNG HD téléchargée !');
-    } catch (err) {
-        console.error(err);
-        notify('Erreur lors de l\'export PNG.');
-    }
-}
-
-function handleExportSVG() {
-    const svg = buildStandaloneSVG(store.scene, { transparent: editor.transparentExport });
-    downloadBlob(new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }), 'schema-phyweb.svg');
-    notify('Fichier SVG téléchargé !');
-}
-
-function handleSaveJSON() {
-    const json = store.exportJSON();
-    downloadBlob(new Blob([json], { type: 'application/json;charset=utf-8' }), 'schema-phyweb.json');
-    markAsSaved();
-    notify('Projet sauvegardé (.json) !');
-}
-
-function downloadBlob(blob, filename) {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
-
-// =========================================================================
-// CÂBLAGE DES BOUTONS & RACCOURCIS CLAVIER
-// =========================================================================
-document.querySelectorAll('.tool-btn[data-tool]').forEach(btn => {
-    btn.addEventListener('click', () => setTool(btn.dataset.tool));
-});
-
-btnUndo.addEventListener('click', () => { if (store.undo()) { renderScene(); renderInspector(); } });
-btnRedo.addEventListener('click', () => { if (store.redo()) { renderScene(); renderInspector(); } });
-
-btnToggleSnap.addEventListener('click', () => {
-    editor.snapEnabled = !editor.snapEnabled;
-    btnToggleSnap.classList.toggle('is-toggled', editor.snapEnabled);
-    if (!store.selection) renderInspector();
-});
-
-btnToggleGrid.addEventListener('click', () => {
-    editor.showGrid = !editor.showGrid;
-    btnToggleGrid.classList.toggle('is-toggled', editor.showGrid);
-    applyViewportTransform();
-    if (!store.selection) renderInspector();
-});
-
 function addOrSelectPaillasse() {
     const existing = store.scene.items.find(i => i.type === 'paillasse');
     if (existing) {
         store.selection = { kind: 'item', id: existing.id };
         setTool('select');
         renderScene();
-        renderInspector();
+        inspector.renderInspector();
         return;
     }
     const center = getViewportCenterScene();
@@ -2573,9 +588,84 @@ function addOrSelectPaillasse() {
     }
     setTool('select');
     renderScene();
-    renderInspector();
+    inspector.renderInspector();
     notify('Paillasse ajoutée en bas du montage !');
 }
+
+// =========================================================================
+// INITIALISATION DES MODULES & NAVBAR PHYWEB
+// =========================================================================
+const ctx = {
+    store,
+    editor,
+    dom,
+    escHtml,
+    notify,
+    clientToScene,
+    getViewportCenterScene,
+    applyViewportTransform,
+    centerInitialView,
+    zoomAt,
+    fitViewToScene,
+    findElementsInRect,
+    alignSelectedElements,
+    distributeSelectedElements,
+    rotateItemBy,
+    addOrSelectPaillasse,
+    renderScene,
+    renderOverlay,
+    setTool
+};
+
+const io = createIOController(ctx);
+ctx.hasSceneData = io.hasSceneData;
+ctx.handleNewScene = io.handleNewScene;
+ctx.handleSaveJSON = io.handleSaveJSON;
+ctx.triggerLoadJSON = io.triggerLoadJSON;
+
+try {
+    initApplets('Schémas de Chimie & Physique', '../..', () => io.hasUnsavedChanges());
+} catch (e) {
+    console.warn('initApplets ignoré:', e);
+}
+io.setupNavbarMenu();
+
+const inspector = createInspectorController(ctx);
+ctx.renderInspector = inspector.renderInspector;
+ctx.syncInspectorValues = inspector.syncInspectorValues;
+
+const drawer = createDrawerController(ctx);
+const exportModal = createExportModalController(ctx);
+ctx.openExportModal = exportModal.openExportModal;
+
+const interactions = createInteractionsController(ctx);
+ctx.closeOverlays = () => {
+    interactions.closeContextMenu();
+    interactions.closeInlineLabelEditor();
+};
+
+// =========================================================================
+// CÂBLAGE DE LA BARRE D'OUTILS & EXPORTS RAPIDES
+// =========================================================================
+document.querySelectorAll('.tool-btn[data-tool]').forEach(btn => {
+    btn.addEventListener('click', () => setTool(btn.dataset.tool));
+});
+
+btnUndo.addEventListener('click', () => { if (store.undo()) { renderScene(); inspector.renderInspector(); } });
+btnRedo.addEventListener('click', () => { if (store.redo()) { renderScene(); inspector.renderInspector(); } });
+
+btnToggleSnap.addEventListener('click', () => {
+    editor.snapEnabled = !editor.snapEnabled;
+    btnToggleSnap.classList.toggle('is-toggled', editor.snapEnabled);
+    if (!store.selection) inspector.renderInspector();
+});
+
+btnToggleGrid.addEventListener('click', () => {
+    editor.showGrid = !editor.showGrid;
+    btnToggleGrid.classList.toggle('is-toggled', editor.showGrid);
+    applyViewportTransform();
+    if (!store.selection) inspector.renderInspector();
+});
 
 document.getElementById('btnAddTable').addEventListener('click', addOrSelectPaillasse);
 
@@ -2589,270 +679,21 @@ document.getElementById('btnZoomOut').addEventListener('click', () => {
 });
 document.getElementById('btnZoomFit').addEventListener('click', fitViewToScene);
 
-document.getElementById('btnQuickCopy').addEventListener('click', handleCopyPNG);
-document.getElementById('btnQuickPNG').addEventListener('click', handleExportPNG);
-document.getElementById('btnQuickSVG').addEventListener('click', handleExportSVG);
-
-const jsonFileInput = document.getElementById('jsonFileInput');
-function triggerLoadJSON() {
-    if (!jsonFileInput) return;
-    if (!hasUnsavedChanges()) {
-        jsonFileInput.click();
-        return;
-    }
-    alertModal({
-        id: 'load-scene-modal',
-        type: 'warning',
-        title: 'Charger un projet',
-        delete: true,
-        body: '<p>Charger un autre fichier remplacera le schéma actuel.</p><p class="has-text-grey is-size-7 mt-2">Les modifications non sauvegardées seront perdues (annulable avec Ctrl+Z).</p>',
-        confirm: {
-            label: 'Choisir un fichier',
-            type: 'warning',
-            cb: () => jsonFileInput.click()
-        },
-        cancel: 'Annuler',
-        width: '32rem'
-    });
-}
-
-if (jsonFileInput) {
-    jsonFileInput.addEventListener('change', async (e) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        try {
-            const text = await file.text();
-            store.importJSON(text);
-            markAsSaved();
-            renderScene();
-            renderInspector();
-            fitViewToScene();
-            notify('Projet chargé avec succès !');
-        } catch (err) {
-            notify('Erreur : fichier JSON invalide.');
-        }
-        jsonFileInput.value = '';
-    });
-}
-
-document.getElementById('btnClearScene').addEventListener('click', () => {
-    if (!hasSceneData()) return;
-    alertModal({
-        id: 'clear-scene-modal',
-        type: 'danger',
-        title: 'Effacer le schéma',
-        delete: true,
-        body: '<p>Êtes-vous sûr de vouloir effacer tout le schéma ?</p><p class="has-text-grey is-size-7 mt-2">Vous pourrez toujours annuler cette action avec Ctrl+Z.</p>',
-        confirm: {
-            label: 'Effacer',
-            type: 'danger',
-            cb: () => {
-                if (store.clearAll()) {
-                    markAsSaved();
-                    renderScene();
-                    renderInspector();
-                    notify('Schéma effacé.');
-                }
-            }
-        },
-        cancel: 'Annuler',
-        width: '32rem'
-    });
-});
-
-document.getElementById('btnToggleDrawer').addEventListener('click', () => {
-    drawerEl.classList.toggle('is-collapsed');
-});
-
-const btnClearSearch = document.getElementById('btnClearSearch');
-drawerSearchEl.addEventListener('input', () => {
-    editor.searchQuery = drawerSearchEl.value;
-    if (btnClearSearch) btnClearSearch.hidden = !drawerSearchEl.value;
-    if (drawerEl.classList.contains('is-collapsed')) {
-        drawerEl.classList.remove('is-collapsed');
-    }
-    buildDrawerGrid();
-});
-
-if (btnClearSearch) {
-    btnClearSearch.addEventListener('click', () => {
-        drawerSearchEl.value = '';
-        editor.searchQuery = '';
-        btnClearSearch.hidden = true;
-        buildDrawerGrid();
-        drawerSearchEl.focus();
-    });
-}
-
-// Raccourcis clavier globaux
-window.addEventListener('keydown', (e) => {
-    // Si une modale PhyWeb est ouverte, lui laisser la priorité (Échap, Entrée, etc.)
-    if (document.querySelector('.modal.is-active')) return;
-
-    const isAltGr = Boolean(e.getModifierState && e.getModifierState('AltGraph'));
-    const isCtrlOrCmd = (e.ctrlKey || e.metaKey) && !isAltGr;
-    const isAlt = e.altKey && !isAltGr;
-
-    if (isCtrlOrCmd && !isAlt) {
-        const lower = e.key.toLowerCase();
-        if (lower === 's') {
-            e.preventDefault();
-            handleSaveJSON();
-            return;
-        }
-        if (lower === 'o') {
-            e.preventDefault();
-            triggerLoadJSON();
-            return;
-        }
-    }
-
-    const tag = document.activeElement?.tagName;
-    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
-
-    if (e.code === 'Space') {
-        e.preventDefault();
-        editor.spaceDown = true;
-        stageEl.classList.add('is-panning');
-        return;
-    }
-
-    if (e.key === 'Escape') {
-        closeContextMenu();
-        editor.pendingConnector = null;
-        setTool('select');
-        store.selection = null;
-        renderInspector();
-        renderOverlay();
-        return;
-    }
-
-    if (isCtrlOrCmd && e.key.toLowerCase() === 'z') {
-        e.preventDefault();
-        if (e.shiftKey) { if (store.redo()) { renderScene(); renderInspector(); } }
-        else { if (store.undo()) { renderScene(); renderInspector(); } }
-        return;
-    }
-    if (isCtrlOrCmd && e.key.toLowerCase() === 'y') {
-        e.preventDefault();
-        if (store.redo()) { renderScene(); renderInspector(); }
-        return;
-    }
-    if (isCtrlOrCmd && e.key.toLowerCase() === 'a') {
-        e.preventDefault();
-        store.selectAll();
-        renderOverlay();
-        renderInspector();
-        return;
-    }
-    if (isCtrlOrCmd && e.key.toLowerCase() === 'c') {
-        if (store.selected.length > 0) {
-            e.preventDefault();
-            handleCopySelection();
-        }
-        return;
-    }
-    if (isCtrlOrCmd && e.key.toLowerCase() === 'x') {
-        if (store.selected.length > 0) {
-            e.preventDefault();
-            handleCutSelection();
-        }
-        return;
-    }
-    if (isCtrlOrCmd && e.key.toLowerCase() === 'v') {
-        if (store.hasClipboard()) {
-            e.preventDefault();
-            handlePasteSelection();
-        }
-        return;
-    }
-    if (isCtrlOrCmd && e.key.toLowerCase() === 'd') {
-        e.preventDefault();
-        if (store.duplicateSelected()) { renderScene(); renderInspector(); }
-        return;
-    }
-
-    if (e.key === 'Delete' || e.key === 'Backspace') {
-        if (store.deleteSelected()) {
-            e.preventDefault();
-            renderScene();
-            renderInspector();
-        }
-        return;
-    }
-
-    if (!isAlt) {
-        if (e.key === '+' || e.key === '=') {
-            e.preventDefault();
-            const r = svgEl.getBoundingClientRect();
-            zoomAt(1.2, r.left + r.width / 2, r.top + r.height / 2);
-            return;
-        }
-        if (e.key === '-') {
-            e.preventDefault();
-            const r = svgEl.getBoundingClientRect();
-            zoomAt(1 / 1.2, r.left + r.width / 2, r.top + r.height / 2);
-            return;
-        }
-        if (e.key === '0') {
-            e.preventDefault();
-            fitViewToScene();
-            return;
-        }
-    }
-
-    if (isCtrlOrCmd || isAlt) return;
-
-    const k = e.key.toLowerCase();
-    if (k === 'v') setTool('select');
-    else if (k === 'w') setTool('wire');
-    else if (k === 't') setTool('hose');
-    else if (k === 'l') setTool('label');
-    else if (k === 'm') btnToggleSnap.click();
-    else if (k === 'g') btnToggleGrid.click();
-    else if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key) && store.selected.length > 0) {
-        const entries = store.getSelectedElements();
-        const movable = entries.filter(en => en.kind === 'item' || en.kind === 'label' || (en.kind === 'connector' && (!en.el.start.itemId || !en.el.end.itemId)));
-        if (movable.length === 0) return;
-        e.preventDefault();
-        const step = e.shiftKey ? 10 : 1;
-        const dx = e.key === 'ArrowLeft' ? -step : (e.key === 'ArrowRight' ? step : 0);
-        const dy = e.key === 'ArrowUp' ? -step : (e.key === 'ArrowDown' ? step : 0);
-        store.pushHistory();
-        for (const { kind, el } of movable) {
-            if (kind === 'item') {
-                el.x += dx;
-                el.y += dy;
-            } else if (kind === 'label') {
-                el.x += dx;
-                el.y += dy;
-                el.targetX += dx;
-                el.targetY += dy;
-            } else if (kind === 'connector') {
-                if (!el.start.itemId) { el.start.x += dx; el.start.y += dy; }
-                if (!el.end.itemId) { el.end.x += dx; el.end.y += dy; }
-            }
-        }
-        renderScene();
-    }
-});
-
-window.addEventListener('keyup', (e) => {
-    if (e.code === 'Space') {
-        editor.spaceDown = false;
-        if (!editor.drag) stageEl.classList.remove('is-panning');
-    }
-});
+document.getElementById('btnQuickCopy').addEventListener('click', io.handleCopyPNG);
+document.getElementById('btnQuickPNG').addEventListener('click', io.handleExportPNG);
+document.getElementById('btnQuickSVG').addEventListener('click', io.handleExportSVG);
+document.getElementById('btnClearScene').addEventListener('click', io.handleClearScene);
 
 // =========================================================================
-// INITIALISATION
+// DÉMARRAGE
 // =========================================================================
-const restoredFromSession = restoreSession();
-buildDrawerTabs();
-buildDrawerGrid();
+const restoredFromSession = io.restoreSession();
+io.setupElectronStartupImport();
+drawer.buildDrawerTabs();
+drawer.buildDrawerGrid();
 setTool('select');
 renderScene();
-renderInspector();
+inspector.renderInspector();
 requestAnimationFrame(() => {
     if (restoredFromSession) {
         fitViewToScene();

@@ -72,6 +72,9 @@
 # Schemas
     possibilité de grouper des objets
     possibiliter de verouiller un objet
+    ajouter un vrai précipité.
+    plusieurs styles dans la coupelle
+    ajouter une icone différente pour les pws
 
 
 # MISC

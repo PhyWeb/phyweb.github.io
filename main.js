@@ -128,6 +128,8 @@ app.whenReady().then(() => {
       const filters = [];
       if (ext === 'pw') {
         filters.push({ name: 'Fichiers PhyWeb (*.pw)', extensions: ['pw'] });
+      } else if (ext === 'pws') {
+        filters.push({ name: 'Schémas PhyWeb (*.pws)', extensions: ['pws'] });
       } else if (ext === 'csv') {
         filters.push({ name: 'Fichiers CSV (*.csv)', extensions: ['csv'] });
       } else if (ext === 'rw3') {
@@ -136,6 +138,8 @@ app.whenReady().then(() => {
         filters.push({ name: 'Fichiers Audio WAV (*.wav)', extensions: ['wav'] });
       } else if (ext === 'png') {
         filters.push({ name: 'Images PNG (*.png)', extensions: ['png'] });
+      } else if (ext === 'jpg' || ext === 'jpeg') {
+        filters.push({ name: 'Images JPEG (*.jpg)', extensions: ['jpg', 'jpeg'] });
       } else if (ext === 'svg') {
         filters.push({ name: 'Images vectorielles SVG (*.svg)', extensions: ['svg'] });
       } else if (ext === 'pdf') {
@@ -156,29 +160,34 @@ app.whenReady().then(() => {
   // Vérification des arguments passés à l'application
   if (args.length >= 2) {
     const filePath = args[args.length - 1];
-    
-    // On vérifie que c'est bien un fichier .pw
-    if (filePath.endsWith('.pw')) {
+    const lowerPath = filePath.toLowerCase();
+
+    // On vérifie que c'est bien un fichier .pw ou .pws
+    if (lowerPath.endsWith('.pw') || lowerPath.endsWith('.pws')) {
       fileToLoad = filePath;
     }
   }
 
-  // Fichier .pw transmis lors de l'ouverture depuis l'explorateur
+  // Fichier .pw ou .pws transmis lors de l'ouverture depuis l'explorateur
   if (fileToLoad) {
-    // Créer directement la fenêtre grapher
-    const grapherWin = createWindow("grapher/index.html");
+    const isSchema = fileToLoad.toLowerCase().endsWith('.pws');
+    const targetWin = createWindow(isSchema ? "applets/schemas/index.html" : "grapher/index.html");
 
-    grapherWin.webContents.once('did-finish-load', () => {
+    targetWin.webContents.once('did-finish-load', () => {
       try {
         // Lire le contenu du fichier et supprimer un éventuel BOM UTF-8
         let fileContent = fs.readFileSync(fileToLoad, 'utf-8');
         if (fileContent.charCodeAt(0) === 0xFEFF) {
           fileContent = fileContent.slice(1);
         }
-        // Envoyer les données au grapher (fichier déjà enregistré sur disque)
-        grapherWin.webContents.send('import-data', { data: fileContent, markAsSaved: true });
+        // Envoyer les données à la fenêtre cible (fichier déjà enregistré sur disque)
+        targetWin.webContents.send('import-data', {
+          data: fileContent,
+          markAsSaved: true,
+          fileName: path.basename(fileToLoad)
+        });
       } catch (error) {
-        console.error("Erreur lors de la lecture du fichier .pw :", error);
+        console.error("Erreur lors de la lecture du fichier PhyWeb :", error);
       }
     });
   } else {

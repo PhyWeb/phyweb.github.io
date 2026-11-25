@@ -84,7 +84,7 @@
                         <i class="fas fa-trash-can"></i>
                     </button>
                 </div>
-                <input type="file" id="jsonFileInput" accept=".json,application/json" style="display:none">
+                <input type="file" id="jsonFileInput" accept=".pws,.json,application/json" style="display:none">
             </aside>
 
             <!-- ZONE DE DESSIN CENTRALE -->
@@ -101,6 +101,7 @@
                     </defs>
                     <g id="viewportGroup">
                         <rect id="gridRect" x="-5000" y="-5000" width="10000" height="10000" fill="url(#gridMajor)" />
+                        <g id="layerConnectorsBack"></g>
                         <g id="layerItems"></g>
                         <g id="layerConnectors"></g>
                         <g id="layerLabels"></g>
@@ -134,6 +135,9 @@
                     <span class="inspector-title" id="inspectorTitle">
                         <i class="fas fa-sliders mr-1"></i> Propriétés
                     </span>
+                    <button type="button" class="inspector-toggle-btn" id="btnToggleInspector" title="Replier / Déplier les propriétés (I)" aria-label="Replier / Déplier les propriétés" aria-expanded="true">
+                        <i class="fas fa-chevron-right" id="inspectorToggleIcon"></i>
+                    </button>
                 </div>
                 <div class="inspector-body" id="inspectorBody"></div>
             </aside>
@@ -165,6 +169,148 @@
 
             <div class="drawer-grid" id="drawerGrid"></div>
         </section>
+    </div>
+</div>
+
+<!-- MODALE D'EXPORT AVANCÉ & IMPRESSION / PDF (style Grapher) -->
+<div id="export-modal" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card" style="width: 82vw; max-width: 1180px; height: 82vh; min-height: 600px;">
+        <header class="modal-card-head" style="padding: 16px 20px;">
+            <p class="modal-card-title is-size-5 has-text-weight-bold">
+                <i class="fas fa-print mr-2"></i>Exporter / Imprimer
+            </p>
+            <button type="button" class="delete" id="export-close-x" aria-label="Fermer"></button>
+        </header>
+
+        <section class="modal-card-body pb-3 is-flex is-flex-direction-column" style="overflow: hidden;">
+            <div class="columns is-flex-grow-1 mb-0" style="min-height: 0;">
+                <!-- COLONNE GAUCHE : Options -->
+                <div class="column is-4" style="overflow-y: auto;">
+                    <div class="field">
+                        <label class="label is-small" for="export-action-select">Action souhaitée</label>
+                        <div class="control">
+                            <div class="select is-small is-fullwidth">
+                                <select id="export-action-select">
+                                    <option value="image" selected>Image (PNG / JPEG / SVG)</option>
+                                    <option value="print">Document (Impression / PDF)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Options pour PDF / Impression -->
+                    <div id="export-print-options" class="box p-3 mt-3">
+                        <div class="field">
+                            <label class="label is-small" for="export-title-input">Titre du document (optionnel)</label>
+                            <div class="control">
+                                <input class="input is-small" type="text" id="export-title-input" placeholder="Ex : Montage à reflux">
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="label is-small" for="export-orientation-select">Orientation (A4)</label>
+                            <div class="control">
+                                <div class="select is-small is-fullwidth">
+                                    <select id="export-orientation-select" class="export-trigger">
+                                        <option value="portrait" selected>Portrait</option>
+                                        <option value="landscape">Paysage</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="field mb-0">
+                            <label class="label is-small" for="export-margin-select">Marges de page</label>
+                            <div class="control">
+                                <div class="select is-small is-fullwidth">
+                                    <select id="export-margin-select" class="export-trigger">
+                                        <option value="1cm">Étroites (1 cm)</option>
+                                        <option value="1.5cm" selected>Normales (1,5 cm)</option>
+                                        <option value="2.5cm">Larges (2,5 cm)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Options pour Image -->
+                    <div id="export-image-options" class="box p-3 mt-3 is-hidden">
+                        <div class="field">
+                            <label class="label is-small" for="export-image-format">Format</label>
+                            <div class="control">
+                                <div class="select is-small is-fullwidth">
+                                    <select id="export-image-format" class="export-trigger">
+                                        <option value="image/png" selected>PNG (sans perte)</option>
+                                        <option value="image/jpeg">JPEG (fond blanc)</option>
+                                        <option value="image/svg+xml">SVG (vectoriel)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="field" id="export-scale-field">
+                            <label class="label is-small" for="export-image-scale">Résolution</label>
+                            <div class="control">
+                                <div class="select is-small is-fullwidth">
+                                    <select id="export-image-scale" class="export-trigger">
+                                        <option value="1">×1 (Standard)</option>
+                                        <option value="2">×2 (HD)</option>
+                                        <option value="3" selected>×3 (Très HD)</option>
+                                        <option value="4">×4 (Ultra HD)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="label is-small" for="export-padding-select">Marge autour du schéma</label>
+                            <div class="control">
+                                <div class="select is-small is-fullwidth">
+                                    <select id="export-padding-select" class="export-trigger">
+                                        <option value="0">Aucune (0 px)</option>
+                                        <option value="16">Fine (16 px)</option>
+                                        <option value="36" selected>Normale (36 px)</option>
+                                        <option value="64">Large (64 px)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="field" id="export-transparent-field">
+                            <label class="checkbox is-size-7 has-text-weight-semibold">
+                                <input type="checkbox" id="export-transparent-check" class="export-trigger">
+                                Fond transparent
+                            </label>
+                        </div>
+
+                        <p class="is-size-7 has-text-grey mt-2" id="export-dims-info"></p>
+                    </div>
+                </div>
+
+                <!-- COLONNE DROITE : Aperçu en temps réel -->
+                <div class="column is-8 is-flex is-flex-direction-column" style="overflow: hidden; min-height: 0;">
+                    <h3 class="title is-6 mb-2" id="export-preview-heading">Aperçu du document</h3>
+                    <div class="box is-flex-grow-1 p-0 is-flex is-flex-direction-column" style="overflow: hidden; min-height: 0;">
+                        <iframe id="export-preview-iframe" title="Aperçu de l'export" style="width: 100%; flex-grow: 1; border: none; height: 100%;"></iframe>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <footer class="modal-card-foot" style="padding: 12px 20px;">
+            <div class="buttons">
+                <button type="button" class="button is-success" id="export-confirm-button">
+                    <span class="icon is-small"><i class="fas fa-print"></i></span>
+                    <span>Imprimer / Exporter en PDF</span>
+                </button>
+                <button type="button" class="button is-info is-hidden" id="export-copy-button">
+                    <span class="icon is-small"><i class="fas fa-copy"></i></span>
+                    <span>Copier l'image</span>
+                </button>
+                <button type="button" class="button" id="export-cancel-button">Annuler</button>
+            </div>
+        </footer>
     </div>
 </div>
 

@@ -35,6 +35,60 @@ input, select, textarea {
     border-bottom: 1px solid var(--schemas-border);
 }
 
+.schema-title-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #f8fafc;
+    border: 1px solid var(--schemas-border);
+    border-radius: 999px;
+    padding: 3px 10px 3px 11px;
+    margin-left: 4px;
+    -webkit-app-region: no-drag;
+    transition: border-color 0.12s, background 0.12s, box-shadow 0.12s;
+}
+
+.schema-title-wrap:focus-within {
+    background: #ffffff;
+    border-color: var(--schemas-accent);
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.14);
+}
+
+.schema-title-wrap i {
+    font-size: 0.72rem;
+    color: var(--schemas-muted);
+    flex-shrink: 0;
+}
+
+.schema-title-input {
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: var(--schemas-text);
+    width: 175px;
+    min-width: 110px;
+}
+
+.schema-title-input::placeholder {
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+.unsaved-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #f59e0b;
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.22);
+    flex-shrink: 0;
+}
+
+.unsaved-dot[hidden] {
+    display: none;
+}
+
 .schemas-workspace {
     flex: 1;
     display: flex;
@@ -344,21 +398,70 @@ input, select, textarea {
     flex-direction: column;
     flex-shrink: 0;
     z-index: 5;
+    transition: width 0.18s ease;
+}
+
+.schemas-inspector.is-collapsed {
+    width: 38px;
 }
 
 .inspector-header {
-    padding: 10px 12px;
+    padding: 8px 10px 8px 12px;
     border-bottom: 1px solid var(--schemas-border);
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 6px;
     background: #f8fafc;
+    min-height: 40px;
+}
+
+.schemas-inspector.is-collapsed .inspector-header {
+    justify-content: center;
+    padding: 8px 0;
+    border-bottom: none;
 }
 
 .inspector-title {
     font-size: 0.85rem;
     font-weight: 700;
     color: var(--schemas-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.schemas-inspector.is-collapsed .inspector-title,
+.schemas-inspector.is-collapsed .inspector-body {
+    display: none;
+}
+
+.inspector-toggle-btn {
+    width: 26px;
+    height: 26px;
+    border: none;
+    border-radius: 5px;
+    background: transparent;
+    color: var(--schemas-muted);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.12s, color 0.12s;
+}
+
+.inspector-toggle-btn:hover {
+    background: #e2e8f0;
+    color: var(--schemas-text);
+}
+
+.inspector-toggle-btn i {
+    transition: transform 0.18s ease;
+}
+
+.schemas-inspector.is-collapsed #inspectorToggleIcon {
+    transform: rotate(180deg);
 }
 
 .inspector-body {

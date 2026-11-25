@@ -10,10 +10,27 @@ export function nextId(prefix = 'el') {
 export function createInitialScene() {
     return {
         version: 1,
+        title: '',       // Nom personnalisable du schéma (utilisé pour les exports)
         items: [],       // Objets du catalogue { id, type, x, y, rotation, scale, flipX, props }
         connectors: [],  // Fils électriques & tuyaux { id, kind: 'wire'|'hose', start, end, mode, bend, color, width, dashed, showArrow, reverseArrow }
         labels: []       // Légendes { id, text, x, y, fontSize, color, bold, italic, showLeader, targetX, targetY, arrowHead }
     };
+}
+
+/**
+ * Transforme un titre de schéma en nom de fichier sûr (sans extension).
+ */
+export function sanitizeFilename(title, fallback = 'schema-phyweb') {
+    const raw = String(title ?? '').trim();
+    if (!raw) return fallback;
+    const cleaned = raw
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[<>:"/\\|?*\x00-\x1f]/g, ' ')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^[-.]+|[-.]+$/g, '');
+    return cleaned || fallback;
 }
 
 export class SceneStore {
@@ -161,23 +178,25 @@ export class SceneStore {
         return item;
     }
 
-    addConnector(kind, start, end) {
+    addConnector(kind, start, end, defaults = {}) {
         this.pushHistory();
         const isWire = kind === 'wire';
         const isAttached = Boolean((start?.itemId && start?.anchorId) || (end?.itemId && end?.anchorId));
+        const mode = defaults.mode || 'bezier';
         const conn = {
             id: nextId(isWire ? 'wire' : 'hose'),
             kind,
             start: { ...start }, // { x, y, itemId?, anchorId? }
             end: { ...end },
-            mode: 'bezier',      // 'bezier' | 'orthogonal'
-            bend: isAttached ? 0 : (isWire ? 40 : 30),
+            mode,                // 'bezier' | 'orthogonal' | 'straight'
+            bend: mode === 'straight' ? 0 : (isAttached ? 0 : (isWire ? 40 : 30)),
             bendX: 0,
-            color: isWire ? '#e03131' : '#74c0fc',
-            width: isWire ? 3.5 : 8,
-            dashed: false,
-            showArrow: !isWire,
-            reverseArrow: false
+            color: defaults.color || (isWire ? '#e03131' : '#74c0fc'),
+            width: Number(defaults.width) || (isWire ? 3.5 : 8),
+            dashed: Boolean(defaults.dashed),
+            showArrow: defaults.showArrow !== undefined ? Boolean(defaults.showArrow) : !isWire,
+            reverseArrow: false,
+            behindItems: Boolean(defaults.behindItems)
         };
         this.scene.connectors.push(conn);
         this.selection = { kind: 'connector', id: conn.id };
@@ -463,8 +482,18 @@ export class SceneStore {
             return false;
         }
         this.pushHistory();
+        const prevTitle = this.scene.title || '';
         this.scene = createInitialScene();
+        this.scene.title = prevTitle;
         this.selection = null;
+        return true;
+    }
+
+    resetNew() {
+        this.scene = createInitialScene();
+        this.undoStack = [];
+        this.redoStack = [];
+        this.selected = [];
         return true;
     }
 
@@ -476,14 +505,20 @@ export class SceneStore {
         }, null, 2);
     }
 
-    importJSON(jsonString) {
-        const parsed = typeof jsonString === 'string' ? JSON.parse(jsonString) : jsonString;
+    importJSON(jsonString, fallbackTitle = '') {
+        const cleanStr = typeof jsonString === 'string' && jsonString.charCodeAt(0) === 0xFEFF
+            ? jsonString.slice(1)
+            : jsonString;
+        const parsed = typeof cleanStr === 'string' ? JSON.parse(cleanStr) : cleanStr;
         if (!parsed || !Array.isArray(parsed.items)) {
-            throw new Error('Format de fichier JSON invalide.');
+            throw new Error('Format de fichier .pws / JSON invalide.');
         }
         this.pushHistory();
         this.scene = {
             version: 1,
+            title: typeof parsed.title === 'string' && parsed.title.trim()
+                ? parsed.title.trim()
+                : String(fallbackTitle || '').trim(),
             items: parsed.items || [],
             connectors: Array.isArray(parsed.connectors) ? parsed.connectors : [],
             labels: Array.isArray(parsed.labels) ? parsed.labels : []
