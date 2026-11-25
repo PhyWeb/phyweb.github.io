@@ -5,6 +5,13 @@ const $ = document.querySelector.bind(document);
 
 const ANIMATION_FLAG = false; // Désactiver les animations pour de meilleures performances
 const PADDING = 0.02; // 2% de padding pour le zoom auto
+const ZERO_PLOT_LINE = {
+  id: 'zero-line',
+  value: 0,
+  width: 2,
+  color: '#555555',
+  zIndex: 2
+};
 
 // --- Début de la surcharge Highcharts ---
 // On exécute ce code une seule fois pour "patcher" la fonction setExtremes
@@ -169,6 +176,7 @@ export default class Grapher {
 
     this.grid = initialSettings.grapherGrid; // Visibilité de la grille principale
     this.minorGrid = initialSettings.minorGrid || false;
+    this.highlightZeroAxes = initialSettings.highlightZeroAxes ?? true;
     this.disableScientificNotation = initialSettings.disableScientificNotation || false;
     this.includeOriginOnAutoZoom = initialSettings.includeOriginOnAutoZoom ?? true;
     this.hasUserZoom = false;
@@ -483,6 +491,7 @@ export default class Grapher {
         minorGridLineWidth: this.minorGrid ? 1 : 0,
         minorTickInterval: this.minorGrid ? 'auto' : null,
         minorGridLineColor: '#f2f2f2', // Gris très clair pour ne pas surcharger
+        plotLines: this._getZeroPlotLines(),
         startOnTick: false,
         endOnTick: false,
         minPadding: 0,
@@ -561,6 +570,7 @@ export default class Grapher {
         minorTickInterval: this.minorGrid ? 'auto' : null,
         minorGridLineColor: '#f2f2f2', // Gris très clair pour ne pas surcharger
         gridLineWidth: this.grid ? 1 : 0,
+        plotLines: this._getZeroPlotLines(),
         tickWidth: 1,
         startOnTick: false,
         endOnTick: false,
@@ -993,6 +1003,24 @@ updateChart(yCurveTitles, redraw = true) {
         },
         yAxis: {
           gridLineWidth: visible ? 1 : 0
+        }
+      });
+    }
+  }
+
+  _getZeroPlotLines() {
+    return this.highlightZeroAxes ? [{ ...ZERO_PLOT_LINE }] : [];
+  }
+
+  setHighlightZeroAxes(enabled) {
+    this.highlightZeroAxes = Boolean(enabled);
+    if (this.chart) {
+      this.chart.update({
+        xAxis: {
+          plotLines: this._getZeroPlotLines()
+        },
+        yAxis: {
+          plotLines: this._getZeroPlotLines()
         }
       });
     }

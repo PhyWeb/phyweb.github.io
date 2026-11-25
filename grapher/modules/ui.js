@@ -1396,6 +1396,7 @@ export default class UIManager {
       significantDigits: this.data?.settings?.significantDigits ?? 4,
       grapherGrid: this.grapher.grid,
       minorGrid: this.grapher.minorGrid,
+      highlightZeroAxes: this.grapher.highlightZeroAxes,
       disableScientificNotation: this.grapher.disableScientificNotation,
       includeOriginOnAutoZoom: this.grapher.includeOriginOnAutoZoom,
       derivatePoints: this.calculation.derivatePoints,
@@ -1412,6 +1413,7 @@ export default class UIManager {
     $('#significant-digits-select').value = settings?.significantDigits ?? 4;
     $('#graph-grid-switch').checked = settings.grapherGrid;
     $('#graph-grid-minor-switch').checked = settings.minorGrid || false;
+    $('#highlight-zero-axes-switch').checked = settings.highlightZeroAxes ?? true;
     $('#graph-disable-scientific-switch').checked = settings.disableScientificNotation || false;
     $('#include-origin-switch').checked = settings.includeOriginOnAutoZoom;
     $('#derivative-points-select').value = settings.derivatePoints;
@@ -1429,6 +1431,7 @@ export default class UIManager {
       significantDigits: parseInt(document.getElementById('significant-digits-select').value) || 4,
       grapherGrid: document.getElementById('graph-grid-switch').checked,
       minorGrid: document.getElementById('graph-grid-minor-switch').checked,
+      highlightZeroAxes: document.getElementById('highlight-zero-axes-switch').checked,
       disableScientificNotation: document.getElementById('graph-disable-scientific-switch').checked,
       includeOriginOnAutoZoom: document.getElementById('include-origin-switch').checked,
       derivatePoints: parseInt(document.getElementById('derivative-points-select').value),
@@ -1459,6 +1462,10 @@ export default class UIManager {
     }
     if (this.grapher.minorGrid !== settings.minorGrid) {
       this.grapher.setMinorGridVisibility(settings.minorGrid);
+    }
+
+    if (this.grapher.highlightZeroAxes !== settings.highlightZeroAxes) {
+      this.grapher.setHighlightZeroAxes(settings.highlightZeroAxes);
     }
 
     if (this.grapher.disableScientificNotation !== settings.disableScientificNotation) {
