@@ -60,6 +60,8 @@
     Bug graphique quand le "nom" d'un modele est trop long genre Amplitudestectrale = f(truclong)
 
     intercepter les erreurs de mathsjs en anglais et les traduire en langage clair
+
+    othogonalité depuis tracker ???? Essayer le pointage du velo on voit pas le accéléré
     
 # Mendeleiev
 # Optique
