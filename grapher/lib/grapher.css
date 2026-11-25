@@ -401,3 +401,145 @@ fieldset[disabled] .button {
   border-color: #363636 !important;
   transition: transform 0.1s ease;
 }
+
+/* Modale d'export : barre latérale à largeur fixe et mise en page compacte */
+#export-modal .modal-card {
+  width: 85vw;
+  max-width: 1200px;
+  height: 85vh;
+  max-height: 860px;
+  min-height: 520px;
+}
+
+#export-modal .modal-card-body {
+  padding: 12px 16px;
+  overflow: hidden;
+}
+
+#export-modal-layout {
+  display: flex;
+  gap: 1rem;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+#export-sidebar {
+  width: 285px;
+  min-width: 285px;
+  max-width: 285px;
+  flex-shrink: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+#export-sidebar .field {
+  margin-bottom: 0.55rem;
+}
+
+#export-sidebar .field:last-child {
+  margin-bottom: 0;
+}
+
+#export-sidebar .label {
+  font-size: 0.8rem;
+  margin-bottom: 0.25rem;
+}
+
+#export-sidebar .export-field-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.55rem;
+}
+
+#export-sidebar .export-field-row > .field {
+  flex: 1 1 0;
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+#export-sidebar .export-panel-box {
+  padding: 0.65rem 0.75rem;
+  margin-top: 0.55rem;
+  margin-bottom: 0;
+  box-shadow: none;
+  border: 1px solid #e5e5e5;
+  background-color: #fafafa;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+#export-rename-details .export-rename-body {
+  min-width: 0;
+  width: 100%;
+  overflow: hidden;
+}
+
+#export-rename-list .input {
+  min-width: 0;
+}
+
+#export-rename-reset-btn {
+  display: flex;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  margin-left: 0;
+  margin-right: 0;
+}
+
+#export-sidebar .export-check-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  margin-bottom: 0.3rem;
+}
+
+#export-sidebar .export-check-item:last-child {
+  margin-bottom: 0;
+}
+
+#export-preview-pane {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Popover compact pour la définition numérique des bornes des axes */
+#axis-bounds-dropdown .dropdown-menu {
+  width: 270px;
+  min-width: 240px;
+  max-width: calc(100vw - 24px);
+  z-index: 40;
+}
+
+#axis-bounds-dropdown .axis-bounds-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+#axis-bounds-dropdown .axis-bounds-row .control {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+#axis-bounds-dropdown .axis-bounds-sep {
+  font-size: 0.75rem;
+  color: #7a7a7a;
+  flex-shrink: 0;
+}
+
+#axis-bounds-dropdown .axis-bounds-auto-btn {
+  height: auto;
+  line-height: 1.2;
+  font-size: 0.75rem;
+  text-decoration: none;
+}
+
+#axis-bounds-dropdown .axis-bounds-auto-btn:hover {
+  text-decoration: underline;
+}

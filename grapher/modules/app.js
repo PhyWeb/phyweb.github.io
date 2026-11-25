@@ -194,6 +194,9 @@ export default class App {
     if (this.uiManager && typeof this.uiManager.setCalculationsStale === 'function') {
       this.uiManager.setCalculationsStale(false);
     }
+    if (this.uiManager) {
+      this.uiManager.exportCurveLabels = {};
+    }
   }
 
   deleteRow(startRow, amount) {

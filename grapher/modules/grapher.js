@@ -5,6 +5,13 @@ const $ = document.querySelector.bind(document);
 
 const ANIMATION_FLAG = false; // Désactiver les animations pour de meilleures performances
 const PADDING = 0.02; // 2% de padding pour le zoom auto
+const ZERO_PLOT_LINE = {
+  id: 'zero-line',
+  value: 0,
+  width: 2,
+  color: '#555555',
+  zIndex: 2
+};
 
 // --- Début de la surcharge Highcharts ---
 // On exécute ce code une seule fois pour "patcher" la fonction setExtremes
@@ -12,9 +19,10 @@ const PADDING = 0.02; // 2% de padding pour le zoom auto
   H.wrap(H.Axis.prototype, 'setExtremes', function (proceed, newMin, newMax, redraw, animation, eventArgs) {
     const chart = this.chart;
     
-    // Vérifie si c'est un reset zoom (newMin et newMax null ou undefined)
-    const isResetZoom = (newMin === null || newMin === undefined) && (newMax === null || newMax === undefined);
-    if (isResetZoom && chart?.options?.customGrapherInstance){
+    // Vérifie si au moins une borne est en mode automatique (null ou undefined)
+    const minIsAuto = newMin === null || newMin === undefined;
+    const maxIsAuto = newMax === null || newMax === undefined;
+    if ((minIsAuto || maxIsAuto) && chart?.options?.customGrapherInstance){
       const includeOrigin = !!chart.options.customGrapherInstance.includeOriginOnAutoZoom;
 
       // Calcule manuellement les extrêmes globaux pour cet axe
@@ -89,11 +97,23 @@ const PADDING = 0.02; // 2% de padding pour le zoom auto
           }
         }
         
+        let targetMin = minIsAuto ? finalMin : newMin;
+        let targetMax = maxIsAuto ? finalMax : newMax;
+
+        // Sécurité si une borne manuelle dépasse la borne automatique calculée
+        if (targetMin >= targetMax) {
+          if (maxIsAuto) {
+            targetMax = targetMin + Math.max(Math.abs(targetMin) * 0.1, 1);
+          } else if (minIsAuto) {
+            targetMin = targetMax - Math.max(Math.abs(targetMax) * 0.1, 1);
+          }
+        }
+        
         // Appel original avec bornes calculées
-        proceed.call(this, finalMin, finalMax, redraw, animation, eventArgs);
+        proceed.call(this, targetMin, targetMax, redraw, animation, eventArgs);
       } else {
-        // Pas de données : reset par défaut
-        proceed.call(this, null, null, redraw, animation, eventArgs);
+        // Pas de données : reset ou bornes fournies par défaut
+        proceed.call(this, minIsAuto ? null : newMin, maxIsAuto ? null : newMax, redraw, animation, eventArgs);
       }
     } else {
       // Autres cas : appel original
@@ -156,6 +176,7 @@ export default class Grapher {
 
     this.grid = initialSettings.grapherGrid; // Visibilité de la grille principale
     this.minorGrid = initialSettings.minorGrid || false;
+    this.highlightZeroAxes = initialSettings.highlightZeroAxes ?? true;
     this.disableScientificNotation = initialSettings.disableScientificNotation || false;
     this.includeOriginOnAutoZoom = initialSettings.includeOriginOnAutoZoom ?? true;
     this.hasUserZoom = false;
@@ -255,14 +276,18 @@ export default class Grapher {
               const xAxis = chart.xAxis[0];
               const yAxis = chart.yAxis[0];
 
+              const arrowScale = chart.renderer?.forExport ? (chart.options?.chart?.exportTextScale || 1) : 1;
+              const arrowLen = Math.round(10 * arrowScale);
+              const arrowHalfW = Math.round(5 * arrowScale);
+
               // Flèche X (droite)
               const xEnd = xAxis.toPixels(xAxis.max);
               const yPos = chart.plotHeight + chart.plotTop;
 
               const arrowX = chart.renderer.path([
                 'M', xEnd, yPos,
-                'L', xEnd - 10, yPos - 5,
-                'L', xEnd - 10, yPos + 5,
+                'L', xEnd - arrowLen, yPos - arrowHalfW,
+                'L', xEnd - arrowLen, yPos + arrowHalfW,
                 'Z'
               ]).attr({ 
                 fill: 'black',
@@ -304,8 +329,8 @@ export default class Grapher {
 
               const arrowY = chart.renderer.path([
                   'M', xPos, yEnd,
-                  'L', xPos - 5, yEnd + 10,
-                  'L', xPos + 5, yEnd + 10,
+                  'L', xPos - arrowHalfW, yEnd + arrowLen,
+                  'L', xPos + arrowHalfW, yEnd + arrowLen,
                   'Z'
               ]).attr({ 
                 fill: 'black',
@@ -345,7 +370,7 @@ export default class Grapher {
             this.chart.redraw();
 
             // 4. Affichage du bouton contextuel personnalisé.
-            $("#auto-zoom-button").classList.remove("is-hidden");
+            this.updateAutoZoomButtonVisibility();
           },
           // Cet événement se déclenche lorsqu'on clique sur le fond du graphique
           click: function () {
@@ -466,6 +491,7 @@ export default class Grapher {
         minorGridLineWidth: this.minorGrid ? 1 : 0,
         minorTickInterval: this.minorGrid ? 'auto' : null,
         minorGridLineColor: '#f2f2f2', // Gris très clair pour ne pas surcharger
+        plotLines: this._getZeroPlotLines(),
         startOnTick: false,
         endOnTick: false,
         minPadding: 0,
@@ -517,7 +543,8 @@ export default class Grapher {
         },
         labels: {
           formatter: function () {
-            const exponent = this.axis.exponent || 0;
+            const exportExp = this.chart?.renderer?.forExport ? this.chart?.options?.chart?.exportXExponent : undefined;
+            const exponent = exportExp !== undefined ? exportExp : (this.axis.exponent || 0);
             const value = this.value / Math.pow(10, exponent);
             const tickInterval = this.axis.tickInterval;
             const scaledTickInterval = tickInterval / Math.pow(10, exponent);
@@ -543,6 +570,7 @@ export default class Grapher {
         minorTickInterval: this.minorGrid ? 'auto' : null,
         minorGridLineColor: '#f2f2f2', // Gris très clair pour ne pas surcharger
         gridLineWidth: this.grid ? 1 : 0,
+        plotLines: this._getZeroPlotLines(),
         tickWidth: 1,
         startOnTick: false,
         endOnTick: false,
@@ -580,7 +608,8 @@ export default class Grapher {
         },
         labels: {
           formatter: function () {
-            const exponent = this.axis.exponent || 0;
+            const exportExp = this.chart?.renderer?.forExport ? this.chart?.options?.chart?.exportYExponent : undefined;
+            const exponent = exportExp !== undefined ? exportExp : (this.axis.exponent || 0);
             const value = this.value / Math.pow(10, exponent);
             const tickInterval = this.axis.tickInterval;
             const scaledTickInterval = tickInterval / Math.pow(10, exponent);
@@ -979,6 +1008,24 @@ updateChart(yCurveTitles, redraw = true) {
     }
   }
 
+  _getZeroPlotLines() {
+    return this.highlightZeroAxes ? [{ ...ZERO_PLOT_LINE }] : [];
+  }
+
+  setHighlightZeroAxes(enabled) {
+    this.highlightZeroAxes = Boolean(enabled);
+    if (this.chart) {
+      this.chart.update({
+        xAxis: {
+          plotLines: this._getZeroPlotLines()
+        },
+        yAxis: {
+          plotLines: this._getZeroPlotLines()
+        }
+      });
+    }
+  }
+
   setMinorGridVisibility(visible) {
     this.minorGrid = visible;
     if (this.chart) {
@@ -1253,7 +1300,17 @@ setDisableScientificNotation(disabled) {
     this.chart.redraw();
 
     // Afficher le bouton de "reset zoom"
-    $("#auto-zoom-button").classList.remove("is-hidden");
+    this.updateAutoZoomButtonVisibility();
+  }
+
+  /**
+   * Synchronise la visibilité du bouton Zoom auto avec l'état `hasUserZoom`.
+   */
+  updateAutoZoomButtonVisibility() {
+    const autoZoomBtn = $("#auto-zoom-button");
+    if (autoZoomBtn) {
+      autoZoomBtn.classList.toggle("is-hidden", !this.hasUserZoom);
+    }
   }
 
   /**
@@ -1262,6 +1319,7 @@ setDisableScientificNotation(disabled) {
    */
   resetZoom(redraw = true) {
     this.hasUserZoom = false;
+    this.updateAutoZoomButtonVisibility();
     // Réinitialise les extrêmes des axes de Highcharts
     if (this.chart?.xAxis?.[0] && this.chart?.yAxis?.[0]) {
       this.chart.xAxis[0].setExtremes(null, null, false);
@@ -1275,6 +1333,36 @@ setDisableScientificNotation(disabled) {
     
     // Mise à jour UI
     this.uiManager?.resetZoomUI();
+  }
+
+  /**
+   * Définit numériquement les bornes des axes X et Y.
+   * Une valeur `null` ou `undefined` laisse la borne correspondante en automatique.
+   * @param {{ xMin?: number|null, xMax?: number|null, yMin?: number|null, yMax?: number|null }} bounds
+   * @returns {boolean}
+   */
+  setAxisBounds({ xMin = null, xMax = null, yMin = null, yMax = null } = {}) {
+    if (!this.chart?.xAxis?.[0] || !this.chart?.yAxis?.[0]) return false;
+
+    const allAuto = (xMin === null || xMin === undefined) &&
+                    (xMax === null || xMax === undefined) &&
+                    (yMin === null || yMin === undefined) &&
+                    (yMax === null || yMax === undefined);
+
+    if (allAuto) {
+      this.resetZoom();
+      return true;
+    }
+
+    this.hasUserZoom = true;
+
+    this.chart.xAxis[0].setExtremes(xMin ?? null, xMax ?? null, false);
+    this.chart.yAxis[0].setExtremes(yMin ?? null, yMax ?? null, false);
+    this.chart.redraw();
+
+    this.updateAutoZoomButtonVisibility();
+
+    return true;
   }
 
   /**
@@ -1618,10 +1706,11 @@ setDisableScientificNotation(disabled) {
 
   _drawSlopeLabel(pixelX, pixelY, slope, targetChart = this.chart) {
     const significantDigits = this.data?.settings?.significantDigits ?? 4;
+    const exportScale = targetChart.renderer?.forExport ? (targetChart.options?.chart?.exportTextScale || 1) : 1;
     const slopeText = `pente = ${formatNumber(slope, significantDigits)}`;
     const slopeLabel = targetChart.renderer.label(slopeText, 0, 0, 'callout')
-      .attr({ fill: 'white', stroke: '#dbdbdb', 'stroke-width': 1, r: 6, padding: 8, zIndex: 6 })
-      .css({ color: 'black', fontSize: '14px' })
+      .attr({ fill: 'white', stroke: '#dbdbdb', 'stroke-width': 1, r: 6, padding: Math.round(8 * exportScale), zIndex: 6 })
+      .css({ color: 'black', fontSize: `${Math.round(14 * exportScale)}px` })
       .add();
 
     const labelBBox = slopeLabel.getBBox();
@@ -1774,14 +1863,22 @@ setDisableScientificNotation(disabled) {
         // 4. Labels Delta
         const xCurveObj = this.data.getCurveByTitle(this.currentXCurve);
         const firstYSeries = chart.series.find(s => s.visible && s.yAxis?.index === 0);
-        const xUnit = xCurveObj?.unit ? ` ${xCurveObj.unit}` : '';
-        const rawYUnit = annotation.yUnit !== undefined
-          ? annotation.yUnit
-          : (firstYSeries?.userOptions?.unit || '');
+        const exportLabels = targetChart.renderer?.forExport ? targetChart.options?.chart?.exportCurveLabels : null;
+        const xOverride = exportLabels && this.currentXCurve ? exportLabels[this.currentXCurve] : null;
+        const yOverride = exportLabels && firstYSeries?.name ? exportLabels[firstYSeries.name] : null;
+
+        const resolvedXUnit = (xOverride && typeof xOverride.unit === 'string') ? xOverride.unit : (xCurveObj?.unit || '');
+        const xUnit = resolvedXUnit ? ` ${resolvedXUnit}` : '';
+        const rawYUnit = (yOverride && typeof yOverride.unit === 'string')
+          ? yOverride.unit
+          : (annotation.yUnit !== undefined
+              ? annotation.yUnit
+              : (firstYSeries?.userOptions?.unit || ''));
         const yUnit = rawYUnit ? ` ${rawYUnit}` : '';
 
-        const labelAttr = { fill: 'rgba(255, 255, 255, 0.85)', stroke: '#dbdbdb', 'stroke-width': 1, r: 4, padding: 5, zIndex: 6 };
-        const labelCss = { color: 'black', fontSize: '12px' };
+        const exportScale = targetChart.renderer?.forExport ? (targetChart.options?.chart?.exportTextScale || 1) : 1;
+        const labelAttr = { fill: 'rgba(255, 255, 255, 0.85)', stroke: '#dbdbdb', 'stroke-width': 1, r: 4, padding: Math.round(5 * exportScale), zIndex: 6 };
+        const labelCss = { color: 'black', fontSize: `${Math.round(12 * exportScale)}px` };
 
         if (clippedDeltaX) {
           const dxText = `Δx = ${formatNumber(p2.x - p1.x, significantDigits)}${xUnit}`;
@@ -1969,12 +2066,27 @@ setDisableScientificNotation(disabled) {
             const yCurveObj = this.data.getCurveByTitle(seriesName);
 
             const isExport = Boolean(targetChart.renderer?.forExport);
-            const eqSub = isExport ? '_eq' : '<sub>eq</sub>';
-            const xLabelName = (xCurveObj?.title || this.currentXCurve || 'V') + eqSub;
-            const yLabelName = (yCurveObj?.title || seriesName || 'pH') + eqSub;
+            const exportScale = isExport ? (targetChart.options?.chart?.exportTextScale || 1) : 1;
+            const exportLabels = isExport ? targetChart.options?.chart?.exportCurveLabels : null;
+            const xKey = xCurveObj?.title || this.currentXCurve || '';
+            const yKey = yCurveObj?.title || seriesName || '';
+            const xOverride = exportLabels && xKey ? exportLabels[xKey] : null;
+            const yOverride = exportLabels && yKey ? exportLabels[yKey] : null;
 
-            const xUnit = xCurveObj?.unit ? ` ${xCurveObj.unit}` : '';
-            const yUnit = yCurveObj?.unit ? ` ${yCurveObj.unit}` : (series?.userOptions?.unit ? ` ${series.userOptions.unit}` : '');
+            const eqSub = isExport
+              ? '<tspan style="font-size: 0.72em; baseline-shift: sub;">eq</tspan>'
+              : '<sub>eq</sub>';
+            const xBaseName = (xOverride && xOverride.title) ? xOverride.title : (xKey || 'V');
+            const yBaseName = (yOverride && yOverride.title) ? yOverride.title : (yKey || 'pH');
+            const xLabelName = xBaseName + eqSub;
+            const yLabelName = yBaseName + eqSub;
+
+            const resolvedXUnit = (xOverride && typeof xOverride.unit === 'string') ? xOverride.unit : (xCurveObj?.unit || '');
+            const resolvedYUnit = (yOverride && typeof yOverride.unit === 'string')
+              ? yOverride.unit
+              : (yCurveObj?.unit || series?.userOptions?.unit || '');
+            const xUnit = resolvedXUnit ? ` ${resolvedXUnit}` : '';
+            const yUnit = resolvedYUnit ? ` ${resolvedYUnit}` : '';
 
             const eqText = `<b>${xLabelName}</b> = ${formatNumber(eqPoint.x, significantDigits)}${xUnit}<br/><b>${yLabelName}</b> = ${formatNumber(eqPoint.y, significantDigits)}${yUnit}`;
             const eqLabel = chart.renderer.label(eqText, 0, 0, 'callout', null, null, !isExport)
@@ -1983,12 +2095,12 @@ setDisableScientificNotation(disabled) {
                   stroke: '#dbdbdb',                 // Bordure de l'étiquette
                   'stroke-width': 1, 
                   r: 6,                              // Bords arrondis
-                  padding: 8, 
+                  padding: Math.round(8 * exportScale), 
                   zIndex: 6 
               })
               .css({ 
                   color: 'black', 
-                  fontSize: '14px' 
+                  fontSize: `${Math.round(14 * exportScale)}px` 
               }).add();
 
             const eqBBox = eqLabel.getBBox();

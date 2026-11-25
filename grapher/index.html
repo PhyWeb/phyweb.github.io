@@ -320,13 +320,13 @@
             <span>Courbes</span>
           </button>
           <div style="border-left: 1px solid #dbdbdb; height: 24px;"></div>
-          <button class="button is-white" id="zoom-button">
+          <button class="button is-white" id="zoom-button" title="Zoomer sur une zone">
             <span class="icon">
               <i class="fa-solid fa-magnifying-glass"></i>
             </span>
             <span>Zoom</span>
           </button>
-          <button class="button is-white" id="zoom-in-button">
+          <button class="button is-white" id="zoom-in-button" title="Zoom avant">
             <span class="icon">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true">
                 <path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376C296.3 401.1 253.9 416 208 416 93.1 416 0 322.9 0 208S93.1 0 208 0 416 93.1 416 208zM208 352a144 144 0 1 0 0-288 144 144 0 1 0 0 288z"/>
@@ -334,7 +334,7 @@
               </svg>
             </span>
           </button>
-          <button class="button is-white" id="zoom-out-button">
+          <button class="button is-white" id="zoom-out-button" title="Zoom arrière">
             <span class="icon">
               <svg viewBox="0 0 512 512" fill="currentColor" aria-hidden="true">
                 <path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376C296.3 401.1 253.9 416 208 416 93.1 416 0 322.9 0 208S93.1 0 208 0 416 93.1 416 208zM208 352a144 144 0 1 0 0-288 144 144 0 1 0 0 288z"/>
@@ -342,7 +342,58 @@
               </svg>
             </span>
           </button>
-          <button class="button is-white" id="auto-zoom-button">
+          <div class="dropdown" id="axis-bounds-dropdown">
+            <div class="dropdown-trigger">
+              <button class="button is-white" id="axis-bounds-button" type="button" title="Définir les bornes des axes" aria-label="Définir les bornes des axes" aria-haspopup="true" aria-controls="axis-bounds-popover">
+                <span class="icon">
+                  <i class="fa-solid fa-sliders"></i>
+                </span>
+              </button>
+            </div>
+            <div class="dropdown-menu" id="axis-bounds-popover" role="menu">
+              <div class="dropdown-content p-3">
+                <p class="is-size-7 has-text-weight-semibold has-text-grey-dark mb-2">Bornes des axes</p>
+                <form id="axis-bounds-form" novalidate>
+                  <div class="axis-bounds-group mb-2">
+                    <div class="is-flex is-justify-content-space-between is-align-items-center mb-1">
+                      <span class="is-size-7 has-text-weight-semibold" id="axis-bounds-x-label">Abscisse (X)</span>
+                      <button type="button" class="button is-ghost is-small p-0 axis-bounds-auto-btn" id="axis-bounds-x-auto" title="Remettre l'axe X en automatique">Auto</button>
+                    </div>
+                    <div class="axis-bounds-row">
+                      <div class="control is-expanded">
+                        <input class="input is-small" type="text" inputmode="decimal" id="axis-bounds-x-min" placeholder="Min (auto)" aria-label="Abscisse minimale">
+                      </div>
+                      <span class="axis-bounds-sep">à</span>
+                      <div class="control is-expanded">
+                        <input class="input is-small" type="text" inputmode="decimal" id="axis-bounds-x-max" placeholder="Max (auto)" aria-label="Abscisse maximale">
+                      </div>
+                    </div>
+                  </div>
+                  <div class="axis-bounds-group mb-2">
+                    <div class="is-flex is-justify-content-space-between is-align-items-center mb-1">
+                      <span class="is-size-7 has-text-weight-semibold" id="axis-bounds-y-label">Ordonnée (Y)</span>
+                      <button type="button" class="button is-ghost is-small p-0 axis-bounds-auto-btn" id="axis-bounds-y-auto" title="Remettre l'axe Y en automatique">Auto</button>
+                    </div>
+                    <div class="axis-bounds-row">
+                      <div class="control is-expanded">
+                        <input class="input is-small" type="text" inputmode="decimal" id="axis-bounds-y-min" placeholder="Min (auto)" aria-label="Ordonnée minimale">
+                      </div>
+                      <span class="axis-bounds-sep">à</span>
+                      <div class="control is-expanded">
+                        <input class="input is-small" type="text" inputmode="decimal" id="axis-bounds-y-max" placeholder="Max (auto)" aria-label="Ordonnée maximale">
+                      </div>
+                    </div>
+                  </div>
+                  <p class="help is-danger is-hidden mb-2" id="axis-bounds-error"></p>
+                  <div class="is-flex is-justify-content-space-between is-align-items-center pt-1">
+                    <button type="button" class="button is-small is-light" id="axis-bounds-reset-btn">Tout auto</button>
+                    <button type="submit" class="button is-small is-primary" id="axis-bounds-apply-btn">Appliquer</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+          <button class="button is-info is-light is-hidden" id="auto-zoom-button" title="Zoom automatique">
             <span class="icon">
               <i class="fa-solid fa-maximize"></i>
             </span>
@@ -1139,6 +1190,15 @@
               </div>
             </div>
             <div class="field">
+              <label class="label">Mettre en évidence les axes à zéro (x = 0, y = 0)</label>
+              <div class="control">
+                <label class="switch is-rounded">
+                  <input type="checkbox" id="highlight-zero-axes-switch" checked>
+                  <span class="check"></span>
+                </label>
+              </div>
+            </div>
+            <div class="field">
               <label class="label">Forcer l'affichage total des nombres (pas de puissances de 10)</label>
               <div class="control">
                 <label class="switch is-rounded">
@@ -1674,24 +1734,22 @@
   <!------------------------------------------------------------------------------------------------------------>
   <div id="export-modal" class="modal">
     <div class="modal-background"></div>
-    <!-- Limite à 720px ajoutée ici -->
-    <div class="modal-card" style="width: 80vw; max-width: 1200px; min-height: 720px; height: 80%;">
+    <div class="modal-card">
       
-      <!-- Padding vertical allégé -->
-      <header class="modal-card-head" style="padding-top: 24px; padding-bottom: 24px;">
+      <header class="modal-card-head" style="padding-top: 20px; padding-bottom: 20px;">
         <p class="modal-card-title">Exporter / Imprimer</p>
         <button class="delete modal-close-button" aria-label="close" data-modal-cancel></button>
       </header>
       
-      <section class="modal-card-body pb-3 is-flex is-flex-direction-column">
-        <div class="columns is-flex-grow-1 mb-0" style="min-height: 0;">
+      <section class="modal-card-body is-flex is-flex-direction-column">
+        <div id="export-modal-layout">
           
-          <!-- COLONNE GAUCHE : Options (retour au style par défaut) -->
-          <div class="column is-3">
+          <!-- COLONNE GAUCHE : Options (largeur fixe & compacte) -->
+          <div id="export-sidebar">
             <div class="field">
               <label class="label">Action souhaitée</label>
               <div class="control">
-                <div class="select is-fullwidth">
+                <div class="select is-small is-fullwidth">
                   <select id="export-action-select">
                     <option value="print">Document (Impression / PDF)</option>
                     <option value="image">Image (Graphe uniquement)</option>
@@ -1700,88 +1758,175 @@
               </div>
             </div>
 
-            <div class="field mb-4">
-              <label class="label">Titre du document (optionnel)</label>
+            <div class="field">
+              <label class="label">Titre (optionnel)</label>
               <div class="control">
-                <input class="input export-trigger" type="text" id="export-title-input" placeholder="Ex: TP Physique">
+                <input class="input is-small" type="text" id="export-title-input" placeholder="Ex: TP Physique">
               </div>
             </div>
 
-            <div class="field mb-4">
-              <label class="label">Taille du graphique</label>
-              <div class="control">
-                <div class="select is-fullwidth">
-                  <select id="export-graph-size" class="export-trigger">
-                    <option value="1" selected>100% (Identique à l'écran)</option>
-                    <option value="0.75">75% (Polices plus lisibles)</option>
-                    <option value="0.5">50% (Polices très lisibles)</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <!-- Options pour PDF/Impression -->
-            <div id="export-sections-container" class="mt-4 box">
-              <label class="label">Éléments à inclure</label>
-              <div class="field mt-3">
-                <label class="checkbox block is-size-6" style="display: block; margin-bottom: 10px;">
-                  <input type="checkbox" id="export-check-graph" class="export-trigger" checked> Grapheur
-                </label>
-                <label class="checkbox block is-size-6" style="display: block; margin-bottom: 10px;">
-                  <input type="checkbox" id="export-check-table" class="export-trigger"> <span id="export-table-label">Tableur (Données)</span>
-                </label>
-                <label class="checkbox block is-size-6" style="display: block;">
-                  <input type="checkbox" id="export-check-calc" class="export-trigger"> Feuille de calculs
-                </label>
-              </div>
-
-              <div class="field mt-4">
-                <label class="label">Marges (Format A4)</label>
+            <div class="export-field-row">
+              <div class="field">
+                <label class="label">Format du graphe</label>
                 <div class="control">
-                  <div class="select is-fullwidth">
-                    <select id="export-margin-select" class="export-trigger">
-                      <option value="1cm" selected>Étroites (1 cm)</option>
-                      <option value="2cm">Normales (2 cm)</option>
-                      <option value="3cm">Larges (3 cm)</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Options pour Image -->
-            <div id="export-image-options" class="is-hidden">
-              <div class="field mb-4">
-                <label class="label">Format</label>
-                <div class="control">
-                  <div class="select is-fullwidth">
-                    <select id="export-image-format" class="export-trigger">
-                      <option value="image/png">PNG</option>
-                      <option value="image/jpeg">JPEG</option>
-                      <option value="image/svg+xml">SVG</option>
+                  <div class="select is-small is-fullwidth">
+                    <select id="export-graph-ratio" class="export-trigger">
+                      <option value="16:10" selected>Standard (16:10)</option>
+                      <option value="16:9">Large (16:9)</option>
+                      <option value="4:3">Classique (4:3)</option>
+                      <option value="1:1">Carré (1:1)</option>
+                      <option value="screen">Écran actuel</option>
                     </select>
                   </div>
                 </div>
               </div>
 
               <div class="field">
-                <label class="label">Qualité</label>
+                <label class="label">Taille des textes</label>
                 <div class="control">
-                  <div class="select is-fullwidth">
-                    <select id="export-image-scale" class="export-trigger">
-                      <option value="1" selected>x1 (Normal)</option>
-                      <option value="2">x2 (HD)</option>
-                      <option value="3">x3 (Très HD)</option>
+                  <div class="select is-small is-fullwidth">
+                    <select id="export-graph-size" class="export-trigger">
+                      <option value="0.85">85%</option>
+                      <option value="1" selected>100% (Normal)</option>
+                      <option value="1.25">125% (Grand)</option>
+                      <option value="1.5">150% (Très grand)</option>
+                      <option value="1.75">175% (Extra)</option>
                     </select>
                   </div>
                 </div>
               </div>
             </div>
+
+            <!-- Options pour PDF/Impression -->
+            <div id="export-sections-container" class="box export-panel-box">
+              <label class="label">Éléments à inclure</label>
+              <div class="field">
+                <label class="checkbox export-check-item">
+                  <input type="checkbox" id="export-check-graph" class="export-trigger" checked>
+                  <span>Grapheur</span>
+                </label>
+                <label class="checkbox export-check-item">
+                  <input type="checkbox" id="export-check-models" class="export-trigger" checked>
+                  <span id="export-models-label">Modélisations</span>
+                </label>
+                <label class="checkbox export-check-item">
+                  <input type="checkbox" id="export-check-table" class="export-trigger">
+                  <span id="export-table-label">Tableur (Données)</span>
+                </label>
+                <label class="checkbox export-check-item">
+                  <input type="checkbox" id="export-check-calc" class="export-trigger">
+                  <span>Feuille de calculs</span>
+                </label>
+              </div>
+
+              <div class="field mt-2 is-hidden" id="export-table-layout-field">
+                <label class="label">Disposition du tableau</label>
+                <div class="control">
+                  <div class="select is-small is-fullwidth">
+                    <select id="export-table-layout" class="export-trigger">
+                      <option value="vertical" selected>Vertical (colonnes)</option>
+                      <option value="horizontal">Horizontal (en lignes)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div class="export-field-row mt-2">
+                <div class="field">
+                  <label class="label">Orientation</label>
+                  <div class="control">
+                    <div class="select is-small is-fullwidth">
+                      <select id="export-orientation-select" class="export-trigger">
+                        <option value="portrait" selected>Portrait</option>
+                        <option value="landscape">Paysage</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="field">
+                  <label class="label">Marges (A4)</label>
+                  <div class="control">
+                    <div class="select is-small is-fullwidth">
+                      <select id="export-margin-select" class="export-trigger">
+                        <option value="1cm" selected>1 cm</option>
+                        <option value="2cm">2 cm</option>
+                        <option value="3cm">3 cm</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Options pour Image -->
+            <div id="export-image-options" class="box export-panel-box is-hidden">
+              <div class="field">
+                <label class="label">Nom du fichier</label>
+                <div class="control">
+                  <input class="input is-small" type="text" id="export-filename-input" placeholder="phyweb_graphe">
+                </div>
+              </div>
+
+              <div class="export-field-row">
+                <div class="field">
+                  <label class="label">Format</label>
+                  <div class="control">
+                    <div class="select is-small is-fullwidth">
+                      <select id="export-image-format">
+                        <option value="image/png">PNG</option>
+                        <option value="image/jpeg">JPEG</option>
+                        <option value="image/svg+xml">SVG</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="field" id="export-image-scale-field">
+                  <label class="label">Résolution</label>
+                  <div class="control">
+                    <div class="select is-small is-fullwidth">
+                      <select id="export-image-scale">
+                        <option value="1">x1 (Standard)</option>
+                        <option value="2" selected>x2 (HD)</option>
+                        <option value="3">x3 (Très HD)</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="field mt-1">
+                <label class="checkbox export-check-item">
+                  <input type="checkbox" id="export-transparent-bg" class="export-trigger">
+                  <span>Fond transparent (PNG / SVG)</span>
+                </label>
+              </div>
+              <p class="help has-text-grey mt-1 mb-0" id="export-image-dimensions-info"></p>
+            </div>
+
+            <!-- Renommage libre des grandeurs / unités pour l'export -->
+            <details id="export-rename-details" class="box export-panel-box">
+              <summary class="is-clickable has-text-weight-semibold" style="font-size: 0.82rem; user-select: none;">
+                <span class="icon is-small mr-1"><i class="fa-solid fa-pen"></i></span>
+                <span>Renommer les grandeurs</span>
+              </summary>
+              <div class="export-rename-body">
+                <p class="help mt-1 mb-2 has-text-grey" style="font-size: 0.72rem; line-height: 1.25;">
+                  Noms et unités libres pour l'export uniquement (espaces, accents, symboles).
+                </p>
+                <div id="export-rename-list"></div>
+                <button type="button" class="button is-small is-light is-fullwidth mt-2" id="export-rename-reset-btn">
+                  <span class="icon is-small"><i class="fa-solid fa-rotate-left"></i></span>
+                  <span>Réinitialiser</span>
+                </button>
+              </div>
+            </details>
           </div>
 
           <!-- COLONNE DROITE : Aperçu -->
-          <div class="column is-9 is-flex is-flex-direction-column" style="overflow: hidden;">
-            <h3 class="title is-5 mb-2">Aperçu du document</h3>
+          <div id="export-preview-pane">
+            <h3 class="title is-6 mb-2" id="export-preview-title">Aperçu du document</h3>
             <div class="box is-flex-grow-1 p-0 has-background-grey-lighter is-flex is-flex-direction-column" style="overflow: hidden;">
               <iframe id="export-preview-iframe" style="width: 100%; flex-grow: 1; border: none; height: 100%;"></iframe>
             </div>

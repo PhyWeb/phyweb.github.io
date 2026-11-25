@@ -2,11 +2,45 @@ import { formatNumber, toSuperscript } from '../../common/formatter.js';
 import { alertModal, showToast, NavigationManager, setupGlobalShortcuts, FileDropManager} from '../../common/common.js';
 import { DEFAULT_SETTINGS, saveSettings, loadSettings, clearSavedSettings } from './settingsManager.js';
 import { stripInlineComment } from './calculation.js';
+import ExportManager, {
+  MAX_PRINT_TABLE_POINTS,
+  EXPORT_RATIO_DIMENSIONS,
+  sanitizeExportFilename,
+  escapeHTML
+} from './exportManager.js';
 
 const $ = document.querySelector.bind(document);
 
-export const MAX_PRINT_TABLE_POINTS = 500;
-export { toSuperscript };
+export { MAX_PRINT_TABLE_POINTS, EXPORT_RATIO_DIMENSIONS, sanitizeExportFilename, escapeHTML, toSuperscript };
+
+/**
+ * Parse une saisie utilisateur de borne numérique (virgule ou point, notation scientifique).
+ * Une chaîne vide correspond à une borne automatique (`null`).
+ * @param {string} rawValue
+ * @returns {{ empty: boolean, value: number|null, valid: boolean }}
+ */
+export function parseAxisBoundInput(rawValue) {
+  const cleaned = String(rawValue ?? '').replace(/[\s\u00A0\u202F]+/g, '').replace(',', '.');
+  if (cleaned === '') {
+    return { empty: true, value: null, valid: true };
+  }
+  const num = Number(cleaned);
+  if (Number.isFinite(num)) {
+    return { empty: false, value: num, valid: true };
+  }
+  return { empty: false, value: null, valid: false };
+}
+
+/**
+ * Formate une borne numérique pour pré-remplir les champs du popover sans bruit flottant.
+ * @param {number} value
+ * @returns {string}
+ */
+export function formatAxisBoundValue(value) {
+  if (!Number.isFinite(value)) return '';
+  const rounded = Number(value.toPrecision(8));
+  return Object.is(rounded, -0) ? '0' : String(rounded);
+}
 const EXTRA_CUSTOMIZATION_COLORS = ['#000000'];
 
 /**
@@ -135,22 +169,6 @@ export function populateColorSelect(selectElement) {
   updatePreview(selectElement.value || colors[0]);
 }
 
-/**
- * Échappe les caractères HTML spéciaux pour prévenir les injections XSS
- * et les balises cassées lors de l'interpolation dans un template HTML.
- * @param {string} str
- * @returns {string}
- */
-export function escapeHTML(str) {
-  if (!str) return '';
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
-
 export default class UIManager {
   constructor(common, data, grapher, calculation, editor, spreadsheet) {
     this.common = common;
@@ -168,8 +186,17 @@ export default class UIManager {
     this.calculationsStale = false;
 
     this.initialSettings = {}; // Pour stocker les paramètres initiaux lors de l'ouverture de la modale des paramètres
+    this.exportManager = new ExportManager({ common, data, grapher, editor });
 
     this.updateModelToolVisibility = this.updateModelToolVisibility.bind(this);
+  }
+
+  get exportCurveLabels() {
+    return this.exportManager.exportCurveLabels;
+  }
+
+  set exportCurveLabels(val) {
+    this.exportManager.exportCurveLabels = val;
   }
 
   setApp(app) {
@@ -230,6 +257,11 @@ export default class UIManager {
         const constantsDropdown = document.getElementById('constants-dropdown');
         if (constantsDropdown) {
           constantsDropdown.classList.remove('is-active');
+        }
+        // Ferme le popover des bornes des axes s'il est ouvert
+        const axisBoundsDropdown = document.getElementById('axis-bounds-dropdown');
+        if (axisBoundsDropdown) {
+          axisBoundsDropdown.classList.remove('is-active');
         }
         // Désactive les outils du grapheur (réticule, etc.)
         this.clearActiveTool(); 
@@ -1364,6 +1396,7 @@ export default class UIManager {
       significantDigits: this.data?.settings?.significantDigits ?? 4,
       grapherGrid: this.grapher.grid,
       minorGrid: this.grapher.minorGrid,
+      highlightZeroAxes: this.grapher.highlightZeroAxes,
       disableScientificNotation: this.grapher.disableScientificNotation,
       includeOriginOnAutoZoom: this.grapher.includeOriginOnAutoZoom,
       derivatePoints: this.calculation.derivatePoints,
@@ -1380,6 +1413,7 @@ export default class UIManager {
     $('#significant-digits-select').value = settings?.significantDigits ?? 4;
     $('#graph-grid-switch').checked = settings.grapherGrid;
     $('#graph-grid-minor-switch').checked = settings.minorGrid || false;
+    $('#highlight-zero-axes-switch').checked = settings.highlightZeroAxes ?? true;
     $('#graph-disable-scientific-switch').checked = settings.disableScientificNotation || false;
     $('#include-origin-switch').checked = settings.includeOriginOnAutoZoom;
     $('#derivative-points-select').value = settings.derivatePoints;
@@ -1397,6 +1431,7 @@ export default class UIManager {
       significantDigits: parseInt(document.getElementById('significant-digits-select').value) || 4,
       grapherGrid: document.getElementById('graph-grid-switch').checked,
       minorGrid: document.getElementById('graph-grid-minor-switch').checked,
+      highlightZeroAxes: document.getElementById('highlight-zero-axes-switch').checked,
       disableScientificNotation: document.getElementById('graph-disable-scientific-switch').checked,
       includeOriginOnAutoZoom: document.getElementById('include-origin-switch').checked,
       derivatePoints: parseInt(document.getElementById('derivative-points-select').value),
@@ -1427,6 +1462,10 @@ export default class UIManager {
     }
     if (this.grapher.minorGrid !== settings.minorGrid) {
       this.grapher.setMinorGridVisibility(settings.minorGrid);
+    }
+
+    if (this.grapher.highlightZeroAxes !== settings.highlightZeroAxes) {
+      this.grapher.setHighlightZeroAxes(settings.highlightZeroAxes);
     }
 
     if (this.grapher.disableScientificNotation !== settings.disableScientificNotation) {
@@ -2868,6 +2907,181 @@ export default class UIManager {
       this.grapher.zoom('out');
     });
 
+    this.initAxisBoundsPopover();
+
+  }
+
+  /**
+   * Initialise le popover compact permettant de définir numériquement les bornes des axes X et Y.
+   */
+  initAxisBoundsPopover() {
+    const dropdown = $('#axis-bounds-dropdown');
+    const triggerBtn = $('#axis-bounds-button');
+    const popover = $('#axis-bounds-popover');
+    const form = $('#axis-bounds-form');
+    const xLabel = $('#axis-bounds-x-label');
+    const xMinInput = $('#axis-bounds-x-min');
+    const xMaxInput = $('#axis-bounds-x-max');
+    const yMinInput = $('#axis-bounds-y-min');
+    const yMaxInput = $('#axis-bounds-y-max');
+    const xAutoBtn = $('#axis-bounds-x-auto');
+    const yAutoBtn = $('#axis-bounds-y-auto');
+    const resetBtn = $('#axis-bounds-reset-btn');
+    const errorEl = $('#axis-bounds-error');
+
+    if (!dropdown || !triggerBtn || !form) return;
+
+    const allInputs = [xMinInput, xMaxInput, yMinInput, yMaxInput].filter(Boolean);
+
+    const clearValidationState = () => {
+      allInputs.forEach(input => input.classList.remove('is-danger'));
+      if (errorEl) {
+        errorEl.textContent = '';
+        errorEl.classList.add('is-hidden');
+      }
+    };
+
+    const showValidationError = (message, invalidInputs = []) => {
+      clearValidationState();
+      invalidInputs.forEach(input => input?.classList.add('is-danger'));
+      if (errorEl) {
+        errorEl.textContent = message;
+        errorEl.classList.remove('is-hidden');
+      }
+    };
+
+    const populateBoundsInputs = () => {
+      clearValidationState();
+
+      // Affiche le nom et l'unité de l'abscisse courante si disponible
+      if (xLabel) {
+        const xTitle = this.grapher?.currentXCurve;
+        const xCurve = xTitle ? this.data?.getCurveByTitle?.(xTitle) : null;
+        if (xTitle) {
+          xLabel.textContent = xCurve?.unit ? `Abscisse : ${xTitle} (${xCurve.unit})` : `Abscisse : ${xTitle}`;
+        } else {
+          xLabel.textContent = 'Abscisse (X)';
+        }
+      }
+
+      const xAxis = this.grapher?.chart?.xAxis?.[0];
+      const yAxis = this.grapher?.chart?.yAxis?.[0];
+      const xEx = xAxis?.getExtremes?.();
+      const yEx = yAxis?.getExtremes?.();
+
+      if (xMinInput) xMinInput.value = formatAxisBoundValue(xEx?.min);
+      if (xMaxInput) xMaxInput.value = formatAxisBoundValue(xEx?.max);
+      if (yMinInput) yMinInput.value = formatAxisBoundValue(yEx?.min);
+      if (yMaxInput) yMaxInput.value = formatAxisBoundValue(yEx?.max);
+    };
+
+    const updatePopoverAlignment = () => {
+      if (typeof window === 'undefined' || typeof triggerBtn.getBoundingClientRect !== 'function') return;
+      const rect = triggerBtn.getBoundingClientRect();
+      const estimatedWidth = 280;
+      const overflowsRight = rect.left + estimatedWidth > window.innerWidth - 12;
+      dropdown.classList.toggle('is-right', overflowsRight);
+    };
+
+    triggerBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const willOpen = !dropdown.classList.contains('is-active');
+
+      // Ferme le menu Outils s'il est ouvert
+      const toolsDropdown = $('#tools-dropdown');
+      if (toolsDropdown) toolsDropdown.classList.remove('is-active');
+
+      if (willOpen) {
+        this.clearActiveTool();
+        populateBoundsInputs();
+        updatePopoverAlignment();
+        dropdown.classList.add('is-active');
+        xMinInput?.focus?.();
+        xMinInput?.select?.();
+      } else {
+        dropdown.classList.remove('is-active');
+      }
+    });
+
+    if (popover) {
+      popover.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+    }
+
+    document.addEventListener('click', () => {
+      dropdown.classList.remove('is-active');
+    });
+
+    if (xAutoBtn) {
+      xAutoBtn.addEventListener('click', () => {
+        if (xMinInput) xMinInput.value = '';
+        if (xMaxInput) xMaxInput.value = '';
+        clearValidationState();
+      });
+    }
+
+    if (yAutoBtn) {
+      yAutoBtn.addEventListener('click', () => {
+        if (yMinInput) yMinInput.value = '';
+        if (yMaxInput) yMaxInput.value = '';
+        clearValidationState();
+      });
+    }
+
+    if (resetBtn) {
+      resetBtn.addEventListener('click', () => {
+        this.grapher?.resetZoom();
+        dropdown.classList.remove('is-active');
+      });
+    }
+
+    allInputs.forEach(input => {
+      input.addEventListener('input', () => {
+        input.classList.remove('is-danger');
+        if (errorEl) errorEl.classList.add('is-hidden');
+      });
+    });
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (!this.grapher?.chart) return;
+
+      const xMinParsed = parseAxisBoundInput(xMinInput?.value);
+      const xMaxParsed = parseAxisBoundInput(xMaxInput?.value);
+      const yMinParsed = parseAxisBoundInput(yMinInput?.value);
+      const yMaxParsed = parseAxisBoundInput(yMaxInput?.value);
+
+      const invalidInputs = [];
+      if (!xMinParsed.valid) invalidInputs.push(xMinInput);
+      if (!xMaxParsed.valid) invalidInputs.push(xMaxInput);
+      if (!yMinParsed.valid) invalidInputs.push(yMinInput);
+      if (!yMaxParsed.valid) invalidInputs.push(yMaxInput);
+
+      if (invalidInputs.length > 0) {
+        showValidationError('Veuillez saisir des valeurs numériques valides.', invalidInputs);
+        return;
+      }
+
+      if (!xMinParsed.empty && !xMaxParsed.empty && xMinParsed.value >= xMaxParsed.value) {
+        showValidationError('En abscisse, la borne min doit être strictement inférieure à la borne max.', [xMinInput, xMaxInput]);
+        return;
+      }
+
+      if (!yMinParsed.empty && !yMaxParsed.empty && yMinParsed.value >= yMaxParsed.value) {
+        showValidationError('En ordonnée, la borne min doit être strictement inférieure à la borne max.', [yMinInput, yMaxInput]);
+        return;
+      }
+
+      this.grapher.setAxisBounds({
+        xMin: xMinParsed.value,
+        xMax: xMaxParsed.value,
+        yMin: yMinParsed.value,
+        yMax: yMaxParsed.value
+      });
+
+      dropdown.classList.remove('is-active');
+    });
   }
 
   /**
@@ -4148,464 +4362,56 @@ export default class UIManager {
     });
   }
   /**
-   * Initialise la modale d'exportation avec aperçu en temps réel
+   * Initialise la modale d'exportation avec aperçu en temps réel (délégué à ExportManager)
    */
   initExportModal() {
-    const exportModal = $('#export-modal');
-    const actionSelect = $('#export-action-select');
-    const sectionsContainer = $('#export-sections-container');
-    const imageOptions = $('#export-image-options');
-    const confirmBtn = $('#export-confirm-button');
-    const copyBtn = $('#export-copy-button');
-    
-    const iframe = $('#export-preview-iframe');
-    const titleInput = $('#export-title-input');
-
-    const getChartDimensions = () => {
-      if (!this.grapher || !this.grapher.chart) return { w: 800, h: 500 };
-      const factor = parseFloat($('#export-graph-size').value);
-      
-      // On prend strictement la taille actuelle du graphique
-      return {
-        w: Math.round(this.grapher.chart.chartWidth * factor),
-        h: Math.round(this.grapher.chart.chartHeight * factor)
-      };
-    };
-
-    const updatePreview = () => {
-      const action = actionSelect.value;
-      const title = titleInput.value.trim();
-      const dims = getChartDimensions();
-      const iframeContainer = iframe.parentElement;
-      const factor = parseFloat($('#export-graph-size').value);
-
-      if (action === 'image') {
-        sectionsContainer.classList.add('is-hidden');
-        imageOptions.classList.remove('is-hidden');
-        confirmBtn.textContent = "Télécharger l'image";
-        copyBtn.classList.remove('is-hidden');
-        iframeContainer.classList.remove('has-background-grey-lighter');
-        iframeContainer.classList.add('has-background-white');
-        if (titleInput.closest('.field')) titleInput.closest('.field').classList.add('is-hidden');
-        
-        iframe.srcdoc = this.generateImagePreviewHTML(title, dims.w, dims.h, factor);
-      } else {
-        sectionsContainer.classList.remove('is-hidden');
-        imageOptions.classList.add('is-hidden');
-        confirmBtn.textContent = "Imprimer / Exporter en PDF";
-        copyBtn.classList.add('is-hidden');
-        iframeContainer.classList.add('has-background-grey-lighter');
-        iframeContainer.classList.remove('has-background-white');
-        if (titleInput.closest('.field')) titleInput.closest('.field').classList.remove('is-hidden');
-
-        const includeGraph = $('#export-check-graph').checked;
-        const includeTable = $('#export-check-table').checked;
-        const includeCalc = $('#export-check-calc').checked;
-        const margin = $('#export-margin-select').value;
-
-        const tableLabel = $('#export-table-label');
-        if (tableLabel) {
-          const totalPoints = (this.data && this.data.getTable) ? this.data.getTable().length : 0;
-          if (totalPoints > MAX_PRINT_TABLE_POINTS) {
-            tableLabel.textContent = `Tableur (Données - limité aux ${MAX_PRINT_TABLE_POINTS} premiers points)`;
-          } else {
-            tableLabel.textContent = 'Tableur (Données)';
-          }
-        }
-
-        iframe.srcdoc = this.generatePrintHTML(includeGraph, includeTable, includeCalc, margin, title, dims.w, dims.h, factor);
-      }
-    };
-
-    $('#export-menu-button').addEventListener('click', () => {
-      const emptyStateContainer = document.getElementById('empty-state-container');
-      const isEmptyState = emptyStateContainer && !emptyStateContainer.classList.contains('is-hidden');
-      const hasNoData = (!this.data?.curves || this.data.curves.length === 0) &&
-                        (!this.editor?.getValue || this.editor.getValue().trim() === '');
-
-      if (isEmptyState || hasNoData) {
-        showToast("Aucune donnée à exporter.", "is-warning");
-        return;
-      }
-
-      const graphTabButton = document.getElementById('grapheur-tab');
-      const isAlreadyOnGraph = graphTabButton && graphTabButton.classList.contains('is-active');
-
-      if (!isAlreadyOnGraph && graphTabButton) {
-        // Bascule automatique sur l'onglet graphe
-        graphTabButton.click();
-        
-        // Délai de 300ms pour laisser le temps à l'onglet de s'afficher et à Highcharts de reflow
-        setTimeout(() => {      
-          updatePreview();
-          this.common.modalManager.openModal(exportModal);
-        }, 300);
-      } else {
-        // Si on y est déjà, on affiche la modale instantanément
-        updatePreview();
-        this.common.modalManager.openModal(exportModal);
-      }
-    });
-
-    actionSelect.addEventListener('change', updatePreview);
-    document.querySelectorAll('.export-trigger').forEach(el => el.addEventListener('change', updatePreview));
-
-    titleInput.addEventListener('input', (e) => {
-      const newTitle = e.target.value.trim();
-      const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-      
-      if (iframeDoc) {
-        const titleEl = iframeDoc.getElementById('preview-title');
-        if (titleEl) {
-          titleEl.textContent = newTitle;
-          // Affiche le titre s'il y a du texte, sinon le cache
-          titleEl.style.display = newTitle ? 'block' : 'none';
-        }
-      }
-    });
-
-    confirmBtn.addEventListener('click', () => {
-      if (actionSelect.value === 'image') {
-        const format = $('#export-image-format').value;
-        const scale = parseInt($('#export-image-scale').value, 10);
-        const dims = getChartDimensions();
-        const factor = parseFloat($('#export-graph-size').value);
-
-        if (this.grapher && this.grapher.chart) {
-           const exportChartOptions = this.getExportChartOptions(dims.w, dims.h, factor);
-
-           this._withExportLegendState(() => {
-             this.grapher.chart.exportChartLocal({
-                 type: format,
-                 filename: 'phyweb_graphe',
-                 scale: scale,
-                 sourceWidth: dims.w,
-                 sourceHeight: dims.h
-             }, exportChartOptions);
-           });
-        }
-        this.common.modalManager.closeAllModals();
-      } else {
-        const includeGraph = $('#export-check-graph').checked;
-        const includeTable = $('#export-check-table').checked;
-        const includeCalc = $('#export-check-calc').checked;
-
-        if (!includeGraph && !includeTable && !includeCalc) {
-            showToast("Veuillez sélectionner au moins un élément.", "is-warning");
-            return;
-        }
-
-        iframe.contentWindow.print();
-      }
-    });
-
-    copyBtn.addEventListener('click', () => {
-      const dims = getChartDimensions();
-      const factor = parseFloat($('#export-graph-size').value);
-      const scale = parseInt($('#export-image-scale').value, 10);
-
-      if (this.grapher && this.grapher.chart) {
-        // 1. Récupère le SVG brut
-        const exportChartOptions = this.getExportChartOptions(dims.w, dims.h, factor);
-        const svg = this._withExportLegendState(() => this.grapher.chart.getSVG(exportChartOptions));
-        
-        // 2. Prépare un canvas avec la résolution voulue (scale)
-        const canvas = document.createElement('canvas');
-        canvas.width = dims.w * scale;
-        canvas.height = dims.h * scale;
-        const ctx = canvas.getContext('2d');
-        
-        // 3. Dessine le SVG sur le Canvas via une balise Image
-        const img = new Image();
-        img.onload = () => {
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          
-          // 4. Extrait le PNG et l'envoie au presse-papier
-          canvas.toBlob((blob) => {
-            if (blob) {
-              navigator.clipboard.write([
-                new ClipboardItem({ 'image/png': blob })
-              ]).then(() => {
-                showToast("Image copiée dans le presse-papier !", "is-success");
-                this.common.modalManager.closeAllModals();
-              }).catch(err => {
-                console.error("Erreur Clipboard:", err);
-                showToast("Erreur lors de la copie.", "is-danger");
-              });
-            }
-          }, 'image/png');
-        };
-        // Encodage du SVG en Base64
-        img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
-      }
-    });
+    return this.exportManager.initExportModal();
   }
 
-  /**
-   * Ajuste temporairement showInLegend dans userOptions pour l'export,
-   * afin que les séries masquées n'apparaissent pas barrées dans la légende exportée.
-   * Restaure systématiquement l'état original après l'exécution du callback.
-   * @param {Function} callback
-   * @returns {*}
-   */
   _withExportLegendState(callback) {
-    const series = this.grapher?.chart?.series || [];
-    const savedStates = [];
-
-    for (const s of series) {
-      if (!s) continue;
-      const createdUserOptions = !s.userOptions;
-      if (createdUserOptions) {
-        s.userOptions = {};
-      }
-      const hadProperty = Object.prototype.hasOwnProperty.call(s.userOptions, 'showInLegend');
-      const originalValue = s.userOptions.showInLegend;
-      savedStates.push({ series: s, createdUserOptions, hadProperty, originalValue });
-      s.userOptions.showInLegend = Boolean(s.visible && s.options?.showInLegend !== false);
-    }
-
-    try {
-      return callback();
-    } finally {
-      for (const { series: s, createdUserOptions, hadProperty, originalValue } of savedStates) {
-        if (createdUserOptions) {
-          delete s.userOptions;
-        } else if (hadProperty) {
-          s.userOptions.showInLegend = originalValue;
-        } else {
-          delete s.userOptions.showInLegend;
-        }
-      }
-    }
+    return this.exportManager._withExportLegendState(callback);
   }
 
-  /**
-   * Génère les options communes pour l'export du graphique (image ou PDF)
-   */
-  getExportChartOptions(width, height, factor = 1) {
-    if (!this.grapher || !this.grapher.chart) return {};
-    
-    const xCurveObj = this.data?.getCurveByTitle ? this.data.getCurveByTitle(this.grapher.currentXCurve) : null;
-    const xUnit = xCurveObj && xCurveObj.unit ? xCurveObj.unit : '';
-    const xAxis = this.grapher.chart.xAxis && this.grapher.chart.xAxis[0];
-    const xExponent = (xAxis && xAxis.exponent) || 0;
-
-    let exponentPart = '';
-    if (xExponent) {
-      exponentPart = `×10${toSuperscript(xExponent)}`;
-    }
-
-    let unitText = '';
-    if (exponentPart && xUnit) {
-      unitText = `${exponentPart} ${xUnit}`;
-    } else if (exponentPart) {
-      unitText = exponentPart;
-    } else if (xUnit) {
-      unitText = xUnit;
-    }
-
-    const xCurveTitle = this.grapher.currentXCurve || '';
-    const xTitle = xCurveTitle ? `${xCurveTitle}${unitText ? ` (${unitText})` : ''}` : (unitText ? `(${unitText})` : '');
-
-    const currentYExponent = (this.grapher.chart.yAxis && this.grapher.chart.yAxis[0] && this.grapher.chart.yAxis[0].exponent) || 0;
-
-    return {
-      chart: { 
-        width: width, 
-        height: height,
-        // On réduit l'espacement par défaut proportionnellement à la taille
-        spacing: [10 * factor, 10 * factor, 15 * factor, 10 * factor]
-      },
-      xAxis: [{
-        title: {
-          text: xTitle,
-          align: 'high',
-          style: { 
-            color: '#000000', 
-            fontSize: '16px',
-            fontWeight: 'normal' 
-          }
-        }
-      }],
-      legend: {
-        useHTML: false,
-        labelFormatter: function () {
-          const unit = this.userOptions.unit || '';
-          const yAxis = this.chart && this.chart.yAxis && this.chart.yAxis[0];
-          const yExponent = (yAxis && yAxis.exponent) || currentYExponent || 0;
-
-          let exponentPart = '';
-          if (yExponent) {
-            exponentPart = `×10${toSuperscript(yExponent)}`;
-          }
-
-          let content = '';
-          if (exponentPart && unit) {
-            content = `${exponentPart} ${unit}`;
-          } else if (exponentPart) {
-            content = exponentPart;
-          } else if (unit) {
-            content = unit;
-          }
-
-          let labelText = this.name || '';
-          if (content) {
-            labelText += ` (${content})`;
-          }
-
-          return labelText;
-        }
-      }
-    };
+  getExportDimensions(ratio = '16:10') {
+    return this.exportManager.getExportDimensions(ratio);
   }
 
-  /**
-   * Génère l'aperçu spécifique pour le mode Image
-   */
-  generateImagePreviewHTML(title, width, height, factor) {
-    if (!this.grapher || !this.grapher.chart) return '';
-    
-    const exportChartOptions = this.getExportChartOptions(width, height, factor);
-    const svg = this._withExportLegendState(() => this.grapher.chart.getSVG(exportChartOptions));
-    
-    let html = `
-      <body style="background-color: white; font-family: sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; box-sizing: border-box;">
-      <div style="flex-grow: 1; display: flex; justify-content: center; align-items: center; width: 100%; min-height: 0;">
-        ${svg}
-      </div>
-      <style>
-        /* On force le SVG à s'étirer pour remplir l'iframe tout en gardant son ratio */
-        svg { 
-          width: 100% !important; 
-          height: 100% !important; 
-          max-height: 100%;
-        }
-      </style>
-      </body>`;
-    
-    return html;
+  getExportCurveLabel(curveTitle, defaultUnit = '', overrides = this.exportManager.exportCurveLabels) {
+    return this.exportManager.getExportCurveLabel(curveTitle, defaultUnit, overrides);
   }
 
-  /**
-   * Retourne une composition HTML propre pour l'impression / export PDF
-   */
-  generatePrintHTML(includeGraph, includeTable, includeCalc, margin, title, width, height, factor) {
-    const sigDigits = this.data?.settings?.significantDigits ?? 4; 
+  getExportChartOptions(width, height, textScale = 1, curveLabels = this.exportManager.exportCurveLabels, extraOptions = {}) {
+    return this.exportManager.getExportChartOptions(width, height, textScale, curveLabels, extraOptions);
+  }
 
-    let html = `
-      <!DOCTYPE html>
-      <html lang="fr">
-      <head>
-        <meta charset="utf-8">
-        <style>
-          @page { size: A4; margin: ${margin}; }
-          
-          /* --- Mode Aperçu (Écran) --- */
-          @media screen {
-            html {
-              background-color: transparent;
-              display: flex;
-              justify-content: center;
-              align-items: flex-start; /* Aligne la feuille en haut */
-              min-height: 100%; /* S'assure que le fond prend toute la place de l'iframe */
-              padding: 20px 0;
-              box-sizing: border-box;
-            }
-            body { 
-              background-color: white;
-              width: 210mm; /* Largeur stricte A4 */
-              min-height: 297mm; /* Hauteur stricte A4 */
-              padding: ${margin};
-              box-sizing: border-box;
-              box-shadow: 0 4px 12px rgba(0,0,0,0.15); /* Effet d'ombre de la feuille */
-              margin: 0;
-            }
-          }
-          
-          /* --- Mode Impression --- */
-          @media print {
-            body { 
-              padding: 0 !important; 
-              width: auto;
-              min-height: auto;
-              box-shadow: none;
-            }
-          }
+  generateImagePreviewHTML(title, width, height, factor, curveLabels = this.exportManager.exportCurveLabels, imageOptions = {}) {
+    return this.exportManager.generateImagePreviewHTML(title, width, height, factor, curveLabels, imageOptions);
+  }
 
-          body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            color: #333; 
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
-          
-          .flex-table { display: flex; flex-wrap: wrap; row-gap: 6px; padding-left: 1px; padding-top: 1px; margin-bottom: 20px; }
-          .flex-col { display: flex; flex-direction: column; margin-left: -1px; }
-          .header-col { font-weight: bold; background-color: #f0f0f0; }
-          .flex-cell { border: 1px solid #aaa; margin-top: -1px; padding: 4px 6px; font-size: 10px; text-align: center; white-space: nowrap; }
-          .row-header { text-align: right; background-color: #f9f9f9; }
-          
-          pre { background: #f9f9f9; padding: 15px; border: 1px solid #ddd; border-radius: 5px; white-space: pre-wrap; font-family: monospace; font-size: 12px;}
-          
-          .svg-container { text-align: center; margin-bottom: 20px; page-break-inside: avoid; }
-          /* C'est cette ligne simplifiée qui empêche la compression */
-          .svg-container svg { max-width: 100%; height: auto !important; }
-        </style>
-      </head>
-      <body>
-    `;
-
-    const safeTitle = escapeHTML(title);
-    html += `<h1 id="preview-title" style="text-align: center; color: #333; margin-top: 0; margin-bottom: 20px; font-size: 18px; display: ${safeTitle ? 'block' : 'none'};">${safeTitle}</h1>`;
-
-    if (includeGraph && this.grapher.chart) {
-      const exportChartOptions = this.getExportChartOptions(width, height, factor);
-      const svg = this._withExportLegendState(() => this.grapher.chart.getSVG(exportChartOptions));
-      html += `<div class="svg-container">${svg}</div>`;
-    }
-
-    if (includeTable && this.data) {
-      const headers = this.data.getHeaders() || [];
-      const data = this.data.getTable() || [];
-      const totalPoints = data.length;
-      const numPoints = Math.min(totalPoints, MAX_PRINT_TABLE_POINTS);
-      
-      if (headers.length > 0 && totalPoints > 0) {
-        html += `<div class="flex-table"><div class="flex-col header-col"><div class="flex-cell row-header">Point #</div>`;
-        headers.forEach(h => html += `<div class="flex-cell row-header">${escapeHTML(h)}</div>`);
-        html += `</div>`;
-
-        for (let j = 0; j < numPoints; j++) {
-          html += `<div class="flex-col"><div class="flex-cell" style="background-color:#f9f9f9; font-weight:bold;">${j + 1}</div>`;
-          headers.forEach((h, colIndex) => {
-            let val = data[j] ? data[j][colIndex] : undefined;
-            let displayVal = (val !== null && val !== undefined && !isNaN(val) && val !== '') 
-                             ? formatNumber(val, sigDigits, { html: true }) : '';
-            html += `<div class="flex-cell">${displayVal}</div>`;
-          });
-          html += `</div>`;
-        }
-        html += `</div>`;
-
-        if (totalPoints > MAX_PRINT_TABLE_POINTS) {
-          const totalPointsFormatted = totalPoints.toLocaleString('fr-FR');
-          html += `
-            <div class="print-table-notice" style="font-size: 11px; color: #555; background-color: #f8f9fa; border: 1px solid #ddd; border-radius: 4px; padding: 8px 12px; margin-top: -10px; margin-bottom: 20px; text-align: center;">
-              Affichage limité aux ${MAX_PRINT_TABLE_POINTS} premiers points (sur ${totalPointsFormatted} au total) pour préserver la fluidité d'impression. Pour exploiter l'ensemble des données, utilisez l'export de fichier (CSV / RW3).
-            </div>
-          `;
-        }
-      }
-    }
-
-    if (includeCalc && this.editor) {
-      const rawCalcText = this.editor.getValue() || '';
-      const safeCalcText = escapeHTML(rawCalcText);
-      html += `<pre>${safeCalcText.trim() ? safeCalcText : 'Aucun calcul enregistré.'}</pre>`;
-    }
-
-    html += `</body></html>`;
-    return html;
+  generatePrintHTML(
+    includeGraph,
+    includeTable,
+    includeCalc,
+    margin,
+    title,
+    width,
+    height,
+    factor,
+    curveLabels = this.exportManager.exportCurveLabels,
+    printOptions = {}
+  ) {
+    return this.exportManager.generatePrintHTML(
+      includeGraph,
+      includeTable,
+      includeCalc,
+      margin,
+      title,
+      width,
+      height,
+      factor,
+      curveLabels,
+      printOptions
+    );
   }
 }
 
