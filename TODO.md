@@ -46,8 +46,6 @@
 
     On empeche l'ouverture de la modale d'edition de nom de grandeur pour les grandeurs calculées... on pourrait peut etre trouver un moyen de laisser la possibilité de changer l'unité voir le nom quand meme
 
-    Bug graphique quand le "nom" d'un modele est trop long genre Amplitudestectrale = f(truclong)
-
     intercepter les erreurs de mathsjs en anglais et les traduire en langage clair
 
     othogonalité depuis tracker ???? Essayer le pointage du velo on voit pas le accéléré
