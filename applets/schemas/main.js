@@ -111,10 +111,17 @@ const {
     btnToggleGrid
 } = dom;
 
-// Injecter les styles SVG partagés dans le SVG principal
+// Injecter les styles SVG partagés dans le SVG principal et pour les miniatures du drawer (source unique : catalog.js)
 const styleEl = document.createElementNS(SVG_NS, 'style');
 styleEl.textContent = SVG_SHARED_STYLES;
 svgEl.insertBefore(styleEl, svgEl.firstChild);
+
+if (!document.getElementById('schemas-drawer-svg-styles')) {
+    const thumbStyleEl = document.createElement('style');
+    thumbStyleEl.id = 'schemas-drawer-svg-styles';
+    thumbStyleEl.textContent = SVG_SHARED_STYLES.replace(/(^|\n)\s*(\.[\w-]+)/g, '$1.drawer-card-thumb $2');
+    document.head.appendChild(thumbStyleEl);
+}
 
 // =========================================================================
 // COORDONNÉES & VIEWPORT
@@ -237,14 +244,17 @@ function findElementsInRect(x1, y1, x2, y2) {
     };
     const found = [];
     for (const item of store.scene.items) {
+        if (item.locked) continue;
         const b = getElementWorldBounds('item', item);
         if (b && rectsIntersect(rect, b)) found.push({ kind: 'item', id: item.id });
     }
     for (const conn of store.scene.connectors) {
+        if (conn.locked) continue;
         const b = getElementWorldBounds('connector', conn);
         if (b && rectsIntersect(rect, b)) found.push({ kind: 'connector', id: conn.id });
     }
     for (const lbl of store.scene.labels) {
+        if (lbl.locked) continue;
         const b = getElementWorldBounds('label', lbl);
         if (b && rectsIntersect(rect, b)) found.push({ kind: 'label', id: lbl.id });
     }
@@ -252,7 +262,7 @@ function findElementsInRect(x1, y1, x2, y2) {
 }
 
 function alignSelectedElements(mode) {
-    const entries = store.getSelectedElements().filter(e => e.kind === 'item' || e.kind === 'label');
+    const entries = store.getSelectedElements().filter(e => !e.el.locked && (e.kind === 'item' || e.kind === 'label'));
     if (entries.length < 2) return;
     const withBounds = entries
         .map(e => ({ ...e, b: getElementWorldBounds(e.kind, e.el) }))
@@ -287,7 +297,7 @@ function alignSelectedElements(mode) {
 }
 
 function distributeSelectedElements(axis) {
-    const entries = store.getSelectedElements().filter(e => e.kind === 'item' || e.kind === 'label');
+    const entries = store.getSelectedElements().filter(e => !e.el.locked && (e.kind === 'item' || e.kind === 'label'));
     if (entries.length < 3) return;
     const withBounds = entries
         .map(e => ({ ...e, b: getElementWorldBounds(e.kind, e.el) }))
@@ -312,6 +322,7 @@ function distributeSelectedElements(axis) {
 }
 
 function rotateItemBy(item, deltaDeg) {
+    if (!item || item.locked) return;
     const def = getCatalogItem(item.type);
     if (!def) return;
     const bb = def.getBBox(item.props || {});
@@ -342,14 +353,14 @@ function renderScene() {
         const scale = item.scale ?? 1;
         const fx = item.flipX ? -scale : scale;
         const transform = `translate(${item.x}, ${item.y}) rotate(${item.rotation ?? 0}) scale(${fx}, ${scale})`;
-        return `<g class="scene-item" data-kind="item" data-id="${item.id}" transform="${transform}">${def.render(item.props || {}, item.id, { rotation: item.rotation ?? 0, flipX: !!item.flipX })}</g>`;
+        return `<g class="scene-item${item.locked ? ' is-locked' : ''}" data-kind="item" data-id="${item.id}" transform="${transform}">${def.render(item.props || {}, item.id, { rotation: item.rotation ?? 0, flipX: !!item.flipX })}</g>`;
     }).join('');
 
     const renderConnectorGroup = (conn) => {
         const { p1, p2 } = resolveConnectorEndpoints(conn, store.scene.items);
         const d = buildConnectorPath(p1, p2, conn.mode, conn.bend, conn.bendX || 0);
         const hitStroke = `<path d="${d}" fill="none" stroke="transparent" stroke-width="18" />`;
-        return `<g class="scene-connector" data-kind="connector" data-id="${conn.id}">${hitStroke}${renderConnectorSVG(conn, store.scene.items)}</g>`;
+        return `<g class="scene-connector${conn.locked ? ' is-locked' : ''}" data-kind="connector" data-id="${conn.id}">${hitStroke}${renderConnectorSVG(conn, store.scene.items)}</g>`;
     };
 
     if (layerConnectorsBack) {
@@ -364,7 +375,7 @@ function renderScene() {
         .join('');
 
     layerLabels.innerHTML = store.scene.labels.map(lbl => {
-        return `<g class="scene-label" data-kind="label" data-id="${lbl.id}">${renderLabelSVG(lbl)}</g>`;
+        return `<g class="scene-label${lbl.locked ? ' is-locked' : ''}" data-kind="label" data-id="${lbl.id}">${renderLabelSVG(lbl)}</g>`;
     }).join('');
 
     renderOverlay();
@@ -409,6 +420,7 @@ function renderOverlay() {
     const selectedEntries = store.getSelectedElements();
     if (selectedEntries.length === 1) {
         const { kind, el } = selectedEntries[0];
+        const isLocked = Boolean(el.locked);
         if (kind === 'item') {
             const def = getCatalogItem(el.type);
             if (def) {
@@ -430,30 +442,54 @@ function renderOverlay() {
                 const by1 = topY;
                 const bx2 = bb.x + bb.width + pad;
                 const by2 = bb.y + bb.height + pad;
-                html += `<g transform="${transform}">
-                    <rect class="selection-box" x="${bx1}" y="${by1}" width="${bb.width + pad * 2}" height="${bb.height + pad * 2}" rx="4" style="stroke-width:${sw.toFixed(2)}" />
-                    <line class="rotate-stem" x1="${cx.toFixed(1)}" y1="${by1.toFixed(1)}" x2="${cx.toFixed(1)}" y2="${(handleY + r).toFixed(1)}" style="stroke-width:${sw.toFixed(2)}" />
-                    <circle class="rotate-handle" data-handle="item-rotate" cx="${cx.toFixed(1)}" cy="${handleY.toFixed(1)}" r="${r.toFixed(2)}" style="stroke-width:${sw.toFixed(2)}"><title>Glisser pour pivoter (double-clic : 0°)</title></circle>
-                    <path class="rotate-handle-icon" d="M ${(cx - rIcon).toFixed(2)},${handleY.toFixed(2)} A ${rIcon.toFixed(2)},${rIcon.toFixed(2)} 0 1,1 ${(cx + rIcon * 0.6).toFixed(2)},${(handleY + rIcon * 0.8).toFixed(2)}" style="stroke-width:${sw.toFixed(2)}" />
-                    <rect class="resize-handle is-nw" data-handle="item-resize" data-corner="nw" x="${(bx1 - hHalf).toFixed(2)}" y="${(by1 - hHalf).toFixed(2)}" width="${hs.toFixed(2)}" height="${hs.toFixed(2)}" rx="${(1.5 / (scale * editor.zoom)).toFixed(2)}" style="stroke-width:${sw.toFixed(2)}"><title>Glisser pour redimensionner</title></rect>
-                    <rect class="resize-handle is-ne" data-handle="item-resize" data-corner="ne" x="${(bx2 - hHalf).toFixed(2)}" y="${(by1 - hHalf).toFixed(2)}" width="${hs.toFixed(2)}" height="${hs.toFixed(2)}" rx="${(1.5 / (scale * editor.zoom)).toFixed(2)}" style="stroke-width:${sw.toFixed(2)}"><title>Glisser pour redimensionner</title></rect>
-                    <rect class="resize-handle is-sw" data-handle="item-resize" data-corner="sw" x="${(bx1 - hHalf).toFixed(2)}" y="${(by2 - hHalf).toFixed(2)}" width="${hs.toFixed(2)}" height="${hs.toFixed(2)}" rx="${(1.5 / (scale * editor.zoom)).toFixed(2)}" style="stroke-width:${sw.toFixed(2)}"><title>Glisser pour redimensionner</title></rect>
-                    <rect class="resize-handle is-se" data-handle="item-resize" data-corner="se" x="${(bx2 - hHalf).toFixed(2)}" y="${(by2 - hHalf).toFixed(2)}" width="${hs.toFixed(2)}" height="${hs.toFixed(2)}" rx="${(1.5 / (scale * editor.zoom)).toFixed(2)}" style="stroke-width:${sw.toFixed(2)}"><title>Glisser pour redimensionner</title></rect>
-                </g>`;
+                if (isLocked) {
+                    const b = getElementWorldBounds('item', el);
+                    const s = 1 / editor.zoom;
+                    html += `<g transform="${transform}">
+                        <rect class="selection-box is-locked" x="${bx1}" y="${by1}" width="${bb.width + pad * 2}" height="${bb.height + pad * 2}" rx="4" style="stroke-width:${sw.toFixed(2)}" />
+                    </g>`;
+                    if (b) {
+                        html += `<g transform="translate(${(b.maxX + 4 * s).toFixed(1)}, ${(b.minY - 8 * s).toFixed(1)}) scale(${s.toFixed(3)})">
+                            <rect class="lock-badge-bg" x="-28" y="-10" width="56" height="18" rx="9" />
+                            <text class="lock-badge-text" x="0" y="3">Verrouillé</text>
+                        </g>`;
+                    }
+                } else {
+                    html += `<g transform="${transform}">
+                        <rect class="selection-box" x="${bx1}" y="${by1}" width="${bb.width + pad * 2}" height="${bb.height + pad * 2}" rx="4" style="stroke-width:${sw.toFixed(2)}" />
+                        <line class="rotate-stem" x1="${cx.toFixed(1)}" y1="${by1.toFixed(1)}" x2="${cx.toFixed(1)}" y2="${(handleY + r).toFixed(1)}" style="stroke-width:${sw.toFixed(2)}" />
+                        <circle class="rotate-handle" data-handle="item-rotate" cx="${cx.toFixed(1)}" cy="${handleY.toFixed(1)}" r="${r.toFixed(2)}" style="stroke-width:${sw.toFixed(2)}"><title>Glisser pour pivoter (double-clic : 0°)</title></circle>
+                        <path class="rotate-handle-icon" d="M ${(cx - rIcon).toFixed(2)},${handleY.toFixed(2)} A ${rIcon.toFixed(2)},${rIcon.toFixed(2)} 0 1,1 ${(cx + rIcon * 0.6).toFixed(2)},${(handleY + rIcon * 0.8).toFixed(2)}" style="stroke-width:${sw.toFixed(2)}" />
+                        <rect class="resize-handle is-nw" data-handle="item-resize" data-corner="nw" x="${(bx1 - hHalf).toFixed(2)}" y="${(by1 - hHalf).toFixed(2)}" width="${hs.toFixed(2)}" height="${hs.toFixed(2)}" rx="${(1.5 / (scale * editor.zoom)).toFixed(2)}" style="stroke-width:${sw.toFixed(2)}"><title>Glisser pour redimensionner</title></rect>
+                        <rect class="resize-handle is-ne" data-handle="item-resize" data-corner="ne" x="${(bx2 - hHalf).toFixed(2)}" y="${(by1 - hHalf).toFixed(2)}" width="${hs.toFixed(2)}" height="${hs.toFixed(2)}" rx="${(1.5 / (scale * editor.zoom)).toFixed(2)}" style="stroke-width:${sw.toFixed(2)}"><title>Glisser pour redimensionner</title></rect>
+                        <rect class="resize-handle is-sw" data-handle="item-resize" data-corner="sw" x="${(bx1 - hHalf).toFixed(2)}" y="${(by2 - hHalf).toFixed(2)}" width="${hs.toFixed(2)}" height="${hs.toFixed(2)}" rx="${(1.5 / (scale * editor.zoom)).toFixed(2)}" style="stroke-width:${sw.toFixed(2)}"><title>Glisser pour redimensionner</title></rect>
+                        <rect class="resize-handle is-se" data-handle="item-resize" data-corner="se" x="${(bx2 - hHalf).toFixed(2)}" y="${(by2 - hHalf).toFixed(2)}" width="${hs.toFixed(2)}" height="${hs.toFixed(2)}" rx="${(1.5 / (scale * editor.zoom)).toFixed(2)}" style="stroke-width:${sw.toFixed(2)}"><title>Glisser pour redimensionner</title></rect>
+                    </g>`;
+                }
             }
         } else if (kind === 'connector') {
             const { p1, p2 } = resolveConnectorEndpoints(el, store.scene.items);
-            html += `<circle class="handle-dot" data-handle="conn-start" cx="${p1.x.toFixed(1)}" cy="${p1.y.toFixed(1)}" r="6"><title>Déplacer le point de départ</title></circle>`;
-            html += `<circle class="handle-dot" data-handle="conn-end" cx="${p2.x.toFixed(1)}" cy="${p2.y.toFixed(1)}" r="6"><title>Déplacer le point d’arrivée</title></circle>`;
-            if (el.mode !== 'straight') {
-                const mid = getConnectorMidpoint(p1, p2, el.mode, el.bend, el.bendX || 0);
-                html += `<circle class="handle-dot" data-handle="conn-bend" cx="${mid.x.toFixed(1)}" cy="${mid.y.toFixed(1)}" r="5.5"><title>Glisser librement pour courber</title></circle>`;
+            if (isLocked) {
+                const d = buildConnectorPath(p1, p2, el.mode, el.bend, el.bendX || 0);
+                html += `<path d="${d}" fill="none" stroke="#d97706" stroke-width="${((el.width || 4) + 5).toFixed(1)}" opacity="0.28" stroke-linecap="round" pointer-events="none" />`;
+            } else {
+                html += `<circle class="handle-dot" data-handle="conn-start" cx="${p1.x.toFixed(1)}" cy="${p1.y.toFixed(1)}" r="6"><title>Déplacer le point de départ</title></circle>`;
+                html += `<circle class="handle-dot" data-handle="conn-end" cx="${p2.x.toFixed(1)}" cy="${p2.y.toFixed(1)}" r="6"><title>Déplacer le point d’arrivée</title></circle>`;
+                if (el.mode !== 'straight') {
+                    const mid = getConnectorMidpoint(p1, p2, el.mode, el.bend, el.bendX || 0);
+                    html += `<circle class="handle-dot" data-handle="conn-bend" cx="${mid.x.toFixed(1)}" cy="${mid.y.toFixed(1)}" r="5.5"><title>Glisser librement pour courber</title></circle>`;
+                }
             }
         } else if (kind === 'label') {
             const m = getLabelMetrics(el);
-            html += `<circle class="handle-dot" data-handle="lbl-pos" cx="${(m.boxX - 8).toFixed(1)}" cy="${(el.y - m.fs * 0.35).toFixed(1)}" r="5"><title>Déplacer la légende (Shift : avec la pointe)</title></circle>`;
-            if (el.showLeader) {
-                html += `<circle class="handle-dot" data-handle="lbl-target" cx="${el.targetX.toFixed(1)}" cy="${el.targetY.toFixed(1)}" r="6"><title>Déplacer la pointe de la flèche</title></circle>`;
+            if (isLocked) {
+                const swWorld = 1.5 / editor.zoom;
+                html += `<rect class="selection-box is-locked" x="${(m.boxX - 4).toFixed(1)}" y="${(m.boxY - 4).toFixed(1)}" width="${(m.boxW + 8).toFixed(1)}" height="${(m.boxH + 8).toFixed(1)}" rx="4" style="stroke-width:${swWorld.toFixed(2)}" />`;
+            } else {
+                html += `<circle class="handle-dot" data-handle="lbl-pos" cx="${(m.boxX - 8).toFixed(1)}" cy="${(el.y - m.fs * 0.35).toFixed(1)}" r="5"><title>Déplacer la légende (Shift : avec la pointe)</title></circle>`;
+                if (el.showLeader) {
+                    html += `<circle class="handle-dot" data-handle="lbl-target" cx="${el.targetX.toFixed(1)}" cy="${el.targetY.toFixed(1)}" r="6"><title>Déplacer la pointe de la flèche</title></circle>`;
+                }
             }
         }
     } else if (selectedEntries.length > 1) {
@@ -545,6 +581,7 @@ function renderOverlay() {
 
 const TOOL_HINTS = {
     select: 'Sélection · Glissez pour cadrer, Shift+clic multi-sélection, Espace/clic droit pour déplacer la vue',
+    pan: 'Main · Glissez pour déplacer la vue (molette pour zoomer, V pour revenir à la sélection)',
     wire: 'Fil électrique · Cliquez sur deux bornes pour tracer en chaîne (Échap pour quitter)',
     hose: 'Tuyau de chimie · Cliquez sur deux embouts pour tracer en chaîne (Échap pour quitter)',
     label: 'Légende · Cliquez sur le schéma pour placer une annotation'
@@ -553,7 +590,7 @@ const TOOL_HINTS = {
 function setTool(tool) {
     editor.tool = tool;
     editor.pendingConnector = null;
-    stageEl.classList.remove('tool-select', 'tool-wire', 'tool-hose', 'tool-label');
+    stageEl.classList.remove('tool-select', 'tool-pan', 'tool-wire', 'tool-hose', 'tool-label');
     stageEl.classList.add(`tool-${tool}`);
     document.querySelectorAll('.tool-btn[data-tool]').forEach(btn => {
         btn.classList.toggle('is-active', btn.dataset.tool === tool);

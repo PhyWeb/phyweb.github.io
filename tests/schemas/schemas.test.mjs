@@ -210,6 +210,27 @@ describe('Applet Schémas — Catalogue paramétrique', () => {
             assert.ok(svg.trim().length > 0);
         }
     });
+
+    it('expose la catégorie Formes & Flèches (flèche, ligne, rectangle, ellipse, accolade)', () => {
+        assert.ok(CATEGORIES.some(c => c.id === 'formes'));
+        for (const id of ['forme-fleche', 'forme-ligne', 'forme-rectangle', 'forme-ellipse', 'forme-accolade']) {
+            const def = getCatalogItem(id);
+            assert.ok(def && def.category === 'formes', `Forme manquante ou mauvaise catégorie: ${id}`);
+            const bb = def.getBBox(def.defaultProps);
+            assert.ok(bb.width > 0 && bb.height > 0);
+            const svg = def.render(def.defaultProps, `shp_${id}`);
+            assert.ok(svg.trim().length > 0);
+        }
+
+        const fleche = getCatalogItem('forme-fleche');
+        const svgDoubleOpen = fleche.render({ length: 160, strokeWidth: 3, strokeColor: '#e03131', doubleHead: true, headStyle: 'open', dashed: true }, 'f1');
+        assert.equal((svgDoubleOpen.match(/<polyline /g) || []).length, 2, 'Double flèche ouverte doit dessiner 2 chevrons');
+        assert.ok(svgDoubleOpen.includes('stroke-dasharray'));
+
+        const rect = getCatalogItem('forme-rectangle');
+        const svgRectFill = rect.render({ width: 200, height: 100, radius: 10, filled: true, fillColor: '#fef08a', fillOpacity: 40, strokeColor: '#2563eb', strokeWidth: 2 }, 'r1');
+        assert.ok(svgRectFill.includes('fill="#fef08a"') && svgRectFill.includes('fill-opacity="0.40"'));
+    });
 });
 
 describe('Applet Schémas — Aimantation cohérente & emboîtements hors angle droit', () => {
@@ -737,5 +758,68 @@ describe('Applet Schémas — État, connecteurs dynamiques, Undo/Redo et Export
         const imgHtml = buildImagePreviewHTML(store.scene, { transparent: true, padding: 16 });
         assert.ok(imgHtml.includes('linear-gradient(45deg'), 'Le mode transparent doit afficher un damier d’aperçu');
         assert.ok(imgHtml.includes('<svg '));
+    });
+
+    it('protège les éléments verrouillés contre suppression et selectAll, et déverrouille les copies', () => {
+        const store = new SceneStore();
+        const table = store.addItem('paillasse', 300, 500);
+        const becher = store.addItem('becher', 300, 400);
+
+        // Verrouiller la paillasse
+        store.selection = { kind: 'item', id: table.id };
+        assert.equal(store.toggleLockSelected(), true);
+        assert.equal(table.locked, true);
+
+        // Impossible de supprimer un élément verrouillé
+        assert.equal(store.deleteSelected(), false);
+        assert.equal(store.scene.items.length, 2);
+
+        // selectAll ignore les éléments verrouillés
+        store.selectAll();
+        assert.equal(store.selected.length, 1);
+        assert.equal(store.selected[0].id, becher.id);
+
+        // Dupliquer un élément verrouillé crée une copie déverrouillée
+        store.selection = { kind: 'item', id: table.id };
+        const copy = store.duplicateSelected();
+        assert.equal(copy.locked, false);
+
+        // Déverrouiller puis supprimer fonctionne
+        store.selection = { kind: 'item', id: table.id };
+        assert.equal(store.toggleLockSelected(), false);
+        assert.equal(store.deleteSelected(), true);
+    });
+
+    it('gère le groupement / dégroupement, la sélection par groupe et la duplication d’un groupe indépendant', () => {
+        const store = new SceneStore();
+        const ballon = store.addItem('ballon', 200, 300);
+        const chauffe = store.addItem('chauffe-ballon', 200, 360);
+        const lbl = store.addLabel(320, 280, 'Chauffage', 220, 300);
+
+        store.selectAll();
+        const gid = store.groupSelected();
+        assert.ok(gid);
+        assert.equal(ballon.groupId, gid);
+        assert.equal(chauffe.groupId, gid);
+        assert.equal(lbl.groupId, gid);
+        assert.equal(store.isSingleGroupSelected(), true);
+
+        // Cliquer sur un seul membre sélectionne tout le groupe
+        store.clearSelection();
+        store.selectWithGroup('item', ballon.id);
+        assert.equal(store.selected.length, 3);
+
+        // Dupliquer le groupe crée un nouveau groupId distinct de l'original
+        const copies = store.duplicateSelected();
+        assert.equal(copies.length, 3);
+        const copyGid = copies[0].groupId;
+        assert.ok(copyGid && copyGid !== gid);
+        assert.equal(copies[1].groupId, copyGid);
+        assert.equal(copies[2].groupId, copyGid);
+
+        // Dégrouper dissocie les copies sans toucher au groupe original
+        assert.equal(store.ungroupSelected(), true);
+        assert.equal(copies[0].groupId, undefined);
+        assert.equal(ballon.groupId, gid);
     });
 });

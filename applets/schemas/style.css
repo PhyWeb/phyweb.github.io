@@ -194,13 +194,21 @@ input, select, textarea {
     cursor: default;
 }
 
+.schemas-stage.tool-pan,
+.schemas-stage.tool-pan #sceneSvg,
+.schemas-stage.tool-pan #sceneSvg * {
+    cursor: grab;
+}
+
 .schemas-stage.tool-wire,
 .schemas-stage.tool-hose,
 .schemas-stage.tool-label {
     cursor: crosshair;
 }
 
-.schemas-stage.is-panning {
+.schemas-stage.is-panning,
+.schemas-stage.is-panning #sceneSvg,
+.schemas-stage.is-panning #sceneSvg * {
     cursor: grabbing !important;
 }
 
@@ -223,11 +231,37 @@ input, select, textarea {
     cursor: move;
 }
 
+.scene-item.is-locked,
+.scene-connector.is-locked,
+.scene-label.is-locked {
+    cursor: default;
+}
+
 .selection-box {
     fill: rgba(37, 99, 235, 0.04);
     stroke: #2563eb;
     stroke-width: 1.5;
     stroke-dasharray: 5 4;
+    pointer-events: none;
+}
+
+.selection-box.is-locked {
+    fill: rgba(217, 119, 6, 0.04);
+    stroke: #d97706;
+    stroke-dasharray: 3 3;
+}
+
+.lock-badge-bg {
+    fill: #d97706;
+    pointer-events: none;
+}
+
+.lock-badge-text {
+    font-family: system-ui, -apple-system, sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    fill: #ffffff;
+    text-anchor: middle;
     pointer-events: none;
 }
 
@@ -657,6 +691,33 @@ input, select, textarea {
     background: #fee2e2;
 }
 
+.mini-btn.is-warning {
+    color: #b45309;
+    border-color: #fcd34d;
+    background: #fef3c7;
+}
+
+.mini-btn.is-warning:hover {
+    background: #fde68a;
+}
+
+.mini-btn:disabled {
+    opacity: 0.42;
+    cursor: not-allowed;
+}
+
+.lock-notice {
+    font-size: 0.74rem;
+    color: #92400e;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 5px;
+    padding: 5px 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
 .shortcuts-list {
     font-size: 0.74rem;
     color: var(--schemas-muted);
@@ -910,27 +971,6 @@ body.is-dragging-from-drawer * {
     max-width: 100%;
     max-height: 100%;
 }
-
-/* Styles vectoriels partagés pour les aperçus SVG du drawer */
-.drawer-card-thumb .verre { fill: #ffffff; stroke: #000000; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
-.drawer-card-thumb .verre-fond { fill: transparent; stroke: none; }
-.drawer-card-thumb .liquide { fill: #9ad1f5; stroke: none; }
-.drawer-card-thumb .solide { fill: #4ecdc4; stroke: none; }
-.drawer-card-thumb .propipette { fill: #e06358; stroke: #000000; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
-.drawer-card-thumb .robinet-rouge { fill: #e06358; stroke: #000000; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.drawer-card-thumb .trait { fill: none; stroke: #000000; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
-.drawer-card-thumb .potence { fill: none; stroke: #000000; stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; }
-.drawer-card-thumb .bouchon { fill: #555555; stroke: #000000; stroke-width: 3; stroke-linejoin: round; }
-.drawer-card-thumb .metal { fill: #b8bec4; stroke: #000000; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
-.drawer-card-thumb .ecran { fill: #e6ece8; stroke: #000000; stroke-width: 2.5; stroke-linejoin: round; }
-.drawer-card-thumb .bouton { fill: #cccccc; stroke: #000000; stroke-width: 2; stroke-linejoin: round; }
-.drawer-card-thumb .texte-ecran { font-family: monospace; font-size: 16px; font-weight: bold; fill: #000000; text-anchor: end; }
-.drawer-card-thumb .cuivre { fill: #c87a52; stroke: #000000; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
-.drawer-card-thumb .zinc { fill: #94a0aa; stroke: #000000; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
-.drawer-card-thumb .texte-metal { font-family: sans-serif; font-size: 14px; font-weight: bold; fill: #000000; text-anchor: middle; }
-.drawer-card-thumb .multimetre-jaune { fill: #f5b025; stroke: #000000; stroke-width: 3; stroke-linejoin: round; }
-.drawer-card-thumb .texte-multimetre { font-family: sans-serif; font-size: 11px; font-weight: bold; fill: #000000; text-anchor: middle; }
-.drawer-card-thumb .bois { fill: #d9b382; stroke: #000000; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
 
 .drawer-card-name {
     font-size: 0.69rem;

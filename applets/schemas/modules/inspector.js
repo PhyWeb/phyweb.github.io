@@ -82,10 +82,10 @@ export function createInspectorController(ctx) {
               <div class="prop-section">
                 <div class="prop-section-title">Raccourcis clavier</div>
                 <div class="shortcuts-list">
-                  <div><kbd>V</kbd> Sélection · <kbd>W</kbd> Fil · <kbd>T</kbd> Tuyau · <kbd>L</kbd> Légende</div>
+                  <div><kbd>V</kbd> Sélection · <kbd>H</kbd> Main · <kbd>W</kbd> Fil · <kbd>T</kbd> Tuyau · <kbd>L</kbd> Légende</div>
                   <div><kbd>Shift+clic</kbd> / Cadre : Multi-sélection · <kbd>Ctrl+A</kbd> Tout</div>
                   <div><kbd>M</kbd> Aimantation · <kbd>G</kbd> Grille · <kbd>I</kbd> Inspecteur · <kbd>Alt</kbd> Libre</div>
-                  <div><kbd>Ctrl+Z</kbd> Annuler · <kbd>Ctrl+C/X/V</kbd> Copier/Coller · <kbd>Ctrl+D</kbd> Dupliquer</div>
+                  <div><kbd>Ctrl+Z</kbd> Annuler · <kbd>Ctrl+C/X/V</kbd> Copier/Coller · <kbd>Ctrl+G</kbd> Grouper</div>
                   <div><kbd>Suppr</kbd> Effacer · <kbd>Ctrl+N/S/O/P</kbd> Fichier & Imprimer</div>
                   <div><kbd>Flèches</kbd> Décalage fin · <kbd>+/−/0</kbd> Zoom · <kbd>Clic droit</kbd> Menu / Vue</div>
                 </div>
@@ -126,20 +126,31 @@ export function createInspectorController(ctx) {
         const nItems = entries.filter(e => e.kind === 'item').length;
         const nConns = entries.filter(e => e.kind === 'connector').length;
         const nLbls = entries.filter(e => e.kind === 'label').length;
+        const allLocked = entries.every(e => Boolean(e.el.locked));
+        const isSingleGroup = store.isSingleGroupSelected();
+        const hasGrouped = store.hasGroupedSelection();
         const parts = [];
         if (nItems) parts.push(`${nItems} objet${nItems > 1 ? 's' : ''}`);
         if (nConns) parts.push(`${nConns} connecteur${nConns > 1 ? 's' : ''}`);
         if (nLbls) parts.push(`${nLbls} légende${nLbls > 1 ? 's' : ''}`);
 
-        inspectorTitleEl.innerHTML = `<i class="fas fa-object-group mr-1"></i> ${entries.length} éléments`;
+        inspectorTitleEl.innerHTML = isSingleGroup
+            ? `<i class="fas fa-object-group mr-1"></i> Groupe (${entries.length})`
+            : `<i class="fas fa-object-group mr-1"></i> ${entries.length} éléments`;
         inspectorBodyEl.innerHTML = `
           <div class="prop-section">
-            <div class="prop-section-title">Sélection multiple</div>
+            <div class="prop-section-title">${isSingleGroup ? 'Groupe' : 'Sélection multiple'}</div>
             <div style="font-size:0.78rem; color:var(--schemas-muted)">${parts.join(' · ')}</div>
             <div class="btn-row">
               <button class="mini-btn" id="btnDupMulti" title="Dupliquer la sélection (Ctrl+D)"><i class="fas fa-clone"></i> Dupliquer</button>
-              <button class="mini-btn is-danger" id="btnDelMulti" title="Supprimer la sélection (Suppr)"><i class="fas fa-trash"></i> Supprimer</button>
+              <button class="mini-btn ${allLocked ? 'is-warning' : ''}" id="btnLockMulti" title="${allLocked ? 'Déverrouiller (Ctrl+Shift+L)' : 'Verrouiller (Ctrl+Shift+L)'}"><i class="fas ${allLocked ? 'fa-lock-open' : 'fa-lock'}"></i> ${allLocked ? 'Déverr.' : 'Verr.'}</button>
+              <button class="mini-btn is-danger" id="btnDelMulti" title="Supprimer la sélection (Suppr)" ${allLocked ? 'disabled' : ''}><i class="fas fa-trash"></i></button>
             </div>
+            <div class="btn-row">
+              ${!isSingleGroup ? `<button class="mini-btn" id="btnGroupMulti" title="Grouper la sélection (Ctrl+G)"><i class="fas fa-object-group"></i> Grouper</button>` : ''}
+              ${hasGrouped ? `<button class="mini-btn" id="btnUngroupMulti" title="Dégrouper (Ctrl+Shift+G)"><i class="fas fa-object-ungroup"></i> Dégrouper</button>` : ''}
+            </div>
+            ${isSingleGroup ? '<div style="font-size:0.72rem; color:var(--schemas-muted)">Astuce : <kbd>Alt+clic</kbd> sélectionne un élément isolé du groupe.</div>' : ''}
           </div>
           ${(nItems + nLbls) >= 2 ? `
           <div class="prop-section">
@@ -174,6 +185,23 @@ export function createInspectorController(ctx) {
             store.duplicateSelected();
             ctx.renderScene();
             renderInspector();
+        });
+        inspectorBodyEl.querySelector('#btnLockMulti').addEventListener('click', () => {
+            store.toggleLockSelected();
+            ctx.renderScene();
+            renderInspector();
+        });
+        inspectorBodyEl.querySelector('#btnGroupMulti')?.addEventListener('click', () => {
+            if (store.groupSelected()) {
+                ctx.renderScene();
+                renderInspector();
+            }
+        });
+        inspectorBodyEl.querySelector('#btnUngroupMulti')?.addEventListener('click', () => {
+            if (store.ungroupSelected()) {
+                ctx.renderScene();
+                renderInspector();
+            }
         });
         inspectorBodyEl.querySelector('#btnDelMulti').addEventListener('click', () => {
             store.deleteSelected();
@@ -254,12 +282,15 @@ export function createInspectorController(ctx) {
             specificHtml += `</div>`;
         }
 
+        const isLocked = Boolean(item.locked);
         inspectorBodyEl.innerHTML = `
           <div class="prop-section">
             <div class="btn-row">
               <button class="mini-btn" id="btnDupEl" title="Dupliquer (Ctrl+D)"><i class="fas fa-clone"></i> Dupliquer</button>
-              <button class="mini-btn is-danger" id="btnDelEl" title="Supprimer (Suppr)"><i class="fas fa-trash"></i> Supprimer</button>
+              <button class="mini-btn ${isLocked ? 'is-warning' : ''}" id="btnLockEl" title="${isLocked ? 'Déverrouiller (Ctrl+Shift+L)' : 'Verrouiller (Ctrl+Shift+L)'}"><i class="fas ${isLocked ? 'fa-lock-open' : 'fa-lock'}"></i> ${isLocked ? 'Déverr.' : 'Verr.'}</button>
+              <button class="mini-btn is-danger" id="btnDelEl" title="Supprimer (Suppr)" ${isLocked ? 'disabled' : ''}><i class="fas fa-trash"></i></button>
             </div>
+            ${isLocked ? '<div class="lock-notice"><i class="fas fa-lock"></i><span>Objet verrouillé (position et suppression protégées)</span></div>' : ''}
             <div class="btn-row">
               <button class="mini-btn" data-z="back" title="Arrière-plan"><i class="fas fa-angles-down"></i></button>
               <button class="mini-btn" data-z="backward" title="Reculer"><i class="fas fa-angle-down"></i></button>
@@ -306,6 +337,11 @@ export function createInspectorController(ctx) {
 
         inspectorBodyEl.querySelector('#btnDupEl').addEventListener('click', () => {
             store.duplicateSelected();
+            ctx.renderScene();
+            renderInspector();
+        });
+        inspectorBodyEl.querySelector('#btnLockEl').addEventListener('click', () => {
+            store.toggleLockSelected();
             ctx.renderScene();
             renderInspector();
         });
@@ -460,12 +496,15 @@ export function createInspectorController(ctx) {
                 { label: 'Transparent', color: '#ffffff' }
             ];
 
+        const isLocked = Boolean(conn.locked);
         inspectorBodyEl.innerHTML = `
           <div class="prop-section">
             <div class="btn-row">
               <button class="mini-btn" id="btnDupEl"><i class="fas fa-clone"></i> Dupliquer</button>
-              <button class="mini-btn is-danger" id="btnDelEl"><i class="fas fa-trash"></i> Supprimer</button>
+              <button class="mini-btn ${isLocked ? 'is-warning' : ''}" id="btnLockEl" title="${isLocked ? 'Déverrouiller (Ctrl+Shift+L)' : 'Verrouiller (Ctrl+Shift+L)'}"><i class="fas ${isLocked ? 'fa-lock-open' : 'fa-lock'}"></i> ${isLocked ? 'Déverr.' : 'Verr.'}</button>
+              <button class="mini-btn is-danger" id="btnDelEl" ${isLocked ? 'disabled' : ''}><i class="fas fa-trash"></i></button>
             </div>
+            ${isLocked ? '<div class="lock-notice"><i class="fas fa-lock"></i><span>Connecteur verrouillé</span></div>' : ''}
           </div>
 
           <div class="prop-section">
@@ -528,6 +567,7 @@ export function createInspectorController(ctx) {
         `;
 
         inspectorBodyEl.querySelector('#btnDupEl').addEventListener('click', () => { store.duplicateSelected(); ctx.renderScene(); renderInspector(); });
+        inspectorBodyEl.querySelector('#btnLockEl').addEventListener('click', () => { store.toggleLockSelected(); ctx.renderScene(); renderInspector(); });
         inspectorBodyEl.querySelector('#btnDelEl').addEventListener('click', () => { store.deleteSelected(); ctx.renderScene(); renderInspector(); });
 
         inspectorBodyEl.querySelector('#selConnMode').addEventListener('change', (ev) => {
@@ -639,12 +679,15 @@ export function createInspectorController(ctx) {
         const symbolButtons = LABEL_SYMBOLS.map(s =>
             `<button type="button" class="symbol-btn" data-symbol="${s.ch}" title="${s.title}">${s.ch}</button>`
         ).join('');
+        const isLocked = Boolean(lbl.locked);
         inspectorBodyEl.innerHTML = `
           <div class="prop-section">
             <div class="btn-row">
               <button class="mini-btn" id="btnDupEl"><i class="fas fa-clone"></i> Dupliquer</button>
-              <button class="mini-btn is-danger" id="btnDelEl"><i class="fas fa-trash"></i> Supprimer</button>
+              <button class="mini-btn ${isLocked ? 'is-warning' : ''}" id="btnLockEl" title="${isLocked ? 'Déverrouiller (Ctrl+Shift+L)' : 'Verrouiller (Ctrl+Shift+L)'}"><i class="fas ${isLocked ? 'fa-lock-open' : 'fa-lock'}"></i> ${isLocked ? 'Déverr.' : 'Verr.'}</button>
+              <button class="mini-btn is-danger" id="btnDelEl" ${isLocked ? 'disabled' : ''}><i class="fas fa-trash"></i></button>
             </div>
+            ${isLocked ? '<div class="lock-notice"><i class="fas fa-lock"></i><span>Légende verrouillée</span></div>' : ''}
           </div>
           <div class="prop-section">
             <div class="prop-section-title">Texte</div>
@@ -707,6 +750,7 @@ export function createInspectorController(ctx) {
         `;
 
         inspectorBodyEl.querySelector('#btnDupEl').addEventListener('click', () => { store.duplicateSelected(); ctx.renderScene(); renderInspector(); });
+        inspectorBodyEl.querySelector('#btnLockEl').addEventListener('click', () => { store.toggleLockSelected(); ctx.renderScene(); renderInspector(); });
         inspectorBodyEl.querySelector('#btnDelEl').addEventListener('click', () => { store.deleteSelected(); ctx.renderScene(); renderInspector(); });
 
         const ta = inspectorBodyEl.querySelector('textarea[data-prop="text"]');

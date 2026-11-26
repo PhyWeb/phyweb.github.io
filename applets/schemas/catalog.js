@@ -9,7 +9,8 @@ export const CATEGORIES = [
     { id: 'supports', label: 'Supports & Paillasse', icon: 'fa-fire-burner' },
     { id: 'mesure', label: 'Mesure', icon: 'fa-gauge-high' },
     { id: 'electricite', label: 'Électricité & Piles', icon: 'fa-bolt' },
-    { id: 'effets', label: 'Effets', icon: 'fa-droplet' }
+    { id: 'effets', label: 'Effets', icon: 'fa-droplet' },
+    { id: 'formes', label: 'Formes & Flèches', icon: 'fa-shapes' }
 ];
 
 export const LIQUID_PRESETS = [
@@ -30,6 +31,24 @@ export const SOLID_PRESETS = [
     { label: 'Jaune (Soufre)', color: '#f4d35e' },
     { label: 'Cuivre', color: '#c87a52' },
     { label: 'Gris (Fer/Zinc)', color: '#8d99ae' }
+];
+
+export const SHAPE_STROKE_PRESETS = [
+    { label: 'Noir / Ardoise', color: '#1e293b' },
+    { label: 'Rouge', color: '#e03131' },
+    { label: 'Bleu', color: '#2563eb' },
+    { label: 'Vert', color: '#16a34a' },
+    { label: 'Orange', color: '#ea580c' },
+    { label: 'Violet', color: '#7c3aed' }
+];
+
+export const SHAPE_FILL_PRESETS = [
+    { label: 'Bleu clair', color: '#bfdbfe' },
+    { label: 'Jaune pâle', color: '#fef08a' },
+    { label: 'Vert pâle', color: '#bbf7d0' },
+    { label: 'Rose pâle', color: '#fecdd3' },
+    { label: 'Gris clair', color: '#e2e8f0' },
+    { label: 'Blanc', color: '#ffffff' }
 ];
 
 export const SVG_SHARED_STYLES = `
@@ -2830,6 +2849,251 @@ export const CATALOG = [
             return `
               <path d="${mound}" fill="${col}" stroke="rgba(0,0,0,0.4)" stroke-width="1.4" stroke-linejoin="round" />
               ${grains}
+            `;
+        }
+    },
+
+    // ---------------------------------------------------------------------
+    // 8. FORMES GÉOMÉTRIQUES & FLÈCHES
+    // ---------------------------------------------------------------------
+    {
+        id: 'forme-fleche',
+        name: 'Flèche / Vecteur',
+        category: 'formes',
+        keywords: 'fleche vecteur rayon force vitesse sens etape reaction avant apres',
+        defaultProps: {
+            length: 120,
+            strokeWidth: 3,
+            strokeColor: '#1e293b',
+            dashed: false,
+            doubleHead: false,
+            headStyle: 'triangle'
+        },
+        propSchema: [
+            { key: 'length', label: 'Longueur', type: 'range', min: 40, max: 400, step: 5, unit: 'px' },
+            { key: 'strokeWidth', label: 'Épaisseur', type: 'range', min: 1.5, max: 8, step: 0.5, unit: 'px' },
+            { key: 'strokeColor', label: 'Couleur', type: 'color', presets: SHAPE_STROKE_PRESETS },
+            { key: 'headStyle', label: 'Pointe', type: 'select', options: [
+                { value: 'triangle', label: 'Triangle plein' },
+                { value: 'open', label: 'Chevron ouvert' }
+            ]},
+            { key: 'doubleHead', label: 'Double flèche', type: 'toggle' },
+            { key: 'dashed', label: 'Pointillés', type: 'toggle' }
+        ],
+        getBBox(p) {
+            const len = Math.max(40, Number(p.length) || 120);
+            const hw = len / 2;
+            const headH = Math.max(10, (Number(p.strokeWidth) || 3) * 3.2);
+            return { x: -hw - 4, y: -headH, width: len + 8, height: headH * 2 };
+        },
+        getAnchors() {
+            return [];
+        },
+        render(p) {
+            const len = Math.max(40, Number(p.length) || 120);
+            const sw = Number(p.strokeWidth) || 3;
+            const col = esc(p.strokeColor || '#1e293b');
+            const hw = len / 2;
+            const hl = Math.max(10, sw * 3.8);
+            const hh = Math.max(5.5, sw * 2.1);
+            const dash = p.dashed ? `stroke-dasharray="${(sw * 2.6).toFixed(1)} ${(sw * 1.8).toFixed(1)}"` : '';
+            const isOpen = p.headStyle === 'open';
+            const x1 = p.doubleHead ? (-hw + (isOpen ? 2 : hl * 0.72)) : -hw;
+            const x2 = hw - (isOpen ? 2 : hl * 0.72);
+
+            const rightHead = isOpen
+                ? `<polyline points="${(hw - hl).toFixed(1)},${(-hh).toFixed(1)} ${hw.toFixed(1)},0 ${(hw - hl).toFixed(1)},${hh.toFixed(1)}" fill="none" stroke="${col}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" />`
+                : `<polygon points="${hw.toFixed(1)},0 ${(hw - hl).toFixed(1)},${(-hh).toFixed(1)} ${(hw - hl * 0.72).toFixed(1)},0 ${(hw - hl).toFixed(1)},${hh.toFixed(1)}" fill="${col}" />`;
+
+            const leftHead = p.doubleHead
+                ? (isOpen
+                    ? `<polyline points="${(-hw + hl).toFixed(1)},${(-hh).toFixed(1)} ${(-hw).toFixed(1)},0 ${(-hw + hl).toFixed(1)},${hh.toFixed(1)}" fill="none" stroke="${col}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" />`
+                    : `<polygon points="${(-hw).toFixed(1)},0 ${(-hw + hl).toFixed(1)},${(-hh).toFixed(1)} ${(-hw + hl * 0.72).toFixed(1)},0 ${(-hw + hl).toFixed(1)},${hh.toFixed(1)}" fill="${col}" />`)
+                : '';
+
+            return `
+              <line x1="${(-hw).toFixed(1)}" y1="0" x2="${hw.toFixed(1)}" y2="0" stroke="transparent" stroke-width="18" />
+              <line x1="${x1.toFixed(1)}" y1="0" x2="${x2.toFixed(1)}" y2="0" stroke="${col}" stroke-width="${sw}" stroke-linecap="round" ${dash} />
+              ${rightHead}
+              ${leftHead}
+            `;
+        }
+    },
+
+    {
+        id: 'forme-ligne',
+        name: 'Segment / Axe',
+        category: 'formes',
+        keywords: 'ligne trait segment axe separation pointilles',
+        defaultProps: {
+            length: 140,
+            strokeWidth: 2.5,
+            strokeColor: '#1e293b',
+            dashed: false
+        },
+        propSchema: [
+            { key: 'length', label: 'Longueur', type: 'range', min: 30, max: 500, step: 5, unit: 'px' },
+            { key: 'strokeWidth', label: 'Épaisseur', type: 'range', min: 1, max: 8, step: 0.5, unit: 'px' },
+            { key: 'strokeColor', label: 'Couleur', type: 'color', presets: SHAPE_STROKE_PRESETS },
+            { key: 'dashed', label: 'Pointillés', type: 'toggle' }
+        ],
+        getBBox(p) {
+            const len = Math.max(30, Number(p.length) || 140);
+            return { x: -len / 2 - 4, y: -10, width: len + 8, height: 20 };
+        },
+        getAnchors() {
+            return [];
+        },
+        render(p) {
+            const len = Math.max(30, Number(p.length) || 140);
+            const sw = Number(p.strokeWidth) || 2.5;
+            const col = esc(p.strokeColor || '#1e293b');
+            const hw = len / 2;
+            const dash = p.dashed ? `stroke-dasharray="${(sw * 2.8).toFixed(1)} ${(sw * 2).toFixed(1)}"` : '';
+            return `
+              <line x1="${(-hw).toFixed(1)}" y1="0" x2="${hw.toFixed(1)}" y2="0" stroke="transparent" stroke-width="18" />
+              <line x1="${(-hw).toFixed(1)}" y1="0" x2="${hw.toFixed(1)}" y2="0" stroke="${col}" stroke-width="${sw}" stroke-linecap="round" ${dash} />
+            `;
+        }
+    },
+
+    {
+        id: 'forme-rectangle',
+        name: 'Rectangle / Cadre',
+        category: 'formes',
+        keywords: 'rectangle cadre boite zone encadre zoom etape carre',
+        defaultProps: {
+            width: 180,
+            height: 110,
+            radius: 8,
+            strokeWidth: 2.5,
+            strokeColor: '#1e293b',
+            dashed: false,
+            filled: false,
+            fillColor: '#bfdbfe',
+            fillOpacity: 25
+        },
+        propSchema: [
+            { key: 'width', label: 'Largeur', type: 'range', min: 40, max: 500, step: 5, unit: 'px' },
+            { key: 'height', label: 'Hauteur', type: 'range', min: 30, max: 400, step: 5, unit: 'px' },
+            { key: 'radius', label: 'Coins arrondis', type: 'range', min: 0, max: 30, step: 2, unit: 'px' },
+            { key: 'strokeWidth', label: 'Épaisseur', type: 'range', min: 1, max: 8, step: 0.5, unit: 'px' },
+            { key: 'strokeColor', label: 'Contour', type: 'color', presets: SHAPE_STROKE_PRESETS },
+            { key: 'dashed', label: 'Pointillés', type: 'toggle' },
+            { key: 'filled', label: 'Remplissage', type: 'toggle' },
+            { key: 'fillColor', label: 'Couleur fond', type: 'color', presets: SHAPE_FILL_PRESETS, showIf: p => Boolean(p.filled) },
+            { key: 'fillOpacity', label: 'Opacité fond', type: 'range', min: 10, max: 100, step: 5, unit: '%', showIf: p => Boolean(p.filled) }
+        ],
+        getBBox(p) {
+            const w = Math.max(40, Number(p.width) || 180);
+            const h = Math.max(30, Number(p.height) || 110);
+            return { x: -w / 2 - 4, y: -h / 2 - 4, width: w + 8, height: h + 8 };
+        },
+        getAnchors() {
+            return [];
+        },
+        render(p) {
+            const w = Math.max(40, Number(p.width) || 180);
+            const h = Math.max(30, Number(p.height) || 110);
+            const rx = Math.max(0, Math.min(Number(p.radius) || 0, Math.min(w, h) / 2));
+            const sw = Number(p.strokeWidth) || 2.5;
+            const col = esc(p.strokeColor || '#1e293b');
+            const dash = p.dashed ? `stroke-dasharray="${(sw * 2.8).toFixed(1)} ${(sw * 2).toFixed(1)}"` : '';
+            const fill = p.filled ? esc(p.fillColor || '#bfdbfe') : 'none';
+            const fillOp = p.filled ? (Math.max(10, Math.min(100, Number(p.fillOpacity) || 25)) / 100).toFixed(2) : '1';
+            const hitRect = p.filled
+                ? ''
+                : `<rect x="${(-w / 2).toFixed(1)}" y="${(-h / 2).toFixed(1)}" width="${w}" height="${h}" rx="${rx}" fill="none" stroke="transparent" stroke-width="14" pointer-events="stroke" />`;
+            return `
+              ${hitRect}
+              <rect x="${(-w / 2).toFixed(1)}" y="${(-h / 2).toFixed(1)}" width="${w}" height="${h}" rx="${rx}" fill="${fill}" fill-opacity="${fillOp}" stroke="${col}" stroke-width="${sw}" stroke-linejoin="round" ${dash} />
+            `;
+        }
+    },
+
+    {
+        id: 'forme-ellipse',
+        name: 'Cercle / Ellipse',
+        category: 'formes',
+        keywords: 'cercle ellipse rond loupe zoom zone ovale',
+        defaultProps: {
+            rx: 55,
+            ry: 55,
+            strokeWidth: 2.5,
+            strokeColor: '#1e293b',
+            dashed: false,
+            filled: false,
+            fillColor: '#bfdbfe',
+            fillOpacity: 25
+        },
+        propSchema: [
+            { key: 'rx', label: 'Rayon X', type: 'range', min: 15, max: 250, step: 5, unit: 'px' },
+            { key: 'ry', label: 'Rayon Y', type: 'range', min: 15, max: 250, step: 5, unit: 'px' },
+            { key: 'strokeWidth', label: 'Épaisseur', type: 'range', min: 1, max: 8, step: 0.5, unit: 'px' },
+            { key: 'strokeColor', label: 'Contour', type: 'color', presets: SHAPE_STROKE_PRESETS },
+            { key: 'dashed', label: 'Pointillés', type: 'toggle' },
+            { key: 'filled', label: 'Remplissage', type: 'toggle' },
+            { key: 'fillColor', label: 'Couleur fond', type: 'color', presets: SHAPE_FILL_PRESETS, showIf: p => Boolean(p.filled) },
+            { key: 'fillOpacity', label: 'Opacité fond', type: 'range', min: 10, max: 100, step: 5, unit: '%', showIf: p => Boolean(p.filled) }
+        ],
+        getBBox(p) {
+            const rx = Math.max(15, Number(p.rx) || 55);
+            const ry = Math.max(15, Number(p.ry) || 55);
+            return { x: -rx - 4, y: -ry - 4, width: rx * 2 + 8, height: ry * 2 + 8 };
+        },
+        getAnchors() {
+            return [];
+        },
+        render(p) {
+            const rx = Math.max(15, Number(p.rx) || 55);
+            const ry = Math.max(15, Number(p.ry) || 55);
+            const sw = Number(p.strokeWidth) || 2.5;
+            const col = esc(p.strokeColor || '#1e293b');
+            const dash = p.dashed ? `stroke-dasharray="${(sw * 2.8).toFixed(1)} ${(sw * 2).toFixed(1)}"` : '';
+            const fill = p.filled ? esc(p.fillColor || '#bfdbfe') : 'none';
+            const fillOp = p.filled ? (Math.max(10, Math.min(100, Number(p.fillOpacity) || 25)) / 100).toFixed(2) : '1';
+            const hitEl = p.filled
+                ? ''
+                : `<ellipse cx="0" cy="0" rx="${rx}" ry="${ry}" fill="none" stroke="transparent" stroke-width="14" pointer-events="stroke" />`;
+            return `
+              ${hitEl}
+              <ellipse cx="0" cy="0" rx="${rx}" ry="${ry}" fill="${fill}" fill-opacity="${fillOp}" stroke="${col}" stroke-width="${sw}" ${dash} />
+            `;
+        }
+    },
+
+    {
+        id: 'forme-accolade',
+        name: 'Accolade',
+        category: 'formes',
+        keywords: 'accolade regroupement hauteur mesure annotation brace',
+        defaultProps: {
+            height: 140,
+            strokeWidth: 2.5,
+            strokeColor: '#1e293b'
+        },
+        propSchema: [
+            { key: 'height', label: 'Hauteur', type: 'range', min: 50, max: 400, step: 5, unit: 'px' },
+            { key: 'strokeWidth', label: 'Épaisseur', type: 'range', min: 1.5, max: 6, step: 0.5, unit: 'px' },
+            { key: 'strokeColor', label: 'Couleur', type: 'color', presets: SHAPE_STROKE_PRESETS }
+        ],
+        getBBox(p) {
+            const h = Math.max(50, Number(p.height) || 140);
+            return { x: -16, y: -h / 2 - 4, width: 32, height: h + 8 };
+        },
+        getAnchors() {
+            return [];
+        },
+        render(p) {
+            const h = Math.max(50, Number(p.height) || 140);
+            const hh = h / 2;
+            const sw = Number(p.strokeWidth) || 2.5;
+            const col = esc(p.strokeColor || '#1e293b');
+            const r = Math.min(14, hh * 0.28);
+            const d = `M -10,${(-hh).toFixed(1)} Q 0,${(-hh).toFixed(1)} 0,${(-hh + r).toFixed(1)} L 0,${(-r).toFixed(1)} Q 0,0 10,0 Q 0,0 0,${r.toFixed(1)} L 0,${(hh - r).toFixed(1)} Q 0,${hh.toFixed(1)} -10,${hh.toFixed(1)}`;
+            return `
+              <path d="${d}" fill="none" stroke="transparent" stroke-width="18" />
+              <path d="${d}" fill="none" stroke="${col}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" />
             `;
         }
     }

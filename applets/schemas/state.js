@@ -79,10 +79,109 @@ export class SceneStore {
 
     selectAll() {
         this.selected = [
-            ...this.scene.items.map(i => ({ kind: 'item', id: i.id })),
-            ...this.scene.connectors.map(c => ({ kind: 'connector', id: c.id })),
-            ...this.scene.labels.map(l => ({ kind: 'label', id: l.id }))
+            ...this.scene.items.filter(i => !i.locked).map(i => ({ kind: 'item', id: i.id })),
+            ...this.scene.connectors.filter(c => !c.locked).map(c => ({ kind: 'connector', id: c.id })),
+            ...this.scene.labels.filter(l => !l.locked).map(l => ({ kind: 'label', id: l.id }))
         ];
+    }
+
+    toggleLockSelected() {
+        const entries = this.getSelectedElements();
+        if (entries.length === 0) return null;
+        const allLocked = entries.every(e => Boolean(e.el.locked));
+        const nextLocked = !allLocked;
+        this.pushHistory();
+        for (const { el } of entries) {
+            el.locked = nextLocked;
+        }
+        return nextLocked;
+    }
+
+    getGroupMembers(groupId) {
+        if (!groupId) return [];
+        return [
+            ...this.scene.items.filter(i => i.groupId === groupId).map(i => ({ kind: 'item', id: i.id })),
+            ...this.scene.connectors.filter(c => c.groupId === groupId).map(c => ({ kind: 'connector', id: c.id })),
+            ...this.scene.labels.filter(l => l.groupId === groupId).map(l => ({ kind: 'label', id: l.id }))
+        ];
+    }
+
+    selectWithGroup(kind, id) {
+        const el = this._findElement(kind, id);
+        if (!el) return;
+        if (el.groupId) {
+            const members = this.getGroupMembers(el.groupId);
+            if (members.length > 0) {
+                this.setSelection(members);
+                return;
+            }
+        }
+        this.selection = { kind, id };
+    }
+
+    toggleSelectionWithGroup(kind, id) {
+        const el = this._findElement(kind, id);
+        if (!el) return;
+        if (el.groupId) {
+            const members = this.getGroupMembers(el.groupId);
+            const allSelected = members.every(m => this.isSelected(m.kind, m.id));
+            if (allSelected) {
+                const keys = new Set(members.map(m => `${m.kind}:${m.id}`));
+                this.selected = this.selected.filter(s => !keys.has(`${s.kind}:${s.id}`));
+            } else {
+                this.setSelection([...this.selected, ...members]);
+            }
+            return;
+        }
+        this.toggleSelection(kind, id);
+    }
+
+    groupSelected() {
+        const entries = this.getSelectedElements();
+        if (entries.length < 2) return null;
+        this.pushHistory();
+        const gid = nextId('grp');
+        for (const { el } of entries) {
+            el.groupId = gid;
+        }
+        this._cleanupOrphanGroups();
+        return gid;
+    }
+
+    ungroupSelected() {
+        const entries = this.getSelectedElements();
+        const grouped = entries.filter(e => Boolean(e.el.groupId));
+        if (grouped.length === 0) return false;
+        this.pushHistory();
+        for (const { el } of grouped) {
+            delete el.groupId;
+        }
+        this._cleanupOrphanGroups();
+        return true;
+    }
+
+    hasGroupedSelection() {
+        return this.getSelectedElements().some(e => Boolean(e.el.groupId));
+    }
+
+    isSingleGroupSelected() {
+        const entries = this.getSelectedElements();
+        if (entries.length < 2) return false;
+        const gid = entries[0].el.groupId;
+        return Boolean(gid) && entries.every(e => e.el.groupId === gid);
+    }
+
+    _cleanupOrphanGroups() {
+        const counts = new Map();
+        const all = [...this.scene.items, ...this.scene.connectors, ...this.scene.labels];
+        for (const el of all) {
+            if (el.groupId) counts.set(el.groupId, (counts.get(el.groupId) || 0) + 1);
+        }
+        for (const el of all) {
+            if (el.groupId && (counts.get(el.groupId) || 0) < 2) {
+                delete el.groupId;
+            }
+        }
     }
 
     clearSelection() {
@@ -231,11 +330,13 @@ export class SceneStore {
 
     deleteSelected(skipHistory = false) {
         if (this.selected.length === 0) return false;
+        const deletable = this.getSelectedElements().filter(e => !e.el.locked);
+        if (deletable.length === 0) return false;
         if (!skipHistory) this.pushHistory();
 
-        const itemIds = new Set(this.selected.filter(s => s.kind === 'item').map(s => s.id));
-        const connIds = new Set(this.selected.filter(s => s.kind === 'connector').map(s => s.id));
-        const lblIds = new Set(this.selected.filter(s => s.kind === 'label').map(s => s.id));
+        const itemIds = new Set(deletable.filter(s => s.kind === 'item').map(s => s.id));
+        const connIds = new Set(deletable.filter(s => s.kind === 'connector').map(s => s.id));
+        const lblIds = new Set(deletable.filter(s => s.kind === 'label').map(s => s.id));
 
         if (itemIds.size > 0) {
             // Détacher les connecteurs conservés qui étaient reliés aux objets supprimés
@@ -257,7 +358,8 @@ export class SceneStore {
         if (lblIds.size > 0) {
             this.scene.labels = this.scene.labels.filter(l => !lblIds.has(l.id));
         }
-        this.selected = [];
+        this._cleanupOrphanGroups();
+        this.ensureValidSelection();
         return true;
     }
 
@@ -268,6 +370,12 @@ export class SceneStore {
 
         const newSelection = [];
         const itemIdMap = new Map();
+        const groupIdMap = new Map();
+        const remapGroup = (gid) => {
+            if (!gid) return undefined;
+            if (!groupIdMap.has(gid)) groupIdMap.set(gid, nextId('grp'));
+            return groupIdMap.get(gid);
+        };
         const created = [];
 
         // 1. Dupliquer d'abord les objets pour pouvoir remapper les connecteurs internes
@@ -275,6 +383,8 @@ export class SceneStore {
             if (kind !== 'item') continue;
             const copy = JSON.parse(JSON.stringify(el));
             copy.id = nextId('obj');
+            copy.locked = false;
+            if (copy.groupId) copy.groupId = remapGroup(copy.groupId);
             copy.x += 30;
             copy.y += 30;
             this.scene.items.push(copy);
@@ -288,6 +398,8 @@ export class SceneStore {
             if (kind !== 'connector') continue;
             const copy = JSON.parse(JSON.stringify(el));
             copy.id = nextId(el.kind === 'wire' ? 'wire' : 'hose');
+            copy.locked = false;
+            if (copy.groupId) copy.groupId = remapGroup(copy.groupId);
             const ep = resolveConnectorEndpoints(el, this.scene.items);
             if (el.start.itemId && itemIdMap.has(el.start.itemId)) {
                 copy.start = { ...el.start, itemId: itemIdMap.get(el.start.itemId), x: ep.p1.x + 30, y: ep.p1.y + 30 };
@@ -309,6 +421,8 @@ export class SceneStore {
             if (kind !== 'label') continue;
             const copy = JSON.parse(JSON.stringify(el));
             copy.id = nextId('lbl');
+            copy.locked = false;
+            if (copy.groupId) copy.groupId = remapGroup(copy.groupId);
             copy.x += 25;
             copy.y += 25;
             copy.targetX += 25;
@@ -318,6 +432,7 @@ export class SceneStore {
             created.push(copy);
         }
 
+        this._cleanupOrphanGroups();
         this.selected = newSelection;
         return created.length === 1 ? created[0] : created;
     }
@@ -397,11 +512,19 @@ export class SceneStore {
 
         const newSelection = [];
         const itemIdMap = new Map();
+        const groupIdMap = new Map();
+        const remapGroup = (gid) => {
+            if (!gid) return undefined;
+            if (!groupIdMap.has(gid)) groupIdMap.set(gid, nextId('grp'));
+            return groupIdMap.get(gid);
+        };
         const created = [];
 
         for (const src of this.clipboard.items) {
             const copy = JSON.parse(JSON.stringify(src));
             copy.id = nextId('obj');
+            copy.locked = false;
+            if (copy.groupId) copy.groupId = remapGroup(copy.groupId);
             copy.x = Math.round(copy.x + dx);
             copy.y = Math.round(copy.y + dy);
             const def = getCatalogItem(copy.type);
@@ -415,6 +538,8 @@ export class SceneStore {
         for (const { data, resolvedP1, resolvedP2 } of this.clipboard.connectors) {
             const copy = JSON.parse(JSON.stringify(data));
             copy.id = nextId(copy.kind === 'wire' ? 'wire' : 'hose');
+            copy.locked = false;
+            if (copy.groupId) copy.groupId = remapGroup(copy.groupId);
             if (data.start.itemId && itemIdMap.has(data.start.itemId)) {
                 copy.start = {
                     ...data.start,
@@ -443,6 +568,8 @@ export class SceneStore {
         for (const src of this.clipboard.labels) {
             const copy = JSON.parse(JSON.stringify(src));
             copy.id = nextId('lbl');
+            copy.locked = false;
+            if (copy.groupId) copy.groupId = remapGroup(copy.groupId);
             copy.x = Math.round(copy.x + dx);
             copy.y = Math.round(copy.y + dy);
             copy.targetX = Math.round(copy.targetX + dx);
@@ -452,6 +579,7 @@ export class SceneStore {
             created.push(copy);
         }
 
+        this._cleanupOrphanGroups();
         this.selected = newSelection;
         return created;
     }

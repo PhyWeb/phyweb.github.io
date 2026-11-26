@@ -57,8 +57,6 @@
 # Chromato
 # Spectres
 # Schemas
-    possibilité de grouper des objets
-    possibiliter de verouiller un objet
     ajouter un vrai précipité.
     plusieurs styles dans la coupelle
     ajouter une icone différente pour les pws
@@ -80,6 +78,7 @@
     - animation RVB
     - exao spectrophotometre COM
     - appli calculs sur téléphone
+    - reflechir à la transparence des verreries notament quand un tuyou passe derriere etc...
 
 
 # NOTES:

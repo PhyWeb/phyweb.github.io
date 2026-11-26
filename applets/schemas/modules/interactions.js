@@ -44,11 +44,42 @@ export function createInteractionsController(ctx) {
     }
 
     function handleCutSelection() {
+        const allLocked = store.getSelectedElements().every(e => Boolean(e.el.locked));
+        if (allLocked) {
+            notify('Impossible de couper un élément verrouillé.');
+            return false;
+        }
         const n = store.cutSelected();
         if (!n) return false;
         ctx.renderScene();
         ctx.renderInspector();
         notify(n > 1 ? `${n} éléments coupés.` : 'Élément coupé.');
+        return true;
+    }
+
+    function handleToggleLock() {
+        const locked = store.toggleLockSelected();
+        if (locked === null) return false;
+        ctx.renderScene();
+        ctx.renderInspector();
+        notify(locked ? 'Élément(s) verrouillé(s).' : 'Élément(s) déverrouillé(s).');
+        return true;
+    }
+
+    function handleGroupSelected() {
+        const gid = store.groupSelected();
+        if (!gid) return false;
+        ctx.renderScene();
+        ctx.renderInspector();
+        notify('Éléments groupés.');
+        return true;
+    }
+
+    function handleUngroupSelected() {
+        if (!store.ungroupSelected()) return false;
+        ctx.renderScene();
+        ctx.renderInspector();
+        notify('Groupe dissocié.');
         return true;
     }
 
@@ -67,7 +98,7 @@ export function createInteractionsController(ctx) {
             const kind = hitEl.dataset.kind;
             const id = hitEl.dataset.id;
             if (!store.isSelected(kind, id)) {
-                store.selection = { kind, id };
+                store.selectWithGroup(kind, id);
                 ctx.renderOverlay();
                 ctx.renderInspector();
             }
@@ -82,10 +113,33 @@ export function createInteractionsController(ctx) {
             const hasItems = entries.some(en => en.kind === 'item');
             const singleItem = isSingleItem ? entries[0].el : null;
             const singleConn = isSingleConn ? entries[0].el : null;
+            const allLocked = entries.every(en => Boolean(en.el.locked));
 
             actions.push({ label: 'Copier', icon: 'fa-copy', kbd: 'Ctrl+C', onClick: () => handleCopySelection() });
-            actions.push({ label: 'Couper', icon: 'fa-scissors', kbd: 'Ctrl+X', onClick: () => handleCutSelection() });
+            actions.push({ label: 'Couper', icon: 'fa-scissors', kbd: 'Ctrl+X', disabled: allLocked, onClick: () => handleCutSelection() });
             actions.push({ label: 'Dupliquer', icon: 'fa-clone', kbd: 'Ctrl+D', onClick: () => { store.duplicateSelected(); ctx.renderScene(); ctx.renderInspector(); } });
+            actions.push({
+                label: allLocked ? 'Déverrouiller' : 'Verrouiller',
+                icon: allLocked ? 'fa-lock-open' : 'fa-lock',
+                kbd: 'Ctrl+Shift+L',
+                onClick: () => handleToggleLock()
+            });
+            if (entries.length >= 2 && !store.isSingleGroupSelected()) {
+                actions.push({
+                    label: 'Grouper',
+                    icon: 'fa-object-group',
+                    kbd: 'Ctrl+G',
+                    onClick: () => handleGroupSelected()
+                });
+            }
+            if (store.hasGroupedSelection()) {
+                actions.push({
+                    label: 'Dégrouper',
+                    icon: 'fa-object-ungroup',
+                    kbd: 'Ctrl+Shift+G',
+                    onClick: () => handleUngroupSelected()
+                });
+            }
 
             if (isSingleConn) {
                 actions.push({ divider: true });
@@ -104,11 +158,12 @@ export function createInteractionsController(ctx) {
                 });
             } else if (isSingleItem) {
                 actions.push({ divider: true });
-                actions.push({ label: 'Pivoter −90°', icon: 'fa-rotate-left', onClick: () => ctx.rotateItemBy(singleItem, -90) });
-                actions.push({ label: 'Pivoter +90°', icon: 'fa-rotate-right', onClick: () => ctx.rotateItemBy(singleItem, 90) });
+                actions.push({ label: 'Pivoter −90°', icon: 'fa-rotate-left', disabled: Boolean(singleItem.locked), onClick: () => ctx.rotateItemBy(singleItem, -90) });
+                actions.push({ label: 'Pivoter +90°', icon: 'fa-rotate-right', disabled: Boolean(singleItem.locked), onClick: () => ctx.rotateItemBy(singleItem, 90) });
                 actions.push({
                     label: 'Inverser horizontalement',
                     icon: 'fa-left-right',
+                    disabled: Boolean(singleItem.locked),
                     onClick: () => {
                         store.pushHistory();
                         singleItem.flipX = !singleItem.flipX;
@@ -157,6 +212,7 @@ export function createInteractionsController(ctx) {
                 icon: 'fa-trash',
                 kbd: 'Suppr',
                 danger: true,
+                disabled: allLocked,
                 onClick: () => {
                     store.deleteSelected();
                     ctx.renderScene();
@@ -295,6 +351,7 @@ export function createInteractionsController(ctx) {
         const origLabels = [];
         const origConns = [];
         for (const { kind, el } of entries) {
+            if (el.locked) continue;
             if (kind === 'item') {
                 origItems.push({ el, x: el.x, y: el.y });
             } else if (kind === 'label') {
@@ -310,6 +367,9 @@ export function createInteractionsController(ctx) {
                     endY: el.end.y
                 });
             }
+        }
+        if (origItems.length === 0 && origLabels.length === 0 && origConns.length === 0) {
+            return null;
         }
         return {
             kind: 'move-multi',
@@ -336,8 +396,8 @@ export function createInteractionsController(ctx) {
         closeContextMenu();
         closeInlineLabelEditor();
 
-        // Pan avec clic milieu, clic droit (drag >= 4px ; clic court = menu contextuel) ou Espace + clic gauche
-        if (e.button === 1 || e.button === 2 || (e.button === 0 && editor.spaceDown)) {
+        // Pan avec clic milieu, clic droit (drag >= 4px ; clic court = menu contextuel), outil Main ou Espace + clic gauche
+        if (e.button === 1 || e.button === 2 || (e.button === 0 && (editor.spaceDown || editor.tool === 'pan'))) {
             e.preventDefault();
             const isRightClick = e.button === 2;
             if (!isRightClick) stageEl.classList.add('is-panning');
@@ -481,27 +541,38 @@ export function createInteractionsController(ctx) {
             const id = hitEl.dataset.id;
 
             if (e.shiftKey) {
-                store.toggleSelection(kind, id);
+                store.toggleSelectionWithGroup(kind, id);
                 ctx.renderInspector();
                 ctx.renderOverlay();
                 return;
             }
 
-            const alreadyInMulti = store.selected.length > 1 && store.isSelected(kind, id);
-            if (!alreadyInMulti) {
+            if (e.altKey) {
+                // Alt+clic : sélectionner cet élément isolément même s'il appartient à un groupe
                 store.selection = { kind, id };
                 ctx.renderInspector();
                 ctx.renderOverlay();
+            } else {
+                const alreadyInMulti = store.selected.length > 1 && store.isSelected(kind, id);
+                if (!alreadyInMulti) {
+                    store.selectWithGroup(kind, id);
+                    ctx.renderInspector();
+                    ctx.renderOverlay();
+                }
             }
 
             if (store.selected.length > 1) {
-                editor.drag = startMultiDrag(pt);
-                svgEl.setPointerCapture(e.pointerId);
+                const multiDrag = startMultiDrag(pt);
+                if (multiDrag) {
+                    editor.drag = multiDrag;
+                    svgEl.setPointerCapture(e.pointerId);
+                }
                 return;
             }
 
             const el = store.getSelectedElement();
-            if (kind === 'item' && el) {
+            if (!el || el.locked) return;
+            if (kind === 'item') {
                 editor.drag = {
                     kind: 'move-item',
                     id,
@@ -800,7 +871,7 @@ export function createInteractionsController(ctx) {
             ctx.renderOverlay();
             ctx.renderInspector();
             const lbl = store.getSelectedElement();
-            if (lbl) openInlineLabelEditor(lbl);
+            if (lbl && !lbl.locked) openInlineLabelEditor(lbl);
             return;
         }
 
@@ -916,6 +987,19 @@ export function createInteractionsController(ctx) {
             }
             return;
         }
+        if (isCtrlOrCmd && e.shiftKey && e.key.toLowerCase() === 'l') {
+            if (store.selected.length > 0) {
+                e.preventDefault();
+                handleToggleLock();
+            }
+            return;
+        }
+        if (isCtrlOrCmd && e.key.toLowerCase() === 'g') {
+            e.preventDefault();
+            if (e.shiftKey) handleUngroupSelected();
+            else handleGroupSelected();
+            return;
+        }
         if (isCtrlOrCmd && e.key.toLowerCase() === 'd') {
             e.preventDefault();
             if (store.duplicateSelected()) { ctx.renderScene(); ctx.renderInspector(); }
@@ -955,6 +1039,7 @@ export function createInteractionsController(ctx) {
 
         const k = e.key.toLowerCase();
         if (k === 'v') ctx.setTool('select');
+        else if (k === 'h') ctx.setTool('pan');
         else if (k === 'w') ctx.setTool('wire');
         else if (k === 't') ctx.setTool('hose');
         else if (k === 'l') ctx.setTool('label');
@@ -963,7 +1048,7 @@ export function createInteractionsController(ctx) {
         else if (k === 'i') document.getElementById('btnToggleInspector')?.click();
         else if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key) && store.selected.length > 0) {
             const entries = store.getSelectedElements();
-            const movable = entries.filter(en => en.kind === 'item' || en.kind === 'label' || (en.kind === 'connector' && (!en.el.start.itemId || !en.el.end.itemId)));
+            const movable = entries.filter(en => !en.el.locked && (en.kind === 'item' || en.kind === 'label' || (en.kind === 'connector' && (!en.el.start.itemId || !en.el.end.itemId))));
             if (movable.length === 0) return;
             e.preventDefault();
             const step = e.shiftKey ? 10 : 1;

@@ -223,6 +223,18 @@ export function createDrawerController(ctx) {
         });
     }
 
+    document.getElementById('btnOpenShapes')?.addEventListener('click', () => {
+        editor.activeCategory = 'formes';
+        if (editor.searchQuery) {
+            drawerSearchEl.value = '';
+            editor.searchQuery = '';
+            if (btnClearSearch) btnClearSearch.hidden = true;
+        }
+        drawerEl.classList.remove('is-collapsed');
+        buildDrawerTabs();
+        buildDrawerGrid();
+    });
+
     return {
         buildDrawerTabs,
         buildDrawerGrid
