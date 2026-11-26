@@ -31,6 +31,15 @@
             <uap:Logo>assets\Square44x44Logo.png</uap:Logo>
           </uap:FileTypeAssociation>
         </uap:Extension>
+        <uap:Extension Category="windows.fileTypeAssociation">
+          <uap:FileTypeAssociation Name="pwsfile">
+            <uap:DisplayName>Schéma PhyWeb</uap:DisplayName>
+            <uap:SupportedFileTypes>
+              <uap:FileType>.pws</uap:FileType>
+            </uap:SupportedFileTypes>
+            <uap:Logo>assets\Square44x44Logo.png</uap:Logo>
+          </uap:FileTypeAssociation>
+        </uap:Extension>
       </Extensions>
 
     </Application>

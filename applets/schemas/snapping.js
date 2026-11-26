@@ -391,6 +391,16 @@ export function computeConnectorGeometry(p1, p2, mode = 'bezier', bend = 0, bend
     const t1 = hasA1 ? angleToUnitVector(p1.angle) : null;
     const t2 = hasA2 ? angleToUnitVector(p2.angle) : null;
 
+    if (mode === 'straight') {
+        const d = `M ${p1.x.toFixed(1)},${p1.y.toFixed(1)} L ${p2.x.toFixed(1)},${p2.y.toFixed(1)}`;
+        const angle = dist < 1 ? 0 : (Math.atan2(dy, dx) * 180) / Math.PI;
+        return {
+            d,
+            mid: { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2, angle },
+            bounds: pointsBounds([p1, p2])
+        };
+    }
+
     if (mode === 'orthogonal') {
         const stub = 24;
         const s1 = t1 ? { x: p1.x + t1.x * stub, y: p1.y + t1.y * stub } : { x: p1.x, y: p1.y };

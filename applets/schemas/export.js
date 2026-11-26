@@ -258,7 +258,14 @@ export function buildStandaloneSVG(scene, options = {}) {
         ? rawItemsMarkup.replaceAll('style="mix-blend-mode: darken;"', 'opacity="0.88"')
         : rawItemsMarkup;
 
-    const connectorsMarkup = scene.connectors.map(c => `<g>${renderConnectorSVG(c, scene.items)}</g>`).join('\n');
+    const backConnectorsMarkup = scene.connectors
+        .filter(c => c.behindItems)
+        .map(c => `<g>${renderConnectorSVG(c, scene.items)}</g>`)
+        .join('\n');
+    const frontConnectorsMarkup = scene.connectors
+        .filter(c => !c.behindItems)
+        .map(c => `<g>${renderConnectorSVG(c, scene.items)}</g>`)
+        .join('\n');
     const labelsMarkup = scene.labels.map(l => `<g>${renderLabelSVG(l)}</g>`).join('\n');
     const bgRect = transparent ? '' : `<rect x="${bounds.x}" y="${bounds.y}" width="${bounds.width}" height="${bounds.height}" fill="#ffffff" />`;
 
@@ -266,18 +273,27 @@ export function buildStandaloneSVG(scene, options = {}) {
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="${bounds.x} ${bounds.y} ${bounds.width} ${bounds.height}" width="${bounds.width}" height="${bounds.height}">
   <style>${SVG_SHARED_STYLES}</style>
   ${bgRect}
+  <g id="layer-connectors-back">${backConnectorsMarkup}</g>
   <g id="layer-items">${itemsMarkup}</g>
-  <g id="layer-connectors">${connectorsMarkup}</g>
+  <g id="layer-connectors">${frontConnectorsMarkup}</g>
   <g id="layer-labels">${labelsMarkup}</g>
 </svg>`;
 }
 
 /**
- * Rasterise le SVG autonome en PNG HD (Blob) via un canvas hors écran.
+ * Rasterise le SVG autonome en Blob image (PNG ou JPEG) via un canvas hors écran.
  */
-export function renderSceneToPNGBlob(scene, options = {}) {
-    const { scale = 3, transparent = false, padding = 36 } = options;
-    const svgString = buildStandaloneSVG(scene, { transparent, padding });
+export function renderSceneToImageBlob(scene, options = {}) {
+    const {
+        format = 'image/png',
+        scale = 3,
+        transparent = false,
+        padding = 36,
+        quality = 0.94
+    } = options;
+    const isJpeg = format === 'image/jpeg';
+    const effectiveTransparent = !isJpeg && Boolean(transparent);
+    const svgString = buildStandaloneSVG(scene, { transparent: effectiveTransparent, padding });
     const bounds = computeSceneBounds(scene, padding);
 
     return new Promise((resolve, reject) => {
@@ -290,7 +306,7 @@ export function renderSceneToPNGBlob(scene, options = {}) {
                 canvas.width = Math.max(1, Math.round(bounds.width * scale));
                 canvas.height = Math.max(1, Math.round(bounds.height * scale));
                 const ctx = canvas.getContext('2d');
-                if (!transparent) {
+                if (!effectiveTransparent) {
                     ctx.fillStyle = '#ffffff';
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
                 }
@@ -299,8 +315,8 @@ export function renderSceneToPNGBlob(scene, options = {}) {
                 URL.revokeObjectURL(url);
                 canvas.toBlob(blob => {
                     if (blob) resolve(blob);
-                    else reject(new Error('Échec de la génération PNG.'));
-                }, 'image/png');
+                    else reject(new Error('Échec de la génération de l\'image.'));
+                }, isJpeg ? 'image/jpeg' : 'image/png', isJpeg ? quality : undefined);
             } catch (err) {
                 URL.revokeObjectURL(url);
                 reject(err);
@@ -308,8 +324,164 @@ export function renderSceneToPNGBlob(scene, options = {}) {
         };
         img.onerror = () => {
             URL.revokeObjectURL(url);
-            reject(new Error('Impossible de charger le SVG pour l\'export PNG.'));
+            reject(new Error('Impossible de charger le SVG pour l\'export image.'));
         };
         img.src = url;
     });
+}
+
+/**
+ * Rasterise le SVG autonome en PNG HD (Blob) via un canvas hors écran.
+ */
+export function renderSceneToPNGBlob(scene, options = {}) {
+    return renderSceneToImageBlob(scene, { ...options, format: 'image/png' });
+}
+
+/**
+ * Génère une page HTML autonome prête pour l'aperçu et l'impression / export PDF A4.
+ */
+export function buildPrintDocumentHTML(scene, options = {}) {
+    const {
+        title = '',
+        margin = '1.5cm',
+        orientation = 'portrait',
+        padding = 24
+    } = options;
+    const isLandscape = orientation === 'landscape';
+    const pageW = isLandscape ? '297mm' : '210mm';
+    const pageH = isLandscape ? '210mm' : '297mm';
+    const safeTitle = esc(String(title || '').trim());
+    const svg = buildStandaloneSVG(scene, { transparent: false, padding });
+
+    return `<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>${safeTitle || 'Schéma PhyWeb'}</title>
+  <style>
+    @page {
+      size: A4 ${isLandscape ? 'landscape' : 'portrait'};
+      margin: ${esc(margin)};
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #e2e8f0;
+      font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      color: #0f172a;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    .page-sheet {
+      width: ${pageW};
+      min-height: ${pageH};
+      margin: 18px auto;
+      padding: ${esc(margin)};
+      background: #ffffff;
+      box-shadow: 0 8px 28px rgba(15, 23, 42, 0.16);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    #preview-title {
+      width: 100%;
+      margin: 0 0 14px 0;
+      padding-bottom: 8px;
+      border-bottom: 1.5px solid #e2e8f0;
+      text-align: center;
+      font-size: 20px;
+      font-weight: 700;
+      color: #0f172a;
+      display: ${safeTitle ? 'block' : 'none'};
+    }
+    .schema-wrap {
+      width: 100%;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .schema-wrap svg {
+      max-width: 100%;
+      max-height: calc(${pageH} - 2 * ${esc(margin)} - 60px);
+      width: auto;
+      height: auto;
+      display: block;
+    }
+    @media print {
+      html, body { background: #ffffff; }
+      .page-sheet {
+        width: auto;
+        min-height: auto;
+        margin: 0;
+        padding: 0;
+        box-shadow: none;
+      }
+      .schema-wrap svg {
+        max-height: 92vh;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-sheet">
+    <h1 id="preview-title">${safeTitle}</h1>
+    <div class="schema-wrap">${svg}</div>
+  </div>
+</body>
+</html>`;
+}
+
+/**
+ * Génère une page HTML d'aperçu centré pour l'export image (PNG / JPEG / SVG).
+ */
+export function buildImagePreviewHTML(scene, options = {}) {
+    const { transparent = false, padding = 36 } = options;
+    const svg = buildStandaloneSVG(scene, { transparent, padding });
+    const bgCss = transparent
+        ? 'background-color: #ffffff; background-image: linear-gradient(45deg, #e2e8f0 25%, transparent 25%), linear-gradient(-45deg, #e2e8f0 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #e2e8f0 75%), linear-gradient(-45deg, transparent 75%, #e2e8f0 75%); background-size: 16px 16px; background-position: 0 0, 0 8px, 8px -8px, -8px 0;'
+        : 'background: #ffffff;';
+
+    return `<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 16px;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f1f5f9;
+    }
+    .frame {
+      max-width: 100%;
+      max-height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+      overflow: hidden;
+      ${bgCss}
+    }
+    .frame svg {
+      max-width: calc(100vw - 40px);
+      max-height: calc(100vh - 40px);
+      width: auto;
+      height: auto;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="frame">${svg}</div>
+</body>
+</html>`;
 }

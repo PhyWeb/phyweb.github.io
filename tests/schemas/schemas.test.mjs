@@ -14,8 +14,15 @@ import {
     snapRotationAngle,
     normalizeAngle
 } from '../../applets/schemas/snapping.js';
-import { SceneStore, resolveConnectorEndpoints } from '../../applets/schemas/state.js';
-import { buildStandaloneSVG, computeSceneBounds, renderLabelSVG, getLabelMetrics } from '../../applets/schemas/export.js';
+import { SceneStore, resolveConnectorEndpoints, sanitizeFilename } from '../../applets/schemas/state.js';
+import {
+    buildStandaloneSVG,
+    computeSceneBounds,
+    renderLabelSVG,
+    getLabelMetrics,
+    buildPrintDocumentHTML,
+    buildImagePreviewHTML
+} from '../../applets/schemas/export.js';
 
 describe('Applet Schémas — Catalogue paramétrique', () => {
     it('contient toutes les familles unifiées et des catégories valides', () => {
@@ -645,5 +652,90 @@ describe('Applet Schémas — État, connecteurs dynamiques, Undo/Redo et Export
         assert.ok(svgNoArrow.includes('<line '));
         assert.ok(!svgNoArrow.includes('<polygon'), 'Ne doit pas dessiner de flèche si arrowHead=false');
         assert.ok(!svgNoArrow.includes('<circle'), 'Ne doit pas dessiner de boule si arrowHead=false');
+    });
+
+    it('gère le nom de schéma personnalisable, le nettoyage de nom de fichier et resetNew()', () => {
+        assert.equal(sanitizeFilename(''), 'schema-phyweb');
+        assert.equal(sanitizeFilename('   '), 'schema-phyweb');
+        assert.equal(sanitizeFilename('Titrage pH-métrique : HCl / NaOH'), 'Titrage-pH-metrique-HCl-NaOH');
+        assert.equal(sanitizeFilename('///...'), 'schema-phyweb');
+
+        const store = new SceneStore();
+        store.scene.title = 'Montage à reflux';
+        store.addItem('becher', 100, 200);
+        const json = store.exportJSON();
+
+        const store2 = new SceneStore();
+        store2.importJSON(json);
+        assert.equal(store2.scene.title, 'Montage à reflux');
+
+        // Ancien JSON sans titre -> utilise fallbackTitle
+        const legacyJson = JSON.stringify({ version: 1, items: [], connectors: [], labels: [] });
+        store2.importJSON(legacyJson, 'Distillation');
+        assert.equal(store2.scene.title, 'Distillation');
+
+        // resetNew() remet tout à zéro (scène, titre, historique)
+        store.resetNew();
+        assert.equal(store.scene.title, '');
+        assert.equal(store.scene.items.length, 0);
+        assert.equal(store.canUndo(), false);
+    });
+
+    it('gère le mode ligne droite, les styles mémorisés et le calque arrière-plan des connecteurs', () => {
+        const geom = computeConnectorGeometry({ x: 10, y: 20 }, { x: 110, y: 20 }, 'straight', 80, 40);
+        assert.equal(geom.d, 'M 10.0,20.0 L 110.0,20.0');
+        assert.equal(geom.mid.x, 60);
+        assert.equal(geom.mid.y, 20);
+        assert.deepEqual(geom.bounds, { minX: 10, minY: 20, maxX: 110, maxY: 20 });
+
+        const store = new SceneStore();
+        store.addItem('becher', 100, 200);
+        const backHose = store.addConnector('hose', { x: 20, y: 50 }, { x: 180, y: 50 }, {
+            mode: 'straight',
+            color: '#9c5a2d',
+            width: 10,
+            dashed: true,
+            showArrow: false,
+            behindItems: true
+        });
+        assert.equal(backHose.mode, 'straight');
+        assert.equal(backHose.color, '#9c5a2d');
+        assert.equal(backHose.width, 10);
+        assert.equal(backHose.dashed, true);
+        assert.equal(backHose.showArrow, false);
+        assert.equal(backHose.behindItems, true);
+
+        const frontWire = store.addConnector('wire', { x: 30, y: 80 }, { x: 170, y: 80 }, {
+            color: '#1971c2',
+            behindItems: false
+        });
+        assert.equal(frontWire.behindItems, false);
+
+        const svg = buildStandaloneSVG(store.scene);
+        const idxBack = svg.indexOf('id="layer-connectors-back"');
+        const idxItems = svg.indexOf('id="layer-items"');
+        const idxFront = svg.indexOf('id="layer-connectors"');
+        assert.ok(idxBack > 0 && idxBack < idxItems && idxItems < idxFront);
+        assert.ok(svg.slice(idxBack, idxItems).includes('#9c5a2d'), 'Le tuyau arrière doit être rendu avant les objets');
+        assert.ok(svg.slice(idxFront).includes('#1971c2'), 'Le fil avant doit être rendu après les objets');
+    });
+
+    it('génère le document HTML d’impression A4 (portrait/paysage, titre, marges) et l’aperçu image', () => {
+        const store = new SceneStore();
+        store.addItem('becher', 100, 200);
+
+        const printHtml = buildPrintDocumentHTML(store.scene, {
+            title: 'TP Titrage <pH>',
+            orientation: 'landscape',
+            margin: '2.5cm'
+        });
+        assert.ok(printHtml.includes('size: A4 landscape'));
+        assert.ok(printHtml.includes('margin: 2.5cm'));
+        assert.ok(printHtml.includes('TP Titrage &lt;pH&gt;'));
+        assert.ok(printHtml.includes('<svg '));
+
+        const imgHtml = buildImagePreviewHTML(store.scene, { transparent: true, padding: 16 });
+        assert.ok(imgHtml.includes('linear-gradient(45deg'), 'Le mode transparent doit afficher un damier d’aperçu');
+        assert.ok(imgHtml.includes('<svg '));
     });
 });
