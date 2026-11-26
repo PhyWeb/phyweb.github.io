@@ -202,6 +202,7 @@ export default class ExportManager {
           badge.style.fontSize = '0.65rem';
           badge.style.height = '1.2rem';
           badge.style.padding = '0 5px';
+          badge.style.flexShrink = '0';
           badge.textContent = 'X';
           headerLine.appendChild(badge);
         } else if (curve.color) {
@@ -216,8 +217,10 @@ export default class ExportManager {
         }
 
         const origLabel = document.createElement('span');
-        origLabel.className = 'is-size-7 has-text-grey';
-        origLabel.textContent = origUnit ? `${origTitle} (${origUnit})` : origTitle;
+        origLabel.className = 'is-size-7 has-text-grey export-rename-orig-label';
+        const origLabelText = origUnit ? `${origTitle} (${origUnit})` : origTitle;
+        origLabel.textContent = origLabelText;
+        origLabel.title = origLabelText;
         headerLine.appendChild(origLabel);
         row.appendChild(headerLine);
 

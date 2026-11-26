@@ -56,7 +56,53 @@
 }
 
 #choose-curves-modal-card{
-  width: 48rem;
+  width: 50rem;
+  overflow: visible;
+}
+
+#choose-curves-modal-card .modal-card-body {
+  overflow: visible;
+}
+
+#choose-curves-modal-card .modal-card-body > .columns > .column:first-child {
+  width: 285px;
+  min-width: 285px;
+  max-width: 285px;
+}
+
+#choose-curves-modal-card #choose-x-curve-select {
+  width: 100%;
+  text-overflow: ellipsis;
+}
+
+#choose-curves-menu {
+  max-height: 55vh;
+  overflow-y: auto;
+}
+
+#choose-curves-menu a {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45em 0.65em;
+}
+
+#choose-curves-menu a input[type="checkbox"],
+#choose-curves-menu a .curve-color-swatch {
+  flex-shrink: 0;
+  margin: 0 !important;
+}
+
+#choose-curves-menu a .curve-menu-label {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#curve-details-panel {
+  min-width: 0;
 }
 
 #curveColorPicker option {
@@ -276,12 +322,60 @@ sub {
   overflow-y: auto;
 }
 
+#model-list .message-header {
+  padding: 0.55em 0.75em;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+#model-list .model-title {
+  flex: 1 1 0;
+  min-width: 0;
+  font-size: 0.9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#model-list .message-header .toggle-icon {
+  flex-shrink: 0;
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+#model-list .model-content {
+  padding: 0.5rem 0.75rem 0.75rem;
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+
+#model-list .parameters-list,
+#model-list .quality-list {
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+
+#model-list .parameters-list li:not(:last-child),
+#model-list .quality-list li:not(:last-child) {
+  margin-bottom: 0.2rem;
+}
+
 /* Force le retour à la ligne des équations longues dans les panneaux et modales */
 .model-equation, 
 #compute-model-equation {
   overflow-wrap: anywhere;
   word-break: normal;
   white-space: normal;
+}
+
+#compute-model-modal .field-label {
+  min-width: 0;
+}
+
+#compute-model-x-label,
+#compute-model-y-label {
+  overflow-wrap: anywhere;
+  word-break: normal;
 }
 
 /* Style pour la coche de succès du calcul */
@@ -335,6 +429,11 @@ sub {
               padding 0.4s ease,
               margin 0.4s ease,
               transform 0.4s ease-in-out;
+}
+
+/* Maintient la largeur interne constante pendant l'animation max-width pour éviter le reflow */
+#modelisation-panel > * {
+  min-width: 276px;
 }
 
 /* ÉTAT FERMÉ */
@@ -473,6 +572,14 @@ fieldset[disabled] .button {
   min-width: 0;
   width: 100%;
   overflow: hidden;
+}
+
+#export-rename-list .export-rename-orig-label {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 #export-rename-list .input {

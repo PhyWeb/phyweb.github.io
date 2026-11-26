@@ -97,8 +97,8 @@ export function populateColorSelect(selectElement) {
           </span>
         </button>
       </div>
-      <div class="dropdown-menu" role="menu" style="width: 100%; min-width: 140px;">
-        <div class="dropdown-content p-2" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px;"></div>
+      <div class="dropdown-menu" role="menu" style="width: 100%; min-width: 180px;">
+        <div class="dropdown-content p-2" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;"></div>
       </div>
     `;
 
@@ -379,8 +379,10 @@ export default class UIManager {
           
           const unitText = param.unit ? ` ${param.unit}` : '';
           const displayValue = formatNumber(param.value, significantDigits, { html: true });
+          const plainValue = formatNumber(param.value, significantDigits);
 
           a.innerHTML = `<span style="color: ${colors.parameter}; font-weight: bold;">${key}</span> = ${displayValue}<span style="color: #7a7a7a;">${unitText}</span>`;
+          a.title = `${key} = ${plainValue}${unitText}`;
           a.dataset.value = key;
           li.appendChild(a);
           ul.appendChild(li);
@@ -393,6 +395,7 @@ export default class UIManager {
           const unitText = curve.unit ? ` (${curve.unit})` : '';
           
           a.innerHTML = `<span style="color: ${colors.variable}; font-weight: bold;">${curve.title}</span><span style="color: #7a7a7a;">${unitText}</span>`;
+          a.title = `${curve.title}${unitText}`;
           a.dataset.value = curve.title; // On insère toujours juste le nom
           li.appendChild(a);
           ul.appendChild(li);
@@ -781,7 +784,12 @@ export default class UIManager {
     }
     panel.style.border = `1px solid ${model.color}`;
 
-    panel.querySelector('.message-header p').innerHTML = `${model.y.title} = f(${model.x.title})`;
+    const modelTitleText = `${model.y.title} = f(${model.x.title})`;
+    const titleEl = panel.querySelector('.message-header p');
+    if (titleEl) {
+      titleEl.textContent = modelTitleText;
+      titleEl.title = modelTitleText;
+    }
     panel.querySelector('.message-body p:nth-of-type(2)').innerHTML = model.getEquationString();
     const ul = panel.querySelector('ul');
     ul.innerHTML = '';
@@ -2501,6 +2509,7 @@ export default class UIManager {
         const li = document.createElement("li");
         const a = document.createElement("a");
         a.dataset.title = curve.title;
+        a.title = curve.unit ? `${curve.title} (${curve.unit})` : curve.title;
 
         const input = document.createElement("input");
         input.type = "checkbox";
@@ -2514,7 +2523,7 @@ export default class UIManager {
         }
 
         const span = document.createElement("span");
-        span.classList.add("ml-2");
+        span.classList.add("ml-2", "curve-menu-label");
         if (curve.unit) {
           span.innerHTML = `${curve.title} <span class="has-text-grey is-size-7">(${curve.unit})</span>`;
         } else {
@@ -2522,6 +2531,7 @@ export default class UIManager {
         }
 
         const colorSwatch = document.createElement("span");
+        colorSwatch.classList.add("curve-color-swatch");
         colorSwatch.style.backgroundColor = curve.color;
         colorSwatch.style.width = '16px';
         colorSwatch.style.height = '16px';
@@ -3322,8 +3332,18 @@ export default class UIManager {
 
     // Peuple la modale avec les infos du modèle
     $('#compute-model-equation').innerHTML = model.getEquationString();
-    $('#compute-model-x-label').textContent = model.x.unit ? `${model.x.title} (${model.x.unit})` : model.x.title;
-    $('#compute-model-y-label').textContent = model.y.unit ? `${model.y.title} (${model.y.unit})` : model.y.title;
+    const xLabelText = model.x.unit ? `${model.x.title} (${model.x.unit})` : model.x.title;
+    const yLabelText = model.y.unit ? `${model.y.title} (${model.y.unit})` : model.y.title;
+    const xLabelEl = $('#compute-model-x-label');
+    const yLabelEl = $('#compute-model-y-label');
+    if (xLabelEl) {
+      xLabelEl.textContent = xLabelText;
+      xLabelEl.title = xLabelText;
+    }
+    if (yLabelEl) {
+      yLabelEl.textContent = yLabelText;
+      yLabelEl.title = yLabelText;
+    }
 
     // Réinitialise les champs
     xInput.value = '';
@@ -3899,7 +3919,12 @@ export default class UIManager {
     }
     article.style.border = `1px solid ${model.color}`;
     
-    panelClone.querySelector('.model-title').textContent = `${model.y.title} = f(${model.x.title})`;
+    const modelTitleText = `${model.y.title} = f(${model.x.title})`;
+    const titleEl = panelClone.querySelector('.model-title');
+    if (titleEl) {
+      titleEl.textContent = modelTitleText;
+      titleEl.title = modelTitleText;
+    }
     panelClone.querySelector('.model-name').innerHTML = `<strong>${model.getModelName()}</strong>`;
     panelClone.querySelector('.model-equation').innerHTML = model.getEquationString();
     
