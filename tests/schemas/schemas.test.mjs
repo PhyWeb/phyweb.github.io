@@ -20,9 +20,11 @@ import {
     computeSceneBounds,
     renderLabelSVG,
     getLabelMetrics,
+    getLabelLeaderAnchor,
     buildPrintDocumentHTML,
     buildImagePreviewHTML
 } from '../../applets/schemas/export.js';
+import { TEMPLATES, buildTemplateScene } from '../../applets/schemas/templates.js';
 
 describe('Applet Schémas — Catalogue paramétrique', () => {
     it('contient toutes les familles unifiées et des catégories valides', () => {
@@ -71,12 +73,15 @@ describe('Applet Schémas — Catalogue paramétrique', () => {
         const bbHaut = boy.getBBox({ height: 160 });
         assert.ok(bbHaut.height > bbBas.height);
 
-        // Réfrigérants (droit & boules) : remplissage complet incluant les raccords latéraux
+        // Réfrigérants (droit & boules) : remplissage complet incluant les raccords latéraux, découpe transparente (evenodd + darken)
         const refrig = getCatalogItem('refrigerant');
         const svgDroit = refrig.render({ variant: 'droit', hasWater: true, waterColor: '#9ad1f5' }, 'rd1');
         const svgBoules = refrig.render({ variant: 'boules', hasWater: true, waterColor: '#9ad1f5' }, 'rb1');
         assert.ok(svgDroit.includes('41,-88') && svgDroit.includes('-41,-350'), 'Le réfrigérant droit doit remplir ses raccords');
         assert.ok(svgBoules.includes('43,-88') && svgBoules.includes('-43,-350'), 'Le réfrigérant à boules doit remplir ses raccords');
+        assert.ok(svgDroit.includes('fill-rule="evenodd"') && svgDroit.includes('mix-blend-mode: darken') && !svgDroit.includes('fill="#ffffff"'));
+        assert.ok(svgBoules.includes('fill-rule="evenodd"') && svgBoules.includes('mix-blend-mode: darken') && !svgBoules.includes('fill="#ffffff"'));
+        assert.ok(SVG_SHARED_STYLES.includes('.is-opaque-bg .verre-fond { fill: #ffffff; }'));
 
         // Robinet (burette & ampoule à décanter) : largeur constante du corps entre ouvert et fermé
         const burette = getCatalogItem('burette');
@@ -141,6 +146,11 @@ describe('Applet Schémas — Catalogue paramétrique', () => {
         const svgGenAC = gen.render({ currentType: 'AC', selector: '6V', display: '6.0 V', on: true }, 'g2');
         assert.ok(svgGenDC.includes('GÉNÉRATEUR DC') && svgGenDC.includes('font-size:22px') && svgGenDC.includes('font-size:20px'));
         assert.ok(svgGenAC.includes('GÉNÉRATEUR AC') && svgGenAC.includes('>~</text>'));
+
+        // Seringue : remplissage complet incluant l'épaulement conique et l'embout Luer
+        const ser = getCatalogItem('seringue');
+        const svgSer = ser.render({ piston: 50, hasLiquid: true, liquidColor: '#9ad1f5' }, 'ser1');
+        assert.ok(svgSer.includes('L 2,-1 L -2,-1') && svgSer.includes('mix-blend-mode: darken'));
     });
 
     it('maintient la surface du liquide horizontale par contre-rotation quand un récipient est incliné', () => {
@@ -326,10 +336,43 @@ describe('Applet Schémas — Aimantation cohérente & emboîtements hors angle 
         const snapPince = computeObjectSnap(pince, clampTarget.wx + 69, clampTarget.wy, [tube, pince], { baseRotation: 0 });
         assert.equal(snapPince.rotation, 30);
 
-        // Une potence (fixedUpright) ne doit PAS pivoter à 30°
+        // Une potence (fixedUpright) ne doit PAS pivoter à 30° et ses pinces doivent être centrées dans les mâchoires
         const potence = { id: 'pot1', type: 'potence', x: 0, y: 0, rotation: 0, scale: 1, flipX: false, props: { variant: 'simple', clamp1Y: 360 } };
         const snapPot = computeObjectSnap(potence, clampTarget.wx + 120, clampTarget.wy + 360, [tube, potence], { baseRotation: 0 });
         assert.equal(snapPot.rotation, 0);
+        assert.equal(getWorldAnchorById(potence, 'clamp1').x, -120);
+
+        const potDouble = {
+            id: 'pot2',
+            type: 'potence',
+            x: 0,
+            y: 0,
+            rotation: 0,
+            scale: 1,
+            flipX: false,
+            props: { variant: 'titrage', clampSize: 'petite', clamp1Y: 360, clamp1Reach: 140, clamp1Side: 'left', clamp2Y: 620, clamp2Reach: 165, clamp2Side: 'right' }
+        };
+        assert.equal(getWorldAnchorById(potDouble, 'clamp1').x, -140);
+        assert.equal(getWorldAnchorById(potDouble, 'clamp2').x, 165);
+
+        // Vérifier que les 3 tailles d'ouverture de pince et la hauteur de tige fonctionnent en gardant l'ancre centrée
+        const potDef = getCatalogItem('potence');
+        const bbPetite = potDef.getBBox({ variant: 'simple', clampSize: 'petite', rodHeight: 760 });
+        const bbGrande = potDef.getBBox({ variant: 'simple', clampSize: 'grande', rodHeight: 960 });
+        assert.ok(bbGrande.width > bbPetite.width);
+        assert.equal(bbPetite.height, 760);
+        assert.equal(bbGrande.height, 960);
+        assert.equal(potDef.getAnchors({ variant: 'simple', clampSize: 'grande', rodHeight: 960, clamp1Y: 800 })[1].y, -800);
+        assert.equal(potDef.getAnchors({ variant: 'simple', clampSize: 'grande', clamp1Y: 360 })[1].x, -120);
+
+        // Potence vue de face : ancre centrée sur la tige (x=0) et auto-alignement à -75° pour un réfrigérant
+        const potFace = { id: 'pf1', type: 'potence', x: 300, y: 500, rotation: 0, scale: 1, flipX: false, props: { variant: 'face', clampSize: 'grande', rodHeight: 480, clamp1Y: 320, clamp1Angle: -75 } };
+        const faceClamp = getWorldAnchorById(potFace, 'clamp1');
+        assert.equal(faceClamp.wx, 300);
+        assert.equal(faceClamp.wy, 180);
+        const refIncl = { id: 'ri1', type: 'refrigerant', x: 0, y: 0, rotation: 0, scale: 1, flipX: false, props: { variant: 'droit' } };
+        const snapFace = computeObjectSnap(refIncl, 302, 180 + 215 + 3, [potFace, refIncl], { baseRotation: 0 });
+        assert.equal(snapFace.rotation, -75);
     });
 
     it('aimante la poignée de rotation sur les angles remarquables (0°, ±45°, ±75°, ±90°, etc.)', () => {
@@ -540,6 +583,13 @@ describe('Applet Schémas — État, connecteurs dynamiques, Undo/Redo et Export
         // Cible directement sous le texte -> départ en bas du texte (y1 > y)
         const below = extractX1Y1(renderLabelSVG({ text: 'Bécher', x: 100, y: 100, fontSize: 16, showLeader: true, targetX: 120, targetY: 220, arrowHead: true }));
         assert.ok(below.y1 > 100, `Attendu départ sous le texte (> 100), obtenu ${below.y1}`);
+
+        // Vérifier que getLabelLeaderAnchor place bien la poignée du bon côté (à droite quand la légende est à gauche de la cible)
+        const aRight = getLabelLeaderAnchor({ text: 'Bécher', x: 100, y: 100, fontSize: 20, showLeader: true, targetX: 300, targetY: 100 });
+        assert.equal(aRight.side, 'right');
+        assert.ok(aRight.startX > 140);
+        const interactiveSvg = renderLabelSVG({ text: 'Bécher', x: 100, y: 100, fontSize: 20, showLeader: true, targetX: 300, targetY: 100 }, { interactive: true });
+        assert.ok(interactiveSvg.includes('data-label-part="leader"') && interactiveSvg.includes('stroke-width="14"'));
     });
 
     it('calcule la boîte englobante complète des connecteurs courbés/orthogonaux et adapte les liquides en export transparent', () => {
@@ -564,6 +614,12 @@ describe('Applet Schémas — État, connecteurs dynamiques, Undo/Redo et Export
         const svgTransparent = buildStandaloneSVG(store.scene, { transparent: true });
         assert.ok(!svgTransparent.includes('mix-blend-mode: darken'));
         assert.ok(svgTransparent.includes('opacity="0.88"'));
+        assert.ok(!svgTransparent.includes('class="is-opaque-bg"'));
+
+        // Option fond opaque par verrerie
+        becher.opaqueBg = true;
+        const svgWithOpaque = buildStandaloneSVG(store.scene, { transparent: false });
+        assert.ok(svgWithOpaque.includes('class="is-opaque-bg"'));
     });
 
     it('gère le presse-papier interne (Copier / Couper / Coller avec remapping des connecteurs et collage à une position)', () => {
@@ -821,5 +877,46 @@ describe('Applet Schémas — État, connecteurs dynamiques, Undo/Redo et Export
         assert.equal(store.ungroupSelected(), true);
         assert.equal(copies[0].groupId, undefined);
         assert.equal(ballon.groupId, gid);
+    });
+
+    it('génère tous les modèles de montages préconstruits avec ancres valides et export SVG', () => {
+        assert.ok(TEMPLATES.length >= 5);
+        for (const tpl of TEMPLATES) {
+            const scene = buildTemplateScene(tpl.id);
+            assert.ok(scene && scene.version === 1 && scene.title.length > 0, `Modèle invalide: ${tpl.id}`);
+            assert.ok(scene.items.length >= 4, `Modèle trop pauvre: ${tpl.id}`);
+
+            for (const item of scene.items) {
+                assert.ok(getCatalogItem(item.type), `Type inconnu ${item.type} dans ${tpl.id}`);
+            }
+            for (const conn of scene.connectors) {
+                for (const end of [conn.start, conn.end]) {
+                    if (end.itemId && end.anchorId) {
+                        const target = scene.items.find(i => i.id === end.itemId);
+                        assert.ok(target, `Connecteur orphelin dans ${tpl.id}`);
+                        assert.ok(getWorldAnchorById(target, end.anchorId), `Ancre ${end.anchorId} introuvable sur ${target.type} dans ${tpl.id}`);
+                    }
+                }
+            }
+
+            const svg = buildStandaloneSVG(scene);
+            assert.ok(svg.startsWith('<?xml') && svg.includes('<svg '), `Export SVG invalide pour ${tpl.id}`);
+        }
+
+        // Vérifier que le réfrigérant de distillation est bien auto-incliné à -75°
+        const dist = buildTemplateScene('distillation');
+        const refrig = dist.items.find(i => i.type === 'refrigerant');
+        assert.equal(refrig.rotation, -75);
+
+        // Vérifier que la burette du titrage pH-métrique est centrée dans les pinces de la potence
+        const titr = buildTemplateScene('titrage-ph');
+        const bur = titr.items.find(i => i.type === 'burette');
+        const pot = titr.items.find(i => i.type === 'potence');
+        const burLow = getWorldAnchorById(bur, 'clamp-low');
+        const potC1 = getWorldAnchorById(pot, 'clamp1');
+        const potC2 = getWorldAnchorById(pot, 'clamp2');
+        assert.equal(burLow.wx, potC1.wx);
+        assert.equal(burLow.wy, potC1.wy);
+        assert.equal(burLow.wx, potC2.wx);
     });
 });

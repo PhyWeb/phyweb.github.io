@@ -309,7 +309,7 @@ export class SceneStore {
             text,
             x: Math.round(x),
             y: Math.round(y),
-            fontSize: 16,
+            fontSize: 20,
             color: '#1e293b',
             bold: false,
             italic: false,

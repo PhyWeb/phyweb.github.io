@@ -588,6 +588,7 @@ export function createInteractionsController(ctx) {
                     requestAnimationFrame(() => openInlineLabelEditor(el));
                     return;
                 }
+                const moveWithTarget = Boolean(e.target.closest('[data-label-part="leader"]'));
                 editor.drag = {
                     kind: 'move-label',
                     id,
@@ -597,6 +598,7 @@ export function createInteractionsController(ctx) {
                     origY: el.y,
                     origTargetX: el.targetX,
                     origTargetY: el.targetY,
+                    moveWithTarget,
                     historyPushed: false
                 };
                 svgEl.setPointerCapture(e.pointerId);
@@ -776,7 +778,7 @@ export function createInteractionsController(ctx) {
             const dy = pt.y - editor.drag.startY;
             lbl.x = Math.round(editor.drag.origX + dx);
             lbl.y = Math.round(editor.drag.origY + dy);
-            if (e.shiftKey) {
+            if (editor.drag.moveWithTarget || e.shiftKey) {
                 lbl.targetX = Math.round(editor.drag.origTargetX + dx);
                 lbl.targetY = Math.round(editor.drag.origTargetY + dy);
             }

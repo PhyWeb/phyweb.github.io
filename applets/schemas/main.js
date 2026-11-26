@@ -15,6 +15,7 @@ import {
     renderConnectorSVG,
     renderLabelSVG,
     getLabelMetrics,
+    getLabelLeaderAnchor,
     computeSceneBounds
 } from './export.js';
 import { createIOController } from './modules/io.js';
@@ -22,6 +23,7 @@ import { createDrawerController } from './modules/drawer.js';
 import { createInspectorController } from './modules/inspector.js';
 import { createInteractionsController } from './modules/interactions.js';
 import { createExportModalController } from './modules/exportModal.js';
+import { createTemplatesModalController } from './modules/templatesModal.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -353,7 +355,7 @@ function renderScene() {
         const scale = item.scale ?? 1;
         const fx = item.flipX ? -scale : scale;
         const transform = `translate(${item.x}, ${item.y}) rotate(${item.rotation ?? 0}) scale(${fx}, ${scale})`;
-        return `<g class="scene-item${item.locked ? ' is-locked' : ''}" data-kind="item" data-id="${item.id}" transform="${transform}">${def.render(item.props || {}, item.id, { rotation: item.rotation ?? 0, flipX: !!item.flipX })}</g>`;
+        return `<g class="scene-item${item.locked ? ' is-locked' : ''}${item.opaqueBg ? ' is-opaque-bg' : ''}" data-kind="item" data-id="${item.id}" transform="${transform}">${def.render(item.props || {}, item.id, { rotation: item.rotation ?? 0, flipX: !!item.flipX })}</g>`;
     }).join('');
 
     const renderConnectorGroup = (conn) => {
@@ -375,7 +377,7 @@ function renderScene() {
         .join('');
 
     layerLabels.innerHTML = store.scene.labels.map(lbl => {
-        return `<g class="scene-label${lbl.locked ? ' is-locked' : ''}" data-kind="label" data-id="${lbl.id}">${renderLabelSVG(lbl)}</g>`;
+        return `<g class="scene-label${lbl.locked ? ' is-locked' : ''}" data-kind="label" data-id="${lbl.id}">${renderLabelSVG(lbl, { interactive: true })}</g>`;
     }).join('');
 
     renderOverlay();
@@ -481,12 +483,15 @@ function renderOverlay() {
                 }
             }
         } else if (kind === 'label') {
-            const m = getLabelMetrics(el);
+            const anchor = getLabelLeaderAnchor(el);
+            const m = anchor.metrics;
             if (isLocked) {
                 const swWorld = 1.5 / editor.zoom;
                 html += `<rect class="selection-box is-locked" x="${(m.boxX - 4).toFixed(1)}" y="${(m.boxY - 4).toFixed(1)}" width="${(m.boxW + 8).toFixed(1)}" height="${(m.boxH + 8).toFixed(1)}" rx="4" style="stroke-width:${swWorld.toFixed(2)}" />`;
             } else {
-                html += `<circle class="handle-dot" data-handle="lbl-pos" cx="${(m.boxX - 8).toFixed(1)}" cy="${(el.y - m.fs * 0.35).toFixed(1)}" r="5"><title>Déplacer la légende (Shift : avec la pointe)</title></circle>`;
+                const handleX = el.showLeader ? anchor.startX : (m.boxX - 8);
+                const handleY = el.showLeader ? anchor.startY : (el.y - m.fs * 0.35);
+                html += `<circle class="handle-dot" data-handle="lbl-pos" cx="${handleX.toFixed(1)}" cy="${handleY.toFixed(1)}" r="5"><title>Déplacer la légende (Shift : avec la pointe)</title></circle>`;
                 if (el.showLeader) {
                     html += `<circle class="handle-dot" data-handle="lbl-target" cx="${el.targetX.toFixed(1)}" cy="${el.targetY.toFixed(1)}" r="6"><title>Déplacer la pointe de la flèche</title></circle>`;
                 }
@@ -656,6 +661,7 @@ const ctx = {
 
 const io = createIOController(ctx);
 ctx.hasSceneData = io.hasSceneData;
+ctx.hasUnsavedChanges = io.hasUnsavedChanges;
 ctx.handleNewScene = io.handleNewScene;
 ctx.handleSaveJSON = io.handleSaveJSON;
 ctx.triggerLoadJSON = io.triggerLoadJSON;
@@ -674,6 +680,9 @@ ctx.syncInspectorValues = inspector.syncInspectorValues;
 const drawer = createDrawerController(ctx);
 const exportModal = createExportModalController(ctx);
 ctx.openExportModal = exportModal.openExportModal;
+
+const templatesModal = createTemplatesModalController(ctx);
+ctx.openTemplatesModal = templatesModal.openTemplatesModal;
 
 const interactions = createInteractionsController(ctx);
 ctx.closeOverlays = () => {

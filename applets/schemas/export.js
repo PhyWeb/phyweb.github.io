@@ -104,15 +104,36 @@ export function renderConnectorSVG(conn, items) {
     `;
 }
 
+let _measureCtx = null;
+
+function measureTextWidth(lines, fs, bold, italic) {
+    if (typeof document !== 'undefined') {
+        if (!_measureCtx) {
+            const c = document.createElement('canvas');
+            _measureCtx = c.getContext('2d');
+        }
+        if (_measureCtx) {
+            _measureCtx.font = `${italic ? 'italic ' : ''}${bold ? 'bold ' : ''}${fs}px system-ui, -apple-system, 'Segoe UI', sans-serif`;
+            let maxW = 0;
+            for (const line of lines) {
+                const w = _measureCtx.measureText(line).width;
+                if (w > maxW) maxW = w;
+            }
+            if (maxW > 0) return maxW;
+        }
+    }
+    const maxLen = Math.max(1, ...lines.map(l => l.length));
+    return maxLen * fs * 0.58;
+}
+
 /**
- * Calcule la géométrie estimée d'une légende (boîte texte, alignement, fond/cadre).
+ * Calcule la géométrie estimée (ou mesurée exactement dans le navigateur) d'une légende.
  */
 export function getLabelMetrics(lbl) {
     const fs = Number(lbl.fontSize) || 16;
     const lines = String(lbl.text || '').split('\n');
-    const maxLen = Math.max(1, ...lines.map(l => l.length));
     const lineHeight = fs * 1.25;
-    const textW = maxLen * fs * 0.58;
+    const textW = measureTextWidth(lines, fs, Boolean(lbl.bold), Boolean(lbl.italic));
     const textH = (lines.length - 1) * lineHeight + fs;
     const align = lbl.align === 'center' || lbl.align === 'right' ? lbl.align : 'left';
     const hasBox = Boolean(lbl.bgEnabled || lbl.borderEnabled);
@@ -148,10 +169,32 @@ export function getLabelMetrics(lbl) {
 }
 
 /**
+ * Calcule le point d'accroche de la ligne de rappel côté texte (gauche, droite, haut ou bas).
+ */
+export function getLabelLeaderAnchor(lbl) {
+    const m = getLabelMetrics(lbl);
+    const { fs, hasBox, boxX, boxY, boxW, boxH } = m;
+    const gap = hasBox ? 0 : 6;
+    const midY = lbl.y - fs * 0.35;
+    if (lbl.targetX < boxX) {
+        return { side: 'left', startX: boxX - gap, startY: midY, metrics: m };
+    }
+    if (lbl.targetX > boxX + boxW) {
+        return { side: 'right', startX: boxX + boxW + gap, startY: midY, metrics: m };
+    }
+    if (lbl.targetY < lbl.y - fs * 0.5) {
+        return { side: 'top', startX: boxX + boxW / 2, startY: boxY - (hasBox ? 0 : 4), metrics: m };
+    }
+    return { side: 'bottom', startX: boxX + boxW / 2, startY: boxY + boxH + (hasBox ? 0 : 4), metrics: m };
+}
+
+/**
  * Construit le markup SVG d'une légende (texte, fond/cadre optionnel + ligne de rappel droite ou coudée).
  */
-export function renderLabelSVG(lbl) {
-    const m = getLabelMetrics(lbl);
+export function renderLabelSVG(lbl, options = {}) {
+    const interactive = Boolean(options?.interactive);
+    const anchor = getLabelLeaderAnchor(lbl);
+    const m = anchor.metrics;
     const { fs, lines, lineHeight, textAnchor, hasBox, boxX, boxY, boxW, boxH } = m;
     const weight = lbl.bold ? 'bold' : 'normal';
     const style = lbl.italic ? 'italic' : 'normal';
@@ -159,31 +202,10 @@ export function renderLabelSVG(lbl) {
 
     let leaderSvg = '';
     if (lbl.showLeader) {
-        const gap = hasBox ? 0 : 6;
-        const midY = lbl.y - fs * 0.35;
-        let startX;
-        let startY;
-        let side;
-        if (lbl.targetX < boxX) {
-            side = 'left';
-            startX = boxX - gap;
-            startY = midY;
-        } else if (lbl.targetX > boxX + boxW) {
-            side = 'right';
-            startX = boxX + boxW + gap;
-            startY = midY;
-        } else if (lbl.targetY < lbl.y - fs * 0.5) {
-            side = 'top';
-            startX = boxX + boxW / 2;
-            startY = boxY - (hasBox ? 0 : 4);
-        } else {
-            side = 'bottom';
-            startX = boxX + boxW / 2;
-            startY = boxY + boxH + (hasBox ? 0 : 4);
-        }
-
+        const { side, startX, startY } = anchor;
         const isElbow = lbl.leaderStyle === 'elbow';
         let lineSvg = '';
+        let hitSvg = '';
         let fromX = startX;
         let fromY = startY;
 
@@ -194,7 +216,9 @@ export function renderLabelSVG(lbl) {
             const elbowY = startY;
             fromX = elbowX;
             fromY = elbowY;
-            lineSvg = `<polyline points="${startX.toFixed(1)},${startY.toFixed(1)} ${elbowX.toFixed(1)},${elbowY.toFixed(1)} ${lbl.targetX.toFixed(1)},${lbl.targetY.toFixed(1)}" fill="none" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />`;
+            const pts = `${startX.toFixed(1)},${startY.toFixed(1)} ${elbowX.toFixed(1)},${elbowY.toFixed(1)} ${lbl.targetX.toFixed(1)},${lbl.targetY.toFixed(1)}`;
+            lineSvg = `<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" data-label-part="leader" />`;
+            if (interactive) hitSvg = `<polyline points="${pts}" fill="none" stroke="transparent" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" data-label-part="leader" />`;
         } else if (isElbow && (side === 'top' || side === 'bottom') && Math.abs(lbl.targetX - startX) > 6) {
             const distV = Math.abs(lbl.targetY - startY);
             const stub = Math.min(20, Math.max(8, distV * 0.35));
@@ -202,19 +226,24 @@ export function renderLabelSVG(lbl) {
             const elbowY = side === 'top' ? startY - stub : startY + stub;
             fromX = elbowX;
             fromY = elbowY;
-            lineSvg = `<polyline points="${startX.toFixed(1)},${startY.toFixed(1)} ${elbowX.toFixed(1)},${elbowY.toFixed(1)} ${lbl.targetX.toFixed(1)},${lbl.targetY.toFixed(1)}" fill="none" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />`;
+            const pts = `${startX.toFixed(1)},${startY.toFixed(1)} ${elbowX.toFixed(1)},${elbowY.toFixed(1)} ${lbl.targetX.toFixed(1)},${lbl.targetY.toFixed(1)}`;
+            lineSvg = `<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" data-label-part="leader" />`;
+            if (interactive) hitSvg = `<polyline points="${pts}" fill="none" stroke="transparent" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" data-label-part="leader" />`;
         } else {
-            lineSvg = `<line x1="${startX.toFixed(1)}" y1="${startY.toFixed(1)}" x2="${lbl.targetX.toFixed(1)}" y2="${lbl.targetY.toFixed(1)}" stroke="${color}" stroke-width="1.8" stroke-linecap="round" />`;
+            const attrs = `x1="${startX.toFixed(1)}" y1="${startY.toFixed(1)}" x2="${lbl.targetX.toFixed(1)}" y2="${lbl.targetY.toFixed(1)}"`;
+            lineSvg = `<line ${attrs} stroke="${color}" stroke-width="1.8" stroke-linecap="round" data-label-part="leader" />`;
+            if (interactive) hitSvg = `<line ${attrs} stroke="transparent" stroke-width="14" stroke-linecap="round" data-label-part="leader" />`;
         }
 
         const dx = lbl.targetX - fromX;
         const dy = lbl.targetY - fromY;
         const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
         const head = lbl.arrowHead
-            ? `<polygon points="0,0 -10,-4.2 -7.5,0 -10,4.2" fill="${color}" transform="translate(${lbl.targetX.toFixed(1)}, ${lbl.targetY.toFixed(1)}) rotate(${angle.toFixed(1)})" />`
+            ? `<polygon points="0,0 -10,-4.2 -7.5,0 -10,4.2" fill="${color}" transform="translate(${lbl.targetX.toFixed(1)}, ${lbl.targetY.toFixed(1)}) rotate(${angle.toFixed(1)})" data-label-part="leader" />`
             : '';
         leaderSvg = `
           ${lineSvg}
+          ${hitSvg}
           ${head}
         `;
     }
@@ -251,7 +280,7 @@ export function buildStandaloneSVG(scene, options = {}) {
         const scale = item.scale ?? 1;
         const fx = item.flipX ? -scale : scale;
         const transform = `translate(${item.x}, ${item.y}) rotate(${item.rotation ?? 0}) scale(${fx}, ${scale})`;
-        return `<g transform="${transform}">${def.render(item.props || {}, item.id, { rotation: item.rotation ?? 0, flipX: !!item.flipX })}</g>`;
+        return `<g${item.opaqueBg ? ' class="is-opaque-bg"' : ''} transform="${transform}">${def.render(item.props || {}, item.id, { rotation: item.rotation ?? 0, flipX: !!item.flipX })}</g>`;
     }).join('\n');
     // Sur fond transparent, mix-blend-mode: darken peut altérer ou masquer les liquides lors de la rasterisation SVG → Canvas
     const itemsMarkup = transparent

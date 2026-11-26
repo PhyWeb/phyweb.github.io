@@ -54,6 +54,7 @@ export const SHAPE_FILL_PRESETS = [
 export const SVG_SHARED_STYLES = `
   .verre { fill: #ffffff; stroke: #000000; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
   .verre-fond { fill: transparent; stroke: none; pointer-events: all; }
+  .is-opaque-bg .verre-fond { fill: #ffffff; }
   .liquide { fill: #9ad1f5; stroke: none; }
   .solide { fill: #4ecdc4; stroke: none; }
   .propipette { fill: #e06358; stroke: #000000; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
@@ -873,8 +874,9 @@ export const CATALOG = [
             // Joint piston va de y=-26 (0%) à y=-96 (100%)
             const jointY = -26 - (pct / 100) * 70;
             const stemTop = jointY - 96;
+            const liqTop = (jointY + 7.5).toFixed(1);
             const liqSvg = (p.hasLiquid && pct > 0)
-                ? `<rect x="-9.5" y="${(jointY + 8).toFixed(1)}" width="19" height="${(-18 - (jointY + 8)).toFixed(1)}" fill="${esc(p.liquidColor)}" />`
+                ? `<path d="M -10,${liqTop} L 10,${liqTop} L 10,-17.5 L 2,-13.5 L 2,-1 L -2,-1 L -2,-13.5 L -10,-17.5 Z" fill="${esc(p.liquidColor)}" style="mix-blend-mode: darken;" />`
                 : '';
             return `
               <path class="verre-fond" d="M -11,-108 L 11,-108 L 11,-18 L 2.5,-14 L 2.5,0 L -2.5,0 L -2.5,-14 L -11,-18 Z" />
@@ -1359,13 +1361,13 @@ export const CATALOG = [
             if (p.variant === 'mural') {
                 return [
                     { id: 'outlet', x: 74, y: 0, type: 'hose', dir: 'down', angle: 180, label: 'Olive sortie eau' },
-                    { id: 'faucet-out', x: 74, y: 0, type: 'faucet-out', dir: 'down', angle: 180, label: 'Bec robinet' }
+                    { id: 'faucet-out', x: 74, y: -18, type: 'faucet-out', dir: 'down', angle: 180, label: 'Bec robinet' }
                 ];
             }
             return [
                 { id: 'base', x: 0, y: 0, type: 'base', dir: 'down', label: 'Embase paillasse' },
                 { id: 'outlet', x: -72, y: -148, type: 'hose', dir: 'down', angle: 180, label: 'Olive sortie eau' },
-                { id: 'faucet-out', x: -72, y: -148, type: 'faucet-out', dir: 'down', angle: 180, label: 'Bec robinet' }
+                { id: 'faucet-out', x: -72, y: -172, type: 'faucet-out', dir: 'down', angle: 180, label: 'Bec robinet' }
             ];
         },
         render(p) {
@@ -1441,14 +1443,16 @@ export const CATALOG = [
         render(p) {
             const w = Math.max(100, Math.min(220, Number(p.width) || 140));
             const hw = w / 2;
+            const outerWall = `M ${-hw},1 L ${-hw},62 C ${-hw},69 ${-hw + 6},74 ${-hw + 14},74 L ${hw - 14},74 C ${hw - 6},74 ${hw},69 ${hw},62 L ${hw},1 Z`;
+            const innerBasin = `M ${-hw + 8},2 L ${-hw + 8},58 C ${-hw + 8},63 ${-hw + 12},66 ${-hw + 18},66 L ${hw - 18},66 C ${hw - 12},66 ${hw - 8},63 ${hw - 8},58 L ${hw - 8},2 Z`;
             const water = p.hasWater
-                ? `<path d="M ${-hw + 9},50 Q ${(-hw / 3).toFixed(1)},47 0,50 T ${hw - 9},50 L ${hw - 9},58 C ${hw - 9},62.5 ${hw - 12.5},65 ${hw - 18},65 L ${-hw + 18},65 C ${-hw + 12.5},65 ${-hw + 9},62.5 ${-hw + 9},58 Z" fill="${esc(p.waterColor || '#9ad1f5')}" opacity="0.85" />`
+                ? `<path d="M ${-hw + 9},50 Q ${(-hw / 3).toFixed(1)},47 0,50 T ${hw - 9},50 L ${hw - 9},58 C ${hw - 9},62.5 ${hw - 12.5},65 ${hw - 18},65 L ${-hw + 18},65 C ${-hw + 12.5},65 ${-hw + 9},62.5 ${-hw + 9},58 Z" fill="${esc(p.waterColor || '#9ad1f5')}" style="mix-blend-mode: darken;" />`
                 : '';
             return `
-              <!-- Masque de découpe encastré à niveau dans la paillasse -->
-              <path d="M ${-hw},1 L ${-hw},62 C ${-hw},69 ${-hw + 6},74 ${-hw + 14},74 L ${hw - 14},74 C ${hw - 6},74 ${hw},69 ${hw},62 L ${hw},1 Z" fill="#f1f5f9" stroke="none" />
-              <!-- Cuve intérieure ouverte vers le haut -->
-              <path d="M ${-hw + 8},2 L ${-hw + 8},58 C ${-hw + 8},63 ${-hw + 12},66 ${-hw + 18},66 L ${hw - 18},66 C ${hw - 12},66 ${hw - 8},63 ${hw - 8},58 L ${hw - 8},2 Z" fill="#ffffff" stroke="none" />
+              <!-- Cuve intérieure (transparente par défaut, blanche avec l'option Fond opaque) -->
+              <path class="verre-fond" d="${innerBasin}" />
+              <!-- Paroi céramique de l'évier -->
+              <path d="${outerWall} ${innerBasin}" fill="#f1f5f9" fill-rule="evenodd" stroke="none" />
               ${water}
               <!-- Conduit d'évacuation sous l'évier -->
               <path d="M -7,74 L -7,92 L 7,92 L 7,74 Z" fill="#94a3b8" stroke="none" />
@@ -1475,52 +1479,146 @@ export const CATALOG = [
         category: 'supports',
         fixedUpright: true,
         keywords: 'potence support pince noix titrage burette',
-        defaultProps: { variant: 'simple', clamp1Y: 360, clamp2Y: 620 },
+        defaultProps: {
+            variant: 'simple',
+            clampSize: 'moyenne',
+            rodHeight: 760,
+            clamp1Y: 360,
+            clamp1Reach: 120,
+            clamp1Side: 'left',
+            clamp1Angle: 0,
+            clamp2Y: 620,
+            clamp2Reach: 120,
+            clamp2Side: 'left'
+        },
         propSchema: [
             { key: 'variant', label: 'Configuration', type: 'select', options: [
-                { value: 'simple', label: 'Simple (1 pince)' },
-                { value: 'titrage', label: 'Titrage (2 pinces)' }
+                { value: 'simple', label: 'Profil (1 pince)' },
+                { value: 'titrage', label: 'Profil (2 pinces)' },
+                { value: 'face', label: 'Vue de face (pince orientable)' }
             ]},
-            { key: 'clamp1Y', label: 'Hauteur pince 1', type: 'range', min: 100, max: 520, step: 10, unit: 'mm' },
-            { key: 'clamp2Y', label: 'Hauteur pince 2', type: 'range', min: 180, max: 700, step: 10, unit: 'mm', showIf: p => p.variant === 'titrage' }
+            { key: 'clampSize', label: 'Ouverture pince', type: 'select', options: [
+                { value: 'petite', label: 'Petite (burette, tube, sonde)' },
+                { value: 'moyenne', label: 'Moyenne (col ballon, Vigreux)' },
+                { value: 'grande', label: 'Grande (réfrigérant, ampoule)' }
+            ]},
+            { key: 'rodHeight', label: 'Hauteur tige', type: 'range', min: 240, max: 1000, step: 20, unit: 'mm' },
+            { key: 'clamp1Y', label: 'Hauteur pince 1', type: 'range', min: 100, max: 940, step: 10, unit: 'mm' },
+            { key: 'clamp1Angle', label: 'Inclinaison pince', type: 'range', min: -90, max: 90, step: 5, unit: '°', showIf: p => p.variant === 'face' },
+            { key: 'clamp1Reach', label: 'Allonge pince 1', type: 'range', min: 60, max: 240, step: 5, unit: 'mm', showIf: p => p.variant !== 'face' },
+            { key: 'clamp1Side', label: 'Côté pince 1', type: 'select', options: [
+                { value: 'left', label: 'Gauche' },
+                { value: 'right', label: 'Droite' }
+            ], showIf: p => p.variant !== 'face' },
+            { key: 'clamp2Y', label: 'Hauteur pince 2', type: 'range', min: 180, max: 940, step: 10, unit: 'mm', showIf: p => p.variant === 'titrage' },
+            { key: 'clamp2Reach', label: 'Allonge pince 2', type: 'range', min: 60, max: 240, step: 5, unit: 'mm', showIf: p => p.variant === 'titrage' },
+            { key: 'clamp2Side', label: 'Côté pince 2', type: 'select', options: [
+                { value: 'left', label: 'Gauche' },
+                { value: 'right', label: 'Droite' }
+            ], showIf: p => p.variant === 'titrage' }
         ],
         getBBox(p) {
-            if (p.variant === 'titrage') return { x: -145, y: -748, width: 195, height: 748 };
-            return { x: -130, y: -565, width: 175, height: 565 };
+            const sizes = { petite: 26, moyenne: 36, grande: 52 };
+            const depth = sizes[p.clampSize] || 36;
+            const h = Math.max(240, Math.min(1000, Number(p.rodHeight) || 760));
+            if (p.variant === 'face') {
+                return { x: -80, y: -h, width: 160, height: h };
+            }
+            const s1 = p.clamp1Side === 'right' ? 1 : -1;
+            const r1 = Math.max(60, Math.min(240, Number(p.clamp1Reach) || 120));
+            const clamps = [{ side: s1, reach: r1 }];
+            if (p.variant === 'titrage') {
+                const s2 = p.clamp2Side === 'right' ? 1 : -1;
+                const r2 = Math.max(60, Math.min(240, Number(p.clamp2Reach) || 120));
+                clamps.push({ side: s2, reach: r2 });
+            }
+            const hasLeft = clamps.some(c => c.side === -1);
+            const hasRight = clamps.some(c => c.side === 1);
+            let minX = hasLeft ? -120 : -50;
+            let maxX = hasRight ? 120 : 50;
+            for (const c of clamps) {
+                const outer = c.side * (c.reach + depth / 2);
+                const tail = -c.side * 40;
+                minX = Math.min(minX, outer, tail);
+                maxX = Math.max(maxX, outer, tail);
+            }
+            return { x: minX, y: -h, width: maxX - minX, height: h };
         },
         getAnchors(p) {
-            const c1 = -(Number(p.clamp1Y) || 360);
+            const rodH = Math.max(240, Math.min(1000, Number(p.rodHeight) || 760));
+            const c1 = -Math.min(Number(p.clamp1Y) || 360, rodH - 20);
+            if (p.variant === 'face') {
+                const clampAngle = Number(p.clamp1Angle) || 0;
+                const anchorAngle = ((180 + clampAngle) % 360 + 360) % 360;
+                const normAngle = anchorAngle > 180 ? anchorAngle - 360 : anchorAngle;
+                return [
+                    { id: 'base', x: 0, y: 0, type: 'base', dir: 'down', label: 'Socle' },
+                    { id: 'clamp1', x: 0, y: c1, type: 'clamp', dir: 'any', angle: normAngle, label: 'Pince (face)' }
+                ];
+            }
+            const s1 = p.clamp1Side === 'right' ? 1 : -1;
+            const r1 = Math.max(60, Math.min(240, Number(p.clamp1Reach) || 120));
             const anchors = [
                 { id: 'base', x: 0, y: 0, type: 'base', dir: 'down', label: 'Socle' },
-                { id: 'clamp1', x: -120, y: c1, type: 'clamp', dir: 'left', angle: 180, label: 'Pince 1' }
+                { id: 'clamp1', x: s1 * r1, y: c1, type: 'clamp', dir: s1 === 1 ? 'right' : 'left', angle: 180, label: 'Pince 1' }
             ];
             if (p.variant === 'titrage') {
-                const c2 = -(Number(p.clamp2Y) || 620);
-                anchors.push({ id: 'clamp2', x: -120, y: c2, type: 'clamp', dir: 'left', angle: 180, label: 'Pince 2' });
+                const c2 = -Math.min(Number(p.clamp2Y) || 620, rodH - 20);
+                const s2 = p.clamp2Side === 'right' ? 1 : -1;
+                const r2 = Math.max(60, Math.min(240, Number(p.clamp2Reach) || 120));
+                anchors.push({ id: 'clamp2', x: s2 * r2, y: c2, type: 'clamp', dir: s2 === 1 ? 'right' : 'left', angle: 180, label: 'Pince 2' });
             }
             return anchors;
         },
         render(p) {
-            const c1 = -(Number(p.clamp1Y) || 360);
-            if (p.variant === 'titrage') {
-                const c2 = -(Number(p.clamp2Y) || 620);
+            const rodH = Math.max(240, Math.min(1000, Number(p.rodHeight) || 760));
+            const c1 = -Math.min(Number(p.clamp1Y) || 360, rodH - 20);
+            const jawSpecs = {
+                petite: { depth: 26, hh: 8 },
+                moyenne: { depth: 36, hh: 10 },
+                grande: { depth: 52, hh: 12 }
+            };
+            const { depth, hh } = jawSpecs[p.clampSize] || jawSpecs.moyenne;
+            if (p.variant === 'face') {
+                const angle = Number(p.clamp1Angle) || 0;
+                const halfD = depth / 2;
                 return `
-                  <line class="potence" x1="-120" y1="0" x2="50" y2="0" />
-                  <line class="potence" x1="0" y1="-748" x2="0" y2="0" />
-                  <line class="potence" x1="-113" y1="${c1}" x2="40" y2="${c1}" />
-                  <circle cx="0" cy="${c1}" r="8" fill="#000000" />
-                  <path class="potence" d="M -145,${c1 - 9} L -113,${c1 - 9} L -113,${c1 + 9} L -145,${c1 + 9}" />
-                  <line class="potence" x1="-113" y1="${c2}" x2="40" y2="${c2}" />
-                  <circle cx="0" cy="${c2}" r="8" fill="#000000" />
-                  <path class="potence" d="M -145,${c2 - 9} L -113,${c2 - 9} L -113,${c2 + 9} L -145,${c2 + 9}" />
+                  <line class="potence" x1="-80" y1="0" x2="80" y2="0" />
+                  <line class="potence" x1="0" y1="${-rodH}" x2="0" y2="0" />
+                  <g transform="translate(0, ${c1}) rotate(${angle})">
+                    <line class="potence" x1="${-halfD}" y1="0" x2="${halfD}" y2="0" />
+                    <path class="potence" d="M ${-halfD + 5},${-hh} L ${-halfD},${-hh} L ${-halfD},${hh} L ${-halfD + 5},${hh}" />
+                    <path class="potence" d="M ${halfD - 5},${-hh} L ${halfD},${-hh} L ${halfD},${hh} L ${halfD - 5},${hh}" />
+                    <circle cx="0" cy="0" r="7" fill="#000000" />
+                  </g>
                 `;
             }
+            const s1 = p.clamp1Side === 'right' ? 1 : -1;
+            const r1 = Math.max(60, Math.min(240, Number(p.clamp1Reach) || 120));
+            const renderClamp = (cy, side, reach) => {
+                const cx = side * reach;
+                const jawOuter = cx + side * (depth / 2);
+                const jawInner = cx - side * (depth / 2);
+                const tailX = -side * 40;
+                return `
+                  <line class="potence" x1="${jawInner}" y1="${cy}" x2="${tailX}" y2="${cy}" />
+                  <circle cx="0" cy="${cy}" r="8" fill="#000000" />
+                  <path class="potence" d="M ${jawOuter},${cy - hh} L ${jawInner},${cy - hh} L ${jawInner},${cy + hh} L ${jawOuter},${cy + hh}" />
+                `;
+            };
+            const isDouble = p.variant === 'titrage';
+            const s2 = p.clamp2Side === 'right' ? 1 : -1;
+            const r2 = Math.max(60, Math.min(240, Number(p.clamp2Reach) || 120));
+            const c2 = -Math.min(Number(p.clamp2Y) || 620, rodH - 20);
+            const hasLeft = s1 === -1 || (isDouble && s2 === -1);
+            const hasRight = s1 === 1 || (isDouble && s2 === 1);
+            const baseX1 = hasLeft ? -120 : -50;
+            const baseX2 = hasRight ? 120 : 50;
             return `
-              <line class="potence" x1="-100" y1="0" x2="45" y2="0" />
-              <line class="potence" x1="0" y1="-565" x2="0" y2="0" />
-              <line class="potence" x1="-98" y1="${c1}" x2="40" y2="${c1}" />
-              <circle cx="0" cy="${c1}" r="8" fill="#000000" />
-              <path class="potence" d="M -130,${c1 - 10} L -98,${c1 - 10} L -98,${c1 + 10} L -130,${c1 + 10}" />
+              <line class="potence" x1="${baseX1}" y1="0" x2="${baseX2}" y2="0" />
+              <line class="potence" x1="0" y1="${-rodH}" x2="0" y2="0" />
+              ${renderClamp(c1, s1, r1)}
+              ${isDouble ? renderClamp(c2, s2, r2) : ''}
             `;
         }
     },
@@ -1531,57 +1629,88 @@ export const CATALOG = [
         category: 'supports',
         fixedUpright: true,
         keywords: 'potence support entonnoir ampoule decanter bois anneau filtration decantation',
-        defaultProps: { variant: 'double', armY: 250 },
+        defaultProps: { variant: 'double', holeSize: 'entonnoir', rodHeight: 480, armY: 260 },
         propSchema: [
             { key: 'variant', label: 'Configuration', type: 'select', options: [
                 { value: 'double', label: 'Double (2 anneaux)' },
                 { value: 'simple', label: 'Simple (1 anneau)' }
             ]},
-            { key: 'armY', label: 'Hauteur du support', type: 'range', min: 130, max: 330, step: 10, unit: 'mm' }
+            { key: 'holeSize', label: 'Ouverture', type: 'select', options: [
+                { value: 'entonnoir', label: 'Entonnoir (28 mm)' },
+                { value: 'ampoule', label: 'Ampoule à décanter (56 mm)' }
+            ]},
+            { key: 'rodHeight', label: 'Hauteur tige', type: 'range', min: 300, max: 650, step: 20, unit: 'mm' },
+            { key: 'armY', label: 'Hauteur du support', type: 'range', min: 120, max: 580, step: 10, unit: 'mm' }
         ],
         getBBox(p) {
-            if (p.variant === 'simple') return { x: -115, y: -386, width: 215, height: 386 };
-            return { x: -115, y: -386, width: 230, height: 386 };
+            const rodH = Math.max(300, Math.min(650, Number(p.rodHeight) || 480));
+            const holeW = p.holeSize === 'ampoule' ? 56 : 28;
+            const outerX = 80 + holeW / 2 + 14;
+            if (p.variant === 'simple') {
+                const minX = -Math.max(115, outerX);
+                return { x: minX, y: -rodH, width: 45 - minX, height: rodH };
+            }
+            const halfW = Math.max(125, outerX);
+            return { x: -halfW, y: -rodH, width: halfW * 2, height: rodH };
         },
         getAnchors(p) {
-            const ay = -(Number(p.armY) || 250);
+            const rodH = Math.max(300, Math.min(650, Number(p.rodHeight) || 480));
+            const ay = -Math.min(Number(p.armY) || 260, rodH - 24);
             const anchors = [
                 { id: 'base', x: 0, y: 0, type: 'base', dir: 'down', label: 'Socle bois' },
-                { id: 'ring-left', x: -72, y: ay, type: 'clamp', dir: 'up', angle: 180, label: 'Anneau gauche' }
+                { id: 'ring-left', x: -80, y: ay, type: 'clamp', dir: 'up', angle: 180, label: 'Anneau gauche' }
             ];
             if (p.variant !== 'simple') {
-                anchors.push({ id: 'ring-right', x: 72, y: ay, type: 'clamp', dir: 'up', angle: 180, label: 'Anneau droit' });
+                anchors.push({ id: 'ring-right', x: 80, y: ay, type: 'clamp', dir: 'up', angle: 180, label: 'Anneau droit' });
             }
             return anchors;
         },
         render(p) {
-            const ay = -(Number(p.armY) || 250);
+            const rodH = Math.max(300, Math.min(650, Number(p.rodHeight) || 480));
+            const ay = -Math.min(Number(p.armY) || 260, rodH - 24);
             const isDouble = p.variant !== 'simple';
-            const armSvg = isDouble
-                ? `
-                  <!-- Bras double à 2 anneaux en bois -->
-                  <path class="bois" d="M -115,${ay - 10} L 115,${ay - 10} C 115,${ay + 2} 105,${ay + 6} 72,${ay + 6} C 42,${ay + 6} 28,${ay + 2} 18,${ay + 2} L -18,${ay + 2} C -28,${ay + 2} -42,${ay + 6} -72,${ay + 6} C -105,${ay + 6} -115,${ay + 2} -115,${ay - 10} Z" />
-                  <ellipse cx="-72" cy="${ay - 5}" rx="28" ry="4.5" fill="#ffffff" stroke="#000000" stroke-width="2" />
-                  <ellipse cx="72" cy="${ay - 5}" rx="28" ry="4.5" fill="#ffffff" stroke="#000000" stroke-width="2" />
-                `
-                : `
-                  <!-- Bras simple à 1 anneau en bois -->
-                  <path class="bois" d="M -115,${ay - 10} L 18,${ay - 10} L 18,${ay + 2} L -18,${ay + 2} C -28,${ay + 2} -42,${ay + 6} -72,${ay + 6} C -105,${ay + 6} -115,${ay + 2} -115,${ay - 10} Z" />
-                  <ellipse cx="-72" cy="${ay - 5}" rx="28" ry="4.5" fill="#ffffff" stroke="#000000" stroke-width="2" />
+            const holeW = p.holeSize === 'ampoule' ? 56 : 28;
+            const halfH = holeW / 2;
+            const lip = 14;
+            const renderArm = (side) => {
+                // side = -1 (gauche) ou +1 (droite), anneau centré à x = side * 80
+                const innerStart = side * 14;
+                const holeNear = side * (80 - halfH);
+                const holeFar = side * (80 + halfH);
+                const outerEnd = side * (80 + halfH + lip);
+                const r1x = Math.min(innerStart, holeNear);
+                const r1w = Math.abs(holeNear - innerStart);
+                const r2x = Math.min(holeFar, outerEnd);
+                const r2w = Math.abs(outerEnd - holeFar);
+                const g1 = Math.min(holeNear, holeFar);
+                const g2 = Math.max(holeNear, holeFar);
+                return `
+                  <!-- Ouverture 2D transparente (arêtes arrière de l'anneau) -->
+                  <line class="trait" style="stroke-width:1.6;" x1="${g1}" y1="${ay - 6}" x2="${g2}" y2="${ay - 6}" />
+                  <line class="trait" style="stroke-width:1.6;" x1="${g1}" y1="${ay + 6}" x2="${g2}" y2="${ay + 6}" />
+                  <!-- Segments bois de part et d'autre de l'ouverture -->
+                  <rect class="bois" x="${r1x}" y="${ay - 6}" width="${r1w}" height="12" rx="1.5" />
+                  <rect class="bois" x="${r2x}" y="${ay - 6}" width="${r2w}" height="12" rx="2" />
                 `;
+            };
+            const baseX = isDouble ? -125 : -115;
+            const baseW = isDouble ? 250 : 160;
             return `
-              <!-- Socle rectangulaire en bois -->
-              <rect class="bois" x="-100" y="-18" width="200" height="18" rx="2.5" />
-              <!-- Tige verticale en bois + renfort bas + pommeau haut -->
-              <rect class="bois" x="-7" y="-366" width="14" height="348" rx="3" />
-              <rect class="bois" x="-10" y="-96" width="20" height="78" rx="2.5" />
-              <circle class="bois" cx="0" cy="-374" r="8.5" />
-              <!-- Bloc de serrage coulissant + vis papillon -->
-              <rect class="bois" x="-18" y="${ay + 2}" width="36" height="24" rx="3" />
-              <line class="trait" style="stroke-width:1.8;" x1="-18" y1="${ay + 22}" x2="18" y2="${ay + 22}" />
-              <path class="bois" style="fill:#b98850;" d="M -14,${ay + 18} L 4,${ay + 7} L 9,${ay + 14} L -9,${ay + 25} Z" />
-              <circle cx="0" cy="${ay + 14}" r="3" fill="#8b5e34" stroke="#000000" stroke-width="1.5" />
-              ${armSvg}
+              <!-- Socle plat en bois -->
+              <rect class="bois" x="${baseX}" y="-16" width="${baseW}" height="16" rx="2" />
+              <!-- Tige verticale en bois -->
+              <rect class="bois" x="-6" y="${-rodH}" width="12" height="${rodH - 16}" rx="2" />
+              <!-- Bras à anneau(x) en coupe 2D -->
+              ${renderArm(-1)}
+              ${isDouble ? renderArm(1) : ''}
+              <!-- Bloc coulissant + vis de serrage -->
+              <rect class="bois" x="-14" y="${ay - 10}" width="28" height="22" rx="2.5" />
+              ${!isDouble ? `
+                <line class="trait" style="stroke-width:2.5;" x1="14" y1="${ay + 1}" x2="26" y2="${ay + 1}" />
+                <rect class="bouchon" x="26" y="${ay - 6}" width="7" height="14" rx="2" />
+              ` : `
+                <circle cx="0" cy="${ay + 1}" r="4.5" fill="#555555" stroke="#000000" stroke-width="1.8" />
+              `}
             `;
         }
     },
@@ -1926,11 +2055,12 @@ export const CATALOG = [
             if (p.variant === 'droit') {
                 const jacketWater = 'M -14,-380 L 14,-380 L 19,-367 L 19,-88 L 41,-88 L 41,-80 L 19,-80 L 19,-63 L 13,-50 L -13,-50 L -19,-63 L -19,-342 L -41,-342 L -41,-350 L -19,-350 L -19,-367 Z';
                 const innerTube = 'M -14,-380 L -7,-355 L -7,-75 L -13,-50 L 13,-50 L 7,-75 L 7,-355 L 14,-380 Z';
-                const water = p.hasWater ? `<path fill="${esc(p.waterColor)}" d="${jacketWater}" />` : '';
+                const water = p.hasWater
+                    ? `<path fill="${esc(p.waterColor)}" fill-rule="evenodd" style="mix-blend-mode: darken;" d="${jacketWater} ${innerTube}" />`
+                    : '';
                 return `
                   <path class="verre-fond" d="M -14,-430 L 14,-430 L 14,-380 L 19,-367 L 19,-88 L 41,-88 L 41,-80 L 19,-80 L 19,-63 L 13,-50 L 13,0 L -13,0 L -13,-50 L -19,-63 L -19,-342 L -41,-342 L -41,-350 L -19,-350 L -19,-367 L -14,-380 Z" />
                   ${water}
-                  ${p.hasWater ? `<path fill="#ffffff" d="${innerTube}" />` : ''}
                   <path class="verre" style="fill:none;" d="M -14,-430 L -14,-380 L -19,-367 L -19,-350 L -41,-350" />
                   <path class="verre" style="fill:none;" d="M -41,-342 L -19,-342 L -19,-63 L -13,-50 L -13,0" />
                   <path class="verre" style="fill:none;" d="M 14,-430 L 14,-380 L 19,-367 L 19,-88 L 41,-88" />
@@ -1940,12 +2070,13 @@ export const CATALOG = [
                 `;
             }
             const jacketWater = 'M -14,-380 L 14,-380 L 21,-367 L 21,-88 L 43,-88 L 43,-80 L 21,-80 L 21,-63 L 13,-50 L -13,-50 L -21,-63 L -21,-342 L -43,-342 L -43,-350 L -21,-350 L -21,-367 Z';
-            const water = p.hasWater ? `<path fill="${esc(p.waterColor)}" d="${jacketWater}" />` : '';
             const innerTube = `M -14,-380 L -6,-355 L -6,-335 C -14,-329 -14,-311 -6,-305 L -6,-287 C -14,-281 -14,-263 -6,-257 L -6,-239 C -14,-233 -14,-215 -6,-209 L -6,-191 C -14,-185 -14,-167 -6,-161 L -6,-143 C -14,-137 -14,-119 -6,-113 L -6,-75 L -13,-50 L 13,-50 L 6,-75 L 6,-113 C 14,-119 14,-137 6,-143 L 6,-161 C 14,-167 14,-185 6,-191 L 6,-209 C 14,-215 14,-233 6,-239 L 6,-257 C 14,-263 14,-281 6,-287 L 6,-305 C 14,-311 14,-329 6,-335 L 6,-355 L 14,-380 Z`;
+            const water = p.hasWater
+                ? `<path fill="${esc(p.waterColor)}" fill-rule="evenodd" style="mix-blend-mode: darken;" d="${jacketWater} ${innerTube}" />`
+                : '';
             return `
               <path class="verre-fond" d="M -14,-430 L 14,-430 L 14,-380 L 21,-367 L 21,-88 L 43,-88 L 43,-80 L 21,-80 L 21,-63 L 13,-50 L 13,0 L -13,0 L -13,-50 L -21,-63 L -21,-342 L -43,-342 L -43,-350 L -21,-350 L -21,-367 L -14,-380 Z" />
               ${water}
-              ${p.hasWater ? `<path fill="#ffffff" d="${innerTube}" />` : ''}
               <path class="verre" style="fill:none;" d="M -14,-430 L -14,-380 L -21,-367 L -21,-350 L -43,-350" />
               <path class="verre" style="fill:none;" d="M -43,-342 L -21,-342 L -21,-63 L -13,-50 L -13,0" />
               <path class="verre" style="fill:none;" d="M 14,-430 L 14,-380 L 21,-367 L 21,-88 L 43,-88" />

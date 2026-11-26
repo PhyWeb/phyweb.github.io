@@ -45,6 +45,9 @@
                     <button class="tool-btn" id="btnOpenShapes" title="Formes & Flèches (ouvrir dans la banque)">
                         <i class="fas fa-shapes"></i>
                     </button>
+                    <button class="tool-btn" id="btnOpenTemplates" title="Modèles de montages préconstruits">
+                        <i class="fas fa-wand-magic-sparkles"></i>
+                    </button>
                 </div>
 
                 <div class="toolbar-divider"></div>
@@ -316,6 +319,26 @@
                 </button>
                 <button type="button" class="button" id="export-cancel-button">Annuler</button>
             </div>
+        </footer>
+    </div>
+</div>
+
+<!-- MODALE DES MODÈLES DE MONTAGES PRÉCONSTRUITS -->
+<div id="templates-modal" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card" style="width: 82vw; max-width: 1020px; max-height: 84vh;">
+        <header class="modal-card-head" style="padding: 16px 20px;">
+            <p class="modal-card-title is-size-5 has-text-weight-bold">
+                <i class="fas fa-wand-magic-sparkles mr-2"></i>Modèles de montages
+            </p>
+            <button type="button" class="delete" id="templates-close-x" aria-label="Fermer"></button>
+        </header>
+        <section class="modal-card-body">
+            <p class="is-size-7 has-text-grey mb-3">Choisissez un montage classique pour démarrer rapidement, puis modifiez-le librement sur le schéma.</p>
+            <div class="templates-grid" id="templatesGrid"></div>
+        </section>
+        <footer class="modal-card-foot" style="padding: 12px 20px;">
+            <button type="button" class="button" id="templates-cancel-button">Fermer</button>
         </footer>
     </div>
 </div>

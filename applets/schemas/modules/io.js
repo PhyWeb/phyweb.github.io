@@ -370,6 +370,10 @@ export function createIOController(ctx) {
               <span class="icon"><i class="fa-solid fa-file-circle-plus"></i></span>
               <span>Nouveau schéma</span>
             </a>
+            <a class="navbar-item" id="menuTemplates">
+              <span class="icon"><i class="fa-solid fa-wand-magic-sparkles"></i></span>
+              <span>Modèles de montages…</span>
+            </a>
             <a class="navbar-item" id="menuSaveJSON">
               <span class="icon"><i class="fa-solid fa-floppy-disk"></i></span>
               <span>Sauvegarder (.pws)</span>
@@ -416,6 +420,7 @@ export function createIOController(ctx) {
         });
 
         menuEl.querySelector('#menuNewScene').addEventListener('click', () => handleNewScene());
+        menuEl.querySelector('#menuTemplates').addEventListener('click', () => ctx.openTemplatesModal?.());
         menuEl.querySelector('#menuSaveJSON').addEventListener('click', () => handleSaveJSON());
         menuEl.querySelector('#menuLoadJSON').addEventListener('click', () => triggerLoadJSON());
         menuEl.querySelector('#menuCopyPNG').addEventListener('click', () => handleCopyPNG());

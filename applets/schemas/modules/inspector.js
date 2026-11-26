@@ -283,6 +283,7 @@ export function createInspectorController(ctx) {
         }
 
         const isLocked = Boolean(item.locked);
+        const hasGlassBg = def.render(item.props || {}, '_probe').includes('verre-fond');
         inspectorBodyEl.innerHTML = `
           <div class="prop-section">
             <div class="btn-row">
@@ -332,6 +333,11 @@ export function createInspectorController(ctx) {
                 <span class="prop-val" id="valScale">${Math.round((item.scale ?? 1) * 100)}%</span>
               </div>
             </div>
+            ${hasGlassBg ? `
+            <div class="prop-row">
+              <label title="Ajoute un fond blanc pour masquer les objets et tuyaux situés derrière cette verrerie">Fond opaque</label>
+              <input type="checkbox" id="chkOpaqueBg" ${item.opaqueBg ? 'checked' : ''}>
+            </div>` : ''}
           </div>
         `;
 
@@ -357,12 +363,15 @@ export function createInspectorController(ctx) {
             });
         });
 
+        const getVisibleSchemaKey = () => schema.filter(f => !f.showIf || f.showIf(item.props || {})).map(f => f.key).join(',');
+
         inspectorBodyEl.querySelectorAll('[data-prop]').forEach(input => {
             const key = input.dataset.prop;
             const field = schema.find(f => f.key === key);
             const isContinuous = input.type === 'range' || input.type === 'text' || input.type === 'color';
             const eventName = isContinuous ? 'input' : 'change';
             let historyPushed = false;
+            let needsRerenderOnRelease = false;
             input.addEventListener(eventName, () => {
                 const prevVal = item.props[key];
                 const newVal = input.type === 'checkbox'
@@ -373,6 +382,7 @@ export function createInspectorController(ctx) {
                     store.pushHistory();
                     historyPushed = isContinuous;
                 }
+                const visBefore = getVisibleSchemaKey();
                 item.props[key] = newVal;
                 if (key === 'fillToRim' && newVal === true && 'liquidLevel' in item.props) {
                     item.props.liquidLevel = 100;
@@ -387,12 +397,22 @@ export function createInspectorController(ctx) {
                 const valEl = inspectorBodyEl.querySelector(`[data-val-for="${key}"]`);
                 if (valEl) valEl.textContent = `${newVal}${field?.unit || ''}`;
                 ctx.renderScene();
-                if (eventName === 'change' || (prevVal === 0 && newVal > 0) || (prevVal > 0 && newVal === 0)) {
+                const visAfter = getVisibleSchemaKey();
+                if (eventName === 'change') {
                     renderInspector();
+                } else if (visBefore !== visAfter) {
+                    // Différer le re-rendu de l'inspecteur au relâchement pour ne pas détruire le slider en cours de glisser
+                    needsRerenderOnRelease = true;
                 }
             });
             if (isContinuous) {
-                input.addEventListener('change', () => { historyPushed = false; });
+                input.addEventListener('change', () => {
+                    historyPushed = false;
+                    if (needsRerenderOnRelease) {
+                        needsRerenderOnRelease = false;
+                        renderInspector();
+                    }
+                });
                 if (input.type === 'text') {
                     input.addEventListener('blur', () => { historyPushed = false; });
                 }
@@ -459,6 +479,15 @@ export function createInspectorController(ctx) {
             ctx.renderScene();
         });
         inpScale.addEventListener('change', () => { scaleHistoryPushed = false; });
+
+        const chkOpaqueBg = inspectorBodyEl.querySelector('#chkOpaqueBg');
+        if (chkOpaqueBg) {
+            chkOpaqueBg.addEventListener('change', () => {
+                store.pushHistory();
+                item.opaqueBg = chkOpaqueBg.checked;
+                ctx.renderScene();
+            });
+        }
     }
 
     function rememberConnectorStyle(conn) {
@@ -696,8 +725,8 @@ export function createInspectorController(ctx) {
             <div class="prop-row">
               <label>Taille police</label>
               <div class="prop-range-wrap">
-                <input type="range" id="inpFontSize" min="10" max="36" step="1" value="${lbl.fontSize ?? 16}">
-                <span class="prop-val" id="valFontSize">${lbl.fontSize ?? 16}px</span>
+                <input type="range" id="inpFontSize" min="10" max="36" step="1" value="${lbl.fontSize ?? 20}">
+                <span class="prop-val" id="valFontSize">${lbl.fontSize ?? 20}px</span>
               </div>
             </div>
             <div class="prop-row">
