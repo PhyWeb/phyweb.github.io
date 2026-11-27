@@ -66,6 +66,9 @@ export function generatePW(app) {
     version: "3.0",
     data: dataToSave,
     calculations: app.editor.getValue(),
+    calculation: {
+      angleUnit: app.calculation?.angleUnit === 'deg' ? 'deg' : 'rad'
+    },
     grapher: {
       xCurve: app.grapher.currentXCurve,
       yCurves: yCurves,
@@ -245,6 +248,9 @@ export async function restorePWState(app, state) {
   }
 
   // Restauration des calculs et annotations
+  if (app.calculation) {
+    app.calculation.angleUnit = state.calculation?.angleUnit === 'deg' ? 'deg' : 'rad';
+  }
   let calculationsText = state.calculations ?? "";
   calculationsText = updateFormulasReferences(calculationsText, nameMap);
   app.editor.setValue(calculationsText);

@@ -91,6 +91,7 @@ export default class SessionUI {
 
       const lastSortVariable = this.ui.data?.lastSortVariable ?? null;
       const orthonormal = Boolean(this.ui.grapher?.orthonormal);
+      const angleUnit = this.ui.calculation?.angleUnit === 'deg' ? 'deg' : 'rad';
 
       return JSON.stringify({
         curves,
@@ -98,6 +99,7 @@ export default class SessionUI {
         parameters,
         models,
         script,
+        angleUnit,
         xCurve,
         yCurves,
         zoom,
@@ -460,6 +462,7 @@ export default class SessionUI {
       includeOriginOnAutoZoom: this.ui.grapher.includeOriginOnAutoZoom,
       derivatePoints: this.ui.calculation.derivatePoints,
       derivateEdges: this.ui.calculation.derivateEdges,
+      angleUnit: this.ui.calculation.angleUnit === 'deg' ? 'deg' : 'rad',
     };
   }
 
@@ -476,6 +479,10 @@ export default class SessionUI {
     $('#include-origin-switch').checked = settings.includeOriginOnAutoZoom;
     $('#derivative-points-select').value = settings.derivatePoints;
     $('#derivate-edges-switch').checked = settings.derivateEdges;
+    const angleUnitSelect = $('#angle-unit-select');
+    if (angleUnitSelect) {
+      angleUnitSelect.value = settings?.angleUnit === 'deg' ? 'deg' : 'rad';
+    }
 
     $('#save-settings-permanently-switch').checked = false;
   }
@@ -485,6 +492,7 @@ export default class SessionUI {
    * @returns {object}
    */
   readSettingsFromModal() {
+    const angleUnitSelect = document.getElementById('angle-unit-select');
     return {
       significantDigits: parseInt(document.getElementById('significant-digits-select').value) || 4,
       grapherGrid: document.getElementById('graph-grid-switch').checked,
@@ -494,6 +502,7 @@ export default class SessionUI {
       includeOriginOnAutoZoom: document.getElementById('include-origin-switch').checked,
       derivatePoints: parseInt(document.getElementById('derivative-points-select').value),
       derivateEdges: document.getElementById('derivate-edges-switch').checked,
+      angleUnit: angleUnitSelect?.value === 'deg' ? 'deg' : 'rad',
     };
   }
 
@@ -540,6 +549,19 @@ export default class SessionUI {
     if (this.ui.calculation.derivateEdges !== settings.derivateEdges) {
       this.ui.calculation.derivateEdges = settings.derivateEdges;
       calcSettingsChanged = true;
+    }
+
+    const currentAngleUnit = this.ui.calculation.angleUnit === 'deg' ? 'deg' : 'rad';
+    const nextAngleUnit = settings.angleUnit === 'deg' ? 'deg' : 'rad';
+    let angleUnitChanged = false;
+    if (currentAngleUnit !== nextAngleUnit) {
+      this.ui.calculation.angleUnit = nextAngleUnit;
+      calcSettingsChanged = true;
+      angleUnitChanged = true;
+    }
+
+    if (angleUnitChanged) {
+      this.ui.calculationUI?.updateAngleUnitUI?.();
     }
 
     if (calcSettingsChanged) {

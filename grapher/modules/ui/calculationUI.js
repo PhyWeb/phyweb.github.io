@@ -118,7 +118,7 @@ export default class CalculationUI {
       containerElement.innerHTML = ''; // Vide le conteneur
 
       const colors = {
-        variable: '#008000',
+        variable: 'var(--bulma-success-40, #309c6d)',
         parameter: '#7b1fa2'
       };
 
@@ -183,6 +183,11 @@ export default class CalculationUI {
         const label = document.createElement('p');
         label.className = 'menu-label mb-2';
         label.textContent = category.title;
+        if (category.title.startsWith('Trigonométrie')) {
+          if (!label.dataset) label.dataset = {};
+          label.dataset.category = 'trigo';
+          if (label.setAttribute) label.setAttribute('data-category', 'trigo');
+        }
         col.appendChild(label);
 
         category.functions.forEach(fn => {
@@ -322,6 +327,33 @@ export default class CalculationUI {
     });
 
     this.ui.editor.setOption("mode", "phyweb-calc");
+    this.updateAngleUnitUI();
+  }
+
+  /**
+   * Synchronise l'état visuel du sélecteur Rad/Deg et le titre de la catégorie Trigonométrie.
+   */
+  updateAngleUnitUI() {
+    const unit = this.ui.calculation?.angleUnit === 'deg' ? 'deg' : 'rad';
+    const radBtn = document.getElementById('angle-unit-rad-button');
+    const degBtn = document.getElementById('angle-unit-deg-button');
+
+    if (radBtn && radBtn.classList) {
+      radBtn.classList.toggle('is-link', unit === 'rad');
+      radBtn.classList.toggle('is-selected', unit === 'rad');
+      if (radBtn.setAttribute) radBtn.setAttribute('aria-pressed', unit === 'rad' ? 'true' : 'false');
+    }
+    if (degBtn && degBtn.classList) {
+      degBtn.classList.toggle('is-link', unit === 'deg');
+      degBtn.classList.toggle('is-selected', unit === 'deg');
+      if (degBtn.setAttribute) degBtn.setAttribute('aria-pressed', unit === 'deg' ? 'true' : 'false');
+    }
+
+    const functionsContent = document.getElementById('calculation-functions-content');
+    const trigoLabel = functionsContent?.querySelector?.('[data-category="trigo"]');
+    if (trigoLabel) {
+      trigoLabel.textContent = `Trigonométrie (${unit})`;
+    }
   }
 
   /**
@@ -584,6 +616,24 @@ export default class CalculationUI {
         const value = btn.dataset?.value || btn.getAttribute?.('data-value');
         if (value) {
           insertTextInEditor(value);
+        }
+      });
+    }
+
+    // Écouteur de clic (event delegation) sur le sélecteur d'unité d'angle (Rad / Deg)
+    const angleUnitToolbar = document.getElementById('calculation-angle-unit-toolbar');
+    if (angleUnitToolbar) {
+      angleUnitToolbar.addEventListener('click', (e) => {
+        const btn = e.target?.closest ? e.target.closest('button[data-angle-unit]') : null;
+        if (!btn) return;
+        e.preventDefault();
+        const nextUnit = (btn.dataset?.angleUnit || btn.getAttribute?.('data-angle-unit')) === 'deg' ? 'deg' : 'rad';
+        if (this.ui.calculation && this.ui.calculation.angleUnit !== nextUnit) {
+          this.ui.calculation.angleUnit = nextUnit;
+          this.updateAngleUnitUI();
+          if (this.ui.app && typeof this.ui.app.applyCalculation === 'function') {
+            this.ui.app.applyCalculation(this.ui.editor.getValue());
+          }
         }
       });
     }

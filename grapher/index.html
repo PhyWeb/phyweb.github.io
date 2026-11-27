@@ -519,6 +519,11 @@
           <button type="button" class="button is-light" data-value="^" title="Insérer un exposant (^)"><span>x<sup>n</sup></span></button>
           <button type="button" class="button is-light" data-value="*10^" title="Insérer une puissance de 10 (*10^)"><span>*10<sup>n</sup></span></button>
         </div>
+        <div style="border-left: 1px solid #dbdbdb; height: 24px;"></div>
+        <div class="buttons has-addons mb-0" id="calculation-angle-unit-toolbar" role="group" aria-label="Unité des angles">
+          <button type="button" class="button is-link is-light is-selected" id="angle-unit-rad-button" data-angle-unit="rad" aria-pressed="true" title="Angles en radians">Rad</button>
+          <button type="button" class="button is-light" id="angle-unit-deg-button" data-angle-unit="deg" aria-pressed="false" title="Angles en degrés">Deg</button>
+        </div>
       </div>
     </nav>
     <div class="columns" style="flex-grow: 1; min-height: 0;">
@@ -1251,6 +1256,17 @@
                   <input type="checkbox" id="derivate-edges-switch" checked>
                   <span class="check"></span>
                 </label>
+              </div>
+            </div>
+            <div class="field">
+              <label class="label">Unité des angles (trigonométrie)</label>
+              <div class="control">
+                <div class="select">
+                  <select id="angle-unit-select">
+                    <option value="rad">Radians (rad)</option>
+                    <option value="deg">Degrés (deg)</option>
+                  </select>
+                </div>
               </div>
             </div>
           </div>

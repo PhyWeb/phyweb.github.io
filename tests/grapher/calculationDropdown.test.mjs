@@ -4,6 +4,7 @@ import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import UIManager from '../../grapher/modules/ui.js';
 import { Calculation } from '../../grapher/modules/calculation.js';
+import { generatePW, restorePWState } from '../../grapher/modules/io/pwCodec.js';
 
 if (!global.CodeMirror) {
   global.CodeMirror = {
@@ -71,6 +72,16 @@ describe('Contrôle Mega-Dropdown des Fonctions dans l\'onglet Calculs', () => {
         htmlContent,
         /<div class="dropdown-content p-4" id="calculation-functions-content"><\/div>/,
         'Le contenu doit avoir les classes dropdown-content p-4 et id calculation-functions-content'
+      );
+      assert.match(
+        htmlContent,
+        /id="calculation-angle-unit-toolbar"/,
+        'La barre d\'outils Calculs doit contenir le sélecteur d\'unité d\'angle'
+      );
+      assert.match(
+        htmlContent,
+        /id="angle-unit-select"/,
+        'La modale Paramètres doit contenir le sélecteur #angle-unit-select'
       );
     });
   });
@@ -453,6 +464,51 @@ describe('Contrôle Mega-Dropdown des Fonctions dans l\'onglet Calculs', () => {
       }
 
       assert.strictEqual(functionsDropdownClasses.has('is-active'), false);
+    });
+  });
+
+  describe('Persistance de angleUnit dans les fichiers .pw', () => {
+    it('sauvegarde et restaure calculation.angleUnit dans un fichier .pw (avec défaut rad pour anciens fichiers)', async () => {
+      const mockApp = {
+        data: { curves: [], parameters: {}, models: [], annotations: [], getCurveByTitle: () => null },
+        editor: { value: 'y = sin(x)', getValue() { return this.value; }, setValue(v) { this.value = v; } },
+        calculation: { angleUnit: 'deg' },
+        grapher: {
+          currentXCurve: null,
+          orthonormal: false,
+          hasUserZoom: false,
+          chart: null,
+          updateChart() {},
+          setVisibilityFromList() {},
+          updateModelVisibility() {},
+          reorderLegendByVisibility() {},
+          resetZoom() {}
+        },
+        spreadsheet: { focusFirstCell() {}, update() {} },
+        uiManager: {
+          updateClearAnnotationsButtonVisibility() {},
+          updateCalculationUI() {},
+          updateAllModelPanelVisibilityIcons() {},
+          updateRecalculateButtonVisibility() {},
+          updateSortUI() {},
+          updateXAxisSelector() {},
+          resetZoomUI() {}
+        }
+      };
+
+      const savedJson = generatePW(mockApp);
+      const parsed = JSON.parse(savedJson);
+      assert.strictEqual(parsed.calculation.angleUnit, 'deg');
+
+      // Restauration en mode deg
+      mockApp.calculation.angleUnit = 'rad';
+      await restorePWState(mockApp, parsed);
+      assert.strictEqual(mockApp.calculation.angleUnit, 'deg');
+
+      // Rétrocompatibilité : un ancien .pw sans champ calculation restaure 'rad'
+      delete parsed.calculation;
+      await restorePWState(mockApp, parsed);
+      assert.strictEqual(mockApp.calculation.angleUnit, 'rad');
     });
   });
 });

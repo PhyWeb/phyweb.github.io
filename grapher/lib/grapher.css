@@ -252,33 +252,33 @@ sub {
 
 /* 3. Style au focus, comme un textarea Bulma */
 #calculs-panel .CodeMirror-focused {
-  border-color: #485fc7 !important;
-  box-shadow: 0 0 0 0.125em rgba(72, 95, 199, 0.25);
+  border-color: var(--bulma-link, #4258ff) !important;
+  box-shadow: 0 0 0 0.125em hsla(var(--bulma-link-h, 233), var(--bulma-link-s, 100%), var(--bulma-link-l, 63%), 0.25);
 }
 
-/* 4. Palette de couleurs (inchangée) */
+/* 4. Palette de couleurs harmonisée avec l'UI Bulma */
 .cm-phyweb-function {
-  color: #485fc7; 
+  color: var(--bulma-link-on-scheme, #3850b7);
   font-weight: 500;
 }
 .cm-phyweb-function-warning {
-  color: #c27803;
+  color: var(--bulma-warning-40, #cc8f00);
   font-weight: 500;
 }
 .cm-variable-2 {
-  color: #008000;
+  color: var(--bulma-success-40, #309c6d);
 }
 .cm-def {
   color: #7b1fa2;
 }
 .cm-number {
-  color: #fe6a35;
+  color: var(--bulma-danger-on-scheme, #cc0f35);
 }
 .cm-operator {
-  color: #888;
+  color: #5a6270;
 }
 .cm-comment {
-  color: #999;
+  color: #7a7a7a;
   font-style: italic;
 }
 

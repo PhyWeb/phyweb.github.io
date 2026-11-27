@@ -842,4 +842,64 @@ describe('Calculation Module', () => {
       assert.ok(Math.abs(res[2] - Math.PI / 2) < 1e-12);
     });
   });
+
+  describe('Unité des angles (Rad / Deg)', () => {
+    it('doit utiliser les radians par défaut', () => {
+      assert.equal(calc.angleUnit, 'rad');
+      assert.ok(Math.abs(calc.evaluate('sin(pi / 2)', {}) - 1) < 1e-12);
+      assert.ok(Math.abs(calc.evaluate('asin(1)', {}) - Math.PI / 2) < 1e-12);
+    });
+
+    it('doit convertir les entrées/sorties des fonctions trigonométriques en mode degrés (scalaires et tableaux)', () => {
+      const calcDeg = new Calculation({ derivatePoints: 5, derivateEdges: true, angleUnit: 'deg' });
+
+      // Directes avec valeurs exactes remarquables
+      assert.ok(Math.abs(calcDeg.evaluate('sin(30)', {}) - 0.5) < 1e-12);
+      assert.equal(calcDeg.evaluate('sin(0)', {}), 0);
+      assert.equal(calcDeg.evaluate('sin(180)', {}), 0);
+      assert.equal(calcDeg.evaluate('cos(90)', {}), 0);
+      assert.equal(calcDeg.evaluate('cos(270)', {}), 0);
+      assert.ok(Math.abs(calcDeg.evaluate('cos(60)', {}) - 0.5) < 1e-12);
+      assert.ok(Math.abs(calcDeg.evaluate('tan(45)', {}) - 1) < 1e-12);
+      assert.equal(calcDeg.evaluate('tan(180)', {}), 0);
+      assert.equal(calcDeg.evaluate('tan(90)', {}), null);
+      assert.equal(calcDeg.evaluate('tan(-90)', {}), null);
+
+      // Tableaux avec null
+      const sinArr = calcDeg.evaluate('sin(theta)', { theta: [0, 30, 90, null, 180] });
+      assert.equal(sinArr[0], 0);
+      assert.ok(Math.abs(sinArr[1] - 0.5) < 1e-12);
+      assert.ok(Math.abs(sinArr[2] - 1) < 1e-12);
+      assert.equal(sinArr[3], null);
+      assert.equal(sinArr[4], 0);
+
+      // Réciproques (y compris synonymes arcsin/arccos/arctan et atan2)
+      assert.ok(Math.abs(calcDeg.evaluate('asin(0.5)', {}) - 30) < 1e-12);
+      assert.ok(Math.abs(calcDeg.evaluate('arcsin(1)', {}) - 90) < 1e-12);
+      assert.ok(Math.abs(calcDeg.evaluate('acos(0)', {}) - 90) < 1e-12);
+      assert.ok(Math.abs(calcDeg.evaluate('atan(1)', {}) - 45) < 1e-12);
+      assert.ok(Math.abs(calcDeg.evaluate('atan2(1, 1)', {}) - 45) < 1e-12);
+
+      const atan2Arr = calcDeg.evaluate('atan2(y, x)', { y: [0, null, 1], x: [1, 1, 0] });
+      assert.equal(atan2Arr[0], 0);
+      assert.equal(atan2Arr[1], null);
+      assert.ok(Math.abs(atan2Arr[2] - 90) < 1e-12);
+
+      // Ne doit PAS affecter les fonctions hyperboliques
+      assert.ok(Math.abs(calcDeg.evaluate('sinh(1)', {}) - Math.sinh(1)) < 1e-12);
+      assert.ok(Math.abs(calcDeg.evaluate('cosh(0)', {}) - 1) < 1e-12);
+      assert.ok(Math.abs(calcDeg.evaluate('asinh(1)', {}) - Math.asinh(1)) < 1e-12);
+    });
+
+    it('doit basculer dynamiquement entre rad et deg sans recréer l\'instance', () => {
+      const dynamicCalc = new Calculation({ derivatePoints: 5, derivateEdges: true, angleUnit: 'rad' });
+      assert.ok(Math.abs(dynamicCalc.evaluate('sin(pi / 6)', {}) - 0.5) < 1e-12);
+
+      dynamicCalc.angleUnit = 'deg';
+      assert.ok(Math.abs(dynamicCalc.evaluate('sin(30)', {}) - 0.5) < 1e-12);
+
+      dynamicCalc.angleUnit = 'rad';
+      assert.ok(Math.abs(dynamicCalc.evaluate('sin(pi / 6)', {}) - 0.5) < 1e-12);
+    });
+  });
 });

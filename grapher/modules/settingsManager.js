@@ -7,6 +7,7 @@ export const DEFAULT_SETTINGS = {
   includeOriginOnAutoZoom: true,
   derivatePoints: 5,
   derivateEdges: false,
+  angleUnit: 'rad',
 };
 
 /**

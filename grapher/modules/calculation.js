@@ -29,6 +29,7 @@ export default class Calculation {
 
     this.derivatePoints = initialSettings.derivatePoints; // Nombre de points pour la dérivation
     this.derivateEdges = initialSettings.derivateEdges; // Calculer les bords ou non
+    this.angleUnit = initialSettings?.angleUnit === 'deg' ? 'deg' : 'rad'; // Unité des angles ('rad' ou 'deg')
 
     // Créer une instance de math.js pré-configurée pour gérer les opérations sur les tableaux.
     this.mathInstance = this.createConfiguredMathInstance();
@@ -53,14 +54,36 @@ export default class Calculation {
     mathInstance.import({ Pi: mathInstance.pi }, { override: false });
 
     // Redéfinir les fonctions scalaires pour qu'elles fonctionnent sur les tableaux
+    const directTrigFunctions = new Set(['sin', 'cos', 'tan']);
+    const inverseTrigFunctions = new Set(['asin', 'acos', 'atan']);
+
     this.scalarFunctions.forEach(name => {
       const originalFn = mathInstance[name];
       if (typeof originalFn !== 'function') return;
 
+      const isDirectTrig = directTrigFunctions.has(name);
+      const isInverseTrig = inverseTrigFunctions.has(name);
+
       const sanitize = (val) => {
         if (val === null || val === undefined) return null;
         try {
-          const res = originalFn(val);
+          if (isDirectTrig && this.angleUnit === 'deg') {
+            if (typeof val !== 'number' || !Number.isFinite(val)) return null;
+            const mod360 = ((val % 360) + 360) % 360;
+            if (name === 'sin' && (mod360 === 0 || mod360 === 180)) return 0;
+            if (name === 'cos' && (mod360 === 90 || mod360 === 270)) return 0;
+            if (name === 'tan') {
+              if (mod360 === 90 || mod360 === 270) return null;
+              if (mod360 === 0 || mod360 === 180) return 0;
+            }
+            const res = originalFn(val * Math.PI / 180);
+            return (typeof res === 'number' && Number.isFinite(res)) ? res : null;
+          }
+
+          let res = originalFn(val);
+          if (isInverseTrig && this.angleUnit === 'deg' && typeof res === 'number' && Number.isFinite(res)) {
+            res = res * 180 / Math.PI;
+          }
           return (typeof res === 'number' && Number.isFinite(res)) ? res : null;
         } catch {
           return null;
@@ -108,7 +131,22 @@ export default class Calculation {
     configureOperator('subtract', (a, b) => a - b);
     configureOperator('multiply', (a, b) => a * b);
     configureOperator('divide', (a, b) => a / b);
-    configureOperator('atan2', (y, x) => Math.atan2(y, x));
+
+    // atan2 élément par élément, null-safe et sensible à angleUnit ('rad' / 'deg')
+    const safeAtan2 = (y, x) => {
+      if (y === null || x === null || y === undefined || x === undefined) return null;
+      if (typeof y !== 'number' || typeof x !== 'number') return null;
+      const res = Math.atan2(y, x);
+      if (!Number.isFinite(res)) return null;
+      return this.angleUnit === 'deg' ? res * 180 / Math.PI : res;
+    };
+    const typedAtan2 = mathInstance.typed('atan2', {
+      'Array | Matrix, Array | Matrix': (y, x) => mathInstance.map(y, x, (valY, valX) => safeAtan2(valY, valX)),
+      'Array | Matrix, any': (y, x) => mathInstance.map(y, valY => safeAtan2(valY, x)),
+      'any, Array | Matrix': (y, x) => mathInstance.map(x, valX => safeAtan2(y, valX)),
+      'any, any': safeAtan2
+    });
+    mathInstance.import({ atan2: typedAtan2 }, { override: true });
 
     // Fonctions statistiques / agrégation "null-aware" (ignorent les cellules vides/null)
     const extractFiniteValues = (input) => {
