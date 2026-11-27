@@ -1,5 +1,6 @@
-import { formatNumber, toSuperscript, formatUnit } from '../../common/formatter.js';
+import { formatNumber, formatUnit } from '../../common/formatter.js';
 import { showToast } from '../../common/common.js';
+import { formatAxisLabelWithUnit } from './grapher/axisFormatting.js';
 
 const $ = (selector) => document.querySelector(selector);
 
@@ -675,25 +676,9 @@ export default class ExportManager {
     const rawXTitle = this.grapher.currentXCurve || '';
     const xCurveObj = this.data?.getCurveByTitle ? this.data.getCurveByTitle(rawXTitle) : null;
     const { title: xDisplayTitle, unit: rawXUnit } = this.getExportCurveLabel(rawXTitle, xCurveObj?.unit || '', resolvedOverrides);
-    const xUnit = formatUnit(rawXUnit);
     const xAxis = this.grapher.chart.xAxis && this.grapher.chart.xAxis[0];
     const xExponent = (xAxis && xAxis.exponent) || 0;
-
-    let exponentPart = '';
-    if (xExponent) {
-      exponentPart = `×10${toSuperscript(xExponent)}`;
-    }
-
-    let unitText = '';
-    if (exponentPart && xUnit) {
-      unitText = `${exponentPart} ${xUnit}`;
-    } else if (exponentPart) {
-      unitText = exponentPart;
-    } else if (xUnit) {
-      unitText = xUnit;
-    }
-
-    const xTitle = xDisplayTitle ? `${xDisplayTitle}${unitText ? ` (${unitText})` : ''}` : (unitText ? `(${unitText})` : '');
+    const xTitle = formatAxisLabelWithUnit(xDisplayTitle, rawXUnit, xExponent);
 
     const currentYExponent = (this.grapher.chart.yAxis && this.grapher.chart.yAxis[0] && this.grapher.chart.yAxis[0].exponent) || 0;
 
@@ -759,30 +744,10 @@ export default class ExportManager {
             this.userOptions?.unit || '',
             resolvedOverrides
           );
-          const unit = formatUnit(rawUnit);
           const yAxis = this.chart && this.chart.yAxis && this.chart.yAxis[0];
           const yExponent = (yAxis && yAxis.exponent) || currentYExponent || 0;
 
-          let exponentPart = '';
-          if (yExponent) {
-            exponentPart = `×10${toSuperscript(yExponent)}`;
-          }
-
-          let content = '';
-          if (exponentPart && unit) {
-            content = `${exponentPart} ${unit}`;
-          } else if (exponentPart) {
-            content = exponentPart;
-          } else if (unit) {
-            content = unit;
-          }
-
-          let labelText = displayName;
-          if (content) {
-            labelText += ` (${content})`;
-          }
-
-          return labelText;
+          return formatAxisLabelWithUnit(displayName, rawUnit, yExponent);
         }
       }
     };
