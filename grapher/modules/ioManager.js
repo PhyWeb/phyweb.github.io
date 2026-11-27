@@ -1,220 +1,26 @@
-import {Curve, Model, COLOR_LIST} from './data.js';
-import Papa from '../../common/papaparse/papaparse.esm.js';
-import {removeAccents, showToast} from '../../common/common.js';
-import SymbolValidator from './symbolValidator.js';
-
-// Fonctions utilitaires
-function splitFlexible(line, delimiter) {
-  if (typeof line !== 'string') return [];
-  const cleanLine = line.replace(/\r$/, '');
-  const sep = delimiter || (cleanLine.includes('\t') ? '\t' : null);
-  if (sep) {
-    return cleanLine.split(sep).map(cell => cell.trim());
-  }
-  return cleanLine.trim().split(/\s{2,}/).map(cell => cell.trim());
-}
-
-function isTabularData(text) {
-  if (!text || typeof text !== 'string') return false;
-  const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
-  if (lines.length < 2) return false;
-  const delimiter = text.includes('\t') ? '\t' : undefined;
-  const colCounts = lines.map(line => splitFlexible(line, delimiter).length);
-  const firstCount = colCounts[0];
-  const sameCount = colCounts.filter(c => c === firstCount).length;
-  return sameCount >= lines.length - 1 && firstCount >= 2;
-}
-
-/**
- * Vérifie si une valeur représente un nombre valide.
- * Évite les faux positifs de parseFloat (ex: "1ère mesure", "24h", "1/s", "10^-3").
- */
-function isNumeric(val) {
-  if (val === null || val === undefined) return false;
-  const s = String(val).replace(',', '.').trim();
-  if (s === '') return false;
-  return /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/.test(s);
-}
-
-/**
- * Vérifie si une ligne de cellules correspond à des données numériques.
- * Une ligne est considérée numérique si elle contient au moins une cellule non vide
- * et que toutes ses cellules non vides représentent des nombres valides.
- */
-function isLineNumeric(cells) {
-  if (!cells || cells.length === 0) return false;
-  const nonEmpty = cells.map(c => String(c).trim()).filter(c => c.length > 0);
-  return nonEmpty.length > 0 && nonEmpty.every(isNumeric);
-}
-
-/**
- * Nettoie un symbole pour respecter : /^[a-zA-ZÀ-ÿ][a-zA-Z0-9À-ÿ]*$/
- * et le passe en CamelCase si besoin.
- */
-function sanitizeSymbol(str, existingSymbols) {
-  if (!str) return "var";
-  
-  // 1. Transforme les espaces, tirets et underscores en CamelCase
-  let s = str.trim().replace(/[-_\s]+(.)?/g, (match, c) => c ? c.toUpperCase() : '');
-  
-  // 2. Ne garde que les lettres (avec accents) et les chiffres
-  s = s.replace(/[^a-zA-ZÀ-ÿ0-9]/g, '');
-  
-  // 3. S'assure que ça commence par une lettre
-  if (/^[0-9]/.test(s) || s === "") {
-    s = "v" + (s === "" ? "ar" : s);
-  }
-  
-  // 4. Garantit l'absence de mot réservé et l'unicité
-  let finalSymbol = s;
-  let counter = SymbolValidator.isReserved(finalSymbol) ? 1 : 2;
-  while (
-    SymbolValidator.isReserved(finalSymbol) ||
-    (existingSymbols && existingSymbols.has(finalSymbol))
-  ) {
-    finalSymbol = `${s}${counter}`;
-    counter++;
-  }
-  
-  if (existingSymbols) existingSymbols.add(finalSymbol);
-  return finalSymbol;
-}
-
-/**
- * Nettoie une unité : remplace les underscores par des tirets 
- * pour ne pas casser la séparation variable_unité.
- */
-function sanitizeUnit(str) {
-  if (!str) return "";
-  return String(str).replace(/_/g, '-').trim();
-}
-
-/**
- * Isole la partie code et la partie commentaire d'une ligne.
- * Gère les commentaires pleins ou en fin de ligne (#, // et ' de Regressi).
- */
-function splitCodeAndComment(line) {
-  const trimmed = line.trimStart();
-  if (trimmed.startsWith('#') || trimmed.startsWith('//') || trimmed.startsWith("'")) {
-    return { code: '', comment: line };
-  }
-
-  let inString = false;
-  let stringChar = '';
-
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
-
-    if (inString) {
-      if (ch === stringChar && line[i - 1] !== '\\') {
-        inString = false;
-      }
-      continue;
-    }
-
-    if (ch === '"') {
-      inString = true;
-      stringChar = ch;
-      continue;
-    }
-
-    if (ch === '#') {
-      return { code: line.slice(0, i), comment: line.slice(i) };
-    }
-
-    if (ch === '/' && i + 1 < line.length && line[i + 1] === '/') {
-      return { code: line.slice(0, i), comment: line.slice(i) };
-    }
-
-    if (ch === "'" && (i === 0 || /\s/.test(line[i - 1]))) {
-      return { code: line.slice(0, i), comment: line.slice(i) };
-    }
-  }
-
-  return { code: line, comment: '' };
-}
-
-/**
- * Remplace les identifiants de variables dans une expression mathématique
- */
-function replaceVariablesInExpression(expr, nameMap) {
-  if (!expr) return expr;
-  const keys = Object.keys(nameMap).filter(k => k && k.length > 0).sort((a, b) => b.length - a.length);
-  if (keys.length === 0) return expr;
-
-  let result = expr;
-  for (const oldName of keys) {
-    const escapedOld = oldName.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-    const regex = new RegExp(`(?<![a-zA-Z0-9À-ÖØ-öø-ÿ_])${escapedOld}(?![a-zA-Z0-9À-ÖØ-öø-ÿ_])`, 'g');
-    result = result.replace(regex, nameMap[oldName]);
-  }
-  return result;
-}
-
-/**
- * Met à jour un texte de formules en remplaçant les anciens noms par les nouveaux
- * tout en préservant les unités du membre de gauche et les commentaires.
- */
-function updateFormulasReferences(text, nameMap) {
-  if (!text || typeof text !== 'string') return text;
-  if (!nameMap || Object.keys(nameMap).length === 0) return text;
-
-  const lines = text.split('\n');
-  const processedLines = lines.map(rawLine => {
-    let line = rawLine;
-    let lineEnding = '';
-    if (line.endsWith('\r')) {
-      line = line.slice(0, -1);
-      lineEnding = '\r';
-    }
-
-    const { code, comment } = splitCodeAndComment(line);
-    if (!code) {
-      return line + lineEnding;
-    }
-
-    const eqIndex = code.indexOf('=');
-    if (eqIndex === -1) {
-      const updatedCode = replaceVariablesInExpression(code, nameMap);
-      return updatedCode + comment + lineEnding;
-    }
-
-    const rawLhs = code.slice(0, eqIndex);
-    const rawRhs = code.slice(eqIndex + 1);
-
-    // Membre de gauche (LHS) : variable[_unité]
-    const underscoreIndex = rawLhs.indexOf('_');
-    let updatedLhs;
-    if (underscoreIndex !== -1) {
-      const varPart = rawLhs.slice(0, underscoreIndex);
-      const unitPart = rawLhs.slice(underscoreIndex);
-      const match = varPart.match(/^(\s*)(.*?)(\s*)$/);
-      const leading = match ? match[1] : '';
-      const varName = match ? match[2] : varPart;
-      const trailing = match ? match[3] : '';
-      const newVarName = nameMap.hasOwnProperty(varName)
-        ? nameMap[varName]
-        : replaceVariablesInExpression(varName, nameMap);
-      updatedLhs = leading + newVarName + trailing + unitPart;
-    } else {
-      const match = rawLhs.match(/^(\s*)(.*?)(\s*)$/);
-      const leading = match ? match[1] : '';
-      const varName = match ? match[2] : rawLhs;
-      const trailing = match ? match[3] : '';
-      const newVarName = nameMap.hasOwnProperty(varName)
-        ? nameMap[varName]
-        : replaceVariablesInExpression(varName, nameMap);
-      updatedLhs = leading + newVarName + trailing;
-    }
-
-    // Membre de droite (RHS) : expression mathématique
-    const updatedRhs = replaceVariablesInExpression(rawRhs, nameMap);
-
-    return updatedLhs + '=' + updatedRhs + comment + lineEnding;
-  });
-
-  return processedLines.join('\n');
-}
+import {
+  sanitizeSymbol,
+  sanitizeUnit,
+  updateFormulasReferences
+} from './io/formulaUtils.js';
+import {
+  splitFlexible,
+  isTabularData,
+  isNumeric,
+  isLineNumeric,
+  generateCSV,
+  parseCSVFileToTSV
+} from './io/csvCodec.js';
+import {
+  generatePW,
+  parsePWInput,
+  validatePWState,
+  restorePWState
+} from './io/pwCodec.js';
+import {
+  generateRW3,
+  parseRW3Buffer
+} from './io/rw3Codec.js';
 
 //-----------------------------------------------------------------------------------------------
 // --------------------------------------------IOManager-----------------------------------------
@@ -236,7 +42,6 @@ export default class IOManager {
   saveFile(fileName, format) {
     let content = '';
     const separator = ';';
-
     let mimeType = 'text/plain;charset=utf-8';
 
     if (format === 'csv') {
@@ -258,210 +63,30 @@ export default class IOManager {
     this.triggerDownload(content, fileName, mimeType);
   }
 
-/**
- * Génère le contenu JSON pour un fichier de session .pw (version 3.0).
- * Sauvegarde l'état complet de l'application pour une restauration parfaite.
- * @returns {string} Le contenu du fichier .pw en chaîne JSON.
- */
-generatePW() {
-  // 1. Sauvegarder les données, modèles et paramètres
-  const dataToSave = {
-    curves: this.app.data.curves.map(curve => ({
-      title: curve.title,
-      unit: curve.unit,
-      color: curve.color,
-      line: curve.line,
-      markers: curve.markers,
-      lineWidth: curve.lineWidth,
-      lineStyle: curve.lineStyle,
-      markerSymbol: curve.markerSymbol,
-      markerRadius: curve.markerRadius,
-      type: curve.type,
-      values: Array.from(curve)
-    })),
-    
-    parameters: this.app.data.parameters,
-
-    models: this.app.data.models.map(m => ({
-      id: m.id,
-      xTitle: m.x.title,
-      yTitle: m.y.title,
-      type: m.type,
-      visible: m.visible,
-      color: m.color,
-      lineWidth: m.lineWidth,
-      lineStyle: m.lineStyle,
-      minX: m.minX,
-      maxX: m.maxX,
-      parameters: m.parameters,
-      rmse: m.rmse,
-      rSquared: m.rSquared,
-    })),
-
-    annotations: this.app.data.annotations ?? [],
-  };
-
-  // 2. Sauvegarder l'état de l'interface
-  const yCurves = this.app.grapher?.chart?.series
-    ? this.app.grapher.chart.series
-        .filter(s => !s.options?.id?.startsWith('model-') && s.visible !== false)
-        .map(s => s.name)
-    : [];
-
-  // 3. Sauvegarde de l'état de zoom
-  let zoomState = null;
-  if (this.app.grapher.chart) {
-    const xEx = this.app.grapher.chart.xAxis[0].getExtremes();
-    const yEx = this.app.grapher.chart.yAxis[0].getExtremes();
-    const hasUserZoom = this.app.grapher.hasUserZoom;
-    zoomState = {
-      xUserMin: hasUserZoom && xEx.userMin !== undefined ? xEx.userMin : null,
-      xUserMax: hasUserZoom && xEx.userMax !== undefined ? xEx.userMax : null,
-      yUserMin: hasUserZoom && yEx.userMin !== undefined ? yEx.userMin : null,
-      yUserMax: hasUserZoom && yEx.userMax !== undefined ? yEx.userMax : null
-    };
-  }
-
-  const state = {
-    version: "3.0",
-    data: dataToSave,
-    calculations: this.app.editor.getValue(),
-    grapher: {
-      xCurve: this.app.grapher.currentXCurve,
-      yCurves: yCurves,
-      zoom: zoomState
-    },
-    sort: {
-      lastSortVariable: this.app.data.lastSortVariable ?? null,
-    },
-  };
-
-  return JSON.stringify(state, null, 2);
+  /**
+   * Génère le contenu JSON pour un fichier de session .pw (version 3.0).
+   * @returns {string}
+   */
+  generatePW() {
+    return generatePW(this.app);
   }
 
   /**
    * Génère le contenu pour un fichier CSV.
    * @param {string} separator - Le séparateur de colonnes.
-   * @returns {string} Le contenu du fichier CSV.
+   * @param {'row'|'parentheses'|'none'} [unitFormat='row']
+   * @returns {string}
    */
   generateCSV(separator, unitFormat = 'row') {
-    // Préparation des en-têtes et des unités (tableaux simples)
-    const rawHeaders = this.app.data.curves.map(c => c.title);
-    const rawUnits = this.app.data.curves.map(c => c.unit);
-    
-    // Préparation des données (remplacement des points par des virgules pour le format FR)
-    const tableData = this.app.data.getTable();
-    const dataRows = tableData.map(row => {
-      return row.map(cell => (cell === null || cell === undefined) ? '' : String(cell).replace('.', ','));
-    });
-
-    let allRows = [];
-    if (unitFormat === 'parentheses') {
-      const headers = rawHeaders.map((h, i) => {
-        const u = rawUnits[i];
-        return (h && u) ? `${h} (${u})` : (h || u || "");
-      });
-      allRows = [headers, ...dataRows];
-    } else if (unitFormat === 'none') {
-      allRows = [rawHeaders, ...dataRows];
-    } else {
-      // 'row' par défaut (format 2 lignes spécifique à Grapher)
-      allRows = [rawHeaders, rawUnits, ...dataRows];
-    }
-
-    // Délégation à Papa Parse pour générer le texte sécurisé
-    return Papa.unparse(allRows, {
-      delimiter: separator
-    });
+    return generateCSV(this.app.data, separator, unitFormat);
   }
 
   /**
-   * Génère le contenu pour un fichier au format Regressi (.rw3). (Version finale corrigée)
-   * @returns {string} Le contenu du fichier .rw3.
+   * Génère le contenu pour un fichier au format Regressi (.rw3).
+   * @returns {string}
    */
   generateRW3() {
-    // Sélection des grandeurs mesurées
-    const rawCurves = this.app.data.curves.filter(c => c.type !== 'calculation');
-    
-    // Noms et unités des grandeurs mesurées
-    const rawNames = rawCurves.map(c => removeAccents(c.title));
-    const rawUnits = rawCurves.map(c => removeAccents(c.unit));
-
-    // Construction du fichier à partir des données mesurées
-    let output = "EVARISTE REGRESSI WINDOWS 1.0\n";
-    
-    output += `£${rawNames.length} NOM VAR\n`;
-    output += rawNames.join('\n') + '\n';
-    
-    output += `£${rawUnits.length} UNITE VAR\n`;
-    output += rawUnits.join('\n') + '\n';
-    
-    output += "£1 PAGE COMMENT\n\n";
-    
-    // Tableau des valeurs des grandeurs mesurées
-    const numRows = rawCurves.reduce((max, curve) => Math.max(max, curve.length), 0);
-    const dataRows = [];
-
-    for (let i = 0; i < numRows; i++) {
-      const row = rawCurves.map(curve => {
-        const cell = curve[i];
-        return (cell === null || cell === undefined) ? '' : String(cell).replace('.', ',');
-      });
-      dataRows.push(row.join('\t'));
-    }
-
-    output += `&${numRows} VALEUR VAR\n`;
-    output += dataRows.join('\n');
-
-  // 4. On ajoute les formules pour que Regressi puisse créer les grandeurs calculées.
-  const calculationsText = removeAccents(this.app.editor.getValue());
-  if (calculationsText) {
-    const memoLines = calculationsText.split('\n').map(line => {
-      const trimmedLine = line.trim();
-
-      if (!trimmedLine) {
-        return null; // Filtre les lignes vides
-      }
-
-      // Convertit les commentaires au format Regressi (')
-      if (trimmedLine.startsWith('//') || trimmedLine.startsWith('#')) {
-        // Remplace // ou # par une apostrophe
-        return "'" + trimmedLine.substring(trimmedLine.startsWith('//') ? 2 : 1).trim();
-      }
-
-      // Traite les lignes de calcul au format "variable_unité=expression"
-      if (trimmedLine.includes('=')) {
-        const parts = trimmedLine.split('=');
-        const leftPart = parts[0].trim();
-        const expression = parts.slice(1).join('=').trim();
-
-        const lastUnderscoreIndex = leftPart.lastIndexOf('_');
-
-        if (lastUnderscoreIndex > 0 && lastUnderscoreIndex < leftPart.length - 1) {
-          const variableName = leftPart.substring(0, lastUnderscoreIndex);
-          const unit = leftPart.substring(lastUnderscoreIndex + 1);
-
-          if (/^[a-zA-Z]/.test(variableName)) {
-            // Transforme "Var_unit = expression" en "Var = expression"
-            return `${variableName} = ${expression}`;
-          }
-        }
-        
-        return trimmedLine;
-      }
-
-      // Conserve toute autre ligne de texte
-      return trimmedLine;
-
-    }).filter(Boolean);
-
-    if (memoLines.length > 0) {
-      output += `\n£${memoLines.length} MEMO GRANDEURS\n`;
-      output += memoLines.join('\n');
-    }
-  }
-    
-    return output;
+    return generateRW3(this.app);
   }
 
   /**
@@ -478,11 +103,11 @@ generatePW() {
     const blob = new Blob(blobParts, { type: mimeType });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
-    
+
     link.setAttribute("href", url);
     link.setAttribute("download", fileName);
     link.style.visibility = 'hidden';
-    
+
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -511,85 +136,39 @@ generatePW() {
     } else if (fileName.endsWith(".rw3")) {
       await this.loadRW3File(file);
     } else {
-      // Si aucun format ne correspond, on lève une erreur qui sera attrapée par ui.js
       throw new Error(`Le type de fichier "${file?.name}" n'est pas supporté.`);
     }
   }
 
   /**
-  * Charge des données tabulaires depuis le presse-papiers.
-  * @param {string} data - Les données copiées (texte brut).
-  */
+   * Charge des données tabulaires depuis le presse-papiers.
+   * @param {string} data - Les données copiées (texte brut).
+   */
   loadClipboard(data) {
-    // Vérification du format tabulaire
     if (!isTabularData(data)) {
       throw new Error("Les données du presse-papiers ne sont pas au format tabulaire.");
     }
 
-    // Réinitialiser la session uniquement après validation des données du presse-papiers
     this.app.resetSession?.();
-
     this.loadData(data);
   }
 
   /**
-   * Parse une entrée .pw (chaîne JSON éventuellement précédée d'un BOM UTF-8, ou objet direct).
-   * @param {string|object} pwInput
-   * @returns {object}
    * @private
    */
   _parsePWInput(pwInput) {
-    if (typeof pwInput === 'string') {
-      const cleanData = pwInput.replace(/^\uFEFF/, '').trim();
-      if (!cleanData) {
-        throw new Error("Fichier PW invalide : contenu vide.");
-      }
-      return JSON.parse(cleanData);
-    }
-    if (pwInput && typeof pwInput === 'object' && !Array.isArray(pwInput)) {
-      return pwInput;
-    }
-    throw new Error("Fichier PW invalide : format d'entrée incorrect.");
+    return parsePWInput(pwInput);
   }
 
   /**
-   * Valide la structure minimale d'un état .pw avant de modifier ou réinitialiser la session active.
-   * @param {object} state
    * @private
    */
   _validatePWState(state) {
-    if (
-      !state ||
-      typeof state !== 'object' ||
-      Array.isArray(state) ||
-      !state.data ||
-      typeof state.data !== 'object' ||
-      Array.isArray(state.data) ||
-      !Array.isArray(state.data.curves)
-    ) {
-      throw new Error("Fichier PW invalide : données de courbes manquantes.");
-    }
-    if (state.data.curves.some(curve => !curve || typeof curve !== 'object' || Array.isArray(curve))) {
-      throw new Error("Fichier PW invalide : format de courbe incorrect.");
-    }
-    if (
-      state.data.parameters !== undefined &&
-      state.data.parameters !== null &&
-      (typeof state.data.parameters !== 'object' || Array.isArray(state.data.parameters))
-    ) {
-      throw new Error("Fichier PW invalide : format de paramètres incorrect.");
-    }
-    if (state.data.models !== undefined && state.data.models !== null && !Array.isArray(state.data.models)) {
-      throw new Error("Fichier PW invalide : format de modèles incorrect.");
-    }
-    if (state.data.annotations !== undefined && state.data.annotations !== null && !Array.isArray(state.data.annotations)) {
-      throw new Error("Fichier PW invalide : format d'annotations incorrect.");
-    }
+    return validatePWState(state);
   }
 
   /**
    * Valide un état .pw, réinitialise la session puis restaure les données.
-   * @param {object} state
    * @private
    */
   async _applyValidatedPWState(state) {
@@ -599,203 +178,17 @@ generatePW() {
   }
 
   /**
-   * Processes the parsed state from a .pw file or session storage.
-   * @param {object} state - The parsed JSON object representing the application state.
+   * Restaure l'état complet de l'application depuis un objet .pw validé.
    * @private
    */
   async _processPWState(state) {
     this._validatePWState(state);
-
-    const existingSymbols = new Set();
-    const nameMap = {}; // Dictionnaire de traduction { "ancien_nom": "nouveauNom" }
-
-    this.app.data.curves = [];
-    state.data.curves.forEach((savedCurve, index) => {
-      const oldTitle = savedCurve.title || `Courbe ${index + 1}`;
-      const newTitle = sanitizeSymbol(oldTitle, existingSymbols);
-      if (oldTitle !== newTitle) nameMap[oldTitle] = newTitle;
-
-      let curveColor = savedCurve.color;
-      if (!curveColor || typeof curveColor !== 'string') {
-        curveColor = COLOR_LIST.find(c => !this.app.data.curves.some(curve => curve.color === c));
-        if (!curveColor) {
-          // Couleur aléatoire si la palette est épuisée
-          curveColor = '#' + Math.floor(Math.random() * 16777215).toString(16);
-          console.warn('No COLORLIST available, using random color for', newTitle);
-        }
-      }
-
-      const sanitizedUnit = sanitizeUnit(savedCurve.unit);
-      const newCurve = new Curve(
-        newTitle,
-        sanitizedUnit,
-        curveColor,
-        savedCurve.line,
-        savedCurve.markers,
-        savedCurve.lineWidth,
-        savedCurve.lineStyle,
-        savedCurve.markerSymbol,
-        savedCurve.markerRadius
-      );
-      if (savedCurve.type !== undefined) {
-        newCurve.type = savedCurve.type;
-      }
-
-      if (Array.isArray(savedCurve.values)) {
-        savedCurve.values.forEach(val => {
-          if (typeof val === 'number' && Number.isFinite(val)) { 
-            newCurve.push(val);
-          } else if (typeof val === 'string' && val.trim() !== '' && Number.isFinite(Number(val))) {
-            newCurve.push(Number(val));
-          } else {
-            newCurve.push(null);
-          }
-        });
-      } else {
-        console.error('Invalid values array:', savedCurve.values);
-      }
-
-      this.app.data.curves.push(newCurve);
-    });
-
-    // Restauration des paramètres
-    this.app.data.parameters = {};
-    if (state.data.parameters) {
-      for (const [oldName, paramObj] of Object.entries(state.data.parameters)) {
-        const newName = sanitizeSymbol(oldName, existingSymbols);
-        if (oldName !== newName) nameMap[oldName] = newName;
-        this.app.data.parameters[newName] = paramObj;
-      }
-    }
-
-    // Restauration des modèles sans recalcul
-    if (Array.isArray(state.data.models)) {
-      for (const savedModel of state.data.models) {
-        const updatedXTitle = nameMap[savedModel.xTitle] || savedModel.xTitle;
-        const updatedYTitle = nameMap[savedModel.yTitle] || savedModel.yTitle;
-
-        const xCurve = this.app.data.getCurveByTitle(updatedXTitle);
-        const yCurve = this.app.data.getCurveByTitle(updatedYTitle);
-
-        if (!xCurve || !yCurve) {
-          console.warn(`Modèle pour "${savedModel.yTitle}" ignoré car les courbes sont introuvables.`);
-          continue;
-        }
-
-        const model = new Model(xCurve, yCurve, savedModel.type, this.app.data);
-        
-        Object.assign(model, savedModel);
-        model.minX = savedModel.minX ?? savedModel.bornedebut ?? null;
-        model.maxX = savedModel.maxX ?? savedModel.bornefin ?? null;
-
-        // Synchroniser les paramètres du modèle avec nameMap et les enregistrer dans data.parameters
-        if (Array.isArray(savedModel.parameters)) {
-          model.parameters = savedModel.parameters.map(p => {
-            const pName = nameMap[p.name] || p.name;
-            if (!this.app.data.parameters[pName]) {
-              const pUnit = p.unit || '';
-              this.app.data.parameters[pName] = { value: p.value, unit: pUnit, type: 'model' };
-            }
-            const finalUnit = p.unit || this.app.data.parameters[pName]?.unit || '';
-            return {
-              name: pName,
-              value: p.value,
-              ...(finalUnit ? { unit: finalUnit } : (p.unit !== undefined ? { unit: p.unit } : {}))
-            };
-          });
-        }
-        
-        this.app.data.models.push(model);
-        this.app.grapher.addModelSeries(model);
-        this.app.uiManager.createModelPanel(model.id);
-      }
-    }
-
-    // 4. Restaurer les autres éléments
-    let calculationsText = state.calculations ?? "";
-    calculationsText = updateFormulasReferences(calculationsText, nameMap);
-    this.app.editor.setValue(calculationsText);
-    this.app.data.annotations = (state.data.annotations ?? []).map(ann => {
-      if (!ann || typeof ann !== 'object') return ann;
-      const updated = { ...ann };
-      if (updated.type === 'tangent-method' && updated.seriesName && nameMap[updated.seriesName]) {
-        updated.seriesName = nameMap[updated.seriesName];
-      }
-      if (updated.xCurve && nameMap[updated.xCurve]) {
-        updated.xCurve = nameMap[updated.xCurve];
-      }
-      return updated;
-    });
-    this.app.uiManager.updateClearAnnotationsButtonVisibility();
-    
-    // 4. Restaurer le graphique (abscisse, courbes affichées et visibilité)
-    const existingTitles = this.app.data.curves.map(c => c.title);
-    const rawXCurve = state.grapher?.xCurve;
-    const mappedXCurve = rawXCurve ? (nameMap[rawXCurve] || rawXCurve) : null;
-
-    const chosenX = (mappedXCurve && existingTitles.includes(mappedXCurve))
-      ? mappedXCurve
-      : (this.app.data.curves.find(c => c.type === 'x')?.title || existingTitles[0] || null);
-
-    if (chosenX) {
-      this.app.grapher.setXCurve(chosenX, false);
-    }
-
-    this.app.grapher.updateChart();
-
-    if (Array.isArray(state.grapher?.yCurves)) {
-      const mappedYCurves = state.grapher.yCurves.map(y => nameMap[y] || y);
-      const validYCurves = mappedYCurves.filter(y => existingTitles.includes(y));
-      if (mappedYCurves.length === 0 || validYCurves.length > 0) {
-        this.app.grapher.setVisibilityFromList(mappedYCurves);
-      }
-    }
-
-    if (state.sort && state.sort.lastSortVariable) {
-      this.app.data.lastSortVariable = nameMap[state.sort.lastSortVariable] || state.sort.lastSortVariable;
-    }
-
-    // 5. Finaliser la mise à jour de l'UI
-    this.app.spreadsheet.focusFirstCell(false);
-    this.app.spreadsheet.update();
-    this.app.uiManager.updateCalculationUI();
-    this.app.uiManager.updateAllModelPanelVisibilityIcons();
-    this.app.uiManager.updateRecalculateButtonVisibility();
-    this.app.uiManager.updateSortUI();
-    this.app.uiManager.updateXAxisSelector();
-    this.app.grapher.updateModelVisibility();
-    this.app.grapher.reorderLegendByVisibility();
-    
-    // Restauration de l'état de Zoom
-    const autoZoomBtn = typeof document !== 'undefined' ? document.querySelector("#auto-zoom-button") : null;
-    if (state.grapher && state.grapher.zoom) {
-      const z = state.grapher.zoom;
-      // Applique les extrêmes (bornes) sauvegardées, sans forcer un redessin immédiat (false)
-      this.app.grapher.chart.xAxis[0].setExtremes(z.xUserMin ?? null, z.xUserMax ?? null, false);
-      this.app.grapher.chart.yAxis[0].setExtremes(z.yUserMin ?? null, z.yUserMax ?? null, false);
-      
-      const hasManualZoom = z.xUserMin !== null || z.xUserMax !== null || z.yUserMin !== null || z.yUserMax !== null;
-      if (hasManualZoom) {
-        this.app.grapher.hasUserZoom = true;
-        if (autoZoomBtn) autoZoomBtn.classList.remove("is-hidden");
-      } else {
-        this.app.grapher.hasUserZoom = false;
-        if (autoZoomBtn) autoZoomBtn.classList.add("is-hidden");
-        this.app.uiManager.resetZoomUI();
-      }
-      this.app.grapher.chart.redraw(); // Redessine une seule fois avec le bon zoom
-    } else {
-      // Comportement par défaut (anciens fichiers)
-      this.app.grapher.resetZoom();
-      if (autoZoomBtn) autoZoomBtn.classList.add("is-hidden");
-    }
-
-    console.log("Session .pw (v3.0) restaurée avec succès.");
+    await restorePWState(this.app, state);
   }
 
   /**
-   * Loads a .pw file by reading it and processing its content.
-   * @param {File} file - The .pw file to load.
+   * Charge un fichier .pw en le lisant et en restaurant son état.
+   * @param {File} file
    * @returns {Promise<void>}
    */
   async loadPWFile(file) {
@@ -819,8 +212,8 @@ generatePW() {
   }
 
   /**
-   * Loads a session from a .pw content string (e.g., from sessionStorage).
-   * @param {string} pwDataString - The string content of a .pw file.
+   * Charge une session depuis une chaîne .pw (ex. sessionStorage).
+   * @param {string} pwDataString
    * @returns {Promise<void>}
    */
   async loadPWFromString(pwDataString) {
@@ -829,310 +222,42 @@ generatePW() {
       await this._applyValidatedPWState(state);
     } catch (e) {
       console.error("Erreur lors du chargement des données PW depuis la chaîne de caractères :", e);
-      // Propagation de l'erreur pour traitement par l'appelant
       throw new Error("Les données de session sont corrompues ou invalides.");
     }
   }
 
-
   /**
    * Charge des données tabulaires depuis un fichier CSV.
-   * @param {File} file - Le fichier CSV à charger.
+   * @param {File} file
    */
-  loadCSVFile(file) {
-    return new Promise((resolve, reject) => {
-      Papa.parse(file, {
-        worker: true, // Délègue au Web Worker
-        skipEmptyLines: true,
-        complete: (results) => {
-          try {
-            if (!results || !Array.isArray(results.data) || results.data.length === 0) {
-              throw new Error('Le fichier CSV ne contient aucune donnée.');
-            }
-
-            // Conversion en TSV pour la méthode loadData
-            const toTSV = results.data
-              .map(r => (Array.isArray(r) ? r : [r]).map(cell => String(cell).replace(/\t/g, " ")).join("\t"))
-              .join("\n");
-
-            if (!toTSV.trim()) {
-              throw new Error('Le fichier CSV ne contient aucune donnée exploitable.');
-            }
-
-            this.app.resetSession?.();
-            this.loadData(toTSV);
-            resolve();
-          } catch (e) {
-            reject(new Error('Erreur lors de l\'injection des données CSV.'));
-            console.error(e);
-          }
-        },
-        error: (err) => {
-          reject(new Error('Erreur lors de la lecture du fichier CSV.'));
-          console.error(err);
-        }
-      });
-    });
+  async loadCSVFile(file) {
+    const toTSV = await parseCSVFileToTSV(file);
+    try {
+      this.app.resetSession?.();
+      this.loadData(toTSV);
+    } catch (e) {
+      console.error(e);
+      throw new Error("Erreur lors de l'injection des données CSV.");
+    }
   }
 
   /**
    * Charge et restaure une "session" depuis un fichier .rw3.
-   * @param {File} file - Le fichier .rw3 à charger.
+   * @param {File} file
    */
   async loadRW3File(file) {
     try {
       const buf = await file.arrayBuffer();
-
-      // 1) Essai UTF-8
-      const utf8Text = new TextDecoder('utf-8', { fatal: false }).decode(buf);
-
-      // 2) Si “” (U+FFFD) est présent, ou si on voit “Â£” issu d'un mauvais décodage, on bascule en Windows-1252 immédiatement.
-      const needsCp1252 =
-        utf8Text.includes('\uFFFD') || /Â£/.test(utf8Text);
-
-      const data = needsCp1252
-        ? new TextDecoder('windows-1252', { fatal: false }).decode(buf)
-        : utf8Text;
-
-      // Tokenisation en lignes
-      const lines = data.split(/\r?\n/);
-
-      const names = [];
-      const units = [];
-      const genres = []; // 0 = mesurée, 1 = calculée
-      const rows = [];   // lignes mesurées uniquement
-
-      const constNames = [];
-      const constUnits = [];
-      const constRawValues = [];
-
-      const memoLines = [];
-
-      const graphX = [];
-      const graphY = [];
-
-      let i = 0;
-
-      let loadedVarValues = false;
-      let hasWarnedTruncation = false;
-
-      // Lecture d'un bloc "£<n> <KEY>" -> n lignes
-      const readBlock = (key, target, parser = s => s.trim()) => {
-        const line = lines[i]?.trim() ?? '';
-        const m = line.match(new RegExp(String.raw`(\d+)\s+${key}\b`, 'i'));
-        if (!m) return false;
-        const count = parseInt(m[1], 10) || 0;
-        i++;
-        for (let j = 0; j < count && i < lines.length; j++, i++) target.push(parser(lines[i]));
-        return true;
-      };
-
-      // Parcours des sections utiles
-      while (i < lines.length) {
-        const line = lines[i]?.trim() ?? '';
-
-        if (/NOM VAR/i.test(line)) { readBlock('NOM VAR', names); continue; }
-        if (/GENRE VAR/i.test(line)) { readBlock('GENRE VAR', genres, s => parseInt(String(s).trim(), 10) || 0); continue; }
-        if (/UNITE VAR/i.test(line)) { readBlock('UNITE VAR', units, s => String(s).trim()); continue; }
-
-        if (/MEMO GRANDEURS/i.test(line)) { 
-          readBlock('MEMO GRANDEURS', memoLines, s => String(s).replace(/\r$/, '')); 
-          continue; 
-        }
-
-        if (/NOM CONST/i.test(line)) { readBlock('NOM CONST', constNames, s => String(s).trim()); continue; }
-        if (/UNITE CONST/i.test(line)) { readBlock('UNITE CONST', constUnits, s => String(s).trim()); continue; }
-
-
-        // Trouve les courbes à tracer
-        if (/^£\s*0\s+GRAPHE\s+VAR\b/i.test(line)) { i++; continue; }
-        let mX = line.match(/&\s*(\d+)\s+X\b/i);
-        if (mX) { const n = parseInt(mX[1], 10) || 0; i++; 
-          for (let j = 0; j < n && i < lines.length; j++, i++) 
-            graphX.push(String(lines[i]).trim()); 
-          continue; 
-        }
-        let mY = line.match(/&\s*(\d+)\s+Y\b/i);
-        if (mY) { const n = parseInt(mY[1], 10) || 0; i++; 
-          for (let j = 0; j < n && i < lines.length; j++, i++) 
-            graphY.push(String(lines[i]).trim()); 
-          continue; 
-        }
-
-        // Bloc paramètres
-        const mConst = line.match(/&\s*(\d+)\s+VALEUR CONST/i);
-        if (mConst) {
-          const n = parseInt(mConst[1], 10) || 0;
-          i++;
-          for (let j = 0; j < n && i < lines.length; j++, i++) {
-            const raw = String(lines[i]).trim();
-            constRawValues.push(String(raw));
-          }
-          continue;
-        }
-
-        // Bloc valeurs: on ne gère que le cas “colonnes mesurées”
-        const mVal = line.match(/&\s*(\d+)\s+VALEUR VAR/i);
-        if (mVal) {
-          const n = parseInt(mVal[1], 10) || 0;
-          i++; // se placer sur la première ligne de valeurs
-
-          if (!loadedVarValues) {
-            const measuredIdx = genres.length === names.length
-              ? genres.map((g, idx) => (g === 0 ? idx : -1)).filter(idx => idx !== -1)
-              : names.map((_, idx) => idx);
-            const mCount = measuredIdx.length;
-
-            let count = 0;
-            while (i < lines.length && count < n) {
-              const val = lines[i].trim();
-              if (val) {
-                // Convertit chaque valeur en nombre, ou en 'null' si invalide
-                const cols = val.split(/\s+/).map(s => {
-                  const num = Number.parseFloat(String(s).replace(',', '.'));
-                  return Number.isFinite(num) ? num : null;
-                });
-
-                // Remplit avec 'null' si la ligne est plus courte que prévu
-                while (cols.length < mCount) {
-                  cols.push(null);
-                }
-                
-                if (cols.length > mCount) {
-                  if (!hasWarnedTruncation) {
-                    console.warn("Des colonnes excédentaires ont été ignorées car il manque des en-têtes.");
-                    showToast("Certaines colonnes de données ont été ignorées (aucun en-tête correspondant).", "is-warning");
-                    hasWarnedTruncation = true;
-                  }
-                }
-                
-                // Tronque la ligne si elle est plus longue et l'ajouter aux résultats
-                rows.push(cols.slice(0, mCount));
-
-              } else {
-                // Si une ligne de données est vide, la traiter comme une ligne de 'null'
-                rows.push(Array(mCount).fill(null));
-              }
-              i++;
-              count++;
-            }
-
-            loadedVarValues = true;
-          } else {
-            i += n;
-          }
-          continue;
-        }
-
-        i++;
-      }
-
-      if (names.length === 0) throw new Error('Aucun bloc NOM VAR trouvé dans le fichier. Fichier invalide.');
-
-      // Préparer les en-têtes mesurés uniquement
-      const measuredIdx = genres.length === names.length
-        ? genres.map((g, idx) => (g === 0 ? idx : -1)).filter(idx => idx !== -1)
-        : names.map((_, idx) => idx);
-
-      if (measuredIdx.length === 0) {
-        throw new Error('Aucune variable mesurée trouvée dans le fichier. Fichier invalide.');
-      }
-
-      const existingSymbols = new Set();
-      const nameMap = {};
-
-      const cleanNames = names.map(name => {
-        const newName = sanitizeSymbol(name, existingSymbols);
-        if (name !== newName) nameMap[name] = newName;
-        return newName;
-      });
-
-      const cleanConstNames = constNames.map(name => {
-        const newName = sanitizeSymbol(name, existingSymbols);
-        if (name !== newName) nameMap[name] = newName;
-        return newName;
-      });
-
-      const headerNames = measuredIdx.map(i => cleanNames[i]);
-      const headerUnits = (units.length ? measuredIdx.map(i => sanitizeUnit(units[i])) : measuredIdx.map(() => ''));
-
-      // Sérialisation TSV: 2 en-têtes + lignes “mesurées”
-      let output = '';
-      output += headerNames.join('\t') + '\n';
-      output += headerUnits.join('\t') + '\n';
-      for (const r of rows) output += r.join('\t') + '\n';
-
-      // lecture des paramètres
-      const paramLines = [];
-      if (cleanConstNames.length) {
-        const n = Math.max(cleanConstNames.length, constUnits.length, constRawValues.length);
-        for (let k = 0; k < n; k++) {
-          const name = (cleanConstNames[k] || '').trim();
-          const unit = sanitizeUnit(constUnits[k]);
-          const rawVal = String(constRawValues[k] ?? '').trim();
-          if (!name || !rawVal) continue; // on n’écrit que s’il y a une valeur
-          const lhs = unit ? `${name}_${unit}` : name;
-          paramLines.push(`${lhs} = ${rawVal}`);
-        }
-      }
-
-      // déplace un suffixe d'unité commun (ex: _J) du membre de droite vers la gauche
-      function moveUnitSuffixToLHS(line) {
-        const t = String(line);
-        const s = t.trim();
-        if (!s || s.startsWith('#') || s.startsWith('//') || s.startsWith("'")) return t;
-
-        const eq = s.indexOf('=');
-        if (eq === -1) return t;
-
-        const lhs = s.slice(0, eq).trim();
-        const rhs = s.slice(eq + 1).trim();
-
-        // Regex élargie
-        const unitRegexStr = "[a-zA-ZÀ-ÿ0-9µ°\\/\\-\\.\\^]+"; 
-        const varRegexStr = "[a-zA-ZÀ-ÿ][a-zA-Z0-9À-ÿ]*";
-        
-        // Remplacement de \b par des lookarounds supportant les accents
-        const boundLeft = "(?<![a-zA-Z0-9À-ÿ_])";
-        const boundRight = "(?![a-zA-Z0-9À-ÿ_])";
-        
-        const extractRegex = new RegExp(`${boundLeft}${varRegexStr}_(${unitRegexStr})${boundRight}`, 'g');
-        const unitMatches = [...rhs.matchAll(extractRegex)];
-        
-        if (unitMatches.length === 0) return t;
-
-        const suffixes = new Set(unitMatches.map(m => m[1]));
-        if (suffixes.size !== 1) return t;
-        const unit = [...suffixes][0];
-        
-        if (new RegExp(`_(${unitRegexStr})$`).test(lhs)) return t;
-
-        const lhsNew = `${lhs}_${unit}`;
-
-        const escapedUnit = unit.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-        const replaceRegex = new RegExp(`${boundLeft}(${varRegexStr})_${escapedUnit}${boundRight}`, 'g');
-        const rhsNew = rhs.replace(replaceRegex, '$1');
-        
-        return `${lhsNew} = ${rhsNew}`;
-      }
-
-      const normalizedMemoLines = memoLines.map(moveUnitSuffixToLHS);
+      const { tsvOutput, finalText, graphX, graphY, nameMap } = parseRW3Buffer(buf);
 
       // Réinitialiser la session uniquement après lecture et validation complètes du fichier
       this.app.resetSession?.();
 
-      // remplir l’éditeur avec le MEMO + paramètres
-      const memoText = normalizedMemoLines.length ? normalizedMemoLines.join('\n') : '';
-      const paramsText = paramLines.length ? paramLines.join('\n') : '';
-      let finalText = memoText && paramsText ? `${paramsText}\n\n${memoText}` : (memoText || paramsText);
-      finalText = updateFormulasReferences(finalText, nameMap);
       if (finalText) {
         this.app.editor.setValue(finalText.endsWith('\n') ? finalText : finalText + '\n');
       }
 
-
-      // Injection des données
-      this.loadData(output.trim());
+      this.loadData(tsvOutput);
 
       // Configurer le graphe
       const cleanGraphX = graphX.map(t => nameMap[t] || t);
@@ -1147,9 +272,9 @@ generatePW() {
       this.app.grapher.reorderLegendByVisibility();
       if (yNow.length) this.app.grapher.setVisibilityFromList(yNow);
 
-      // Y à activer plus tard (courbes calculées absentes pour l’instant)
+      // Y à activer plus tard (courbes calculées absentes pour l'instant)
       this.app.pendingRW3 = {
-        x: chosenX || null, 
+        x: chosenX || null,
         y: cleanGraphY.filter(t => !existingTitles.includes(t))
       };
     } catch (error) {
@@ -1172,12 +297,10 @@ generatePW() {
       const lines = data.split(/\r?\n/).filter(l => l.trim().length > 0);
       if (lines.length === 0) {
         this.isLoading = false;
-        return; // Rien à charger
+        return;
       }
 
       const delimiter = data.includes('\t') ? '\t' : undefined;
-
-      // Déterminer le nombre maximum de colonnes dans l'ensemble des données
       const numColumns = lines.reduce((max, line) => Math.max(max, splitFlexible(line, delimiter).length), 0);
       if (numColumns === 0) {
         this.isLoading = false;
@@ -1188,32 +311,25 @@ generatePW() {
       let units = undefined;
       let dataLines;
 
-      // Vérifie si la première ligne ressemble à des données (c-à-d, est numérique).
       const firstLineCells = splitFlexible(lines[0], delimiter);
       const isFirstLineNumeric = isLineNumeric(firstLineCells);
 
       if (isFirstLineNumeric) {
-        // Pas de ligne d'en-tête. On génère des en-têtes génériques pour toutes les colonnes.
-        headers = Array.from({
-          length: numColumns
-        }, (_, i) => `Colonne${i + 1}`);
-        units = Array(numColumns).fill(""); // Pas d'unités
-        dataLines = lines; // Toutes les lignes sont des données
+        headers = Array.from({ length: numColumns }, (_, i) => `Colonne${i + 1}`);
+        units = Array(numColumns).fill("");
+        dataLines = lines;
       } else {
-        // La ligne d'en-tête existe.
-        // On s'assure d'avoir un en-tête pour chaque colonne détectée.
         const rawHeaders = splitFlexible(lines[0], delimiter);
         const extractedTitles = [];
         const extractedUnits = [];
 
         for (let i = 0; i < numColumns; i++) {
-          const h = rawHeaders[i] || ""; // Utilise l'en-tête s'il existe, sinon une chaîne vide
+          const h = rawHeaders[i] || "";
           const trimmedHeader = h.trim();
           if (trimmedHeader === "") {
             extractedTitles.push(`Colonne${i + 1}`);
             extractedUnits.push("");
           } else {
-            // Détection d'unité entre parenthèses ou crochets : ex "t (s)", "x [m]"
             const unitMatch = trimmedHeader.match(/^(.+?)\s*[\(\[]([^\)\]]+)[\)\]]$/);
             if (unitMatch) {
               extractedTitles.push(unitMatch[1].trim());
@@ -1225,27 +341,19 @@ generatePW() {
           }
         }
 
-        // Vérifie si la deuxième ligne correspond aux unités ou aux données
         if (lines.length > 1) {
           const secondLineCells = splitFlexible(lines[1], delimiter);
           const isSecondLineNumeric = isLineNumeric(secondLineCells);
 
           if (isSecondLineNumeric) {
-            // La deuxième ligne contient des données, donc pas de ligne d'unités explicite.
-            // On utilise les unités extraites des en-têtes le cas échéant.
             units = extractedUnits;
             dataLines = lines.slice(1);
           } else {
-            // La deuxième ligne contient les unités. On s'assure d'en avoir pour chaque colonne.
-            // Les unités de la 2e ligne priment, avec repli sur les unités extraites de la 1ère ligne.
             const rawUnits = splitFlexible(lines[1], delimiter);
-            units = Array.from({
-              length: numColumns
-            }, (_, i) => sanitizeUnit(rawUnits[i]) || extractedUnits[i] || "");
+            units = Array.from({ length: numColumns }, (_, i) => sanitizeUnit(rawUnits[i]) || extractedUnits[i] || "");
             dataLines = lines.slice(2);
           }
         } else {
-          // Il n'y a qu'une ligne d'en-tête, pas de données
           units = extractedUnits;
           dataLines = [];
         }
@@ -1254,7 +362,6 @@ generatePW() {
         headers = extractedTitles.map(h => sanitizeSymbol(h, existingSymbols));
       }
 
-      // Crée les courbes et les remplit
       const curvesData = headers.map(() => []);
 
       for (const line of dataLines) {
@@ -1266,16 +373,14 @@ generatePW() {
         }
       }
 
-      const PERFORMANCE_THRESHOLD = Infinity; // Désactivé pour l'instant (plus utile depuis la désactivation des animations)
+      const PERFORMANCE_THRESHOLD = Infinity;
       for (let i = 0; i < headers.length; i++) {
-
         const dataToAdd = curvesData[i];
 
         let curve;
-        // Mode performance : masquage des marqueurs si grand nombre de points
         if (dataToAdd.length > PERFORMANCE_THRESHOLD) {
           curve = this.app.addCurve(headers[i], units ? units[i] : undefined, true, false);
-        } else{
+        } else {
           curve = this.app.addCurve(headers[i], units ? units[i] : undefined);
         }
 
@@ -1285,7 +390,7 @@ generatePW() {
       }
 
       console.log("data loaded", this.app.data);
-      this.app.applyCalculation(this.app.editor.getValue()); // Re-applique les calculs
+      this.app.applyCalculation(this.app.editor.getValue());
       this.app.spreadsheet.focusFirstCell(false);
       this.app.spreadsheet.update();
       this.app.grapher.updateChart();
@@ -1295,11 +400,8 @@ generatePW() {
       this.app.grapher.chart.yAxis[0].setExtremes(null, null);
 
       this.app.uiManager.updateCalculationUI();
-
       this.app.uiManager.updateSortUI();
       this.app.uiManager.updateXAxisSelector();
-
-
     } finally {
       this.isLoading = false;
     }

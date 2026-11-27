@@ -1,3 +1,15 @@
+import { stripInlineComment } from './io/formulaUtils.js';
+import {
+  numericalDerivative,
+  numericalIntegration,
+  movingAverageSmooth
+} from './calculation/numericalAnalysis.js';
+import {
+  normalizeFunctionCases,
+  preprocessSpecialCharacters,
+  preprocessDecimalCommas
+} from './calculation/expressionPreprocessor.js';
+
 const $ = document.querySelector.bind(document);
 
 /*----------------------------------------------------------------------------------------------
@@ -5,20 +17,19 @@ const $ = document.querySelector.bind(document);
 ----------------------------------------------------------------------------------------------*/
 export default class Calculation {
   /**
-   * @param {object} data - L'objet de données contenant les courbes. Ex: { curves: [{ title: 'x', values: [1,2,3] }] }
+   * @param {object} initialSettings
    */
   constructor(initialSettings) {
-    
     this.scalarFunctions = [
-      'sqrt', 'cbrt', 'abs', 'exp', 'log', 'ln', 
+      'sqrt', 'cbrt', 'abs', 'exp', 'log', 'ln',
       'round', 'floor', 'ceil',
-      'sin', 'cos', 'tan', 'asin', 'acos', 'atan', 
+      'sin', 'cos', 'tan', 'asin', 'acos', 'atan',
       'sinh', 'cosh', 'tanh', 'asinh', 'acosh', 'atanh'
     ];
 
     this.derivatePoints = initialSettings.derivatePoints; // Nombre de points pour la dérivation
     this.derivateEdges = initialSettings.derivateEdges; // Calculer les bords ou non
-    
+
     // Créer une instance de math.js pré-configurée pour gérer les opérations sur les tableaux.
     this.mathInstance = this.createConfiguredMathInstance();
   }
@@ -34,7 +45,7 @@ export default class Calculation {
 
     // Créer 'ln' comme un alias pour la fonction 'log' (logarithme népérien par défaut)
     mathInstance.import({ ln: mathInstance.log });
-    
+
     // Redéfinir 'log' pour qu'il soit le logarithme en base 10
     mathInstance.import({ log: mathInstance.log10 }, { override: true });
 
@@ -133,242 +144,29 @@ export default class Calculation {
       }
     };
     const typedPow = mathInstance.typed('pow', {
-      // signature pour le cas: Array ^ Array
       'Array | Matrix, Array | Matrix': (base, exponent) => mathInstance.map(base, exponent, (b, e) => safePow(b, e)),
-
-      // Signature pour le cas: Array ^ Nombre
-      'Array | Matrix, any': function(base, exponent) {
+      'Array | Matrix, any': function (base, exponent) {
         return mathInstance.map(base, (b) => {
           if (b === null || exponent === null) return null;
-          // Gère le cas des bases négatives avec exposants non-entiers qui donnerait un résultat complexe
           if (b < 0 && exponent % 1 !== 0) return null;
           return safePow(b, exponent);
         });
       },
-      
-      // Signature pour le cas: Nombre ^ Array
-      'any, Array | Matrix': function(base, exponent) {
+      'any, Array | Matrix': function (base, exponent) {
         return mathInstance.map(exponent, (e) => {
           if (e === null || base === null) return null;
           if (base < 0 && e % 1 !== 0) return null;
           return safePow(base, e);
         });
       },
-
-      // Signature de base pour le cas: Nombre ^ Nombre
-      'any, any': function(base, exponent) {
+      'any, any': function (base, exponent) {
         if (base === null || exponent === null) return null;
         return safePow(base, exponent);
       }
     });
     mathInstance.import({ pow: typedPow }, { override: true });
 
-
-    // --- Ajout de la fonction de dérivation numérique avec options de lissage ---
-
-    /**
-     * Calcule la dérivée numérique de y par rapport à x. Gère les valeurs null et les grilles à pas variable.
-     * @param {Array<number|null>} y Le tableau des valeurs de la fonction.
-     * @param {Array<number|null>} x Le tableau des points de la variable (ex: le temps).
-     * @param {number} [points=5] Le nombre de points à utiliser pour le stencil (3, 5, ou 7).
-     * @param {boolean} [calculateEdges=true] Si false, les points sur les bords qui ne peuvent pas utiliser le stencil complet retourneront null.
-     * @returns {Array<number|null>} La dérivée numérique.
-     */
-    const numericalDerivative = (y, x, points = 5, calculateEdges = true) => {
-        const toArr = (v) => (v && v.toArray ? v.toArray() : v);
-        const yArr = toArr(y);
-        const xArr = toArr(x);
-
-        const nMin = Math.min(yArr.length, xArr.length);
-        const nMax = Math.max(yArr.length, xArr.length);
-
-        if (nMin < points) {
-            throw new Error(`Pas assez de points pour une dérivation à ${points} points. Il en faut au moins ${points}.`);
-        }
-
-
-        const n = nMin;
-        let direction = 0; // 1 pour croissant, -1 pour décroissant
-        let prevX = null;
-        for (let i = 0; i < n; i++) {
-          const currentX = xArr[i];
-          if (currentX === null || currentX === undefined || !isFinite(currentX)) continue;
-          if (prevX !== null) {
-            const diffX = currentX - prevX;
-            if (diffX === 0) {
-              throw new Error("la grandeur de dérivation contient deux valeurs identiques consécutives.");
-            }
-            const stepDir = Math.sign(diffX);
-            if (direction === 0) {
-              direction = stepDir;
-            } else if (stepDir !== direction) {
-              throw new Error("la grandeur de dérivation n'est pas triée. Veuillez trier vos données dans le tableur.");
-            }
-          }
-          prevX = currentX;
-        }
-
-        const result = new Array(nMax).fill(null);
-
-
-
-        // Vérification de la régularité du pas d'échantillonnage
-        const isUniformSpacing = (coords, startIdx, count) => {
-            if (startIdx < 0 || startIdx + count > coords.length) return false;
-            for (let k = 0; k < count; k++) {
-                if (coords[startIdx + k] === null || coords[startIdx + k] === undefined || !Number.isFinite(coords[startIdx + k])) {
-                    return false;
-                }
-            }
-            const firstStep = coords[startIdx + 1] - coords[startIdx];
-            if (firstStep === 0) return false;
-            const tol = 1e-3 * Math.abs(firstStep);
-            for (let k = 1; k < count - 1; k++) {
-                const step = coords[startIdx + k + 1] - coords[startIdx + k];
-                if (Math.sign(step) !== Math.sign(firstStep) || Math.abs(step - firstStep) > tol) {
-                    return false;
-                }
-            }
-            return true;
-        };
-
-        const isValidPoint = (idx) =>
-            idx >= 0 && idx < n &&
-            yArr[idx] !== null && yArr[idx] !== undefined && Number.isFinite(yArr[idx]) &&
-            xArr[idx] !== null && xArr[idx] !== undefined && Number.isFinite(xArr[idx]);
-
-        const hasValidWindow = (startIdx, count) => {
-            if (startIdx < 0 || startIdx + count > n) return false;
-            for (let k = 0; k < count; k++) {
-                if (!isValidPoint(startIdx + k)) return false;
-            }
-            return true;
-        };
-
-        // Repère les bornes [segStart[i], segEnd[i]] de chaque segment contigu de points valides
-        // afin d'identifier les vrais bords même lorsque yArr commence/finit par des null (ex: dérivée seconde)
-        // ou contient des valeurs manquantes.
-        const segStart = new Array(n).fill(-1);
-        const segEnd = new Array(n).fill(-1);
-        let currentStart = -1;
-        for (let i = 0; i < n; i++) {
-            if (isValidPoint(i)) {
-                if (currentStart === -1) currentStart = i;
-                segStart[i] = currentStart;
-            } else if (currentStart !== -1) {
-                for (let k = currentStart; k < i; k++) segEnd[k] = i - 1;
-                currentStart = -1;
-            }
-        }
-        if (currentStart !== -1) {
-            for (let k = currentStart; k < n; k++) segEnd[k] = n - 1;
-        }
-
-        // Détermine si le point i est un bord devant être masqué lorsque calculateEdges est false.
-        // Un point n'est considéré comme bord pour un stencil 5 ou 7 points que si ce stencil d'ordre supérieur
-        // est effectivement applicable sur le segment valide avoisinant (ou si le segment uniforme est plus court que le stencil).
-        const isEdgePoint = (i) => {
-            const start = segStart[i];
-            const end = segEnd[i];
-            if (start === -1 || end === -1) return true;
-            if (i === start || i === end) return true;
-
-            const segLen = end - start + 1;
-            const distStart = i - start;
-            const distEnd = end - i;
-
-            if (points >= 7) {
-                const startWin = Math.min(7, segLen);
-                const endWin = Math.min(7, segLen);
-                if ((distStart === 1 || distStart === 2) && isUniformSpacing(xArr, start, startWin)) return true;
-                if ((distEnd === 1 || distEnd === 2) && isUniformSpacing(xArr, end - endWin + 1, endWin)) return true;
-            }
-            if (points >= 5) {
-                const startWin = Math.min(5, segLen);
-                const endWin = Math.min(5, segLen);
-                if (distStart === 1 && isUniformSpacing(xArr, start, startWin)) return true;
-                if (distEnd === 1 && isUniformSpacing(xArr, end - endWin + 1, endWin)) return true;
-            }
-            return false;
-        };
-
-        let warnedNonUniform = false;
-
-        for (let i = 0; i < n; i++) {
-            if (!isValidPoint(i)) {
-                continue;
-            }
-
-            const isEdge = isEdgePoint(i);
-
-            if (isEdge && !calculateEdges) {
-                continue;
-            }
-
-            let computed = false;
-
-            // Stencil uniforme à 7 points (ordre 6)
-            if (points >= 7 && i >= 3 && i < n - 3) {
-                const hasAllValues = hasValidWindow(i - 3, 7);
-                if (hasAllValues && isUniformSpacing(xArr, i - 3, 7)) {
-                    const h = (xArr[i + 3] - xArr[i - 3]) / 6;
-                    if (h !== 0) {
-                        result[i] = (-yArr[i - 3] + 9 * yArr[i - 2] - 45 * yArr[i - 1] + 45 * yArr[i + 1] - 9 * yArr[i + 2] + yArr[i + 3]) / (60 * h);
-                        computed = true;
-                    }
-                } else if (hasAllValues && !warnedNonUniform && points >= 7) {
-                    console.warn("Dérivation : pas variable détecté pour le stencil à 7 points. Utilisation du schéma adapté au pas variable.");
-                    warnedNonUniform = true;
-                }
-            }
-
-            // Stencil uniforme à 5 points (ordre 4)
-            if (!computed && points >= 5 && i >= 2 && i < n - 2) {
-                const hasAllValues = hasValidWindow(i - 2, 5);
-                if (hasAllValues && isUniformSpacing(xArr, i - 2, 5)) {
-                    const h = (xArr[i + 2] - xArr[i - 2]) / 4;
-                    if (h !== 0) {
-                        result[i] = (yArr[i - 2] - 8 * yArr[i - 1] + 8 * yArr[i + 1] - yArr[i + 2]) / (12 * h);
-                        computed = true;
-                    }
-                } else if (hasAllValues && !warnedNonUniform && points >= 5) {
-                    console.warn("Dérivation : pas variable détecté pour le stencil à 5 points. Utilisation du schéma adapté au pas variable.");
-                    warnedNonUniform = true;
-                }
-            }
-
-            // Schéma non-uniforme à 3 points (Lagrange / différences finies d'ordre 2 pour pas variable)
-            if (!computed && i >= 1 && i < n - 1) {
-                if (isValidPoint(i - 1) && isValidPoint(i + 1)) {
-                    const h1 = xArr[i] - xArr[i - 1];
-                    const h2 = xArr[i + 1] - xArr[i];
-                    if (h1 !== 0 && h2 !== 0 && (h1 + h2) !== 0) {
-                        result[i] = (Math.pow(h1, 2) * (yArr[i + 1] - yArr[i]) + Math.pow(h2, 2) * (yArr[i] - yArr[i - 1])) / (h1 * h2 * (h1 + h2));
-                        computed = true;
-                    }
-                }
-            }
-
-            // Repli sur différences finies à 2 points aux extrémités ou près des points manquants
-            if (!computed && calculateEdges) {
-                if (i + 1 < n && isValidPoint(i + 1)) {
-                    const dx = xArr[i + 1] - xArr[i];
-                    if (dx !== 0) {
-                        result[i] = (yArr[i + 1] - yArr[i]) / dx;
-                        computed = true;
-                    }
-                } else if (i - 1 >= 0 && isValidPoint(i - 1)) {
-                    const dx = xArr[i] - xArr[i - 1];
-                    if (dx !== 0) {
-                        result[i] = (yArr[i] - yArr[i - 1]) / dx;
-                        computed = true;
-                    }
-                }
-            }
-        }
-        return result;
-    };
-
+    // --- Dérivation numérique ---
     const typedDiff = mathInstance.typed('diff', {
       'number, Array | Matrix': (y, x) => mathInstance.zeros((x && x.length !== undefined) ? x.length : (x.size && x.size()[0]) || 0).toArray(),
       'Array | Matrix, Array | Matrix': (y, x) => numericalDerivative(y, x, this.derivatePoints, this.derivateEdges),
@@ -381,75 +179,7 @@ export default class Calculation {
     });
     mathInstance.import({ diff: typedDiff }, { override: true });
 
-    // --- Ajout de la fonction d'intégration numérique (primitive par trapèzes cumulés) ---
-
-    /**
-     * Calcule la primitive numérique de y par rapport à x via la méthode des trapèzes cumulés.
-     * @param {Array<number|null>} y Le tableau des valeurs de la fonction à intégrer.
-     * @param {Array<number|null>} x Le tableau des points de la variable d'intégration.
-     * @param {number} [initialValue=0] La valeur initiale de la primitive au premier point.
-     * @returns {Array<number|null>} La primitive numérique cumulée.
-     */
-    const numericalIntegration = (y, x, initialValue = 0) => {
-      const toArr = (v) => (v && v.toArray ? v.toArray() : v);
-      const yArr = toArr(y);
-      const xArr = toArr(x);
-
-      const nMin = Math.min(yArr.length, xArr.length);
-      const nMax = Math.max(yArr.length, xArr.length);
-
-      if (nMin < 2) {
-        throw new Error("Pas assez de points pour calculer une primitive. Il en faut au moins 2.");
-      }
-
-      let direction = 0; // 1 pour croissant, -1 pour décroissant
-      let prevX = null;
-      for (let i = 0; i < nMin; i++) {
-        const currentX = xArr[i];
-        if (currentX === null || currentX === undefined || !Number.isFinite(currentX)) continue;
-        if (prevX !== null) {
-          const diffX = currentX - prevX;
-          if (diffX === 0) {
-            throw new Error("la grandeur d'intégration contient deux valeurs identiques consécutives.");
-          }
-          const stepDir = Math.sign(diffX);
-          if (direction === 0) {
-            direction = stepDir;
-          } else if (stepDir !== direction) {
-            throw new Error("la grandeur d'intégration n'est pas triée. Veuillez trier vos données dans le tableur.");
-          }
-        }
-        prevX = currentX;
-      }
-
-      const result = new Array(nMax).fill(null);
-      let cumulativeSum = Number(initialValue) || 0;
-      let prevValidIdx = -1;
-
-      for (let i = 0; i < nMin; i++) {
-        const xVal = xArr[i];
-        const yVal = yArr[i];
-        const isValid = xVal !== null && xVal !== undefined && Number.isFinite(xVal) &&
-                        yVal !== null && yVal !== undefined && Number.isFinite(yVal);
-
-        if (!isValid) {
-          continue;
-        }
-
-        if (prevValidIdx === -1) {
-          result[i] = cumulativeSum;
-          prevValidIdx = i;
-        } else {
-          const dx = xVal - xArr[prevValidIdx];
-          cumulativeSum += 0.5 * (yArr[prevValidIdx] + yVal) * dx;
-          result[i] = cumulativeSum;
-          prevValidIdx = i;
-        }
-      }
-
-      return result;
-    };
-
+    // --- Intégration numérique (primitive par trapèzes cumulés) ---
     const typedIntegrate = mathInstance.typed('integrate', {
       'Array | Matrix, Array | Matrix': (y, x) => numericalIntegration(y, x, 0),
       'Array | Matrix, Array | Matrix, number': (y, x, y0) => numericalIntegration(y, x, y0),
@@ -476,56 +206,7 @@ export default class Calculation {
     });
     mathInstance.import({ integrate: typedIntegrate }, { override: true });
 
-    // --- Ajout de la fonction de lissage par moyenne mobile centrée ---
-
-    /**
-     * Calcule la moyenne mobile centrée d'un tableau y.
-     * @param {Array<number|null>} y Le tableau des valeurs à lisser.
-     * @param {number} [windowSize=5] La taille de la fenêtre de lissage (entier >= 3).
-     * @returns {Array<number|null>} Les valeurs lissées.
-     */
-    const movingAverageSmooth = (y, windowSize = 5) => {
-      const toArr = (v) => (v && v.toArray ? v.toArray() : v);
-      const yArr = toArr(y);
-
-      const w = Math.round(Number(windowSize));
-      if (!Number.isFinite(w) || w < 3) {
-        throw new Error("La fenêtre de lissage doit être un entier supérieur ou égal à 3.");
-      }
-
-      const half = Math.floor((w - 1) / 2);
-
-      if (!yArr || yArr.length < w) {
-        throw new Error(`Pas assez de points pour un lissage sur ${w} points.`);
-      }
-
-      const result = new Array(yArr.length).fill(null);
-
-      for (let i = 0; i < yArr.length; i++) {
-        const valI = yArr[i];
-        if (valI === null || valI === undefined || !Number.isFinite(valI)) {
-          result[i] = null;
-          continue;
-        }
-
-        const maxHalf = Math.min(half, i, yArr.length - 1 - i);
-        let sum = 0;
-        let count = 0;
-
-        for (let j = i - maxHalf; j <= i + maxHalf; j++) {
-          const val = yArr[j];
-          if (val !== null && val !== undefined && Number.isFinite(val)) {
-            sum += val;
-            count++;
-          }
-        }
-
-        result[i] = count > 0 ? sum / count : null;
-      }
-
-      return result;
-    };
-
+    // --- Lissage par moyenne mobile centrée ---
     const typedSmooth = mathInstance.typed('smooth', {
       'Array | Matrix': (y) => movingAverageSmooth(y, 5),
       'Array | Matrix, number': (y, n) => movingAverageSmooth(y, n),
@@ -537,232 +218,22 @@ export default class Calculation {
     return mathInstance;
   }
 
-  /**
-   * Normalise la casse des fonctions connues dans une expression.
-   * @param {string} expression - L'expression à traiter.
-   * @returns {string} L'expression avec les fonctions en minuscules.
-   */
   _normalizeFunctionCases(expression) {
-    const knownFunctions = this.getAvailableFunctions();
-    // Crée une regex insensible à la casse pour toutes les fonctions connues
-    const regex = new RegExp(`\\b(${knownFunctions.join('|')})\\b(?=\\s*\\()`, 'gi');
-    
-    return expression.replace(regex, (match) => match.toLowerCase());
+    return normalizeFunctionCases(expression, this.getAvailableFunctions());
   }
 
-  /**
-   * Remplace les exposants Unicode (ex: '²', '³', '⁻¹', '⁻²') par leur équivalent pour math.js ('^2', '^3', '^(-1)', '^(-2)').
-   * @param {string} expression - L'expression à traiter.
-   * @returns {string} - L'expression avec les exposants convertis.
-   */
   preprocessSpecialCharacters(expression) {
-    if (!expression || typeof expression !== 'string') return expression;
-    const superscriptMap = {
-      '⁰': '0', '¹': '1', '²': '2', '³': '3', '⁴': '4',
-      '⁵': '5', '⁶': '6', '⁷': '7', '⁸': '8', '⁹': '9',
-      '⁺': '+', '⁻': '-'
-    };
-    return expression.replace(/([⁺⁻]?[⁰¹²³⁴⁵⁶⁷⁸⁹]+)/g, (match) => {
-      const ascii = match.split('').map(ch => superscriptMap[ch] || ch).join('');
-      if (ascii.startsWith('-') || ascii.startsWith('+')) {
-        return `^(${ascii})`;
-      }
-      return `^${ascii}`;
-    });
+    return preprocessSpecialCharacters(expression);
   }
 
-  /**
-   * Traite les virgules dans une expression pour concilier la notation décimale française
-   * (ex: 0,5 * m) et les séparateurs d'arguments ou d'éléments (ex: pow(2,3), [1,2,3], pow(x1,2)) :
-   * - Remplace les points-virgules ';' utilisés comme séparateurs par des virgules
-   * - Préserve les virgules comme séparateurs dans les tableaux [1,2,3]
-   * - Préserve les virgules comme séparateurs d'arguments dans les fonctions multi-arguments (pow(2,3), min(2,3), atan2(1,2)...)
-   * - Préserve les virgules après une variable se terminant par un chiffre (ex: pow(x1,2))
-   * - Convertit les virgules décimales en points (ex: 1,5 * a -> 1.5 * a, sin(0,5) -> sin(0.5))
-   * @param {string} expression - L'expression à traiter.
-   * @returns {string} - L'expression avec les virgules traitées.
-   */
   preprocessDecimalCommas(expression) {
-    if (!expression || typeof expression !== 'string') return expression;
-
-    // Normalise le point-virgule (séparateur usuel en notation française quand la virgule est décimale)
-    let expr = expression.replace(/;\s*/g, ', ');
-
-    const multiArgFunctions = new Set([
-      'pow', 'diff', 'integrate', 'smooth', 'atan2', 'min', 'max', 'hypot', 'gcd', 'lcm', 'nthroot', 'mod'
-    ]);
-
-    // Trouve l'indice de la parenthèse fermante correspondante
-    const findMatchingCloseParen = (str, openIndex) => {
-      let depth = 0;
-      for (let k = openIndex; k < str.length; k++) {
-        if (str[k] === '(') depth++;
-        else if (str[k] === ')') {
-          depth--;
-          if (depth === 0) return k;
-        }
-      }
-      return -1;
-    };
-
-    // Compte le nombre de virgules au niveau 0 (hors sous-parenthèses/crochets) entre deux indices
-    const countTopLevelCommas = (str, start, end) => {
-      let count = 0;
-      let pDepth = 0;
-      let bDepth = 0;
-      for (let k = start; k < end; k++) {
-        const c = str[k];
-        if (c === '(') pDepth++;
-        else if (c === ')') pDepth--;
-        else if (c === '[') bDepth++;
-        else if (c === ']') bDepth--;
-        else if (c === ',' && pDepth === 0 && bDepth === 0) {
-          count++;
-        }
-      }
-      return count;
-    };
-
-    const stack = [];
-    let result = '';
-    const len = expr.length;
-    let i = 0;
-
-    while (i < len) {
-      const char = expr[i];
-
-      // Parenthèse ouvrante
-      if (char === '(') {
-        let j = result.length - 1;
-        while (j >= 0 && /\s/.test(result[j])) j--;
-        const identEnd = j + 1;
-        while (j >= 0 && /[a-zA-ZÀ-ÖØ-öø-ÿ0-9_]/.test(result[j])) j--;
-        const ident = result.slice(j + 1, identEnd).toLowerCase();
-
-        const closeIndex = findMatchingCloseParen(expr, i);
-        const topLevelCommas = closeIndex !== -1 ? countTopLevelCommas(expr, i + 1, closeIndex) : 0;
-
-        if (ident && multiArgFunctions.has(ident)) {
-          stack.push({ type: 'multiArgCall', name: ident, topLevelCommas });
-        } else if (ident) {
-          stack.push({ type: 'singleArgCall', name: ident, topLevelCommas });
-        } else {
-          stack.push({ type: 'paren', topLevelCommas });
-        }
-
-        result += char;
-        i++;
-        continue;
-      }
-
-      // Parenthèse fermante
-      if (char === ')') {
-        if (stack.length > 0 && stack[stack.length - 1].type !== 'bracket') {
-          stack.pop();
-        }
-        result += char;
-        i++;
-        continue;
-      }
-
-      // Crochet ouvrant (tableau)
-      if (char === '[') {
-        stack.push({ type: 'bracket' });
-        result += char;
-        i++;
-        continue;
-      }
-
-      // Crochet fermant
-      if (char === ']') {
-        if (stack.length > 0 && stack[stack.length - 1].type === 'bracket') {
-          stack.pop();
-        }
-        result += char;
-        i++;
-        continue;
-      }
-
-      // Virgule
-      if (char === ',') {
-        const prevChar = i > 0 ? expr[i - 1] : '';
-        const nextChar = i + 1 < len ? expr[i + 1] : '';
-
-        // Une virgule décimale est nécessairement collée entre deux chiffres
-        const isBetweenDigits = /\d/.test(prevChar) && /\d/.test(nextChar);
-
-        // Vérifier si le chiffre avant la virgule fait partie d'un identifiant (ex: pow(x1,2))
-        let isPartOfIdentifier = false;
-        if (isBetweenDigits) {
-          let k = result.length - 1;
-          while (k >= 0 && /\d/.test(result[k])) k--;
-          if (k >= 0 && /[a-zA-ZÀ-ÖØ-öø-ÿ_]/.test(result[k])) {
-            isPartOfIdentifier = true;
-          }
-        }
-
-        const currentContext = stack.length > 0 ? stack[stack.length - 1] : null;
-
-        if (isBetweenDigits && isPartOfIdentifier) {
-          result += ', ';
-          i++;
-          continue;
-        }
-
-        if (isBetweenDigits && !isPartOfIdentifier) {
-          // Dans un tableau [1,2,3], la virgule sépare des éléments
-          if (currentContext && currentContext.type === 'bracket') {
-            result += ', ';
-            i++;
-            continue;
-          }
-
-          // Dans une fonction multi-arguments :
-          // Si la fonction ne comporte qu'une seule virgule à son niveau principal (ex: pow(2,3), min(2,3), atan2(1,2)),
-          // cette virgule est obligatoirement le séparateur d'arguments.
-          if (currentContext && currentContext.type === 'multiArgCall' && currentContext.topLevelCommas === 1) {
-            result += ', ';
-            i++;
-            continue;
-          }
-
-          // Sinon, c'est une virgule décimale (ex: 0,5 * m, sin(0,5), pow(0,5, 2))
-          result += '.';
-          i++;
-          continue;
-        }
-
-        result += ',';
-        i++;
-        continue;
-      }
-
-      result += char;
-      i++;
-    }
-
-    return result;
+    return preprocessDecimalCommas(expression);
   }
 
-  /**
-   * Retire les commentaires inline (#, // et ' précédé d'un espace) d'une expression.
-   * Préserve le contenu à l'intérieur des chaînes de caractères ("...").
-   * @param {string} str - L'expression à nettoyer.
-   * @returns {string} - L'expression sans commentaire.
-   */
   stripInlineComment(str) {
     return stripInlineComment(str);
   }
 
-  /**
-   * Prétraite une formule pour la normaliser avant analyse syntaxique et évaluation :
-   * - Retire les commentaires inline (#, // et ' précédé d'un espace)
-   * - Remplace les virgules décimales par des points tout en préservant les séparateurs d'arguments
-   * - Remplace les caractères spéciaux (ex: '²' -> '^2')
-   * - Normalise la casse des fonctions connues (ex: SQRT -> sqrt)
-   * @param {string} expression - L'expression à traiter.
-   * @returns {string} - L'expression nettoyée et normalisée.
-   */
   preprocessExpression(expression) {
     if (!expression || typeof expression !== 'string') return expression;
     let clean = stripInlineComment(expression);
@@ -783,201 +254,155 @@ export default class Calculation {
     return this.mathInstance.evaluate(cleanExpression, scope);
   }
 
-/**
- * Évalue un bloc de formules en gérant les dépendances et en validant les variables.
- * @param {Array<object>} formulas - Un tableau d'objets {variableName, expression, unit}.
- * @param {object} initialScope - Le scope de base avec les courbes et paramètres initiaux.
- * @returns {{results: Array<object>, errors: Array<object>}} Un objet contenant les résultats et les erreurs.
- */
-evaluateBlock(formulas, initialScope) {
-  console.log('Évaluation des formules avec le scope initial:', initialScope);
-  const toArr = (v) => (v && v.toArray ? v.toArray() : v);
+  /**
+   * Évalue un bloc de formules en gérant les dépendances et en validant les variables.
+   * @param {Array<object>} formulas - Un tableau d'objets {variableName, expression, unit}.
+   * @param {object} initialScope - Le scope de base avec les courbes et paramètres initiaux.
+   * @returns {{results: Array<object>, errors: Array<object>}} Un objet contenant les résultats et les erreurs.
+   */
+  evaluateBlock(formulas, initialScope) {
+    console.log('Évaluation des formules avec le scope initial:', initialScope);
+    const toArr = (v) => (v && v.toArray ? v.toArray() : v);
 
-  // Détermine la longueur maximale parmi les courbes présentes dans initialScope
-  let maxCurveLength = 0;
-  for (const key in initialScope) {
-    const value = initialScope[key];
-    const isParam = typeof value === 'object' && value !== null && !Array.isArray(value) && value.hasOwnProperty('value');
-    if (!isParam) {
-      const arr = toArr(value);
-      if (arr && typeof arr.length === 'number' && arr.length > maxCurveLength) {
-        maxCurveLength = arr.length;
-      }
-    }
-  }
-
-  const scope = {};
-  for (const key in initialScope) {
-    const value = initialScope[key];
-    if (typeof value === 'object' && value !== null && !Array.isArray(value) && value.hasOwnProperty('value')) {
-      scope[key] = value.value; 
-    } else {
-      const rawArray = toArr(value);
-      const cleanedArray = [];
-      const len = rawArray ? rawArray.length : 0;
-      if (len > 0) {
-        const targetLen = Math.max(len, maxCurveLength);
-        for (let i = 0; i < targetLen; i++) {
-          if (i >= len) {
-            cleanedArray.push(null);
-            continue;
-          }
-          const val = rawArray[i];
-          if (val === null || val === undefined || String(val).trim() === '') {
-            cleanedArray.push(null);
-            continue;
-          }
-          const num = Number(val);
-          cleanedArray.push(isNaN(num) ? null : num);
+    let maxCurveLength = 0;
+    for (const key in initialScope) {
+      const value = initialScope[key];
+      const isParam = typeof value === 'object' && value !== null && !Array.isArray(value) && value.hasOwnProperty('value');
+      if (!isParam) {
+        const arr = toArr(value);
+        if (arr && typeof arr.length === 'number' && arr.length > maxCurveLength) {
+          maxCurveLength = arr.length;
         }
       }
-      scope[key] = cleanedArray;
     }
-  }
 
-  let pendingCalculations = [...formulas];
-  const successfulResults = [];
-  
-  let progressMade = true;
-  const maxIterations = pendingCalculations.length;
-  let iteration = 0;
-
-  while (pendingCalculations.length > 0 && progressMade && iteration <= maxIterations) {
-    progressMade = false;
-    iteration++;
-    
-    const remainingForNextLoop = [];
-
-    for (const calc of pendingCalculations) {
-      try {
-        const cleanExpression = this.preprocessExpression(calc.expression);
-
-        const expressionNode = this.mathInstance.parse(cleanExpression);
-        expressionNode.traverse((node, path, parent) => {
-          // Vérification de la définition de chaque variable
-          if (node.isSymbolNode) {
-            const symbol = node.name;
-            if (!(symbol in scope) && !(symbol in this.mathInstance)) {
-              throw new Error(`La variable "${symbol}" n'est pas définie.`);
+    const scope = {};
+    for (const key in initialScope) {
+      const value = initialScope[key];
+      if (typeof value === 'object' && value !== null && !Array.isArray(value) && value.hasOwnProperty('value')) {
+        scope[key] = value.value;
+      } else {
+        const rawArray = toArr(value);
+        const cleanedArray = [];
+        const len = rawArray ? rawArray.length : 0;
+        if (len > 0) {
+          const targetLen = Math.max(len, maxCurveLength);
+          for (let i = 0; i < targetLen; i++) {
+            if (i >= len) {
+              cleanedArray.push(null);
+              continue;
             }
-            if (symbol in scope && Array.isArray(scope[symbol]) && scope[symbol].length === 0) {
-              throw new Error(`La grandeur "${symbol}" ne contient aucune donnée.`);
+            const val = rawArray[i];
+            if (val === null || val === undefined || String(val).trim() === '') {
+              cleanedArray.push(null);
+              continue;
             }
-            if (symbol in scope && scope[symbol] === null) {
-              throw new Error(`Le paramètre "${symbol}" n'a pas de valeur valide.`);
-            }
+            const num = Number(val);
+            cleanedArray.push(isNaN(num) ? null : num);
           }
-        });
-
-        const resultData = this.evaluate(cleanExpression, scope);
-
-        if (resultData === null) {
-          throw new Error(`Le résultat n'est pas défini dans les réels (hors du domaine de validité).`);
         }
+        scope[key] = cleanedArray;
+      }
+    }
 
-        if (typeof resultData === 'number' && !Number.isFinite(resultData)) {
-          throw new Error(`Le calcul a produit une valeur non finie (${resultData}).`);
-        }
-        
-        const isParameter = typeof resultData === 'number';
-        const isCurve = Array.isArray(resultData) || (resultData !== null && typeof resultData.toArray === 'function');
-        
-        if (!isParameter && !isCurve) {
-          throw new Error(`Le résultat n'est pas d'un type mathématique valide (texte ou objet non pris en charge).`);
-        }
-        
-        if (isParameter) {
-          scope[calc.variableName] = resultData;
-          successfulResults.push({ 
-            variableName: calc.variableName, 
-            data: { value: resultData, unit: calc.unit || '' },
-            type: 'parameter' 
+    let pendingCalculations = [...formulas];
+    const successfulResults = [];
+
+    let progressMade = true;
+    const maxIterations = pendingCalculations.length;
+    let iteration = 0;
+
+    while (pendingCalculations.length > 0 && progressMade && iteration <= maxIterations) {
+      progressMade = false;
+      iteration++;
+
+      const remainingForNextLoop = [];
+
+      for (const calc of pendingCalculations) {
+        try {
+          const cleanExpression = this.preprocessExpression(calc.expression);
+
+          const expressionNode = this.mathInstance.parse(cleanExpression);
+          expressionNode.traverse((node) => {
+            if (node.isSymbolNode) {
+              const symbol = node.name;
+              if (!(symbol in scope) && !(symbol in this.mathInstance)) {
+                throw new Error(`La variable "${symbol}" n'est pas définie.`);
+              }
+              if (symbol in scope && Array.isArray(scope[symbol]) && scope[symbol].length === 0) {
+                throw new Error(`La grandeur "${symbol}" ne contient aucune donnée.`);
+              }
+              if (symbol in scope && scope[symbol] === null) {
+                throw new Error(`Le paramètre "${symbol}" n'a pas de valeur valide.`);
+              }
+            }
           });
-        } else {
-          const rawArray = toArr(resultData);
-          const resultAsArray = (rawArray || []).map(val => (typeof val === 'number' && Number.isFinite(val)) ? val : null);
-          if (maxCurveLength > 0 && resultAsArray.length < maxCurveLength) {
-            while (resultAsArray.length < maxCurveLength) {
-              resultAsArray.push(null);
+
+          const resultData = this.evaluate(cleanExpression, scope);
+
+          if (resultData === null) {
+            throw new Error(`Le résultat n'est pas défini dans les réels (hors du domaine de validité).`);
+          }
+
+          if (typeof resultData === 'number' && !Number.isFinite(resultData)) {
+            throw new Error(`Le calcul a produit une valeur non finie (${resultData}).`);
+          }
+
+          const isParameter = typeof resultData === 'number';
+          const isCurve = Array.isArray(resultData) || (resultData !== null && typeof resultData.toArray === 'function');
+
+          if (!isParameter && !isCurve) {
+            throw new Error(`Le résultat n'est pas d'un type mathématique valide (texte ou objet non pris en charge).`);
+          }
+
+          if (isParameter) {
+            scope[calc.variableName] = resultData;
+            successfulResults.push({
+              variableName: calc.variableName,
+              data: { value: resultData, unit: calc.unit || '' },
+              type: 'parameter'
+            });
+          } else {
+            const rawArray = toArr(resultData);
+            const resultAsArray = (rawArray || []).map(val => (typeof val === 'number' && Number.isFinite(val)) ? val : null);
+            if (maxCurveLength > 0 && resultAsArray.length < maxCurveLength) {
+              while (resultAsArray.length < maxCurveLength) {
+                resultAsArray.push(null);
+              }
             }
+            if (resultAsArray.length > maxCurveLength) {
+              maxCurveLength = resultAsArray.length;
+            }
+            scope[calc.variableName] = resultAsArray;
+            successfulResults.push({
+              variableName: calc.variableName,
+              data: resultAsArray,
+              type: 'curve',
+              unit: calc.unit || ''
+            });
           }
-          if (resultAsArray.length > maxCurveLength) {
-            maxCurveLength = resultAsArray.length;
-          }
-          scope[calc.variableName] = resultAsArray;
-          successfulResults.push({ 
-            variableName: calc.variableName, 
-            data: resultAsArray,
-            type: 'curve',
-            unit: calc.unit || ''
-          });
+          progressMade = true;
+        } catch (error) {
+          remainingForNextLoop.push({ ...calc, error: error.message });
         }
-        progressMade = true;
-
-      } catch (error) {
-        // Si une erreur est levée (par nous ou par math.js), on la stocke
-        remainingForNextLoop.push({ ...calc, error: error.message });
       }
+      pendingCalculations = remainingForNextLoop;
     }
-    pendingCalculations = remainingForNextLoop;
-  }
 
-  return {
-    results: successfulResults,
-    errors: pendingCalculations 
-  };
-}
+    return {
+      results: successfulResults,
+      errors: pendingCalculations
+    };
+  }
 
   clear() {
-    // Réinitialise l'instance math.js pour libérer la mémoire et réinitialiser les fonctions.
     this.mathInstance = this.createConfiguredMathInstance();
-
-    $("#calculation-input").value = ""; // Réinitialise le champ de saisie
+    $("#calculation-input").value = "";
   }
 
   getAvailableFunctions() {
-    // Retourne les fonctions scalaires de base plus les fonctions personnalisées.
-    // Le tri assure un affichage alphabétique propre dans la barre latérale.
-    const allFunctions = [...this.scalarFunctions, 'diff', 'integrate', 'smooth'];
-    return allFunctions;
+    return [...this.scalarFunctions, 'diff', 'integrate', 'smooth'];
   }
-}
-
-/**
- * Retire les commentaires inline (#, // et ' précédé d'un espace) d'une expression.
- * Préserve le contenu à l'intérieur des chaînes de caractères ("...").
- * @param {string} str - L'expression à nettoyer.
- * @returns {string} - L'expression sans commentaire.
- */
-function stripInlineComment(str) {
-  if (!str || typeof str !== 'string') return '';
-  let inString = false;
-  let stringChar = '';
-
-  for (let i = 0; i < str.length; i++) {
-    const ch = str[i];
-    if (inString) {
-      if (ch === stringChar && str[i - 1] !== '\\') {
-        inString = false;
-      }
-      continue;
-    }
-    if (ch === '"') {
-      inString = true;
-      stringChar = ch;
-      continue;
-    }
-    if (ch === '#') {
-      return str.slice(0, i).trim();
-    }
-    if (ch === '/' && i + 1 < str.length && str[i + 1] === '/') {
-      return str.slice(0, i).trim();
-    }
-    if (ch === "'" && (i === 0 || /\s/.test(str[i - 1]))) {
-      return str.slice(0, i).trim();
-    }
-  }
-  return str.trim();
 }
 
 export { Calculation, stripInlineComment };

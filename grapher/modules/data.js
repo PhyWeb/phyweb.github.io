@@ -1,47 +1,13 @@
-import {Serie} from "../../common/common.js"
-import {formatUnit} from "../../common/formatter.js"
-import SymbolValidator from "./symbolValidator.js";
+import { Serie } from "../../common/common.js";
+import { formatUnit } from "../../common/formatter.js";
+import { parseCellValue } from "./models/parseCellValue.js";
+import { Model } from "./models/model.js";
 
-const $ = document.querySelector.bind(document);
-
-const COLOR_LIST = [ "#2caffe", "#544fc5", "#00e272", "#fe6a35", "#6b8abc", "#d568fb", "#2ee0ca", "#fa4b42", "#feb56a", "#91e8e1" ]
+const COLOR_LIST = ["#2caffe", "#544fc5", "#00e272", "#fe6a35", "#6b8abc", "#d568fb", "#2ee0ca", "#fa4b42", "#feb56a", "#91e8e1"];
 
 const DEFAULT_MARKER = true;
 const DEFAULT_LINE = false;
 const DEFAULT_LINE_WIDTH = 2;
-
-const DEFAULT_MODEL_RESOLUTION = 400; // Nombre de points pour le tracé du modèle
-
-const SUPPORTED_MODEL_TYPES = new Set([
-  "linear", "affine", "quadratic", "power",
-  "exp1", "exp2", "ln", "log",
-  "sin", "cos", "dampedsin", "dampedcos"
-]);
-
-/**
- * Convertit une valeur de cellule ou de point de mesure en nombre ou null.
- * Gère les nombres existants, les virgules décimales (format FR), les espaces,
- * les notations scientifiques, ainsi que les chaînes vides et valeurs invalides.
- * @param {*} value - La valeur à parser.
- * @returns {number|null} Le nombre fini ou null si vide ou invalide.
- */
-function parseCellValue(value) {
-  if (value === null || value === undefined) {
-    return null;
-  }
-  if (typeof value === 'number') {
-    return Number.isFinite(value) ? value : null;
-  }
-  if (typeof value === 'string') {
-    const cleaned = value.replace(/\s+/g, '').replace(',', '.');
-    if (cleaned === '') {
-      return null;
-    }
-    const num = Number(cleaned);
-    return Number.isFinite(num) ? num : null;
-  }
-  return null;
-}
 
 /*----------------------------------------------------------------------------------------------
 -----------------------------------------------Curve--------------------------------------------
@@ -62,708 +28,6 @@ class Curve extends Serie {
 }
 
 /*----------------------------------------------------------------------------------------------
------------------------------------------------Model--------------------------------------------
-----------------------------------------------------------------------------------------------*/
-
-class Model {
-  constructor(x, y, type, data, color, line, lineWidth, lineStyle) {
-    this.x = x; // Courbe pour les valeurs x
-    this.y = y; // Courbe pour les valeurs y
-
-    this.id = Highcharts.uniqueKey();
-
-    this.data = data; // On stocke l'instance complète de Data
-
-    this.type = type; // Ex: "Linear", "Quadratic"
-    this.visible = true; // Si le modèle est visible sur le graphe
-    this.parameters = []; // Paramètres du modèle (a, b, c...)
-
-    this.rmse = 0; // Ecart quadratique moyen
-    this.rSquared = 0; // Coefficient de corrélation
-
-    this.color = color;
-    this.line = line;
-    this.lineWidth = lineWidth;
-    this.lineStyle = lineStyle;
-
-    this.minX = null; // Bornes pour le tracé du modèle
-    this.maxX = null; // Bornes pour le tracé du modèle
-  }
-
-  getEquationString() {
-    switch(this.type){
-      case "linear":
-        // y = a*x
-        return `${this.y.title} = ${this.parameters[0].name}·${this.x.title}`;
-      case "affine":
-        // y = a*x + b
-        return `${this.y.title} = ${this.parameters[0].name}·${this.x.title} + ${this.parameters[1].name}`;
-      case "quadratic":
-        // y = a*x^2 + b*x + c
-        return `${this.y.title} = ${this.parameters[0].name}·${this.x.title}² + ${this.parameters[1].name}·${this.x.title} + ${this.parameters[2].name}`;
-      case "power":
-        // y = a*x^b
-        return `${this.y.title} = ${this.parameters[0].name}·${this.x.title}<sup>${this.parameters[1].name}</sup>`;
-      case "exp1":
-        // y = a*e^(-x/b)
-        return `${this.y.title} = ${this.parameters[0].name}·e<sup>-${this.x.title}/${this.parameters[1].name}</sup>`;
-      case "exp2":
-        // y = a*(1 - e^(-x/b))
-        return `${this.y.title} = ${this.parameters[0].name}·(1 - e<sup>-${this.x.title}/${this.parameters[1].name}</sup>)`;
-      case "ln":
-        // y = a*ln(x) + b
-        return `${this.y.title} = ${this.parameters[0].name}·ln(${this.x.title}) + ${this.parameters[1].name}`;
-      case "log":
-        // y = a*log10(x) + b
-        return `${this.y.title} = ${this.parameters[0].name}·log(${this.x.title}) + ${this.parameters[1].name}`;
-      case "sin":
-        // y = a*sin(b*x + c) + d
-        return `${this.y.title} = ${this.parameters[0].name}·sin(${this.parameters[1].name}·${this.x.title} + ${this.parameters[2].name}) + ${this.parameters[3].name}`;
-      case "cos":
-        // y = a*cos(b*x + c) + d
-        return `${this.y.title} = ${this.parameters[0].name}·cos(${this.parameters[1].name}·${this.x.title} + ${this.parameters[2].name}) + ${this.parameters[3].name}`;
-      case "dampedsin":
-        // y = a*sin(b*x + c)*e^(-x/d) + e
-        return `${this.y.title} = ${this.parameters[0].name}·sin(${this.parameters[1].name}·${this.x.title} + ${this.parameters[2].name})·e<sup>-${this.x.title}/${this.parameters[3].name}</sup> + ${this.parameters[4].name}`;
-      case "dampedcos":
-        // y = a*cos(b*x + c)*e^(-x/d) + e
-        return `${this.y.title} = ${this.parameters[0].name}·cos(${this.parameters[1].name}·${this.x.title} + ${this.parameters[2].name})·e<sup>-${this.x.title}/${this.parameters[3].name}</sup> + ${this.parameters[4].name}`;
-      default:
-        return "Modèle non défini";
-    }
-  }
-
-  getModelName(){
-    switch(this.type){
-      case "linear":
-        return "Linéaire";
-      case "affine":
-        return "Affine";
-      case "quadratic":
-        return "Parabole";
-      case "power":
-        return "Puissance";
-      case "exp1":
-        return "Exponentielle 1";
-      case "exp2":
-        return "Exponentielle 2";
-      case "ln":
-        return "Logarithme népérien";
-      case "log":
-        return "Logarithme décimal";
-      case "sin":
-        return "Sinus";
-      case "cos":
-        return "Cosinus";
-      case "dampedsin":
-        return "Sin amorti";
-      case "dampedcos":
-        return "Cos amorti";
-      default:
-        return "Modèle inconnu";
-    }
-  }
-
-  /*
-  * Retourne la fonction mathématique correspondant au type de modèle.
-  * @returns {Function}
-  * @returns {Function} La fonction mathématique du modèle.
-  * ATTENTION : fonction dupliquée dans le worker fitter.worker.js
-  */
-  _getFunction(){
-    switch(this.type){
-      case "linear":
-        // y = a*x
-        return (a_n, x) => a_n[0] * x;
-      case "affine":
-        // y = a*x + b 
-        return (a_n, x) => a_n[0] * x + a_n[1];
-      case "quadratic":
-        // y = a*x^2 + b*x + c
-        return (a_n, x) => a_n[0] * Math.pow(x, 2) + a_n[1] * x + a_n[2];
-      case "power":
-        // y = a*x^b
-        return (a_n, x) => a_n[0] * Math.pow(x, a_n[1]);
-      case "exp1":
-        // y = a*e^(-x/b)
-        return (a_n, x) => a_n[0] * Math.exp(-x / a_n[1]);
-      case "exp2":
-        // y = a*(1 - e^(-x/b))
-        return (a_n, x) => a_n[0] * (1 - Math.exp(-x / a_n[1]));
-      case "ln":
-        // y = a*ln(x) + b
-        return (a_n, x) => a_n[0] * Math.log(x) + a_n[1];
-      case "log":
-        // y = a*log10(x) + b
-        return (a_n, x) => a_n[0] * Math.log10(x) + a_n[1];
-      case "sin":
-        // y = a*sin(b*x + c) + d
-        return (a_n, x) => a_n[0] * Math.sin(a_n[1] * x + a_n[2]) + a_n[3];
-      case "cos":
-        // y = a*cos(b*x + c) + d
-        return (a_n, x) => a_n[0] * Math.cos(a_n[1] * x + a_n[2]) + a_n[3];
-      case "dampedsin":
-        // y = a*sin(b*x + c)*e^(-x/d) + e
-        return (a_n, x) => a_n[0] * Math.sin(a_n[1] * x + a_n[2]) * Math.exp(-x / a_n[3]) + a_n[4];
-      case "dampedcos":
-        // y = a*cos(b*x + c)*e^(-x/d) + e
-        return (a_n, x) => a_n[0] * Math.cos(a_n[1] * x + a_n[2]) * Math.exp(-x / a_n[3]) + a_n[4];
-      default:
-        return () => 0; // Fonction par défaut
-      }
-  }
-
-  _buildData(){
-    let data = [];
-    for(let i = 0; i < this.x.length; i++){
-      const numX = parseCellValue(this.x[i]);
-      const numY = parseCellValue(this.y[i]);
-
-      if (numX === null || numY === null) {
-        continue;
-      }
-
-      // On ne prend en compte que les points dans les bornes définies
-      if (this.minX !== null && numX < this.minX) {
-        continue;
-      }
-      if (this.maxX !== null && numX > this.maxX) {
-        continue;
-      }
-
-      data.push([numX, numY]);
-    }
-    return data;
-  }
-
-  calculate(x){
-    const f = this._getFunction();
-    const params = this.parameters.map(p => p.value);
-    return f(params, x);
-  }
-
-  /**
-   * Estime des paramètres initiaux basés sur les données pour aider l'algorithme d'ajustement.
-   * @param {Array<Array<number>>} data - Les données [x, y].
-   * @returns {Array<number>|null} Les paramètres estimés ou null.
-   */
-  _estimateInitialGuess(data) {
-    const n = data.length;
-    if (n < 2) return null;
-
-    let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
-    let minX = data[0][0], maxX = data[0][0];
-    let minY = data[0][1], maxY = data[0][1];
-
-    for (let i = 0; i < n; i++) {
-      const x = data[i][0];
-      const y = data[i][1];
-      sumX += x;
-      sumY += y;
-      sumXY += x * y;
-      sumXX += x * x;
-      if (x < minX) minX = x;
-      if (x > maxX) maxX = x;
-      if (y < minY) minY = y;
-      if (y > maxY) maxY = y;
-    }
-
-    const meanY = sumY / n;
-
-    // Régression linéaire (y = mx + p)
-    const denominator = (n * sumXX - sumX * sumX);
-    let slope = 1, intercept = 0;
-    if (Math.abs(denominator) > 1e-9) {
-        slope = (n * sumXY - sumX * sumY) / denominator;
-        intercept = (sumY - slope * sumX) / n;
-    }
-
-    switch (this.type) {
-      case 'linear': // y = ax
-        // a = sum(xy) / sum(xx)
-        return [sumXX !== 0 ? sumXY / sumXX : 1];
-
-      case 'affine': // y = ax + b
-        return [slope, intercept];
-
-      case 'quadratic': // y = ax^2 + bx + c
-        {
-            const x1 = data[0][0], y1 = data[0][1];
-            const x3 = data[n-1][0], y3 = data[n-1][1];
-            const mid = Math.floor(n/2);
-            const x2 = data[mid][0], y2 = data[mid][1];
-            
-            const denom = (x1 - x2) * (x1 - x3) * (x2 - x3);
-            if (Math.abs(denom) < 1e-9) return [0, slope, intercept];
-            
-            const a = (x3 * (y2 - y1) + x2 * (y1 - y3) + x1 * (y3 - y2)) / denom;
-            const b = (x3*x3 * (y1 - y2) + x2*x2 * (y3 - y1) + x1*x1 * (y2 - y3)) / denom;
-            const c = (x2 * x3 * (x2 - x3) * y1 + x3 * x1 * (x3 - x1) * y2 + x1 * x2 * (x1 - x2) * y3) / denom;
-            return [a, b, c];
-        }
-
-      case 'power': // y = a*x^b
-        {
-            let sLnX = 0, sLnY = 0, sLnXLnY = 0, sLnXLnX = 0;
-            let count = 0;
-            for(let i=0; i<n; i++) {
-                if(data[i][0] > 0 && data[i][1] > 0) {
-                    const lx = Math.log(data[i][0]);
-                    const ly = Math.log(data[i][1]);
-                    sLnX += lx; sLnY += ly;
-                    sLnXLnY += lx * ly; sLnXLnX += lx * lx;
-                    count++;
-                }
-            }
-            if(count < 2) return [1, 1];
-            const denomPow = (count * sLnXLnX - sLnX * sLnX);
-            if (Math.abs(denomPow) < 1e-9) return [1, 1];
-            const b = (count * sLnXLnY - sLnX * sLnY) / denomPow;
-            const lnA = (sLnY - b * sLnX) / count;
-            return [Math.exp(lnA), b];
-        }
-
-      case 'exp1': // y = a*e^(-x/b)
-        {
-            const defaultTau = (maxX > minX) ? (maxX - minX) / 3 : 1;
-            const isNegative = (minY < 0 && Math.abs(minY) > Math.abs(maxY));
-            const sign = isNegative ? -1 : 1;
-            const defaultA = isNegative ? (minY !== 0 ? minY : -1) : (maxY !== 0 ? maxY : 1);
-
-            let sX = 0, sLnY = 0, sXLnY = 0, sXX_exp = 0;
-            let count = 0;
-            for (let i = 0; i < n; i++) {
-                const val = sign * data[i][1];
-                if (val > 0) {
-                    const x = data[i][0];
-                    const ly = Math.log(val);
-                    sX += x; sLnY += ly;
-                    sXLnY += x * ly; sXX_exp += x * x;
-                    count++;
-                }
-            }
-            if (count < 2) return [defaultA, defaultTau];
-            const denomExp = (count * sXX_exp - sX * sX);
-            if (Math.abs(denomExp) < 1e-9) return [defaultA, defaultTau];
-            const m = (count * sXLnY - sX * sLnY) / denomExp; // m = -1/b
-            const b = Math.abs(m) > 1e-9 ? -1.0 / m : defaultTau;
-            const interceptExp = (sLnY - m * sX) / count; // ln(|a|)
-
-            // Évite un dépassement exponentiel si x0 >> tau
-            let a;
-            if (interceptExp > 700) {
-                a = defaultA;
-            } else if (interceptExp < -700) {
-                a = 0;
-            } else {
-                a = sign * Math.exp(interceptExp);
-            }
-
-            if (!Number.isFinite(a)) a = defaultA;
-            if (!Number.isFinite(b) || b === 0) b = defaultTau;
-
-            return [a, b];
-        }
-        
-      case 'exp2': // y = a*(1 - e^(-x/b))
-        {
-            const defaultTau = (maxX > minX) ? (maxX - minX) / 3 : 1;
-            const isNegative = (minY < 0 && Math.abs(minY) > Math.abs(maxY));
-            const a = isNegative
-                ? (minY !== 0 ? minY * 1.05 : -1)
-                : (maxY > 0 ? maxY * 1.05 : 1);
-
-            let sX = 0, sLnDiff = 0, sXLnDiff = 0, sXX_exp2 = 0;
-            let count = 0;
-            for (let i = 0; i < n; i++) {
-                const diff = isNegative ? (data[i][1] - a) : (a - data[i][1]);
-                if (diff > 0) {
-                    const x = data[i][0];
-                    const ldiff = Math.log(diff);
-                    sX += x; sLnDiff += ldiff;
-                    sXLnDiff += x * ldiff; sXX_exp2 += x * x;
-                    count++;
-                }
-            }
-            if (count < 2) return [a, defaultTau];
-            const denomExp2 = (count * sXX_exp2 - sX * sX);
-            if (Math.abs(denomExp2) < 1e-9) return [a, defaultTau];
-            const m = (count * sXLnDiff - sX * sLnDiff) / denomExp2; // m = -1/b
-            // Pour une relaxation physique, ln(diff) décroît avec x => m < 0 et b = -1/m > 0
-            const b = (m < -1e-9) ? -1.0 / m : defaultTau;
-            return [a, b];
-        }
-
-      case 'ln': // y = a*ln(x) + b
-        {
-            let sLnX = 0, sY_ln = 0, sLnXY = 0, sLnXLnX = 0;
-            let count = 0;
-            for(let i=0; i<n; i++) {
-                if(data[i][0] > 0) {
-                    const lx = Math.log(data[i][0]);
-                    const y = data[i][1];
-                    sLnX += lx; sY_ln += y;
-                    sLnXY += lx * y; sLnXLnX += lx * lx;
-                    count++;
-                }
-            }
-            if(count < 2) return [1, 1];
-            const denomLn = (count * sLnXLnX - sLnX * sLnX);
-            if (Math.abs(denomLn) < 1e-9) return [1, 1];
-            const a = (count * sLnXY - sLnX * sY_ln) / denomLn;
-            const b = (sY_ln - a * sLnX) / count;
-            return [a, b];
-        }
-
-      case 'log': // y = a*log10(x) + b
-        {
-            let sLogX = 0, sY_log = 0, sLogXY = 0, sLogXLogX = 0;
-            let count = 0;
-            for(let i=0; i<n; i++) {
-                if(data[i][0] > 0) {
-                    const lx = Math.log10(data[i][0]);
-                    const y = data[i][1];
-                    sLogX += lx; sY_log += y;
-                    sLogXY += lx * y; sLogXLogX += lx * lx;
-                    count++;
-                }
-            }
-            if(count < 2) return [1, 1];
-            const denomLog = (count * sLogXLogX - sLogX * sLogX);
-            if (Math.abs(denomLog) < 1e-9) return [1, 1];
-            const a = (count * sLogXY - sLogX * sY_log) / denomLog;
-            const b = (sY_log - a * sLogX) / count;
-            return [a, b];
-        }
-
-      case 'sin': // y = a*sin(bx+c) + d
-      case 'cos': // y = a*cos(bx+c) + d
-      case 'dampedsin': // y = a*sin(bx+c)*exp(-x/d) + e
-      case 'dampedcos': // y = a*cos(bx+c)*exp(-x/d) + e
-        {
-            const a = (maxY - minY) / 2 || 1; // amplitude
-            const d = (maxY + minY) / 2; // offset basé sur le centre crête-à-crête
-            
-            // On s'assure que les points sont ordonnés selon x pour analyser la séquence temporelle
-            const pts = [...data].sort((p1, p2) => p1[0] - p2[0]);
-            
-            let crossings = 0;
-            for(let i=1; i<n; i++) {
-                if ((pts[i][1] - d) * (pts[i-1][1] - d) < 0) {
-                    crossings++;
-                }
-            }
-            
-            let b = 1;
-            if (crossings > 0 && maxX !== minX) {
-                b = Math.PI * crossings / (maxX - minX);
-            } else if (maxX !== minX) {
-                b = Math.PI / (maxX - minX);
-            }
-            
-            // Estimation robuste de la phase initiale au premier point x0
-            const x0 = pts[0][0];
-            const y0 = pts[0][1];
-            const normalizedY0 = Math.max(-1, Math.min(1, (y0 - d) / a));
-            
-            // Détection de la tendance (croissante ou décroissante) sur les premiers points
-            const sampleCount = Math.min(n - 1, 3);
-            let slopeSum = 0;
-            for (let j = 1; j <= sampleCount; j++) {
-                const dx = pts[j][0] - x0;
-                if (dx > 0) {
-                    slopeSum += (pts[j][1] - y0) / dx;
-                }
-            }
-            const isIncreasing = slopeSum >= 0;
-            
-            let phi0 = 0;
-            if (this.type === 'cos' || this.type === 'dampedcos') {
-                const theta = Math.acos(normalizedY0);
-                phi0 = isIncreasing ? -theta : theta;
-            } else {
-                const theta = Math.asin(normalizedY0);
-                phi0 = isIncreasing ? theta : (Math.PI - theta);
-            }
-            
-            let c = phi0 - b * x0;
-            // Normalisation de la phase dans l'intervalle [-PI, PI]
-            c = ((c + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI;
-
-            if (this.type.includes('damped')) {
-                const decay = (maxX - minX) || 1;
-                return [a, b, c, decay, d];
-            } else {
-                return [a, b, c, d];
-            }
-        }
-
-      default:
-        return null;
-    }
-  }
-
-  // Application des paramètres ajustés au modèle
-  _applyParams(params, data) {
-    const canPreserveNames = Array.isArray(this.parameters) &&
-      this.parameters.length === params.length &&
-      this.parameters.every(p => p && typeof p.name === 'string' && p.name.trim() !== '');
-
-    if (canPreserveNames) {
-      params.forEach((paramValue, i) => {
-        const paramName = this.parameters[i].name;
-        this.parameters[i].value = paramValue;
-        const currentUnit = this.parameters[i].unit || (this.data && this.data.parameters && this.data.parameters[paramName]?.unit) || '';
-        if (currentUnit) {
-          this.parameters[i].unit = currentUnit;
-        }
-        if (this.data && this.data.parameters) {
-          if (this.data.parameters[paramName]) {
-            this.data.parameters[paramName].value = paramValue;
-          } else {
-            this.data.parameters[paramName] = { value: paramValue, unit: currentUnit, type: 'model' };
-          }
-        }
-      });
-    } else {
-      // Vider les anciens paramètres
-      if (this.data && this.data.parameters) {
-        this.parameters.forEach(param => {
-          delete this.data.parameters[param.name];
-        });
-      }
-      this.parameters.length = 0;
-
-      const baseNames = ['a', 'b', 'c', 'd', 'k', 'f'];
-      params.forEach((paramValue, i) => {
-        let baseName = baseNames[i] || `p${i}`;
-        let finalName = baseName;
-        let counter = 1;
-        while (
-          SymbolValidator.isReserved(finalName) ||
-          (this.data && this.data.parameters && this.data.parameters.hasOwnProperty(finalName)) ||
-          (this.data && this.data.curves && this.data.curves.some(c => c.title === finalName))
-        ) {
-          finalName = `${baseName}${counter}`;
-          counter++;
-        }
-        this.parameters.push({ name: finalName, value: paramValue });
-        if (this.data && this.data.parameters) {
-          this.data.parameters[finalName] = { value: paramValue, unit: '', type: 'model' };
-        }
-      });
-    }
-
-    this.calculateRMSE(data);
-    this.calculateRSquared(data);
-  }
-
-  // Ajustement du modèle par régression non linéaire via un Web Worker
-  fit() {
-    return new Promise((resolve, reject) => {
-      if (this.activeWorker) {
-        this.stopFit();
-      }
-
-      const data = this._buildData();
-      if (data.length < 2) {
-        return reject(new Error("Pas assez de données valides."));
-      }
-      
-      const worker = new Worker(new URL('./fitter.worker.js', import.meta.url));
-      this.activeWorker = worker;
-      this.resolveFit = resolve;
-
-      // Notification du début du calcul
-      document.dispatchEvent(new CustomEvent('model-fit-start', { detail: { model: this } }));
-
-      worker.onmessage = (e) => {
-        const message = e.data;
-        if (message.type === 'partial_update') {
-          // Mémorisation de l'état intermédiaire
-          this.lastPartialParams = message.params;
-        } else if (message.type === 'final_result') {
-          if (message.success) {
-            this._applyParams(message.params, data);
-            worker.terminate();
-            this.activeWorker = null;
-            document.dispatchEvent(new CustomEvent('model-fit-end', { detail: { model: this } }));
-            resolve(this);
-          } else {
-            worker.terminate();
-            this.activeWorker = null;
-            document.dispatchEvent(new CustomEvent('model-fit-end', { detail: { model: this } }));
-            reject(new Error(message.error));
-          }
-        } else if (message.type === 'error') {
-            worker.terminate();
-            this.activeWorker = null;
-            document.dispatchEvent(new CustomEvent('model-fit-end', { detail: { model: this } }));
-            reject(new Error(message.error));
-        }
-      };
-
-      worker.onerror = (error) => {
-        worker.terminate();
-        this.activeWorker = null;
-        document.dispatchEvent(new CustomEvent('model-fit-end', { detail: { model: this } }));
-        reject(error);
-      };
-
-      let guessSize = 2;
-      if (this.type === 'linear') guessSize = 1;
-      if (this.type === 'quadratic') guessSize = 3;
-      if (this.type === 'sin' || this.type === 'cos') guessSize = 4;
-      if (this.type === 'dampedsin' || this.type === 'dampedcos') guessSize = 5;
-      
-      let initialGuess = this._estimateInitialGuess(data);
-      if (!initialGuess || initialGuess.length !== guessSize || initialGuess.some(v => !isFinite(v))) {
-          initialGuess = Array(guessSize).fill(1);
-      }
-
-      this.lastPartialParams = [...initialGuess]; // Paramètres par défaut en cas d'interruption
-
-      worker.postMessage({
-        data: data,
-        modelType: this.type,
-        initialGuess: initialGuess
-      });
-    });
-  }
-
-  // Interruption du calcul d'ajustement en cours
-  stopFit() {
-    if (this.activeWorker) {
-      this.activeWorker.terminate(); // Arrêt du worker
-      this.activeWorker = null;
-      
-      // Application des derniers paramètres intermédiaires disponibles
-      const data = this._buildData();
-      if (this.lastPartialParams) {
-         this._applyParams(this.lastPartialParams, data);
-      }
-      
-      // Notification de fin de calcul
-      document.dispatchEvent(new CustomEvent('model-fit-end', { detail: { model: this } }));
-      if (this.resolveFit) {
-         this.resolveFit(this);
-      }
-    }
-  }
-
-  getHighResData(minX, maxX, points = DEFAULT_MODEL_RESOLUTION){
-    if (!Array.isArray(this.parameters) || this.parameters.length === 0) {
-      return [];
-    }
-    if (!Number.isFinite(minX) || !Number.isFinite(maxX)) {
-      return [];
-    }
-    if (!SUPPORTED_MODEL_TYPES.has(this.type)) {
-      console.error("Modèle non pris en charge pour la génération de données haute résolution.");
-      return [];
-    }
-
-    const data = [];
-    points = Math.max(2, points);
-    const step = (maxX - minX) / (points - 1);
-    const f = this._getFunction();
-    const params = this.parameters.map(p => p.value);
-
-    try {
-      for (let i = 0; i < points; i++) {
-        const x = minX + i * step;
-        const y = f(params, x);
-        // Highcharts attend null pour les points hors domaine (NaN / ±Infinity)
-        data.push([x, Number.isFinite(y) ? y : null]);
-      }
-      return data;
-    } catch {
-      return [];
-    }
-  }
-
-  calculateRMSE(data) {
-    if (this.parameters.length === 0) {
-      this.rmse = 0;
-      return;
-    }
-
-    const points = data || this._buildData();
-    
-    const f = this._getFunction();
-    let sumOfSquaredErrors = 0;
-    let validPointsCount = 0;
-    
-    for (let i = 0; i < points.length; i++) {
-      const xVal = points[i][0];
-      const yVal = points[i][1];
-      
-      // On ne calcule l'erreur que pour les points valides
-      if (xVal !== null && yVal !== null && isFinite(xVal) && isFinite(yVal)) {
-        const predictedY = f(this.parameters.map(p => p.value), xVal);
-        const error = yVal - predictedY;
-        sumOfSquaredErrors += Math.pow(error, 2);
-        validPointsCount++;
-      }
-    }
-    
-    const rmseValue = validPointsCount > 0 ? Math.sqrt(sumOfSquaredErrors / validPointsCount) : 0;
-
-    // On vérifie si le résultat est un nombre fini (ni Infinity, ni NaN)
-    this.rmse = isFinite(rmseValue) ? rmseValue : null;
-  }
-
-  calculateRSquared(data) {
-    const points = data || this._buildData();
-    if (this.parameters.length === 0 || points.length < 2) {
-      this.rSquared = 0;
-      return;
-    }
-
-    const f = this._getFunction();
-
-    // Filtrer les points pour s'assurer qu'il n'y a pas de valeurs nulles ou indéfinies
-    const validPoints = points.filter(p => p[0] !== null && p[1] !== null && isFinite(p[0]) && isFinite(p[1]));
-
-    if (validPoints.length < 2) {
-      this.rSquared = 0;
-      return;
-    }
-
-    // 1. Calculer la moyenne des valeurs y réelles
-    const meanY = validPoints.reduce((sum, point) => sum + point[1], 0) / validPoints.length;
-
-    let totalSumOfSquares = 0;
-    let residualSumOfSquares = 0;
-
-    for (let i = 0; i < validPoints.length; i++) {
-      const xVal = validPoints[i][0];
-      const yVal = validPoints[i][1];
-      
-      // Valeur prédite par le modèle
-      const predictedY = f(this.parameters.map(p => p.value), xVal);
-
-      // Calculer la somme totale des carrés (total sum of squares)
-      totalSumOfSquares += Math.pow(yVal - meanY, 2);
-      
-      // Calculer la somme résiduelle des carrés (residual sum of squares)
-      residualSumOfSquares += Math.pow(yVal - predictedY, 2);
-    }
-    
-    // Calculer le R²
-    let rSquaredValue;
-    if (totalSumOfSquares === 0) {
-      rSquaredValue = residualSumOfSquares === 0 ? 1 : 0;
-    } else {
-      rSquaredValue = 1 - (residualSumOfSquares / totalSumOfSquares);
-    }
-
-    // On vérifie si le résultat est un nombre fini
-    this.rSquared = isFinite(rSquaredValue) ? rSquaredValue : null;
-  }
-}
-
-/*----------------------------------------------------------------------------------------------
 ------------------------------------------------Data--------------------------------------------
 ----------------------------------------------------------------------------------------------*/
 export default class Data {
@@ -780,9 +44,9 @@ export default class Data {
     this.lastSortVariable = null; // Dernière variable utilisée pour le tri
   }
 
-  addCurve(title, unit, size, fill, line, markers, type){
+  addCurve(title, unit, size, fill, line, markers, type) {
     // Vérifie si le nom de grandeur est déjà utilisé
-    if(this.curves.find(curve => curve.title === title)){
+    if (this.curves.find(curve => curve.title === title)) {
       return null;
     }
 
@@ -807,7 +71,7 @@ export default class Data {
     return curve;
   }
 
-  deleteCurve(title){
+  deleteCurve(title) {
     // Réinitialise le tri si la grandeur supprimée servait d'axe de tri
     if (this.lastSortVariable === title) {
       this.clearSort();
@@ -834,10 +98,10 @@ export default class Data {
     });
   }
 
-  async addModel(xName, yName, type){
+  async addModel(xName, yName, type) {
     let x = this.getCurveByTitle(xName);
     let y = this.getCurveByTitle(yName);
-    let model = new Model(x, y, type, this,y.color,true,2,"Dash");
+    let model = new Model(x, y, type, this, y.color, true, 2, "Dash");
     model.visible = true;
     await model.fit();
     this.models.push(model);
@@ -848,23 +112,23 @@ export default class Data {
     const index = this.models.findIndex(m => m.id === modelID);
     if (index !== -1) {
       const model = this.models[index];
-      
+
       // Supprime les paramètres du modèle de l'objet parameters
       model.parameters.forEach(param => {
         delete this.parameters[param.name];
       });
-      
+
       this.models.splice(index, 1);
     }
   }
 
-  getTable(){
+  getTable() {
     let table = [];
 
     // Recherche de la série la plus longue
     let size = 0;
     this.curves.forEach((curve) => {
-      if(curve.length > size){
+      if (curve.length > size) {
         size = curve.length;
       }
     });
@@ -880,17 +144,17 @@ export default class Data {
     return table;
   }
 
-  getHeaders(){
+  getHeaders() {
     let headers = [];
 
-    this.curves.forEach((curve, i) => {
+    this.curves.forEach((curve) => {
       const formattedUnit = formatUnit(curve.unit);
       headers.push(formattedUnit ? `${curve.title} (${formattedUnit})` : curve.title);
     });
     return headers;
   }
 
-  setValue(curveIndex, index, value){
+  setValue(curveIndex, index, value) {
     const curve = this.curves[curveIndex];
     if (!curve || curve.type === 'calculation' || index < 0) return null;
     const parsedValue = parseCellValue(value);
@@ -902,7 +166,7 @@ export default class Data {
     return parsedValue;
   }
 
-  getCurveByTitle(title){
+  getCurveByTitle(title) {
     return this.curves.find(curve => curve.title === title);
   }
 
@@ -927,17 +191,12 @@ export default class Data {
 
     // Si la colonne de tri n'est pas déjà la première, on la déplace au début.
     if (sortCurveIndex > 0) {
-      // On retire la grandeur de sa position actuelle pour la remettre en premier.
       const [sortedCurve] = this.curves.splice(sortCurveIndex, 1);
       this.curves.unshift(sortedCurve);
     }
 
     const sortColumn = this.curves[0];
-
-    // Trouver le nombre maximum de lignes parmi toutes les courbes
     const rowCount = this.curves.reduce((max, curve) => Math.max(max, curve.length), 0);
-
-    // Créer un tableau d'indices [0, 1, 2, ..., rowCount-1]
     const indices = Array.from({ length: rowCount }, (_, i) => i);
 
     indices.sort((indexA, indexB) => {
@@ -948,14 +207,14 @@ export default class Data {
       const bIsNull = valB === null || valB === undefined || valB === '';
 
       if (aIsNull && bIsNull) return 0;
-      if (aIsNull) return 1; // Mettre les nuls à la fin
+      if (aIsNull) return 1;
       if (bIsNull) return -1;
 
       const numA = parseCellValue(valA);
       const numB = parseCellValue(valB);
 
       if (numA !== null && numB !== null) {
-        return numA - numB; // Tri numérique
+        return numA - numB;
       }
 
       console.warn(`Comparaison non numérique entre "${valA}" et "${valB}". Utilisation du tri lexicographique.`);
@@ -964,9 +223,7 @@ export default class Data {
 
     const orderChanged = indices.some((origIndex, newIndex) => origIndex !== newIndex);
 
-    // Réorganisation des données de chaque grandeur
     this.curves.forEach(curve => {
-      // Ajustement de la longueur du tableau
       while (curve.length < rowCount) {
         curve.push(null);
       }
@@ -985,8 +242,6 @@ export default class Data {
   clearSort() {
     this.lastSortVariable = null;
   }
-
-  
 }
 
-export {COLOR_LIST, Data, Curve, Model, parseCellValue};
+export { COLOR_LIST, Data, Curve, Model, parseCellValue };
