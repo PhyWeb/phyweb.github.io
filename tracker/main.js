@@ -579,8 +579,19 @@ function resize(column2Size) {
 }
 
 // HANDLER
-$('.handler').addEventListener('mousedown', function(e) {
+const handlerEl = $('.handler');
+const stopHandlerDragging = () => {
+  if (!isHandlerDragging) return;
+  isHandlerDragging = false;
+  handlerEl.classList.remove('is-dragging');
+  document.body.classList.remove('is-resizing-panel');
+};
+
+handlerEl.addEventListener('mousedown', function(e) {
+  e.preventDefault();
   isHandlerDragging = true;
+  handlerEl.classList.add('is-dragging');
+  document.body.classList.add('is-resizing-panel');
 });
 
 document.addEventListener('mousemove', (e) => {
@@ -592,10 +603,8 @@ document.addEventListener('mousemove', (e) => {
   applyResize($("#right-column"), column2Size, player);
 });
 
-document.addEventListener('mouseup', function(e) {
-  // Désactivation du mode glisser lors du relâchement du clic
-  isHandlerDragging = false;
-});
+document.addEventListener('mouseup', stopHandlerDragging);
+window.addEventListener('blur', stopHandlerDragging);
 
 resize();
 
