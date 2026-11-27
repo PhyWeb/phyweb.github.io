@@ -24,8 +24,6 @@
 # Grapher
     - possibilité d'avoir 2 axes y
 
-    parametre? pour angles en degrés
-
     une option pour que le premier et le dernier point soient a la limite du graphique et pas à 5% du bord
 
     intercepter les erreurs de mathsjs en anglais et les traduire en langage clair
