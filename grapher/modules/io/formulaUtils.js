@@ -186,3 +186,58 @@ export function updateFormulasReferences(text, nameMap) {
 
   return processedLines.join('\n');
 }
+
+/**
+ * Met à jour l'unité d'une variable définie dans un bloc de formules (membre de gauche variable[_unité] = ...),
+ * tout en préservant l'espacement, le membre de droite et les commentaires.
+ * @param {string} text
+ * @param {string} variableName
+ * @param {string} newUnit
+ * @returns {string}
+ */
+export function updateFormulaUnit(text, variableName, newUnit) {
+  if (!text || typeof text !== 'string' || !variableName) return text;
+
+  const cleanUnit = String(newUnit ?? '').trim().replace(/\s+/g, '');
+  const lines = text.split('\n');
+
+  const processedLines = lines.map(rawLine => {
+    let line = rawLine;
+    let lineEnding = '';
+    if (line.endsWith('\r')) {
+      line = line.slice(0, -1);
+      lineEnding = '\r';
+    }
+
+    const { code, comment } = splitCodeAndComment(line);
+    if (!code) {
+      return line + lineEnding;
+    }
+
+    const eqIndex = code.indexOf('=');
+    if (eqIndex === -1) {
+      return line + lineEnding;
+    }
+
+    const rawLhs = code.slice(0, eqIndex);
+    const rawRhs = code.slice(eqIndex + 1);
+
+    const underscoreIndex = rawLhs.indexOf('_');
+    const rawVarPart = underscoreIndex !== -1 ? rawLhs.slice(0, underscoreIndex) : rawLhs;
+    const normalizedVar = rawVarPart.trim().replace(/\s+/g, '');
+
+    if (normalizedVar !== variableName) {
+      return line + lineEnding;
+    }
+
+    const leadingMatch = rawLhs.match(/^(\s*)/);
+    const trailingMatch = rawLhs.match(/(\s*)$/);
+    const leading = leadingMatch ? leadingMatch[1] : '';
+    const trailing = trailingMatch ? trailingMatch[1] : '';
+    const newLhsCore = cleanUnit ? `${variableName}_${cleanUnit}` : variableName;
+
+    return leading + newLhsCore + trailing + '=' + rawRhs + comment + lineEnding;
+  });
+
+  return processedLines.join('\n');
+}

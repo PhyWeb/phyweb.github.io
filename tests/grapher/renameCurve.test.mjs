@@ -2,7 +2,7 @@ import '../helpers/setup.mjs';
 import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import App from '../../grapher/modules/app.js';
-import { updateFormulasReferences, sanitizeSymbol } from '../../grapher/modules/ioManager.js';
+import { updateFormulasReferences, updateFormulaUnit, sanitizeSymbol } from '../../grapher/modules/ioManager.js';
 import SymbolValidator from '../../grapher/modules/symbolValidator.js';
 
 describe('IOManager - updateFormulasReferences', () => {
@@ -318,6 +318,81 @@ describe('App - renameCurve (Mise à jour automatique des formules)', () => {
     assert.equal(curve.title, 'v');
     assert.equal(toasts.length, 2);
     assert.match(toasts[1].innerHTML, /mot réservé/i);
+  });
+
+  it('met à jour uniquement l\'unité dans l\'éditeur de calculs lors de la modification d\'unité d\'une grandeur calculée', () => {
+    const calcCurve = { title: 'v', unit: 'm/s', type: 'calculation' };
+    app.data.getCurveByTitle = (title) => (title === 'v' ? calcCurve : null);
+    app.editor = {
+      getValue: () => 'v_m/s = diff(x, t) # vitesse\nEc_J = 0.5 * m * v^2',
+      setValue: (val) => { updatedEditorContent = val; }
+    };
+
+    app.renameCurve('v', 'v', 'km/h');
+
+    assert.equal(calcCurve.title, 'v');
+    assert.equal(calcCurve.unit, 'km/h');
+    assert.equal(updatedEditorContent, 'v_km/h = diff(x, t) # vitesse\nEc_J = 0.5 * m * v^2');
+    assert.equal(toasts.length, 1);
+    assert.ok(toasts[0].className.includes('is-info'));
+  });
+
+  it('ajoute ou supprime l\'unité dans l\'éditeur de calculs pour une grandeur calculée', () => {
+    const calcCurve = { title: 'v', unit: '', type: 'calculation' };
+    app.data.getCurveByTitle = (title) => (title === 'v' ? calcCurve : null);
+    let currentText = 'v = diff(x, t)';
+    app.editor = {
+      getValue: () => currentText,
+      setValue: (val) => {
+        currentText = val;
+        updatedEditorContent = val;
+      }
+    };
+
+    // Ajout d'unité (avec espaces nettoyés)
+    app.renameCurve('v', 'v', ' m / s ');
+    assert.equal(calcCurve.unit, 'm/s');
+    assert.equal(updatedEditorContent, 'v_m/s = diff(x, t)');
+
+    // Suppression de l'unité
+    app.renameCurve('v', 'v', '');
+    assert.equal(calcCurve.unit, '');
+    assert.equal(updatedEditorContent, 'v = diff(x, t)');
+  });
+
+  it('met à jour simultanément le nom, les références et l\'unité d\'une grandeur calculée', () => {
+    const calcCurve = { title: 'v', unit: 'm/s', type: 'calculation' };
+    app.data.getCurveByTitle = (title) => (title === 'v' ? calcCurve : null);
+    app.editor = {
+      getValue: () => 'v_m/s = diff(x, t)\nEc_J = 0.5 * m * v^2',
+      setValue: (val) => { updatedEditorContent = val; }
+    };
+
+    app.renameCurve('v', 'vitesse', 'cm/s');
+
+    assert.equal(calcCurve.title, 'vitesse');
+    assert.equal(calcCurve.unit, 'cm/s');
+    assert.equal(updatedEditorContent, 'vitesse_cm/s = diff(x, t)\nEc_J = 0.5 * m * vitesse^2');
+    assert.equal(toasts.length, 1);
+    assert.ok(toasts[0].className.includes('is-info'));
+  });
+});
+
+describe('IOManager - updateFormulaUnit', () => {
+  it('ajoute, remplace ou supprime l\'unité uniquement sur la définition ciblée en préservant les commentaires', () => {
+    const text = 'v = diff(x, t) # vitesse\na_m/s^2 = diff(v, t)';
+    assert.equal(
+      updateFormulaUnit(text, 'v', 'm/s'),
+      'v_m/s = diff(x, t) # vitesse\na_m/s^2 = diff(v, t)'
+    );
+    assert.equal(
+      updateFormulaUnit('v_m/s = diff(x, t) // comment', 'v', 'km/h'),
+      'v_km/h = diff(x, t) // comment'
+    );
+    assert.equal(
+      updateFormulaUnit('v_m/s = diff(x, t)', 'v', ''),
+      'v = diff(x, t)'
+    );
   });
 });
 

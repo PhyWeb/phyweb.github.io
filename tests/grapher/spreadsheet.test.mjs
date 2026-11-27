@@ -675,8 +675,8 @@ describe('Spreadsheet - handleAfterChange() et correction du bug de pagination',
         const subtitle = thCalc.querySelector('.ht-col-header-subtitle');
         assert.ok(subtitle, 'Un sous-titre doit être inséré dans l\'en-tête de la colonne calculée');
         assert.equal(subtitle.textContent, 'calculée');
-        assert.equal(thCalc.style.cursor, 'default');
-        assert.equal(thCalc.getAttribute('title'), 'Grandeur calculée (non éditable dans le tableur)');
+        assert.equal(thCalc.style.cursor, 'pointer');
+        assert.equal(thCalc.getAttribute('title'), 'Grandeur calculée — double-cliquer pour éditer');
 
         // Idempotence : un second appel ne doit pas dupliquer le sous-titre
         capturedOptions.afterGetColHeader(1, thCalc);
@@ -690,6 +690,40 @@ describe('Spreadsheet - handleAfterChange() et correction du bug de pagination',
       } finally {
         globalThis.Handsontable = originalHot;
         global.__createElementOverride = originalCreateOverride;
+      }
+    });
+
+    it('doit ouvrir la modale d\'édition d\'en-tête au double-clic sur une colonne calculée', () => {
+      const data = new Data({ significantDigits: 4 });
+      data.addCurve('x', 'm');
+      const calcCurve = data.addCurve('v', 'm/s');
+      calcCurve.type = 'calculation';
+
+      const spreadsheet = new Spreadsheet(data);
+      let capturedOptions = null;
+      const openedCurves = [];
+      const originalHot = globalThis.Handsontable;
+      globalThis.Handsontable = class MockHandsontable {
+        constructor(container, options) {
+          capturedOptions = options;
+        }
+      };
+
+      try {
+        spreadsheet.build({
+          openEditHeaderModal: (curve) => openedCurves.push(curve)
+        });
+
+        capturedOptions.afterOnCellMouseDown(
+          { detail: 2, stopImmediatePropagation: () => {} },
+          { row: -1, col: 1 },
+          null
+        );
+
+        assert.equal(openedCurves.length, 1);
+        assert.equal(openedCurves[0], calcCurve);
+      } finally {
+        globalThis.Handsontable = originalHot;
       }
     });
 

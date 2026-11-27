@@ -1,7 +1,8 @@
 import {
   sanitizeSymbol,
   sanitizeUnit,
-  updateFormulasReferences
+  updateFormulasReferences,
+  updateFormulaUnit
 } from './io/formulaUtils.js';
 import {
   splitFlexible,
@@ -409,4 +410,4 @@ export default class IOManager {
   }
 }
 
-export { isNumeric, isLineNumeric, sanitizeSymbol, sanitizeUnit, splitFlexible, isTabularData, updateFormulasReferences };
+export { isNumeric, isLineNumeric, sanitizeSymbol, sanitizeUnit, splitFlexible, isTabularData, updateFormulasReferences, updateFormulaUnit };

@@ -1,4 +1,4 @@
-import IOManager, { updateFormulasReferences } from './ioManager.js';
+import IOManager, { updateFormulasReferences, updateFormulaUnit } from './ioManager.js';
 import { stripInlineComment } from './calculation.js';
 import { showToast } from '../../common/common.js';
 import SymbolValidator from './symbolValidator.js';
@@ -84,13 +84,19 @@ export default class App {
 
     // Mise à jour des données
     const curve = this.data.getCurveByTitle(oldTitle);
-    if (curve) {
-        curve.title = newTitle;
-        curve.unit = newUnit;
-    } else {
+    if (!curve) {
         console.error(`renameCurve: La courbe "${oldTitle}" n'a pas été trouvée.`);
         return;
     }
+
+    const isCalculatedCurve = curve.type === 'calculation';
+    const oldUnit = curve.unit || '';
+    const effectiveUnit = isCalculatedCurve
+      ? String(newUnit ?? '').trim().replace(/\s+/g, '')
+      : newUnit;
+
+    curve.title = newTitle;
+    curve.unit = effectiveUnit;
 
     // Mettre à jour les modèles qui utilisent cette courbe
     this.data.models.forEach(model => {
@@ -120,7 +126,7 @@ export default class App {
     if (seriesToUpdate) {
         seriesToUpdate.update({
             name: newTitle,
-            unit: newUnit // Assure que l'unité est aussi à jour pour les tooltips/légendes
+            unit: effectiveUnit // Assure que l'unité est aussi à jour pour les tooltips/légendes
         }, false); // 'false' pour ne pas redessiner tout de suite
     }
 
@@ -141,10 +147,18 @@ export default class App {
     this.uiManager.updateCalculationUI();
     this.data.models.forEach(model => this.uiManager.updateModelPanel(model));
     
-    // Mise à jour automatique des références dans l'éditeur de calculs
-    if (oldTitle !== newTitle && this.editor && typeof this.editor.getValue === 'function' && this.editor.getValue()) {
+    // Mise à jour automatique des références et unités dans l'éditeur de calculs
+    if (this.editor && typeof this.editor.getValue === 'function' && this.editor.getValue()) {
       const currentCalcText = this.editor.getValue();
-      const updatedCalcText = updateFormulasReferences(currentCalcText, { [oldTitle]: newTitle });
+      let updatedCalcText = currentCalcText;
+
+      if (oldTitle !== newTitle) {
+        updatedCalcText = updateFormulasReferences(updatedCalcText, { [oldTitle]: newTitle });
+      }
+      if (isCalculatedCurve && oldUnit !== effectiveUnit) {
+        updatedCalcText = updateFormulaUnit(updatedCalcText, newTitle, effectiveUnit);
+      }
+
       if (updatedCalcText !== currentCalcText) {
         if (typeof this.editor.setValue === 'function') {
           this.editor.setValue(updatedCalcText);
@@ -152,7 +166,13 @@ export default class App {
         if (this.uiManager && typeof this.uiManager.updateCalculationUI === 'function') {
           this.uiManager.updateCalculationUI();
         }
-        showToast(`Les formules utilisant "${oldTitle}" ont été mises à jour avec "${newTitle}".`, "is-info", 4000);
+        if (oldTitle !== newTitle && isCalculatedCurve && oldUnit !== effectiveUnit) {
+          showToast(`La formule de "${oldTitle}" a été mise à jour ("${newTitle}", unité modifiée).`, "is-info", 4000);
+        } else if (oldTitle !== newTitle) {
+          showToast(`Les formules utilisant "${oldTitle}" ont été mises à jour avec "${newTitle}".`, "is-info", 4000);
+        } else if (isCalculatedCurve && oldUnit !== effectiveUnit) {
+          showToast(`L'unité de "${newTitle}" a été mise à jour dans les formules de calcul.`, "is-info", 4000);
+        }
       }
     }
   }

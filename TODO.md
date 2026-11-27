@@ -24,8 +24,6 @@
 # Grapher
     - possibilité d'avoir 2 axes y
 
-    - changer le style des points selectionnés dans grapher
-
     des fonctions non prévues existent (pow, min etc de math.js)
 
     ajouter des synonymes aux fonctions mathematique genre derivee()
@@ -33,10 +31,6 @@
     parametre? pour angles en degrés
 
     une option pour que le premier et le dernier point soient a la limite du graphique et pas à 5% du bord
-
-    améliorer la grille (voir géogebra)
-
-    On empeche l'ouverture de la modale d'edition de nom de grandeur pour les grandeurs calculées... on pourrait peut etre trouver un moyen de laisser la possibilité de changer l'unité voir le nom quand meme
 
     intercepter les erreurs de mathsjs en anglais et les traduire en langage clair
     

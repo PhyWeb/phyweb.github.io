@@ -50,9 +50,9 @@ class Spreadsheet {
       : null;
 
     if (curve.type === 'calculation') {
-      if (TH.style) TH.style.cursor = 'default';
+      if (TH.style) TH.style.cursor = 'pointer';
       if (typeof TH.setAttribute === 'function') {
-        TH.setAttribute('title', 'Grandeur calculée (non éditable dans le tableur)');
+        TH.setAttribute('title', 'Grandeur calculée — double-cliquer pour éditer');
       }
       TH.classList?.add('ht-calculated-col-header');
 
@@ -349,10 +349,6 @@ class Spreadsheet {
     const onSpreadsheetHeaderDblClick = (colIndex) => {
       const curve = this.data.getCurveByIndex(colIndex);
       if (curve) {
-        if (curve.type === 'calculation') {
-          showToast("Vous ne pouvez pas renommer une grandeur issue d'un calcul.", "is-danger");
-          return;
-        }
         uiManager.openEditHeaderModal(curve);
       }
     }
