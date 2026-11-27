@@ -179,7 +179,8 @@ describe('Coloration syntaxique et boutons rapides dans l\'onglet Calculs', () =
     assert.ok(html.includes('data-value="²"'));
     assert.ok(html.includes('data-value="³"'));
     assert.ok(html.includes('data-value="⁻¹"'));
+    assert.ok(html.includes('data-value="⁻²"'));
     assert.ok(html.includes('data-value="^"'));
-    assert.ok(html.includes('data-value="10^"'));
+    assert.ok(html.includes('data-value="*10^"'));
   });
 });
