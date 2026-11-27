@@ -2,6 +2,7 @@ import '../helpers/setup.mjs';
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import Calculation from '../../grapher/modules/calculation.js';
+import { translateMathError } from '../../grapher/modules/calculation/mathErrorTranslator.js';
 
 describe('Calculation Module', () => {
   const calc = new Calculation({ derivatePoints: 5, derivateEdges: true });
@@ -116,7 +117,7 @@ describe('Calculation Module', () => {
       const { results, errors } = calc.evaluateBlock(formulas, initialScope);
       assert.equal(errors.length, 2);
       assert.equal(results.length, 0);
-      assert.match(errors[0].error, /La variable "FONCTION_INCONNUE" n'est pas définie/);
+      assert.match(errors[0].error, /La fonction "FONCTION_INCONNUE" n'est pas reconnue/);
       assert.match(errors[1].error, /La variable "variableInconnue" n'est pas définie/);
     });
 
@@ -900,6 +901,44 @@ describe('Calculation Module', () => {
 
       dynamicCalc.angleUnit = 'rad';
       assert.ok(Math.abs(dynamicCalc.evaluate('sin(pi / 6)', {}) - 0.5) < 1e-12);
+    });
+  });
+
+  describe('Traduction et simplification des erreurs math.js (translateMathError)', () => {
+    const scope = { x: [1, 2, 3, 4, 5], t: [0, 1, 2, 3, 4], m: { value: 2, unit: 'kg' } };
+
+    it('doit traduire les erreurs de syntaxe, parenthèses, arguments et multiplication implicite dans evaluateBlock', () => {
+      const checkError = (expr, expectedRegex) => {
+        const { errors } = calc.evaluateBlock([{ variableName: 'r', expression: expr, unit: '' }], scope);
+        assert.equal(errors.length, 1, `Une erreur était attendue pour "${expr}"`);
+        assert.match(errors[0].error, expectedRegex);
+      };
+
+      checkError('m(x + 1)', /« m » n'est pas une fonction.*signe \*/);
+      checkError('sin(x', /Parenthèse fermante "\)" manquante\./);
+      checkError('sin(x))', /Parenthèse fermante "\)" en trop\./);
+      checkError('[1, 2', /Crochet fermant "\]" manquant\./);
+      checkError('2 * x +', /La formule est incomplète\./);
+      checkError('2 * / x', /Valeur ou grandeur attendue/);
+      checkError('1.2.3 * x', /Syntaxe invalide près de « \.3 »\./);
+      checkError('diff(x)', /Pas assez d'arguments pour diff\(\) — syntaxe attendue : diff\(y, x\)\./);
+      checkError('sin()', /Pas assez d'arguments pour la fonction sin\(\)\./);
+      checkError('diff(x, t, 2)', /Trop d'arguments pour diff\(\) \(2 attendus, 3 fournis\)\./);
+      checkError('sin(x, 2)', /Trop d'arguments pour sin\(\) \(1 attendu, 2 fournis\)\./);
+      checkError('x[0]', /la numérotation commence à 1/);
+      checkError('x[10]', /10 dépasse la taille 5/);
+      checkError('[1, 2] + [1, 2, 3]', /n'ont pas la même taille/);
+    });
+
+    it('doit préserver intactes les erreurs PhyWeb en français et les erreurs inconnues', () => {
+      assert.equal(
+        translateMathError(new Error('Impossible de dériver par rapport à une constante.')),
+        'Impossible de dériver par rapport à une constante.'
+      );
+      assert.equal(
+        translateMathError(new Error('Some completely unknown error')),
+        'Some completely unknown error'
+      );
     });
   });
 });

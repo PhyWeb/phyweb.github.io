@@ -360,13 +360,13 @@ describe('Contrôle Mega-Dropdown des Constantes dans l\'onglet Calculs', () => 
       const cssContent = fs.readFileSync('grapher/lib/grapher.css', 'utf8');
       assert.match(
         cssContent,
-        /\.cm-phyweb-function\s*\{[^}]*color:\s*#485fc7/,
-        '.cm-phyweb-function doit avoir la couleur is-link (#485fc7)'
+        /\.cm-phyweb-function\s*\{[^}]*color:\s*var\(--bulma-link-on-scheme/,
+        '.cm-phyweb-function doit utiliser la couleur Bulma link (--bulma-link-on-scheme)'
       );
       assert.match(
         cssContent,
-        /\.cm-phyweb-function-warning\s*\{[^}]*color:\s*#c27803/,
-        '.cm-phyweb-function-warning doit avoir la couleur is-warning (#c27803)'
+        /\.cm-phyweb-function-warning\s*\{[^}]*color:\s*var\(--bulma-warning-40/,
+        '.cm-phyweb-function-warning doit utiliser la couleur Bulma warning (--bulma-warning-40)'
       );
       assert.match(
         cssContent,

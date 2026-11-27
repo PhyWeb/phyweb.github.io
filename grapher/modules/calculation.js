@@ -11,6 +11,7 @@ import {
   preprocessSpecialCharacters,
   preprocessDecimalCommas
 } from './calculation/expressionPreprocessor.js';
+import { translateMathError } from './calculation/mathErrorTranslator.js';
 
 /*----------------------------------------------------------------------------------------------
 --------------------------------------------Calculation-----------------------------------------
@@ -416,10 +417,13 @@ export default class Calculation {
           const cleanExpression = this.preprocessExpression(calc.expression);
 
           const expressionNode = this.mathInstance.parse(cleanExpression);
-          expressionNode.traverse((node) => {
+          expressionNode.traverse((node, path, parent) => {
             if (node.isSymbolNode) {
               const symbol = node.name;
               if (!(symbol in scope) && !(symbol in this.mathInstance)) {
+                if (parent && parent.isFunctionNode && parent.fn === node) {
+                  throw new Error(`La fonction "${symbol}" n'est pas reconnue.`);
+                }
                 throw new Error(`La variable "${symbol}" n'est pas définie.`);
               }
               if (symbol in scope && Array.isArray(scope[symbol]) && scope[symbol].length === 0) {
@@ -476,7 +480,7 @@ export default class Calculation {
           }
           progressMade = true;
         } catch (error) {
-          remainingForNextLoop.push({ ...calc, error: error.message });
+          remainingForNextLoop.push({ ...calc, error: translateMathError(error) });
         }
       }
       pendingCalculations = remainingForNextLoop;
