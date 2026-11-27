@@ -50,8 +50,6 @@
 
     othogonalité depuis tracker ???? Essayer le pointage du velo on voit pas le accéléré
 
-    possibilité de facilement écrire des exposants
-
     bug: plus d'étiquettes Δx et Δy dans les réticules
     
 # Mendeleiev
