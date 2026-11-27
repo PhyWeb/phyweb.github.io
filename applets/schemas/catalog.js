@@ -111,9 +111,10 @@ function renderClippedLiquid(uid, clipPathD, minY, maxY, level, color, ctx = {},
     const fillToRim = Boolean(opts?.fillToRim);
     if (lvl <= 0 && !fillToRim) return '';
     if (fillToRim && lvl >= 100) {
+        const safeUid = esc(uid);
         return `
-      <defs><clipPath id="clip-${uid}"><path d="${clipPathD}" /></clipPath></defs>
-      <g clip-path="url(#clip-${uid})" style="mix-blend-mode: darken;">
+      <defs><clipPath id="clip-${safeUid}"><path d="${clipPathD}" /></clipPath></defs>
+      <g clip-path="url(#clip-${safeUid})" style="mix-blend-mode: darken;">
         <rect x="-800" y="-800" width="1600" height="1600" fill="${esc(color)}" />
       </g>
     `;
@@ -137,9 +138,10 @@ function renderClippedLiquid(uid, clipPathD, minY, maxY, level, color, ctx = {},
 
     const counterRot = flipX ? rot : -rot;
     const rotAttr = Math.abs(counterRot) > 0.01 ? ` transform="rotate(${counterRot.toFixed(2)}, 0, 0)"` : '';
+    const safeUid = esc(uid);
     return `
-      <defs><clipPath id="clip-${uid}"><path d="${clipPathD}" /></clipPath></defs>
-      <g clip-path="url(#clip-${uid})" style="mix-blend-mode: darken;">
+      <defs><clipPath id="clip-${safeUid}"><path d="${clipPathD}" /></clipPath></defs>
+      <g clip-path="url(#clip-${safeUid})" style="mix-blend-mode: darken;">
         <g${rotAttr}>
           <rect x="-800" y="${wySurface.toFixed(1)}" width="1600" height="1600" fill="${esc(color)}" />
         </g>
@@ -1126,9 +1128,10 @@ export const CATALOG = [
             const showP2 = l2 > 0 && wy2 < wy1 - 0.5;
             const counterRot = flipX ? rot : -rot;
             const rotAttr = Math.abs(counterRot) > 0.01 ? ` transform="rotate(${counterRot.toFixed(2)}, 0, 0)"` : '';
+            const safeUid = esc(uid);
             const liquids = (showP1 || showP2) ? `
-              <defs><clipPath id="clip-${uid}"><path d="${bodyClip}" /></clipPath></defs>
-              <g clip-path="url(#clip-${uid})" style="mix-blend-mode: darken;">
+              <defs><clipPath id="clip-${safeUid}"><path d="${bodyClip}" /></clipPath></defs>
+              <g clip-path="url(#clip-${safeUid})" style="mix-blend-mode: darken;">
                 <g${rotAttr}>
                   ${showP1 ? `<rect x="-800" y="${wy1.toFixed(1)}" width="1600" height="1600" fill="${esc(p.phase1Color)}" />` : ''}
                   ${showP2 ? `<rect x="-800" y="${wy2.toFixed(1)}" width="1600" height="${showP1 ? (wy1 - wy2).toFixed(1) : '1600'}" fill="${esc(p.phase2Color)}" />` : ''}
@@ -1726,8 +1729,10 @@ export const CATALOG = [
             { key: 'height', label: 'Hauteur', type: 'range', min: 60, max: 185, step: 5, unit: 'mm' }
         ],
         getBBox(p) {
-            const h = Number(p.height) || 90;
-            return { x: -100, y: -h, width: 228, height: h };
+            const h = Math.max(60, Math.min(185, Number(p.height) || 90));
+            const halfSpan = Math.max(36, Math.min(78, Math.sqrt(Math.max(1200, 168 * 168 - (h - 18) * (h - 18))) / 2));
+            const knobX = Math.max(106, halfSpan + 44);
+            return { x: -100, y: -h, width: Math.ceil(knobX + 12 + 100), height: h };
         },
         getAnchors(p) {
             const h = Number(p.height) || 90;

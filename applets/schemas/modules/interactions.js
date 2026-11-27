@@ -182,12 +182,14 @@ export function createInteractionsController(ctx) {
                     label: 'Mettre au premier plan',
                     icon: 'fa-angles-up',
                     onClick: () => {
-                        store.pushHistory();
                         const ids = new Set(entries.filter(en => en.kind === 'item').map(en => en.id));
-                        store.scene.items = [
+                        const nextItems = [
                             ...store.scene.items.filter(i => !ids.has(i.id)),
                             ...store.scene.items.filter(i => ids.has(i.id))
                         ];
+                        if (!nextItems.some((it, idx) => it.id !== store.scene.items[idx].id)) return;
+                        store.pushHistory();
+                        store.scene.items = nextItems;
                         ctx.renderScene();
                     }
                 });
@@ -195,12 +197,14 @@ export function createInteractionsController(ctx) {
                     label: 'Mettre à l’arrière-plan',
                     icon: 'fa-angles-down',
                     onClick: () => {
-                        store.pushHistory();
                         const ids = new Set(entries.filter(en => en.kind === 'item').map(en => en.id));
-                        store.scene.items = [
+                        const nextItems = [
                             ...store.scene.items.filter(i => ids.has(i.id)),
                             ...store.scene.items.filter(i => !ids.has(i.id))
                         ];
+                        if (!nextItems.some((it, idx) => it.id !== store.scene.items[idx].id)) return;
+                        store.pushHistory();
+                        store.scene.items = nextItems;
                         ctx.renderScene();
                     }
                 });
@@ -293,17 +297,27 @@ export function createInteractionsController(ctx) {
         if (!lbl) return;
 
         const m = getLabelMetrics(lbl);
-        const left = m.boxX * editor.zoom + editor.panX - 6;
-        const top = m.boxY * editor.zoom + editor.panY - 4;
         const fontSizePx = Math.max(11, Math.round(m.fs * editor.zoom));
 
         const ta = document.createElement('textarea');
         ta.className = 'inline-label-editor';
         ta.value = lbl.text || '';
         ta.rows = Math.max(1, m.lines.length);
-        ta.style.left = `${Math.round(left)}px`;
-        ta.style.top = `${Math.round(top)}px`;
-        ta.style.width = `${Math.max(110, Math.round(m.boxW * editor.zoom + 34))}px`;
+
+        const syncEditorGeometry = (metrics) => {
+            const widthPx = Math.max(110, Math.round(metrics.boxW * editor.zoom + 34));
+            let leftPx = metrics.boxX * editor.zoom + editor.panX - 6;
+            if (metrics.align === 'right') {
+                leftPx = (metrics.boxX + metrics.boxW) * editor.zoom + editor.panX + 6 - widthPx;
+            } else if (metrics.align === 'center') {
+                leftPx = (metrics.boxX + metrics.boxW / 2) * editor.zoom + editor.panX - widthPx / 2;
+            }
+            ta.style.left = `${Math.round(leftPx)}px`;
+            ta.style.top = `${Math.round(metrics.boxY * editor.zoom + editor.panY - 4)}px`;
+            ta.style.width = `${widthPx}px`;
+        };
+
+        syncEditorGeometry(m);
         ta.style.fontSize = `${fontSizePx}px`;
         ta.style.fontWeight = lbl.bold ? 'bold' : 'normal';
         ta.style.fontStyle = lbl.italic ? 'italic' : 'normal';
@@ -320,8 +334,7 @@ export function createInteractionsController(ctx) {
             lbl.text = ta.value;
             const lines = ta.value.split('\n');
             ta.rows = Math.max(1, lines.length);
-            const maxLen = Math.max(4, ...lines.map(l => l.length));
-            ta.style.width = `${Math.max(110, Math.round(maxLen * fontSizePx * 0.62 + 34))}px`;
+            syncEditorGeometry(getLabelMetrics(lbl));
             ctx.renderScene();
             const inspTa = inspectorBodyEl.querySelector('textarea[data-prop="text"]');
             if (inspTa && inspTa.value !== ta.value) inspTa.value = ta.value;
@@ -437,8 +450,16 @@ export function createInteractionsController(ctx) {
                 };
                 ctx.renderOverlay();
             } else {
+                const st = editor.pendingConnector.start;
+                const samePort = Boolean(st.itemId && st.itemId === snappedPoint.itemId && st.anchorId === snappedPoint.anchorId);
+                const samePos = Math.hypot(snappedPoint.x - st.x, snappedPoint.y - st.y) < 2;
+                if (samePort || samePos) {
+                    editor.pendingConnector = null;
+                    ctx.renderOverlay();
+                    return;
+                }
                 const defaults = editor.connectorDefaults?.[editor.tool] || {};
-                store.addConnector(editor.tool, editor.pendingConnector.start, snappedPoint, defaults);
+                store.addConnector(editor.tool, st, snappedPoint, defaults);
                 editor.pendingConnector = null;
                 // Rester dans l'outil Fil/Tuyau pour permettre le tracé en chaîne (Échap pour quitter)
                 ctx.renderScene();
@@ -450,7 +471,7 @@ export function createInteractionsController(ctx) {
         // 2. Outil Légende
         if (editor.tool === 'label') {
             e.preventDefault();
-            const lbl = store.addLabel(pt.x + 55, pt.y - 25, 'Légende', pt.x, pt.y);
+            const lbl = store.addLabel(pt.x + 55, pt.y - 25, 'Légende', pt.x, pt.y, editor.labelDefaults || {});
             ctx.setTool('select');
             ctx.renderScene();
             ctx.renderInspector();
@@ -462,11 +483,10 @@ export function createInteractionsController(ctx) {
         const handleEl = e.target.closest('[data-handle]');
         if (handleEl && store.selection) {
             const handleType = handleEl.dataset.handle;
-            store.pushHistory();
             if (handleType === 'item-rotate' && store.selection.kind === 'item') {
                 const item = store.getSelectedElement();
                 const def = item ? getCatalogItem(item.type) : null;
-                if (item && def) {
+                if (item && def && !item.locked) {
                     const bb = def.getBBox(item.props || {});
                     const cx = bb.x + bb.width / 2;
                     const cy = bb.y + bb.height / 2;
@@ -477,7 +497,8 @@ export function createInteractionsController(ctx) {
                         localCenterX: cx,
                         localCenterY: cy,
                         pivotX: pivotWorld.x,
-                        pivotY: pivotWorld.y
+                        pivotY: pivotWorld.y,
+                        historyPushed: false
                     };
                     svgEl.setPointerCapture(e.pointerId);
                     return;
@@ -486,7 +507,7 @@ export function createInteractionsController(ctx) {
             if (handleType === 'item-resize' && store.selection.kind === 'item') {
                 const item = store.getSelectedElement();
                 const def = item ? getCatalogItem(item.type) : null;
-                if (item && def) {
+                if (item && def && !item.locked) {
                     const bb = def.getBBox(item.props || {});
                     const pad = 6;
                     const corner = handleEl.dataset.corner || 'se';
@@ -511,13 +532,15 @@ export function createInteractionsController(ctx) {
                         ux: (grabWorld.x - anchorWorld.x) / origDist,
                         uy: (grabWorld.y - anchorWorld.y) / origDist,
                         origDist,
-                        origScale: item.scale ?? 1
+                        origScale: item.scale ?? 1,
+                        historyPushed: false
                     };
                     svgEl.setPointerCapture(e.pointerId);
                     return;
                 }
             }
             const currentEl = store.getSelectedElement();
+            if (!currentEl || currentEl.locked) return;
             editor.drag = {
                 kind: 'handle',
                 handleType,
@@ -528,7 +551,8 @@ export function createInteractionsController(ctx) {
                 origTargetX: currentEl?.targetX ?? 0,
                 origTargetY: currentEl?.targetY ?? 0,
                 origBend: currentEl?.bend ?? 0,
-                origBendX: currentEl?.bendX ?? 0
+                origBendX: currentEl?.bendX ?? 0,
+                historyPushed: false
             };
             svgEl.setPointerCapture(e.pointerId);
             return;
@@ -585,7 +609,6 @@ export function createInteractionsController(ctx) {
             } else if (kind === 'label' && el) {
                 if (e.detail >= 2) {
                     e.preventDefault();
-                    requestAnimationFrame(() => openInlineLabelEditor(el));
                     return;
                 }
                 const moveWithTarget = Boolean(e.target.closest('[data-label-part="leader"]'));
@@ -736,6 +759,10 @@ export function createInteractionsController(ctx) {
             const { pivotX, pivotY, localCenterX, localCenterY } = editor.drag;
             const rawAngle = (Math.atan2(pt.y - pivotY, pt.x - pivotX) * 180) / Math.PI + 90;
             const res = snapRotationAngle(rawAngle, editor.snapEnabled && !e.altKey);
+            if (!editor.drag.historyPushed && res.angle !== (item.rotation ?? 0)) {
+                store.pushHistory();
+                editor.drag.historyPushed = true;
+            }
             item.rotation = res.angle;
             const newCenter = localToWorld(item, localCenterX, localCenterY);
             item.x = Math.round(item.x + (pivotX - newCenter.x));
@@ -755,8 +782,12 @@ export function createInteractionsController(ctx) {
             if (editor.snapEnabled && !e.altKey) {
                 nextScale = Math.round(nextScale / 0.05) * 0.05;
             }
-            nextScale = Math.round(nextScale * 100) / 100;
-            item.scale = Math.max(0.4, Math.min(2.0, nextScale));
+            nextScale = Math.max(0.4, Math.min(2.0, Math.round(nextScale * 100) / 100));
+            if (!editor.drag.historyPushed && nextScale !== (item.scale ?? 1)) {
+                store.pushHistory();
+                editor.drag.historyPushed = true;
+            }
+            item.scale = nextScale;
             const newAnchor = localToWorld(item, oppLocalX, oppLocalY);
             item.x = Math.round(item.x + (anchorX - newAnchor.x));
             item.y = Math.round(item.y + (anchorY - newAnchor.y));
@@ -789,6 +820,10 @@ export function createInteractionsController(ctx) {
         if (editor.drag.kind === 'handle') {
             const el = store.getSelectedElement();
             if (!el) return;
+            if (!editor.drag.historyPushed) {
+                store.pushHistory();
+                editor.drag.historyPushed = true;
+            }
             const h = editor.drag.handleType;
             if (h === 'conn-start' || h === 'conn-end') {
                 const portType = el.kind === 'wire' ? 'elec' : 'hose';
@@ -802,7 +837,9 @@ export function createInteractionsController(ctx) {
                 ctx.renderScene();
             } else if (h === 'conn-bend') {
                 el.bendX = Math.round((editor.drag.origBendX || 0) + (pt.x - editor.drag.startX));
-                el.bend = Math.round((editor.drag.origBend || 0) + (pt.y - editor.drag.startY));
+                el.bend = el.mode === 'orthogonal'
+                    ? 0
+                    : Math.round((editor.drag.origBend || 0) + (pt.y - editor.drag.startY));
                 ctx.renderScene();
                 ctx.syncInspectorValues();
             } else if (h === 'lbl-pos') {
@@ -823,6 +860,19 @@ export function createInteractionsController(ctx) {
         }
     });
 
+    function resetActiveDrag(pointerId) {
+        editor.drag = null;
+        editor.activeGuides = [];
+        editor.snappedPort = null;
+        editor.rotateFeedback = null;
+        editor.scaleFeedback = null;
+        drawerEl.classList.remove('is-drop-delete');
+        stageEl.classList.remove('is-panning');
+        if (pointerId !== undefined) {
+            try { svgEl.releasePointerCapture(pointerId); } catch (_) {}
+        }
+    }
+
     svgEl.addEventListener('pointerup', (e) => {
         if (editor.drag) {
             const wasRightClickMenu = editor.drag.kind === 'pan' && editor.drag.isRightClick && !editor.drag.moved;
@@ -831,24 +881,16 @@ export function createInteractionsController(ctx) {
             const wasMovable = editor.drag.kind === 'move-item' || editor.drag.kind === 'move-label' || editor.drag.kind === 'move-multi';
             const shouldDelete = wasMovable && isOverDeleteZone(e.clientX, e.clientY);
             const historyPushed = Boolean(editor.drag.historyPushed);
-            const delCount = store.selected.length;
+            const delCount = store.getSelectedElements().filter(en => !en.el.locked).length;
 
-            editor.drag = null;
-            editor.activeGuides = [];
-            editor.snappedPort = null;
-            editor.rotateFeedback = null;
-            editor.scaleFeedback = null;
-            drawerEl.classList.remove('is-drop-delete');
-            stageEl.classList.remove('is-panning');
-            try { svgEl.releasePointerCapture(e.pointerId); } catch (_) {}
+            resetActiveDrag(e.pointerId);
 
             if (wasRightClickMenu) {
                 openContextMenu(e.clientX, e.clientY, rightClickHitEl);
                 return;
             }
 
-            if (shouldDelete) {
-                store.deleteSelected(historyPushed);
+            if (shouldDelete && store.deleteSelected(historyPushed)) {
                 ctx.renderScene();
                 ctx.renderInspector();
                 notify(delCount > 1 ? `${delCount} éléments supprimés.` : 'Élément supprimé.');
@@ -857,6 +899,14 @@ export function createInteractionsController(ctx) {
                 ctx.renderOverlay();
             }
         }
+    });
+
+    svgEl.addEventListener('pointercancel', (e) => {
+        if (!editor.drag) return;
+        const wasMarquee = editor.drag.kind === 'marquee';
+        resetActiveDrag(e.pointerId);
+        if (wasMarquee) ctx.renderInspector();
+        ctx.renderOverlay();
     });
 
     svgEl.addEventListener('dblclick', (e) => {
@@ -1038,6 +1088,12 @@ export function createInteractionsController(ctx) {
         }
 
         if (isCtrlOrCmd || isAlt) return;
+
+        if (e.key === '?') {
+            e.preventDefault();
+            ctx.openShortcutsModal?.();
+            return;
+        }
 
         const k = e.key.toLowerCase();
         if (k === 'v') ctx.setTool('select');

@@ -66,7 +66,19 @@ const editor = {
     spaceDown: false,
     connectorDefaults: {
         wire: { mode: 'bezier', color: '#e03131', width: 3.5, dashed: false, showArrow: false, behindItems: false },
-        hose: { mode: 'bezier', color: '#74c0fc', width: 8, dashed: false, showArrow: true, behindItems: false }
+        hose: { mode: 'bezier', color: '#74c0fc', width: 8, dashed: false, showArrow: true, behindItems: true }
+    },
+    labelDefaults: {
+        fontSize: 20,
+        color: '#1e293b',
+        bold: false,
+        italic: false,
+        align: 'left',
+        bgEnabled: false,
+        bgColor: '#ffffff',
+        borderEnabled: false,
+        leaderStyle: 'straight',
+        arrowHead: true
     }
 };
 
@@ -260,7 +272,26 @@ function findElementsInRect(x1, y1, x2, y2) {
         const b = getElementWorldBounds('label', lbl);
         if (b && rectsIntersect(rect, b)) found.push({ kind: 'label', id: lbl.id });
     }
-    return found;
+    const expanded = [];
+    const seen = new Set();
+    const pushUnique = (kind, id) => {
+        const key = `${kind}:${id}`;
+        if (seen.has(key)) return;
+        seen.add(key);
+        expanded.push({ kind, id });
+    };
+    for (const entry of found) {
+        const el = store._findElement(entry.kind, entry.id);
+        if (el?.groupId) {
+            for (const m of store.getGroupMembers(el.groupId)) {
+                const mEl = store._findElement(m.kind, m.id);
+                if (mEl && !mEl.locked) pushUnique(m.kind, m.id);
+            }
+        } else {
+            pushUnique(entry.kind, entry.id);
+        }
+    }
+    return expanded;
 }
 
 function alignSelectedElements(mode) {
@@ -355,14 +386,14 @@ function renderScene() {
         const scale = item.scale ?? 1;
         const fx = item.flipX ? -scale : scale;
         const transform = `translate(${item.x}, ${item.y}) rotate(${item.rotation ?? 0}) scale(${fx}, ${scale})`;
-        return `<g class="scene-item${item.locked ? ' is-locked' : ''}${item.opaqueBg ? ' is-opaque-bg' : ''}" data-kind="item" data-id="${item.id}" transform="${transform}">${def.render(item.props || {}, item.id, { rotation: item.rotation ?? 0, flipX: !!item.flipX })}</g>`;
+        return `<g class="scene-item${item.locked ? ' is-locked' : ''}${item.opaqueBg ? ' is-opaque-bg' : ''}" data-kind="item" data-id="${escHtml(item.id)}" transform="${transform}">${def.render(item.props || {}, item.id, { rotation: item.rotation ?? 0, flipX: !!item.flipX })}</g>`;
     }).join('');
 
     const renderConnectorGroup = (conn) => {
         const { p1, p2 } = resolveConnectorEndpoints(conn, store.scene.items);
         const d = buildConnectorPath(p1, p2, conn.mode, conn.bend, conn.bendX || 0);
         const hitStroke = `<path d="${d}" fill="none" stroke="transparent" stroke-width="18" />`;
-        return `<g class="scene-connector${conn.locked ? ' is-locked' : ''}" data-kind="connector" data-id="${conn.id}">${hitStroke}${renderConnectorSVG(conn, store.scene.items)}</g>`;
+        return `<g class="scene-connector${conn.locked ? ' is-locked' : ''}" data-kind="connector" data-id="${escHtml(conn.id)}">${hitStroke}${renderConnectorSVG(conn, store.scene.items)}</g>`;
     };
 
     if (layerConnectorsBack) {
@@ -377,7 +408,7 @@ function renderScene() {
         .join('');
 
     layerLabels.innerHTML = store.scene.labels.map(lbl => {
-        return `<g class="scene-label${lbl.locked ? ' is-locked' : ''}" data-kind="label" data-id="${lbl.id}">${renderLabelSVG(lbl, { interactive: true })}</g>`;
+        return `<g class="scene-label${lbl.locked ? ' is-locked' : ''}" data-kind="label" data-id="${escHtml(lbl.id)}">${renderLabelSVG(lbl, { interactive: true })}</g>`;
     }).join('');
 
     renderOverlay();
@@ -656,6 +687,7 @@ const ctx = {
     addOrSelectPaillasse,
     renderScene,
     renderOverlay,
+    updateHistoryButtons,
     setTool
 };
 
@@ -683,6 +715,27 @@ ctx.openExportModal = exportModal.openExportModal;
 
 const templatesModal = createTemplatesModalController(ctx);
 ctx.openTemplatesModal = templatesModal.openTemplatesModal;
+
+// Modale Raccourcis & astuces (?)
+const shortcutsModalEl = document.getElementById('shortcuts-modal');
+const closeShortcutsModal = () => shortcutsModalEl?.classList.remove('is-active');
+const openShortcutsModal = () => {
+    if (!shortcutsModalEl) return;
+    ctx.closeOverlays?.();
+    shortcutsModalEl.classList.add('is-active');
+};
+ctx.openShortcutsModal = openShortcutsModal;
+if (shortcutsModalEl) {
+    shortcutsModalEl.querySelector('.modal-background')?.addEventListener('click', closeShortcutsModal);
+    document.getElementById('shortcuts-close-x')?.addEventListener('click', closeShortcutsModal);
+    document.getElementById('shortcuts-close-btn')?.addEventListener('click', closeShortcutsModal);
+    window.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Escape' && shortcutsModalEl.classList.contains('is-active')) {
+            ev.preventDefault();
+            closeShortcutsModal();
+        }
+    });
+}
 
 const interactions = createInteractionsController(ctx);
 ctx.closeOverlays = () => {

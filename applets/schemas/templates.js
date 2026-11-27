@@ -2,7 +2,8 @@
 import { getCatalogItem } from './catalog.js';
 import { getWorldAnchorById, localToWorld, normalizeAngle } from './snapping.js';
 
-function createBuilder(title) {
+function createBuilder(title, idPrefix = 'tpl') {
+    const safePrefix = String(idPrefix || 'tpl').replace(/[^a-zA-Z0-9_-]/g, '_');
     let seq = 1;
     const items = [];
     const connectors = [];
@@ -12,7 +13,7 @@ function createBuilder(title) {
         const def = getCatalogItem(type);
         if (!def) throw new Error(`Type de catalogue inconnu dans le modèle : ${type}`);
         const item = {
-            id: `tpl_obj_${seq++}`,
+            id: `${safePrefix}_obj_${seq++}`,
             type,
             x: Math.round(x),
             y: Math.round(y),
@@ -58,7 +59,7 @@ function createBuilder(title) {
         };
         const isWire = kind === 'wire';
         const conn = {
-            id: `tpl_${isWire ? 'wire' : 'hose'}_${seq++}`,
+            id: `${safePrefix}_${isWire ? 'wire' : 'hose'}_${seq++}`,
             kind,
             start: resolve(startRef),
             end: resolve(endRef),
@@ -78,7 +79,7 @@ function createBuilder(title) {
 
     const addLabel = (x, y, text, targetX = null, targetY = null, opts = {}) => {
         const lbl = {
-            id: `tpl_lbl_${seq++}`,
+            id: `${safePrefix}_lbl_${seq++}`,
             text,
             x: Math.round(x),
             y: Math.round(y),
@@ -115,8 +116,8 @@ export const TEMPLATES = [
         name: 'Titrage pH-métrique',
         category: 'Dosage',
         description: 'Burette graduée sur potence, bécher sur agitateur magnétique, pH-mètre et sonde.',
-        build() {
-            const b = createBuilder('Titrage pH-métrique');
+        build(idPrefix = 'tpl_titrage-ph') {
+            const b = createBuilder('Titrage pH-métrique', idPrefix);
             const Y = 460;
             b.addItem('paillasse', 100, Y, { width: 820 }, { locked: true });
             b.addItem('agitateur-magnetique', 0, Y, { stirring: true, heating: false });
@@ -150,8 +151,8 @@ export const TEMPLATES = [
         name: 'Chauffage à reflux',
         category: 'Synthèse',
         description: 'Support élévateur, chauffe-ballon, ballon, réfrigérant à boules et circulation d’eau.',
-        build() {
-            const b = createBuilder('Chauffage à reflux');
+        build(idPrefix = 'tpl_chauffage-reflux') {
+            const b = createBuilder('Chauffage à reflux', idPrefix);
             const Y = 520;
             b.addItem('paillasse', 100, Y, { width: 880 }, { locked: true });
             const boy = b.addItem('boy', 0, Y, { height: 95 });
@@ -199,8 +200,8 @@ export const TEMPLATES = [
         name: 'Distillation fractionnée',
         category: 'Séparation',
         description: 'Ballon chauffé, colonne de Vigreux, tête de distillation avec thermomètre, réfrigérant droit sur potence et éprouvette.',
-        build() {
-            const b = createBuilder('Distillation fractionnée');
+        build(idPrefix = 'tpl_distillation') {
+            const b = createBuilder('Distillation fractionnée', idPrefix);
             const Y = 540;
             b.addItem('paillasse', 220, Y, { width: 1120 }, { locked: true });
             b.addItem('potence', 205, Y, { variant: 'face', clampSize: 'grande', rodHeight: 820, clamp1Y: 680, clamp1Angle: -75 });
@@ -214,7 +215,7 @@ export const TEMPLATES = [
             b.addItem('thermometre', -80, -205, { variant: 'alcool', temperature: 78 });
             b.addItem('allonge-coudee', 441, 13);
 
-            b.addItem('evier', 600, Y, { width: 140, hasWater: true, waterColor: '#9ad1f5' }, { opaqueBg: true });
+            const evier = b.addItem('evier', 600, Y, { width: 140, hasWater: true, waterColor: '#9ad1f5' }, { opaqueBg: true });
             const robinet = b.addItem('robinet', 710, Y, { variant: 'paillasse' });
             const refrig = b.addItem('refrigerant', 413, -84, { variant: 'droit', hasWater: true, waterColor: '#cbe8fb' }, { rotation: -75, flipX: true, opaqueBg: true });
 
@@ -228,7 +229,7 @@ export const TEMPLATES = [
                 showArrow: true,
                 behindItems: true
             });
-            b.connect('hose', { item: refrig, anchorId: 'water-out' }, { x: 554, y: 560 }, {
+            b.connect('hose', { item: refrig, anchorId: 'water-out' }, { item: evier, anchorId: 'drain-in' }, {
                 color: '#ff8787',
                 showArrow: true,
                 behindItems: true
@@ -249,8 +250,8 @@ export const TEMPLATES = [
         name: 'Filtration sous vide (Büchner)',
         category: 'Séparation',
         description: 'Fiole à vide, entonnoir Büchner, robinet avec trompe à eau et tuyau d’aspiration.',
-        build() {
-            const b = createBuilder('Filtration sous vide (Büchner)');
+        build(idPrefix = 'tpl_filtration-vide') {
+            const b = createBuilder('Filtration sous vide (Büchner)', idPrefix);
             const Y = 460;
             b.addItem('paillasse', 80, Y, { width: 760 }, { locked: true });
             const fiole = b.addItem('fiole-vide', -60, Y, { liquidLevel: 30, liquidColor: '#9ad1f5' });
@@ -280,8 +281,8 @@ export const TEMPLATES = [
         name: 'Pile Daniell (Cu / Zn)',
         category: 'Électrochimie',
         description: 'Deux demi-piles Cu²⁺/Cu et Zn²⁺/Zn reliées par un pont salin et un voltmètre.',
-        build() {
-            const b = createBuilder('Pile Daniell (Cu / Zn)');
+        build(idPrefix = 'tpl_pile-daniell') {
+            const b = createBuilder('Pile Daniell (Cu / Zn)', idPrefix);
             const Y = 440;
             b.addItem('paillasse', 0, Y, { width: 760 }, { locked: true });
 
@@ -316,8 +317,8 @@ export const TEMPLATES = [
     }
 ];
 
-export function buildTemplateScene(templateId) {
+export function buildTemplateScene(templateId, idPrefix) {
     const tpl = TEMPLATES.find(t => t.id === templateId);
     if (!tpl) return null;
-    return tpl.build();
+    return tpl.build(idPrefix);
 }

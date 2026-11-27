@@ -14,7 +14,7 @@ function esc(str) {
 /**
  * Calcule la boîte englobante globale de tous les éléments de la scène.
  */
-export function computeSceneBounds(scene, padding = 36) {
+export function computeSceneBounds(scene, padding = 36, options = {}) {
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
 
     const expand = (x, y) => {
@@ -46,7 +46,7 @@ export function computeSceneBounds(scene, padding = 36) {
     }
 
     for (const lbl of scene.labels) {
-        const m = getLabelMetrics(lbl);
+        const m = getLabelMetrics(lbl, options);
         expand(m.boxX - 4, m.boxY - 4);
         expand(m.boxX + m.boxW + 4, m.boxY + m.boxH + 4);
         if (lbl.showLeader) {
@@ -129,11 +129,12 @@ function measureTextWidth(lines, fs, bold, italic) {
 /**
  * Calcule la géométrie estimée (ou mesurée exactement dans le navigateur) d'une légende.
  */
-export function getLabelMetrics(lbl) {
+export function getLabelMetrics(lbl, options = {}) {
     const fs = Number(lbl.fontSize) || 16;
     const lines = String(lbl.text || '').split('\n');
     const lineHeight = fs * 1.25;
-    const textW = measureTextWidth(lines, fs, Boolean(lbl.bold), Boolean(lbl.italic));
+    const rawTextW = measureTextWidth(lines, fs, Boolean(lbl.bold), Boolean(lbl.italic));
+    const textW = options?.blankLabels ? Math.max(rawTextW, 48) : rawTextW;
     const textH = (lines.length - 1) * lineHeight + fs;
     const align = lbl.align === 'center' || lbl.align === 'right' ? lbl.align : 'left';
     const hasBox = Boolean(lbl.bgEnabled || lbl.borderEnabled);
@@ -171,8 +172,8 @@ export function getLabelMetrics(lbl) {
 /**
  * Calcule le point d'accroche de la ligne de rappel côté texte (gauche, droite, haut ou bas).
  */
-export function getLabelLeaderAnchor(lbl) {
-    const m = getLabelMetrics(lbl);
+export function getLabelLeaderAnchor(lbl, options = {}) {
+    const m = getLabelMetrics(lbl, options);
     const { fs, hasBox, boxX, boxY, boxW, boxH } = m;
     const gap = hasBox ? 0 : 6;
     const midY = lbl.y - fs * 0.35;
@@ -193,9 +194,10 @@ export function getLabelLeaderAnchor(lbl) {
  */
 export function renderLabelSVG(lbl, options = {}) {
     const interactive = Boolean(options?.interactive);
-    const anchor = getLabelLeaderAnchor(lbl);
+    const blankLabels = Boolean(options?.blankLabels);
+    const anchor = getLabelLeaderAnchor(lbl, { blankLabels });
     const m = anchor.metrics;
-    const { fs, lines, lineHeight, textAnchor, hasBox, boxX, boxY, boxW, boxH } = m;
+    const { fs, lines, lineHeight, textAnchor, textLeft, textW, hasBox, boxX, boxY, boxW, boxH } = m;
     const weight = lbl.bold ? 'bold' : 'normal';
     const style = lbl.italic ? 'italic' : 'normal';
     const color = esc(lbl.color || '#1e293b');
@@ -256,6 +258,20 @@ export function renderLabelSVG(lbl, options = {}) {
         boxSvg = `<rect x="${boxX.toFixed(1)}" y="${boxY.toFixed(1)}" width="${boxW.toFixed(1)}" height="${boxH.toFixed(1)}" rx="5" fill="${fillAttr}" stroke="${strokeAttr}" stroke-width="${strokeWidthAttr}" />`;
     }
 
+    if (blankLabels) {
+        const x1 = textLeft.toFixed(1);
+        const x2 = (textLeft + Math.max(textW, 48)).toFixed(1);
+        const blankLines = lines.map((_, i) => {
+            const ly = (lbl.y + i * lineHeight - 2).toFixed(1);
+            return `<line x1="${x1}" y1="${ly}" x2="${x2}" y2="${ly}" stroke="#64748b" stroke-width="1.6" stroke-dasharray="3 4" stroke-linecap="round" />`;
+        }).join('');
+        return `
+      ${leaderSvg}
+      ${boxSvg}
+      ${blankLines}
+    `;
+    }
+
     const tspans = lines.map((line, i) =>
         `<tspan x="${lbl.x}" dy="${i === 0 ? 0 : lineHeight.toFixed(1)}">${esc(line)}</tspan>`
     ).join('');
@@ -271,8 +287,8 @@ export function renderLabelSVG(lbl, options = {}) {
  * Génère une chaîne SVG complète et autonome prête à l'export.
  */
 export function buildStandaloneSVG(scene, options = {}) {
-    const { transparent = false, padding = 36 } = options;
-    const bounds = computeSceneBounds(scene, padding);
+    const { transparent = false, padding = 36, blankLabels = false } = options;
+    const bounds = computeSceneBounds(scene, padding, { blankLabels });
 
     const rawItemsMarkup = scene.items.map(item => {
         const def = getCatalogItem(item.type);
@@ -295,7 +311,7 @@ export function buildStandaloneSVG(scene, options = {}) {
         .filter(c => !c.behindItems)
         .map(c => `<g>${renderConnectorSVG(c, scene.items)}</g>`)
         .join('\n');
-    const labelsMarkup = scene.labels.map(l => `<g>${renderLabelSVG(l)}</g>`).join('\n');
+    const labelsMarkup = scene.labels.map(l => `<g>${renderLabelSVG(l, { blankLabels })}</g>`).join('\n');
     const bgRect = transparent ? '' : `<rect x="${bounds.x}" y="${bounds.y}" width="${bounds.width}" height="${bounds.height}" fill="#ffffff" />`;
 
     return `<?xml version="1.0" encoding="UTF-8"?>
@@ -318,12 +334,13 @@ export function renderSceneToImageBlob(scene, options = {}) {
         scale = 3,
         transparent = false,
         padding = 36,
-        quality = 0.94
+        quality = 0.94,
+        blankLabels = false
     } = options;
     const isJpeg = format === 'image/jpeg';
     const effectiveTransparent = !isJpeg && Boolean(transparent);
-    const svgString = buildStandaloneSVG(scene, { transparent: effectiveTransparent, padding });
-    const bounds = computeSceneBounds(scene, padding);
+    const svgString = buildStandaloneSVG(scene, { transparent: effectiveTransparent, padding, blankLabels });
+    const bounds = computeSceneBounds(scene, padding, { blankLabels });
 
     return new Promise((resolve, reject) => {
         const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
@@ -374,13 +391,14 @@ export function buildPrintDocumentHTML(scene, options = {}) {
         title = '',
         margin = '1.5cm',
         orientation = 'portrait',
-        padding = 24
+        padding = 24,
+        blankLabels = false
     } = options;
     const isLandscape = orientation === 'landscape';
     const pageW = isLandscape ? '297mm' : '210mm';
     const pageH = isLandscape ? '210mm' : '297mm';
     const safeTitle = esc(String(title || '').trim());
-    const svg = buildStandaloneSVG(scene, { transparent: false, padding });
+    const svg = buildStandaloneSVG(scene, { transparent: false, padding, blankLabels });
 
     return `<!DOCTYPE html>
 <html lang="fr">
@@ -466,8 +484,8 @@ export function buildPrintDocumentHTML(scene, options = {}) {
  * Génère une page HTML d'aperçu centré pour l'export image (PNG / JPEG / SVG).
  */
 export function buildImagePreviewHTML(scene, options = {}) {
-    const { transparent = false, padding = 36 } = options;
-    const svg = buildStandaloneSVG(scene, { transparent, padding });
+    const { transparent = false, padding = 36, blankLabels = false } = options;
+    const svg = buildStandaloneSVG(scene, { transparent, padding, blankLabels });
     const bgCss = transparent
         ? 'background-color: #ffffff; background-image: linear-gradient(45deg, #e2e8f0 25%, transparent 25%), linear-gradient(-45deg, #e2e8f0 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #e2e8f0 75%), linear-gradient(-45deg, transparent 75%, #e2e8f0 75%); background-size: 16px 16px; background-position: 0 0, 0 8px, 8px -8px, -8px 0;'
         : 'background: #ffffff;';

@@ -217,22 +217,26 @@ export function createInspectorController(ctx) {
         const btnBack = inspectorBodyEl.querySelector('#btnMultiBack');
         if (btnBack) {
             btnBack.addEventListener('click', () => {
-                store.pushHistory();
                 const ids = new Set(entries.filter(e => e.kind === 'item').map(e => e.id));
                 const moved = store.scene.items.filter(i => ids.has(i.id));
                 const rest = store.scene.items.filter(i => !ids.has(i.id));
-                store.scene.items = [...moved, ...rest];
+                const nextItems = [...moved, ...rest];
+                if (!nextItems.some((it, idx) => it.id !== store.scene.items[idx].id)) return;
+                store.pushHistory();
+                store.scene.items = nextItems;
                 ctx.renderScene();
             });
         }
         const btnFront = inspectorBodyEl.querySelector('#btnMultiFront');
         if (btnFront) {
             btnFront.addEventListener('click', () => {
-                store.pushHistory();
                 const ids = new Set(entries.filter(e => e.kind === 'item').map(e => e.id));
                 const moved = store.scene.items.filter(i => ids.has(i.id));
                 const rest = store.scene.items.filter(i => !ids.has(i.id));
-                store.scene.items = [...rest, ...moved];
+                const nextItems = [...rest, ...moved];
+                if (!nextItems.some((it, idx) => it.id !== store.scene.items[idx].id)) return;
+                store.pushHistory();
+                store.scene.items = nextItems;
                 ctx.renderScene();
             });
         }
@@ -307,29 +311,29 @@ export function createInspectorController(ctx) {
             <div class="prop-row">
               <label>Rotation</label>
               <div class="prop-range-wrap">
-                <input type="range" id="inpRotation" min="-180" max="180" step="1" value="${item.rotation ?? 0}">
+                <input type="range" id="inpRotation" min="-180" max="180" step="1" value="${item.rotation ?? 0}" ${isLocked ? 'disabled' : ''}>
                 <span class="prop-val" id="valRotation">${item.rotation ?? 0}°</span>
               </div>
             </div>
             <div class="btn-row">
-              <button class="mini-btn" data-rot="-90">-90°</button>
-              <button class="mini-btn" data-rot="-45">-45°</button>
-              <button class="mini-btn" data-rot="-15">-15°</button>
-              <button class="mini-btn" data-rot="0">0°</button>
-              <button class="mini-btn" data-rot="15">+15°</button>
-              <button class="mini-btn" data-rot="45">+45°</button>
-              <button class="mini-btn" data-rot="90">+90°</button>
+              <button class="mini-btn" data-rot="-90" ${isLocked ? 'disabled' : ''}>-90°</button>
+              <button class="mini-btn" data-rot="-45" ${isLocked ? 'disabled' : ''}>-45°</button>
+              <button class="mini-btn" data-rot="-15" ${isLocked ? 'disabled' : ''}>-15°</button>
+              <button class="mini-btn" data-rot="0" ${isLocked ? 'disabled' : ''}>0°</button>
+              <button class="mini-btn" data-rot="15" ${isLocked ? 'disabled' : ''}>+15°</button>
+              <button class="mini-btn" data-rot="45" ${isLocked ? 'disabled' : ''}>+45°</button>
+              <button class="mini-btn" data-rot="90" ${isLocked ? 'disabled' : ''}>+90°</button>
             </div>
             <div class="prop-row">
               <label>Symétrie horizontale</label>
-              <button class="mini-btn ${item.flipX ? 'is-active' : ''}" id="btnFlipX" style="flex:0 0 auto; padding:3px 10px">
+              <button class="mini-btn ${item.flipX ? 'is-active' : ''}" id="btnFlipX" style="flex:0 0 auto; padding:3px 10px" ${isLocked ? 'disabled' : ''}>
                 <i class="fas fa-left-right"></i> Inverser
               </button>
             </div>
             <div class="prop-row">
               <label>Échelle</label>
               <div class="prop-range-wrap">
-                <input type="range" id="inpScale" min="0.4" max="2.0" step="0.05" value="${item.scale ?? 1}">
+                <input type="range" id="inpScale" min="0.4" max="2.0" step="0.05" value="${item.scale ?? 1}" ${isLocked ? 'disabled' : ''}>
                 <span class="prop-val" id="valScale">${Math.round((item.scale ?? 1) * 100)}%</span>
               </div>
             </div>
@@ -431,19 +435,29 @@ export function createInspectorController(ctx) {
         const inpRot = inspectorBodyEl.querySelector('#inpRotation');
         const valRot = inspectorBodyEl.querySelector('#valRotation');
         let rotHistoryPushed = false;
+        let rotPivot = null;
         inpRot.addEventListener('input', () => {
+            if (item.locked) return;
+            const bb = def.getBBox(item.props || {});
+            const cx = bb.x + bb.width / 2;
+            const cy = bb.y + bb.height / 2;
             if (!rotHistoryPushed) {
                 store.pushHistory();
                 rotHistoryPushed = true;
+                rotPivot = localToWorld(item, cx, cy);
             }
             item.rotation = Number(inpRot.value);
+            const newCenter = localToWorld(item, cx, cy);
+            item.x = Math.round(item.x + (rotPivot.x - newCenter.x));
+            item.y = Math.round(item.y + (rotPivot.y - newCenter.y));
             valRot.textContent = `${item.rotation}°`;
             ctx.renderScene();
         });
-        inpRot.addEventListener('change', () => { rotHistoryPushed = false; });
+        inpRot.addEventListener('change', () => { rotHistoryPushed = false; rotPivot = null; });
 
         inspectorBodyEl.querySelectorAll('[data-rot]').forEach(btn => {
             btn.addEventListener('click', () => {
+                if (item.locked) return;
                 store.pushHistory();
                 const delta = Number(btn.dataset.rot);
                 const bb = def.getBBox(item.props || {});
@@ -460,6 +474,7 @@ export function createInspectorController(ctx) {
         });
 
         inspectorBodyEl.querySelector('#btnFlipX').addEventListener('click', () => {
+            if (item.locked) return;
             store.pushHistory();
             item.flipX = !item.flipX;
             ctx.renderScene();
@@ -470,6 +485,7 @@ export function createInspectorController(ctx) {
         const valScale = inspectorBodyEl.querySelector('#valScale');
         let scaleHistoryPushed = false;
         inpScale.addEventListener('input', () => {
+            if (item.locked) return;
             if (!scaleHistoryPushed) {
                 store.pushHistory();
                 scaleHistoryPushed = true;
@@ -526,6 +542,10 @@ export function createInspectorController(ctx) {
             ];
 
         const isLocked = Boolean(conn.locked);
+        const isOrtho = conn.mode === 'orthogonal';
+        const bendDisplayVal = isOrtho
+            ? Math.round((Number(conn.bendX) || 0) + (Number(conn.bend) || 0) * 0.5)
+            : (conn.bend ?? 0);
         inspectorBodyEl.innerHTML = `
           <div class="prop-section">
             <div class="btn-row">
@@ -542,7 +562,7 @@ export function createInspectorController(ctx) {
               <label for="selConnMode">Style de tracé</label>
               <select class="prop-select" id="selConnMode">
                 <option value="bezier" ${conn.mode === 'bezier' ? 'selected' : ''}>Courbe souple</option>
-                <option value="orthogonal" ${conn.mode === 'orthogonal' ? 'selected' : ''}>Angles droits</option>
+                <option value="orthogonal" ${isOrtho ? 'selected' : ''}>Angles droits</option>
                 <option value="straight" ${isStraight ? 'selected' : ''}>Ligne droite</option>
               </select>
             </div>
@@ -550,8 +570,8 @@ export function createInspectorController(ctx) {
             <div class="prop-row">
               <label>Courbure / Décalage</label>
               <div class="prop-range-wrap">
-                <input type="range" id="inpConnBend" min="-220" max="220" step="5" value="${conn.bend ?? 0}">
-                <span class="prop-val" id="valConnBend">${conn.bend ?? 0}</span>
+                <input type="range" id="inpConnBend" min="-220" max="220" step="5" value="${bendDisplayVal}">
+                <span class="prop-val" id="valConnBend">${bendDisplayVal}</span>
               </div>
             </div>
             <div class="btn-row">
@@ -614,8 +634,14 @@ export function createInspectorController(ctx) {
                     store.pushHistory();
                     bendHistoryPushed = true;
                 }
-                conn.bend = Number(inpBend.value);
-                inspectorBodyEl.querySelector('#valConnBend').textContent = conn.bend;
+                const nextVal = Number(inpBend.value);
+                if (conn.mode === 'orthogonal') {
+                    conn.bendX = nextVal;
+                    conn.bend = 0;
+                } else {
+                    conn.bend = nextVal;
+                }
+                inspectorBodyEl.querySelector('#valConnBend').textContent = nextVal;
                 ctx.renderScene();
             });
             inpBend.addEventListener('change', () => { bendHistoryPushed = false; });
@@ -699,6 +725,21 @@ export function createInspectorController(ctx) {
                 ctx.renderScene();
             });
         }
+    }
+
+    function rememberLabelStyle(lbl) {
+        const d = editor.labelDefaults;
+        if (!d) return;
+        d.fontSize = Number(lbl.fontSize) || 20;
+        d.color = lbl.color || '#1e293b';
+        d.bold = Boolean(lbl.bold);
+        d.italic = Boolean(lbl.italic);
+        d.align = lbl.align === 'center' || lbl.align === 'right' ? lbl.align : 'left';
+        d.bgEnabled = Boolean(lbl.bgEnabled);
+        d.bgColor = lbl.bgColor || '#ffffff';
+        d.borderEnabled = Boolean(lbl.borderEnabled);
+        d.leaderStyle = lbl.leaderStyle === 'elbow' ? 'elbow' : 'straight';
+        d.arrowHead = Boolean(lbl.arrowHead);
     }
 
     function renderLabelInspector(lbl) {
@@ -820,6 +861,7 @@ export function createInspectorController(ctx) {
                 fsHistoryPushed = true;
             }
             lbl.fontSize = Number(inpFs.value);
+            rememberLabelStyle(lbl);
             inspectorBodyEl.querySelector('#valFontSize').textContent = `${lbl.fontSize}px`;
             ctx.renderScene();
         });
@@ -833,6 +875,7 @@ export function createInspectorController(ctx) {
                 colHistoryPushed = true;
             }
             lbl.color = inpCol.value;
+            rememberLabelStyle(lbl);
             ctx.renderScene();
         });
         inpCol.addEventListener('change', () => { colHistoryPushed = false; });
@@ -840,12 +883,14 @@ export function createInspectorController(ctx) {
         inspectorBodyEl.querySelector('#btnBold').addEventListener('click', () => {
             store.pushHistory();
             lbl.bold = !lbl.bold;
+            rememberLabelStyle(lbl);
             ctx.renderScene();
             renderInspector();
         });
         inspectorBodyEl.querySelector('#btnItalic').addEventListener('click', () => {
             store.pushHistory();
             lbl.italic = !lbl.italic;
+            rememberLabelStyle(lbl);
             ctx.renderScene();
             renderInspector();
         });
@@ -854,6 +899,7 @@ export function createInspectorController(ctx) {
                 if (lbl.align === btn.dataset.lblAlign) return;
                 store.pushHistory();
                 lbl.align = btn.dataset.lblAlign;
+                rememberLabelStyle(lbl);
                 ctx.renderScene();
                 renderInspector();
             });
@@ -863,6 +909,7 @@ export function createInspectorController(ctx) {
             store.pushHistory();
             lbl.bgEnabled = ev.target.checked;
             if (lbl.bgEnabled && !lbl.bgColor) lbl.bgColor = '#ffffff';
+            rememberLabelStyle(lbl);
             ctx.renderScene();
             renderInspector();
         });
@@ -875,6 +922,7 @@ export function createInspectorController(ctx) {
                     bgColHistoryPushed = true;
                 }
                 lbl.bgColor = inpBgCol.value;
+                rememberLabelStyle(lbl);
                 ctx.renderScene();
             });
             inpBgCol.addEventListener('change', () => { bgColHistoryPushed = false; });
@@ -882,6 +930,7 @@ export function createInspectorController(ctx) {
         inspectorBodyEl.querySelector('#chkLblBorder').addEventListener('change', (ev) => {
             store.pushHistory();
             lbl.borderEnabled = ev.target.checked;
+            rememberLabelStyle(lbl);
             ctx.renderScene();
         });
 
@@ -896,6 +945,7 @@ export function createInspectorController(ctx) {
             selLeaderStyle.addEventListener('change', (ev) => {
                 store.pushHistory();
                 lbl.leaderStyle = ev.target.value;
+                rememberLabelStyle(lbl);
                 ctx.renderScene();
             });
         }
@@ -904,6 +954,7 @@ export function createInspectorController(ctx) {
             chkAh.addEventListener('change', (ev) => {
                 store.pushHistory();
                 lbl.arrowHead = ev.target.checked;
+                rememberLabelStyle(lbl);
                 ctx.renderScene();
             });
         }
@@ -915,8 +966,11 @@ export function createInspectorController(ctx) {
         if (store.selection?.kind === 'connector') {
             const inpBend = inspectorBodyEl.querySelector('#inpConnBend');
             const valBend = inspectorBodyEl.querySelector('#valConnBend');
-            if (inpBend) inpBend.value = el.bend;
-            if (valBend) valBend.textContent = el.bend;
+            const bendVal = el.mode === 'orthogonal'
+                ? Math.round((Number(el.bendX) || 0) + (Number(el.bend) || 0) * 0.5)
+                : el.bend;
+            if (inpBend) inpBend.value = bendVal;
+            if (valBend) valBend.textContent = bendVal;
         } else if (store.selection?.kind === 'item') {
             const inpRot = inspectorBodyEl.querySelector('#inpRotation');
             const valRot = inspectorBodyEl.querySelector('#valRotation');

@@ -305,7 +305,6 @@ export function createIOController(ctx) {
                 type: 'danger',
                 cb: () => {
                     if (store.clearAll()) {
-                        markAsSaved();
                         ctx.renderScene();
                         ctx.renderInspector();
                         notify('Schéma effacé.');
@@ -340,6 +339,7 @@ export function createIOController(ctx) {
                 if (!titleHistoryPushed) {
                     store.pushHistory();
                     titleHistoryPushed = true;
+                    ctx.updateHistoryButtons?.();
                 }
                 store.scene.title = schemaTitleInputEl.value;
                 updateDocumentStatus();
@@ -400,6 +400,11 @@ export function createIOController(ctx) {
               <span class="icon"><i class="fa-solid fa-print"></i></span>
               <span>Exporter / Imprimer (PDF)…</span>
             </a>
+            <hr class="navbar-divider">
+            <a class="navbar-item" id="menuShortcuts">
+              <span class="icon"><i class="fa-solid fa-keyboard"></i></span>
+              <span>Raccourcis & astuces (?)</span>
+            </a>
           </div>
         `;
 
@@ -427,6 +432,7 @@ export function createIOController(ctx) {
         menuEl.querySelector('#menuExportPNG').addEventListener('click', () => handleExportPNG());
         menuEl.querySelector('#menuExportSVG').addEventListener('click', () => handleExportSVG());
         menuEl.querySelector('#menuExportAdvanced').addEventListener('click', () => ctx.openExportModal?.('image'));
+        menuEl.querySelector('#menuShortcuts').addEventListener('click', () => ctx.openShortcutsModal?.());
     }
 
     // Alerte navigateur en cas de fermeture d'onglet ou rechargement avec modifications non sauvegardées
