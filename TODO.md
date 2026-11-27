@@ -2,8 +2,6 @@
     - tester sur petit ecran (et faire les adaptations nécessaires) <== notament spectres et forces
     - continuer d'ajouter des raccourcis clavier
 
-    - Deplacer le a propos dans le menu ?
-
     - On defullscreen pas quand on essai de drag la fenetre (si?)
 
     quand on ouvre un .pw, mettre un spinner (sur desktop ca va. tester sur un ordi faible)
@@ -19,7 +17,6 @@
 # Tracker
     - Add vidéos
     - pan and zoom
-    - ajouter une petite handle visuelle pour le redimensionnement du panneau
 
 # Grapher
     - possibilité d'avoir 2 axes y
