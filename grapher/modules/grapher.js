@@ -1,4 +1,4 @@
-import { formatNumber, toSuperscript } from '../../common/formatter.js';
+import { formatNumber, toSuperscript, formatUnit } from '../../common/formatter.js';
 import { showToast } from '../../common/common.js';
 
 const $ = document.querySelector.bind(document);
@@ -298,7 +298,7 @@ export default class Grapher {
 
               // Récupérer l'unité de l'axe X
               const xCurveObj = self.data.getCurveByTitle(self.currentXCurve);
-              const xUnit = xCurveObj?.unit || '';
+              const xUnit = formatUnit(xCurveObj?.unit || '');
               const xExponent = xAxis.exponent;
 
               let exponentPart = '';
@@ -390,7 +390,7 @@ export default class Grapher {
           color: '#000000'
         },
         labelFormatter: function () {
-          const unit = this.userOptions.unit || '';
+          const unit = formatUnit(this.userOptions.unit || '');
           const yAxis = this.chart.yAxis[0];
           const yExponent = yAxis ? yAxis.exponent : 0;
 
@@ -449,11 +449,11 @@ export default class Grapher {
 
           const xCurve = grapher.currentXCurve;
           const xCurveObj = grapher.data.getCurveByTitle(xCurve);
-          const xUnit = xCurveObj?.unit || '';
+          const xUnit = formatUnit(xCurveObj?.unit || '');
           const xLabel = `<strong>${xCurve} =</strong> ${formatNumber(this.x, significantDigits)} ${xUnit}`;
 
           const yCurveObj = grapher.data.getCurveByTitle(this.series.name);
-          const yUnit = yCurveObj?.unit || '';
+          const yUnit = formatUnit(yCurveObj?.unit || '');
           const yLabel = `<strong>${this.series.name} =</strong> ${formatNumber(this.y, significantDigits)} ${yUnit}`;
           
           return `${xLabel}<br>${yLabel}`;
@@ -1867,13 +1867,13 @@ setDisableScientificNotation(disabled) {
         const xOverride = exportLabels && this.currentXCurve ? exportLabels[this.currentXCurve] : null;
         const yOverride = exportLabels && firstYSeries?.name ? exportLabels[firstYSeries.name] : null;
 
-        const resolvedXUnit = (xOverride && typeof xOverride.unit === 'string') ? xOverride.unit : (xCurveObj?.unit || '');
+        const resolvedXUnit = formatUnit((xOverride && typeof xOverride.unit === 'string') ? xOverride.unit : (xCurveObj?.unit || ''));
         const xUnit = resolvedXUnit ? ` ${resolvedXUnit}` : '';
-        const rawYUnit = (yOverride && typeof yOverride.unit === 'string')
+        const rawYUnit = formatUnit((yOverride && typeof yOverride.unit === 'string')
           ? yOverride.unit
           : (annotation.yUnit !== undefined
               ? annotation.yUnit
-              : (firstYSeries?.userOptions?.unit || ''));
+              : (firstYSeries?.userOptions?.unit || '')));
         const yUnit = rawYUnit ? ` ${rawYUnit}` : '';
 
         const exportScale = targetChart.renderer?.forExport ? (targetChart.options?.chart?.exportTextScale || 1) : 1;
@@ -2081,10 +2081,10 @@ setDisableScientificNotation(disabled) {
             const xLabelName = xBaseName + eqSub;
             const yLabelName = yBaseName + eqSub;
 
-            const resolvedXUnit = (xOverride && typeof xOverride.unit === 'string') ? xOverride.unit : (xCurveObj?.unit || '');
-            const resolvedYUnit = (yOverride && typeof yOverride.unit === 'string')
+            const resolvedXUnit = formatUnit((xOverride && typeof xOverride.unit === 'string') ? xOverride.unit : (xCurveObj?.unit || ''));
+            const resolvedYUnit = formatUnit((yOverride && typeof yOverride.unit === 'string')
               ? yOverride.unit
-              : (yCurveObj?.unit || series?.userOptions?.unit || '');
+              : (yCurveObj?.unit || series?.userOptions?.unit || ''));
             const xUnit = resolvedXUnit ? ` ${resolvedXUnit}` : '';
             const yUnit = resolvedYUnit ? ` ${resolvedYUnit}` : '';
 

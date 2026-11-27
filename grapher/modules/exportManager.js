@@ -1,4 +1,4 @@
-import { formatNumber, toSuperscript } from '../../common/formatter.js';
+import { formatNumber, toSuperscript, formatUnit } from '../../common/formatter.js';
 import { showToast } from '../../common/common.js';
 
 const $ = (selector) => document.querySelector(selector);
@@ -674,7 +674,8 @@ export default class ExportManager {
 
     const rawXTitle = this.grapher.currentXCurve || '';
     const xCurveObj = this.data?.getCurveByTitle ? this.data.getCurveByTitle(rawXTitle) : null;
-    const { title: xDisplayTitle, unit: xUnit } = this.getExportCurveLabel(rawXTitle, xCurveObj?.unit || '', resolvedOverrides);
+    const { title: xDisplayTitle, unit: rawXUnit } = this.getExportCurveLabel(rawXTitle, xCurveObj?.unit || '', resolvedOverrides);
+    const xUnit = formatUnit(rawXUnit);
     const xAxis = this.grapher.chart.xAxis && this.grapher.chart.xAxis[0];
     const xExponent = (xAxis && xAxis.exponent) || 0;
 
@@ -753,11 +754,12 @@ export default class ExportManager {
         symbolWidth: Math.round(16 * scale),
         itemDistance: Math.round(20 * scale),
         labelFormatter: function () {
-          const { title: displayName, unit } = self.getExportCurveLabel(
+          const { title: displayName, unit: rawUnit } = self.getExportCurveLabel(
             this.name || '',
             this.userOptions?.unit || '',
             resolvedOverrides
           );
+          const unit = formatUnit(rawUnit);
           const yAxis = this.chart && this.chart.yAxis && this.chart.yAxis[0];
           const yExponent = (yAxis && yAxis.exponent) || currentYExponent || 0;
 
@@ -1060,7 +1062,8 @@ export default class ExportManager {
             html += `<ul class="model-card-list">`;
             model.parameters.forEach(param => {
               const rawUnit = param.unit || this.data?.parameters?.[param.name]?.unit || '';
-              const unitText = rawUnit ? ` ${escapeHTML(rawUnit)}` : '';
+              const formattedUnit = formatUnit(rawUnit);
+              const unitText = formattedUnit ? ` ${escapeHTML(formattedUnit)}` : '';
               const formattedVal = (param.value !== null && param.value !== undefined && !isNaN(param.value))
                 ? formatNumber(param.value, sigDigits, { html: true })
                 : 'Indéfini';
@@ -1072,7 +1075,8 @@ export default class ExportManager {
           if (model.minX != null || model.maxX != null) {
             const minStr = model.minX != null ? formatNumber(model.minX, sigDigits, { html: true }) : '-∞';
             const maxStr = model.maxX != null ? formatNumber(model.maxX, sigDigits, { html: true }) : '+∞';
-            const xUnitSuffix = xUnit ? ` ${escapeHTML(xUnit)}` : '';
+            const formattedXUnit = formatUnit(xUnit);
+            const xUnitSuffix = formattedXUnit ? ` ${escapeHTML(formattedXUnit)}` : '';
             html += `<div class="model-card-quality">Domaine : [${minStr} ; ${maxStr}]${xUnitSuffix}</div>`;
           }
 
@@ -1090,7 +1094,8 @@ export default class ExportManager {
       const headers = hasCurves
         ? this.data.curves.map(c => {
             const { title: displayTitle, unit: displayUnit } = this.getExportCurveLabel(c.title, c.unit || '', curveLabels);
-            return displayUnit ? `${displayTitle} (${displayUnit})` : displayTitle;
+            const formattedUnit = formatUnit(displayUnit);
+            return formattedUnit ? `${displayTitle} (${formattedUnit})` : displayTitle;
           })
         : (this.data.getHeaders() || []);
       const data = this.data.getTable() || [];
