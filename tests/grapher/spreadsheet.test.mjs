@@ -569,6 +569,138 @@ describe('Spreadsheet - handleAfterChange() et correction du bug de pagination',
       assert.equal(res, null);
       assert.equal(calcCurve[0], 42);
     });
+
+    it('doit afficher le sous-titre "calculée" et adapter columnHeaderHeight pour les colonnes calculées', () => {
+      const createMockNode = (tagName = 'div') => {
+        const classes = new Set();
+        const attrs = new Map();
+        const node = {
+          tagName: tagName.toUpperCase(),
+          textContent: '',
+          style: {},
+          children: [],
+          parentNode: null,
+          get className() {
+            return Array.from(classes).join(' ');
+          },
+          set className(val) {
+            classes.clear();
+            String(val || '').split(/\s+/).filter(Boolean).forEach((c) => classes.add(c));
+          },
+          classList: {
+            add: (...cls) => cls.forEach((c) => classes.add(c)),
+            remove: (...cls) => cls.forEach((c) => classes.delete(c)),
+            contains: (c) => classes.has(c)
+          },
+          setAttribute: (k, v) => attrs.set(k, String(v)),
+          getAttribute: (k) => (attrs.has(k) ? attrs.get(k) : null),
+          appendChild: (child) => {
+            child.parentNode = node;
+            node.children.push(child);
+            return child;
+          },
+          remove: () => {
+            if (node.parentNode) {
+              node.parentNode.children = node.parentNode.children.filter((c) => c !== node);
+              node.parentNode = null;
+            }
+          },
+          querySelectorAll: (selector) => {
+            const cls = selector.startsWith('.') ? selector.slice(1) : null;
+            const results = [];
+            const walk = (el) => {
+              for (const child of el.children) {
+                if (cls && child.classList.contains(cls)) results.push(child);
+                walk(child);
+              }
+            };
+            walk(node);
+            return results;
+          },
+          querySelector: (selector) => node.querySelectorAll(selector)[0] || null
+        };
+        return node;
+      };
+
+      const data = new Data({ significantDigits: 4 });
+      data.addCurve('x', 'm');
+      const calcCurve = data.addCurve('v', 'm/s');
+      calcCurve.type = 'calculation';
+
+      const spreadsheet = new Spreadsheet(data);
+      let capturedOptions = null;
+      const originalHot = globalThis.Handsontable;
+      const originalCreateOverride = global.__createElementOverride;
+      global.__createElementOverride = (tag) => createMockNode(tag);
+      globalThis.Handsontable = class MockHandsontable {
+        constructor(container, options) {
+          capturedOptions = options;
+        }
+      };
+
+      try {
+        spreadsheet.build({ openEditHeaderModal: () => {} });
+
+        assert.equal(capturedOptions.columnHeaderHeight, 46);
+        assert.equal(typeof capturedOptions.afterGetColHeader, 'function');
+
+        // En-tête de colonne standard
+        const thStandard = createMockNode('th');
+        const relStandard = createMockNode('div');
+        relStandard.className = 'relative';
+        const labelStandard = createMockNode('span');
+        labelStandard.className = 'colHeader';
+        labelStandard.textContent = 'x (m)';
+        relStandard.appendChild(labelStandard);
+        thStandard.appendChild(relStandard);
+
+        capturedOptions.afterGetColHeader(0, thStandard);
+        assert.equal(thStandard.classList.contains('ht-calculated-col-header'), false);
+        assert.equal(thStandard.querySelector('.ht-col-header-subtitle'), null);
+        assert.equal(thStandard.style.cursor, 'pointer');
+        assert.equal(thStandard.getAttribute('title'), 'Double-cliquer pour éditer');
+
+        // En-tête de colonne calculée
+        const thCalc = createMockNode('th');
+        const relCalc = createMockNode('div');
+        relCalc.className = 'relative';
+        const labelCalc = createMockNode('span');
+        labelCalc.className = 'colHeader';
+        labelCalc.textContent = 'v (m/s)';
+        relCalc.appendChild(labelCalc);
+        thCalc.appendChild(relCalc);
+
+        capturedOptions.afterGetColHeader(1, thCalc);
+        assert.equal(thCalc.classList.contains('ht-calculated-col-header'), true);
+        const subtitle = thCalc.querySelector('.ht-col-header-subtitle');
+        assert.ok(subtitle, 'Un sous-titre doit être inséré dans l\'en-tête de la colonne calculée');
+        assert.equal(subtitle.textContent, 'calculée');
+        assert.equal(thCalc.style.cursor, 'default');
+        assert.equal(thCalc.getAttribute('title'), 'Grandeur calculée (non éditable dans le tableur)');
+
+        // Idempotence : un second appel ne doit pas dupliquer le sous-titre
+        capturedOptions.afterGetColHeader(1, thCalc);
+        assert.equal(thCalc.querySelectorAll('.ht-col-header-subtitle').length, 1);
+
+        // Si le même TH est réutilisé pour une colonne non calculée, le sous-titre doit être retiré
+        capturedOptions.afterGetColHeader(0, thCalc);
+        assert.equal(thCalc.classList.contains('ht-calculated-col-header'), false);
+        assert.equal(thCalc.querySelector('.ht-col-header-subtitle'), null);
+        assert.equal(thCalc.style.cursor, 'pointer');
+      } finally {
+        globalThis.Handsontable = originalHot;
+        global.__createElementOverride = originalCreateOverride;
+      }
+    });
+
+    it('ne doit pas imposer columnHeaderHeight lorsqu\'aucune colonne calculée n\'est présente', () => {
+      const data = new Data({ significantDigits: 4 });
+      data.addCurve('x', 'm');
+      data.addCurve('y', 's');
+
+      const spreadsheet = new Spreadsheet(data);
+      assert.equal(spreadsheet.getColumnHeaderHeight(), undefined);
+    });
   });
 
   describe('Filtrage des changements nuls/identiques et protection de la ligne vide (minSpareRows)', () => {

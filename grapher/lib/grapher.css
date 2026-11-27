@@ -702,3 +702,46 @@ fieldset[disabled] .button {
 #axis-bounds-dropdown .axis-bounds-auto-btn:hover {
   text-decoration: underline;
 }
+
+/* Sous-titre "calculée" dans les en-têtes des colonnes calculées du tableur */
+#table thead tr th {
+  vertical-align: middle;
+}
+
+#table thead tr th .relative {
+  height: 100%;
+  align-items: center;
+}
+
+#table thead tr th.ht-calculated-col-header .relative {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  line-height: 1.15;
+}
+
+#table thead tr th.ht-calculated-col-header .relative .colHeader {
+  flex: 0 0 auto;
+  max-width: 100%;
+  line-height: 1.2;
+  text-align: left;
+}
+
+#table .ht-col-header-subtitle {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 400;
+  font-style: italic;
+  line-height: 1.1;
+  text-align: left;
+  color: inherit;
+  opacity: 0.68;
+}
+
+#table th.ht__active_highlight .ht-col-header-subtitle {
+  opacity: 0.9;
+}

@@ -32,6 +32,49 @@ class Spreadsheet {
     return this.getPageOffset() + visualRow;
   }
 
+  // Retourne la hauteur d'en-tête de colonne adaptée (plus haute si au moins une colonne calculée affiche un sous-titre)
+  getColumnHeaderHeight() {
+    const hasCalculatedCurve = Array.isArray(this.data?.curves)
+      && this.data.curves.some((curve) => curve.type === 'calculation');
+    return hasCalculatedCurve ? 46 : undefined;
+  }
+
+  // Met à jour l'aspect de l'en-tête de colonne (infobulle, curseur et sous-titre "calculée")
+  decorateColHeader(col, TH) {
+    if (col < 0 || !TH) return;
+    const curve = this.data.getCurveByIndex(col);
+    if (!curve) return;
+
+    const existingSubtitle = typeof TH.querySelector === 'function'
+      ? TH.querySelector('.ht-col-header-subtitle')
+      : null;
+
+    if (curve.type === 'calculation') {
+      if (TH.style) TH.style.cursor = 'default';
+      if (typeof TH.setAttribute === 'function') {
+        TH.setAttribute('title', 'Grandeur calculée (non éditable dans le tableur)');
+      }
+      TH.classList?.add('ht-calculated-col-header');
+
+      if (!existingSubtitle && typeof document !== 'undefined' && typeof document.createElement === 'function') {
+        const subtitle = document.createElement('span');
+        subtitle.className = 'ht-col-header-subtitle';
+        subtitle.textContent = 'calculée';
+        const headerContainer = (typeof TH.querySelector === 'function' && TH.querySelector('.relative')) || TH;
+        headerContainer.appendChild(subtitle);
+      }
+    } else {
+      if (TH.style) TH.style.cursor = 'pointer';
+      if (typeof TH.setAttribute === 'function') {
+        TH.setAttribute('title', 'Double-cliquer pour éditer');
+      }
+      TH.classList?.remove('ht-calculated-col-header');
+      if (existingSubtitle && typeof existingSubtitle.remove === 'function') {
+        existingSubtitle.remove();
+      }
+    }
+  }
+
   // Calcule la largeur d'une colonne avec précision en utilisant l'API Canvas
   calculateColWidth(index) {
     const headers = this.data.getHeaders();
@@ -161,6 +204,7 @@ class Spreadsheet {
         this.hot?.updateSettings({
           data: displayData,
           colHeaders: headers,
+          columnHeaderHeight: this.getColumnHeaderHeight(),
           columns: columnsConfig,
           cells: (row, col) => {
             const cellProperties = {};
@@ -332,14 +376,7 @@ class Spreadsheet {
     };
 
     const afterGetColHeader = (col, TH) => {
-      if (col >= 0) {
-        const curve = this.data.getCurveByIndex(col);
-        if (!curve) return;
-        if (curve.type !== 'calculation') {
-          TH.style.cursor = 'pointer';
-          TH.setAttribute('title', 'Double-cliquer pour éditer');
-        } 
-      }
+      this.decorateColHeader(col, TH);
     };
     
     // Initialisation de la pagination
@@ -370,6 +407,7 @@ class Spreadsheet {
         return (this.currentPage * this.pageSize) + index + 1;
       },
       colHeaders: this.data.getHeaders(),
+      columnHeaderHeight: this.getColumnHeaderHeight(),
       columns: columnsConfig,
       cells: (row, col) => {
         const cellProperties = {};
@@ -402,6 +440,7 @@ class Spreadsheet {
     this.hot?.updateSettings({
       data: [],
       colHeaders: true,
+      columnHeaderHeight: undefined,
       columns: null
     });
 
