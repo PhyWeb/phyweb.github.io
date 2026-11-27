@@ -1,4 +1,4 @@
-import { formatNumber, toSuperscript } from '../../common/formatter.js';
+import { formatNumber, toSuperscript, formatUnit } from '../../common/formatter.js';
 import { alertModal, showToast, NavigationManager, setupGlobalShortcuts, FileDropManager} from '../../common/common.js';
 import { DEFAULT_SETTINGS, saveSettings, loadSettings, clearSavedSettings } from './settingsManager.js';
 import { stripInlineComment } from './calculation.js';
@@ -377,7 +377,8 @@ export default class UIManager {
           const li = document.createElement('li');
           const a = document.createElement('a');
           
-          const unitText = param.unit ? ` ${param.unit}` : '';
+          const formattedUnit = formatUnit(param.unit);
+          const unitText = formattedUnit ? ` ${formattedUnit}` : '';
           const displayValue = formatNumber(param.value, significantDigits, { html: true });
           const plainValue = formatNumber(param.value, significantDigits);
 
@@ -392,7 +393,8 @@ export default class UIManager {
           const li = document.createElement('li');
           const a = document.createElement('a');
           
-          const unitText = curve.unit ? ` (${curve.unit})` : '';
+          const formattedUnit = formatUnit(curve.unit);
+          const unitText = formattedUnit ? ` (${formattedUnit})` : '';
           
           a.innerHTML = `<span style="color: ${colors.variable}; font-weight: bold;">${curve.title}</span><span style="color: #7a7a7a;">${unitText}</span>`;
           a.title = `${curve.title}${unitText}`;
@@ -628,6 +630,7 @@ export default class UIManager {
           // --- Si ce n'est pas un mot, on cherche le reste ---
 
           if (stream.match(/^[0-9]+([,.][0-9]+)?([eE][+-]?[0-9]+)?/)) return "number"; // Gère entiers, décimaux et notation scientifique
+          if (stream.match(/^[⁺⁻]?[⁰¹²³⁴⁵⁶⁷⁸⁹]+/)) return "number"; // Exposants Unicode (ex: ², ³, ⁻¹)
           if (stream.match(/^[=+\-*/^(),]/)) return "operator";
 
           // Avance d'un caractère non reconnu
@@ -797,7 +800,7 @@ export default class UIManager {
     model.parameters.forEach(param => {
       const li = document.createElement('li');
       const displayValue = formatNumber(param.value, significantDigits, { html: true });
-      const unit = param.unit || this.data?.parameters?.[param.name]?.unit || '';
+      const unit = formatUnit(param.unit || this.data?.parameters?.[param.name]?.unit || '');
       const unitText = unit ? ` ${unit}` : '';
       li.innerHTML = `${param.name} = ${displayValue}${unitText}`;
       ul.appendChild(li);
@@ -2244,7 +2247,8 @@ export default class UIManager {
         if(curve.type === "calculation") return; // On ne peut pas supprimer les modèles
         const option = document.createElement("option");
         option.value = curve.title;
-        option.textContent = curve.unit ? `${curve.title} (${curve.unit})` : curve.title;
+        const formattedUnit = formatUnit(curve.unit);
+        option.textContent = formattedUnit ? `${curve.title} (${formattedUnit})` : curve.title;
         selectElement.appendChild(option);
       });
 
@@ -2508,8 +2512,9 @@ export default class UIManager {
       this.data.curves.forEach(curve => {
         const li = document.createElement("li");
         const a = document.createElement("a");
+        const formattedUnit = formatUnit(curve.unit);
         a.dataset.title = curve.title;
-        a.title = curve.unit ? `${curve.title} (${curve.unit})` : curve.title;
+        a.title = formattedUnit ? `${curve.title} (${formattedUnit})` : curve.title;
 
         const input = document.createElement("input");
         input.type = "checkbox";
@@ -2524,8 +2529,8 @@ export default class UIManager {
 
         const span = document.createElement("span");
         span.classList.add("ml-2", "curve-menu-label");
-        if (curve.unit) {
-          span.innerHTML = `${curve.title} <span class="has-text-grey is-size-7">(${curve.unit})</span>`;
+        if (formattedUnit) {
+          span.innerHTML = `${curve.title} <span class="has-text-grey is-size-7">(${formattedUnit})</span>`;
         } else {
           span.innerHTML = curve.title;
         }
@@ -2968,7 +2973,8 @@ export default class UIManager {
         const xTitle = this.grapher?.currentXCurve;
         const xCurve = xTitle ? this.data?.getCurveByTitle?.(xTitle) : null;
         if (xTitle) {
-          xLabel.textContent = xCurve?.unit ? `Abscisse : ${xTitle} (${xCurve.unit})` : `Abscisse : ${xTitle}`;
+          const formattedXUnit = formatUnit(xCurve?.unit);
+          xLabel.textContent = formattedXUnit ? `Abscisse : ${xTitle} (${formattedXUnit})` : `Abscisse : ${xTitle}`;
         } else {
           xLabel.textContent = 'Abscisse (X)';
         }
@@ -3332,8 +3338,10 @@ export default class UIManager {
 
     // Peuple la modale avec les infos du modèle
     $('#compute-model-equation').innerHTML = model.getEquationString();
-    const xLabelText = model.x.unit ? `${model.x.title} (${model.x.unit})` : model.x.title;
-    const yLabelText = model.y.unit ? `${model.y.title} (${model.y.unit})` : model.y.title;
+    const formattedXUnit = formatUnit(model.x.unit);
+    const formattedYUnit = formatUnit(model.y.unit);
+    const xLabelText = formattedXUnit ? `${model.x.title} (${formattedXUnit})` : model.x.title;
+    const yLabelText = formattedYUnit ? `${model.y.title} (${formattedYUnit})` : model.y.title;
     const xLabelEl = $('#compute-model-x-label');
     const yLabelEl = $('#compute-model-y-label');
     if (xLabelEl) {
@@ -3934,7 +3942,7 @@ export default class UIManager {
     const significantDigits = this.data?.settings?.significantDigits ?? 4;
     model.parameters.forEach(param => {
       const li = document.createElement('li');
-      const unit = param.unit || this.data?.parameters?.[param.name]?.unit || '';
+      const unit = formatUnit(param.unit || this.data?.parameters?.[param.name]?.unit || '');
       const unitText = unit ? ` ${unit}` : '';
       li.innerHTML = `${param.name} = ${formatNumber(param.value, significantDigits, { html: true })}${unitText}`;
       parametersList.appendChild(li);
@@ -4094,6 +4102,20 @@ export default class UIManager {
       document.addEventListener('click', (event) => {
         if (!constantsDropdown.contains || !constantsDropdown.contains(event.target)) {
           constantsDropdown.classList.remove('is-active');
+        }
+      });
+    }
+
+    // Écouteur de clic (event delegation) sur les boutons rapides d'exposants
+    const exponentsToolbar = document.getElementById('calculation-exponents-toolbar');
+    if (exponentsToolbar) {
+      exponentsToolbar.addEventListener('click', (e) => {
+        const btn = e.target?.closest ? e.target.closest('button[data-value]') : null;
+        if (!btn) return;
+        e.preventDefault();
+        const value = btn.dataset?.value || btn.getAttribute?.('data-value');
+        if (value) {
+          insertTextInEditor(value);
         }
       });
     }

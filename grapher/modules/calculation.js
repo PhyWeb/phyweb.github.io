@@ -551,13 +551,24 @@ export default class Calculation {
   }
 
   /**
-   * Remplace les caractères spéciaux comme '²' par leur équivalent pour math.js.
+   * Remplace les exposants Unicode (ex: '²', '³', '⁻¹', '⁻²') par leur équivalent pour math.js ('^2', '^3', '^(-1)', '^(-2)').
    * @param {string} expression - L'expression à traiter.
-   * @returns {string} - L'expression avec les caractères remplacés.
+   * @returns {string} - L'expression avec les exposants convertis.
    */
   preprocessSpecialCharacters(expression) {
-      // Remplace le caractère '²' par '^2'
-      return expression.replace(/²/g, '^2');
+    if (!expression || typeof expression !== 'string') return expression;
+    const superscriptMap = {
+      '⁰': '0', '¹': '1', '²': '2', '³': '3', '⁴': '4',
+      '⁵': '5', '⁶': '6', '⁷': '7', '⁸': '8', '⁹': '9',
+      '⁺': '+', '⁻': '-'
+    };
+    return expression.replace(/([⁺⁻]?[⁰¹²³⁴⁵⁶⁷⁸⁹]+)/g, (match) => {
+      const ascii = match.split('').map(ch => superscriptMap[ch] || ch).join('');
+      if (ascii.startsWith('-') || ascii.startsWith('+')) {
+        return `^(${ascii})`;
+      }
+      return `^${ascii}`;
+    });
   }
 
   /**

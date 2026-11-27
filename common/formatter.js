@@ -26,6 +26,27 @@ export function toSuperscript(value) {
 }
 
 /**
+ * Formate une unité pour l'affichage en convertissant :
+ * - les exposants écrits avec '^' (ex: "m.s^-1", "m/s^2", "m.s^(-2)") en exposants Unicode ("m.s⁻¹", "m/s²", "m.s⁻²")
+ * - les astérisques '*' en point médian '·' (ex: "N*m" -> "N·m", "m*s^-1" -> "m·s⁻¹").
+ * @param {string} unit - L'unité brute.
+ * @returns {string} L'unité formatée pour l'affichage.
+ */
+export function formatUnit(unit) {
+  if (unit === undefined || unit === null) return '';
+  let str = String(unit);
+  if (str.includes('^')) {
+    str = str.replace(/\^(?:\(([+-]?\d+)\)|([+-]?\d+))/g, (_, parenExp, plainExp) => {
+      return toSuperscript(parenExp ?? plainExp);
+    });
+  }
+  if (str.includes('*')) {
+    str = str.replace(/\*/g, '·');
+  }
+  return str;
+}
+
+/**
  * Formate un nombre en chaîne de caractères avec un nombre fixe de chiffres significatifs.
  * Utilise la notation scientifique (ex: "1,23·10⁵") pour les grands et petits nombres.
  * @param {*} value La valeur à formater.

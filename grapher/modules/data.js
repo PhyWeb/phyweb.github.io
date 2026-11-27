@@ -1,4 +1,5 @@
 import {Serie} from "../../common/common.js"
+import {formatUnit} from "../../common/formatter.js"
 import SymbolValidator from "./symbolValidator.js";
 
 const $ = document.querySelector.bind(document);
@@ -883,7 +884,8 @@ export default class Data {
     let headers = [];
 
     this.curves.forEach((curve, i) => {
-      headers.push(curve.unit ? `${curve.title} (${curve.unit})` : curve.title);
+      const formattedUnit = formatUnit(curve.unit);
+      headers.push(formattedUnit ? `${curve.title} (${formattedUnit})` : curve.title);
     });
     return headers;
   }
