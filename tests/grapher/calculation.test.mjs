@@ -736,4 +736,76 @@ describe('Calculation Module', () => {
       assert.equal(calc.evaluate('8 / 2 \' division', {}), 4);
     });
   });
+
+  describe('Synonymes silencieux de fonctions et constantes mathématiques', () => {
+    it('doit résoudre les synonymes de dérivation (derivee, dérivée, deriv) insensibles à la casse', () => {
+      const t = [0, 1, 2, 3, 4];
+      const x = [0, 2, 4, 6, 8];
+
+      assert.equal(calc.preprocessExpression('derivee(x, t)'), 'diff(x, t)');
+      assert.equal(calc.preprocessExpression('dérivée(x, t)'), 'diff(x, t)');
+      assert.equal(calc.preprocessExpression('DÉRIVÉE (x, t)'), 'diff (x, t)');
+      assert.equal(calc.preprocessExpression('deriv(x, t)'), 'diff(x, t)');
+
+      assert.equal(calc.evaluate('derivee(x, t)', { x, t })[2], 2);
+      assert.equal(calc.evaluate('dérivée(x, t)', { x, t })[2], 2);
+      assert.equal(calc.evaluate('deriv(x, t)', { x, t })[2], 2);
+    });
+
+    it('doit résoudre les synonymes d\'intégration et de lissage avec gestion des virgules décimales', () => {
+      const t = [0, 1, 2, 3, 4];
+      const v = [0, 2, 4, 6, 8];
+      const y = [10, 20, 30, 40, 50];
+
+      assert.deepEqual(calc.evaluate('integrale(v, t)', { v, t }), [0, 1, 4, 9, 16]);
+      assert.deepEqual(calc.evaluate('intégrale(v, t, 1,5)', { v, t }), [1.5, 2.5, 5.5, 10.5, 17.5]);
+      assert.deepEqual(calc.evaluate('primitive(v, t)', { v, t }), [0, 1, 4, 9, 16]);
+      assert.deepEqual(calc.evaluate('intg(v, t)', { v, t }), [0, 1, 4, 9, 16]);
+
+      assert.deepEqual(calc.evaluate('lissage(y, 3)', { y }), [10, 20, 30, 40, 50]);
+      assert.deepEqual(calc.evaluate('lisser(y)', { y }), [10, 20, 30, 40, 50]);
+    });
+
+    it('doit résoudre les synonymes usuels (racine, rac, log10, arcsin, arccos, arctan)', () => {
+      assert.equal(calc.evaluate('racine(9)', {}), 3);
+      assert.equal(calc.evaluate('rac(16)', {}), 4);
+      assert.equal(calc.evaluate('log10(100)', {}), 2);
+      assert.ok(Math.abs(calc.evaluate('arcsin(1)', {}) - Math.PI / 2) < 1e-12);
+      assert.ok(Math.abs(calc.evaluate('arccos(0)', {}) - Math.PI / 2) < 1e-12);
+      assert.ok(Math.abs(calc.evaluate('arctan(1)', {}) - Math.PI / 4) < 1e-12);
+      assert.equal(calc.evaluate('arcsinh(0)', {}), 0);
+      assert.equal(calc.evaluate('arccosh(1)', {}), 0);
+      assert.equal(calc.evaluate('arctanh(0)', {}), 0);
+    });
+
+    it('ne doit pas entrer en conflit avec des noms de variables portant le même nom qu\'un synonyme', () => {
+      const initialScope = {
+        t: [0, 1, 2, 3, 4],
+        x: [0, 2, 4, 6, 8]
+      };
+      const formulas = [
+        { variableName: 'derivee', expression: 'derivee(x, t)', unit: 'm/s' },
+        { variableName: 'racine', expression: 'racine(x)', unit: '' },
+        { variableName: 'doubleDerivee', expression: '2 * derivee', unit: 'm/s' }
+      ];
+
+      const { results, errors } = calc.evaluateBlock(formulas, initialScope);
+      assert.equal(errors.length, 0, `Erreurs inattendues: ${JSON.stringify(errors)}`);
+      const byName = Object.fromEntries(results.map(r => [r.variableName, r.data]));
+      assert.equal(byName.derivee[2], 2);
+      assert.equal(byName.racine[2], 2);
+      assert.equal(byName.doubleDerivee[2], 4);
+    });
+
+    it('doit normaliser les variantes de pi (π, PI, Pi) sans altérer les identifiants contenant "pi"', () => {
+      assert.ok(Math.abs(calc.evaluate('π', {}) - Math.PI) < 1e-12);
+      assert.ok(Math.abs(calc.evaluate('2π', {}) - 2 * Math.PI) < 1e-12);
+      assert.ok(Math.abs(calc.evaluate('π²', {}) - Math.PI ** 2) < 1e-12);
+      assert.ok(Math.abs(calc.evaluate('cos(PI)', {}) - (-1)) < 1e-12);
+      assert.ok(Math.abs(calc.evaluate('sin(Pi / 2)', {}) - 1) < 1e-12);
+
+      // Ne doit pas altérer un identifiant contenant "pi"
+      assert.equal(calc.evaluate('epice + x1pi', { epice: 3, x1pi: 4 }), 7);
+    });
+  });
 });

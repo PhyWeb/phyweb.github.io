@@ -1,6 +1,72 @@
 import { stripInlineComment } from '../io/formulaUtils.js';
 
 /**
+ * Alias silencieux de fonctions mathématiques (insensibles à la casse).
+ * Résolus uniquement lorsqu'ils sont suivis d'une parenthèse ouvrante '(' afin
+ * de ne pas entrer en conflit avec des noms de grandeurs ou de paramètres utilisateur.
+ */
+export const FUNCTION_ALIASES = {
+  // Dérivation
+  derivee: 'diff',
+  'dérivée': 'diff',
+  deriv: 'diff',
+
+  // Intégration / primitive
+  integrale: 'integrate',
+  'intégrale': 'integrate',
+  primitive: 'integrate',
+  intg: 'integrate',
+
+  // Lissage
+  lissage: 'smooth',
+  lisser: 'smooth',
+
+  // Racines & logarithmes
+  racine: 'sqrt',
+  rac: 'sqrt',
+  log10: 'log',
+
+  // Trigonométrie réciproque
+  arcsin: 'asin',
+  arccos: 'acos',
+  arctan: 'atan',
+  arcsinh: 'asinh',
+  arccosh: 'acosh',
+  arctanh: 'atanh'
+};
+
+const ALIAS_KEYS_SORTED = Object.keys(FUNCTION_ALIASES).sort((a, b) => b.length - a.length);
+const FUNCTION_ALIAS_REGEX = new RegExp(
+  `(?<![a-zA-Z0-9À-ÖØ-öø-ÿ_])(${ALIAS_KEYS_SORTED.join('|')})(?=\\s*\\()`,
+  'gi'
+);
+
+/**
+ * Remplace les synonymes de fonctions reconnus (suivis d'une parenthèse ouvrante)
+ * par leur nom canonique.
+ * @param {string} expression - L'expression à traiter.
+ * @returns {string}
+ */
+export function normalizeFunctionAliases(expression) {
+  if (!expression || typeof expression !== 'string') return expression;
+  return expression.replace(FUNCTION_ALIAS_REGEX, (match) => {
+    return FUNCTION_ALIASES[match.toLowerCase()] || match;
+  });
+}
+
+/**
+ * Normalise les variantes de constantes mathématiques intégrées (π, PI, Pi -> pi).
+ * @param {string} expression - L'expression à traiter.
+ * @returns {string}
+ */
+export function normalizeMathConstants(expression) {
+  if (!expression || typeof expression !== 'string') return expression;
+  let result = expression.replace(/(?<![a-zA-ZÀ-ÖØ-öø-ÿ_])π(?![a-zA-Z0-9À-ÖØ-öø-ÿ_])/g, 'pi');
+  result = result.replace(/(?<![a-zA-Z0-9À-ÖØ-öø-ÿ_])pi(?![a-zA-Z0-9À-ÖØ-öø-ÿ_])/gi, 'pi');
+  return result;
+}
+
+/**
  * Normalise la casse des fonctions connues dans une expression.
  * @param {string} expression - L'expression à traiter.
  * @param {string[]} knownFunctions - Liste des noms de fonctions connues.
@@ -194,8 +260,10 @@ export function preprocessDecimalCommas(expression) {
 export function preprocessExpression(expression, knownFunctions) {
   if (!expression || typeof expression !== 'string') return expression;
   let clean = stripInlineComment(expression);
+  clean = normalizeFunctionAliases(clean);
   clean = preprocessDecimalCommas(clean);
   clean = preprocessSpecialCharacters(clean);
+  clean = normalizeMathConstants(clean);
   clean = normalizeFunctionCases(clean, knownFunctions);
   return clean;
 }

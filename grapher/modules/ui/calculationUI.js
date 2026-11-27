@@ -1,6 +1,7 @@
 import { formatNumber, formatUnit } from '../../../common/formatter.js';
 import { showToast } from '../../../common/common.js';
 import { stripInlineComment } from '../calculation.js';
+import { FUNCTION_ALIASES, normalizeFunctionAliases } from '../calculation/expressionPreprocessor.js';
 
 const $ = (selector) => document.querySelector(selector);
 
@@ -256,6 +257,10 @@ export default class CalculationUI {
             ? /^[a-zA-ZÀ-ÿ_][a-zA-Z0-9À-ÿ]*(?:_[^=\s,#;]+)?/
             : /^[a-zA-ZÀ-ÿ_][a-zA-Z0-9À-ÿ]*(?:_[a-zA-Z0-9À-ÿ]+)?/;
 
+          if (stream.match(/^π/)) {
+            return "def";
+          }
+
           if (stream.match(wordRegex)) {
             const word = stream.current();
 
@@ -265,6 +270,16 @@ export default class CalculationUI {
 
             if (functionNames.includes(word)) {
               return "phyweb-function";
+            }
+
+            const aliasTarget = !isLHS ? FUNCTION_ALIASES[word.toLowerCase()] : undefined;
+            if (aliasTarget && /^\s*\(/.test(line.slice(stream.pos))) {
+              if (['diff', 'integrate', 'smooth'].includes(aliasTarget)) {
+                return "phyweb-function-warning";
+              }
+              if (functionNames.includes(aliasTarget)) {
+                return "phyweb-function";
+              }
             }
 
             const baseName = word.split('_')[0];
@@ -373,7 +388,7 @@ export default class CalculationUI {
 
       const leftPart = parts[0].trim();
       const rawExpression = parts.slice(1).join('=').trim();
-      const expression = stripInlineComment(rawExpression);
+      const expression = normalizeFunctionAliases(stripInlineComment(rawExpression));
       const variableName = leftPart.split('_')[0].trim().replace(/\s+/g, '');
 
       if (variableName.length > 0 && expression.length > 0 && orderDependentPattern.test(expression)) {

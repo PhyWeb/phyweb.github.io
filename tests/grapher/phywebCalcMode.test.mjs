@@ -240,6 +240,37 @@ describe('Coloration syntaxique CodeMirror (mode phyweb-calc)', () => {
       const tokens2 = tokenizeLine('c = 2 * PI * x');
       const piToken2 = tokens2.find(t => t.text === 'PI');
       assert.strictEqual(piToken2.style, 'def');
+
+      const tokens3 = tokenizeLine('c = 2 * π * x');
+      const piToken3 = tokens3.find(t => t.text === 'π');
+      assert.strictEqual(piToken3.style, 'def');
+    });
+
+    it('doit colorer les synonymes de fonctions uniquement devant une parenthèse ouvrante', () => {
+      const tokensDiff = tokenizeLine('v = derivee(x, t)');
+      assert.strictEqual(tokensDiff[2].text, 'derivee');
+      assert.strictEqual(tokensDiff[2].style, 'phyweb-function-warning');
+
+      const tokensAccent = tokenizeLine('v = dérivée(x, t)');
+      assert.strictEqual(tokensAccent[2].text, 'dérivée');
+      assert.strictEqual(tokensAccent[2].style, 'phyweb-function-warning');
+
+      const tokensRacine = tokenizeLine('y = racine(x)');
+      assert.strictEqual(tokensRacine[2].text, 'racine');
+      assert.strictEqual(tokensRacine[2].style, 'phyweb-function');
+
+      // En tant que nom de variable (sans parenthèse), ne doit pas être coloré comme fonction
+      const tokensVar = tokenizeLine('derivee = diff(x, t)');
+      assert.strictEqual(tokensVar.find(t => t.text === 'derivee'), undefined);
+    });
+
+    it('doit détecter les synonymes de fonctions dépendantes de l\'ordre dans hasOrderDependentFormulas', () => {
+      assert.strictEqual(ui.hasOrderDependentFormulas('v = derivee(x, t)'), true);
+      assert.strictEqual(ui.hasOrderDependentFormulas('v = dérivée(x, t)'), true);
+      assert.strictEqual(ui.hasOrderDependentFormulas('p = integrale(v, t)'), true);
+      assert.strictEqual(ui.hasOrderDependentFormulas('p = primitive(v, t)'), true);
+      assert.strictEqual(ui.hasOrderDependentFormulas('yl = lissage(y, 5)'), true);
+      assert.strictEqual(ui.hasOrderDependentFormulas('derivee = 2 * x'), false);
     });
 
     it('doit colorer les nombres en notation scientifique', () => {

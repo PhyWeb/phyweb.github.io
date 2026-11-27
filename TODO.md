@@ -26,8 +26,6 @@
 
     des fonctions non prévues existent (pow, min etc de math.js)
 
-    ajouter des synonymes aux fonctions mathematique genre derivee()
-
     parametre? pour angles en degrés
 
     une option pour que le premier et le dernier point soient a la limite du graphique et pas à 5% du bord

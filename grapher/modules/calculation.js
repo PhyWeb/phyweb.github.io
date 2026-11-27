@@ -5,6 +5,8 @@ import {
   movingAverageSmooth
 } from './calculation/numericalAnalysis.js';
 import {
+  normalizeFunctionAliases,
+  normalizeMathConstants,
   normalizeFunctionCases,
   preprocessSpecialCharacters,
   preprocessDecimalCommas
@@ -235,8 +237,10 @@ export default class Calculation {
   preprocessExpression(expression) {
     if (!expression || typeof expression !== 'string') return expression;
     let clean = stripInlineComment(expression);
+    clean = normalizeFunctionAliases(clean);
     clean = this.preprocessDecimalCommas(clean);
     clean = this.preprocessSpecialCharacters(clean);
+    clean = normalizeMathConstants(clean);
     clean = this._normalizeFunctionCases(clean);
     return clean;
   }
