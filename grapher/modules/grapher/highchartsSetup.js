@@ -15,6 +15,15 @@ export const ZERO_PLOT_LINE = {
   color: '#555555',
   zIndex: 2
 };
+export const GRID_STYLE = {
+  majorColor: '#cccccc',
+  majorWidth: 1,
+  minorColor: '#e8e8e8',
+  minorWidth: 0.75,
+  minorTickColor: '#999999',
+  minorTickWidth: 1,
+  minorTickLength: 4
+};
 
 /**
  * Applique une seule fois les surcharges globales Highcharts (auto-zoom incluant l'origine,
@@ -393,10 +402,14 @@ export function buildChartOptions(grapher) {
       title: {
         text: null
       },
-      gridLineWidth: grapher.grid ? 1 : 0,
-      minorGridLineWidth: grapher.minorGrid ? 1 : 0,
+      gridLineWidth: grapher.grid ? GRID_STYLE.majorWidth : 0,
+      gridLineColor: GRID_STYLE.majorColor,
+      minorGridLineWidth: grapher.minorGrid ? GRID_STYLE.minorWidth : 0,
+      minorGridLineColor: GRID_STYLE.minorColor,
       minorTickInterval: grapher.minorGrid ? 'auto' : null,
-      minorGridLineColor: '#f2f2f2',
+      minorTickWidth: grapher.minorGrid ? GRID_STYLE.minorTickWidth : 0,
+      minorTickLength: GRID_STYLE.minorTickLength,
+      minorTickColor: GRID_STYLE.minorTickColor,
       plotLines: grapher._getZeroPlotLines(),
       startOnTick: false,
       endOnTick: false,
@@ -442,10 +455,14 @@ export function buildChartOptions(grapher) {
         text: null
       },
       lineWidth: 1,
-      minorGridLineWidth: grapher.minorGrid ? 1 : 0,
+      gridLineWidth: grapher.grid ? GRID_STYLE.majorWidth : 0,
+      gridLineColor: GRID_STYLE.majorColor,
+      minorGridLineWidth: grapher.minorGrid ? GRID_STYLE.minorWidth : 0,
+      minorGridLineColor: GRID_STYLE.minorColor,
       minorTickInterval: grapher.minorGrid ? 'auto' : null,
-      minorGridLineColor: '#f2f2f2',
-      gridLineWidth: grapher.grid ? 1 : 0,
+      minorTickWidth: grapher.minorGrid ? GRID_STYLE.minorTickWidth : 0,
+      minorTickLength: GRID_STYLE.minorTickLength,
+      minorTickColor: GRID_STYLE.minorTickColor,
       plotLines: grapher._getZeroPlotLines(),
       tickWidth: 1,
       startOnTick: false,

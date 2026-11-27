@@ -8,7 +8,8 @@ import {
   formatUnitWithExponent,
   formatAxisLabelWithUnit
 } from '../../grapher/modules/grapher/axisFormatting.js';
-import { buildChartOptions, buildSeriesMarkerOptions } from '../../grapher/modules/grapher/highchartsSetup.js';
+import { GRID_STYLE, buildChartOptions, buildSeriesMarkerOptions } from '../../grapher/modules/grapher/highchartsSetup.js';
+import { DEFAULT_SETTINGS } from '../../grapher/modules/settingsManager.js';
 
 describe('Grapher - Configuration Highcharts, formatage d\'axes et zoom', () => {
   it('computeAxisExponent calcule l\'exposant par multiples de 3 et respecte disableScientificNotation', () => {
@@ -105,6 +106,74 @@ describe('Grapher - Configuration Highcharts, formatage d\'axes et zoom', () => 
       lineColor: '#2caffe',
       lineWidth: 2.5,
       radiusPlus: 2
+    });
+  });
+
+  it('applique la hiérarchie visuelle des grilles principale/secondaire et des tirets de sous-graduations', () => {
+    assert.equal(DEFAULT_SETTINGS.minorGrid, true);
+
+    const data = new Data();
+    const grapherDefault = new Grapher(data, { grapherGrid: true });
+    assert.equal(grapherDefault.minorGrid, true);
+
+    const grapherMinorOff = new Grapher(data, {
+      grapherGrid: true,
+      minorGrid: false
+    });
+    const optsOff = buildChartOptions(grapherMinorOff);
+
+    for (const axis of [optsOff.xAxis[0], optsOff.yAxis[0]]) {
+      assert.equal(axis.gridLineWidth, GRID_STYLE.majorWidth);
+      assert.equal(axis.gridLineColor, GRID_STYLE.majorColor);
+      assert.equal(axis.minorGridLineWidth, 0);
+      assert.equal(axis.minorGridLineColor, GRID_STYLE.minorColor);
+      assert.equal(axis.minorTickInterval, null);
+      assert.equal(axis.minorTickWidth, 0);
+      assert.equal(axis.minorTickLength, GRID_STYLE.minorTickLength);
+      assert.equal(axis.minorTickColor, GRID_STYLE.minorTickColor);
+    }
+
+    const grapherMinorOn = new Grapher(data, {
+      grapherGrid: true,
+      minorGrid: true
+    });
+    const optsOn = buildChartOptions(grapherMinorOn);
+
+    for (const axis of [optsOn.xAxis[0], optsOn.yAxis[0]]) {
+      assert.equal(axis.minorGridLineWidth, GRID_STYLE.minorWidth);
+      assert.ok(axis.minorGridLineWidth < axis.gridLineWidth);
+      assert.equal(axis.minorTickInterval, 'auto');
+      assert.equal(axis.minorTickWidth, GRID_STYLE.minorTickWidth);
+    }
+
+    const updates = [];
+    grapherMinorOff.chart = { update: (u) => updates.push(u) };
+    grapherMinorOff.setMinorGridVisibility(true);
+    assert.deepEqual(updates[0], {
+      xAxis: {
+        minorGridLineWidth: GRID_STYLE.minorWidth,
+        minorTickInterval: 'auto',
+        minorTickWidth: GRID_STYLE.minorTickWidth
+      },
+      yAxis: {
+        minorGridLineWidth: GRID_STYLE.minorWidth,
+        minorTickInterval: 'auto',
+        minorTickWidth: GRID_STYLE.minorTickWidth
+      }
+    });
+
+    grapherMinorOff.setMinorGridVisibility(false);
+    assert.deepEqual(updates[1], {
+      xAxis: {
+        minorGridLineWidth: 0,
+        minorTickInterval: null,
+        minorTickWidth: 0
+      },
+      yAxis: {
+        minorGridLineWidth: 0,
+        minorTickInterval: null,
+        minorTickWidth: 0
+      }
     });
   });
 

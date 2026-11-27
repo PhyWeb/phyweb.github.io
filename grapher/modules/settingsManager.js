@@ -1,7 +1,7 @@
 export const DEFAULT_SETTINGS = {
   significantDigits: 4,
   grapherGrid: true,
-  minorGrid: false,
+  minorGrid: true,
   highlightZeroAxes: true,
   disableScientificNotation: false,
   includeOriginOnAutoZoom: true,

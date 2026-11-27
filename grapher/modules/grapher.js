@@ -1,6 +1,7 @@
 import {
   ANIMATION_FLAG,
   ZERO_PLOT_LINE,
+  GRID_STYLE,
   installHighchartsPatches,
   buildChartOptions,
   buildSeriesMarkerOptions,
@@ -35,7 +36,7 @@ export default class Grapher {
     this.uiManager = null;
 
     this.grid = initialSettings.grapherGrid; // Visibilité de la grille principale
-    this.minorGrid = initialSettings.minorGrid || false;
+    this.minorGrid = initialSettings.minorGrid ?? true;
     this.highlightZeroAxes = initialSettings.highlightZeroAxes ?? true;
     this.disableScientificNotation = initialSettings.disableScientificNotation || false;
     this.includeOriginOnAutoZoom = initialSettings.includeOriginOnAutoZoom ?? true;
@@ -363,10 +364,10 @@ updateChart(yCurveTitles, redraw = true) {
     if (this.chart) {
       this.chart.update({
         xAxis: {
-          gridLineWidth: visible ? 1 : 0
+          gridLineWidth: visible ? GRID_STYLE.majorWidth : 0
         },
         yAxis: {
-          gridLineWidth: visible ? 1 : 0
+          gridLineWidth: visible ? GRID_STYLE.majorWidth : 0
         }
       });
     }
@@ -395,12 +396,14 @@ updateChart(yCurveTitles, redraw = true) {
     if (this.chart) {
       this.chart.update({
         xAxis: {
-          minorGridLineWidth: visible ? 1 : 0,
-          minorTickInterval: visible ? 'auto' : null
+          minorGridLineWidth: visible ? GRID_STYLE.minorWidth : 0,
+          minorTickInterval: visible ? 'auto' : null,
+          minorTickWidth: visible ? GRID_STYLE.minorTickWidth : 0
         },
         yAxis: {
-          minorGridLineWidth: visible ? 1 : 0,
-          minorTickInterval: visible ? 'auto' : null
+          minorGridLineWidth: visible ? GRID_STYLE.minorWidth : 0,
+          minorTickInterval: visible ? 'auto' : null,
+          minorTickWidth: visible ? GRID_STYLE.minorTickWidth : 0
         }
       });
     }

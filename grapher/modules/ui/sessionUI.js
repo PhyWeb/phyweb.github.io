@@ -468,7 +468,7 @@ export default class SessionUI {
   loadSettingsIntoModalUI(settings) {
     $('#significant-digits-select').value = settings?.significantDigits ?? 4;
     $('#graph-grid-switch').checked = settings.grapherGrid;
-    $('#graph-grid-minor-switch').checked = settings.minorGrid || false;
+    $('#graph-grid-minor-switch').checked = settings.minorGrid ?? true;
     $('#highlight-zero-axes-switch').checked = settings.highlightZeroAxes ?? true;
     $('#graph-disable-scientific-switch').checked = settings.disableScientificNotation || false;
     $('#include-origin-switch').checked = settings.includeOriginOnAutoZoom;
