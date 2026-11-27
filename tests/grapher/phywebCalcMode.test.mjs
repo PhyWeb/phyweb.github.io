@@ -259,6 +259,14 @@ describe('Coloration syntaxique CodeMirror (mode phyweb-calc)', () => {
       assert.strictEqual(tokensRacine[2].text, 'racine');
       assert.strictEqual(tokensRacine[2].style, 'phyweb-function');
 
+      const tokensStats = tokenizeLine('m = mean(x) + std(x) + moyenne(x)');
+      assert.strictEqual(tokensStats.find(t => t.text === 'mean').style, 'phyweb-function');
+      assert.strictEqual(tokensStats.find(t => t.text === 'std').style, 'phyweb-function');
+      assert.strictEqual(tokensStats.find(t => t.text === 'moyenne').style, 'phyweb-function');
+
+      const tokensAtan2 = tokenizeLine('a = atan2(y, x)');
+      assert.strictEqual(tokensAtan2.find(t => t.text === 'atan2').style, 'phyweb-function');
+
       // En tant que nom de variable (sans parenthèse), ne doit pas être coloré comme fonction
       const tokensVar = tokenizeLine('derivee = diff(x, t)');
       assert.strictEqual(tokensVar.find(t => t.text === 'derivee'), undefined);

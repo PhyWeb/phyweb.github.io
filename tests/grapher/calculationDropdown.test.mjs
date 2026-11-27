@@ -64,8 +64,8 @@ describe('Contrôle Mega-Dropdown des Fonctions dans l\'onglet Calculs', () => {
       );
       assert.match(
         htmlContent,
-        /<div class="dropdown-menu" id="functions-dropdown-menu" role="menu" style="[^"]*min-width:\s*540px;?[^"]*">/,
-        'Le menu doit avoir style="min-width: 540px;" et role="menu"'
+        /<div class="dropdown-menu" id="functions-dropdown-menu" role="menu" style="[^"]*min-width:\s*780px;?[^"]*">/,
+        'Le menu doit avoir style="min-width: 780px;" et role="menu"'
       );
       assert.match(
         htmlContent,
@@ -148,34 +148,29 @@ describe('Contrôle Mega-Dropdown des Fonctions dans l\'onglet Calculs', () => {
       };
     });
 
-    it('génère 4 colonnes catégorisées dans #calculation-functions-content', () => {
+    it('génère 6 catégories sur 3 colonnes dans #calculation-functions-content', () => {
       ui.updateCalculationUI();
 
       assert.strictEqual(functionsContentElement.children.length, 1);
       const grid = functionsContentElement.children[0];
       assert.strictEqual(grid.className, 'columns is-multiline is-variable is-3');
-      assert.strictEqual(grid.children.length, 4);
+      assert.strictEqual(grid.children.length, 6);
 
-      // Catégorie 1: Usuelles & Puissances
-      const cat1 = grid.children[0];
-      assert.ok(cat1.className.includes('column is-6'));
-      assert.strictEqual(cat1.children[0].textContent, 'Usuelles & Puissances');
-      assert.strictEqual(cat1.children[0].innerHTML.includes('fa-'), false, 'Pas d\'icône fa dans Catégorie 1');
+      const expectedTitles = [
+        'Usuelles & Puissances',
+        'Statistiques',
+        'Analyse',
+        'Trigonométrie (rad)',
+        'Hyperboliques',
+        'Arrondis'
+      ];
 
-      // Catégorie 2: Analyse & Arrondis
-      const cat2 = grid.children[1];
-      assert.strictEqual(cat2.children[0].textContent, 'Analyse & Arrondis');
-      assert.strictEqual(cat2.children[0].innerHTML.includes('fa-'), false, 'Pas d\'icône fa dans Catégorie 2');
-
-      // Catégorie 3: Trigonométrie (rad)
-      const cat3 = grid.children[2];
-      assert.strictEqual(cat3.children[0].textContent, 'Trigonométrie (rad)');
-      assert.strictEqual(cat3.children[0].innerHTML.includes('fa-'), false, 'Pas d\'icône fa dans Catégorie 3');
-
-      // Catégorie 4: Hyperboliques
-      const cat4 = grid.children[3];
-      assert.strictEqual(cat4.children[0].textContent, 'Hyperboliques');
-      assert.strictEqual(cat4.children[0].innerHTML.includes('fa-'), false, 'Pas d\'icône fa dans Catégorie 4');
+      expectedTitles.forEach((title, idx) => {
+        const cat = grid.children[idx];
+        assert.ok(cat.className.includes('column is-4'), `Catégorie ${idx + 1} doit utiliser column is-4`);
+        assert.strictEqual(cat.children[0].textContent, title);
+        assert.strictEqual(cat.children[0].innerHTML.includes('fa-'), false, `Pas d'icône fa dans ${title}`);
+      });
     });
 
     it('diff et integrate doivent avoir le tag is-warning is-light et les autres fonctions is-link is-light', () => {
@@ -423,6 +418,28 @@ describe('Contrôle Mega-Dropdown des Fonctions dans l\'onglet Calculs', () => {
       functionsContentListener(fakeEvent);
 
       assert.strictEqual(insertedTexts[0], 'smooth(');
+      assert.strictEqual(functionsDropdownClasses.has('is-active'), false);
+    });
+
+    it('insère atan2(,) avec la virgule au clic sur atan2()', () => {
+      ui.initCalculationControls();
+      functionsDropdownClasses.add('is-active');
+
+      const fakeEvent = {
+        preventDefault: () => {},
+        target: {
+          closest: (sel) => {
+            if (sel === 'a[data-value]') {
+              return { dataset: { value: 'atan2()' } };
+            }
+            return null;
+          }
+        }
+      };
+
+      functionsContentListener(fakeEvent);
+
+      assert.strictEqual(insertedTexts[0], 'atan2(,)');
       assert.strictEqual(functionsDropdownClasses.has('is-active'), false);
     });
 

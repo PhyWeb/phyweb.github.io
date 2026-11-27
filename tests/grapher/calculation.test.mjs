@@ -807,5 +807,39 @@ describe('Calculation Module', () => {
       // Ne doit pas altérer un identifiant contenant "pi"
       assert.equal(calc.evaluate('epice + x1pi', { epice: 3, x1pi: 4 }), 7);
     });
+
+    it('doit évaluer les fonctions statistiques (mean, median, std, min, max, sum) en ignorant les null', () => {
+      const scope = { x: [1, null, 3, 5] };
+      const formulas = [
+        { variableName: 'moyenne', expression: 'moyenne(x)', unit: 'm' },
+        { variableName: 'med', expression: 'médiane(x)', unit: 'm' },
+        { variableName: 's', expression: 'ecarttype(x)', unit: 'm' },
+        { variableName: 'mi', expression: 'minimum(x)', unit: 'm' },
+        { variableName: 'ma', expression: 'maximum(x)', unit: 'm' },
+        { variableName: 'tot', expression: 'somme(x)', unit: 'm' },
+        { variableName: 'centre', expression: 'x - moyenne', unit: 'm' }
+      ];
+
+      const { results, errors } = calc.evaluateBlock(formulas, scope);
+      assert.equal(errors.length, 0, `Erreurs inattendues: ${JSON.stringify(errors)}`);
+
+      const byName = Object.fromEntries(results.map(r => [r.variableName, r]));
+      assert.equal(byName.moyenne.type, 'parameter');
+      assert.equal(byName.moyenne.data.value, 3);
+      assert.equal(byName.med.data.value, 3);
+      assert.equal(byName.s.data.value, 2); // std([1, 3, 5]) = sqrt(((4+0+4)/2)) = 2
+      assert.equal(byName.mi.data.value, 1);
+      assert.equal(byName.ma.data.value, 5);
+      assert.equal(byName.tot.data.value, 9);
+      assert.deepEqual(byName.centre.data, [-2, null, 0, 2]);
+    });
+
+    it('doit évaluer atan2(y, x) élément par élément et gérer les valeurs null', () => {
+      const scope = { y: [0, null, 1], x: [1, 1, 0] };
+      const res = calc.evaluate('atan2(y, x)', scope);
+      assert.equal(res[0], 0);
+      assert.equal(res[1], null);
+      assert.ok(Math.abs(res[2] - Math.PI / 2) < 1e-12);
+    });
   });
 });

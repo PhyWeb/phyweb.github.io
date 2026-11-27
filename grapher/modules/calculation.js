@@ -108,6 +108,59 @@ export default class Calculation {
     configureOperator('subtract', (a, b) => a - b);
     configureOperator('multiply', (a, b) => a * b);
     configureOperator('divide', (a, b) => a / b);
+    configureOperator('atan2', (y, x) => Math.atan2(y, x));
+
+    // Fonctions statistiques / agrégation "null-aware" (ignorent les cellules vides/null)
+    const extractFiniteValues = (input) => {
+      const arr = input && typeof input.toArray === 'function' ? input.toArray() : input;
+      if (!Array.isArray(arr)) return [];
+      return arr.filter(v => typeof v === 'number' && Number.isFinite(v));
+    };
+
+    ['mean', 'median', 'std', 'min', 'max', 'sum'].forEach(name => {
+      const originalFn = mathInstance[name];
+      if (typeof originalFn !== 'function') return;
+
+      const safeStatFn = (...args) => {
+        if (args.length === 1) {
+          const arg = args[0];
+          if (arg === null || arg === undefined) return null;
+          if (Array.isArray(arg) || (arg && typeof arg.toArray === 'function')) {
+            const valid = extractFiniteValues(arg);
+            if (valid.length === 0) return null;
+            try {
+              const res = originalFn(valid);
+              return (typeof res === 'number' && Number.isFinite(res)) ? res : null;
+            } catch {
+              return null;
+            }
+          }
+          if (typeof arg === 'number' && Number.isFinite(arg)) {
+            return name === 'std' ? 0 : arg;
+          }
+          return null;
+        }
+
+        const flat = [];
+        for (const a of args) {
+          if (a === null || a === undefined) continue;
+          if (Array.isArray(a) || (a && typeof a.toArray === 'function')) {
+            flat.push(...extractFiniteValues(a));
+          } else if (typeof a === 'number' && Number.isFinite(a)) {
+            flat.push(a);
+          }
+        }
+        if (flat.length === 0) return null;
+        try {
+          const res = originalFn(flat);
+          return (typeof res === 'number' && Number.isFinite(res)) ? res : null;
+        } catch {
+          return null;
+        }
+      };
+
+      mathInstance.import({ [name]: safeStatFn }, { override: true });
+    });
 
     // Rendre les opérateurs unaires "null-aware" et finis dans R
     const configureUnaryOperator = (name) => {
@@ -402,7 +455,12 @@ export default class Calculation {
   }
 
   getAvailableFunctions() {
-    return [...this.scalarFunctions, 'diff', 'integrate', 'smooth'];
+    return [
+      ...this.scalarFunctions,
+      'atan2',
+      'diff', 'integrate', 'smooth',
+      'mean', 'median', 'std', 'min', 'max', 'sum'
+    ];
   }
 }
 

@@ -32,7 +32,18 @@ export const FUNCTION_ALIASES = {
   arctan: 'atan',
   arcsinh: 'asinh',
   arccosh: 'acosh',
-  arctanh: 'atanh'
+  arctanh: 'atanh',
+
+  // Statistiques
+  moyenne: 'mean',
+  moy: 'mean',
+  mediane: 'median',
+  'médiane': 'median',
+  ecarttype: 'std',
+  'écarttype': 'std',
+  somme: 'sum',
+  minimum: 'min',
+  maximum: 'max'
 };
 
 const ALIAS_KEYS_SORTED = Object.keys(FUNCTION_ALIASES).sort((a, b) => b.length - a.length);

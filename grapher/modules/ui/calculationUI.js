@@ -18,14 +18,22 @@ const FUNCTION_CATEGORIES = [
     ]
   },
   {
-    title: 'Analyse & Arrondis',
+    title: 'Statistiques',
+    functions: [
+      { name: 'mean', desc: 'Moyenne : mean(x)' },
+      { name: 'median', desc: 'Médiane : median(x)' },
+      { name: 'std', desc: 'Écart-type : std(x)' },
+      { name: 'min', desc: 'Minimum : min(x)' },
+      { name: 'max', desc: 'Maximum : max(x)' },
+      { name: 'sum', desc: 'Somme : sum(x)' }
+    ]
+  },
+  {
+    title: 'Analyse',
     functions: [
       { name: 'diff', desc: 'Dérivée : diff(y, x)', tagClass: 'is-warning is-light' },
       { name: 'integrate', desc: 'Primitive : integrate(y, x)', tagClass: 'is-warning is-light' },
-      { name: 'smooth', desc: 'Lissage : smooth(y, n)', tagClass: 'is-warning is-light' },
-      { name: 'round', desc: 'Arrondi au plus proche' },
-      { name: 'floor', desc: 'Arrondi inférieur' },
-      { name: 'ceil', desc: 'Arrondi supérieur' }
+      { name: 'smooth', desc: 'Lissage : smooth(y, n)', tagClass: 'is-warning is-light' }
     ]
   },
   {
@@ -36,7 +44,8 @@ const FUNCTION_CATEGORIES = [
       { name: 'tan', desc: 'Tangente' },
       { name: 'asin', desc: 'Arc sinus' },
       { name: 'acos', desc: 'Arc cosinus' },
-      { name: 'atan', desc: 'Arc tangente' }
+      { name: 'atan', desc: 'Arc tangente' },
+      { name: 'atan2', desc: 'Arc tangente : atan2(y, x)' }
     ]
   },
   {
@@ -48,6 +57,14 @@ const FUNCTION_CATEGORIES = [
       { name: 'asinh', desc: 'Arc sinus hyp.' },
       { name: 'acosh', desc: 'Arc cosinus hyp.' },
       { name: 'atanh', desc: 'Arc tangente hyp.' }
+    ]
+  },
+  {
+    title: 'Arrondis',
+    functions: [
+      { name: 'round', desc: 'Arrondi au plus proche' },
+      { name: 'floor', desc: 'Arrondi inférieur' },
+      { name: 'ceil', desc: 'Arrondi supérieur' }
     ]
   }
 ];
@@ -161,7 +178,7 @@ export default class CalculationUI {
 
       FUNCTION_CATEGORIES.forEach(category => {
         const col = document.createElement('div');
-        col.className = 'column is-6';
+        col.className = 'column is-4';
 
         const label = document.createElement('p');
         label.className = 'menu-label mb-2';
@@ -470,7 +487,7 @@ export default class CalculationUI {
       let cursorOffset = textToInsert.length;
 
       if (textToInsert.endsWith('()')) {
-        const twoArgFunctions = ['diff()', 'integrate()'];
+        const twoArgFunctions = ['diff()', 'integrate()', 'atan2()'];
         finalInsert = twoArgFunctions.includes(textToInsert)
           ? `${textToInsert.slice(0, -2)}(,)`
           : textToInsert.slice(0, -1);
