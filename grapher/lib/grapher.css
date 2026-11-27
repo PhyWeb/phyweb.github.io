@@ -501,6 +501,48 @@ fieldset[disabled] .button {
   transition: transform 0.1s ease;
 }
 
+.custom-color-dropdown .color-option-btn.is-selected {
+  border-color: #363636 !important;
+  box-shadow: 0 0 0 2px hsla(var(--bulma-primary-h, 229), var(--bulma-primary-s, 53%), var(--bulma-primary-l, 53%), 0.35);
+}
+
+.custom-color-dropdown .custom-color-picker-row {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--bulma-border-weak, #ededed);
+}
+
+.custom-color-dropdown .custom-color-picker-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: var(--bulma-text, #4a4a4a);
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+.custom-color-dropdown .custom-color-picker-label:hover {
+  background-color: var(--bulma-scheme-main-bis, #f5f5f5);
+}
+
+.custom-color-dropdown .color-picker-native {
+  width: 28px;
+  height: 24px;
+  padding: 1px;
+  border: 1px solid var(--bulma-border, #dbdbdb);
+  border-radius: 4px;
+  cursor: pointer;
+  background: transparent;
+  flex-shrink: 0;
+}
+
+.custom-color-dropdown .color-picker-native:hover {
+  border-color: #363636;
+}
+
 /* Modale d'export : barre latérale à largeur fixe et mise en page compacte */
 #export-modal .modal-card {
   width: 85vw;
