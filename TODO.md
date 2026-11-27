@@ -45,8 +45,6 @@
     intercepter les erreurs de mathsjs en anglais et les traduire en langage clair
 
     othogonalité depuis tracker ???? Essayer le pointage du velo on voit pas le accéléré
-
-    bug: plus d'étiquettes Δx et Δy dans les réticules
     
 # Mendeleiev
 # Optique

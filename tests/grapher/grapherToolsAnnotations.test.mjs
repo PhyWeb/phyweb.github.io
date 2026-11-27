@@ -465,5 +465,39 @@ describe('Grapher - Corrections outils d\'annotation, fallback, axe X et clippin
       // Seul eqPoint (~10, 7) de tangent-method est dans le zoom !
       assert.equal(chart.drawnCircles.length, 1);
     });
+
+    it('n\'applique pas de clip-path SVG sur les étiquettes Δx et Δy (évite leur masquage après translate) et les maintient dans plotBox', () => {
+      const chart = createCalibratedMockChart({
+        xMin: 0, xMax: 20, yMin: 0, yMax: 14,
+        plotLeft: 60, plotTop: 50, plotWidth: 500, plotHeight: 400
+      });
+      grapher.chart = chart;
+
+      data.annotations.push({
+        id: 'seg-labels',
+        type: 'segment',
+        points: [{ x: 2, y: 2 }, { x: 19.8, y: 13.8 }],
+        yUnit: '',
+        xCurve: 'V'
+      });
+
+      grapher.drawAnnotations();
+
+      const dxLabel = chart.drawnLabels.find(l => l.text.startsWith('Δx ='));
+      const dyLabel = chart.drawnLabels.find(l => l.text.startsWith('Δy ='));
+      assert.ok(dxLabel, 'L\'étiquette Δx doit être créée');
+      assert.ok(dyLabel, 'L\'étiquette Δy doit être créée');
+
+      // Aucune étiquette traduite ne doit recevoir clipRect (car clip-path s'applique dans le repère local du <g>)
+      assert.equal(dxLabel.calls.clippedWith, null, 'Δx ne doit pas être clippé via clipRect');
+      assert.equal(dyLabel.calls.clippedWith, null, 'Δy ne doit pas être clippé via clipRect');
+
+      // Les étiquettes doivent rester à l'intérieur de plotBox ([60..560] x [50..450])
+      const { width, height } = dxLabel.getBBox();
+      assert.ok(dxLabel.calls.translatedTo.x >= 60 && dxLabel.calls.translatedTo.x + width <= 560);
+      assert.ok(dxLabel.calls.translatedTo.y >= 50 && dxLabel.calls.translatedTo.y + height <= 450);
+      assert.ok(dyLabel.calls.translatedTo.x >= 60 && dyLabel.calls.translatedTo.x + width <= 560);
+      assert.ok(dyLabel.calls.translatedTo.y >= 50 && dyLabel.calls.translatedTo.y + height <= 450);
+    });
   });
 });

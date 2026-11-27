@@ -321,8 +321,16 @@ export default class AnnotationsRenderer {
           const dxLabel = chart.renderer.label(dxText, 0, 0).attr(labelAttr).css(labelCss).add();
           const dxBBox = dxLabel.getBBox();
           const midPixX = (xAxis.toPixels(clippedDeltaX.x1) + xAxis.toPixels(clippedDeltaX.x2)) / 2;
-          dxLabel.translate(midPixX - dxBBox.width / 2, pixelY1 - (pixelY1 > pixelY2 ? 5 : dxBBox.height + 5));
-          segmentElements.push(this._clipToPlot(dxLabel, targetChart));
+          let dxLabelX = midPixX - dxBBox.width / 2;
+          let dxLabelY = pixelY1 - (pixelY1 > pixelY2 ? 5 : dxBBox.height + 5);
+          if (Number.isFinite(chart.plotLeft) && Number.isFinite(chart.plotWidth)) {
+            dxLabelX = Math.max(chart.plotLeft, Math.min(dxLabelX, chart.plotLeft + chart.plotWidth - dxBBox.width));
+          }
+          if (Number.isFinite(chart.plotTop) && Number.isFinite(chart.plotHeight)) {
+            dxLabelY = Math.max(chart.plotTop, Math.min(dxLabelY, chart.plotTop + chart.plotHeight - dxBBox.height));
+          }
+          dxLabel.translate(dxLabelX, dxLabelY);
+          segmentElements.push(dxLabel);
         }
 
         if (clippedDeltaY) {
@@ -330,8 +338,16 @@ export default class AnnotationsRenderer {
           const dyLabel = chart.renderer.label(dyText, 0, 0).attr(labelAttr).css(labelCss).add();
           const dyBBox = dyLabel.getBBox();
           const midPixY = (yAxis.toPixels(clippedDeltaY.y1) + yAxis.toPixels(clippedDeltaY.y2)) / 2;
-          dyLabel.translate(pixelX2 + (pixelX2 > pixelX1 ? 5 : -dyBBox.width - 5), midPixY - dyBBox.height / 2);
-          segmentElements.push(this._clipToPlot(dyLabel, targetChart));
+          let dyLabelX = pixelX2 + (pixelX2 > pixelX1 ? 5 : -dyBBox.width - 5);
+          let dyLabelY = midPixY - dyBBox.height / 2;
+          if (Number.isFinite(chart.plotLeft) && Number.isFinite(chart.plotWidth)) {
+            dyLabelX = Math.max(chart.plotLeft, Math.min(dyLabelX, chart.plotLeft + chart.plotWidth - dyBBox.width));
+          }
+          if (Number.isFinite(chart.plotTop) && Number.isFinite(chart.plotHeight)) {
+            dyLabelY = Math.max(chart.plotTop, Math.min(dyLabelY, chart.plotTop + chart.plotHeight - dyBBox.height));
+          }
+          dyLabel.translate(dyLabelX, dyLabelY);
+          segmentElements.push(dyLabel);
         }
 
         if (segmentElements.length > 0) {
