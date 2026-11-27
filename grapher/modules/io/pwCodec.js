@@ -69,7 +69,8 @@ export function generatePW(app) {
     grapher: {
       xCurve: app.grapher.currentXCurve,
       yCurves: yCurves,
-      zoom: zoomState
+      zoom: zoomState,
+      orthonormal: Boolean(app.grapher.orthonormal)
     },
     sort: {
       lastSortVariable: app.data.lastSortVariable ?? null,
@@ -298,6 +299,10 @@ export async function restorePWState(app, state) {
   app.grapher.updateModelVisibility();
   app.grapher.reorderLegendByVisibility();
 
+  // Restauration du mode repère orthonormé (1:1)
+  app.grapher.orthonormal = Boolean(state.grapher?.orthonormal);
+  app.grapher.updateOrthonormalButtonUI?.();
+
   // Restauration de l'état de Zoom
   const autoZoomBtn = typeof document !== 'undefined' ? document.querySelector("#auto-zoom-button") : null;
   if (state.grapher && state.grapher.zoom) {
@@ -313,6 +318,9 @@ export async function restorePWState(app, state) {
       app.grapher.hasUserZoom = false;
       if (autoZoomBtn) autoZoomBtn.classList.add("is-hidden");
       app.uiManager.resetZoomUI();
+    }
+    if (app.grapher.orthonormal) {
+      app.grapher.applyOrthonormalBounds?.(false);
     }
     app.grapher.chart.redraw();
   } else {

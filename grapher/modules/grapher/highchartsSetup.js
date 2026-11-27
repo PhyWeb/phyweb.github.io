@@ -26,6 +26,77 @@ export const GRID_STYLE = {
 };
 
 /**
+ * Calcule des bornes orthonormées (même échelle unités/pixel en X et Y) en élargissant
+ * l'axe le plus serré autour de son centre afin de ne jamais rogner les données visibles.
+ * Retourne `null` si les axes sont déjà orthonormés (à 1e-6 près) ou invalides.
+ * @param {number} xMin
+ * @param {number} xMax
+ * @param {number} yMin
+ * @param {number} yMax
+ * @param {number} plotWidth
+ * @param {number} plotHeight
+ * @returns {{ xMin: number, xMax: number, yMin: number, yMax: number } | null}
+ */
+export function computeOrthonormalBounds(xMin, xMax, yMin, yMax, plotWidth, plotHeight) {
+  if (
+    !Number.isFinite(xMin) || !Number.isFinite(xMax) ||
+    !Number.isFinite(yMin) || !Number.isFinite(yMax) ||
+    !Number.isFinite(plotWidth) || !Number.isFinite(plotHeight) ||
+    plotWidth <= 0 || plotHeight <= 0
+  ) {
+    return null;
+  }
+
+  const rangeX = xMax - xMin;
+  const rangeY = yMax - yMin;
+  if (rangeX <= 0 || rangeY <= 0) return null;
+
+  const scaleX = rangeX / plotWidth;
+  const scaleY = rangeY / plotHeight;
+  if (Math.abs(scaleX - scaleY) / Math.max(scaleX, scaleY) < 1e-6) {
+    return null;
+  }
+
+  const scale = Math.max(scaleX, scaleY);
+  const targetRangeX = scale * plotWidth;
+  const targetRangeY = scale * plotHeight;
+  const centerX = (xMin + xMax) / 2;
+  const centerY = (yMin + yMax) / 2;
+
+  return {
+    xMin: targetRangeX > rangeX ? centerX - targetRangeX / 2 : xMin,
+    xMax: targetRangeX > rangeX ? centerX + targetRangeX / 2 : xMax,
+    yMin: targetRangeY > rangeY ? centerY - targetRangeY / 2 : yMin,
+    yMax: targetRangeY > rangeY ? centerY + targetRangeY / 2 : yMax
+  };
+}
+
+/**
+ * Calcule un pas de graduation partagé (`1, 2, 2.5, 5, 10 × 10^n`) pour garantir
+ * des carreaux parfaitement carrés en mode repère orthonormé (1:1).
+ * @param {number} scale - Échelle en unités par pixel (`range / plotSize`).
+ * @param {number} [targetPixels=80] - Espacement cible entre graduations principales (px).
+ * @returns {number | null}
+ */
+export function computeSharedTickInterval(scale, targetPixels = 80) {
+  if (!Number.isFinite(scale) || scale <= 0 || !Number.isFinite(targetPixels) || targetPixels <= 0) {
+    return null;
+  }
+  const raw = scale * targetPixels;
+  const magnitude = Math.pow(10, Math.floor(Math.log10(raw)));
+  const normalized = raw / magnitude;
+  const multiples = [1, 2, 2.5, 5, 10];
+  let chosen = multiples[multiples.length - 1];
+  for (let i = 0; i < multiples.length; i++) {
+    chosen = multiples[i];
+    if (normalized <= (multiples[i] + (multiples[i + 1] || multiples[i])) / 2) {
+      break;
+    }
+  }
+  return Number((chosen * magnitude).toPrecision(12));
+}
+
+/**
  * Applique une seule fois les surcharges globales Highcharts (auto-zoom incluant l'origine,
  * symboles SVG `cross` et `crossX`).
  * @param {object} H - L'objet global Highcharts.
@@ -298,6 +369,11 @@ export function buildChartOptions(grapher) {
               chart.getSelectedPoints().forEach(bringPointToFront);
             }
           });
+          Highcharts.addEvent(chart, 'redraw', () => {
+            if (grapher.orthonormal && !grapher._applyingOrthonormal) {
+              grapher.applyOrthonormalBounds(true);
+            }
+          });
         },
         selection: (e) => {
           if (!e.xAxis || !e.yAxis) return;
@@ -307,6 +383,9 @@ export function buildChartOptions(grapher) {
 
           grapher.chart.xAxis[0].setExtremes(e.xAxis[0].min, e.xAxis[0].max, false);
           grapher.chart.yAxis[0].setExtremes(e.yAxis[0].min, e.yAxis[0].max, false);
+          if (grapher.orthonormal) {
+            grapher.applyOrthonormalBounds(false);
+          }
           grapher.chart.redraw();
 
           grapher.updateAutoZoomButtonVisibility();
@@ -425,6 +504,7 @@ export function buildChartOptions(grapher) {
 
             if (newMin !== undefined && newMax !== undefined) {
               g.redrawAllModels(newMin, newMax);
+              g._modelsUpdatedInSetExtremes = true;
             }
           }
         },
@@ -497,10 +577,10 @@ export function buildChartOptions(grapher) {
     },
     plotOptions: {
       line: {
-        boostThreshold: 50000
+        boostThreshold: 5000
       },
       series: {
-        boostThreshold: 50000,
+        boostThreshold: 5000,
         allowPointSelect: true,
         findNearestPointBy: 'xy',
         animation: ANIMATION_FLAG,
@@ -552,7 +632,142 @@ export function buildChartOptions(grapher) {
  * @param {import('../grapher.js').default} grapher
  */
 export function attachChartInteractionListeners(grapher) {
+  const PAN_THRESHOLD_PX = 4;
+
+  // Zoom à la molette centré sur le curseur
+  grapher.chart.container.addEventListener('wheel', (e) => {
+    if (!grapher.chart?.pointer?.getChartPosition) return;
+    const pos = grapher.chart.pointer.getChartPosition();
+    const pageX = e.pageX ?? e.clientX;
+    const pageY = e.pageY ?? e.clientY;
+    const chartX = pageX - pos.left;
+    const chartY = pageY - pos.top;
+
+    if (!grapher._isInsidePlotBox(chartX, chartY)) return;
+
+    e.preventDefault();
+    if (!e.deltaY) return;
+
+    let normalizedDelta = e.deltaY;
+    if (e.deltaMode === 1) normalizedDelta *= 16;
+    else if (e.deltaMode === 2) normalizedDelta *= 100;
+    const clampedDelta = Math.max(-150, Math.min(150, normalizedDelta));
+    const factor = Math.pow(1.15, clampedDelta / 100);
+
+    grapher.hideFreeCrosshair();
+    grapher.zoomAt(factor, chartX, chartY);
+  }, { passive: false });
+
+  // Déplacement (pan) au clic gauche (hors outil / zoom rectangle) ou clic milieu
   grapher.chart.container.addEventListener('mousedown', (e) => {
+    const isZoomBoxActive = Boolean(
+      grapher.uiManager?.isZoomEnabled || grapher.chart?.options?.chart?.zooming?.type
+    );
+    const isLeftPan = e.button === 0 && grapher.crosshairMode === null && !isZoomBoxActive;
+    const isMiddlePan = e.button === 1;
+    if (!isLeftPan && !isMiddlePan) return;
+
+    if (!grapher.chart?.pointer?.getChartPosition) return;
+    const pos = grapher.chart.pointer.getChartPosition();
+    const pageX = e.pageX ?? e.clientX;
+    const pageY = e.pageY ?? e.clientY;
+    const chartX = pageX - pos.left;
+    const chartY = pageY - pos.top;
+
+    if (!grapher._isInsidePlotBox(chartX, chartY)) return;
+
+    const xAxis = grapher.chart.xAxis?.[0];
+    const yAxis = grapher.chart.yAxis?.[0];
+    if (!xAxis || !yAxis) return;
+
+    const xEx = xAxis.getExtremes();
+    const yEx = yAxis.getExtremes();
+    if (!Number.isFinite(xEx?.min) || !Number.isFinite(xEx?.max) ||
+        !Number.isFinite(yEx?.min) || !Number.isFinite(yEx?.max)) {
+      return;
+    }
+
+    if (isMiddlePan) {
+      e.preventDefault();
+    }
+
+    const panState = {
+      startClientX: e.clientX,
+      startClientY: e.clientY,
+      xMin: xEx.min,
+      xMax: xEx.max,
+      yMin: yEx.min,
+      yMax: yEx.max,
+      plotWidth: grapher.chart.plotWidth,
+      plotHeight: grapher.chart.plotHeight,
+      moved: false,
+      rafId: null,
+      lastDx: 0,
+      lastDy: 0
+    };
+
+    const flushPan = () => {
+      panState.rafId = null;
+      grapher.panFromOrigin(panState.lastDx, panState.lastDy, panState);
+    };
+
+    const onPanMove = (moveEvent) => {
+      const dx = moveEvent.clientX - panState.startClientX;
+      const dy = moveEvent.clientY - panState.startClientY;
+
+      if (!panState.moved) {
+        if (Math.hypot(dx, dy) < PAN_THRESHOLD_PX) return;
+        panState.moved = true;
+        grapher.isPanning = true;
+        grapher.chart.container.classList?.add('chart-panning');
+        grapher.hideFreeCrosshair();
+      }
+
+      moveEvent.preventDefault?.();
+      panState.lastDx = dx;
+      panState.lastDy = dy;
+
+      if (typeof requestAnimationFrame === 'function') {
+        if (panState.rafId === null) {
+          panState.rafId = requestAnimationFrame(flushPan);
+        }
+      } else {
+        flushPan();
+      }
+    };
+
+    const onPanEnd = () => {
+      document.removeEventListener('mousemove', onPanMove);
+      document.removeEventListener('mouseup', onPanEnd);
+
+      if (panState.rafId !== null && typeof cancelAnimationFrame === 'function') {
+        cancelAnimationFrame(panState.rafId);
+        panState.rafId = null;
+      }
+
+      if (panState.moved) {
+        grapher.panFromOrigin(panState.lastDx, panState.lastDy, panState);
+        grapher.isPanning = false;
+        grapher.chart.container.classList?.remove('chart-panning');
+
+        // Empêche le relâchement du drag de déclencher un clic parasite sur le graphe
+        const suppressClick = (clickEvent) => {
+          clickEvent.stopPropagation();
+          clickEvent.preventDefault();
+        };
+        grapher.chart.container.addEventListener('click', suppressClick, { capture: true, once: true });
+        setTimeout(() => {
+          grapher.chart.container.removeEventListener('click', suppressClick, { capture: true });
+        }, 0);
+      }
+    };
+
+    document.addEventListener('mousemove', onPanMove);
+    document.addEventListener('mouseup', onPanEnd);
+  });
+
+  grapher.chart.container.addEventListener('mousedown', (e) => {
+    if (e.button !== 0) return;
     if (
       grapher.crosshairMode !== 'free' &&
       grapher.crosshairMode !== 'model' &&
@@ -644,6 +859,10 @@ export function attachChartInteractionListeners(grapher) {
   });
 
   Highcharts.addEvent(grapher.chart, 'redraw', () => {
+    if (grapher._modelsUpdatedInSetExtremes) {
+      grapher._modelsUpdatedInSetExtremes = false;
+      return;
+    }
     if (grapher.suppressModelAutoUpdate) return;
     const ex = grapher.chart.xAxis[0].getExtremes();
     grapher.redrawAllModels(ex.min, ex.max);

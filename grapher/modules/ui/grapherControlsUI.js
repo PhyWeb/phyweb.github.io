@@ -307,6 +307,14 @@ export default class GrapherControlsUI {
       this.ui.grapher.zoom('out');
     });
 
+    const orthonormalBtn = $("#orthonormal-button");
+    if (orthonormalBtn) {
+      orthonormalBtn.addEventListener("click", () => {
+        this.ui.grapher?.setOrthonormal?.(!this.ui.grapher.orthonormal);
+      });
+      this.ui.grapher?.updateOrthonormalButtonUI?.();
+    }
+
     this.ui.initAxisBoundsPopover();
   }
 

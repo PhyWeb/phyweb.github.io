@@ -90,6 +90,7 @@ export default class SessionUI {
       }
 
       const lastSortVariable = this.ui.data?.lastSortVariable ?? null;
+      const orthonormal = Boolean(this.ui.grapher?.orthonormal);
 
       return JSON.stringify({
         curves,
@@ -100,6 +101,7 @@ export default class SessionUI {
         xCurve,
         yCurves,
         zoom,
+        orthonormal,
         lastSortVariable
       });
     };

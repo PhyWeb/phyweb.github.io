@@ -2,6 +2,8 @@ import {
   ANIMATION_FLAG,
   ZERO_PLOT_LINE,
   GRID_STYLE,
+  computeOrthonormalBounds,
+  computeSharedTickInterval,
   installHighchartsPatches,
   buildChartOptions,
   buildSeriesMarkerOptions,
@@ -41,6 +43,9 @@ export default class Grapher {
     this.disableScientificNotation = initialSettings.disableScientificNotation || false;
     this.includeOriginOnAutoZoom = initialSettings.includeOriginOnAutoZoom ?? true;
     this.hasUserZoom = false;
+    this.orthonormal = false;
+    this._applyingOrthonormal = false;
+    this._orthonormalTickInterval = null;
 
     this.currentXCurve = null;
 
@@ -57,6 +62,7 @@ export default class Grapher {
     // Propriété pour gérer le clic intelligent
     this.mouseDownInfo = null;
     this.isDragging = false;      // Pour savoir si un glisser est en cours
+    this.isPanning = false;       // Pour savoir si un déplacement de vue (pan) est en cours
     this.tempAnnotation = null; // Pour stocker les éléments temporaires
     this.snappedModelPoint = null;
     this.snappedDataPoint = null;
@@ -201,6 +207,9 @@ setVisibilityFromList(titles) {
     this.chart.redraw(); // Un seul redessin à la fin
     this.currentXCurve = null;
     this.hasUserZoom = false;
+    this.orthonormal = false;
+    this.syncOrthonormalTickInterval(false);
+    this.updateOrthonormalButtonUI();
   }
 
   /**
@@ -346,6 +355,9 @@ updateChart(yCurveTitles, redraw = true) {
     if (!this.hasUserZoom && this.chart?.xAxis?.[0] && this.chart?.yAxis?.[0]) {
       this.chart.xAxis[0].setExtremes(null, null, false);
       this.chart.yAxis[0].setExtremes(null, null, false);
+      if (this.orthonormal) {
+        this.applyOrthonormalBounds(false);
+      }
     }
 
     // 4. Réordonner la légende en fonction de la visibilité des séries
@@ -485,12 +497,99 @@ setDisableScientificNotation(disabled) {
     // Appliquer les nouvelles limites sans redessiner immédiatement
     this.chart.xAxis[0].setExtremes(newMinX, newMaxX, false);
     this.chart.yAxis[0].setExtremes(newMinY, newMaxY, false);
+    if (this.orthonormal) {
+      this.syncOrthonormalTickInterval(false);
+    }
     
     // Déclencher un unique redraw qui mettra à jour à la fois les modèles et les annotations
     this.chart.redraw();
 
     // Afficher le bouton de "reset zoom"
     this.updateAutoZoomButtonVisibility();
+  }
+
+  /**
+   * Zoome ou dézoome les deux axes autour d'un point (en pixels dans le conteneur du graphe).
+   * @param {number} factor - Facteur d'échelle (< 1 pour zoomer, > 1 pour dézoomer).
+   * @param {number} chartX - Position X du curseur dans le graphe (px).
+   * @param {number} chartY - Position Y du curseur dans le graphe (px).
+   * @returns {boolean}
+   */
+  zoomAt(factor, chartX, chartY) {
+    if (!Number.isFinite(factor) || factor <= 0) return false;
+    const xAxis = this.chart?.xAxis?.[0];
+    const yAxis = this.chart?.yAxis?.[0];
+    if (!xAxis || !yAxis) return false;
+
+    const exX = xAxis.getExtremes();
+    const exY = yAxis.getExtremes();
+    if (!Number.isFinite(exX?.min) || !Number.isFinite(exX?.max) ||
+        !Number.isFinite(exY?.min) || !Number.isFinite(exY?.max)) {
+      return false;
+    }
+
+    const rangeX = exX.max - exX.min;
+    const rangeY = exY.max - exY.min;
+    if (rangeX <= 0 || rangeY <= 0) return false;
+
+    const rawPivotX = typeof xAxis.toValue === 'function' ? xAxis.toValue(chartX) : (exX.min + exX.max) / 2;
+    const rawPivotY = typeof yAxis.toValue === 'function' ? yAxis.toValue(chartY) : (exY.min + exY.max) / 2;
+    const pivotX = Number.isFinite(rawPivotX) ? rawPivotX : (exX.min + exX.max) / 2;
+    const pivotY = Number.isFinite(rawPivotY) ? rawPivotY : (exY.min + exY.max) / 2;
+
+    const newMinX = pivotX - (pivotX - exX.min) * factor;
+    const newMaxX = pivotX + (exX.max - pivotX) * factor;
+    const newMinY = pivotY - (pivotY - exY.min) * factor;
+    const newMaxY = pivotY + (exY.max - pivotY) * factor;
+
+    const minSpan = 1e-30;
+    if (!Number.isFinite(newMinX) || !Number.isFinite(newMaxX) ||
+        !Number.isFinite(newMinY) || !Number.isFinite(newMaxY) ||
+        (newMaxX - newMinX) < minSpan || (newMaxY - newMinY) < minSpan) {
+      return false;
+    }
+
+    this.hasUserZoom = true;
+    xAxis.setExtremes(newMinX, newMaxX, false);
+    yAxis.setExtremes(newMinY, newMaxY, false);
+    if (this.orthonormal) {
+      this.syncOrthonormalTickInterval(false);
+    }
+    this.chart.redraw();
+    this.updateAutoZoomButtonVisibility();
+    return true;
+  }
+
+  /**
+   * Déplace la fenêtre d'affichage (pan) à partir des bornes d'origine et d'un décalage en pixels.
+   * @param {number} dxPixels - Déplacement horizontal de la souris (px, positif vers la droite).
+   * @param {number} dyPixels - Déplacement vertical de la souris (px, positif vers le bas).
+   * @param {{ xMin: number, xMax: number, yMin: number, yMax: number, plotWidth: number, plotHeight: number }} origin
+   * @returns {boolean}
+   */
+  panFromOrigin(dxPixels, dyPixels, origin) {
+    const xAxis = this.chart?.xAxis?.[0];
+    const yAxis = this.chart?.yAxis?.[0];
+    if (!xAxis || !yAxis || !origin) return false;
+
+    const { xMin, xMax, yMin, yMax, plotWidth, plotHeight } = origin;
+    if (!Number.isFinite(xMin) || !Number.isFinite(xMax) ||
+        !Number.isFinite(yMin) || !Number.isFinite(yMax) ||
+        !Number.isFinite(plotWidth) || !Number.isFinite(plotHeight) ||
+        plotWidth <= 0 || plotHeight <= 0) {
+      return false;
+    }
+
+    const dxData = -(dxPixels / plotWidth) * (xMax - xMin);
+    const dyData = (dyPixels / plotHeight) * (yMax - yMin);
+    if (!Number.isFinite(dxData) || !Number.isFinite(dyData)) return false;
+
+    this.hasUserZoom = true;
+    xAxis.setExtremes(xMin + dxData, xMax + dxData, false);
+    yAxis.setExtremes(yMin + dyData, yMax + dyData, false);
+    this.chart.redraw();
+    this.updateAutoZoomButtonVisibility();
+    return true;
   }
 
   /**
@@ -514,6 +613,9 @@ setDisableScientificNotation(disabled) {
     if (this.chart?.xAxis?.[0] && this.chart?.yAxis?.[0]) {
       this.chart.xAxis[0].setExtremes(null, null, false);
       this.chart.yAxis[0].setExtremes(null, null, false);
+      if (this.orthonormal) {
+        this.applyOrthonormalBounds(false);
+      }
     }
 
     // Un seul redraw final pour les deux axes
@@ -523,6 +625,127 @@ setDisableScientificNotation(disabled) {
     
     // Mise à jour UI
     this.uiManager?.resetZoomUI();
+  }
+
+  /**
+   * Synchronise l'état visuel du bouton "1:1" (repère orthonormé).
+   */
+  updateOrthonormalButtonUI() {
+    const btn = $("#orthonormal-button");
+    if (!btn) return;
+    btn.classList.toggle("is-info", this.orthonormal);
+    btn.classList.toggle("is-light", this.orthonormal);
+    btn.classList.toggle("is-white", !this.orthonormal);
+    btn.setAttribute("aria-pressed", String(this.orthonormal));
+  }
+
+  /**
+   * Active ou désactive le mode repère orthonormé (1:1).
+   * @param {boolean} enabled
+   * @param {boolean} [redraw=true]
+   */
+  setOrthonormal(enabled, redraw = true) {
+    this.orthonormal = Boolean(enabled);
+    this.updateOrthonormalButtonUI();
+
+    if (!this.chart?.xAxis?.[0] || !this.chart?.yAxis?.[0]) return;
+
+    if (this.orthonormal) {
+      if (!this.hasUserZoom) {
+        this.chart.xAxis[0].setExtremes(null, null, false);
+        this.chart.yAxis[0].setExtremes(null, null, false);
+      }
+      this.applyOrthonormalBounds(false);
+      this.syncOrthonormalTickInterval(false);
+      if (redraw) {
+        this.chart.redraw();
+      }
+    } else {
+      this.syncOrthonormalTickInterval(false);
+      if (!this.hasUserZoom) {
+        this.resetZoom(redraw);
+      } else if (redraw) {
+        this.chart.redraw();
+      }
+    }
+  }
+
+  /**
+   * Synchronise un même `tickInterval` sur X et Y lorsque le mode orthonormé est actif
+   * (sinon Highcharts utilise tickPixelInterval=100 en X et 72 en Y, créant une grille rectangulaire).
+   * @param {boolean} [redraw=false]
+   */
+  syncOrthonormalTickInterval(redraw = false) {
+    const xAxis = this.chart?.xAxis?.[0];
+    const yAxis = this.chart?.yAxis?.[0];
+    if (!xAxis || !yAxis || typeof xAxis.update !== 'function' || typeof yAxis.update !== 'function') {
+      return;
+    }
+
+    if (!this.orthonormal) {
+      if (this._orthonormalTickInterval !== null) {
+        this._orthonormalTickInterval = null;
+        xAxis.update({ tickInterval: null }, false);
+        yAxis.update({ tickInterval: null }, false);
+        if (redraw) this.chart.redraw();
+      }
+      return;
+    }
+
+    const xEx = xAxis.getExtremes();
+    const plotWidth = this.chart.plotWidth;
+    if (!Number.isFinite(xEx?.min) || !Number.isFinite(xEx?.max) || !Number.isFinite(plotWidth) || plotWidth <= 0) {
+      return;
+    }
+
+    const scale = (xEx.max - xEx.min) / plotWidth;
+    const interval = computeSharedTickInterval(scale, 80);
+    if (interval !== null && interval !== this._orthonormalTickInterval) {
+      this._orthonormalTickInterval = interval;
+      xAxis.update({ tickInterval: interval }, false);
+      yAxis.update({ tickInterval: interval }, false);
+      if (redraw) this.chart.redraw();
+    }
+  }
+
+  /**
+   * Ajuste les bornes X et Y pour garantir une échelle identique (unités/pixel) sur les deux axes.
+   * @param {boolean} [redraw=true]
+   * @returns {boolean} true si les bornes ont été modifiées.
+   */
+  applyOrthonormalBounds(redraw = true) {
+    if (!this.orthonormal || this._applyingOrthonormal) return false;
+    const xAxis = this.chart?.xAxis?.[0];
+    const yAxis = this.chart?.yAxis?.[0];
+    if (!xAxis || !yAxis) return false;
+
+    const xEx = xAxis.getExtremes();
+    const yEx = yAxis.getExtremes();
+    const bounds = computeOrthonormalBounds(
+      xEx?.min,
+      xEx?.max,
+      yEx?.min,
+      yEx?.max,
+      this.chart.plotWidth,
+      this.chart.plotHeight
+    );
+    if (!bounds) {
+      this.syncOrthonormalTickInterval(redraw);
+      return false;
+    }
+
+    this._applyingOrthonormal = true;
+    try {
+      xAxis.setExtremes(bounds.xMin, bounds.xMax, false);
+      yAxis.setExtremes(bounds.yMin, bounds.yMax, false);
+      this.syncOrthonormalTickInterval(false);
+      if (redraw) {
+        this.chart.redraw();
+      }
+    } finally {
+      this._applyingOrthonormal = false;
+    }
+    return true;
   }
 
   /**
@@ -548,6 +771,9 @@ setDisableScientificNotation(disabled) {
 
     this.chart.xAxis[0].setExtremes(xMin ?? null, xMax ?? null, false);
     this.chart.yAxis[0].setExtremes(yMin ?? null, yMax ?? null, false);
+    if (this.orthonormal) {
+      this.applyOrthonormalBounds(false);
+    }
     this.chart.redraw();
 
     this.updateAutoZoomButtonVisibility();
