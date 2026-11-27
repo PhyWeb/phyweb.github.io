@@ -112,6 +112,7 @@ function hasUnsavedData() {
 const navManager = new NavigationManager(hasUnsavedData);
 
 // Lier les boutons de la barre de navigation
+navManager.addLink($('#navbar-brand-home-button'), '../index.html');
 navManager.addLink($('#navbar-home-button'), '../index.html');
 navManager.addLink($('#navbar-audio-button'), '../audio/index.html');
 navManager.addLink($('#navbar-grapher-button'), '../grapher/index.html');

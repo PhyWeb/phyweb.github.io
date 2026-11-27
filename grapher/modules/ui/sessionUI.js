@@ -132,6 +132,7 @@ export default class SessionUI {
     this.ui.hasUnsavedData = hasUnsavedData;
     this.ui.navManager = new NavigationManager(hasUnsavedData);
 
+    this.ui.navManager.addLink($('#navbar-brand-home-button'), '../index.html');
     this.ui.navManager.addLink($('#navbar-home-button'), '../index.html');
     this.ui.navManager.addLink($('#navbar-audio-button'), '../audio/index.html');
     this.ui.navManager.addLink($('#navbar-tracker-button'), '../tracker/index.html');

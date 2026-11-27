@@ -2048,9 +2048,17 @@ function initApplets(title, basePath = "..", hasDataCallback = () => false) {  /
         </div>
       </div>
       <div class="navbar-end is-flex is-align-items-center" style="height: 100%;">
-        <div class="navbar-item" id="expand-button">
+        <div class="navbar-item">
+          <a class="button is-white" id="about-button" title="À propos">
+            <span class="icon">
+              <i class="fas fa-circle-info"></i>
+            </span>
+            <span>À propos</span>
+          </a>
+        </div>
+        <div class="navbar-item" id="expand-button" title="Passer en mode plein écran">
           <button class="button is-white">
-            <span class="icon is-medium"><i class="fas fa-expand" title="Passer en mode plein écran"></i></span>
+            <span class="icon is-medium"><i class="fas fa-expand"></i></span>
           </button>
         </div>
         <div class="navbar-item is-hidden" id="compress-button" title="Sortir du mode plein écran">

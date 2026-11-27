@@ -19,6 +19,9 @@ setupGlobalShortcuts({
   onNew: () => {
     $("#new-session-button").click();
   },
+  onOpen: () => {
+    $("#menu-open-file-button").click();
+  },
   onEscape: () => {
 
 
@@ -149,6 +152,7 @@ $("#temporal-fourier-button").addEventListener("click",()=>{
 const hasAudioData = () => tabManager.tabs.length > 2;
 const navManager = new NavigationManager(hasAudioData);
 
+navManager.addLink(document.querySelector('#navbar-brand-home-button'), '../index.html');
 navManager.addLink(document.querySelector('#navbar-home-button'), '../index.html');
 navManager.addLink(document.querySelector('#navbar-tracker-button'), '../tracker/index.html');
 navManager.addLink(document.querySelector('#navbar-grapher-button'), '../grapher/index.html');
