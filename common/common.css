@@ -125,14 +125,6 @@ body, html {
 #menu-dropdown-container .navbar-dropdown {
   right: 0;
   left: auto;
-  min-width: 220px;
-}
-
-.menu-shortcut {
-  margin-left: auto;
-  padding-left: 1.5rem;
-  font-size: 0.78rem;
-  color: #7a7a7a;
 }
 
 /*----------------------------------------------------------------------------------------------

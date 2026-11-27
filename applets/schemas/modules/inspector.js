@@ -86,7 +86,7 @@ export function createInspectorController(ctx) {
                   <div><kbd>Shift+clic</kbd> / Cadre : Multi-sélection · <kbd>Ctrl+A</kbd> Tout</div>
                   <div><kbd>M</kbd> Aimantation · <kbd>G</kbd> Grille · <kbd>I</kbd> Inspecteur · <kbd>Alt</kbd> Libre</div>
                   <div><kbd>Ctrl+Z</kbd> Annuler · <kbd>Ctrl+C/X/V</kbd> Copier/Coller · <kbd>Ctrl+G</kbd> Grouper</div>
-                  <div><kbd>Suppr</kbd> Effacer · <kbd>Ctrl+N/S/O/P</kbd> Fichier & Imprimer</div>
+                  <div><kbd>Suppr</kbd> Effacer · <kbd>Ctrl+S/O/P</kbd> Fichier & Imprimer</div>
                   <div><kbd>Flèches</kbd> Décalage fin · <kbd>+/−/0</kbd> Zoom · <kbd>Clic droit</kbd> Menu / Vue</div>
                 </div>
               </div>

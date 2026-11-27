@@ -403,7 +403,7 @@ export function createIOController(ctx) {
             <hr class="navbar-divider">
             <a class="navbar-item" id="menuShortcuts">
               <span class="icon"><i class="fa-solid fa-keyboard"></i></span>
-              <span>Raccourcis & astuces (?)</span>
+              <span>Raccourcis & astuces</span>
             </a>
           </div>
         `;
