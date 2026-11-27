@@ -8,6 +8,7 @@ import {
   formatUnitWithExponent,
   formatAxisLabelWithUnit
 } from '../../grapher/modules/grapher/axisFormatting.js';
+import { buildChartOptions, buildSeriesMarkerOptions } from '../../grapher/modules/grapher/highchartsSetup.js';
 
 describe('Grapher - Configuration Highcharts, formatage d\'axes et zoom', () => {
   it('computeAxisExponent calcule l\'exposant par multiples de 3 et respecte disableScientificNotation', () => {
@@ -36,6 +37,75 @@ describe('Grapher - Configuration Highcharts, formatage d\'axes et zoom', () => 
     assert.equal(crossXPath[0], 'M');
     assert.equal(crossPath.length, 12);
     assert.equal(crossXPath.length, 12);
+  });
+
+  it('place le marqueur d\'un point sélectionné au premier plan (toFront)', () => {
+    const data = new Data();
+    const grapher = new Grapher(data, {
+      grapherGrid: true,
+      minorGrid: false,
+      highlightZeroAxes: true,
+      disableScientificNotation: false,
+      includeOriginOnAutoZoom: true
+    });
+    const options = buildChartOptions(grapher);
+    assert.equal(options.plotOptions.line.boostThreshold, 50000);
+    assert.equal(options.plotOptions.series.findNearestPointBy, 'xy');
+    assert.deepEqual(options.plotOptions.series.states.select.halo, { size: 10, opacity: 0.25 });
+    const onSelect = options.plotOptions.series.point.events.select;
+    assert.equal(typeof onSelect, 'function');
+
+    const callOrder = [];
+    const fakePoint = {
+      graphic: {
+        element: { parentNode: {} },
+        toFront() { callOrder.push('graphic'); }
+      }
+    };
+    fakePoint.series = {
+      halo: {
+        point: fakePoint,
+        element: { parentNode: {} },
+        toFront() { callOrder.push('halo'); }
+      }
+    };
+    onSelect.call(fakePoint);
+    assert.deepEqual(callOrder, ['halo', 'graphic']);
+
+    // Ne doit pas planter si le point n'a pas de graphic ou de parentNode
+    assert.doesNotThrow(() => onSelect.call({}));
+    assert.doesNotThrow(() => onSelect.call({ graphic: { element: { parentNode: null }, toFront() { callOrder.push('never'); } } }));
+    assert.deepEqual(callOrder, ['halo', 'graphic']);
+  });
+
+  it('buildSeriesMarkerOptions adapte le style de sélection entre symboles pleins et croix', () => {
+    const circleMarker = buildSeriesMarkerOptions({
+      markers: true,
+      markerSymbol: 'circle',
+      markerRadius: 4,
+      color: '#2caffe'
+    });
+    assert.equal(circleMarker.lineWidth, 0);
+    assert.deepEqual(circleMarker.states.select, {
+      fillColor: null,
+      lineColor: '#ffffff',
+      lineWidth: 2,
+      radiusPlus: 2
+    });
+
+    const crossMarker = buildSeriesMarkerOptions({
+      markers: true,
+      markerSymbol: 'crossX',
+      markerRadius: 4,
+      color: '#2caffe'
+    });
+    assert.equal(crossMarker.lineWidth, 1);
+    assert.deepEqual(crossMarker.states.select, {
+      fillColor: null,
+      lineColor: '#2caffe',
+      lineWidth: 2.5,
+      radiusPlus: 2
+    });
   });
 
   describe('Grapher.zoom() et Grapher.resetZoom()', () => {

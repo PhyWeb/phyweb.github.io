@@ -3,6 +3,7 @@ import {
   ZERO_PLOT_LINE,
   installHighchartsPatches,
   buildChartOptions,
+  buildSeriesMarkerOptions,
   attachChartInteractionListeners
 } from './grapher/highchartsSetup.js';
 import AnnotationsRenderer from './grapher/annotationsRenderer.js';
@@ -295,13 +296,7 @@ updateChart(yCurveTitles, redraw = true) {
           color: curve.color,
           lineWidth: curve.line ? curve.lineWidth : 0,
           dashStyle: curve.lineStyle,
-          marker: {
-            enabled: curve.markers,
-            symbol: curve.markerSymbol,
-            radius: curve.markerRadius,
-            lineWidth: (curve.markerSymbol === "cross" || curve.markerSymbol === "crossX") ? 1 : 0,
-            lineColor: curve.color
-          },
+          marker: buildSeriesMarkerOptions(curve),
           unit: curve.unit,
           visible: shouldBeVisible, // Visibilité déterminée ici
           showInLegend: true

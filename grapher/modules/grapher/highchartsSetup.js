@@ -143,6 +143,56 @@ export function installHighchartsPatches(H) {
       ];
     };
   }
+
+  if (typeof H.addEvent === 'function' && H.Point) {
+    H.addEvent(H.Point, 'afterSetState', function (e) {
+      if (e?.state === 'select') {
+        bringPointToFront(this);
+      }
+    });
+  }
+}
+
+function bringPointToFront(point) {
+  const halo = point?.series?.halo;
+  if (halo && halo.point === point && (!halo.element || halo.element.parentNode)) {
+    halo.toFront?.();
+  }
+  if (point?.graphic && (!point.graphic.element || point.graphic.element.parentNode)) {
+    point.graphic.toFront?.();
+  }
+}
+
+/**
+ * Construit les options de marqueur Highcharts pour une courbe donnée,
+ * avec un style de sélection adapté aux symboles pleins et aux croix (`cross`, `crossX`).
+ * @param {object} curve
+ * @returns {object}
+ */
+export function buildSeriesMarkerOptions(curve) {
+  const isCross = curve.markerSymbol === 'cross' || curve.markerSymbol === 'crossX';
+  return {
+    enabled: curve.markers,
+    symbol: curve.markerSymbol,
+    radius: curve.markerRadius,
+    lineWidth: isCross ? 1 : 0,
+    lineColor: curve.color,
+    states: {
+      select: isCross
+        ? {
+            fillColor: null,
+            lineColor: curve.color,
+            lineWidth: 2.5,
+            radiusPlus: 2
+          }
+        : {
+            fillColor: null,
+            lineColor: '#ffffff',
+            lineWidth: 2,
+            radiusPlus: 2
+          }
+    }
+  };
 }
 
 /**
@@ -232,6 +282,11 @@ export function buildChartOptions(grapher) {
           Highcharts.addEvent(chart, 'redraw', () => {
             if (grapher.crosshairMode === 'edit-bounds' && grapher.editingModel) {
               grapher.updateModelBoundsVisuals();
+            }
+          });
+          Highcharts.addEvent(chart, 'redraw', () => {
+            if (typeof chart.getSelectedPoints === 'function') {
+              chart.getSelectedPoints().forEach(bringPointToFront);
             }
           });
         },
@@ -424,15 +479,35 @@ export function buildChartOptions(grapher) {
       enabled: false
     },
     plotOptions: {
+      line: {
+        boostThreshold: 50000
+      },
       series: {
         boostThreshold: 50000,
         allowPointSelect: true,
+        findNearestPointBy: 'xy',
         animation: ANIMATION_FLAG,
         stickyTracking: false,
+        marker: {
+          states: {
+            select: {
+              fillColor: null,
+              lineColor: '#ffffff',
+              lineWidth: 2,
+              radiusPlus: 2
+            }
+          }
+        },
         states: {
           hover: {
             enabled: false,
             lineWidthPlus: 0
+          },
+          select: {
+            halo: {
+              size: 10,
+              opacity: 0.25
+            }
           }
         },
         events: {
@@ -440,6 +515,13 @@ export function buildChartOptions(grapher) {
             const g = this.chart.options.customGrapherInstance;
             setTimeout(() => g?.reorderLegendByVisibility(), 0);
             return true;
+          }
+        },
+        point: {
+          events: {
+            select: function () {
+              bringPointToFront(this);
+            }
           }
         }
       }

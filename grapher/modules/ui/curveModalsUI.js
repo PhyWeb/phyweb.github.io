@@ -1,6 +1,7 @@
 import { formatUnit } from '../../../common/formatter.js';
 import { alertModal, showToast } from '../../../common/common.js';
 import { populateColorSelect } from './colorPicker.js';
+import { buildSeriesMarkerOptions } from '../grapher/highchartsSetup.js';
 
 const $ = (selector) => document.querySelector(selector);
 
@@ -1096,13 +1097,7 @@ export default class CurveModalsUI {
           color: curve.color,
           lineWidth: curve.line ? curve.lineWidth : 0,
           dashStyle: curve.lineStyle,
-          marker: {
-            enabled: curve.markers,
-            symbol: curve.markerSymbol,
-            radius: curve.markerRadius,
-            lineWidth: (curve.markerSymbol === "cross" || curve.markerSymbol === "crossX") ? 1 : 0,
-            lineColor: curve.color
-          }
+          marker: buildSeriesMarkerOptions(curve)
         });
       }
 
