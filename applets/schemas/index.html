@@ -295,6 +295,14 @@
 
                         <p class="is-size-7 has-text-grey mt-2" id="export-dims-info"></p>
                     </div>
+
+                    <!-- Option pédagogique commune (Image & Document) -->
+                    <div class="box p-3 mt-3">
+                        <label class="checkbox is-size-7 has-text-weight-semibold" style="display:flex; align-items:flex-start; gap:6px; line-height:1.35;">
+                            <input type="checkbox" id="export-blank-labels-check" class="export-trigger" style="margin-top:2px;">
+                            <span>Schéma à légender<br><span class="has-text-weight-normal has-text-grey">Remplace les textes par des pointillés (version élève)</span></span>
+                        </label>
+                    </div>
                 </div>
 
                 <!-- COLONNE DROITE : Aperçu en temps réel -->
@@ -339,6 +347,56 @@
         </section>
         <footer class="modal-card-foot" style="padding: 12px 20px;">
             <button type="button" class="button" id="templates-cancel-button">Fermer</button>
+        </footer>
+    </div>
+</div>
+
+<!-- MODALE RACCOURCIS CLAVIER & ASTUCES -->
+<div id="shortcuts-modal" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card" style="width: 90vw; max-width: 720px; max-height: 84vh;">
+        <header class="modal-card-head" style="padding: 16px 20px;">
+            <p class="modal-card-title is-size-5 has-text-weight-bold">
+                <i class="fas fa-keyboard mr-2"></i>Raccourcis clavier & astuces
+            </p>
+            <button type="button" class="delete" id="shortcuts-close-x" aria-label="Fermer"></button>
+        </header>
+        <section class="modal-card-body">
+            <div class="shortcuts-grid">
+                <div class="shortcuts-col">
+                    <h4 class="shortcuts-heading">Outils & Affichage</h4>
+                    <div class="shortcut-row"><span>Sélection</span><kbd>V</kbd></div>
+                    <div class="shortcut-row"><span>Main (déplacer la vue)</span><span><kbd>H</kbd> ou <kbd>Espace</kbd></span></div>
+                    <div class="shortcut-row"><span>Fil électrique / Tuyau</span><span><kbd>W</kbd> / <kbd>T</kbd></span></div>
+                    <div class="shortcut-row"><span>Légende</span><kbd>L</kbd></div>
+                    <div class="shortcut-row"><span>Aimantation / Grille</span><span><kbd>M</kbd> / <kbd>G</kbd></span></div>
+                    <div class="shortcut-row"><span>Replier les propriétés</span><kbd>I</kbd></div>
+                    <div class="shortcut-row"><span>Zoom + / − / Ajuster</span><span><kbd>+</kbd> <kbd>−</kbd> <kbd>0</kbd></span></div>
+                    <div class="shortcut-row"><span>Aide-mémoire</span><kbd>?</kbd></div>
+                </div>
+                <div class="shortcuts-col">
+                    <h4 class="shortcuts-heading">Édition & Organisation</h4>
+                    <div class="shortcut-row"><span>Annuler / Rétablir</span><span><kbd>Ctrl+Z</kbd> / <kbd>Ctrl+Y</kbd></span></div>
+                    <div class="shortcut-row"><span>Copier / Couper / Coller</span><span><kbd>Ctrl+C</kbd> <kbd>X</kbd> <kbd>V</kbd></span></div>
+                    <div class="shortcut-row"><span>Dupliquer / Tout sélectionner</span><span><kbd>Ctrl+D</kbd> / <kbd>Ctrl+A</kbd></span></div>
+                    <div class="shortcut-row"><span>Grouper / Dégrouper</span><span><kbd>Ctrl+G</kbd> / <kbd>Ctrl+Maj+G</kbd></span></div>
+                    <div class="shortcut-row"><span>Verrouiller / Déverrouiller</span><kbd>Ctrl+Maj+L</kbd></div>
+                    <div class="shortcut-row"><span>Déplacer finement (×10)</span><span><kbd>↑↓←→</kbd> (+ <kbd>Maj</kbd>)</span></div>
+                    <div class="shortcut-row"><span>Nouveau / Sauver / Imprimer</span><span><kbd>Ctrl+N</kbd> <kbd>S</kbd> <kbd>P</kbd></span></div>
+                </div>
+            </div>
+            <div class="shortcuts-tips">
+                <strong>Astuces souris :</strong>
+                <ul>
+                    <li><strong>Double-clic</strong> sur une légende pour modifier son texte directement sur le schéma ; glisser sa <strong>ligne de rappel</strong> déplace texte + flèche ensemble.</li>
+                    <li>Maintenir <strong>Alt</strong> pendant un déplacement ignore temporairement l'aimantation ; <strong>Alt+clic</strong> sélectionne un élément isolé dans un groupe.</li>
+                    <li><strong>Clic droit</strong> court ouvre le menu contextuel ; <strong>clic droit + glisser</strong> (ou molette) déplace la vue.</li>
+                    <li>Dans <strong>Exporter / Imprimer</strong>, cochez <em>Schéma à légender</em> pour produire une fiche élève à compléter.</li>
+                </ul>
+            </div>
+        </section>
+        <footer class="modal-card-foot" style="padding: 12px 20px;">
+            <button type="button" class="button" id="shortcuts-close-btn">Fermer</button>
         </footer>
     </div>
 </div>

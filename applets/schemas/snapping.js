@@ -405,7 +405,7 @@ export function computeConnectorGeometry(p1, p2, mode = 'bezier', bend = 0, bend
         const stub = 24;
         const s1 = t1 ? { x: p1.x + t1.x * stub, y: p1.y + t1.y * stub } : { x: p1.x, y: p1.y };
         const s2 = t2 ? { x: p2.x + t2.x * stub, y: p2.y + t2.y * stub } : { x: p2.x, y: p2.y };
-        const offsetX = bendX || bend * 0.5;
+        const offsetX = (Number(bendX) || 0) + (Number(bend) || 0) * 0.5;
         const midX = (s1.x + s2.x) / 2 + offsetX;
         const midY = (s1.y + s2.y) / 2;
 
@@ -417,7 +417,9 @@ export function computeConnectorGeometry(p1, p2, mode = 'bezier', bend = 0, bend
         pts.push(p2);
 
         const d = pts.map((pt, i) => `${i === 0 ? 'M' : 'L'} ${pt.x.toFixed(1)},${pt.y.toFixed(1)}`).join(' ');
-        const angle = (s2.y - s1.y) >= 0 ? 90 : -90;
+        const angle = Math.abs(s2.y - s1.y) < 1
+            ? ((s2.x - s1.x) >= 0 ? 0 : 180)
+            : ((s2.y - s1.y) >= 0 ? 90 : -90);
         return { d, mid: { x: midX, y: midY, angle }, bounds: pointsBounds(pts) };
     }
 

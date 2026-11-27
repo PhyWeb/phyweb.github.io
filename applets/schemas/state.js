@@ -302,26 +302,26 @@ export class SceneStore {
         return conn;
     }
 
-    addLabel(x, y, text = 'Légende', targetX = null, targetY = null) {
+    addLabel(x, y, text = 'Légende', targetX = null, targetY = null, defaults = {}) {
         this.pushHistory();
         const lbl = {
             id: nextId('lbl'),
             text,
             x: Math.round(x),
             y: Math.round(y),
-            fontSize: 20,
-            color: '#1e293b',
-            bold: false,
-            italic: false,
-            align: 'left',
-            bgEnabled: false,
-            bgColor: '#ffffff',
-            borderEnabled: false,
+            fontSize: Number(defaults.fontSize) || 20,
+            color: defaults.color || '#1e293b',
+            bold: Boolean(defaults.bold),
+            italic: Boolean(defaults.italic),
+            align: defaults.align === 'center' || defaults.align === 'right' ? defaults.align : 'left',
+            bgEnabled: Boolean(defaults.bgEnabled),
+            bgColor: defaults.bgColor || '#ffffff',
+            borderEnabled: Boolean(defaults.borderEnabled),
             showLeader: targetX !== null && targetY !== null,
-            leaderStyle: 'straight',
+            leaderStyle: defaults.leaderStyle === 'elbow' ? 'elbow' : 'straight',
             targetX: targetX !== null ? Math.round(targetX) : Math.round(x - 60),
             targetY: targetY !== null ? Math.round(targetY) : Math.round(y + 35),
-            arrowHead: true
+            arrowHead: defaults.arrowHead !== undefined ? Boolean(defaults.arrowHead) : true
         };
         this.scene.labels.push(lbl);
         this.selection = { kind: 'label', id: lbl.id };
@@ -387,7 +387,9 @@ export class SceneStore {
             if (copy.groupId) copy.groupId = remapGroup(copy.groupId);
             copy.x += 30;
             copy.y += 30;
-            this.scene.items.push(copy);
+            const def = getCatalogItem(copy.type);
+            if (def?.insertAtBack) this.scene.items.unshift(copy);
+            else this.scene.items.push(copy);
             itemIdMap.set(el.id, copy.id);
             newSelection.push({ kind: 'item', id: copy.id });
             created.push(copy);
@@ -423,10 +425,10 @@ export class SceneStore {
             copy.id = nextId('lbl');
             copy.locked = false;
             if (copy.groupId) copy.groupId = remapGroup(copy.groupId);
-            copy.x += 25;
-            copy.y += 25;
-            copy.targetX += 25;
-            copy.targetY += 25;
+            copy.x += 30;
+            copy.y += 30;
+            copy.targetX += 30;
+            copy.targetY += 30;
             this.scene.labels.push(copy);
             newSelection.push({ kind: 'label', id: copy.id });
             created.push(copy);
@@ -446,10 +448,7 @@ export class SceneStore {
         );
     }
 
-    copySelected() {
-        const entries = this.getSelectedElements();
-        if (entries.length === 0) return 0;
-
+    _copyEntries(entries) {
         const items = [];
         const connectors = [];
         const labels = [];
@@ -474,11 +473,18 @@ export class SceneStore {
         return entries.length;
     }
 
+    copySelected() {
+        const entries = this.getSelectedElements();
+        if (entries.length === 0) return 0;
+        return this._copyEntries(entries);
+    }
+
     cutSelected() {
-        const count = this.copySelected();
-        if (count === 0) return 0;
+        const cuttable = this.getSelectedElements().filter(e => !e.el.locked);
+        if (cuttable.length === 0) return 0;
+        this._copyEntries(cuttable);
         this.deleteSelected();
-        return count;
+        return cuttable.length;
     }
 
     pasteClipboard(options = {}) {
@@ -641,15 +647,64 @@ export class SceneStore {
         if (!parsed || !Array.isArray(parsed.items)) {
             throw new Error('Format de fichier .pws / JSON invalide.');
         }
+        const sanitizeItems = (arr) => (Array.isArray(arr) ? arr : [])
+            .filter(it => it && typeof it === 'object' && typeof it.type === 'string')
+            .map(it => ({
+                ...it,
+                id: typeof it.id === 'string' && it.id ? it.id : nextId('obj'),
+                x: Number.isFinite(Number(it.x)) ? Number(it.x) : 0,
+                y: Number.isFinite(Number(it.y)) ? Number(it.y) : 0,
+                rotation: Number.isFinite(Number(it.rotation)) ? Number(it.rotation) : 0,
+                scale: Number.isFinite(Number(it.scale)) && Number(it.scale) > 0 ? Number(it.scale) : 1,
+                props: it.props && typeof it.props === 'object' ? it.props : {}
+            }));
+        const sanitizeEndpoint = (ep) => {
+            if (!ep || typeof ep !== 'object') return null;
+            const out = {
+                x: Number.isFinite(Number(ep.x)) ? Number(ep.x) : 0,
+                y: Number.isFinite(Number(ep.y)) ? Number(ep.y) : 0
+            };
+            if (typeof ep.itemId === 'string' && ep.itemId && typeof ep.anchorId === 'string' && ep.anchorId) {
+                out.itemId = ep.itemId;
+                out.anchorId = ep.anchorId;
+            }
+            return out;
+        };
+        const sanitizeConnectors = (arr) => (Array.isArray(arr) ? arr : [])
+            .filter(c => c && typeof c === 'object' && c.start && c.end)
+            .map(c => ({
+                ...c,
+                id: typeof c.id === 'string' && c.id ? c.id : nextId(c.kind === 'hose' ? 'hose' : 'wire'),
+                kind: c.kind === 'hose' ? 'hose' : 'wire',
+                start: sanitizeEndpoint(c.start),
+                end: sanitizeEndpoint(c.end)
+            }))
+            .filter(c => c.start && c.end);
+        const sanitizeLabels = (arr) => (Array.isArray(arr) ? arr : [])
+            .filter(l => l && typeof l === 'object')
+            .map(l => {
+                const lx = Number.isFinite(Number(l.x)) ? Number(l.x) : 0;
+                const ly = Number.isFinite(Number(l.y)) ? Number(l.y) : 0;
+                return {
+                    ...l,
+                    id: typeof l.id === 'string' && l.id ? l.id : nextId('lbl'),
+                    text: String(l.text ?? ''),
+                    x: lx,
+                    y: ly,
+                    targetX: Number.isFinite(Number(l.targetX)) ? Number(l.targetX) : lx - 60,
+                    targetY: Number.isFinite(Number(l.targetY)) ? Number(l.targetY) : ly + 35
+                };
+            });
+
         this.pushHistory();
         this.scene = {
             version: 1,
             title: typeof parsed.title === 'string' && parsed.title.trim()
                 ? parsed.title.trim()
                 : String(fallbackTitle || '').trim(),
-            items: parsed.items || [],
-            connectors: Array.isArray(parsed.connectors) ? parsed.connectors : [],
-            labels: Array.isArray(parsed.labels) ? parsed.labels : []
+            items: sanitizeItems(parsed.items),
+            connectors: sanitizeConnectors(parsed.connectors),
+            labels: sanitizeLabels(parsed.labels)
         };
         this.selection = null;
         return true;
@@ -661,20 +716,22 @@ export class SceneStore {
  * en suivant dynamiquement les objets auxquels il est attaché.
  */
 export function resolveConnectorEndpoints(conn, items) {
-    let p1 = { x: conn.start.x, y: conn.start.y, angle: null };
-    let p2 = { x: conn.end.x, y: conn.end.y, angle: null };
+    const start = conn?.start || { x: 0, y: 0 };
+    const end = conn?.end || { x: 0, y: 0 };
+    let p1 = { x: Number(start.x) || 0, y: Number(start.y) || 0, angle: null };
+    let p2 = { x: Number(end.x) || 0, y: Number(end.y) || 0, angle: null };
 
-    if (conn.start.itemId && conn.start.anchorId) {
-        const it = items.find(i => i.id === conn.start.itemId);
+    if (start.itemId && start.anchorId) {
+        const it = items.find(i => i.id === start.itemId);
         if (it) {
-            const a = getWorldAnchorById(it, conn.start.anchorId);
+            const a = getWorldAnchorById(it, start.anchorId);
             if (a) p1 = { x: a.wx, y: a.wy, angle: a.worldAngle ?? null };
         }
     }
-    if (conn.end.itemId && conn.end.anchorId) {
-        const it = items.find(i => i.id === conn.end.itemId);
+    if (end.itemId && end.anchorId) {
+        const it = items.find(i => i.id === end.itemId);
         if (it) {
-            const a = getWorldAnchorById(it, conn.end.anchorId);
+            const a = getWorldAnchorById(it, end.anchorId);
             if (a) p2 = { x: a.wx, y: a.wy, angle: a.worldAngle ?? null };
         }
     }

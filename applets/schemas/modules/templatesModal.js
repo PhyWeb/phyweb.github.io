@@ -61,7 +61,7 @@ export function createTemplatesModalController(ctx) {
         gridEl.innerHTML = '';
 
         for (const tpl of TEMPLATES) {
-            const previewScene = tpl.build();
+            const previewScene = tpl.build(`preview_${tpl.id}`);
             const svgMarkup = buildStandaloneSVG(previewScene, { transparent: false, padding: 24 });
 
             const card = document.createElement('button');

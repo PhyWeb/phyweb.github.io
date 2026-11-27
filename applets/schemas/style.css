@@ -1171,3 +1171,66 @@ body.is-dragging-from-drawer * {
     color: var(--schemas-muted);
     line-height: 1.35;
 }
+
+/* ==========================================================================
+   MODALE RACCOURCIS CLAVIER & ASTUCES
+   ========================================================================== */
+.shortcuts-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.shortcuts-heading {
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--schemas-muted);
+    margin: 0 0 8px 0;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--schemas-border);
+}
+
+.shortcut-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 4px 0;
+    font-size: 0.82rem;
+    color: var(--schemas-text);
+}
+
+.shortcut-row kbd {
+    display: inline-block;
+    padding: 1px 6px;
+    font-size: 0.74rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-bottom-width: 2px;
+    border-radius: 4px;
+    color: #0f172a;
+    white-space: nowrap;
+}
+
+.shortcuts-tips {
+    margin-top: 16px;
+    padding: 10px 12px;
+    background: #f8fafc;
+    border: 1px solid var(--schemas-border);
+    border-radius: 8px;
+    font-size: 0.8rem;
+    color: var(--schemas-text);
+}
+
+.shortcuts-tips ul {
+    margin: 6px 0 0 18px;
+    list-style: disc;
+}
+
+.shortcuts-tips li {
+    margin-bottom: 4px;
+    line-height: 1.4;
+}

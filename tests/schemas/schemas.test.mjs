@@ -590,6 +590,20 @@ describe('Applet Schémas — État, connecteurs dynamiques, Undo/Redo et Export
         assert.ok(aRight.startX > 140);
         const interactiveSvg = renderLabelSVG({ text: 'Bécher', x: 100, y: 100, fontSize: 20, showLeader: true, targetX: 300, targetY: 100 }, { interactive: true });
         assert.ok(interactiveSvg.includes('data-label-part="leader"') && interactiveSvg.includes('stroke-width="14"'));
+
+        // Mode « Schéma à légender » : masque le texte, conserve la ligne de rappel et trace des pointillés
+        const blankSvg = renderLabelSVG({ text: 'Bécher\n250 mL', x: 100, y: 100, fontSize: 20, showLeader: true, targetX: 300, targetY: 100, arrowHead: true }, { blankLabels: true });
+        assert.ok(!blankSvg.includes('Bécher') && !blankSvg.includes('<text '));
+        assert.ok(blankSvg.includes('stroke-dasharray="3 4"') && blankSvg.includes('<polygon '));
+
+        // Mémorisation des styles de légende via defaults dans SceneStore.addLabel
+        const lblStore = new SceneStore();
+        const styledLbl = lblStore.addLabel(100, 100, 'Test', 50, 100, { fontSize: 24, color: '#2563eb', bold: true, leaderStyle: 'elbow', align: 'right' });
+        assert.equal(styledLbl.fontSize, 24);
+        assert.equal(styledLbl.color, '#2563eb');
+        assert.equal(styledLbl.bold, true);
+        assert.equal(styledLbl.leaderStyle, 'elbow');
+        assert.equal(styledLbl.align, 'right');
     });
 
     it('calcule la boîte englobante complète des connecteurs courbés/orthogonaux et adapte les liquides en export transparent', () => {
@@ -918,5 +932,125 @@ describe('Applet Schémas — État, connecteurs dynamiques, Undo/Redo et Export
         assert.equal(burLow.wx, potC1.wx);
         assert.equal(burLow.wy, potC1.wy);
         assert.equal(burLow.wx, potC2.wx);
+
+        // Vérifier l'absence de collision d'IDs <clipPath> entre les différents modèles et leurs aperçus
+        const seenClipIds = new Set();
+        for (const tpl of TEMPLATES) {
+            for (const scene of [tpl.build(), tpl.build(`preview_${tpl.id}`)]) {
+                const svg = buildStandaloneSVG(scene);
+                for (const m of svg.matchAll(/<clipPath id="([^"]+)"/g)) {
+                    assert.ok(!seenClipIds.has(m[1]), `Collision d'ID clipPath détectée : ${m[1]}`);
+                    seenClipIds.add(m[1]);
+                }
+            }
+        }
+        assert.ok(seenClipIds.size > 0);
+    });
+
+    it('oriente correctement la flèche des connecteurs orthogonaux horizontaux et cumule bendX / bend', () => {
+        // Fil orthogonal horizontal (s1.y === s2.y) vers la droite -> angle 0°
+        const horizRight = computeConnectorGeometry({ x: 100, y: 200 }, { x: 300, y: 200 }, 'orthogonal', 0, 0);
+        assert.equal(horizRight.mid.angle, 0);
+
+        // Fil orthogonal horizontal vers la gauche -> angle 180°
+        const horizLeft = computeConnectorGeometry({ x: 300, y: 200 }, { x: 100, y: 200 }, 'orthogonal', 0, 0);
+        assert.equal(horizLeft.mid.angle, 180);
+
+        // Fil orthogonal vertical descendant -> angle 90° ; montant -> -90°
+        assert.equal(computeConnectorGeometry({ x: 100, y: 100 }, { x: 200, y: 250 }, 'orthogonal', 0, 0).mid.angle, 90);
+        assert.equal(computeConnectorGeometry({ x: 100, y: 250 }, { x: 200, y: 100 }, 'orthogonal', 0, 0).mid.angle, -90);
+
+        // bend reste pris en compte même si bendX est non nul
+        const withBoth = computeConnectorGeometry({ x: 100, y: 100 }, { x: 200, y: 200 }, 'orthogonal', 40, 30);
+        assert.equal(withBoth.mid.x, 150 + 30 + 20);
+    });
+
+    it('protège les éléments verrouillés dans cutSelected() et préserve alignement/z-order dans duplicateSelected()', () => {
+        const store = new SceneStore();
+        const table = store.addItem('paillasse', 300, 500);
+        const becher = store.addItem('becher', 300, 400);
+        const lbl = store.addLabel(360, 360, 'Bécher', 300, 360);
+
+        // Dupliquer paillasse + bécher + légende : même décalage (+30, +30) et paillasse placée à l'arrière-plan
+        store.selectAll();
+        const copies = store.duplicateSelected();
+        const copiedTable = copies.find(c => c.type === 'paillasse');
+        const copiedBecher = copies.find(c => c.type === 'becher');
+        const copiedLbl = copies.find(c => c.text === 'Bécher');
+        assert.equal(copiedBecher.x - becher.x, 30);
+        assert.equal(copiedBecher.y - becher.y, 30);
+        assert.equal(copiedLbl.x - lbl.x, 30);
+        assert.equal(copiedLbl.y - lbl.y, 30);
+        assert.equal(copiedLbl.targetX - lbl.targetX, 30);
+        assert.equal(copiedLbl.targetY - lbl.targetY, 30);
+        assert.ok(
+            store.scene.items.indexOf(copiedTable) < store.scene.items.indexOf(becher),
+            'Une paillasse dupliquée doit rester à l’arrière-plan (insertAtBack)'
+        );
+
+        // cutSelected() sur sélection mixte (1 verrouillé + 1 déverrouillé) : ne coupe que le déverrouillé
+        table.locked = true;
+        store.setSelection([
+            { kind: 'item', id: table.id },
+            { kind: 'item', id: becher.id }
+        ]);
+        const cutCount = store.cutSelected();
+        assert.equal(cutCount, 1);
+        assert.equal(store.clipboard.items.length, 1);
+        assert.equal(store.clipboard.items[0].id, becher.id);
+        assert.ok(store.scene.items.some(i => i.id === table.id), 'L’objet verrouillé ne doit pas être supprimé');
+        assert.ok(!store.scene.items.some(i => i.id === becher.id), 'L’objet déverrouillé doit être coupé');
+    });
+
+    it('dimensionne proprement les légendes courtes en mode « Schéma à légender », sécurise importJSON et vérifie distillation/boy', () => {
+        // 1. Mode Schéma à légender sur texte court ("Cu") avec cadre et flèche à droite
+        const shortLbl = {
+            id: 'lbl_short',
+            text: 'Cu',
+            x: 100,
+            y: 100,
+            fontSize: 16,
+            align: 'right',
+            borderEnabled: true,
+            showLeader: true,
+            targetX: 200,
+            targetY: 100,
+            arrowHead: true
+        };
+        const mBlank = getLabelMetrics(shortLbl, { blankLabels: true });
+        assert.ok(mBlank.textW >= 48, 'La largeur mesurée en mode blankLabels doit être >= 48 px');
+        const anchorBlank = getLabelLeaderAnchor(shortLbl, { blankLabels: true });
+        assert.ok(anchorBlank.startX >= mBlank.textLeft + mBlank.textW, 'La ligne de rappel ne doit pas traverser les pointillés');
+
+        const blankScene = { version: 1, title: '', items: [], connectors: [], labels: [shortLbl] };
+        const boundsBlank = computeSceneBounds(blankScene, 0, { blankLabels: true });
+        assert.ok(boundsBlank.x <= mBlank.boxX && boundsBlank.x + boundsBlank.width >= mBlank.boxX + mBlank.boxW);
+
+        // 2. Robustesse de importJSON et resolveConnectorEndpoints face aux données malformées
+        const store = new SceneStore();
+        store.importJSON(JSON.stringify({
+            items: [null, { type: 'becher', x: 'bad', y: 120 }, { x: 10, y: 20 }],
+            connectors: [null, { kind: 'wire' }, { kind: 'wire', start: { x: 0, y: 0 }, end: { x: 50, y: 50 } }],
+            labels: [null, { text: 'Ok', x: 10, y: 20 }]
+        }));
+        assert.equal(store.scene.items.length, 1);
+        assert.equal(store.scene.items[0].x, 0);
+        assert.equal(store.scene.connectors.length, 1);
+        assert.equal(store.scene.labels.length, 1);
+        const safeEp = resolveConnectorEndpoints({}, store.scene.items);
+        assert.equal(safeEp.p1.x, 0);
+        assert.equal(safeEp.p2.y, 0);
+
+        // 3. Modèle distillation : le tuyau d'eau chaude est bien ancré sur l'évier (drain-in)
+        const dist = buildTemplateScene('distillation');
+        const evier = dist.items.find(i => i.type === 'evier');
+        const hotHose = dist.connectors.find(c => c.start.anchorId === 'water-out');
+        assert.equal(hotHose?.end?.itemId, evier?.id);
+        assert.equal(hotHose?.end?.anchorId, 'drain-in');
+
+        // 4. Boy à hauteur minimale (60 mm) : getBBox couvre la molette (x >= 134)
+        const boy = getCatalogItem('boy');
+        const bbLow = boy.getBBox({ height: 60 });
+        assert.ok(bbLow.x + bbLow.width >= 134, `BBox du Boy à 60 mm trop étroite : maxX=${bbLow.x + bbLow.width}`);
     });
 });

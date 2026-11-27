@@ -39,6 +39,7 @@ export function createExportModalController(ctx) {
     const paddingSelect = document.getElementById('export-padding-select');
     const transparentField = document.getElementById('export-transparent-field');
     const transparentCheck = document.getElementById('export-transparent-check');
+    const blankLabelsCheck = document.getElementById('export-blank-labels-check');
     const dimsInfo = document.getElementById('export-dims-info');
     const previewHeading = document.getElementById('export-preview-heading');
     const iframe = document.getElementById('export-preview-iframe');
@@ -54,6 +55,7 @@ export function createExportModalController(ctx) {
 
     function updatePreview() {
         const action = actionSelect.value;
+        const blankLabels = Boolean(blankLabelsCheck?.checked);
 
         if (action === 'image') {
             printOptions.classList.add('is-hidden');
@@ -72,14 +74,14 @@ export function createExportModalController(ctx) {
             scaleField.classList.toggle('is-hidden', isSvg);
             transparentField.classList.toggle('is-hidden', isJpeg);
 
-            const bounds = computeSceneBounds(store.scene, padding);
+            const bounds = computeSceneBounds(store.scene, padding, { blankLabels });
             if (isSvg) {
                 dimsInfo.textContent = `Dimensions vectorielles : ${bounds.width} × ${bounds.height} px`;
             } else {
                 dimsInfo.textContent = `Dimensions export : ${Math.round(bounds.width * scale)} × ${Math.round(bounds.height * scale)} px`;
             }
 
-            iframe.srcdoc = buildImagePreviewHTML(store.scene, { transparent, padding });
+            iframe.srcdoc = buildImagePreviewHTML(store.scene, { transparent, padding, blankLabels });
         } else {
             printOptions.classList.remove('is-hidden');
             imageOptions.classList.add('is-hidden');
@@ -91,7 +93,8 @@ export function createExportModalController(ctx) {
                 title: titleInput.value.trim(),
                 orientation: orientationSelect.value,
                 margin: marginSelect.value,
-                padding: 24
+                padding: 24,
+                blankLabels
             });
         }
     }
@@ -117,6 +120,9 @@ export function createExportModalController(ctx) {
     titleInput.addEventListener('input', () => {
         const newTitle = titleInput.value.trim();
         const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+        if (iframeDoc) {
+            iframeDoc.title = newTitle || 'Schéma PhyWeb';
+        }
         const titleEl = iframeDoc?.getElementById('preview-title');
         if (titleEl) {
             titleEl.textContent = newTitle;
@@ -135,22 +141,24 @@ export function createExportModalController(ctx) {
         const scale = parseInt(scaleSelect.value, 10) || 3;
         const padding = parseInt(paddingSelect.value, 10) || 0;
         const transparent = format !== 'image/jpeg' && transparentCheck.checked;
-        const baseName = sanitizeFilename(store.scene.title);
+        const blankLabels = Boolean(blankLabelsCheck?.checked);
+        const baseName = sanitizeFilename(store.scene.title) + (blankLabels ? '-a-legender' : '');
 
         // Synchroniser la préférence fond transparent avec l'éditeur
         if (format !== 'image/jpeg') {
             editor.transparentExport = transparent;
+            if (!store.selection) ctx.renderInspector?.();
         }
 
         try {
             if (format === 'image/svg+xml') {
-                const svg = buildStandaloneSVG(store.scene, { transparent, padding });
+                const svg = buildStandaloneSVG(store.scene, { transparent, padding, blankLabels });
                 const filename = `${baseName}.svg`;
                 downloadBlob(new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }), filename);
                 notify(`Fichier SVG téléchargé (${filename}) !`);
             } else {
                 const ext = format === 'image/jpeg' ? 'jpg' : 'png';
-                const blob = await renderSceneToImageBlob(store.scene, { format, scale, transparent, padding });
+                const blob = await renderSceneToImageBlob(store.scene, { format, scale, transparent, padding, blankLabels });
                 const filename = `${baseName}.${ext}`;
                 downloadBlob(blob, filename);
                 notify(`Image ${ext.toUpperCase()} téléchargée (${filename}) !`);
@@ -166,8 +174,9 @@ export function createExportModalController(ctx) {
         const scale = parseInt(scaleSelect.value, 10) || 3;
         const padding = parseInt(paddingSelect.value, 10) || 0;
         const transparent = formatSelect.value !== 'image/jpeg' && transparentCheck.checked;
+        const blankLabels = Boolean(blankLabelsCheck?.checked);
         try {
-            const blob = await renderSceneToImageBlob(store.scene, { format: 'image/png', scale, transparent, padding });
+            const blob = await renderSceneToImageBlob(store.scene, { format: 'image/png', scale, transparent, padding, blankLabels });
             await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
             notify('Image copiée dans le presse-papier !');
             closeExportModal();
