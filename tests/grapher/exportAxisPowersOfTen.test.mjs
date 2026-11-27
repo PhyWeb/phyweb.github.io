@@ -206,4 +206,55 @@ describe('Export Grapher - Puissances de 10 et exposants en abscisses et ordonn�
       assert.equal(label, 'Gain (×10³)');
     });
   });
+
+  describe('getExportChartOptions - Option disableScientificNotation', () => {
+    it('force les exposants X et Y à 0 à l\'export même si les axes portaient encore un exposant', () => {
+      const dataMock = {
+        getCurveByTitle: () => ({ title: 't', unit: 's' })
+      };
+      const grapherMock = {
+        currentXCurve: 't',
+        disableScientificNotation: true,
+        chart: {
+          xAxis: [{ min: 0, max: 10000, exponent: 3 }],
+          yAxis: [{ min: 0, max: 5e-4, exponent: -6 }],
+          series: [{ name: 'U', visible: true, options: { showInLegend: true } }]
+        }
+      };
+      const uiManager = new UIManager({}, dataMock, grapherMock, {}, {}, {});
+      const options = uiManager.getExportChartOptions(800, 500, 1);
+
+      assert.equal(options.chart.exportXExponent, 0);
+      assert.equal(options.chart.exportYExponent, 0);
+      assert.equal(options.xAxis[0].title.text, 't (s)');
+
+      const label = options.legend.labelFormatter.call({
+        name: 'U',
+        userOptions: { unit: 'V' },
+        chart: { yAxis: [{ exponent: -6 }] }
+      });
+      assert.equal(label, 'U (V)');
+    });
+
+    it('calcule les exposants depuis min/max si xAxis.exponent ou yAxis.exponent est undefined (hors disableScientificNotation)', () => {
+      const dataMock = {
+        getCurveByTitle: () => ({ title: 't', unit: 's' })
+      };
+      const grapherMock = {
+        currentXCurve: 't',
+        disableScientificNotation: false,
+        chart: {
+          xAxis: [{ min: 0, max: 5000 }],
+          yAxis: [{ min: 0, max: 2e6 }],
+          series: [{ name: 'U', visible: true, options: { showInLegend: true } }]
+        }
+      };
+      const uiManager = new UIManager({}, dataMock, grapherMock, {}, {}, {});
+      const options = uiManager.getExportChartOptions(800, 500, 1);
+
+      assert.equal(options.chart.exportXExponent, 3);
+      assert.equal(options.chart.exportYExponent, 6);
+      assert.equal(options.xAxis[0].title.text, 't (×10³ s)');
+    });
+  });
 });

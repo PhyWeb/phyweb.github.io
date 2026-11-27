@@ -6,7 +6,8 @@ import Grapher from '../../grapher/modules/grapher.js';
 import {
   computeAxisExponent,
   formatUnitWithExponent,
-  formatAxisLabelWithUnit
+  formatAxisLabelWithUnit,
+  formatAxisTickValue
 } from '../../grapher/modules/grapher/axisFormatting.js';
 import {
   GRID_STYLE,
@@ -37,6 +38,66 @@ describe('Grapher - Configuration Highcharts, formatage d\'axes et zoom', () => 
     assert.equal(formatUnitWithExponent('V', 0), 'V');
     assert.equal(formatAxisLabelWithUnit('U', 'V', 3), 'U (×10³ V)');
     assert.equal(formatAxisLabelWithUnit('t', '', 0), 't');
+  });
+
+  it('formatAxisTickValue formate tous les ordres de grandeur sans jamais produire de notation scientifique', () => {
+    // Petits nombres (< 1e-6) où Highcharts.numberFormat produisait "5,0e-7"
+    assert.equal(formatAxisTickValue(5e-7, 5e-7, 0), '0,00000050');
+    assert.equal(formatAxisTickValue(-5e-7, 5e-7, 0), '-0,00000050');
+    assert.equal(formatAxisTickValue(2e-8, 1e-8, 0), '0,000000020');
+
+    // Très petits nombres (< 1e-15 et < 1e-20) : ne doivent ni s'arrondir à 0 ni passer en e-
+    assert.equal(formatAxisTickValue(5e-18, 1e-18, 0), '0,0000000000000000050');
+    assert.equal(formatAxisTickValue(5e-22, 1e-22, 0), '0,00000000000000000000050');
+
+    // Grands nombres (dont >= 1e21) : séparateur de milliers et jamais de e+
+    assert.equal(formatAxisTickValue(2000000, 1000000, 0), '2 000 000');
+    assert.equal(formatAxisTickValue(1e21, 1e20, 0), '1 000 000 000 000 000 000 000');
+
+    // Zéro exact et zéro négatif
+    assert.equal(formatAxisTickValue(0, 5e-7, 0), '0');
+    assert.equal(formatAxisTickValue(-0, 0.1, 0), '0');
+
+    // Avec exposant factorisé
+    assert.equal(formatAxisTickValue(5000, 1000, 3), '5,0');
+    assert.equal(formatAxisTickValue(5e-7, 1e-7, -6), '0,50');
+  });
+
+  it('setDisableScientificNotation met à jour les exposants, marque les axes dirty/forceRedraw et redessine une seule fois', () => {
+    const data = new Data();
+    const grapher = new Grapher(data, { disableScientificNotation: false });
+    const events = [];
+
+    grapher.chart = {
+      xAxis: [{ min: 0, max: 5000, exponent: 3, isDirty: false, forceRedraw: false }],
+      yAxis: [{ min: 0, max: 5e-4, exponent: -6, isDirty: false, forceRedraw: false }],
+      legend: {
+        update(opts, redraw) { events.push({ type: 'legend.update', redraw }); }
+      },
+      redraw(anim) { events.push({ type: 'chart.redraw', anim }); }
+    };
+
+    grapher.setDisableScientificNotation(true);
+    assert.equal(grapher.disableScientificNotation, true);
+    assert.equal(grapher.chart.xAxis[0].exponent, 0);
+    assert.equal(grapher.chart.yAxis[0].exponent, 0);
+    assert.equal(grapher.chart.xAxis[0].isDirty, true);
+    assert.equal(grapher.chart.xAxis[0].forceRedraw, true);
+    assert.equal(grapher.chart.yAxis[0].isDirty, true);
+    assert.equal(grapher.chart.yAxis[0].forceRedraw, true);
+    assert.deepEqual(events, [
+      { type: 'legend.update', redraw: false },
+      { type: 'chart.redraw', anim: false }
+    ]);
+
+    events.length = 0;
+    grapher.setDisableScientificNotation(false);
+    assert.equal(grapher.chart.xAxis[0].exponent, 3);
+    assert.equal(grapher.chart.yAxis[0].exponent, -6);
+    assert.deepEqual(events, [
+      { type: 'legend.update', redraw: false },
+      { type: 'chart.redraw', anim: false }
+    ]);
   });
 
   it('installe les symboles SVG Highcharts cross et crossX', () => {

@@ -63,8 +63,75 @@ export function formatAxisLabelWithUnit(displayName, rawUnit, exponent = 0) {
   return content ? `(${content})` : '';
 }
 
+const decimalFormatterCache = new Map();
+
+function getDecimalFormatter(decimals) {
+  let formatter = decimalFormatterCache.get(decimals);
+  if (!formatter) {
+    formatter = new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+      useGrouping: true
+    });
+    decimalFormatterCache.set(decimals, formatter);
+  }
+  return formatter;
+}
+
+function groupIntegerDigits(intStr, thousandsSep) {
+  if (!thousandsSep || intStr.length <= 3) return intStr;
+  return intStr.replace(/\B(?=(\d{3})+(?!\d))/g, thousandsSep);
+}
+
+function formatExtremeDecimal(absValue, decimals, decimalPoint, thousandsSep) {
+  const exp = Math.floor(Math.log10(absValue));
+
+  if (exp >= 0) {
+    const [mantissa, expStr] = absValue.toExponential().split('e');
+    const e = parseInt(expStr, 10);
+    const digits = mantissa.replace('.', '');
+    const intLen = e + 1;
+    let intPart;
+    let fracPart = '';
+
+    if (digits.length <= intLen) {
+      intPart = digits.padEnd(intLen, '0');
+    } else {
+      intPart = digits.slice(0, intLen);
+      fracPart = digits.slice(intLen);
+    }
+
+    const groupedInt = groupIntegerDigits(intPart, thousandsSep);
+    if (decimals <= 0) return groupedInt;
+    return `${groupedInt}${decimalPoint}${fracPart.slice(0, decimals).padEnd(decimals, '0')}`;
+  }
+
+  const sigDecimals = decimals + exp;
+  if (sigDecimals < 0) {
+    return '0';
+  }
+
+  const [mantissa, expStr] = absValue.toExponential(Math.min(sigDecimals, 100)).split('e');
+  const e = parseInt(expStr, 10);
+  const digits = mantissa.replace('.', '');
+
+  if (e >= 0) {
+    const intLen = e + 1;
+    const intPart = digits.length <= intLen ? digits.padEnd(intLen, '0') : digits.slice(0, intLen);
+    const fracPart = digits.length <= intLen ? '' : digits.slice(intLen);
+    const groupedInt = groupIntegerDigits(intPart, thousandsSep);
+    if (decimals <= 0) return groupedInt;
+    return `${groupedInt}${decimalPoint}${fracPart.slice(0, decimals).padEnd(decimals, '0')}`;
+  }
+
+  const leadingZeros = -e - 1;
+  const fracRaw = '0'.repeat(leadingZeros) + digits;
+  return `0${decimalPoint}${fracRaw.slice(0, decimals).padEnd(decimals, '0')}`;
+}
+
 /**
- * Formate une graduation numérique d'axe Highcharts compte tenu de l'exposant factorisé.
+ * Formate une graduation numérique d'axe Highcharts compte tenu de l'exposant factorisé,
+ * sans jamais réintroduire de notation scientifique (`e-7`, `e+21`, etc.).
  * @param {number} rawValue
  * @param {number} tickInterval
  * @param {number} [exponent=0]
@@ -73,11 +140,32 @@ export function formatAxisLabelWithUnit(displayName, rawUnit, exponent = 0) {
 export function formatAxisTickValue(rawValue, tickInterval, exponent = 0) {
   const factor = Math.pow(10, exponent || 0);
   const value = rawValue / factor;
+  if (!Number.isFinite(value)) return '';
+  if (value === 0) return '0';
+
   const scaledTickInterval = tickInterval / factor;
   let decimals = 0;
-  if (scaledTickInterval > 0) {
+  if (Number.isFinite(scaledTickInterval) && scaledTickInterval > 0) {
     decimals = Math.max(0, -Math.floor(Math.log10(scaledTickInterval)) + 1);
   }
-  decimals = Math.min(decimals, 15);
-  return Highcharts.numberFormat(value, decimals, ',', ' ');
+  decimals = Math.min(decimals, 30);
+
+  const absValue = Math.abs(value);
+  const isNegative = value < 0;
+  let formatted;
+
+  if (absValue < 1e21 && decimals <= 20) {
+    formatted = getDecimalFormatter(decimals)
+      .format(absValue)
+      .replace(/,/g, '\u0000')
+      .replace(/\./g, ',')
+      .replace(/\u0000/g, ' ');
+  } else {
+    formatted = formatExtremeDecimal(absValue, decimals, ',', ' ');
+  }
+
+  if (/^0(?:,0+)?$/.test(formatted)) {
+    return '0';
+  }
+  return isNegative ? `-${formatted}` : formatted;
 }

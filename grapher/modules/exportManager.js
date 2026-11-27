@@ -1,6 +1,6 @@
 import { formatUnit } from '../../common/formatter.js';
 import { showToast } from '../../common/common.js';
-import { formatAxisLabelWithUnit } from './grapher/axisFormatting.js';
+import { computeAxisExponent, formatAxisLabelWithUnit } from './grapher/axisFormatting.js';
 import {
   MAX_PRINT_TABLE_POINTS,
   escapeHTML,
@@ -663,14 +663,24 @@ export default class ExportManager {
       }
     }
 
+    const disableSci = Boolean(this.grapher.disableScientificNotation);
     const rawXTitle = this.grapher.currentXCurve || '';
     const xCurveObj = this.data?.getCurveByTitle ? this.data.getCurveByTitle(rawXTitle) : null;
     const { title: xDisplayTitle, unit: rawXUnit } = this.getExportCurveLabel(rawXTitle, xCurveObj?.unit || '', resolvedOverrides);
     const xAxis = this.grapher.chart.xAxis && this.grapher.chart.xAxis[0];
-    const xExponent = (xAxis && xAxis.exponent) || 0;
+    const xExponent = disableSci
+      ? 0
+      : (xAxis && xAxis.exponent !== undefined
+          ? xAxis.exponent
+          : (xAxis ? computeAxisExponent(xAxis.min, xAxis.max, false) : 0));
     const xTitle = formatAxisLabelWithUnit(xDisplayTitle, rawXUnit, xExponent);
 
-    const currentYExponent = (this.grapher.chart.yAxis && this.grapher.chart.yAxis[0] && this.grapher.chart.yAxis[0].exponent) || 0;
+    const yAxisSrc = this.grapher.chart.yAxis && this.grapher.chart.yAxis[0];
+    const currentYExponent = disableSci
+      ? 0
+      : (yAxisSrc && yAxisSrc.exponent !== undefined
+          ? yAxisSrc.exponent
+          : (yAxisSrc ? computeAxisExponent(yAxisSrc.min, yAxisSrc.max, false) : 0));
 
     return {
       chart: {
@@ -734,6 +744,9 @@ export default class ExportManager {
             this.userOptions?.unit || '',
             resolvedOverrides
           );
+          if (disableSci) {
+            return formatAxisLabelWithUnit(displayName, rawUnit, 0);
+          }
           const yAxis = this.chart && this.chart.yAxis && this.chart.yAxis[0];
           const yExponent = (yAxis && yAxis.exponent) || currentYExponent || 0;
 

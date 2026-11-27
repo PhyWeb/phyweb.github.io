@@ -9,6 +9,7 @@ import {
   buildSeriesMarkerOptions,
   attachChartInteractionListeners
 } from './grapher/highchartsSetup.js';
+import { computeAxisExponent } from './grapher/axisFormatting.js';
 import AnnotationsRenderer from './grapher/annotationsRenderer.js';
 import ToolsController from './grapher/toolsController.js';
 
@@ -421,18 +422,28 @@ updateChart(yCurveTitles, redraw = true) {
     }
   }
 
-setDisableScientificNotation(disabled) {
-    this.disableScientificNotation = disabled;
+  setDisableScientificNotation(disabled) {
+    this.disableScientificNotation = Boolean(disabled);
     if (this.chart) {
-      // Force l'exécution de l'événement pour recalculer les exposants
-      Highcharts.fireEvent(this.chart.xAxis[0], 'afterSetExtremes');
-      Highcharts.fireEvent(this.chart.yAxis[0], 'afterSetExtremes');
-      
-      // Indique à Highcharts que les axes ont été modifiés 
-      this.chart.xAxis[0].isDirty = true;
-      this.chart.yAxis[0].isDirty = true;
-      
-      this.chart.redraw();
+      const xAxis = this.chart.xAxis?.[0];
+      const yAxis = this.chart.yAxis?.[0];
+
+      if (xAxis) {
+        xAxis.exponent = computeAxisExponent(xAxis.min, xAxis.max, this.disableScientificNotation);
+        xAxis.isDirty = true;
+        xAxis.forceRedraw = true;
+      }
+      if (yAxis) {
+        yAxis.exponent = computeAxisExponent(yAxis.min, yAxis.max, this.disableScientificNotation);
+        yAxis.isDirty = true;
+        yAxis.forceRedraw = true;
+      }
+
+      if (this.chart.legend && typeof this.chart.legend.update === 'function') {
+        this.chart.legend.update({}, false);
+      }
+
+      this.chart.redraw(false);
     }
   }
 

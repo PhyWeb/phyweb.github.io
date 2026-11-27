@@ -514,6 +514,8 @@ export function buildChartOptions(grapher) {
           this.exponent = g ? computeAxisExponent(this.min, this.max, g.disableScientificNotation) : 0;
 
           if (oldExponent !== this.exponent) {
+            this.isDirty = true;
+            this.forceRedraw = true;
             this.chart.redraw(false);
           }
         }
@@ -556,7 +558,10 @@ export function buildChartOptions(grapher) {
           this.exponent = g ? computeAxisExponent(this.min, this.max, g.disableScientificNotation) : 0;
 
           if (oldExponent !== this.exponent) {
-            this.chart.legend.update({});
+            this.isDirty = true;
+            this.forceRedraw = true;
+            this.chart.legend.update({}, false);
+            this.chart.redraw(false);
           }
         }
       },

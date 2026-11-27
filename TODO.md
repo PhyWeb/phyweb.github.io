@@ -34,8 +34,6 @@
 
     mettre un sous titres dans les colonnes calculées
 
-    bug avec le mode afficher tous les chiffres
-
     une option pour que le premier et le dernier point soient a la limite du graphique et pas à 5% du bord
 
     améliorer la grille (voir géogebra)
