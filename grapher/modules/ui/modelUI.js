@@ -10,6 +10,29 @@ export default class ModelUI {
   }
 
   /**
+   * Supprime le panneau latéral d'un modèle donné.
+   * @param {string} modelId
+   */
+  removeModelPanel(modelId) {
+    if (typeof document === 'undefined') return;
+    const modelPanel = document.querySelector(`article[data-model-id="${modelId}"]`);
+    if (modelPanel) {
+      modelPanel.remove();
+    }
+  }
+
+  /**
+   * Vide l'ensemble des panneaux de modèles du panneau latéral.
+   */
+  clearModelPanels() {
+    if (typeof document === 'undefined') return;
+    const modelList = $('#model-list');
+    if (modelList) {
+      modelList.innerHTML = '';
+    }
+  }
+
+  /**
    * Met à jour la visibilité du bouton de recalcul des modèles en fonction de la présence de modèles.
    */
   updateRecalculateButtonVisibility() {

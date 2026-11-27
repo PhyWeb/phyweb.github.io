@@ -10,12 +10,22 @@ import {
 } from './modelDefinitions.js';
 import { estimateInitialGuess } from './modelInitialGuess.js';
 
+let fallbackModelIdCounter = 0;
+
+function generateModelId() {
+  if (typeof Highcharts !== 'undefined' && typeof Highcharts.uniqueKey === 'function') {
+    return Highcharts.uniqueKey();
+  }
+  fallbackModelIdCounter += 1;
+  return `model-${fallbackModelIdCounter}`;
+}
+
 export class Model {
   constructor(x, y, type, data, color, line, lineWidth, lineStyle) {
     this.x = x; // Courbe pour les valeurs x
     this.y = y; // Courbe pour les valeurs y
 
-    this.id = Highcharts.uniqueKey();
+    this.id = generateModelId();
 
     this.data = data; // On stocke l'instance complète de Data
 

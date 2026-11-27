@@ -267,6 +267,14 @@ export default class UIManager {
     return this._getModelUI().updateModelPanel(model);
   }
 
+  removeModelPanel(modelId) {
+    return this._getModelUI().removeModelPanel(modelId);
+  }
+
+  clearModelPanels() {
+    return this._getModelUI().clearModelPanels();
+  }
+
   activateEditBoundsMode(modelId) {
     return this._getModelUI().activateEditBoundsMode(modelId);
   }

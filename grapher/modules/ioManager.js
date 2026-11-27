@@ -21,6 +21,7 @@ import {
   generateRW3,
   parseRW3Buffer
 } from './io/rw3Codec.js';
+import { parseCellValue } from './models/parseCellValue.js';
 
 //-----------------------------------------------------------------------------------------------
 // --------------------------------------------IOManager-----------------------------------------
@@ -38,15 +39,17 @@ export default class IOManager {
    * Méthode principale de sauvegarde
    * @param {string} fileName - Le nom du fichier à sauvegarder.
    * @param {string} format - Le format du fichier (csv, rw3, pw).
+   * @param {object} [options] - Options d'export (ex: { unitFormat: 'row'|'parentheses'|'none' }).
    */
-  saveFile(fileName, format) {
+  saveFile(fileName, format, options = {}) {
     let content = '';
     const separator = ';';
     let mimeType = 'text/plain;charset=utf-8';
 
     if (format === 'csv') {
-      const unitFormatSelect = typeof document !== 'undefined' ? document.querySelector("#csv-unit-format-select") : null;
-      const unitFormat = unitFormatSelect ? unitFormatSelect.value : 'row';
+      const unitFormat = options.unitFormat
+        ?? (typeof document !== 'undefined' ? document.querySelector("#csv-unit-format-select")?.value : undefined)
+        ?? 'row';
       content = this.generateCSV(separator, unitFormat);
       mimeType = 'text/csv;charset=utf-8';
     } else if (format === 'rw3') {
@@ -367,9 +370,7 @@ export default class IOManager {
       for (const line of dataLines) {
         const cells = splitFlexible(line, delimiter);
         for (let i = 0; i < headers.length; i++) {
-          const rawValue = cells[i];
-          const value = rawValue !== undefined && rawValue !== "" ? parseFloat(String(rawValue).replace(',', '.').trim()) : null;
-          curvesData[i].push(isNaN(value) ? null : value);
+          curvesData[i].push(parseCellValue(cells[i]));
         }
       }
 

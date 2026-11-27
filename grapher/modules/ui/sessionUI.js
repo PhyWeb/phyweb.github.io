@@ -602,8 +602,11 @@ export default class SessionUI {
     $("#download-file-button").addEventListener("click", () => {
       const baseName = fileNameInput.value || "session";
       const fileName = `${baseName}.${selectedFormat}`;
+      const unitFormat = selectedFormat === 'csv'
+        ? ($("#csv-unit-format-select")?.value || 'row')
+        : undefined;
 
-      this.ui.app.ioManager.saveFile(fileName, selectedFormat);
+      this.ui.app.ioManager.saveFile(fileName, selectedFormat, unitFormat ? { unitFormat } : {});
       this.ui.markAsSaved();
       this.ui.common.modalManager.closeAllModals();
     });

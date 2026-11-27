@@ -1,9 +1,7 @@
 import IOManager, { updateFormulasReferences } from './ioManager.js';
 import { stripInlineComment } from './calculation.js';
 import { showToast } from '../../common/common.js';
-import SymbolValidator from './symbolValidator.js'; 
-
-const $ = document.querySelector.bind(document);
+import SymbolValidator from './symbolValidator.js';
 
 /*----------------------------------------------------------------------------------------------
 -------------------------------------------------APP--------------------------------------------
@@ -53,10 +51,7 @@ export default class App {
         this.deleteModel(model.id);
 
         // Suppression de la carte du modèle dans le panneau latéral
-        const modelPanel = document.querySelector(`article[data-model-id="${model.id}"]`);
-        if (modelPanel) {
-          modelPanel.remove();
-        }
+        this.uiManager?.removeModelPanel?.(model.id);
       });
     }
 
@@ -171,7 +166,7 @@ export default class App {
     allModelIds.forEach(modelId => this.deleteModel(modelId));
 
     // Vider le panneau des modèles dans l'interface et mettre à jour les boutons
-    $('#model-list').innerHTML = '';
+    this.uiManager?.clearModelPanels?.();
     this.uiManager.updateRecalculateButtonVisibility();
     this.uiManager.updateModelToolVisibility();
 

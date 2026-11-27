@@ -10,8 +10,6 @@ import {
   preprocessDecimalCommas
 } from './calculation/expressionPreprocessor.js';
 
-const $ = document.querySelector.bind(document);
-
 /*----------------------------------------------------------------------------------------------
 --------------------------------------------Calculation-----------------------------------------
 ----------------------------------------------------------------------------------------------*/
@@ -397,7 +395,6 @@ export default class Calculation {
 
   clear() {
     this.mathInstance = this.createConfiguredMathInstance();
-    $("#calculation-input").value = "";
   }
 
   getAvailableFunctions() {
