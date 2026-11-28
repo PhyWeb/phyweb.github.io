@@ -604,12 +604,22 @@ updateChart(yCurveTitles, redraw = true) {
   }
 
   /**
-   * Synchronise la visibilité du bouton Zoom auto avec l'état `hasUserZoom`.
+   * Synchronise la visibilité du bouton Zoom auto et l'indicateur du bouton Bornes
+   * avec l'état `hasUserZoom`.
    */
   updateAutoZoomButtonVisibility() {
     const autoZoomBtn = $("#auto-zoom-button");
     if (autoZoomBtn) {
       autoZoomBtn.classList.toggle("is-hidden", !this.hasUserZoom);
+    }
+
+    const axisBoundsBtn = $("#axis-bounds-button");
+    if (axisBoundsBtn && axisBoundsBtn.classList) {
+      if (this.hasUserZoom) {
+        axisBoundsBtn.classList.add("has-custom-bounds");
+      } else {
+        axisBoundsBtn.classList.remove("has-custom-bounds");
+      }
     }
   }
 

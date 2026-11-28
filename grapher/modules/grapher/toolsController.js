@@ -38,6 +38,15 @@ export default class ToolsController {
       }
     }
 
+    const editBoundsBanner = $('#edit-bounds-banner');
+    if (editBoundsBanner && editBoundsBanner.classList) {
+      if (mode === 'edit-bounds') {
+        editBoundsBanner.classList.remove('is-hidden');
+      } else {
+        editBoundsBanner.classList.add('is-hidden');
+      }
+    }
+
     // Désélectionner immédiatement les éventuels points sélectionnés lors de l'activation d'un outil
     if (mode !== null && typeof g.chart?.getSelectedPoints === 'function') {
       g.chart.getSelectedPoints().forEach(p => p.select(false));

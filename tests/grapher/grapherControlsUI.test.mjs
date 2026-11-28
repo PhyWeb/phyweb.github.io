@@ -109,6 +109,9 @@ describe('UIManager - Contrôles du grapheur (tests de caractérisation)', () =>
     zoomBtn.dispatch('click');
     assert.equal(ui.isZoomEnabled, true);
     assert.equal(zoomBtn.classList.contains('is-active'), true);
+    assert.equal(zoomBtn.classList.contains('is-info'), true);
+    assert.equal(zoomBtn.classList.contains('is-light'), true);
+    assert.equal(zoomBtn.classList.contains('is-white'), false);
     assert.equal(grapher.chart.container.classList.contains('chart-free-crosshair'), true);
     assert.equal(grapher.chart.updates.at(-1).chart.zooming.type, 'xy');
 
@@ -116,6 +119,8 @@ describe('UIManager - Contrôles du grapheur (tests de caractérisation)', () =>
     zoomBtn.dispatch('click');
     assert.equal(ui.isZoomEnabled, false);
     assert.equal(zoomBtn.classList.contains('is-active'), false);
+    assert.equal(zoomBtn.classList.contains('is-info'), false);
+    assert.equal(zoomBtn.classList.contains('is-white'), true);
     assert.equal(grapher.chart.updates.at(-1).chart.zooming.type, null);
 
     // Zoom in / out / auto
@@ -151,5 +156,42 @@ describe('UIManager - Contrôles du grapheur (tests de caractérisation)', () =>
 
     assert.deepEqual(grapher.setXCurveCalls, ['x']);
     assert.equal(iconsUpdated, 1);
+  });
+
+  it('initTools met en évidence #tools-dropdown-button quand un outil est actif et le réinitialise via clearActiveTool', () => {
+    const toolsDropdown = createEl('div');
+    const toolsTrigger = createEl('div');
+    const toolsBtn = createEl('button');
+    const toolsText = createEl('span');
+    toolsText.textContent = 'Outils';
+    const zoomBtn = createEl('button', ['is-white']);
+    const checkmark = createEl('span');
+    const toolItem = createEl('button');
+    toolItem.id = 'tool-tangent';
+    toolItem.textContent = 'Tangente';
+    toolItem.querySelector = (sel) => sel === '.tool-checkmark-container' ? checkmark : null;
+    toolsDropdown.querySelector = (sel) => sel === '.dropdown-trigger' ? toolsTrigger : null;
+
+    const map = {
+      '#tools-dropdown': toolsDropdown,
+      '#tools-dropdown-button': toolsBtn,
+      '#tools-button-text': toolsText,
+      '#zoom-button': zoomBtn
+    };
+    global.__querySelectorOverride = (sel) => map[sel] || null;
+    global.__querySelectorAllOverride = (sel) => sel === '.tool-item' ? [toolItem] : [];
+    grapher.chart = null;
+
+    ui.initTools();
+
+    toolItem.dispatch('click');
+    assert.equal(toolsBtn.classList.contains('is-info'), true);
+    assert.equal(toolsBtn.classList.contains('is-light'), true);
+    assert.equal(toolsText.textContent, 'Tangente');
+
+    ui.clearActiveTool();
+    assert.equal(toolsBtn.classList.contains('is-info'), false);
+    assert.equal(toolsBtn.classList.contains('is-light'), false);
+    assert.equal(toolsText.textContent, 'Outils');
   });
 });

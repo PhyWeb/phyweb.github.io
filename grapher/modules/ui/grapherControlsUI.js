@@ -89,6 +89,13 @@ export default class GrapherControlsUI {
       this.ui.grapher.clearAllAnnotations();
     });
 
+    const editBoundsBannerClose = $("#edit-bounds-banner-close");
+    if (editBoundsBannerClose) {
+      editBoundsBannerClose.addEventListener("click", () => {
+        this.ui.clearActiveTool();
+      });
+    }
+
     const activeFittingModels = new Set();
 
     document.addEventListener('model-fit-start', (e) => {
@@ -154,6 +161,39 @@ export default class GrapherControlsUI {
   }
 
   /**
+   * Met à jour le style actif/inactif du bouton du menu Outils.
+   * @param {boolean} isActive
+   */
+  setToolsButtonActive(isActive) {
+    const toolsBtn = $("#tools-dropdown-button") || $("#tools-dropdown .dropdown-trigger button");
+    if (!toolsBtn || !toolsBtn.classList) return;
+    if (isActive) {
+      toolsBtn.classList.add("is-info", "is-light");
+    } else {
+      toolsBtn.classList.remove("is-info", "is-light");
+    }
+  }
+
+  /**
+   * Met à jour le style actif/inactif du bouton Zoom rectangle.
+   * @param {boolean} isActive
+   */
+  setZoomButtonActive(isActive) {
+    const zoomBtn = $("#zoom-button") || document.getElementById('zoom-button');
+    if (!zoomBtn || !zoomBtn.classList) return;
+    if (isActive) {
+      zoomBtn.classList.add("is-active", "is-info", "is-light");
+      zoomBtn.classList.remove("is-white");
+    } else {
+      zoomBtn.classList.remove("is-active", "is-info", "is-light");
+      zoomBtn.classList.add("is-white");
+    }
+    if (typeof zoomBtn.setAttribute === 'function') {
+      zoomBtn.setAttribute('aria-pressed', String(Boolean(isActive)));
+    }
+  }
+
+  /**
    * Initialise les outils du grapheur.
    */
   initTools() {
@@ -173,6 +213,7 @@ export default class GrapherControlsUI {
       if (isDeselecting) {
         this.ui.activeToolElement = null;
         toolsButtonText.textContent = 'Outils';
+        this.setToolsButtonActive(false);
         this.ui.grapher.setCrosshairMode(null);
         return;
       }
@@ -180,6 +221,7 @@ export default class GrapherControlsUI {
       // Sinon, on active le nouvel outil
       this.ui.activeToolElement = clickedItem;
       toolsButtonText.textContent = clickedItem.textContent.trim();
+      this.setToolsButtonActive(true);
       const checkmarkContainer = clickedItem.querySelector('.tool-checkmark-container');
       if (checkmarkContainer) {
         checkmarkContainer.innerHTML = '<i class="fa-solid fa-check"></i>';
@@ -205,7 +247,7 @@ export default class GrapherControlsUI {
     toolItems.forEach(item => {
       item.addEventListener('click', () => {
         // Désactivation du bouton de zoom
-        $("#zoom-button").classList.remove("is-active");
+        this.setZoomButtonActive(false);
         this.ui.isZoomEnabled = false;
 
         const activated = setActiveTool(item);
@@ -250,6 +292,7 @@ export default class GrapherControlsUI {
       if (check) check.innerHTML = '';
       const toolsButtonText = $("#tools-button-text");
       if (toolsButtonText) toolsButtonText.textContent = 'Outils';
+      this.setToolsButtonActive(false);
       this.ui.activeToolElement = null;
       this.ui.grapher.setCrosshairMode(null);
     }
@@ -266,7 +309,7 @@ export default class GrapherControlsUI {
       if (!this.ui.isZoomEnabled) {
         this.ui.clearActiveTool();
 
-        $("#zoom-button").classList.add("is-active");
+        this.setZoomButtonActive(true);
         this.ui.grapher.chart.update({
           chart: {
             zooming: {
@@ -284,7 +327,7 @@ export default class GrapherControlsUI {
         this.ui.grapher.chart.container.classList.add('chart-free-crosshair');
         this.ui.isZoomEnabled = true;
       } else {
-        $("#zoom-button").classList.remove("is-active");
+        this.setZoomButtonActive(false);
         this.ui.grapher.chart.update({
           chart: { zooming: { type: null } }
         });
@@ -496,10 +539,7 @@ export default class GrapherControlsUI {
   resetZoomUI() {
     this.ui.clearActiveTool();
 
-    const zoomButton = document.getElementById('zoom-button');
-    if (zoomButton) {
-      zoomButton.classList.remove('is-active');
-    }
+    this.setZoomButtonActive(false);
 
     if (this.ui.grapher.chart) {
       this.ui.grapher.chart.container.classList.remove('chart-free-crosshair');
@@ -518,6 +558,7 @@ export default class GrapherControlsUI {
 
     const toolsBtnText = $("#tools-button-text");
     if (toolsBtnText) toolsBtnText.textContent = 'Outils';
+    this.setToolsButtonActive(false);
 
     this.ui.activeToolElement = null;
 

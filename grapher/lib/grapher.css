@@ -885,3 +885,58 @@ fieldset[disabled] .button {
   background-color: var(--bulma-scheme-main-bis, #f5f5f5);
   border: 1px solid var(--bulma-border-weak, #e8e8e8);
 }
+
+/* Pastille discrète sur le bouton des bornes quand des bornes manuelles sont actives */
+#axis-bounds-button {
+  position: relative;
+}
+
+#axis-bounds-button.has-custom-bounds::after {
+  content: "";
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: var(--bulma-info, #3e8ed0);
+  box-shadow: 0 0 0 1.5px var(--bulma-scheme-main, #ffffff);
+  pointer-events: none;
+}
+
+/* Bandeau discret en mode édition des bornes d'un modèle */
+.edit-bounds-banner {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 9999px;
+  background-color: rgba(239, 245, 251, 0.94);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(62, 142, 208, 0.35);
+  box-shadow: 0 2px 8px rgba(10, 10, 10, 0.08);
+  color: var(--bulma-info-dark, #296fa8);
+  font-size: 0.82rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.edit-bounds-banner.is-hidden {
+  display: none !important;
+}
+
+.edit-bounds-banner kbd {
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.05em 0.4em;
+  border-radius: 4px;
+  background-color: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(62, 142, 208, 0.35);
+  color: inherit;
+}

@@ -322,7 +322,7 @@
         <div class="level-left">
           <div class="dropdown" id="tools-dropdown">
             <div class="dropdown-trigger">
-              <button class="button" aria-haspopup="true" aria-controls="tools-dropdown-menu">
+              <button class="button" id="tools-dropdown-button" aria-haspopup="true" aria-controls="tools-dropdown-menu">
                 <span class="icon">
                   <i class="fa-solid fa-toolbox"></i>
                 </span>
@@ -469,6 +469,13 @@
         </div>
       </nav>
       <div class="block" style="overflow:auto;" id="chart-wrapper">
+        <div id="edit-bounds-banner" class="edit-bounds-banner is-hidden" role="status" aria-live="polite">
+          <span class="icon is-small has-text-info" aria-hidden="true">
+            <i class="fa-solid fa-arrows-left-right-to-line"></i>
+          </span>
+          <span>Déplacez les bornes sur le graphe — <kbd>Échap</kbd> pour terminer</span>
+          <button type="button" class="delete is-small" id="edit-bounds-banner-close" aria-label="Terminer l'ajustement des bornes" title="Terminer (Échap)"></button>
+        </div>
         <div id="chart" class="pb-3 pr-3"></div>
         <div id="xaxis-selector-container">
           <div class="select is-small">
