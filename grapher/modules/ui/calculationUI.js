@@ -477,8 +477,44 @@ export default class CalculationUI {
   initCalculationControls() {
     // Initialisation de l'éditeur de code
     let initializeEditor = () => {
-      this.ui.editor.getWrapperElement().classList.add('textarea');
-      this.ui.editor.getWrapperElement().classList.add('p-0');
+      const wrapper = this.ui.editor.getWrapperElement();
+      wrapper.classList.add('textarea');
+      wrapper.classList.add('p-0');
+
+      // Placeholder discret dans l'éditeur vide
+      const linesContainer = wrapper?.querySelector?.('.CodeMirror-lines > div') || wrapper?.querySelector?.('.CodeMirror-lines');
+      if (linesContainer && typeof document !== 'undefined' && typeof document.createElement === 'function') {
+        let placeholderEl = linesContainer.querySelector?.('.cm-phyweb-placeholder');
+        if (!placeholderEl) {
+          placeholderEl = document.createElement('pre');
+          placeholderEl.className = 'cm-phyweb-placeholder';
+          if (typeof placeholderEl.setAttribute === 'function') {
+            placeholderEl.setAttribute('aria-hidden', 'true');
+          }
+          placeholderEl.textContent = [
+            '# Syntaxe : nom_unité = formule',
+            '# Ex : v_m/s = diff(x, t)',
+            '# Ex : Ec_J = 0.5 * m * v²'
+          ].join('\n');
+          linesContainer.appendChild(placeholderEl);
+        }
+
+        const updatePlaceholderVisibility = () => {
+          const val = typeof this.ui.editor?.getValue === 'function' ? this.ui.editor.getValue() : '';
+          if (placeholderEl.classList) {
+            if (val.length === 0) {
+              placeholderEl.classList.remove('is-hidden');
+            } else {
+              placeholderEl.classList.add('is-hidden');
+            }
+          }
+        };
+
+        updatePlaceholderVisibility();
+        if (typeof this.ui.editor?.on === 'function') {
+          this.ui.editor.on('change', updatePlaceholderVisibility);
+        }
+      }
 
       // Raccourcis clavier
       this.ui.editor.setOption("extraKeys", {

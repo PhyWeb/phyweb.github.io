@@ -511,4 +511,76 @@ describe('Contrôle Mega-Dropdown des Fonctions dans l\'onglet Calculs', () => {
       assert.strictEqual(mockApp.calculation.angleUnit, 'rad');
     });
   });
+
+  describe('Placeholder discret dans l\'éditeur de calculs vide', () => {
+    it('affiche le placeholder quand l\'éditeur est vide et le masque dès qu\'un caractère est saisi', () => {
+      const appended = [];
+      const linesDiv = {
+        querySelector: () => null,
+        appendChild: (el) => { appended.push(el); return el; }
+      };
+      const wrapper = {
+        classList: { add: () => {} },
+        querySelector: (sel) => sel === '.CodeMirror-lines > div' ? linesDiv : null
+      };
+
+      let editorValue = '';
+      let changeHandler = null;
+
+      const origGetById = global.__getElementByIdOverride;
+      const origQuerySelector = global.__querySelectorOverride;
+      const origCreateElement = global.__createElementOverride;
+
+      global.__getElementByIdOverride = () => null;
+      global.__querySelectorOverride = () => ({ addEventListener: () => {} });
+      global.__createElementOverride = () => {
+        const classes = new Set();
+        return {
+          className: '',
+          textContent: '',
+          setAttribute: () => {},
+          classList: {
+            add: (c) => classes.add(c),
+            remove: (c) => classes.delete(c),
+            contains: (c) => classes.has(c)
+          }
+        };
+      };
+
+      try {
+        const ui = Object.create(UIManager.prototype);
+        ui.editor = {
+          getWrapperElement: () => wrapper,
+          getValue: () => editorValue,
+          on: (ev, fn) => { if (ev === 'change') changeHandler = fn; },
+          setOption: () => {},
+          replaceSelection: () => {},
+          getCursor: () => ({ line: 0, ch: 0 }),
+          setCursor: () => {},
+          focus: () => {}
+        };
+        ui.updateCalculationUI = () => {};
+
+        ui.initCalculationControls();
+
+        assert.strictEqual(appended.length, 1, 'Le placeholder doit être injecté dans .CodeMirror-lines > div');
+        const placeholderEl = appended[0];
+        assert.ok(placeholderEl.textContent.includes('nom_unité = formule'));
+        assert.strictEqual(placeholderEl.classList.contains('is-hidden'), false);
+        assert.strictEqual(typeof changeHandler, 'function');
+
+        editorValue = 'v_m/s = diff(x, t)';
+        changeHandler();
+        assert.strictEqual(placeholderEl.classList.contains('is-hidden'), true);
+
+        editorValue = '';
+        changeHandler();
+        assert.strictEqual(placeholderEl.classList.contains('is-hidden'), false);
+      } finally {
+        global.__getElementByIdOverride = origGetById;
+        global.__querySelectorOverride = origQuerySelector;
+        global.__createElementOverride = origCreateElement;
+      }
+    });
+  });
 });
