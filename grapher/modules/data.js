@@ -42,6 +42,7 @@ export default class Data {
     };
 
     this.lastSortVariable = null; // Dernière variable utilisée pour le tri
+    this.lastSortDirection = 'asc'; // Sens du tri ('asc' ou 'desc')
   }
 
   addCurve(title, unit, size, fill, line, markers, type) {
@@ -177,9 +178,10 @@ export default class Data {
   /**
    * Trie toutes les données de courbe en fonction des valeurs d'une variable spécifiée.
    * @param {string} variableTitle - Le titre de la courbe à utiliser pour le tri.
+   * @param {'asc'|'desc'} [direction='asc'] - Sens du tri (croissant ou décroissant).
    * @returns {boolean} true si l'ordre des lignes a été modifié, false sinon.
    */
-  sortDataBy(variableTitle) {
+  sortDataBy(variableTitle, direction = 'asc') {
     const sortCurveIndex = this.curves.findIndex(c => c.title === variableTitle);
 
     if (sortCurveIndex === -1) {
@@ -187,7 +189,9 @@ export default class Data {
       return false;
     }
 
+    const dir = direction === 'desc' ? 'desc' : 'asc';
     this.lastSortVariable = variableTitle;
+    this.lastSortDirection = dir;
 
     // Si la colonne de tri n'est pas déjà la première, on la déplace au début.
     if (sortCurveIndex > 0) {
@@ -213,12 +217,15 @@ export default class Data {
       const numA = parseCellValue(valA);
       const numB = parseCellValue(valB);
 
+      let cmp;
       if (numA !== null && numB !== null) {
-        return numA - numB;
+        cmp = numA - numB;
+      } else {
+        console.warn(`Comparaison non numérique entre "${valA}" et "${valB}". Utilisation du tri lexicographique.`);
+        cmp = String(valA).localeCompare(String(valB));
       }
 
-      console.warn(`Comparaison non numérique entre "${valA}" et "${valB}". Utilisation du tri lexicographique.`);
-      return String(valA).localeCompare(String(valB));
+      return dir === 'desc' ? -cmp : cmp;
     });
 
     const orderChanged = indices.some((origIndex, newIndex) => origIndex !== newIndex);
@@ -241,6 +248,7 @@ export default class Data {
    */
   clearSort() {
     this.lastSortVariable = null;
+    this.lastSortDirection = 'asc';
   }
 }
 

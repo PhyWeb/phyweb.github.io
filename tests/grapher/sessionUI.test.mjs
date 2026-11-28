@@ -310,4 +310,37 @@ describe('UIManager - Gestion de session, paramètres et sauvegarde (tests de ca
     assert.equal(ui._tabsShown, true);
     assert.deepEqual(spreadsheet.focusCalls, [true]);
   });
+
+  it('initEmptyState relie directement les 3 cartes d\'action (Nouveau, Ouvrir, Coller)', () => {
+    const emptyNewBtn = createEl('button');
+    const emptyOpenBtn = createEl('button');
+    const emptyPasteBtn = createEl('button');
+    const modalNewBtn = createEl('button');
+    const fileInput = createEl('input');
+    const modalPasteBtn = createEl('button');
+
+    const clicks = [];
+    modalNewBtn.addEventListener('click', () => clicks.push('new'));
+    fileInput.addEventListener('click', () => clicks.push('open'));
+    modalPasteBtn.addEventListener('click', () => clicks.push('paste'));
+
+    const byId = {
+      'empty-state-new-file-btn': emptyNewBtn,
+      'empty-state-open-file-btn': emptyOpenBtn,
+      'empty-state-paste-btn': emptyPasteBtn,
+      'new-file-button': modalNewBtn,
+      'file-input': fileInput,
+      'paste-button': modalPasteBtn
+    };
+
+    global.__getElementByIdOverride = (id) => byId[id] || createEl();
+
+    ui.initEmptyState();
+
+    emptyNewBtn.click();
+    emptyOpenBtn.click();
+    emptyPasteBtn.click();
+
+    assert.deepEqual(clicks, ['new', 'open', 'paste']);
+  });
 });

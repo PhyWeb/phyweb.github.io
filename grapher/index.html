@@ -173,16 +173,52 @@
   <!------------------------------------------------EMPTY STATE------------------------------------------------->
   <!------------------------------------------------------------------------------------------------------------>
   <div id="empty-state-container" class="section">
-    <div class="columns is-centered">
-      <div class="column is-narrow has-text-centered">
-        <div class="box" style="padding: 2rem;" style="width: 600px;">
-          <p class="subtitle is-4">Bienvenue sur PhyWeb Grapher</p>
-          <p class="mb-5">Pour commencer, créez une nouvelle session ou importez des données.</p>
-          <button id="empty-state-new-session-btn" class="button is-primary is-large">
-            <span class="icon is-small"><i class="fas fa-file-circle-plus"></i></span>
-            <span>Démarrer une session</span>
-          </button>
-        </div>
+    <div class="empty-state-card has-text-centered">
+      <div class="empty-state-header mb-5">
+        <span class="empty-state-logo has-text-primary mb-2" aria-hidden="true">
+          <i class="fa-solid fa-chart-line fa-2x"></i>
+        </span>
+        <h1 class="title is-4 mb-2">Bienvenue sur PhyWeb Grapher</h1>
+        <p class="has-text-grey">Créez une nouvelle session ou importez vos données expérimentales.</p>
+      </div>
+
+      <div class="empty-state-actions">
+        <button type="button" id="empty-state-new-file-btn" class="empty-state-action-card">
+          <span class="empty-state-action-icon" aria-hidden="true">
+            <i class="fas fa-file-alt fa-2x"></i>
+          </span>
+          <span class="empty-state-action-title">Nouveau fichier</span>
+          <span class="empty-state-action-desc">Saisir vos mesures</span>
+        </button>
+
+        <button type="button" id="empty-state-open-file-btn" class="empty-state-action-card">
+          <span class="empty-state-action-icon" aria-hidden="true">
+            <i class="fas fa-folder-open fa-2x"></i>
+          </span>
+          <span class="empty-state-action-title">Ouvrir un fichier</span>
+          <span class="empty-state-action-desc">Importer depuis le disque</span>
+        </button>
+
+        <button type="button" id="empty-state-paste-btn" class="empty-state-action-card">
+          <span class="empty-state-action-icon" aria-hidden="true">
+            <i class="fas fa-paste fa-2x"></i>
+          </span>
+          <span class="empty-state-action-title">Coller</span>
+          <span class="empty-state-action-desc">Depuis le presse-papier</span>
+        </button>
+      </div>
+
+      <div class="empty-state-drop-hint mt-5">
+        <span class="icon is-small has-text-primary" aria-hidden="true">
+          <i class="fas fa-cloud-arrow-up"></i>
+        </span>
+        <span>
+          ou glissez-déposez un fichier
+          <span class="empty-state-ext">.pw</span>,
+          <span class="empty-state-ext">.csv</span> ou
+          <span class="empty-state-ext">.rw3</span>
+          ici
+        </span>
       </div>
     </div>
   </div>
@@ -203,8 +239,13 @@
           </p>
           <p class="control">
             <button class="button" id="sort-button" title="Trier par ordre croissant">
-              <span class="icon"><i class="fa-solid fa-sort-amount-down"></i></span>
+              <span class="icon"><i class="fa-solid fa-arrow-down-short-wide" id="sort-button-icon"></i></span>
               <span>Trier</span>
+            </button>
+          </p>
+          <p class="control">
+            <button class="button" id="sort-direction-button" type="button" title="Ordre croissant (cliquer pour passer en décroissant)" aria-label="Inverser l'ordre de tri" aria-pressed="false">
+              <span class="icon is-small"><i class="fa-solid fa-arrow-down" id="sort-direction-icon"></i></span>
             </button>
           </p>
         </div>
@@ -232,6 +273,10 @@
           </span>
           <span>Recalculer les grandeurs</span>
         </button>
+      </div>
+      <!-- Right side -->
+      <div class="level-right">
+        <span id="spreadsheet-row-count" class="spreadsheet-row-count" aria-live="polite" title="Nombre de lignes de mesures">0 ligne</span>
       </div>
     </nav>
     <div class="block mb-1" style="overflow:auto; height: 100%" id="table-container">

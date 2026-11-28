@@ -90,6 +90,7 @@ export default class SessionUI {
       }
 
       const lastSortVariable = this.ui.data?.lastSortVariable ?? null;
+      const lastSortDirection = this.ui.data?.lastSortDirection === 'desc' ? 'desc' : 'asc';
       const orthonormal = Boolean(this.ui.grapher?.orthonormal);
       const angleUnit = this.ui.calculation?.angleUnit === 'deg' ? 'deg' : 'rad';
 
@@ -104,7 +105,8 @@ export default class SessionUI {
         yCurves,
         zoom,
         orthonormal,
-        lastSortVariable
+        lastSortVariable,
+        lastSortDirection
       });
     };
 
@@ -371,14 +373,23 @@ export default class SessionUI {
   }
 
   /**
-   * Initialise le bouton de l'état vide au démarrage.
+   * Initialise les cartes d'action de l'état vide au démarrage.
    */
   initEmptyState() {
-    const emptyStateButton = document.getElementById('empty-state-new-session-btn');
-    const newFileModalButton = document.getElementById('new-file-open-modal-button');
+    const newFileCardBtn = document.getElementById('empty-state-new-file-btn');
+    const openFileCardBtn = document.getElementById('empty-state-open-file-btn');
+    const pasteCardBtn = document.getElementById('empty-state-paste-btn');
 
-    emptyStateButton.addEventListener('click', () => {
-      newFileModalButton.click();
+    newFileCardBtn?.addEventListener('click', () => {
+      document.getElementById('new-file-button')?.click();
+    });
+
+    openFileCardBtn?.addEventListener('click', () => {
+      document.getElementById('file-input')?.click();
+    });
+
+    pasteCardBtn?.addEventListener('click', () => {
+      document.getElementById('paste-button')?.click();
     });
   }
 

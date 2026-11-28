@@ -186,8 +186,9 @@ class Spreadsheet {
     const endIdx = Math.min(startIdx + this.pageSize, totalRows);
     const displayData = fullTableData.slice(startIdx, endIdx);
 
-    // Mise à jour de l'UI de pagination
+    // Mise à jour de l'UI de pagination et du compteur de lignes
     this.updatePaginationUI(totalRows, startIdx, endIdx);
+    this.updateRowCountUI();
 
     if (this.hot) {
       if (!needsSettingsUpdate) {
@@ -225,6 +226,42 @@ class Spreadsheet {
         });
       }
     }
+  }
+
+  // Compte le nombre de lignes contenant au moins une mesure non vide
+  getMeasurementCount() {
+    const curves = this.data?.curves;
+    if (!Array.isArray(curves) || curves.length === 0) return 0;
+
+    let maxLen = 0;
+    for (let i = 0; i < curves.length; i++) {
+      if (curves[i].length > maxLen) {
+        maxLen = curves[i].length;
+      }
+    }
+
+    let count = 0;
+    for (let row = 0; row < maxLen; row++) {
+      for (let col = 0; col < curves.length; col++) {
+        const val = curves[col][row];
+        if (val !== null && val !== undefined && val !== '') {
+          count++;
+          break;
+        }
+      }
+    }
+    return count;
+  }
+
+  // Met à jour le compteur discret de lignes dans la barre d'outils du tableur
+  updateRowCountUI(explicitCount = null) {
+    if (typeof document === 'undefined' || typeof document.getElementById !== 'function') return;
+    const counterEl = document.getElementById('spreadsheet-row-count');
+    if (!counterEl) return;
+
+    const count = explicitCount !== null ? explicitCount : this.getMeasurementCount();
+    const formatted = new Intl.NumberFormat('fr-FR').format(count);
+    counterEl.textContent = `${formatted} ${count > 1 ? 'lignes' : 'ligne'}`;
   }
 
   // Met à jour les boutons et le texte
@@ -340,8 +377,11 @@ class Spreadsheet {
       }
     });
 
-    if (hasActualChange && typeof this.cb === 'function') {
-      this.cb(change);
+    if (hasActualChange) {
+      this.updateRowCountUI();
+      if (typeof this.cb === 'function') {
+        this.cb(change);
+      }
     }
   }
 
@@ -429,6 +469,8 @@ class Spreadsheet {
       outsideClickDeselects: false,
       licenseKey: 'non-commercial-and-evaluation', 
     });
+
+    this.updateRowCountUI();
   }
 
   clear() {
@@ -441,6 +483,7 @@ class Spreadsheet {
     });
 
     this.formatCache.clear();
+    this.updateRowCountUI(0);
   }
 
   focusFirstCell(editMode = false) {

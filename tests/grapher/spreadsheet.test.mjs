@@ -845,4 +845,43 @@ describe('Spreadsheet - handleAfterChange() et correction du bug de pagination',
       assert.equal(changes[0], null);
     });
   });
+
+  describe('Compteur de lignes de mesures (getMeasurementCount / updateRowCountUI)', () => {
+    it('affiche le singulier pour 0 ou 1 ligne et le pluriel au-delà, en ignorant les lignes entièrement vides', () => {
+      const counterEl = { textContent: '' };
+      const origGetById = global.__getElementByIdOverride;
+      global.__getElementByIdOverride = (id) => (id === 'spreadsheet-row-count' ? counterEl : null);
+
+      try {
+        const data = new Data({ significantDigits: 4 });
+        const x = data.addCurve('x', 'm');
+        const y = data.addCurve('y', 's');
+        const spreadsheet = new Spreadsheet(data, () => {});
+
+        spreadsheet.updateRowCountUI();
+        assert.equal(counterEl.textContent, '0 ligne');
+
+        x.push(1);
+        y.push(null);
+        spreadsheet.updateRowCountUI();
+        assert.equal(counterEl.textContent, '1 ligne');
+
+        // Une ligne entièrement vide (null, null) ne doit pas être comptée
+        x.push(null);
+        y.push(null);
+        spreadsheet.updateRowCountUI();
+        assert.equal(counterEl.textContent, '1 ligne');
+
+        // L'ajout d'une saisie via handleAfterChange met à jour le compteur
+        spreadsheet.handleAfterChange([[1, 0, null, 2.5]], 'edit');
+        assert.equal(counterEl.textContent, '2 lignes');
+
+        // clear() remet le compteur à 0 ligne
+        spreadsheet.clear();
+        assert.equal(counterEl.textContent, '0 ligne');
+      } finally {
+        global.__getElementByIdOverride = origGetById;
+      }
+    });
+  });
 });

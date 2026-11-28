@@ -500,7 +500,7 @@ export default class App {
     // Si un tri était actif avant le recalcul, on le réapplique
     if (this.data.lastSortVariable) {
       if (this.data.getCurveByTitle(this.data.lastSortVariable)) {
-        this.data.sortDataBy(this.data.lastSortVariable);
+        this.data.sortDataBy(this.data.lastSortVariable, this.data.lastSortDirection);
       } else {
         this.data.clearSort();
       }

@@ -421,6 +421,29 @@ describe('Data - sortDataBy()', () => {
     assert.equal(data.sortDataBy('A'), true);
     assert.equal(data.sortDataBy('A'), false);
   });
+
+  it('doit supporter le tri décroissant ("desc") tout en conservant les valeurs nulles/vides en fin de tableau', () => {
+    const data = createTestData();
+    const curveA = data.addCurve('A', 'm');
+    const curveB = data.addCurve('B', 's');
+
+    curveA.push(10, null, 30, '', 20);
+    curveB.push(1, 99, 3, 88, 2);
+
+    assert.equal(data.sortDataBy('A', 'desc'), true);
+    assert.equal(data.lastSortVariable, 'A');
+    assert.equal(data.lastSortDirection, 'desc');
+    assert.deepEqual([...data.curves[0]], [30, 20, 10, null, '']);
+    assert.deepEqual([...data.curves[1]], [3, 2, 1, 99, 88]);
+
+    // Un second tri décroissant identique ne modifie pas l'ordre
+    assert.equal(data.sortDataBy('A', 'desc'), false);
+
+    // clearSort() réinitialise variable et sens de tri
+    data.clearSort();
+    assert.equal(data.lastSortVariable, null);
+    assert.equal(data.lastSortDirection, 'asc');
+  });
 });
 
 describe('Model - _buildData() et robustesse face aux chaînes et virgules', () => {

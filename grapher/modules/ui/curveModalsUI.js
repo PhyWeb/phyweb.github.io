@@ -13,28 +13,59 @@ export default class CurveModalsUI {
   updateSortUI() {
     const select = $('#sort-variable-select');
 
-    if (!select) return;
-    const selectedValue = this.ui.data.lastSortVariable || select.value;
-    select.innerHTML = ''; // Vide les options
+    if (select) {
+      const selectedValue = this.ui.data.lastSortVariable || select.value;
+      select.innerHTML = ''; // Vide les options
 
-    const defaultOption = document.createElement('option');
-    defaultOption.textContent = "Trier par...";
-    defaultOption.value = "";
-    defaultOption.disabled = true;
-    select.appendChild(defaultOption);
+      const defaultOption = document.createElement('option');
+      defaultOption.textContent = "Trier par...";
+      defaultOption.value = "";
+      defaultOption.disabled = true;
+      select.appendChild(defaultOption);
 
-    this.ui.data.curves.forEach(curve => {
-      const option = document.createElement('option');
-      option.value = curve.title;
-      option.textContent = curve.title;
-      select.appendChild(option);
-    });
+      this.ui.data.curves.forEach(curve => {
+        const option = document.createElement('option');
+        option.value = curve.title;
+        option.textContent = curve.title;
+        select.appendChild(option);
+      });
 
-    // Restaure la sélection si elle est toujours valide
-    if (this.ui.data.curves.some(c => c.title === selectedValue)) {
-      select.value = selectedValue;
-    } else {
-      select.value = ""; // Sinon, sélectionne le placeholder
+      // Restaure la sélection si elle est toujours valide
+      if (this.ui.data.curves.some(c => c.title === selectedValue)) {
+        select.value = selectedValue;
+      } else {
+        select.value = ""; // Sinon, sélectionne le placeholder
+      }
+    }
+
+    this.updateSortDirectionUI();
+  }
+
+  updateSortDirectionUI() {
+    const isDesc = this.ui.data?.lastSortDirection === 'desc';
+    const sortBtn = $('#sort-button');
+    const sortBtnIcon = $('#sort-button-icon');
+    const dirBtn = $('#sort-direction-button');
+    const dirIcon = $('#sort-direction-icon');
+
+    if (sortBtn) {
+      sortBtn.title = isDesc ? 'Trier par ordre décroissant' : 'Trier par ordre croissant';
+    }
+    if (sortBtnIcon && sortBtnIcon.classList) {
+      sortBtnIcon.classList.toggle('fa-arrow-down-short-wide', !isDesc);
+      sortBtnIcon.classList.toggle('fa-arrow-up-wide-short', isDesc);
+    }
+    if (dirBtn) {
+      dirBtn.title = isDesc
+        ? 'Ordre décroissant (cliquer pour passer en croissant)'
+        : 'Ordre croissant (cliquer pour passer en décroissant)';
+      if (typeof dirBtn.setAttribute === 'function') {
+        dirBtn.setAttribute('aria-pressed', isDesc ? 'true' : 'false');
+      }
+    }
+    if (dirIcon && dirIcon.classList) {
+      dirIcon.classList.toggle('fa-arrow-down', !isDesc);
+      dirIcon.classList.toggle('fa-arrow-up', isDesc);
     }
   }
 
@@ -42,11 +73,11 @@ export default class CurveModalsUI {
     this.ui.updateSortUI();
     this.ui.updateXAxisSelector();
 
-    // Ajouter l'écouteur pour le bouton de tri
-    $('#sort-button').addEventListener('click', () => {
-      const selectedVariable = $('#sort-variable-select').value;
+    const applySort = () => {
+      const selectedVariable = $('#sort-variable-select')?.value;
       if (selectedVariable) {
-        const orderChanged = this.ui.data.sortDataBy(selectedVariable);
+        const direction = this.ui.data?.lastSortDirection === 'desc' ? 'desc' : 'asc';
+        const orderChanged = this.ui.data.sortDataBy(selectedVariable, direction);
         this.ui.spreadsheet.update();
         this.ui.grapher.updateChart();
         const hasEmptyCalcCurve = Boolean(
@@ -56,7 +87,22 @@ export default class CurveModalsUI {
           this.ui.setCalculationsStale(true);
         }
       }
-    });
+    };
+
+    // Ajouter l'écouteur pour le bouton de tri
+    $('#sort-button').addEventListener('click', applySort);
+
+    // Ajouter l'écouteur pour la bascule croissant / décroissant
+    const sortDirectionBtn = $('#sort-direction-button');
+    if (sortDirectionBtn) {
+      sortDirectionBtn.addEventListener('click', () => {
+        if (this.ui.data) {
+          this.ui.data.lastSortDirection = this.ui.data.lastSortDirection === 'desc' ? 'asc' : 'desc';
+        }
+        this.updateSortDirectionUI();
+        applySort();
+      });
+    }
 
     // Ajouter l'écouteur pour le recalcul des grandeurs depuis le tableur
     const recalculateSpreadsheetBtn = document.getElementById('recalculate-spreadsheet-button');

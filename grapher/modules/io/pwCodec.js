@@ -77,6 +77,7 @@ export function generatePW(app) {
     },
     sort: {
       lastSortVariable: app.data.lastSortVariable ?? null,
+      lastSortDirection: app.data.lastSortDirection === 'desc' ? 'desc' : 'asc',
     },
   };
 
@@ -293,6 +294,7 @@ export async function restorePWState(app, state) {
   if (state.sort && state.sort.lastSortVariable) {
     app.data.lastSortVariable = nameMap[state.sort.lastSortVariable] || state.sort.lastSortVariable;
   }
+  app.data.lastSortDirection = state.sort?.lastSortDirection === 'desc' ? 'desc' : 'asc';
 
   // Finalisation UI
   app.spreadsheet.focusFirstCell(false);
