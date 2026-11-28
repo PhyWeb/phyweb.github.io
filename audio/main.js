@@ -257,12 +257,7 @@ $("#simple-mode-button").addEventListener("click", async ()=>{
   // Masquage des réglages de Fourier
   $("#fourier-settings-panel").style.display = "none";
 
-  // Redimensionnement du graphe temporel
-  $("#rt-graph-container").style.height = "calc(100vh - 130px)";
-  $("#rec-graph-container").style.height = "calc(100vh - 130px)";
-  $("#sav-graph-container").style.height = "calc(100vh - 130px)";
-
-  // Ajustement des marges
+  // Ajustement des marges (la hauteur s'adapte automatiquement en Flexbox)
   $("#rt-graph-container").style.marginBottom = "0px";
   $("#rec-graph-container").style.marginBottom = "0px";
   $("#sav-graph-container").style.marginBottom = "0px";

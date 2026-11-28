@@ -186,14 +186,14 @@
   <!------------------------------------------------------------------------------------------------------------>
   <!----------------------------------------------------RT------------------------------------------------------>
   <!------------------------------------------------------------------------------------------------------------>
-  <div class="columns is-flex-grow-1 is-hidden main-container" id="rt-panel">
-    <div class="column is-narrow pr-0 pb-0" style="width: calc(100vw - 300px)">
-      <div class="block box mb-3" id="rt-graph-container" style="height: calc(55vh - 65px)">
+  <div class="columns is-flex-grow-1 is-hidden main-container audio-main-panel" id="rt-panel">
+    <div class="column is-flex is-flex-direction-column pr-0 pb-3 audio-charts-column">
+      <div class="block box mb-3 audio-wave-box" id="rt-graph-container">
       </div>
-      <div class="block box" id="rt-fourier-container" style="height: calc(45vh - 65px)">
+      <div class="block box mb-0 audio-fourier-box" id="rt-fourier-container">
       </div>
     </div>
-    <div class="column is-narrow" style="width:300px">
+    <div class="column is-narrow audio-sidebar-column" style="width:300px">
       <div class="card mb-3">
         <header class="card-header has-background-primary">
           <p class="is-size-5 has-text-centered is-flex-grow-1 m-2">Paramètres</p>
@@ -242,14 +242,14 @@
   <!------------------------------------------------------------------------------------------------------------>
   <!----------------------------------------------------REC----------------------------------------------------->
   <!------------------------------------------------------------------------------------------------------------>
-  <div class="columns is-flex-grow-1 is-hidden main-container" id="rec-panel">
-    <div class="column is-flex is-flex-direction-column pr-0 pb-0" style="width: calc(100vw - 324px)">
-      <div class="block box mb-3" id="rec-graph-container" style="height: calc(55vh - 65px)">
+  <div class="columns is-flex-grow-1 is-hidden main-container audio-main-panel" id="rec-panel">
+    <div class="column is-flex is-flex-direction-column pr-0 pb-3 audio-charts-column">
+      <div class="block box mb-3 audio-wave-box" id="rec-graph-container">
       </div>
-      <div class="block box" id="rec-fourier-container" style="height: calc(45vh - 65px)">
+      <div class="block box mb-0 audio-fourier-box" id="rec-fourier-container">
       </div>
     </div>
-    <div class="column is-narrow" style="width:300px">
+    <div class="column is-narrow audio-sidebar-column" style="width:300px">
       <div class="card mb-3">
         <header class="card-header has-background-primary">
           <p class="is-size-5 has-text-centered is-flex-grow-1 m-2">Acquisition</p>
@@ -359,16 +359,16 @@
   <!------------------------------------------------------------------------------------------------------------>
   <!----------------------------------------------------SAVE---------------------------------------------------->
   <!------------------------------------------------------------------------------------------------------------>
-  <div class="columns is-flex-grow-1 is-hidden main-container" id="save-panel">
-    <div class="column is-flex is-flex-direction-column pr-0 pb-0" style="width: calc(100vw - 324px)">
-      <div class="block box mb-3" id="sav-graph-container" style="height: calc(55vh - 65px)">
+  <div class="columns is-flex-grow-1 is-hidden main-container audio-main-panel" id="save-panel">
+    <div class="column is-flex is-flex-direction-column pr-0 pb-3 audio-charts-column">
+      <div class="block box mb-3 audio-wave-box" id="sav-graph-container">
       </div>
-      <div class="block box mb-0" id="sav-fourier-container" style="height: calc(45vh - 65px)">
+      <div class="block box mb-0 audio-fourier-box" id="sav-fourier-container">
       </div>
-      <div class="block box is-hidden" id="sav-temporal-fourier-container" style="height: calc(45vh - 65px)">
+      <div class="block box mb-0 is-hidden audio-fourier-box" id="sav-temporal-fourier-container">
       </div>
     </div>
-    <div class="column is-narrow" style="width:300px">
+    <div class="column is-narrow audio-sidebar-column" style="width:300px">
       <div class="card mb-3">
         <header class="card-header has-background-primary">
           <p class="is-size-5 has-text-centered is-flex-grow-1 m-2">Paramètres</p>

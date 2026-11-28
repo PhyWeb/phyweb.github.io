@@ -117,7 +117,8 @@
 }
 
 #grapheur-panel {
-  flex-grow: 1;
+  flex: 1;
+  min-height: 0;
   overflow: hidden;
 }
 

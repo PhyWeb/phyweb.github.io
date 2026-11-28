@@ -37,3 +37,36 @@
 #file-length-modal-card {
   width: 41rem;
 }
+
+#app > .has-background-white {
+  flex-shrink: 0;
+}
+
+.audio-main-panel {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.audio-charts-column {
+  flex: 1 1 0 !important;
+  min-width: 0;
+  min-height: 0;
+}
+
+.audio-wave-box {
+  flex: 55 1 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.audio-fourier-box {
+  flex: 45 1 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.audio-sidebar-column {
+  min-height: 0;
+  overflow-y: auto;
+}
