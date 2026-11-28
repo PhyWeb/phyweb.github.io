@@ -570,12 +570,15 @@
         </div>
       </section>
       <footer class="modal-card-foot">
-        <button class="button is-fullwidth is-primary" id="download-file-button" data-modal-confirm>
-          <span class="icon">
-            <i class="fas fa-download"></i>
-          </span>
-          <span>Télécharger le fichier</span>
-        </button>
+        <div class="buttons">
+          <button class="button modal-close-button" data-modal-cancel>Annuler</button>
+          <button class="button is-primary" id="download-file-button" data-modal-confirm>
+            <span class="icon">
+              <i class="fas fa-download"></i>
+            </span>
+            <span>Télécharger le fichier</span>
+          </button>
+        </div>
       </footer>
     </div>
   </div>
@@ -617,10 +620,13 @@
 
       </section>
       <footer class="modal-card-foot">
-        <button class="button is-fullwidth is-primary" id="confirm-send-to-grapher-button" autofocus data-modal-confirm>
-          <span class="icon"><i class="fas fa-paper-plane"></i></span>
-          <span>Envoyer les données</span>
-        </button>
+        <div class="buttons">
+          <button class="button modal-close-button" data-modal-cancel>Annuler</button>
+          <button class="button is-primary" id="confirm-send-to-grapher-button" autofocus data-modal-confirm>
+            <span class="icon"><i class="fas fa-paper-plane"></i></span>
+            <span>Envoyer les données</span>
+          </button>
+        </div>
       </footer>
     </div>
   </div>
@@ -670,11 +676,14 @@
         </article>
       </section>
       <footer class="modal-card-foot">
-        <button class="button mr-2" id="play-file-preview-button" style="width: 120px;">
+        <button class="button mr-auto" id="play-file-preview-button" style="width: 120px;">
           <span class="icon"><i class="fas fa-play"></i></span>
-          <span>Ecouter</span>
+          <span>Écouter</span>
         </button>
-        <button class="button is-primary is-flex-grow-1" id="open-resized-file" data-modal-confirm>Charger</button>
+        <div class="buttons">
+          <button class="button modal-close-button" data-modal-cancel>Annuler</button>
+          <button class="button is-primary" id="open-resized-file" data-modal-confirm>Charger</button>
+        </div>
       </footer>
     </div>
   </div>

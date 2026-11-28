@@ -1005,8 +1005,8 @@
       </section>
       <footer class="modal-card-foot">
         <div class="buttons">
-          <button class="button is-success" id="add-curve-confirm-button" data-modal-confirm>Ajouter</button>
           <button class="button modal-close-button" data-modal-cancel>Annuler</button>
+          <button class="button is-primary" id="add-curve-confirm-button" data-modal-confirm>Ajouter</button>
         </div>
       </footer>
     </div>
@@ -1036,8 +1036,8 @@
       </section>
       <footer class="modal-card-foot">
         <div class="buttons">
-          <button class="button is-danger" id="delete-curve-confirm-button" data-modal-confirm>Supprimer</button>
           <button class="button modal-close-button" data-modal-cancel>Annuler</button>
+          <button class="button is-danger" id="delete-curve-confirm-button" data-modal-confirm>Supprimer</button>
         </div>
       </footer>
     </div>
@@ -1164,7 +1164,7 @@
         </section>
         <footer class="modal-card-foot">
           <div class="buttons">
-            <button class="button is-success" id="choose-curves-confirm-button" data-modal-confirm>Confirmer</button>
+            <button class="button is-primary" id="choose-curves-confirm-button" data-modal-confirm>Confirmer</button>
           </div>
         </footer>
       </div>
@@ -1195,8 +1195,8 @@
       </section>
       <footer class="modal-card-foot">
         <div class="buttons">
-          <button id="edit-header-save-button" class="button is-success" data-modal-confirm>Sauvegarder</button>
           <button class="button modal-close-button" data-modal-cancel>Annuler</button>
+          <button id="edit-header-save-button" class="button is-primary" data-modal-confirm>Sauvegarder</button>
         </div>
       </footer>
     </div>
@@ -1328,17 +1328,17 @@
           <button id="settings-reset-button" class="button is-warning is-light is-fullwidth">Restaurer les réglages par défaut</button>
         </div>
       </section>
-      <footer class="modal-card-foot is-justify-content-flex-end">
+      <footer class="modal-card-foot">
         
-        <label class="b-checkbox checkbox">
+        <label class="b-checkbox checkbox mr-auto">
           <input type="checkbox" id="save-settings-permanently-switch">
           <span class="check"></span>
           <span class="control-label">Mémoriser ces réglages</span>
         </label>
 
         <div class="buttons ml-4">
-          <button id="settings-save-button" class="button is-success" data-modal-confirm>Appliquer</button>
           <button class="button modal-close-button" data-modal-cancel>Annuler</button>
+          <button id="settings-save-button" class="button is-primary" data-modal-confirm>Appliquer</button>
         </div>
         
       </footer>
@@ -1402,12 +1402,15 @@
         </div>
       </section>
       <footer class="modal-card-foot">
-        <button class="button is-fullwidth is-primary" id="download-file-button" data-modal-confirm>
-          <span class="icon">
-            <i class="fas fa-download"></i>
-          </span>
-          <span>Télécharger le fichier</span>
-        </button>
+        <div class="buttons">
+          <button class="button modal-close-button" data-modal-cancel>Annuler</button>
+          <button class="button is-primary" id="download-file-button" data-modal-confirm>
+            <span class="icon">
+              <i class="fas fa-download"></i>
+            </span>
+            <span>Télécharger le fichier</span>
+          </button>
+        </div>
       </footer>
     </div>
   </div>
@@ -1570,8 +1573,8 @@
       </section>
       <footer class="modal-card-foot">
         <div class="buttons">
-          <button class="button is-success" id="add-model-confirm-button" disabled data-modal-confirm>Créer</button>
           <button class="button modal-close-button" data-modal-cancel>Annuler</button>
+          <button class="button is-primary" id="add-model-confirm-button" disabled data-modal-confirm>Créer</button>
         </div>
       </footer>
     </div>
@@ -1664,8 +1667,8 @@
       </section>
       <footer class="modal-card-foot">
         <div class="buttons">
-          <button class="button is-success" id="model-edit-save-button" data-modal-confirm>Sauvegarder</button>
           <button class="button modal-close-button" data-modal-cancel>Annuler</button>
+          <button class="button is-primary" id="model-edit-save-button" data-modal-confirm>Sauvegarder</button>
         </div>
       </footer>
     </div>
@@ -1748,8 +1751,8 @@
       </section>
       <footer class="modal-card-foot">
         <div class="buttons">
-          <button class="button is-success" id="compute-model-confirm-button" data-modal-confirm>Calculer</button>
           <button class="button modal-close-button" data-modal-cancel>Fermer</button>
+          <button class="button is-primary" id="compute-model-confirm-button" data-modal-confirm>Calculer</button>
         </div>
       </footer>
     </div>
@@ -2021,13 +2024,12 @@
       <!-- Padding vertical allégé -->
       <footer class="modal-card-foot" style="padding-top: 12px; padding-bottom: 12px;">
         <div class="buttons">
-          <button class="button is-success" id="export-confirm-button" data-modal-confirm>Imprimer / Exporter</button>
+          <button class="button modal-close-button" data-modal-cancel>Annuler</button>
           <button class="button is-info is-hidden" id="export-copy-button">
             <span class="icon"><i class="fas fa-copy"></i></span>
             <span>Copier l'image</span>
           </button>
-          
-          <button class="button modal-close-button" data-modal-cancel>Annuler</button>
+          <button class="button is-primary" id="export-confirm-button" data-modal-confirm>Imprimer / Exporter</button>
         </div>
       </footer>
     </div>

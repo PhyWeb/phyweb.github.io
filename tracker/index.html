@@ -383,7 +383,7 @@
           </div>
         </div>
       </section>
-      <footer class="modal-card-foot">
+      <footer class="modal-card-foot is-justify-content-flex-start">
         <label class="b-checkbox checkbox">
           <input type="checkbox" id="force-filesize-modal-input">
           <span class="check"></span>
@@ -419,7 +419,10 @@
         </div>
       </section>
       <footer class="modal-card-foot">
-        <button class="button is-primary" id="open-video" disabled data-modal-confirm>Ouvrir la vidéo sélectionnée</button>
+        <div class="buttons">
+          <button class="button modal-close-button" data-modal-cancel>Annuler</button>
+          <button class="button is-primary" id="open-video" disabled data-modal-confirm>Ouvrir la vidéo sélectionnée</button>
+        </div>
       </footer>
     </div>
   </div>
@@ -454,8 +457,9 @@
       </section>
       <footer class="modal-card-foot">
         <div class="buttons">
+          <button class="button modal-close-button" data-modal-cancel>Annuler</button>
           <button class="button is-primary" id="validate-settings-button" data-modal-confirm>Valider</button>
-      </div>
+        </div>
       </footer>
     </div>
   </div>
@@ -544,7 +548,10 @@
         </article>
       </section>
       <footer class="modal-card-foot">
-        <button class="button is-danger is-fullwidth" id="open-resized-video" data-modal-confirm></button>
+        <div class="buttons">
+          <button class="button modal-close-button" data-modal-cancel>Annuler</button>
+          <button class="button is-danger" id="open-resized-video" data-modal-confirm></button>
+        </div>
       </footer>
     </div>
   </div>
@@ -603,12 +610,15 @@
         </div>
       </section>
       <footer class="modal-card-foot">
-        <button class="button is-fullwidth is-primary" id="download-file-button" data-modal-confirm>
-          <span class="icon">
-            <i class="fas fa-download"></i>
-          </span>
-          <span>Télécharger le fichier</span>
-        </button>
+        <div class="buttons">
+          <button class="button modal-close-button" data-modal-cancel>Annuler</button>
+          <button class="button is-primary" id="download-file-button" data-modal-confirm>
+            <span class="icon">
+              <i class="fas fa-download"></i>
+            </span>
+            <span>Télécharger le fichier</span>
+          </button>
+        </div>
       </footer>
     </div>
   </div>

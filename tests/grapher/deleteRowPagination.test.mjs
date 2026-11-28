@@ -108,9 +108,10 @@ describe('Suppression de ligne avec pagination (UIManager.initDeleteLineButton &
         buttonListener();
       },
       confirmDeletion: () => {
-        // Dans alertModal de common.js, le premier bouton créé est le bouton confirm
+        // Dans alertModal de common.js, le bouton Annuler précède le bouton de confirmation (.modal-confirm-button)
         assert.ok(modalConfirmButtons.length > 0, 'La modale de confirmation doit afficher des boutons');
-        modalConfirmButtons[0].click();
+        const confirmBtn = modalConfirmButtons.find(b => b.className?.includes('modal-confirm-button')) || modalConfirmButtons.at(-1);
+        confirmBtn.click();
       },
       getCapturedDelete: () => capturedDelete
     };
@@ -225,7 +226,7 @@ describe('Suppression de ligne avec pagination (UIManager.initDeleteLineButton &
       ui.initDeleteLineButton();
 
       buttonListener();
-      modalConfirmButtons[0].click();
+      (modalConfirmButtons.find(b => b.className?.includes('modal-confirm-button')) || modalConfirmButtons.at(-1)).click();
 
       // 1. Longueur totale réduite de 25 à 24
       assert.equal(curveX.length, 24);
@@ -273,7 +274,7 @@ describe('Suppression de ligne avec pagination (UIManager.initDeleteLineButton &
       ui.initDeleteLineButton();
 
       buttonListener();
-      modalConfirmButtons[0].click();
+      (modalConfirmButtons.find(b => b.className?.includes('modal-confirm-button')) || modalConfirmButtons.at(-1)).click();
 
       // Il reste 20 lignes -> 2 pages (0 et 1)
       assert.equal(curveX.length, 20);
@@ -435,7 +436,7 @@ describe('Suppression de ligne avec pagination (UIManager.initDeleteLineButton &
       assert.ok(modalConfirmButtons.length > 0, 'La modale doit s\'afficher car 0 est une donnée valide');
       assert.equal(capturedDelete, null, 'deleteRow ne doit pas être appelé avant confirmation');
 
-      modalConfirmButtons[0].click();
+      (modalConfirmButtons.find(b => b.className?.includes('modal-confirm-button')) || modalConfirmButtons.at(-1)).click();
       assert.deepEqual(capturedDelete, { startRow: 0, amount: 1 });
     });
 
@@ -473,7 +474,7 @@ describe('Suppression de ligne avec pagination (UIManager.initDeleteLineButton &
       assert.ok(modalConfirmButtons.length > 0, 'La modale doit s\'afficher si au moins une ligne contient des données');
       assert.equal(capturedDelete, null);
 
-      modalConfirmButtons[0].click();
+      (modalConfirmButtons.find(b => b.className?.includes('modal-confirm-button')) || modalConfirmButtons.at(-1)).click();
       assert.deepEqual(capturedDelete, { startRow: 0, amount: 2 });
     });
   });

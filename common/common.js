@@ -690,30 +690,7 @@ function alertModal(_config){
     let foot = createElement("footer", "modal-card-foot", card);
     let buttons = createElement("div", "buttons", foot);
 
-    // Bouton de confirmation
-    if(_config.confirm){
-      let type = "primary";
-      if(_config.confirm.type){
-        type = _config.confirm.type;
-      }
-      confirmButton = createElement("button", "button is-" + type + " modal-confirm-button", buttons);
-      if (confirmButton.setAttribute) {
-        confirmButton.setAttribute('data-modal-confirm', 'true');
-      }
-      confirmButton.addEventListener("click", ()=>{closeAlertModal(modal)});
-
-      if(typeof _config.confirm === "string"){
-        confirmButton.innerHTML = _config.confirm;
-      } else{
-        confirmButton.innerHTML = _config.confirm.label;
-      }
-
-      if(_config.confirm.cb){
-        confirmButton.addEventListener("click", ()=>{_config.confirm.cb()});
-      }
-    }
-
-    // Bouton d'annulation
+    // Bouton d'annulation (toujours à gauche de l'action principale)
     if(_config.cancel){
       cancelButton = createElement("button", "button modal-cancel-button modal-close-button", buttons);
       if (cancelButton.setAttribute) {
@@ -734,6 +711,29 @@ function alertModal(_config){
       }
 
       cancelButton.addEventListener("click", ()=>{closeAlertModal(modal)});
+    }
+
+    // Bouton de confirmation (à droite)
+    if(_config.confirm){
+      let type = "primary";
+      if(_config.confirm.type){
+        type = _config.confirm.type;
+      }
+      confirmButton = createElement("button", "button is-" + type + " modal-confirm-button", buttons);
+      if (confirmButton.setAttribute) {
+        confirmButton.setAttribute('data-modal-confirm', 'true');
+      }
+      confirmButton.addEventListener("click", ()=>{closeAlertModal(modal)});
+
+      if(typeof _config.confirm === "string"){
+        confirmButton.innerHTML = _config.confirm;
+      } else{
+        confirmButton.innerHTML = _config.confirm.label;
+      }
+
+      if(_config.confirm.cb){
+        confirmButton.addEventListener("click", ()=>{_config.confirm.cb()});
+      }
     }
   } else {
     // Absence de pied de page

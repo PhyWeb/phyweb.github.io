@@ -64,8 +64,8 @@ describe('TabManager - Gestion des onglets et intégrité de deleteTab', () => {
   const deleteAndConfirm = (id) => {
     confirmButtons = [];
     tabManager.deleteTab(id);
-    // In alertModal with confirm and cancel, the first button created is confirmButton
-    const confirmButton = confirmButtons[0];
+    // Dans alertModal, le bouton Annuler est créé avant le bouton de confirmation (.modal-confirm-button)
+    const confirmButton = confirmButtons.find(b => b.className?.includes('modal-confirm-button')) || confirmButtons.at(-1);
     if (confirmButton) {
       confirmButton.click();
     }
