@@ -1440,8 +1440,8 @@
         </div>
         <div class="field">
           <label class="label">Type de modèle</label>
-          <div id="model-type-container" class="is-flex is-flex-wrap-wrap" style="gap: 1rem;">
-            <div class="model-type-item box is-clickable p-3 has-text-centered is-flex-grow-1" data-model-type="linear">
+          <div id="model-type-container" class="model-type-grid">
+            <div class="model-type-item box is-clickable p-3 has-text-centered" data-model-type="linear">
               <span class="icon is-large has-text-info">
                 <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
                   <path fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" d="M6 42 L42 42 M6 42 L6 6"/>
@@ -1451,7 +1451,7 @@
               <p class="has-text-weight-semibold mt-2">Linéaire</p>
               <p class="is-size-7">y = a·x</p>
             </div>
-            <div class="model-type-item box is-clickable p-3 has-text-centered is-flex-grow-1" data-model-type="affine">
+            <div class="model-type-item box is-clickable p-3 has-text-centered" data-model-type="affine">
               <span class="icon is-large has-text-info">
                 <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
                   <path fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" d="M6 42 L42 42 M6 42 L6 6"/>
@@ -1461,7 +1461,7 @@
               <p class="has-text-weight-semibold mt-2">Affine</p>
               <p class="is-size-7">y = a·x + b</p>
             </div>
-            <div class="model-type-item box is-clickable p-3 has-text-centered is-flex-grow-1" data-model-type="quadratic">
+            <div class="model-type-item box is-clickable p-3 has-text-centered" data-model-type="quadratic">
               <span class="icon is-large has-text-info">
                 <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
                   <path fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" d="M6 42 L42 42 M6 42 L6 6"/>
@@ -1471,7 +1471,7 @@
               <p class="has-text-weight-semibold mt-2">Parabole</p>
               <p class="is-size-7">y = a·x² + b·x + c</p>
             </div>
-            <div class="model-type-item box is-clickable p-3 has-text-centered is-flex-grow-1 mb-3" data-model-type="power">
+            <div class="model-type-item box is-clickable p-3 has-text-centered" data-model-type="power">
             <span class="icon is-large has-text-info">
               <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
                 <path fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" d="M6 42 L42 42 M6 42 L6 6"/>
@@ -1482,8 +1482,8 @@
             <p class="is-size-7">y = a·x^b</p>
             </div>
           </div>
-          <div class="more-models-container is-hidden is-flex is-flex-wrap-wrap is-fullwidth" style="gap: 1rem;">
-            <div class="model-type-item box is-clickable p-3 has-text-centered is-flex-grow-1" data-model-type="exp1">
+          <div class="more-models-container model-type-grid is-hidden">
+            <div class="model-type-item box is-clickable p-3 has-text-centered" data-model-type="exp1">
               <span class="icon is-large has-text-primary">
                 <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
                   <path fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" d="M6 42 L42 42 M6 42 L6 6" />
@@ -1493,7 +1493,7 @@
               <p class="has-text-weight-semibold mt-2">Exponentielle 1</p>
               <p class="is-size-7">y = a·e<sup>-x/b</sup></p>
             </div>
-            <div class="model-type-item box is-clickable p-3 has-text-centered is-flex-grow-1" data-model-type="exp2">
+            <div class="model-type-item box is-clickable p-3 has-text-centered" data-model-type="exp2">
               <span class="icon is-large has-text-primary">
                 <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
                   <path fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" d="M6 42 L42 42 M6 42 L6 6"/>
@@ -1503,7 +1503,7 @@
               <p class="has-text-weight-semibold mt-2">Exponentielle 2</p>
               <p class="is-size-7">y = a·(1-e<sup>-x/b</sup>)</p>
             </div>
-            <div class="model-type-item box is-clickable p-3 has-text-centered is-flex-grow-1" data-model-type="ln">
+            <div class="model-type-item box is-clickable p-3 has-text-centered" data-model-type="ln">
               <span class="icon is-large has-text-primary">
                 <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
                     <path fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" d="M6 42 L42 42 M6 42 L6 6"/>
@@ -1513,7 +1513,7 @@
               <p class="has-text-weight-semibold mt-2">Log népérien</p>
               <p class="is-size-7">y = a·ln(x) + b</p>
             </div>
-            <div class="model-type-item box is-clickable p-3 has-text-centered is-flex-grow-1 mb-3" data-model-type="log">
+            <div class="model-type-item box is-clickable p-3 has-text-centered" data-model-type="log">
               <span class="icon is-large has-text-primary">
                 <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
                     <path fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" d="M6 42 L42 42 M6 42 L6 6"/>
@@ -1524,8 +1524,8 @@
               <p class="is-size-7">y = a·log(x) + b</p>
             </div>
           </div>
-          <div class="more-models-container is-hidden is-flex is-flex-wrap-wrap is-fullwidth" style="gap: 1rem;">
-            <div class="model-type-item box is-clickable p-3 has-text-centered is-flex-grow-1" data-model-type="sin">
+          <div class="more-models-container model-type-grid is-hidden">
+            <div class="model-type-item box is-clickable p-3 has-text-centered" data-model-type="sin">
               <span class="icon is-large has-text-warning">
                 <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
                   <path fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" d="M 6,24 H 42 M 24,42 V 6"/>
@@ -1535,7 +1535,7 @@
               <p class="has-text-weight-semibold mt-2">Sinus</p>
               <p class="is-size-7">y = a·sin(b·x + c) + d</p>
             </div>
-            <div class="model-type-item box is-clickable p-3 has-text-centered is-flex-grow-1" data-model-type="cos">
+            <div class="model-type-item box is-clickable p-3 has-text-centered" data-model-type="cos">
               <span class="icon is-large has-text-warning">
                 <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
                   <path fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" d="M 6,24 H 42 M 24,42 V 6"/>
@@ -1545,7 +1545,7 @@
               <p class="has-text-weight-semibold mt-2">Cosinus</p>
               <p class="is-size-7">y = a·cos(b·x + c) + d</p>
             </div>
-            <div class="model-type-item box is-clickable p-3 has-text-centered is-flex-grow-1" data-model-type="dampedsin">
+            <div class="model-type-item box is-clickable p-3 has-text-centered" data-model-type="dampedsin">
               <span class="icon is-large has-text-warning">
                 <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
                     <path fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" d="M 6,24 H 42 M 6,42 V 6"/>
@@ -1555,7 +1555,7 @@
               <p class="has-text-weight-semibold mt-2">Sin amorti</p>
               <p class="is-size-7">y = a·sin(b·x+c)·e<sup>-x/d</sup> + e</p>
             </div>
-            <div class="model-type-item box is-clickable p-3 has-text-centered is-flex-grow-1 mb-3" data-model-type="dampedcos">
+            <div class="model-type-item box is-clickable p-3 has-text-centered" data-model-type="dampedcos">
               <span class="icon is-large has-text-warning">
                 <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
                     <path fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" d="M 6,24 H 42 M 6,42 V 6"/>
