@@ -194,6 +194,23 @@
   line-height: 1;
 }
 
+/* Méga-dropdowns Calculs : empêcher le débordement sur petits écrans */
+#functions-dropdown-menu,
+#constants-dropdown-menu {
+  min-width: 0;
+  max-width: calc(100vw - 2rem);
+}
+
+#calculation-functions-content,
+#calculation-constants-content {
+  max-height: calc(100vh - 160px);
+  overflow-y: auto;
+}
+
+#calculation-constants-content .dropdown-item {
+  white-space: normal;
+}
+
 .tag.is-purple-light {
   background-color: #f3e8ff;
   color: #7b1fa2;

@@ -65,8 +65,8 @@ describe('Contrôle Mega-Dropdown des Fonctions dans l\'onglet Calculs', () => {
       );
       assert.match(
         htmlContent,
-        /<div class="dropdown-menu" id="functions-dropdown-menu" role="menu" style="[^"]*min-width:\s*780px;?[^"]*">/,
-        'Le menu doit avoir style="min-width: 780px;" et role="menu"'
+        /<div class="dropdown-menu" id="functions-dropdown-menu" role="menu" style="[^"]*max-width:\s*calc\(100vw - 2rem\);?[^"]*">/,
+        'Le menu doit limiter sa largeur à max-width: calc(100vw - 2rem) et avoir role="menu"'
       );
       assert.match(
         htmlContent,
